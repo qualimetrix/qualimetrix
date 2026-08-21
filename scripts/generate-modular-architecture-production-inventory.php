@@ -2438,6 +2438,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0017-baseline-ceiling.md' => ['Analysis.Policy.Baseline', 'P6'],
         'docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
         'docs/adr/0022-capability-oriented-modular-monolith.md' => ['Architecture.Governance', 'P2'],
+        'docs/adr/0027-weight-of-class-measures-accessors-not-visibility.md' => ['Analysis.Evidence.Design', 'P7'],
         'docs/adr/0023-p8-context-locality-and-composition-bindings.md' => ['Architecture.Governance', 'P8'],
         'docs/internal/plans/modular-architecture.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture/decisions-and-target.md' => ['Architecture.Governance', 'P2'],

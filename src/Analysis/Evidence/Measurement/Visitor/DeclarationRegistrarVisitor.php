@@ -16,8 +16,6 @@ use Qualimetrix\Core\Symbol\FileDeclarationIndex;
  * asks about the node it is currently entering always finds it registered.
  * Registration reuses the shared lexical traversal scope rather than a second
  * implementation of identity.
- *
- * @qmx-ignore design.data-class -- A traversal participant whose whole job is to fill one collaborator: every node it sees goes into the index, and the index is the only thing it exposes. The metric reads that surface as a record of data.
  */
 final class DeclarationRegistrarVisitor extends NodeVisitorAbstract implements DeclarationRegistrarInterface
 {

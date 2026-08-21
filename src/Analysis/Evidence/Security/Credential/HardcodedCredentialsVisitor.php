@@ -13,8 +13,6 @@ use Qualimetrix\Analysis\Evidence\Security\SensitiveNameMatcher;
 
 /**
  * Traverses nodes and delegates credential-literal semantics.
- *
- * @qmx-ignore design.data-class -- Traversal adapter intentionally delegates credential policy and retains only lifecycle state.
  */
 final class HardcodedCredentialsVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {

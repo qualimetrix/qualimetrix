@@ -433,9 +433,9 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         // DataClassOptions — warning -> wocThreshold, error -> wmcThreshold
         $dataClass = new DataClassOptions(
             enabled: false,
-            wocThreshold: 80,
+            wocThreshold: 30,
             wmcThreshold: 10,
-            minMethods: 4,
+            minMembers: 4,
             excludeReadonly: false,
             excludePromotedOnly: false,
             excludeExceptions: false,
@@ -444,7 +444,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertFalse($dataClassOverridden->enabled, 'DataClass: enabled must be preserved');
         self::assertSame(90, $dataClassOverridden->wocThreshold, 'DataClass: wocThreshold must take warning override');
         self::assertSame(5, $dataClassOverridden->wmcThreshold, 'DataClass: wmcThreshold must take error override');
-        self::assertSame(4, $dataClassOverridden->minMethods, 'DataClass: minMethods must be preserved');
+        self::assertSame(4, $dataClassOverridden->minMembers, 'DataClass: minMembers must be preserved');
         self::assertFalse($dataClassOverridden->excludeReadonly, 'DataClass: excludeReadonly must be preserved');
         self::assertFalse($dataClassOverridden->excludePromotedOnly, 'DataClass: excludePromotedOnly must be preserved');
         self::assertFalse($dataClassOverridden->excludeExceptions, 'DataClass: excludeExceptions must be preserved');

@@ -672,7 +672,7 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 | `--constructor-overinjection-error=N`   | code-smell.constructor-overinjection | error               |
 | `--data-class-woc-threshold=N`          | design.data-class                    | wocThreshold        |
 | `--data-class-wmc-threshold=N`          | design.data-class                    | wmcThreshold        |
-| `--data-class-min-methods=N`            | design.data-class                    | minMethods          |
+| `--data-class-min-members=N`            | design.data-class                    | minMembers          |
 | `--data-class-exclude-readonly`         | design.data-class                    | excludeReadonly     |
 | `--data-class-exclude-promoted-only`    | design.data-class                    | excludePromotedOnly |
 | `--god-class-wmc-threshold=N`           | design.god-class                     | wmcThreshold        |

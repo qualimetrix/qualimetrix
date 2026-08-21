@@ -64,6 +64,7 @@
             <directory>tests/Analysis/Evidence/Measurement/Integration</directory>
             <directory>tests/Analysis/Evidence/CodeSmell/Integration</directory>
             <directory>tests/Analysis/Evidence/Complexity/Integration</directory>
+            <directory>tests/Analysis/Evidence/Design/Integration</directory>
             <directory>tests/Analysis/Evidence/ComputedMetrics/Integration</directory>
             <directory>tests/Analysis/Run/Integration</directory>
         </testsuite>

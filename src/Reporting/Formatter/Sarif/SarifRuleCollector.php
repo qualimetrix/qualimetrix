@@ -121,7 +121,7 @@ final class SarifRuleCollector
             'architecture.circular-dependency' => 'Circular dependency detected',
             'duplication.code-duplication' => 'Duplicated code block detected',
             'code-smell.constructor-overinjection' => 'Constructor has too many dependencies',
-            'design.data-class' => 'Data Class detected (high public surface, low complexity)',
+            'design.data-class' => 'Data Class detected (public interface is mostly data access, low complexity)',
             'design.god-class' => 'God Class detected (complex, large, low cohesion)',
             'code-smell.unused-private' => 'Unused private member detected',
             default => ucfirst(str_replace(['.', '-'], ' ', $ruleName)),

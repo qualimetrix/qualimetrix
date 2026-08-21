@@ -12,8 +12,6 @@ use PhpParser\Node;
  * That list changes when a new kind of dependency is recognised; walking a file
  * and collecting the edges does not. Keeping them apart also keeps the visitor
  * from naming every handler it never calls directly.
- *
- * @qmx-ignore design.data-class -- A routing table: both operations look up the handler for a node and pass the node to it, which the metric reads as a class that only hands its contents out.
  */
 final class DependencyHandlerTable
 {

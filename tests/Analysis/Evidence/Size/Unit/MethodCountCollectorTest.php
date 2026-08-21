@@ -798,10 +798,10 @@ PHP;
     }
 
     #[Test]
-    public function itIncludesPublicGettersAndSettersInWoc(): void
+    public function itCountsAccessorsAgainstWocRatherThanTowardsIt(): void
     {
-        // Class with 3 public getters + 2 public setters + 1 private method = 6 total
-        // All public methods (including getters/setters) = 5, WOC = round(5/6 * 100) = 83
+        // 5 public accessors + 1 public functional method + 1 private method:
+        // WOC = round(1/6 * 100) = 17. Private methods are not public members.
         $code = <<<'PHP'
 <?php
 
@@ -814,19 +814,19 @@ class EntityWithAccessors
     public function isActive(): bool { return true; }
     public function setName(string $name): void {}
     public function setId(int $id): void {}
+    public function publish(): void {}
     private function validate(): void {}
 }
 PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(83, $metrics->get('woc:App\EntityWithAccessors'));
+        self::assertSame(17, $metrics->get('woc:App\EntityWithAccessors'));
     }
 
     #[Test]
-    public function itReturns100WocWhenAllPublicGettersAndSetters(): void
+    public function itReturnsZeroWocWhenAllPublicMembersAreAccessors(): void
     {
-        // Class with only public getters/setters: WOC = 100
         $code = <<<'PHP'
 <?php
 
@@ -843,12 +843,63 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(100, $metrics->get('woc:App\PureDto'));
+        self::assertSame(0, $metrics->get('woc:App\PureDto'));
     }
 
     #[Test]
-    public function itReturnsZeroWocForEmptyClass(): void
+    public function itCountsPublicPropertiesAsPublicMembersInWoc(): void
     {
+        // 1 functional public method against 1 public method + 3 public
+        // properties = 4 public members: WOC = 25.
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class OpenState
+{
+    public string $name = '';
+    public int $id = 0;
+    public bool $active = false;
+
+    public function publish(): void {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(25, $metrics->get('woc:App\OpenState'));
+    }
+
+    #[Test]
+    public function itCountsADelegatingMethodAsBehaviour(): void
+    {
+        // A body that only forwards to a collaborator is still a functional
+        // public method: WOC is about the shape of the interface.
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Forwarder
+{
+    private object $inner;
+
+    public function enterNode(object $node): void { $this->inner->handle($node); }
+    public function leaveNode(object $node): void { $this->inner->release($node); }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(100, $metrics->get('woc:App\Forwarder'));
+    }
+
+    #[Test]
+    public function itReturns100WocForAClassWithoutPublicMembers(): void
+    {
+        // No public surface at all — nothing is exposed, so nothing is data
+        // access. The degenerate case is defined, not left undefined.
         $code = <<<'PHP'
 <?php
 
@@ -859,7 +910,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('woc:App\EmptyWoc'));
+        self::assertSame(100, $metrics->get('woc:App\EmptyWoc'));
     }
 
     #[Test]
@@ -892,7 +943,7 @@ PHP;
     }
 
     #[Test]
-    public function itProjectsTheSameClassMetricsAsTheFileBagIncludingZeroTotalWoc(): void
+    public function itProjectsTheSameClassMetricsAsTheFileBagIncludingDegenerateWoc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -946,7 +997,7 @@ PHP;
             ['App\EmptyClass', 'App\ConstructorAccessors', 'App\MixedPromoted', 'App\SecondClass'],
             $classNames,
         );
-        self::assertSame(0, $classes[0]->metrics->get('woc'));
+        self::assertSame(100, $classes[0]->metrics->get('woc'));
 
         foreach ($classes as $index => $class) {
             foreach ($this->collector->provides() as $metricName) {

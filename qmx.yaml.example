@@ -189,10 +189,12 @@
   #   tcc_threshold: 0.33
   #   min_criteria: 3
 
-  # Data Class detection.
+  # Data Class detection. WOC is the share of the public interface that
+  # carries behaviour, so both thresholds are upper bounds.
   # design.data-class:
-  #   woc_threshold: 80
+  #   woc_threshold: 33
   #   wmc_threshold: 10
+  #   min_members: 3             # methods plus properties declared
   #   exclude_readonly: true
 
   # — Maintainability —

@@ -58,9 +58,23 @@ subdirectory inside this leaf.
   graph. Both global collectors retain their existing collector names,
   definitions, ordering, and aggregation semantics.
 - `DataClassRule`, `GodClassRule`, `TypeCoverageRule`, `InheritanceRule`, and
-  `NocRule` retain their IDs, options, CLI aliases, thresholds, finding
-  channels, and output semantics. They read precomputed Measurement facts and
-  never traverse an AST.
+  `NocRule` retain their IDs, options, and CLI aliases. They read precomputed
+  Measurement facts and never traverse an AST.
+- `DataClassRule` gates on a **low** WOC: the share of the public interface
+  that carries behaviour rather than data access. Its finding channel is
+  therefore `WorseDirection::Lower`, and both `@qmx-threshold` axes are upper
+  bounds. What counts as data access is decided by method name in
+  `Size\MethodCountVisitor` — `get*`/`is*`/`has*`/`set*` — and by public
+  property declarations; **a method body is never read**. A public method that
+  merely forwards to a collaborator is behaviour for this rule, and an
+  `is*`/`has*` predicate that computes its answer is data access: WOC measures
+  the shape of the interface, not the weight of the bodies behind it. The
+  constructor counts on neither side of the ratio. Classes with no public
+  members at all score 100 and are never flagged, and the size floor
+  (`minMembers`) counts declared methods plus declared properties so a struct
+  of public fields stays in reach. Traits are in the population; only
+  interfaces, abstract classes, exceptions and property-less classes are
+  excluded.
 - Per-file visitors implement Measurement reset semantics. Global collectors
   are stateless across runs; the worker wire payload remains Measurement-owned.
 
@@ -72,6 +86,8 @@ Owned test code is under `tests/Analysis/Evidence/Design/`:
 Fixtures/
 ├── ReadonlyDto.php
 └── SmallClass.php
+Integration/
+└── DataClassDetectionTest.php
 Unit/
 ├── DataClassRuleTest.php
 ├── DitGlobalCollectorTest.php
@@ -94,7 +110,10 @@ Run the owned suite with:
 vendor/bin/phpunit --no-coverage --do-not-cache-result tests/Analysis/Evidence/Design
 ```
 
-The tests cover all 235 discovered PHPUnit IDs, including type-coverage
+`DataClassDetectionTest` drives the rule from PHP source instead of a
+hand-written metric bag: the unit suite can only assert what the rule does with
+a WOC number, never what that number means, which is how an inverted WOC
+survived it. The tests cover type-coverage
 projection and scale, data/god-class criteria, local/imported/external
 inheritance fallback, DIT/NOC global graph behavior, thresholds, and finding
 identity. Shared container, worker, and cross-capability integration tests stay

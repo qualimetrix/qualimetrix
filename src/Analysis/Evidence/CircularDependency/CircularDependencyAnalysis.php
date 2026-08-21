@@ -9,8 +9,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 
 /**
  * Owns prepared circular-dependency evidence for one analysis run.
- *
- * @qmx-ignore design.data-class -- Run-scoped state holder intentionally exposes preparation and read access around private circular-dependency evidence.
  */
 final class CircularDependencyAnalysis implements CircularDependencyPreparationInterface
 {

@@ -2116,15 +2116,28 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::selfInUnionTypeDoesNotProduceDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::selfTypeHintDoesNotProduceDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::staticTypeHintDoesNotProduceDependency
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"accessor trait"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"accessors only"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"behaviour methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"delegating methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"no public members"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"public fields plus accessors"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"struct without methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itKeepsTheConstructorOutOfTheRatio
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itReportsTheWocShareItGatedOn
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itSeesOnlyMembersDeclaredByTheClassItself
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itSparesAClassWhoseComplexityExceedsTheWmcGate
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itTreatsTheThresholdItselfAsAViolation
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itAnalyzeDisabledReturnsEmpty
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDetectsHighWocLowWmc
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDetectsLowWocLowWmc
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDisablesWhenLoadedFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotFlagHighWmc
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotFlagLowWoc
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotFlagHighWoc
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotSkipExceptionClassWhenOptionFalse
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotSkipPromotedOnlyWhenOptionFalse
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotSkipReadonlyWhenOptionFalse
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itFiltersOnMinMethods
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itFiltersOnMinMembers
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itFlagsAClassMadeOfNothingButAccessors
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itGetsCategory
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itGetsDescription
@@ -2138,7 +2151,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsAbstractClasses
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsExceptionClassWhenExcluded
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsInterfaces
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsNativeDataClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsNullWoc
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsPromotedOnlyWhenExcluded
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsReadonlyWhenExcluded
@@ -3354,6 +3366,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itProvidesExactSourceSpanMetricsForEveryNamespaceBlock
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itResetsState
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itSkipsAnonymousClassForClassLoc
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsADelegatingMethodAsBehaviour
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsAccessorsAgainstWocRatherThanTowardsIt
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsEnumMethods
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsGetters
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsGettersAndSettersSeparately
@@ -3367,6 +3381,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsProtectedProperties
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsPublicMethods
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsPublicProperties
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsPublicPropertiesAsPublicMembersInWoc
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsReadonlyProperties
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsSetters
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itCountsTraitMethods
@@ -3381,15 +3396,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itGetsName
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itHandlesClassWithoutNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itIgnoresAnonymousClass
- - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itIncludesPublicGettersAndSettersInWoc
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itIncludesStaticProperties
- - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itProjectsTheSameClassMetricsAsTheFileBagIncludingZeroTotalWoc
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itProjectsTheSameClassMetricsAsTheFileBagIncludingDegenerateWoc
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itProvides
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itResetsState
- - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturns100WocWhenAllPublicGettersAndSetters
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturns100WocForAClassWithoutPublicMembers
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturnsZeroCountsForEmptyClass
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturnsZeroWhenNoProperties
- - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturnsZeroWocForEmptyClass
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturnsZeroWocWhenAllPublicMembersAreAccessors
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itGeneratesWarning

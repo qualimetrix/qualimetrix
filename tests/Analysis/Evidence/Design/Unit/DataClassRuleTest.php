@@ -31,13 +31,12 @@ final class DataClassRuleTest extends TestCase
     private function makeMetricBag(array $overrides = []): MetricBag
     {
         $defaults = [
-            'woc' => 90,
+            'woc' => 10,
             'wmc' => 5,
-            'methodCount' => 10,
+            'methodCountTotal' => 10,
             'propertyCount' => 3,
             'isReadonly' => 0,
             'isPromotedPropertiesOnly' => 0,
-            'isDataClass' => 0,
             'isAbstract' => 0,
             'isInterface' => 0,
             'isException' => 0,
@@ -70,7 +69,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         self::assertSame(
-            'Detects classes with high public surface but low complexity (Data Classes)',
+            'Detects classes whose public interface is mostly data access rather than behavior (Data Classes)',
             $rule->getDescription(),
         );
     }
@@ -89,7 +88,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         self::assertSame(
-            ['woc', 'wmc', 'methodCount', 'propertyCount', 'isReadonly', 'isPromotedPropertiesOnly', 'isDataClass', 'isAbstract', 'isInterface', 'isException'],
+            ['woc', 'wmc', 'methodCountTotal', 'propertyCount', 'isReadonly', 'isPromotedPropertiesOnly', 'isAbstract', 'isInterface', 'isException'],
             $rule->requires(),
         );
     }
@@ -110,13 +109,13 @@ final class DataClassRuleTest extends TestCase
 
         self::assertArrayHasKey('data-class-woc-threshold', $aliases);
         self::assertArrayHasKey('data-class-wmc-threshold', $aliases);
-        self::assertArrayHasKey('data-class-min-methods', $aliases);
+        self::assertArrayHasKey('data-class-min-members', $aliases);
         self::assertArrayHasKey('data-class-exclude-readonly', $aliases);
         self::assertArrayHasKey('data-class-exclude-promoted-only', $aliases);
         self::assertArrayHasKey('data-class-exclude-exceptions', $aliases);
         self::assertSame('wocThreshold', $aliases['data-class-woc-threshold']);
         self::assertSame('wmcThreshold', $aliases['data-class-wmc-threshold']);
-        self::assertSame('minMethods', $aliases['data-class-min-methods']);
+        self::assertSame('minMembers', $aliases['data-class-min-members']);
         self::assertSame('excludeReadonly', $aliases['data-class-exclude-readonly']);
         self::assertSame('excludePromotedOnly', $aliases['data-class-exclude-promoted-only']);
         self::assertSame('excludeExceptions', $aliases['data-class-exclude-exceptions']);
@@ -136,14 +135,14 @@ final class DataClassRuleTest extends TestCase
     }
 
     #[Test]
-    public function itFiltersOnMinMethods(): void
+    public function itFiltersOnMinMembers(): void
     {
-        $rule = new DataClassRule(new DataClassOptions(minMethods: 3));
+        $rule = new DataClassRule(new DataClassOptions(minMembers: 3));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'SmallClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SmallClass.php'), 10);
 
-        $metricBag = $this->makeMetricBag(['methodCount' => 2]);
+        $metricBag = $this->makeMetricBag(['methodCountTotal' => 1, 'propertyCount' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -235,14 +234,14 @@ final class DataClassRuleTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsNativeDataClass(): void
+    public function itFlagsAClassMadeOfNothingButAccessors(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'PureDto');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Dto/PureDto.php'), 5);
 
-        $metricBag = $this->makeMetricBag(['isDataClass' => 1]);
+        $metricBag = $this->makeMetricBag(['woc' => 0]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -250,11 +249,11 @@ final class DataClassRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertCount(0, $rule->analyze($context));
+        self::assertCount(1, $rule->analyze($context));
     }
 
     #[Test]
-    public function itDetectsHighWocLowWmc(): void
+    public function itDetectsLowWocLowWmc(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -272,17 +271,17 @@ final class DataClassRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('WOC=90%', $violations[0]->message);
-        self::assertStringContainsString('threshold 80%', $violations[0]->message);
+        self::assertStringContainsString('only 10% of the public interface is behavior', $violations[0]->message);
+        self::assertStringContainsString('threshold 33%', $violations[0]->message);
         self::assertStringContainsString('WMC=5', $violations[0]->message);
         self::assertStringContainsString('threshold 10', $violations[0]->message);
-        self::assertSame(90, $violations[0]->metricValue);
+        self::assertSame(10, $violations[0]->metricValue);
         self::assertSame('design.data-class', $violations[0]->ruleName);
         self::assertSame('design.data-class', $violations[0]->violationCode);
     }
 
     #[Test]
-    public function itDoesNotFlagLowWoc(): void
+    public function itDoesNotFlagHighWoc(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -330,11 +329,10 @@ final class DataClassRuleTest extends TestCase
         // Omit 'woc' key entirely to get null
         $metricBag = (new MetricBag())
             ->with('wmc', 5)
-            ->with('methodCount', 10)
+            ->with('methodCountTotal', 10)
             ->with('propertyCount', 3)
             ->with('isReadonly', 0)
             ->with('isPromotedPropertiesOnly', 0)
-            ->with('isDataClass', 0)
             ->with('isAbstract', 0)
             ->with('isInterface', 0)
             ->with('isException', 0);
@@ -455,9 +453,9 @@ final class DataClassRuleTest extends TestCase
         $options = new DataClassOptions();
 
         self::assertTrue($options->enabled);
-        self::assertSame(80, $options->wocThreshold);
+        self::assertSame(33, $options->wocThreshold);
         self::assertSame(10, $options->wmcThreshold);
-        self::assertSame(3, $options->minMethods);
+        self::assertSame(3, $options->minMembers);
         self::assertTrue($options->excludeReadonly);
         self::assertTrue($options->excludePromotedOnly);
         self::assertTrue($options->excludeExceptions);
@@ -470,7 +468,7 @@ final class DataClassRuleTest extends TestCase
             'enabled' => true,
             'woc_threshold' => 70,
             'wmc_threshold' => 15,
-            'min_methods' => 5,
+            'min_members' => 5,
             'exclude_readonly' => false,
             'exclude_promoted_only' => false,
             'exclude_exceptions' => false,
@@ -479,7 +477,7 @@ final class DataClassRuleTest extends TestCase
         self::assertTrue($options->enabled);
         self::assertSame(70, $options->wocThreshold);
         self::assertSame(15, $options->wmcThreshold);
-        self::assertSame(5, $options->minMethods);
+        self::assertSame(5, $options->minMembers);
         self::assertFalse($options->excludeReadonly);
         self::assertFalse($options->excludePromotedOnly);
         self::assertFalse($options->excludeExceptions);
@@ -491,7 +489,7 @@ final class DataClassRuleTest extends TestCase
         $options = DataClassOptions::fromArray([
             'wocThreshold' => 75,
             'wmcThreshold' => 12,
-            'minMethods' => 4,
+            'minMembers' => 4,
             'excludeReadonly' => false,
             'excludePromotedOnly' => false,
             'excludeExceptions' => false,
@@ -499,7 +497,7 @@ final class DataClassRuleTest extends TestCase
 
         self::assertSame(75, $options->wocThreshold);
         self::assertSame(12, $options->wmcThreshold);
-        self::assertSame(4, $options->minMethods);
+        self::assertSame(4, $options->minMembers);
         self::assertFalse($options->excludeReadonly);
         self::assertFalse($options->excludePromotedOnly);
         self::assertFalse($options->excludeExceptions);

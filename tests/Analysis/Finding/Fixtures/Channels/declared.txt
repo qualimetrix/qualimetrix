@@ -87,7 +87,7 @@ coupling.class-rank#coupling.class-rank occurrence
 coupling.distance#coupling.distance magnitude:higher
 coupling.instability#coupling.instability.class magnitude:higher
 coupling.instability#coupling.instability.namespace magnitude:higher
-design.data-class#design.data-class magnitude:higher
+design.data-class#design.data-class magnitude:lower
 design.god-class#design.god-class magnitude:higher
 design.inheritance#design.inheritance magnitude:higher
 design.lcom#design.lcom magnitude:higher
