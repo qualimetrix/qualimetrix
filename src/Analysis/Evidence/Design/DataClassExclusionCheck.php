@@ -10,8 +10,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 /**
  * Evaluates the independent exclusion predicates for {@see DataClassRule}:
  * interfaces, abstract classes, zero-property classes, exceptions,
- * readonly classes, promoted-properties-only classes, classes under
- * minMethods, and explicit data-class markers.
+ * readonly classes, promoted-properties-only classes, and classes under
+ * minMembers.
  *
  * Extracted out of {@see DataClassRule::analyze()} so the guard-clause chain
  * is a single loop over independent predicates rather than a sequence of
@@ -37,7 +37,7 @@ final class DataClassExclusionCheck
     private static function predicates(DataClassOptions $options): array
     {
         return [
-            // Interfaces are contracts, not data classes — 100% WOC by definition
+            // Interfaces are contracts, not data classes
             static fn(MetricBag $metrics): bool => $metrics->get(MetricName::STRUCTURE_IS_INTERFACE) === 1,
             // Abstract classes are contracts, not data classes
             static fn(MetricBag $metrics): bool => $metrics->get(MetricName::STRUCTURE_IS_ABSTRACT) === 1,
@@ -52,10 +52,12 @@ final class DataClassExclusionCheck
             // Skip promoted-properties-only classes if configured
             static fn(MetricBag $metrics): bool => $options->excludePromotedOnly
                 && $metrics->get(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY) === 1,
-            // Skip classes with too few methods
-            static fn(MetricBag $metrics): bool => (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT) ?? 0) < $options->minMethods,
-            // Skip intentional data classes (pure DTOs)
-            static fn(MetricBag $metrics): bool => $metrics->get(MetricName::STRUCTURE_IS_DATA_CLASS) === 1,
+            // Size is counted in members, not methods: a struct of public
+            // fields declares no methods at all and is the purest Data Class
+            // there is. Accessors count too — they are what such a class is
+            // made of.
+            static fn(MetricBag $metrics): bool => (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT_TOTAL) ?? 0)
+                + (int) ($metrics->get(MetricName::STRUCTURE_PROPERTY_COUNT) ?? 0) < $options->minMembers,
         ];
     }
 }

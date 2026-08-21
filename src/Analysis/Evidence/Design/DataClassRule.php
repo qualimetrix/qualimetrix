@@ -20,15 +20,17 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
- * Rule that detects Data Classes — classes with high public surface but low complexity.
+ * Rule that detects Data Classes — classes whose public interface is mostly
+ * data access and whose logic is thin.
  *
- * A Data Class has many public accessors (high WOC) but simple logic (low WMC),
- * suggesting it only holds data without encapsulating behavior.
- * Pure DTOs (readonly, promoted-properties-only, or marked as data class) are excluded.
+ * Follows Lanza & Marinescu: a Data Class exposes its state through accessors
+ * and public properties instead of behaviour, so the share of functional
+ * public methods (WOC) is low while complexity (WMC) stays low too. DTOs
+ * declared as such (readonly or promoted-properties-only) are excluded.
  */
 #[CliAlias('data-class-woc-threshold', 'wocThreshold')]
 #[CliAlias('data-class-wmc-threshold', 'wmcThreshold')]
-#[CliAlias('data-class-min-methods', 'minMethods')]
+#[CliAlias('data-class-min-members', 'minMembers')]
 #[CliAlias('data-class-exclude-readonly', 'excludeReadonly')]
 #[CliAlias('data-class-exclude-promoted-only', 'excludePromotedOnly')]
 #[CliAlias('data-class-exclude-exceptions', 'excludeExceptions')]
@@ -43,7 +45,7 @@ final class DataClassRule extends AbstractRule
 
     public function getDescription(): string
     {
-        return 'Detects classes with high public surface but low complexity (Data Classes)';
+        return 'Detects classes whose public interface is mostly data access rather than behavior (Data Classes)';
     }
 
     public function getCategory(): RuleCategory
@@ -59,11 +61,10 @@ final class DataClassRule extends AbstractRule
         return [
             MetricName::STRUCTURE_WOC,
             MetricName::STRUCTURE_WMC,
-            MetricName::STRUCTURE_METHOD_COUNT,
+            MetricName::STRUCTURE_METHOD_COUNT_TOTAL,
             MetricName::STRUCTURE_PROPERTY_COUNT,
             MetricName::STRUCTURE_IS_READONLY,
             MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY,
-            MetricName::STRUCTURE_IS_DATA_CLASS,
             MetricName::STRUCTURE_IS_ABSTRACT,
             MetricName::STRUCTURE_IS_INTERFACE,
             MetricName::STRUCTURE_IS_EXCEPTION,
@@ -128,7 +129,7 @@ final class DataClassRule extends AbstractRule
         $wmcValue = (int) ($metrics->get(MetricName::STRUCTURE_WMC) ?? 0);
 
         // Data Class: high WOC (public surface) + low WMC (complexity)
-        if ($wocValue < $effectiveOptions->wocThreshold || $wmcValue > $effectiveOptions->wmcThreshold) {
+        if ($wocValue > $effectiveOptions->wocThreshold || $wmcValue > $effectiveOptions->wmcThreshold) {
             return null;
         }
 
@@ -139,7 +140,7 @@ final class DataClassRule extends AbstractRule
             ruleName: $this->getName(),
             violationCode: self::NAME,
             message: \sprintf(
-                'Data Class detected: high public surface (WOC=%d%%, threshold %d%%) with low complexity (WMC=%d, threshold %d). Consider encapsulating behavior or using a DTO pattern',
+                'Data Class detected: only %d%% of the public interface is behavior (WOC, threshold %d%%) and complexity is low (WMC=%d, threshold %d). Consider encapsulating behavior or using a DTO pattern',
                 $wocValue,
                 $effectiveOptions->wocThreshold,
                 $wmcValue,
@@ -162,13 +163,13 @@ final class DataClassRule extends AbstractRule
     /**
      * `design.data-class` reports WOC (`$wocValue`) as `metricValue` — see
      * the emission above — the only one of the rule's two gating axes that
-     * reaches the `Violation`: emission requires the conjunction
-     * `$wocValue < $effectiveOptions->wocThreshold ||
+     * reaches the `Violation`: emission requires the disjunction
+     * `$wocValue > $effectiveOptions->wocThreshold ||
      * $wmcValue > $effectiveOptions->wmcThreshold` to be **false**
-     * ({@see evaluateClass()}, line 116), i.e. `woc >= wocThreshold`
-     * (inclusive). Higher WOC on the reported axis is worse — a higher
-     * public-surface percentage with the WMC gate still satisfied is a
-     * stronger Data Class signal. WMC's own gate is unaffected by this
+     * ({@see evaluateClass()}), i.e. `woc <= wocThreshold` (inclusive).
+     * Lower WOC on the reported axis is worse — the less of the public
+     * interface carries behaviour, with the WMC gate still satisfied, the
+     * stronger the Data Class signal. WMC's own gate is unaffected by this
      * declaration: it is not reported and therefore not baselineable on its
      * own terms (ADR 0017 — a compound rule is
      * baselined only on the axis it actually reports).
@@ -178,7 +179,7 @@ final class DataClassRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower),
         ];
     }
 

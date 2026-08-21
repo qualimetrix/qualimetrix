@@ -11,9 +11,10 @@ use Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure;
  *
  * Used by rules that combine multiple metric conditions and route the
  * warning and error halves of `@qmx-threshold` to independent axes — the
- * Data Class rule maps warning to the WOC threshold (lower bound) and
- * error to the WMC threshold (upper bound). Only non-negativity is
- * enforced; the two values are unrelated.
+ * Data Class rule maps warning to the WOC threshold and error to the WMC
+ * threshold, both upper bounds on unrelated metrics. Only non-negativity is
+ * enforced, so a warning value below the error value is not an ordering
+ * error here.
  */
 final class IndependentAxisValidator implements OverrideValidatorInterface
 {

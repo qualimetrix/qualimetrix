@@ -14,20 +14,21 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 /**
  * Options for DataClassRule.
  *
- * A Data Class has high public surface (WOC) but low complexity (WMC),
- * suggesting it only holds data without encapsulating behavior.
+ * A Data Class exposes state rather than behaviour: a low share of functional
+ * public methods (WOC) combined with low complexity (WMC). The 33% default
+ * follows the 1/3 cut-off of Lanza & Marinescu.
  *
  * `@qmx-threshold design.data-class W E` maps W to `wocThreshold`
- * (minimum WOC to flag) and E to `wmcThreshold` (maximum WMC to flag).
+ * (maximum WOC to flag) and E to `wmcThreshold` (maximum WMC to flag).
  * Both conditions must hold for the rule to flag a class.
  */
 final readonly class DataClassOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
-        public int $wocThreshold = 80,
+        public int $wocThreshold = 33,
         public int $wmcThreshold = 10,
-        public int $minMethods = 3,
+        public int $minMembers = 3,
         public bool $excludeReadonly = true,
         public bool $excludePromotedOnly = true,
         public bool $excludeExceptions = true,
@@ -44,9 +45,9 @@ final readonly class DataClassOptions implements RuleOptionsInterface, Threshold
 
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            wocThreshold: (int) ($config['woc_threshold'] ?? $config['wocThreshold'] ?? 80),
+            wocThreshold: (int) ($config['woc_threshold'] ?? $config['wocThreshold'] ?? 33),
             wmcThreshold: (int) ($config['wmc_threshold'] ?? $config['wmcThreshold'] ?? 10),
-            minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
+            minMembers: (int) ($config['min_members'] ?? $config['minMembers'] ?? 3),
             excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
             excludePromotedOnly: (bool) ($config['exclude_promoted_only'] ?? $config['excludePromotedOnly'] ?? true),
             excludeExceptions: (bool) ($config['exclude_exceptions'] ?? $config['excludeExceptions'] ?? true),
@@ -71,6 +72,7 @@ final readonly class DataClassOptions implements RuleOptionsInterface, Threshold
     /**
      * Maps `@qmx-threshold design.data-class W E` to (`wocThreshold`,
      * `wmcThreshold`). Null keeps the original value per threshold.
+     * Both axes are upper bounds, so W below E is not an ordering error.
      */
     public function withOverride(int|float|null $warning, int|float|null $error): static
     {
@@ -78,7 +80,7 @@ final readonly class DataClassOptions implements RuleOptionsInterface, Threshold
             enabled: $this->enabled,
             wocThreshold: $warning !== null ? (int) $warning : $this->wocThreshold,
             wmcThreshold: $error !== null ? (int) $error : $this->wmcThreshold,
-            minMethods: $this->minMethods,
+            minMembers: $this->minMembers,
             excludeReadonly: $this->excludeReadonly,
             excludePromotedOnly: $this->excludePromotedOnly,
             excludeExceptions: $this->excludeExceptions,
