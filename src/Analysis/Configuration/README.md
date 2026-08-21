@@ -112,7 +112,7 @@ this moved README; the user-facing CLI reference remains under `website/docs/`.
 | `--instability-ns-error=N`                | coupling.instability                 | namespace.max_error   |
 | `--data-class-woc-threshold=N`            | design.data-class                    | wocThreshold          |
 | `--data-class-wmc-threshold=N`            | design.data-class                    | wmcThreshold          |
-| `--data-class-min-methods=N`              | design.data-class                    | minMethods            |
+| `--data-class-min-members=N`              | design.data-class                    | minMembers            |
 | `--data-class-exclude-readonly=N`         | design.data-class                    | excludeReadonly       |
 | `--data-class-exclude-promoted-only=N`    | design.data-class                    | excludePromotedOnly   |
 | `--data-class-exclude-exceptions=N`       | design.data-class                    | excludeExceptions     |

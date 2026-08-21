@@ -43,14 +43,14 @@ These rules check whether your classes and namespaces have grown too large. Big 
 
 These rules check class cohesion, inheritance depth, and structural problems.
 
-| Rule                           | ID                     | What it checks                                      | Default Warning | Default Error |
-| ------------------------------ | ---------------------- | --------------------------------------------------- | --------------- | ------------- |
-| [LCOM](design.md)              | `design.lcom`          | Whether a class does too many unrelated things      | 3               | 5             |
-| [Inheritance Depth](design.md) | `design.inheritance`   | How deep the inheritance chain is                   | 4               | 6             |
-| [NOC](design.md)               | `design.noc`           | Number of classes inheriting from this one          | 10              | 15            |
-| [Type Coverage](design.md)     | `design.type-coverage` | Percentage of typed parameters, returns, properties | 80% (below)     | 50% (below)   |
-| [Data Class](design.md)        | `design.data-class`    | High public surface but low complexity              | Warning         | --            |
-| [God Class](design.md)         | `design.god-class`     | Overly complex, large classes with low cohesion     | 3+ criteria     | all criteria  |
+| Rule                           | ID                     | What it checks                                         | Default Warning | Default Error |
+| ------------------------------ | ---------------------- | ------------------------------------------------------ | --------------- | ------------- |
+| [LCOM](design.md)              | `design.lcom`          | Whether a class does too many unrelated things         | 3               | 5             |
+| [Inheritance Depth](design.md) | `design.inheritance`   | How deep the inheritance chain is                      | 4               | 6             |
+| [NOC](design.md)               | `design.noc`           | Number of classes inheriting from this one             | 10              | 15            |
+| [Type Coverage](design.md)     | `design.type-coverage` | Percentage of typed parameters, returns, properties    | 80% (below)     | 50% (below)   |
+| [Data Class](design.md)        | `design.data-class`    | Public interface is mostly data access, low complexity | Warning         | --            |
+| [God Class](design.md)         | `design.god-class`     | Overly complex, large classes with low cohesion        | 3+ criteria     | all criteria  |
 
 [Read more about Design rules --&gt;](design.md)
 

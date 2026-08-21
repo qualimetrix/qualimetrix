@@ -66,6 +66,7 @@ What follows from this decision — trade-offs, constraints, future implications
 - [0023 — P8 Context Locality and Composition Bindings](0023-p8-context-locality-and-composition-bindings.md) — concrete configuration-document seam, owner-local runtime state, and permanent exact DI composition bindings
 - [0024 — Channel Identity and Selector Semantics](0024-channel-identity-and-selector-semantics.md) — selector matching becomes equality with an explicit `X.*` wildcard; the addressed level comes from the directive; `RuleCategory` loses all behaviour; channels declare threshold-override support, file scope, and acceptability; configuration errors gate past `fail_on`; the `annotation.directive` rule reports directives that address nothing
 - [0025 — Channel Selectors in Configuration Keys](0025-channel-selectors-in-configuration-keys.md) — `exclude_namespace_channels` keys read the full ADR 0024 grammar; shared `ChannelSelector`; exclusion queries take the whole `ViolationChannel`; a key must address a channel its owning rule produces
+- [0026 — Weight of Class Measures Accessors, Not Visibility](0026-weight-of-class-measures-accessors-not-visibility.md) — `woc` becomes the Lanza & Marinescu ratio and `design.data-class` gates on a low value; accessor-ness is decided by name, never by body; `isDataClass` stops being an exclusion
 
 
 ## Index maintenance

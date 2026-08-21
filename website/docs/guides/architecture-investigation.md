@@ -179,13 +179,24 @@ TCC (Tight Class Cohesion) measures what proportion of method pairs access the s
 
 ### Data Class Detection
 
-The data class rule has a higher false-positive rate than god class detection, especially on:
+The rule fires when little of a class's public interface carries behavior: a
+low WOC together with a low WMC. Interfaces, abstract classes, exception
+classes and classes without properties are excluded outright; traits are not,
+since a trait carrying fields and their accessors is a Data Class spread across
+a reuse unit.
 
-- Interfaces (100% WOC by definition)
-- Exception classes (simple by design)
-- Small service classes with clean APIs
+Two populations account for most of what you will see:
 
-Use `excludeReadonly: true` and `excludePromotedOnly: true` for codebases with PHP 8.2+ DTOs. For exception classes and interfaces, suppress with `@qmx-ignore design.data-class`.
+- **Data by design** — records and value objects written without `readonly`,
+  option holders with public fields, wire-format structs mirroring an external
+  payload. These are true positives; the question is whether the intent is
+  stated in the code.
+- **Named like an accessor, computing like a method** — `is*`/`has*`/`get*`
+  methods that match, search or derive rather than expose a field. Accessor-ness
+  is decided by name, so these count against WOC. A class of three public
+  members needs only two such names to land on the threshold.
+
+Use `excludeReadonly: true` and `excludePromotedOnly: true` for codebases with PHP 8.2+ DTOs. Where a plain class is deliberately a record, prefer making it `readonly` over suppressing with `@qmx-ignore design.data-class` — the intent then reads from the code. For the second population, renaming the method to say what it does is usually the better fix.
 
 ---
 
@@ -210,7 +221,7 @@ Not all code smell findings are equally urgent. Here is a prioritization guide b
 ### Suppress or Disable Selectively
 
 - **`debug-code`** -- suppress in files that intentionally provide dump/debug API
-- **`data-class`** -- suppress for exception classes and DTOs
+- **`data-class`** -- prefer marking deliberate records `readonly` over suppressing
 - **`identical-subexpression`** -- exclude generated files via `--exclude` or baseline
 - **`empty-catch`** -- suppress for chain-of-responsibility patterns; always add a comment explaining why
 

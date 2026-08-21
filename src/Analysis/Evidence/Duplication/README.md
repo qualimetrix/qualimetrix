@@ -59,10 +59,10 @@ provider's stored array.
 
 The provider is intentionally an instance-owned lifecycle state holder, not a
 DTO or public data surface. Its private array is available only through the
-replace/read/reset semantics required by one analysis run. The point control
-`@qmx-ignore design.data-class` records that the rule's public-surface and WMC
-heuristic does not model this lifecycle role; adding unrelated behavior would
-weaken the class rather than improve it.
+replace/read/reset semantics required by one analysis run. It carried a point
+`@qmx-ignore design.data-class` until `design.data-class` was corrected to gate
+on a low share of functional public methods; its replace/read/reset methods are
+functional, so the control is no longer needed.
 
 ## Dependencies and ports
 

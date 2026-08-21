@@ -319,9 +319,12 @@ bin/qmx check src/ --rule-opt="design.type-coverage:param_error=60"
 <!-- llms:skip-begin -->
 ### What it measures
 
-Detects classes with high public surface (WOC -- Weight of Class, % of public methods) but low complexity (WMC -- Weighted Methods per Class). Such classes mostly expose data through getters/setters without encapsulating meaningful behavior. Based on Lanza & Marinescu metrics.
+Detects classes whose public interface is mostly data access rather than behavior. WOC (Weight of Class, Lanza & Marinescu) is the share of the public interface that carries behavior: functional public methods divided by all public members -- public methods, accessors included, plus public properties. A Data Class combines a **low** WOC with a low WMC (Weighted Methods per Class): it exposes state and does little with it.
 
-Intentional DTOs are excluded: readonly classes, promoted-properties-only classes, and classes marked as data classes via `isDataClass` are not flagged.
+Intentional DTOs are excluded: readonly classes and promoted-properties-only classes are not flagged, along with interfaces, abstract classes, exception classes and classes without properties. Traits are not excluded: a trait carrying fields and their accessors is a Data Class spread across a reuse unit.
+
+!!! info "How a method is classified"
+    Accessor-ness is decided by **name**, not by body: `get*`, `is*`, `has*` and `set*` (and the bare `get`/`is`/`has`/`set`) count as data access, everything else counts as behavior. The body is never read, so a public method that only forwards to a collaborator -- a visitor's `enterNode()`, a routing table's `dispatch()` -- is behavior. WOC describes the shape of the public interface, not the weight of the work behind it. The constructor counts on neither side: Lanza & Marinescu define a functional method as neither accessor nor constructor. A class with no public members at all scores 100 and is never flagged. Only members declared by the class itself are counted — inherited and trait-imported ones are invisible.
 
 <!-- llms:skip-end -->
 
@@ -330,16 +333,20 @@ Intentional DTOs are excluded: readonly classes, promoted-properties-only classe
 
 | Metric          | Condition   | Default |
 | --------------- | ----------- | ------- |
-| WOC             | ≥ threshold | 80%     |
+| WOC             | ≤ threshold | 33%     |
 | WMC             | ≤ threshold | 10      |
-| Minimum methods | ≥           | 3       |
+| Minimum members | ≥           | 3       |
+
+The bound is inclusive: exactly 33% is a finding. Both metric axes are upper bounds, so `@qmx-threshold design.data-class W E`
+takes a WOC bound below the WMC bound without that being an ordering error.
+Minimum members counts every declared method (accessors included) plus every declared property: a struct of public fields declares no methods at all and must still fall within the rule's reach.
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
 
 ```php
-// Flagged: high public surface, low complexity, not readonly
+// Flagged: the whole public interface is data access, not readonly
 class UserProfile
 {
     private string $name;
@@ -369,7 +376,7 @@ readonly class UserDTO
 <!-- llms:skip-begin -->
 ### How to fix
 
-1. **Encapsulate behavior** -- move operations that use this data into the class itself.
+1. **Encapsulate behavior** -- move operations that use this data into the class itself. Replacing a getter/setter pair with a method that expresses the operation raises WOC directly.
 2. **Convert to a DTO** -- if the class is intentionally just data, make it `readonly` to signal intent.
 3. **Merge with its consumer** -- if a class only holds data for another class, consider inlining it.
 
@@ -381,9 +388,9 @@ readonly class UserDTO
 # qmx.yaml
 rules:
   design.data-class:
-    woc_threshold: 80
+    woc_threshold: 33
     wmc_threshold: 10
-    min_methods: 3
+    min_members: 3
     exclude_readonly: true
     exclude_promoted_only: true
 ```
@@ -453,6 +460,6 @@ rules:
     tcc_threshold: 0.33
     class_loc_threshold: 300
     min_criteria: 3
-    min_methods: 3
+    min_members: 3
     exclude_readonly: true
 ```

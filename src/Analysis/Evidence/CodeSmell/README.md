@@ -86,7 +86,7 @@ Side-effect expressions (function calls, method calls, etc.) are excluded to avo
 
 The complete repeated-expression stack is collector → visitor → `RepeatedExpressions` / `RepeatedConditions` → finding VO. `RepeatedConditions` is the sole child-to-child dependency and calls `RepeatedExpressions` only for structural equality. Direct companion tests own semantic matrices (`ControlFlowSmellsTest`, `DebugCodeSmellsTest`, `BooleanArgumentSmellsTest`, `RepeatedExpressionsTest`, `RepeatedConditionsTest`); visitor tests own traversal/delegation and residual projection. `CredentialLiteralsTest` owns the seven credential-literal shapes and exclusions; the credential visitor test owns delegation.
 
-The only internal dogfood controls are `CredentialLiterals` `@qmx-ignore health.cohesion -- Stateless credential-literal shapes share one classification policy and location boundary.` and `HardcodedCredentialsVisitor` `@qmx-ignore design.data-class -- Traversal adapter intentionally delegates credential policy and retains only lifecycle state.` They are structural explanations, not metric behavior changes or baseline debt.
+The only internal dogfood control is `CredentialLiterals` `@qmx-ignore health.cohesion -- Stateless credential-literal shapes share one classification policy and location boundary.` It is a structural explanation, not a metric behavior change or baseline debt. `HardcodedCredentialsVisitor` carried a matching `design.data-class` control until that rule was corrected to gate on a low share of functional public methods; a delegating traversal adapter is no longer read as a data surface.
 
 
 ## Locality
