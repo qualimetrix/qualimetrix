@@ -96,7 +96,7 @@ Extends `BaseCollectorInterface`. Collector that computes metrics from global co
 
 **Methods:**
 - `getName(): string` — unique collector name
-- `requires(): array<string>` — required metric names (for topological sorting)
+- `requires(): array<string>` — required metric names; drives topological sorting, and a name no collector provides is rejected when the aggregation service is built
 - `provides(): array<string>` — list of provided metric names
 - `getMetricDefinitions(): array<MetricDefinition>` — metric definitions
 - `calculate(DependencyGraphInterface $graph, MetricRepositoryInterface $repository): void` — compute and store metrics
