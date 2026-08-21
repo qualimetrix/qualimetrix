@@ -15,7 +15,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationExcepti
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface	Analysis.Evidence.ComputedMetrics	2	2
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface	Analysis.Evidence.ComputedMetrics	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition	Analysis.Evidence.ComputedMetrics	1	1
-Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface	Analysis.Evidence.ComputedMetrics	5	3
+Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface	Analysis.Evidence.ComputedMetrics	6	3
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension	Analysis.Evidence.ComputedMetrics	7	2
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions	Analysis.Evidence.ComputedMetrics	3	2
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator	Analysis.Evidence.ComputedMetrics	1	1
@@ -77,6 +77,8 @@ Qualimetrix\Analysis\Finding\Contract\AcceptedLevel	Analysis.Finding	4	1
 Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	34	14
 Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	10	4
 Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface	Analysis.Finding	7	3
+Qualimetrix\Analysis\Finding\Contract\ChannelPresentation	Analysis.Finding	1	1
+Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides	Analysis.Finding	1	1
@@ -94,7 +96,7 @@ Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStageResult	Analysis
 Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	37	14
 Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	8	5
 Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	8	5
-Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface	Analysis.Finding	6	3
+Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface	Analysis.Finding	7	3
 Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule	Analysis.Finding	32	13
 Qualimetrix\Analysis\Finding\Contract\Rule\AdditionalOptionKeysInterface	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	33	14
@@ -113,6 +115,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTra
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory	Analysis.Finding	32	13
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface	Analysis.Finding	3	2
+Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel	Analysis.Finding	11	3
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader	Analysis.Finding	7	4
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	Analysis.Finding	46	14

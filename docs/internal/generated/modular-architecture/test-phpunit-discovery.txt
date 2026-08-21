@@ -3466,6 +3466,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::exactlyTheLayerPolicyAndDirectiveDiagnosticsDeclareAConfigurationError
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::noExcludedFixtureLineNamesADeclaredChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyDeclaredChannelHasAProducer
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRegisteredRuleIsAddressableIncludingOnesThatDeclareNoChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRulesDeclaredThresholdSupportMatchesWhatItsOptionsCanHonour
@@ -3534,6 +3535,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAnOccurrenceDeclarationViaTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAMagnitudeDeclarationWithoutADirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAnOccurrenceDeclarationCarryingADirection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itFailsLoudWhenTheProducingRuleHasNoDeclaredDocsPage
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itJoinsTheProducersDescriptionAndDeclaredDocsPage
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullForACodeNoChannelCarries
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullWhenTheResolvedDescriptionIsEmpty
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"bare separator"
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty dot segment"
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty rule half"
@@ -5926,6 +5931,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Profiler\Integration\ProfilerIntegrationTest::itPerformsAtomicFileWrite
  - Qualimetrix\Tests\Infrastructure\Profiler\Integration\ProfilerIntegrationTest::itStartsAsADisabledEmptySession
  - Qualimetrix\Tests\Infrastructure\Profiler\Unit\ProfileSessionTest::itClearsRecordedStateOnEveryModeTransition
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itPassesThroughAStaticChannelUnchanged
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itPrefersTheConfiguredDefinitionsOwnDescriptionOverTheProducersGenericOne
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itReturnsNullWhenTheConfiguredDefinitionsDescriptionIsEmpty
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itReturnsNullWhenTheInnerViewAlreadyDoes
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAddsRuntimeComputedMetricChannelsToTheirProducer
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAnswersTheReverseLookupForAConfiguredComputedMetric
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAnswersTheReverseLookupWithTheProducingRuleNotTheChannelsOwnRuleName

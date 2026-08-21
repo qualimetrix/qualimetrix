@@ -14,7 +14,8 @@ Finding/
 ├── Exclusion/            # Private namespace and path exclusion stores
 ├── Rule/                 # Internal producer and channel implementations
 ├── RuleConfiguration/    # Option parsing, normalization, and per-run state
-└── RuleExecution.php     # Selects producers, executes them, and publishes metadata/stats
+├── RuleExecution.php     # Selects producers, executes them, and publishes metadata/stats
+└── ChannelPresentationView.php # Joins a channel's producer to that rule's own description and docs page
 ```
 
 `RuleExecutionInterface` exposes immutable `RuleMetadata`; concrete rule instances never cross the capability boundary. `RuleConfigurationInterface` is the only external mutation/query surface for per-run options, selection, and exclusions. Runtime reset clears CLI selection and exclusion state before every run.
@@ -41,6 +42,18 @@ report a mistake in the configuration rather than debt in the code — it is
 refused by every baseline path and fails the run without consulting `fail_on`.
 Today the layer-policy diagnostics carry it. Finding neither resolves computed
 definitions nor retains Infrastructure-owned definition state.
+
+`ChannelPresentationInterface` (`presentationFor()` → `ChannelPresentation`)
+joins `ChannelIdentityInterface::producerOf()` with that producer's own
+`RuleMetadata` (description) and its declared documentation page —
+`ChannelPresentationView` is the composing service, a small run-time join
+rather than a fourth view on the universe (rule *instances* do not exist when
+the universe is assembled). It cannot depend on `ComputedMetricDefinition` to
+prefer a configured `computed.*`/`health.*` channel's own description without
+closing a dependency cycle back onto this capability; that preference is
+layered on by `Infrastructure\Rule\ComputedMetricChannelPresentation`, a
+decorator registered in front of the public alias. See
+`docs/internal/plans/sarif-channel-descriptions.md`, package P2.
 
 
 ## Locality

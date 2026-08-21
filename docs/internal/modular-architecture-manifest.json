@@ -1431,6 +1431,11 @@
                     "owner": "Reporting",
                     "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder",
                     "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Rule",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ComputedMetricChannelPresentation",
+                    "closes_in": null
                 }
             ]
         },
@@ -6508,6 +6513,11 @@
                     "owner": "Infrastructure.DependencyInjection",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
                     "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
+                    "closes_in": null
                 }
             ]
         },
@@ -7695,9 +7705,15 @@
             "path": "src/Analysis/Finding/Contract/Rule/RuleDocsPageReader.php",
             "kind": "class",
             "owner": "Analysis.Finding",
-            "visibility": "internal",
+            "visibility": "contract",
             "closure_package": "P7",
-            "consumers": []
+            "consumers": [
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
+                    "closes_in": null
+                }
+            ]
         },
         "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleLevel": {
             "path": "src/Analysis/Finding/Contract/Rule/RuleLevel.php",
@@ -17536,6 +17552,86 @@
                     "owner": "Infrastructure.Console",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
                     "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Finding\\ChannelPresentationView": {
+            "path": "src/Analysis/Finding/ChannelPresentationView.php",
+            "kind": "class",
+            "owner": "Analysis.Finding",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": [
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "relation": "composition_binding",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
+                    "closes_in": null,
+                    "operations": [
+                        "service_reference",
+                        "service_registration"
+                    ]
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "relation": "composition_binding",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
+                    "closes_in": null,
+                    "operations": [
+                        "definition_argument_mutation"
+                    ]
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelPresentation": {
+            "path": "src/Analysis/Finding/Contract/ChannelPresentation.php",
+            "kind": "class",
+            "owner": "Analysis.Finding",
+            "visibility": "contract",
+            "closure_package": "P7",
+            "consumers": [
+                {
+                    "owner": "Infrastructure.Rule",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ComputedMetricChannelPresentation",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelPresentationInterface": {
+            "path": "src/Analysis/Finding/Contract/ChannelPresentationInterface.php",
+            "kind": "interface",
+            "owner": "Analysis.Finding",
+            "visibility": "contract",
+            "closure_package": "P7",
+            "consumers": [
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Rule",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ComputedMetricChannelPresentation",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Infrastructure\\Rule\\ComputedMetricChannelPresentation": {
+            "path": "src/Infrastructure/Rule/ComputedMetricChannelPresentation.php",
+            "kind": "class",
+            "owner": "Infrastructure.Rule",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": [
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "relation": "composition_binding",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
+                    "closes_in": null,
+                    "operations": [
+                        "service_alias",
+                        "service_registration"
+                    ]
                 }
             ]
         }

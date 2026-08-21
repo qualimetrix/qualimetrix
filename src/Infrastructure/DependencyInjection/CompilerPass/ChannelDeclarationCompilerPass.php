@@ -6,8 +6,10 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
+use Qualimetrix\Analysis\Finding\ChannelPresentationView;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
@@ -17,12 +19,16 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Assembles the static half of the channel universe from every tagged rule
- * service and injects it into {@see ChannelUniverse}.
+ * service and injects it into {@see ChannelUniverse}. Also builds the rule
+ * name => documentation page map and injects it into
+ * {@see ChannelPresentationView}, the composing service that joins a
+ * channel's producer to that producer's own description and declared page.
  *
- * Three facts are read off each rule class by reflection, none of which
+ * Four facts are read off each rule class by reflection, none of which
  * instantiates it: its name ({@see RuleNameReader}), the channels it declares
- * ({@see ChannelDeclarationReader}), and whether it declares support for
- * `@qmx-threshold` ({@see ThresholdOverrideSupportReader}). Mirrors
+ * ({@see ChannelDeclarationReader}), whether it declares support for
+ * `@qmx-threshold` ({@see ThresholdOverrideSupportReader}), and its declared
+ * documentation page ({@see RuleDocsPageReader}). Mirrors
  * {@see RuleRegistryCompilerPass}, which walks the same `qmx.rule`-tagged
  * services and likewise hands the container a finished map.
  *
@@ -63,6 +69,8 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         $thresholdOverrideSupport = [];
         /** @var array<string, string> $producerByViolationCode */
         $producerByViolationCode = [];
+        /** @var array<string, string> $docsPageByRule */
+        $docsPageByRule = [];
 
         foreach ($container->findTaggedServiceIds(RuleRegistryCompilerPass::TAG) as $id => $tags) {
             $class = $container->getDefinition($id)->getClass();
@@ -75,6 +83,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 
             $producerRuleName = RuleNameReader::read($class);
             $thresholdOverrideSupport[$producerRuleName] = ThresholdOverrideSupportReader::read($class);
+            $docsPageByRule[$producerRuleName] = RuleDocsPageReader::read($class);
 
             foreach (ChannelDeclarationReader::read($class) as $key => $declaration) {
                 if (isset($declarations[$key])) {
@@ -107,6 +116,11 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
             ->setArgument('$staticChannelKeysByProducer', $channelKeysByProducer)
             ->setArgument('$thresholdOverrideSupportByRule', $thresholdOverrideSupport)
             ->setArgument('$computedMetricRuleName', ComputedMetricChannelFamily::PRODUCER_RULE_NAME);
+
+        if ($container->hasDefinition(ChannelPresentationView::class)) {
+            $container->getDefinition(ChannelPresentationView::class)
+                ->setArgument('$docsPageByRule', $docsPageByRule);
+        }
     }
 
     /**

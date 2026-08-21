@@ -236,6 +236,8 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
 {
     public const string NAME = 'fixture.no-channel-declarations';
 
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
     public function getName(): string
     {
         return self::NAME;

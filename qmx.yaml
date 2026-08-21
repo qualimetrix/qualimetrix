@@ -419,12 +419,15 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Size\PropertyCountRule'
     - name: analysis-finding
       patterns:
+        - 'Qualimetrix\Analysis\Finding\ChannelPresentationView'
         - 'Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver'
         - 'Qualimetrix\Analysis\Finding\Contract\AcceptedLevel'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelPresentation'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelShape'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides'
@@ -863,6 +866,7 @@ architecture:
     - name: infrastructure-rule
       patterns:
         - 'Qualimetrix\Infrastructure\Rule\ChannelUniverse'
+        - 'Qualimetrix\Infrastructure\Rule\ComputedMetricChannelPresentation'
         - 'Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface'
         - 'Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException'
         - 'Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter'
