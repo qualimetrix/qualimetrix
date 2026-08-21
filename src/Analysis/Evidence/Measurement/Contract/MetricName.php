@@ -98,6 +98,7 @@ final class MetricName
     public const string STRUCTURE_DIT = 'dit';
     public const string STRUCTURE_LCOM = 'lcom';
     public const string STRUCTURE_METHOD_COUNT = 'methodCount';
+    public const string STRUCTURE_METHOD_COUNT_TOTAL = 'methodCountTotal';
     public const string STRUCTURE_PROPERTY_COUNT = 'propertyCount';
     public const string STRUCTURE_IS_READONLY = 'isReadonly';
     public const string STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY = 'isPromotedPropertiesOnly';

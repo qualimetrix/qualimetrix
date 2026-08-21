@@ -36,7 +36,7 @@ use SplFileInfo;
  * - propertyCountProtected: protected properties
  * - propertyCountPrivate: private properties
  * - promotedPropertyCount: constructor promoted properties (PHP 8+)
- * - woc: Weight of Class (ratio of all public methods incl. getters/setters to total methods, 0-100)
+ * - woc: Weight of Class (non-accessor public methods over all public members, 0-100)
  *
  * Anonymous classes are ignored.
  */
@@ -46,7 +46,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
 
     private const NAME = 'method-count';
 
-    public const string METRIC_METHOD_COUNT_TOTAL = 'methodCountTotal';
     public const string METRIC_METHOD_COUNT_PUBLIC = 'methodCountPublic';
     public const string METRIC_METHOD_COUNT_PROTECTED = 'methodCountProtected';
     public const string METRIC_METHOD_COUNT_PRIVATE = 'methodCountPrivate';
@@ -58,8 +57,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
     public const string METRIC_PROMOTED_PROPERTY_COUNT = 'promotedPropertyCount';
 
     // RFC-008: Class characteristics for false positive reduction
-
-    // PDepend WOC metric — see MetricName::STRUCTURE_WOC
 
     public function __construct()
     {
@@ -78,7 +75,7 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
     {
         return [
             MetricName::STRUCTURE_METHOD_COUNT,
-            self::METRIC_METHOD_COUNT_TOTAL,
+            MetricName::STRUCTURE_METHOD_COUNT_TOTAL,
             self::METRIC_METHOD_COUNT_PUBLIC,
             self::METRIC_METHOD_COUNT_PROTECTED,
             self::METRIC_METHOD_COUNT_PRIVATE,
@@ -96,7 +93,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             MetricName::STRUCTURE_IS_ABSTRACT,
             MetricName::STRUCTURE_IS_INTERFACE,
             MetricName::STRUCTURE_IS_EXCEPTION,
-            // PDepend WOC metric
             MetricName::STRUCTURE_WOC,
         ];
     }
@@ -116,23 +112,9 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             $isPromotedOnly = $metrics->propertyCount > 0
                 && $metrics->propertyCount === $metrics->promotedPropertyCount;
 
-            // isDataClass = only getters/setters/constructor (no other logic)
-            $nonAccessorMethods = $metrics->methodCountTotal
-                - $metrics->getterCount
-                - $metrics->setterCount
-                - ($metrics->hasConstructor ? 1 : 0);
-            $isDataClass = $nonAccessorMethods === 0;
-
-            // WOC = allPublicMethods / totalMethods (percentage 0-100)
-            // Higher WOC = more public surface, potentially less encapsulation
-            // Uses methodCountPublicAll which includes getters/setters
-            $woc = $metrics->methodCountTotal > 0
-                ? (int) round(($metrics->methodCountPublicAll / $metrics->methodCountTotal) * 100)
-                : 0;
-
             $bag = $bag
                 ->with(MetricName::STRUCTURE_METHOD_COUNT . ':' . $classFqn, $metrics->methodCount())
-                ->with(self::METRIC_METHOD_COUNT_TOTAL . ':' . $classFqn, $metrics->methodCountTotal)
+                ->with(MetricName::STRUCTURE_METHOD_COUNT_TOTAL . ':' . $classFqn, $metrics->methodCountTotal)
                 ->with(self::METRIC_METHOD_COUNT_PUBLIC . ':' . $classFqn, $metrics->methodCountPublic)
                 ->with(self::METRIC_METHOD_COUNT_PROTECTED . ':' . $classFqn, $metrics->methodCountProtected)
                 ->with(self::METRIC_METHOD_COUNT_PRIVATE . ':' . $classFqn, $metrics->methodCountPrivate)
@@ -146,12 +128,11 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
                 // RFC-008: Class characteristics for false positive reduction
                 ->with(MetricName::STRUCTURE_IS_READONLY . ':' . $classFqn, $metrics->isReadonly ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY . ':' . $classFqn, $isPromotedOnly ? 1 : 0)
-                ->with(MetricName::STRUCTURE_IS_DATA_CLASS . ':' . $classFqn, $isDataClass ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_DATA_CLASS . ':' . $classFqn, $metrics->isDataClass() ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_ABSTRACT . ':' . $classFqn, $metrics->isAbstract ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_INTERFACE . ':' . $classFqn, $metrics->isInterface ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_EXCEPTION . ':' . $classFqn, $metrics->isException ? 1 : 0)
-                // PDepend WOC metric
-                ->with(MetricName::STRUCTURE_WOC . ':' . $classFqn, $woc);
+                ->with(MetricName::STRUCTURE_WOC . ':' . $classFqn, $metrics->woc());
         }
 
         return $bag;
@@ -171,19 +152,9 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             $isPromotedOnly = $metrics->propertyCount > 0
                 && $metrics->propertyCount === $metrics->promotedPropertyCount;
 
-            $nonAccessorMethods = $metrics->methodCountTotal
-                - $metrics->getterCount
-                - $metrics->setterCount
-                - (int) $metrics->hasConstructor;
-            $isDataClass = $nonAccessorMethods === 0;
-
-            // WOC = allPublicMethods / totalMethods (percentage 0-100)
-            // Uses methodCountPublicAll which includes getters/setters
-            $woc = (int) round(($metrics->methodCountPublicAll / max(1, $metrics->methodCountTotal)) * 100);
-
             $bag = (new MetricBag())
                 ->with(MetricName::STRUCTURE_METHOD_COUNT, $metrics->methodCount())
-                ->with(self::METRIC_METHOD_COUNT_TOTAL, $metrics->methodCountTotal)
+                ->with(MetricName::STRUCTURE_METHOD_COUNT_TOTAL, $metrics->methodCountTotal)
                 ->with(self::METRIC_METHOD_COUNT_PUBLIC, $metrics->methodCountPublic)
                 ->with(self::METRIC_METHOD_COUNT_PROTECTED, $metrics->methodCountProtected)
                 ->with(self::METRIC_METHOD_COUNT_PRIVATE, $metrics->methodCountPrivate)
@@ -197,12 +168,11 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
                 // RFC-008: Class characteristics for false positive reduction
                 ->with(MetricName::STRUCTURE_IS_READONLY, $metrics->isReadonly ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY, $isPromotedOnly ? 1 : 0)
-                ->with(MetricName::STRUCTURE_IS_DATA_CLASS, $isDataClass ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_DATA_CLASS, $metrics->isDataClass() ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_ABSTRACT, $metrics->isAbstract ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_INTERFACE, $metrics->isInterface ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_EXCEPTION, $metrics->isException ? 1 : 0)
-                // PDepend WOC metric
-                ->with(MetricName::STRUCTURE_WOC, $woc);
+                ->with(MetricName::STRUCTURE_WOC, $metrics->woc());
 
             $result[] = $this->classWithMetrics(SymbolPath::forClass($metrics->namespace ?? '', $metrics->className), $file, $metrics->startFilePos, $metrics->line, $bag);
         }
@@ -238,7 +208,7 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_METHOD_COUNT_TOTAL,
+                name: MetricName::STRUCTURE_METHOD_COUNT_TOTAL,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $aggregations,
             ),
@@ -342,7 +312,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
                     SymbolLevel::Project->value => [AggregationStrategy::Sum],
                 ],
             ),
-            // PDepend WOC metric (percentage 0-100)
             new MetricDefinition(
                 name: MetricName::STRUCTURE_WOC,
                 collectedAt: SymbolLevel::Class_,

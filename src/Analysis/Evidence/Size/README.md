@@ -313,9 +313,18 @@ and rules. It is a private leaf capability; it publishes no `Contract/`
 namespace. Cross-capability consumers use Measurement's metric and repository
 contracts rather than these implementations.
 
-Metric keys and rule IDs remain stable. In particular, `MethodCountCollector`
-continues to publish the method/property metrics and the WOC input consumed by
-design policy, while WMC remains the Measurement aggregation of callable CCN.
+Rule IDs remain stable. `MethodCountCollector` publishes the method/property
+metrics and the WOC input consumed by design policy, while WMC remains the
+Measurement aggregation of callable CCN.
+
+`woc` follows Lanza & Marinescu: functional public methods — neither accessor
+nor constructor — over all other public members, which are public methods
+(accessors included) plus public properties. Accessor-ness is decided by method
+name in `MethodCountVisitor`, so a public method whose body only forwards to a
+collaborator counts as functional. Only members declared by the class itself
+are counted. A class with no public members scores 100 rather than being left
+undefined. `methodCountTotal` moved to `MetricName::STRUCTURE_METHOD_COUNT_TOTAL`
+so Design can require it without importing a Size constant.
 
 ## Structure
 
@@ -352,8 +361,9 @@ anonymous classes, methods, properties, thresholds, and property exclusions.
 
 - All 15 Size declarations remain in this flat leaf without a `Contract/` or
   role-based subdirectory.
-- `size.class-count`, `size.method-count`, and `size.property-count`, their
-  metric keys, and WOC/WMC inputs retain their existing behaviour.
+- `size.class-count`, `size.method-count`, and `size.property-count` and their
+  metric keys retain their existing behaviour. `woc` is the Lanza & Marinescu
+  ratio described above; WMC stays the Measurement aggregation of callable CCN.
 - The seven owned tests remain discovered and cover anonymous-class exclusion,
   LOC, statement, method, property, and class counts.
 
