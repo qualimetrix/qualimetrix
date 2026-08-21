@@ -30,6 +30,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class IdenticalSubExpressionRule extends AbstractRule
 {
     public const string NAME = 'code-smell.identical-subexpression';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
 
     /**
      * Finding types with corresponding violation messages.

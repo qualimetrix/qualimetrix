@@ -51,6 +51,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class InlineDirectiveRule extends AbstractRule
 {
     public const string NAME = InlineDirectivePolicy::PRODUCER_RULE_NAME;
+    public const string DOCS_PAGE = 'rules/annotation.md';
 
     /**
      * The three channel names, restated here as `self::` constants purely so

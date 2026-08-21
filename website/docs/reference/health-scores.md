@@ -6,6 +6,8 @@ Definitions are resolved per analysis run and evaluated after raw metric
 aggregation. Reusing a process for multiple runs replaces the prior definition
 set atomically, so configuration from an earlier run cannot leak into the next.
 
+**Rule ID:** `computed.health`
+
 ---
 
 ## Dimensions

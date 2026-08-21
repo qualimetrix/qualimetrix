@@ -35,6 +35,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class LongParameterListRule extends AbstractRule
 {
     public const string NAME = 'code-smell.long-parameter-list';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
 
     public function getName(): string
     {

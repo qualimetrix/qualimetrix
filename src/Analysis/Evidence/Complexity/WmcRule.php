@@ -34,6 +34,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class WmcRule extends AbstractRule
 {
     public const string NAME = 'complexity.wmc';
+    public const string DOCS_PAGE = 'rules/complexity.md';
 
     public function getName(): string
     {

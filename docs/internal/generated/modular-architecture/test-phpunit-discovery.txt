@@ -3473,6 +3473,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::itNamesTheProducerForEveryIdentityMechanismThatDefeatsAScan
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theAssembledUniverseAgreesWithTheRuleClassesReadDirectly
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theEnumerationAgreesWithTheTrackedFixture
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyDeclaredDocsPageCarriesTheRulesOwnAnchor
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyRegisteredRuleDeclaresItsOwnDocsPage
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::theTwoNonPrefixPagesAreDeclaredExplicitly
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesParamErrorViaDedicatedCliFlagWithoutFalseWarning
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesReturnErrorViaRuleOptSnakeCaseSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaConfigFileKebabKey
@@ -3609,6 +3612,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\PredicateFilterStageTest::itPassesThroughTheSameObjectsInTheSameOrder
  - Qualimetrix\Tests\Analysis\Finding\Unit\PredicateFilterStageTest::itReportsTheStageItWasBuiltFor
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfigurationIsolationTest::itClearsEveryPerRunValueBeforeTheNextConfiguration
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itReadsTheDocsPageConstantWithoutInstantiation
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsAClassThatCannotBeLoaded
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsADocsPageConstantOnlyInheritedFromAnAbstractAncestor
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsANonStringDocsPageConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsAnEmptyStringDocsPageConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsRulesWithoutADocsPageConstant
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itAppliesOnlyRulesFilterToHierarchicalRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itCapturesExcludedViolationsWhenCaptureHolderIsEnabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itChannelNamespaceExclusionDoesNotHideClassFindingsInThatNamespace

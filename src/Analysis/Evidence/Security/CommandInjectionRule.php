@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 final class CommandInjectionRule extends AbstractSecurityPatternRule
 {
     public const string NAME = 'security.command-injection';
+    public const string DOCS_PAGE = 'rules/security.md';
 
     public function getName(): string
     {

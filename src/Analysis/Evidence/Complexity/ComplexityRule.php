@@ -36,6 +36,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class ComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.cyclomatic';
+    public const string DOCS_PAGE = 'rules/complexity.md';
 
     public function getName(): string
     {

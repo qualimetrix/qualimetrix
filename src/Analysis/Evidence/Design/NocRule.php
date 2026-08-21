@@ -34,6 +34,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class NocRule extends AbstractRule
 {
     public const string NAME = 'design.noc';
+    public const string DOCS_PAGE = 'rules/design.md';
 
     public function getName(): string
     {

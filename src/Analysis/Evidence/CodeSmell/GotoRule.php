@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 final class GotoRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.goto';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
     protected const string DESCRIPTION = 'Detects usage of goto statement';
     protected const string SMELL_TYPE = 'goto';
     protected const Severity SEVERITY = Severity::Error;

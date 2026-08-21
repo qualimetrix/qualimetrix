@@ -34,6 +34,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class UnusedPrivateRule extends AbstractRule
 {
     public const string NAME = 'code-smell.unused-private';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
 
     private const ENTRY_KEYS = [
         MetricName::STRUCTURE_UNUSED_PRIVATE_METHOD => 'Unused private method',

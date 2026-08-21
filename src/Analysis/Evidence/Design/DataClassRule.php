@@ -37,6 +37,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class DataClassRule extends AbstractRule
 {
     public const string NAME = 'design.data-class';
+    public const string DOCS_PAGE = 'rules/design.md';
 
     public function getName(): string
     {

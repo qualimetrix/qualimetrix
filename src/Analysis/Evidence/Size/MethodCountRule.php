@@ -31,6 +31,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class MethodCountRule extends AbstractRule
 {
     public const string NAME = 'size.method-count';
+    public const string DOCS_PAGE = 'rules/size.md';
 
     public function getName(): string
     {

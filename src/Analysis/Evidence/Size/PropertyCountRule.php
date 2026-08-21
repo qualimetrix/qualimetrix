@@ -32,6 +32,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class PropertyCountRule extends AbstractRule
 {
     public const string NAME = 'size.property-count';
+    public const string DOCS_PAGE = 'rules/size.md';
 
     public function getName(): string
     {

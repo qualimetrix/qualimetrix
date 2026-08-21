@@ -27,6 +27,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class CodeDuplicationRule extends AbstractRule
 {
     public const string NAME = 'duplication.code-duplication';
+    public const string DOCS_PAGE = 'rules/duplication.md';
 
     public function __construct(
         RuleOptionsInterface $options,

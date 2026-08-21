@@ -21,6 +21,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class ComputedMetricRule extends AbstractRule
 {
     public const string NAME = ComputedMetricChannelFamily::PRODUCER_RULE_NAME;
+    public const string DOCS_PAGE = 'reference/health-scores.md';
 
     public function __construct(
         ComputedMetricRuleOptions $options,

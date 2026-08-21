@@ -77,6 +77,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class LayerViolationRule extends AbstractRule
 {
     public const string NAME = LayerPolicyPreparationInterface::PRODUCER_RULE_NAME;
+    public const string DOCS_PAGE = 'rules/architecture.md';
 
     public const string COVERAGE_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME;
 

@@ -38,6 +38,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class TypeCoverageRule extends AbstractRule
 {
     public const string NAME = 'design.type-coverage';
+    public const string DOCS_PAGE = 'rules/design.md';
 
     public function getName(): string
     {

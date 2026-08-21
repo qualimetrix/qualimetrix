@@ -30,6 +30,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class ClassCountRule extends AbstractRule
 {
     public const string NAME = 'size.class-count';
+    public const string DOCS_PAGE = 'rules/size.md';
 
     public function getName(): string
     {

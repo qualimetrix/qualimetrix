@@ -466,6 +466,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey'

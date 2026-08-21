@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 final class BooleanArgumentRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.boolean-argument';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
     protected const string DESCRIPTION = 'Detects boolean arguments in method/function signatures';
     protected const string SMELL_TYPE = 'boolean_argument';
     protected const Severity SEVERITY = Severity::Warning;

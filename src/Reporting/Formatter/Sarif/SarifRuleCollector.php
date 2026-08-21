@@ -16,21 +16,28 @@ use Qualimetrix\Analysis\Finding\Contract\Violation;
 final class SarifRuleCollector
 {
     public const INFORMATION_URI = 'https://github.com/qualimetrix/qualimetrix';
-    private const DOCS_BASE_URI = 'https://qualimetrix.dev/rules/';
 
-    /** @var array<string, string> Maps rule category prefix to its docs page path segment */
+    /**
+     * Site root, not `/rules/`: `computed.health` documents outside `rules/`
+     * entirely (`reference/health-scores`), which no `/rules/`-rooted base
+     * could ever address. See `docs/internal/plans/sarif-channel-descriptions.md`,
+     * the "helpUri" section.
+     */
+    private const DOCS_BASE_URI = 'https://qualimetrix.dev/';
+
+    /** @var array<string, string> Maps rule category prefix to its docs page path segment, relative to {@see DOCS_BASE_URI} */
     private const CATEGORY_DOCS_MAP = [
-        'complexity' => 'complexity/',
-        'coupling' => 'coupling/',
-        'cohesion' => 'cohesion/',
-        'design' => 'design/',
-        'maintainability' => 'maintainability/',
-        'size' => 'size/',
-        'code-smell' => 'code-smell/',
-        'architecture' => 'architecture/',
-        'security' => 'security/',
-        'duplication' => 'architecture/',
-        'computed' => 'maintainability/',
+        'complexity' => 'rules/complexity/',
+        'coupling' => 'rules/coupling/',
+        'cohesion' => 'rules/cohesion/',
+        'design' => 'rules/design/',
+        'maintainability' => 'rules/maintainability/',
+        'size' => 'rules/size/',
+        'code-smell' => 'rules/code-smell/',
+        'architecture' => 'rules/architecture/',
+        'security' => 'rules/security/',
+        'duplication' => 'rules/architecture/',
+        'computed' => 'rules/maintainability/',
     ];
 
     /**

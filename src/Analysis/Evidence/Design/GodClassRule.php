@@ -36,6 +36,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class GodClassRule extends AbstractRule
 {
     public const string NAME = 'design.god-class';
+    public const string DOCS_PAGE = 'rules/design.md';
 
     public function getName(): string
     {

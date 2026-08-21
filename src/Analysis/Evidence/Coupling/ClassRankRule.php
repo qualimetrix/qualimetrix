@@ -30,6 +30,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class ClassRankRule extends AbstractRule
 {
     public const string NAME = 'coupling.class-rank';
+    public const string DOCS_PAGE = 'rules/coupling.md';
 
     public function getName(): string
     {

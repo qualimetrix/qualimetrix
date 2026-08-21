@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 final class SqlInjectionRule extends AbstractSecurityPatternRule
 {
     public const string NAME = 'security.sql-injection';
+    public const string DOCS_PAGE = 'rules/security.md';
 
     public function getName(): string
     {

@@ -35,6 +35,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class LcomRule extends AbstractRule
 {
     public const string NAME = 'cohesion.lcom';
+    public const string DOCS_PAGE = 'rules/cohesion.md';
 
     public function getName(): string
     {

@@ -7691,6 +7691,14 @@
                 }
             ]
         },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleDocsPageReader": {
+            "path": "src/Analysis/Finding/Contract/Rule/RuleDocsPageReader.php",
+            "kind": "class",
+            "owner": "Analysis.Finding",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleLevel": {
             "path": "src/Analysis/Finding/Contract/Rule/RuleLevel.php",
             "kind": "enum",

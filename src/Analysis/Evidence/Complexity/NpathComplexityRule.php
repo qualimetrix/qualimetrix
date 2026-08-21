@@ -38,6 +38,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class NpathComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.npath';
+    public const string DOCS_PAGE = 'rules/complexity.md';
 
     private const int MAX_DISPLAY = 1_000_000;
 

@@ -50,6 +50,7 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
 final class DistanceRule extends AbstractRule
 {
     public const string NAME = 'coupling.distance';
+    public const string DOCS_PAGE = 'rules/coupling.md';
 
     public function __construct(
         RuleOptionsInterface $options,

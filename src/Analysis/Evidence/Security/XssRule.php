@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 final class XssRule extends AbstractSecurityPatternRule
 {
     public const string NAME = 'security.xss';
+    public const string DOCS_PAGE = 'rules/security.md';
 
     public function getName(): string
     {
