@@ -1,6 +1,6 @@
-# 0026. Weight of Class Measures Accessors, Not Visibility
+# 0027. Weight of Class Measures Accessors, Not Visibility
 
-**Date:** 2026-08-20
+**Date:** 2026-08-21
 **Status:** Accepted
 **Related:** [ADR 0013](0013-threshold-override-validators.md) (threshold override validators), [ADR 0017](0017-baseline-ceiling.md) (baseline ceiling and channel declarations)
 

@@ -71,8 +71,8 @@ of truth.
 `external` excludes `Qualimetrix\**`; `coverage: error` makes
 an uncovered project class fail even when it has no dependency edges.
 
-The published topology records 692 governed test/support/fixture artifacts,
-102 fixture directories, 551 PHPUnit classes, and 7,348 semantic test IDs. The
+The published topology records 693 governed test/support/fixture artifacts,
+102 fixture directories, 552 PHPUnit classes, and 7,350 semantic test IDs. The
 self-analysis input contains 787 analyzed files; its active v13 baseline has
 262 groups across 198 subjects, and the current dogfood result is zero findings.
 

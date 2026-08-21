@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-20T20:02:32+00:00",
+  "generated": "2026-08-21T03:44:57+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [

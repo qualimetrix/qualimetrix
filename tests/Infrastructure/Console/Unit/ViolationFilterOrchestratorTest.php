@@ -258,6 +258,37 @@ final class ViolationFilterOrchestratorTest extends TestCase
         self::assertStringNotContainsString('baseline:cleanup', $display);
     }
 
+    /** A reader told only about repair and configuration would hunt for a finding that moved rather than vanished. */
+    #[Test]
+    public function itNamesAMovedDeclarationAmongTheCausesOfStaleness(): void
+    {
+        $stillFiring = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $baselinePath = $this->writeBaseline([
+            $stillFiring->subject->toCanonical() => [
+                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
+                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
+            ],
+        ]);
+
+        $output = new BufferedOutput();
+        $this->filterAndReport(
+            $this->createOrchestrator(new RuleExclusionStats()),
+            $this->createAnalysisResult([$stillFiring]),
+            $this->createInput(['--baseline' => $baselinePath]),
+            self::diagnosticConsole($output),
+            $this->createScopeResolution(),
+        );
+
+        $display = $output->fetch();
+
+        self::assertStringContainsString('was repaired', $display);
+        self::assertStringContainsString('stopped producing it', $display);
+        self::assertStringContainsString('is no longer that declaration', $display);
+        self::assertStringContainsString('added, removed or moved', $display);
+        self::assertStringContainsString('another declaration of the same logical identity', $display);
+        self::assertStringContainsString('for a closure or a member of an anonymous class', $display);
+    }
+
     /**
      * `--show-resolved` reads the same predicate as staleness, so while a
      * stale entry aborted the run it could only ever print on a run with
