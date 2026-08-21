@@ -27,6 +27,10 @@ final class DeclarationIdentityTest extends TestCase
               enabled: false
         YAML;
 
+    private const string EVERY_RULE = <<<'YAML'
+        rules: {}
+        YAML;
+
     private string $root = '';
 
     protected function setUp(): void
@@ -133,8 +137,20 @@ final class DeclarationIdentityTest extends TestCase
         self::assertSame($sequential, $this->subjects(2));
     }
 
+    /**
+     * Runs the whole rule set, not the single rule the other cases pin.
+     *
+     * A file with two braced namespaces used to kill the run with
+     * `Required metric "classCount.sum" not found in MetricBag` — from a global
+     * collector, which is why the crash needs neither a wide rule set nor a
+     * class inside the braces to reproduce (checked against 372d8315: the two
+     * function-only files below already kill it under the single-rule config).
+     * The wide run is not what catches that one; it is what puts every other
+     * rule on these namespace forms, and the smelly file below is what keeps
+     * "wide" from quietly becoming a claim about a config that narrowed.
+     */
     #[Test]
-    public function itAnalysesIrregularNamespaceFormsWithoutFailing(): void
+    public function itAnalysesIrregularNamespaceFormsUnderEveryRule(): void
     {
         $this->write('Braced.php', <<<'PHP'
             <?php
@@ -153,6 +169,41 @@ final class DeclarationIdentityTest extends TestCase
                 }
             }
             PHP);
+        $this->write('BracedClasses.php', <<<'PHP'
+            <?php
+
+            namespace Fixture\BracedFirst {
+                class First
+                {
+                    public function first(int $a): int
+                    {
+                        return $a > 1 ? 1 : 2;
+                    }
+                }
+            }
+
+            namespace Fixture\BracedSecond {
+                interface Second
+                {
+                }
+            }
+            PHP);
+        $this->write('BracedGlobal.php', <<<'PHP'
+            <?php
+
+            namespace {
+                class GlobalClass
+                {
+                    public function act(int $a): int
+                    {
+                        return $a > 1 ? 1 : 2;
+                    }
+                }
+            }
+
+            namespace Fixture\Empty_ {
+            }
+            PHP);
         $this->write('Global.php', <<<'PHP'
             <?php
 
@@ -162,10 +213,40 @@ final class DeclarationIdentityTest extends TestCase
             }
             PHP);
 
-        $report = $this->report();
+        $this->write('Smelly.php', <<<'PHP'
+            <?php
+
+            namespace Fixture\Smelly {
+                class Smelly
+                {
+                    public function show(int $a): void
+                    {
+                        var_dump($a);
+                        $this->toggle(true);
+                    }
+
+                    public function toggle(bool $flag): void
+                    {
+                        if ($flag) {
+                            echo 'on';
+                        }
+                    }
+                }
+            }
+            PHP);
+
+        $report = $this->report(config: self::EVERY_RULE);
+        $rules = array_unique(array_map(
+            static fn(array $violation): string => (string) $violation['rule'],
+            $report['violations'],
+        ));
 
         self::assertSame(0, $report['coverage']['failed'], (string) json_encode($report['coverage']));
-        self::assertSame(2, $report['coverage']['analyzed']);
+        self::assertSame(5, $report['coverage']['analyzed']);
+        // Both fire inside a braced namespace and neither is reachable under
+        // the single-rule config the other cases use.
+        self::assertContains('code-smell.debug-code', $rules);
+        self::assertContains('code-smell.boolean-argument', $rules);
     }
 
     #[Test]
@@ -215,8 +296,9 @@ final class DeclarationIdentityTest extends TestCase
     }
 
     /** @return array<string, mixed> */
-    private function report(int $workers = 0): array
+    private function report(int $workers = 0, string $config = self::CONFIG): array
     {
+        file_put_contents($this->root . '/qmx.yaml', $config);
         $command = \sprintf(
             'cd %s && %s %s check src --config=qmx.yaml --format=json --no-progress --workers=%d 2>/dev/null',
             escapeshellarg($this->root),

@@ -1,0 +1,17 @@
+# Машинный вывод сверки потолков v12 -> v13 (DoD 12 пакета P2)
+#
+# Вход: 2682106a:qmx-baseline.json (v12) и qmx-baseline.json (v13).
+# Процедура, нормализация и негативный контроль — в README.md этого каталога.
+# Единица счёта ниже — пара мультимножества «идентичность -> величина», а не
+# запись: смена величины у одной записи даёт одну ушедшую пару и одну пришедшую.
+#
+# Перепрогнано 2026-08-20. Негативный контроль (в копии v13 у одной записи
+# поднят count, другая удалена) на том же скрипте падает и называет обе порчи.
+
+records: 264 -> 264
+architecture entries: 0 -> 0
+divergences: 2 gone, 2 new
+GONE x1 declaration:class:Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor@src/Analysis/Evidence/DependencyModel/Extraction/DependencyVisitor.php | coupling.cbo#coupling.cbo.class | ('magnitudes', ('20',))
+GONE x1 project:@ | duplication.code-duplication#duplication.code-duplication | ('magnitudes', ('36',))
+NEW x1 ns:Qualimetrix\Analysis\Evidence\Measurement\Visitor@ | coupling.instability#coupling.instability.namespace | ('magnitudes', ('0.92',))
+NEW x1 project:@ | duplication.code-duplication#duplication.code-duplication | ('magnitudes', ('32',))

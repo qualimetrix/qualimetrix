@@ -59,10 +59,11 @@ Architecture pilot and ADR 0016 remains the governing subject-cohesion rule.
 The accepted capability boundaries distribute the former Metrics and Rules role
 buckets among eight evidence capabilities. The tree below describes the current
 physical layout. P0 governance remains live: the versioned internal manifest is
-authoritative for 789 declarations in 787 files and 37 semantic owners. It
-generates a coarse qmx projection with 37 owner layers, no singleton
-enforcement seams, final `external`, and 64 permanent exact composition
-bindings that retain 13 coarse owner pairs (227 declared allow edges).
+authoritative for every production declaration and its semantic owner. It
+generates a coarse qmx projection with one layer per owner, no singleton
+enforcement seams, final `external`, and permanent exact composition bindings
+that retain the coarse owner pairs the projection would otherwise lose. Counts
+live in `docs/internal/generated/modular-architecture/`, never in prose.
 
 ```
 src/
@@ -255,7 +256,7 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
 - The internal manifest is the current exact owner/visibility/import authority.
   Its checker runs through `composer architecture:check` before selfcheck and
   rejects unlisted exact imports even when a coarse qmx owner edge permits them.
-- Generated `qmx.yaml` contains 37 semantic-owner layers, no singleton
+- Generated `qmx.yaml` contains one semantic-owner layer per owner, no singleton
   enforcement seams and final `external`; `coverage: error` keeps isolated and
   edge-connected project declarations fail-closed. The qmx graph is coarse and
   does not replace the manifest checker.

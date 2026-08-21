@@ -61,20 +61,23 @@ universal invocation context, generic runtime store, or generic collector
 configuration carrier.
 
 P0 governance implements the current enforcement model. The versioned internal
-manifest covers 789 declarations in 787 files and names 37 semantic owners. It
-has no singleton enforcement seam. Its 64 permanent exact composition bindings
-retain 13 required coarse owner pairs and the generated qmx projection has 227
-declared allow edges. A permanent binding is one observed DI source-to-private
-target reference; it is neither a public contract nor an owner-wide permission.
-Generated artifacts are deterministic projections rather than a second source
-of truth.
+manifest covers every production declaration, names its semantic owner, and has
+no singleton enforcement seam. Permanent exact composition bindings retain the
+coarse owner pairs the qmx projection would otherwise lose; a permanent binding
+is one observed DI source-to-private target reference, neither a public contract
+nor an owner-wide permission. Generated artifacts are deterministic projections
+rather than a second source of truth, and they — not this document — carry the
+counts: see `docs/internal/generated/modular-architecture/`, whose
+`manifest-enforcement-summary.tsv` reports the current declaration, owner,
+binding, and allow-edge totals.
 `external` excludes `Qualimetrix\**`; `coverage: error` makes
 an uncovered project class fail even when it has no dependency edges.
 
-The published topology records 693 governed test/support/fixture artifacts,
-102 fixture directories, 552 PHPUnit classes, and 7,350 semantic test IDs. The
-self-analysis input contains 787 analyzed files; its active v13 baseline has
-262 groups across 198 subjects, and the current dogfood result is zero findings.
+Every test, support file, and fixture directory is governed by the same
+manifest; `test-topology.tsv` in the generated directory reports how many of
+each. Self-analysis runs against the versioned v13 root baseline, whose
+262 groups across 198 subjects are checked against the file itself by
+`DocumentationConsistencyTest`, and the current dogfood result is zero findings.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
 `composer architecture:check` before selfcheck and rejects unlisted imports even
