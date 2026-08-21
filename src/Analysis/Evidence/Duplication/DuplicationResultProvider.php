@@ -6,8 +6,6 @@ namespace Qualimetrix\Analysis\Evidence\Duplication;
 
 /**
  * Owns the duplication result for one analysis run.
- *
- * @qmx-ignore design.data-class -- Run-scoped state holder intentionally exposes replace/read/reset lifecycle around private duplication evidence; it is not a DTO or public data surface.
  */
 final class DuplicationResultProvider
 {

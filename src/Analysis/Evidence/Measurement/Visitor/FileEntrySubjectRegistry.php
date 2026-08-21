@@ -18,8 +18,6 @@ use Qualimetrix\Core\Symbol\MetricSubjectCodec;
  *
  * This is the half that moves when the wire grammar moves — what a subject is
  * made of, and when a collision ordinal is written at all.
- *
- * @qmx-ignore design.data-class -- A minting table: it hands out ids and resolves them back, so its methods read as accessors to the metric while the rule they carry — when an ordinal is written at all — is the point of the class.
  */
 final class FileEntrySubjectRegistry
 {
