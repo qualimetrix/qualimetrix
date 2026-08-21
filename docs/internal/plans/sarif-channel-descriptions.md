@@ -274,8 +274,14 @@ its docblock so the next reader does not "simplify" it back into a prefix rule.
 The route into the join is named here rather than left implicit: the reader is
 called from the same place that already reads `NAME`, and the resulting map is
 handed to the composing service of P2 as a constructor argument, so the
-constant reaches `ChannelPresentation` by declaration rather than by a
-lookup the service performs on its own.
+constant reaches `ChannelPresentation` by declaration rather than by a lookup
+the service performs on its own.
+
+P1 carries its **own** guard rather than deferring to P4's: a test asserting
+that every registered rule declares the constant on its own class, and that the
+declared path resolves to a page carrying that rule's `Rule ID:` anchor.
+Without it, the invariant "every rule declares a page" holds only by the good
+behaviour of whoever adds the 43rd rule between P1 and P4 landing.
 
 **P2 — Finding: the join.**
 Files: `src/Analysis/Finding/Contract/ChannelPresentationInterface.php` and
