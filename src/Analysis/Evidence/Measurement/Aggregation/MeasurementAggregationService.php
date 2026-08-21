@@ -7,9 +7,11 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
@@ -34,7 +36,10 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
         private readonly ProfilerInterface $profiler,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
-        $this->sortedCollectors = (new GlobalCollectorSorter())->sort($collectors);
+        $this->sortedCollectors = (new GlobalCollectorSorter())->sort(
+            $collectors,
+            self::providedMetrics($fileCollector->getCollectors(), $fileCollector->getDerivedCollectors()),
+        );
         $regularDefinitions = AggregationHelper::collectDefinitions($fileCollector->getCollectors());
         $derivedDefinitions = self::definitions($fileCollector->getDerivedCollectors());
         $this->globalDefinitions = self::definitions($this->sortedCollectors);
@@ -72,7 +77,27 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
     }
 
     /**
-     * @param iterable<\Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface|GlobalContextCollectorInterface> $collectors
+     * Metric names the earlier phases put into the repository, against which the
+     * global collectors' requires() is checked.
+     *
+     * @param iterable<DerivedCollectorInterface|MetricCollectorInterface> ...$collectorSets
+     *
+     * @return list<string>
+     */
+    private static function providedMetrics(iterable ...$collectorSets): array
+    {
+        $metrics = [];
+        foreach ($collectorSets as $collectors) {
+            foreach ($collectors as $collector) {
+                array_push($metrics, ...$collector->provides());
+            }
+        }
+
+        return $metrics;
+    }
+
+    /**
+     * @param iterable<DerivedCollectorInterface|GlobalContextCollectorInterface> $collectors
      *
      * @return list<MetricDefinition>
      */

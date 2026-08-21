@@ -2628,12 +2628,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\ClassToNamespaceAggregatorTest::itUsesExplicitNamespaceContributionsInsteadOfCopyingTheWholeFileBag
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\ClassToNamespaceAggregatorTest::itUsesRawMethodValuesNotClassBagForNamespaceAggregation
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itAcceptsIterableInput
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itAcceptsMetricsProducedByEarlierPhases
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itDetectsLongCycle
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itDetectsSimpleCycle
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itHandlesCollectorsWithNoDependencies
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itHandlesDottedMetricNames
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itHandlesUnknownRequiredMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itIncludesCycleInException
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itRejectsRequiredMetricNobodyProvides
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itRejectsRequiredMetricNobodyProvidesAmongSeveralCollectors
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itReturnsEmptyArrayForEmptyInput
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itReturnsSingleCollectorUnchanged
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalCollectorSorterTest::itSortsDiamondDependency

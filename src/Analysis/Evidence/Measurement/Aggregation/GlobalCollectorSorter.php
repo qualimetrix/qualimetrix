@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 
 /**
@@ -18,21 +19,25 @@ final class GlobalCollectorSorter
      * Sorts collectors in topological order based on requires() → provides() dependencies.
      *
      * @param iterable<GlobalContextCollectorInterface> $collectors
+     * @param list<string> $metricsFromEarlierPhases Metric names produced before the global phase
      *
      * @throws CyclicDependencyException When a cyclic dependency is detected
+     * @throws LogicException When a required metric is provided by nobody
      *
      * @return list<GlobalContextCollectorInterface>
      */
-    public function sort(iterable $collectors): array
+    public function sort(iterable $collectors, array $metricsFromEarlierPhases): array
     {
         $collectorList = $this->toList($collectors);
+
+        // Build mapping: metric → collector that provides it
+        $providers = $this->buildProvidersMap($collectorList);
+
+        $this->assertRequirementsSatisfiable($collectorList, $providers, $metricsFromEarlierPhases);
 
         if (\count($collectorList) <= 1) {
             return $collectorList;
         }
-
-        // Build mapping: metric → collector that provides it
-        $providers = $this->buildProvidersMap($collectorList);
 
         // Build collector → index mapping for O(1) lookup
         $indexByName = [];
@@ -123,6 +128,38 @@ final class GlobalCollectorSorter
         }
 
         return $providers;
+    }
+
+    /**
+     * Rejects a collector whose requires() names a metric nobody produces.
+     *
+     * Without this the requirement is silently dropped from the ordering and the
+     * run fails much later, inside whichever collector reads the metric first.
+     *
+     * @param list<GlobalContextCollectorInterface> $collectors
+     * @param array<string, string> $providers Metric → collector name mapping
+     * @param list<string> $metricsFromEarlierPhases
+     */
+    private function assertRequirementsSatisfiable(
+        array $collectors,
+        array $providers,
+        array $metricsFromEarlierPhases,
+    ): void {
+        $available = $providers + array_fill_keys($metricsFromEarlierPhases, '');
+
+        foreach ($collectors as $collector) {
+            foreach ($collector->requires() as $metric) {
+                if (isset($available[$metric]) || isset($available[$this->getBaseMetric($metric)])) {
+                    continue;
+                }
+
+                throw new LogicException(\sprintf(
+                    'Global collector "%s" requires metric "%s", but no collector provides it',
+                    $collector->getName(),
+                    $metric,
+                ));
+            }
+        }
     }
 
     /**

@@ -28,7 +28,10 @@ interface GlobalContextCollectorInterface
     /**
      * Returns list of metric names this collector requires.
      *
-     * These metrics must be already computed before this collector runs.
+     * These metrics must be already computed before this collector runs, either by
+     * an earlier phase or by another global collector. A name that no collector
+     * provides is rejected when the aggregation service is built.
+     *
      * Used for topological sorting of collectors.
      *
      * @return list<string>

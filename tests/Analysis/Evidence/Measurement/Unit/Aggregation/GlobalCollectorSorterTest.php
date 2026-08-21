@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation;
 
 use Generator;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -26,7 +27,7 @@ final class GlobalCollectorSorterTest extends TestCase
     #[Test]
     public function itReturnsEmptyArrayForEmptyInput(): void
     {
-        $result = $this->sorter->sort([]);
+        $result = $this->sorter->sort([], []);
 
         self::assertSame([], $result);
     }
@@ -36,7 +37,7 @@ final class GlobalCollectorSorterTest extends TestCase
     {
         $collector = $this->createCollector('single', [], ['metric']);
 
-        $result = $this->sorter->sort([$collector]);
+        $result = $this->sorter->sort([$collector], []);
 
         self::assertCount(1, $result);
         self::assertSame('single', $result[0]->getName());
@@ -49,7 +50,7 @@ final class GlobalCollectorSorterTest extends TestCase
         $b = $this->createCollector('b', [], ['metricB']);
         $c = $this->createCollector('c', [], ['metricC']);
 
-        $result = $this->sorter->sort([$a, $b, $c]);
+        $result = $this->sorter->sort([$a, $b, $c], []);
 
         self::assertCount(3, $result);
         // All should be present (order doesn't matter for independent collectors)
@@ -67,7 +68,7 @@ final class GlobalCollectorSorterTest extends TestCase
         $b = $this->createCollector('b', ['metricA'], ['metricB']);
         $c = $this->createCollector('c', ['metricB'], ['metricC']);
 
-        $result = $this->sorter->sort([$c, $b, $a]); // Input in reverse order
+        $result = $this->sorter->sort([$c, $b, $a], []); // Input in reverse order
 
         self::assertCount(3, $result);
         // Must be: A before B before C
@@ -89,7 +90,7 @@ final class GlobalCollectorSorterTest extends TestCase
         $c = $this->createCollector('c', ['metricA'], ['metricC']);
         $d = $this->createCollector('d', ['metricB', 'metricC'], ['metricD']);
 
-        $result = $this->sorter->sort([$d, $c, $b, $a]);
+        $result = $this->sorter->sort([$d, $c, $b, $a], []);
 
         $names = array_map(fn($c) => $c->getName(), $result);
 
@@ -109,7 +110,7 @@ final class GlobalCollectorSorterTest extends TestCase
         $classCount = $this->createCollector('classCount', [], ['classCount']);
         $abstractness = $this->createCollector('abstractness', ['classCount.sum'], ['abstractness']);
 
-        $result = $this->sorter->sort([$abstractness, $classCount]);
+        $result = $this->sorter->sort([$abstractness, $classCount], []);
 
         $names = array_map(fn($c) => $c->getName(), $result);
         self::assertSame(['classCount', 'abstractness'], $names);
@@ -131,7 +132,10 @@ final class GlobalCollectorSorterTest extends TestCase
         );
         $distance = $this->createCollector('distance', ['instability', 'abstractness'], ['distance']);
 
-        $result = $this->sorter->sort([$distance, $abstractness, $coupling]);
+        $result = $this->sorter->sort(
+            [$distance, $abstractness, $coupling],
+            ['classCount', 'abstractClassCount', 'interfaceCount'],
+        );
 
         $names = array_map(fn($c) => $c->getName(), $result);
 
@@ -155,7 +159,7 @@ final class GlobalCollectorSorterTest extends TestCase
         self::expectException(CyclicDependencyException::class);
         self::expectExceptionMessage('Cyclic dependency detected');
 
-        $this->sorter->sort([$a, $b]);
+        $this->sorter->sort([$a, $b], []);
     }
 
     #[Test]
@@ -168,7 +172,7 @@ final class GlobalCollectorSorterTest extends TestCase
 
         self::expectException(CyclicDependencyException::class);
 
-        $this->sorter->sort([$a, $b, $c]);
+        $this->sorter->sort([$a, $b, $c], []);
     }
 
     #[Test]
@@ -178,7 +182,7 @@ final class GlobalCollectorSorterTest extends TestCase
         $b = $this->createCollector('b', ['metricA'], ['metricB']);
 
         try {
-            $this->sorter->sort([$a, $b]);
+            $this->sorter->sort([$a, $b], []);
             self::fail('Expected CyclicDependencyException');
         } catch (CyclicDependencyException $e) {
             self::assertContains('a', $e->cycle);
@@ -197,23 +201,45 @@ final class GlobalCollectorSorterTest extends TestCase
             yield $a;
         })();
 
-        $result = $this->sorter->sort($generator);
+        $result = $this->sorter->sort($generator, []);
 
         $names = array_map(fn($c) => $c->getName(), $result);
         self::assertSame(['a', 'b'], $names);
     }
 
     #[Test]
-    public function itHandlesUnknownRequiredMetrics(): void
+    public function itAcceptsMetricsProducedByEarlierPhases(): void
     {
-        // Collector requires a metric that no one provides - should not fail
-        // (the metric might come from file-level collectors)
-        $a = $this->createCollector('a', ['unknownMetric'], ['metricA']);
+        // classCount.sum comes from a file-level collector, not from a global one
+        $a = $this->createCollector('a', ['classCount.sum'], ['metricA']);
 
-        $result = $this->sorter->sort([$a]);
+        $result = $this->sorter->sort([$a], ['classCount']);
 
         self::assertCount(1, $result);
         self::assertSame('a', $result[0]->getName());
+    }
+
+    #[Test]
+    public function itRejectsRequiredMetricNobodyProvides(): void
+    {
+        $a = $this->createCollector('a', ['unknownMetric'], ['metricA']);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Global collector "a" requires metric "unknownMetric", but no collector provides it');
+
+        $this->sorter->sort([$a], ['classCount']);
+    }
+
+    #[Test]
+    public function itRejectsRequiredMetricNobodyProvidesAmongSeveralCollectors(): void
+    {
+        $a = $this->createCollector('a', [], ['metricA']);
+        $b = $this->createCollector('b', ['metricA', 'metricC.avg'], ['metricB']);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Global collector "b" requires metric "metricC.avg", but no collector provides it');
+
+        $this->sorter->sort([$b, $a], []);
     }
 
     /**
