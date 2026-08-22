@@ -6,11 +6,13 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\ChannelPresentationView;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
@@ -22,13 +24,22 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * service and injects it into {@see ChannelUniverse}. Also builds the rule
  * name => documentation page map and injects it into
  * {@see ChannelPresentationView}, the composing service that joins a
- * channel's producer to that producer's own description and declared page.
+ * channel's producer to that producer's own description and declared page,
+ * and the rule name => remediation minutes map into
+ * {@see RemediationTimeRegistry}, which no longer keeps that fact itself.
  *
- * Four facts are read off each rule class by reflection, none of which
+ * Five facts are read off each rule class by reflection, none of which
  * instantiates it: its name ({@see RuleNameReader}), the channels it declares
  * ({@see ChannelDeclarationReader}), whether it declares support for
- * `@qmx-threshold` ({@see ThresholdOverrideSupportReader}), and its declared
- * documentation page ({@see RuleDocsPageReader}). Mirrors
+ * `@qmx-threshold` ({@see ThresholdOverrideSupportReader}), its declared
+ * documentation page ({@see RuleDocsPageReader}), and its declared
+ * remediation estimate ({@see RuleRemediationMinutesReader}). `$minutesByRule`
+ * additionally inherits an entry for every channel's own `ruleName` half, not
+ * only the producer's — the architecture and annotation diagnostics are
+ * emitted under their own identity (`architecture.coverage`,
+ * `annotation.unused-directive`, …), distinct from the rule class's own
+ * `NAME`, and there is no separate class for
+ * {@see RuleRemediationMinutesReader} to read a constant off. Mirrors
  * {@see RuleRegistryCompilerPass}, which walks the same `qmx.rule`-tagged
  * services and likewise hands the container a finished map.
  *
@@ -71,6 +82,8 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         $producerByViolationCode = [];
         /** @var array<string, string> $docsPageByRule */
         $docsPageByRule = [];
+        /** @var array<string, int> $minutesByRule */
+        $minutesByRule = [];
 
         foreach ($container->findTaggedServiceIds(RuleRegistryCompilerPass::TAG) as $id => $tags) {
             $class = $container->getDefinition($id)->getClass();
@@ -84,6 +97,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
             $producerRuleName = RuleNameReader::read($class);
             $thresholdOverrideSupport[$producerRuleName] = ThresholdOverrideSupportReader::read($class);
             $docsPageByRule[$producerRuleName] = RuleDocsPageReader::read($class);
+            $minutesByRule[$producerRuleName] = RuleRemediationMinutesReader::read($class);
 
             foreach (ChannelDeclarationReader::read($class) as $key => $declaration) {
                 if (isset($declarations[$key])) {
@@ -94,7 +108,18 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                     ));
                 }
 
-                $violationCode = ViolationChannel::fromKey($key)->violationCode;
+                $channel = ViolationChannel::fromKey($key);
+                $violationCode = $channel->violationCode;
+
+                // A channel's own ruleName half does not always equal its producer's
+                // NAME: the architecture and annotation diagnostics are emitted under
+                // their own identity (e.g. "architecture.coverage") by a producer whose
+                // own name is different ("architecture.layer-violation"). Every such
+                // identity a Violation can carry must resolve to a remediation
+                // estimate, so it inherits the declaring rule's minutes here rather
+                // than needing its own constant on a class that does not exist.
+                $minutesByRule[$channel->ruleName] ??= $minutesByRule[$producerRuleName];
+
                 if (isset($producerByViolationCode[$violationCode])) {
                     throw new LogicException(\sprintf(
                         'Violation code "%s" is declared by two producers ("%s" and "%s"). A code names exactly one'
@@ -120,6 +145,11 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         if ($container->hasDefinition(ChannelPresentationView::class)) {
             $container->getDefinition(ChannelPresentationView::class)
                 ->setArgument('$docsPageByRule', $docsPageByRule);
+        }
+
+        if ($container->hasDefinition(RemediationTimeRegistry::class)) {
+            $container->getDefinition(RemediationTimeRegistry::class)
+                ->setArgument('$minutesByRule', $minutesByRule);
         }
     }
 

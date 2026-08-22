@@ -31,6 +31,8 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresentation;
 
 /**
@@ -128,7 +130,7 @@ final class JsonShapePreservationTest extends TestCase
         $healthScoreDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
         $worstClassDrillDown = new WorstClassDrillDown($definitionCatalog);
         $sanitizer = new JsonSanitizer();
-        $registry = new RemediationTimeRegistry();
+        $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $formatter = new JsonFormatter(
             new DebtCalculator($registry),
             new JsonHealthSection(new HealthScoreResolver($healthScoreDrillDown), $sanitizer),

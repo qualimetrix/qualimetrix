@@ -346,70 +346,92 @@ only then is it committed together with P3's fix. What is verified is that the
 test discriminates — the artefact is the recorded failure, not the commit
 order.
 
-**P5 — `RemediationTimeRegistry`: delete the copy, and stop scaling what cannot
-be scaled.**
-Files: `src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php`,
-its DI registration in `OutputConfigurator` (**overlaps P3**), manifest +
-generated artefacts (**overlaps P2/P3**), and the 17 test files that construct
-the registry directly.
+**P5 — Remediation time: the minutes move to the rules, the registry keeps the
+model.**
+Files: every rule class (42) — one constant each; a reader beside
+`RuleNameReader`/`RuleDocsPageReader`;
+`src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php`;
+`src/Analysis/Finding/Contract/ChannelDeclaration.php`; DI registration in
+`OutputConfigurator`; the 21 test files that construct the registry directly;
+a new cross-view page under `website/docs/reference/`; manifest + regeneration;
+`CHANGELOG.md`.
 
-This package has now been designed three times, and the two discarded shapes are
-recorded because each was refuted by evidence a reader would otherwise have to
-re-derive.
+This package was designed **four** times. The first three shapes and their
+refutations are kept below because each is the obvious next idea and each is
+wrong. The fourth came from asking a question the first three never asked:
+*whose fact is a remediation estimate?*
 
 *Discarded shape 1 — "read the direction from `ChannelDeclaration`".* Refuted by
-`coupling.class-rank`: declared `occurrence`, so the declaration is forbidden to
-carry a direction, yet it emits both a `metricValue` and a threshold and is
-therefore scaled today.
+`coupling.class-rank`: declared `occurrence`, so forbidden a direction, yet it
+emits a `metricValue` and a threshold and is scaled today.
 
 *Discarded shape 2 — "keep the table as an audited copy, with a test asserting
-it agrees with the declarations".* Refuted twice over. The stated justification
-was that `ChannelDeclaration.direction` answers a cross-run question while debt
-scaling asks a within-run one; `WorseDirection`'s own docblock refutes that —
-"the direction in which a magnitude gets worse" is run-neutral, and the enum
-merely *hosts* the two cross-run seam formulas. And the guard itself was
+it agrees with the declarations".* Refuted twice. Its stated justification was
+that `ChannelDeclaration.direction` answers a cross-run question while debt
+scaling asks a within-run one; `WorseDirection`'s docblock refutes that — "the
+direction in which a magnitude gets worse" is run-neutral. And the guard was
 worthless: on every magnitude channel the table and the declarations agree
-bit-for-bit today, so the agreement test would be green from birth on the very
-case it was written for.
+bit-for-bit today, so the agreement test is green from birth on the very case
+it was written for.
 
-*The actual obstacle*, once both are cleared away, is narrow and structural:
-`ChannelDeclaration` welds shape and direction together — a direction is
-permitted exactly when the shape is `magnitude` — and `coupling.class-rank`
-needs one without the other.
+*Discarded shape 3 — "inject the declaration registry and split the class".*
+Implemented, and it worked, but it dropped `Prioritization\Debt`'s namespace
+cohesion below threshold: `getBaseMinutes()` reads only the static table,
+`overshootRatio()` reads only the injected registry, so the class acquired two
+field-usage groups. The proposed remedy was to split it into a catalog and an
+estimator. That treats the symptom.
 
-**Decision: it should not need one.** ClassRank is a project-wide normalised
-PageRank whose threshold is rescaled per class count; multiplying remediation
-minutes by `rank / threshold` is justified by nothing except both numbers being
-in scope at the call site. It stops being scaled and takes the flat base time.
-With that, the original idea becomes correct: `INVERTED_RULES` is **deleted**,
-not audited, and direction is read from
-`ChannelDeclarationRegistryInterface::declarationFor()` — the same registry
-`FindingProjector` already consumes. The `computed.health` heuristic is replaced
-by `ComputedMetricDefinition::$inverted`, and the literal `'computed.health'` at
-the call site by the family constant its owner already publishes.
+**The actual finding: `MINUTES_BY_RULE` is not Debt's fact.** Co-change says so
+— every commit that added a rule edited this table in another capability, in the
+same commit (`43341581` added three entries alongside the God Class / Data Class
+/ Constructor Over-injection rules; `f77e770d` added the `security.*` entries).
+The table even carried `code-smell.god-class` and `code-smell.data-class` and
+had to be renamed later when those rules moved to `design.*` — the same remote
+copy drifting behind its subject that this plan exists to remove. Every other
+per-rule fact — `NAME`, description, category, `DOCS_PAGE`,
+`channelDeclarations()`, options class, CLI aliases, default thresholds — is
+declared by the rule.
 
-The policy is **fail-closed**, which is what makes it survive a rule nobody has
-written yet: a channel whose declaration carries no direction is not scaled.
-Today that is `coupling.class-rank` alone; the fourteen other `occurrence`
-channels in `MINUTES_BY_RULE` emit no threshold and are already unscaled, so
-nothing else moves. A future `occurrence` channel that starts emitting a
-threshold inherits "not scaled" rather than silently inheriting
-higher-is-worse.
+**Decision: the minutes are declared by each rule**, by the same
+reflection-readable constant idiom P1 established. The registry keeps only the
+model: base time scaled by `ln(overshoot)`, direction read from the channel's
+declaration, **fail-closed** — a declaration carrying no direction is not
+scaled. Today that is `coupling.class-rank` alone (verified: the other fourteen
+`occurrence` channels emit no threshold); its `occurrence` declaration is
+correct and argued at its emission point and is not touched. The
+`computed.health` heuristic is replaced by `ComputedMetricDefinition::$inverted`,
+reached through the declaration registry, and the literal `'computed.health'` by
+the family constant its owner publishes.
+
+Two problems dissolve rather than being managed. The class loses its static
+table, so it has one field-usage group again and needs no split. And the six
+rules that silently took `DEFAULT_MINUTES` stop being a category to assert in a
+test: every rule declares its own value, and the "declared on its own class, not
+inherited" guard from P1 makes omission impossible instead of merely reported.
+
+**The cost this pays, stated rather than discovered later:** calibration is
+comparative — a central table let a reader ask whether SQL injection is really
+four times a debug statement. Forty-two scattered constants do not. The project
+already answers this exact trade-off for default thresholds: they live in each
+rule's Options class, and `website/docs/reference/default-thresholds.md` gives
+the cross-view. The same shape applies here, with one addition this plan
+insists on: the cross-view page is **guarded**, its numbers asserted against the
+declared constants, so it cannot become the fifth hand-kept copy.
 
 **Not in this package: `design.data-class`.** It is flat because `DataClassRule`
-emits no `threshold` at all, which no change here touches. Whether that rule
-should report the threshold it compares against is a real question about that
-rule, and folding it in here would let a rule fix ride along inside a debt-model
-change.
+emits no `threshold` at all, which nothing here touches. Whether that rule
+should report the threshold it compares against is a question about that rule.
 
-DoD: `INVERTED_RULES` and the `computed.health` heuristic are gone.
-A test asserts the fail-closed policy directly — a synthetic violation on a
+DoD: `MINUTES_BY_RULE`, `INVERTED_RULES`, `isInvertedComputedMetric()` and the
+`'computed.health'` literal are gone. Every registered rule declares its
+remediation minutes on its own class; the guard is shown to fail on an inherited
+value. A test asserts the fail-closed policy directly — a violation on a
 directionless channel is not scaled — rather than asserting agreement between
-two tables. The omission list is read from `MINUTES_BY_RULE`'s keys against the
-registered rule names: five rules carry an explicit `15` identical to
-`DEFAULT_MINUTES`, so the public `getBaseMinutes()` cannot tell an omission from
-a deliberate entry. `CHANGELOG.md` records that ClassRank debt is no longer
-scaled, since reported totals change.
+two tables. The cross-view page's numbers are asserted against the constants.
+`Prioritization\Debt` namespace cohesion is back above threshold **without** a
+baseline entry or an exclusion. `CHANGELOG.md` records both user-visible
+changes: ClassRank debt is no longer scaled, and remediation minutes are now
+declared per rule.
 
 **P6 — The hand-spelled codes and the docs.**
 Files: `src/Reporting/Template/dev.html`,

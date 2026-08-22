@@ -4,19 +4,26 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(RemediationTimeRegistry::class)]
 final class RemediationTimeRegistryTest extends TestCase
@@ -25,7 +32,10 @@ final class RemediationTimeRegistryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->registry = new RemediationTimeRegistry();
+        $this->registry = new RemediationTimeRegistry(
+            StubChannelDeclarationRegistry::alwaysHigherMagnitude(),
+            StubRemediationMinutes::withRealValues(),
+        );
     }
 
     /**
@@ -33,58 +43,42 @@ final class RemediationTimeRegistryTest extends TestCase
      */
     public static function knownRulesProvider(): iterable
     {
-        yield 'complexity.cyclomatic' => ['complexity.cyclomatic', 30];
-        yield 'complexity.cognitive' => ['complexity.cognitive', 30];
-        yield 'complexity.npath' => ['complexity.npath', 30];
-        yield 'complexity.wmc' => ['complexity.wmc', 30];
-        yield 'coupling.cbo' => ['coupling.cbo', 45];
-        yield 'coupling.class-rank' => ['coupling.class-rank', 30];
-        yield 'coupling.instability' => ['coupling.instability', 30];
-        yield 'coupling.distance' => ['coupling.distance', 30];
-        yield 'design.inheritance' => ['design.inheritance', 30];
-        yield 'design.noc' => ['design.noc', 20];
-        yield 'design.type-coverage' => ['design.type-coverage', 15];
-        yield 'cohesion.lcom' => ['cohesion.lcom', 45];
-        yield 'size.class-count' => ['size.class-count', 30];
-        yield 'size.method-count' => ['size.method-count', 20];
-        yield 'size.property-count' => ['size.property-count', 15];
-        yield 'maintainability.index' => ['maintainability.index', 60];
-        yield 'code-smell.boolean-argument' => ['code-smell.boolean-argument', 10];
-        yield 'code-smell.debug-code' => ['code-smell.debug-code', 5];
-        yield 'code-smell.empty-catch' => ['code-smell.empty-catch', 10];
-        yield 'code-smell.eval' => ['code-smell.eval', 15];
-        yield 'code-smell.exit' => ['code-smell.exit', 10];
-        yield 'code-smell.goto' => ['code-smell.goto', 15];
-        yield 'code-smell.superglobals' => ['code-smell.superglobals', 15];
-        yield 'code-smell.error-suppression' => ['code-smell.error-suppression', 10];
-        yield 'code-smell.count-in-loop' => ['code-smell.count-in-loop', 10];
-        yield 'code-smell.long-parameter-list' => ['code-smell.long-parameter-list', 20];
-        yield 'code-smell.unreachable-code' => ['code-smell.unreachable-code', 10];
-        yield 'security.hardcoded-credentials' => ['security.hardcoded-credentials', 30];
-        yield 'security.sql-injection' => ['security.sql-injection', 60];
-        yield 'security.xss' => ['security.xss', 45];
-        yield 'security.command-injection' => ['security.command-injection', 60];
-        yield 'security.sensitive-parameter' => ['security.sensitive-parameter', 10];
-        yield 'architecture.circular-dependency' => ['architecture.circular-dependency', 120];
+        foreach (StubRemediationMinutes::withRealValues() as $ruleName => $minutes) {
+            yield $ruleName => [$ruleName, $minutes];
+        }
     }
 
     #[Test]
     #[DataProvider('knownRulesProvider')]
-    public function itReturnsCorrectBaseMinutesForKnownRule(string $ruleName, int $expectedMinutes): void
+    public function itReturnsTheInjectedBaseMinutesForKnownRule(string $ruleName, int $expectedMinutes): void
     {
         self::assertSame($expectedMinutes, $this->registry->getBaseMinutes($ruleName));
     }
 
+    /**
+     * No fallback remains: `MINUTES_BY_RULE` and `DEFAULT_MINUTES` are gone,
+     * and every registered rule declares its own minutes on its own class
+     * (see {@see RuleRemediationMinutesCoverageTest}). A name absent from the
+     * injected map is not a legitimately unknown rule to silently default
+     * for — it means a violation carries a rule name no rule declared.
+     */
     #[Test]
-    public function itReturnsDefaultForUnknownRule(): void
+    public function itThrowsForARuleNameNotInTheInjectedMap(): void
     {
-        self::assertSame(15, $this->registry->getBaseMinutes('unknown.rule'));
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('No remediation minutes declared for rule "unknown.rule"');
+
+        $this->registry->getBaseMinutes('unknown.rule');
     }
 
     #[Test]
-    public function itReturnsDefaultForAnotherUnknownRule(): void
+    public function itThrowsWhenTheInjectedMapIsEmpty(): void
     {
-        self::assertSame(15, $this->registry->getBaseMinutes('custom.my-rule'));
+        $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude());
+
+        self::expectException(LogicException::class);
+
+        $registry->getBaseMinutes('complexity.cyclomatic');
     }
 
     #[Test]
@@ -150,10 +144,20 @@ final class RemediationTimeRegistryTest extends TestCase
     #[Test]
     public function itHandlesInvertedRuleForMaintainabilityIndex(): void
     {
+        // Direction is read from the declaration, not from a private copy —
+        // maintainability.index is declared Lower (a magnitude decreasing
+        // below its threshold is worse), so the overshoot ratio flips.
+        $registry = new RemediationTimeRegistry(
+            new StubChannelDeclarationRegistry([
+                'maintainability.index#maintainability.index' => ChannelDeclaration::magnitude(WorseDirection::Lower),
+            ]),
+            StubRemediationMinutes::withRealValues(),
+        );
+
         // MI=30, threshold=50 (inverted): ratio=50/30=1.667, ln(1.667)=0.511, max(1, 0.511)=1 → 60*1=60
         $violation = $this->createViolation('maintainability.index', metricValue: 30, threshold: 50);
 
-        $minutes = $this->registry->getMinutesForViolation($violation);
+        $minutes = $registry->getMinutesForViolation($violation);
 
         self::assertSame(60, $minutes);
     }
@@ -161,21 +165,41 @@ final class RemediationTimeRegistryTest extends TestCase
     #[Test]
     public function itHandlesInvertedRuleForTypeCoverage(): void
     {
+        $registry = new RemediationTimeRegistry(
+            new StubChannelDeclarationRegistry([
+                'design.type-coverage#design.type-coverage' => ChannelDeclaration::magnitude(WorseDirection::Lower),
+            ]),
+            StubRemediationMinutes::withRealValues(),
+        );
+
         // Type coverage=40, threshold=80 (inverted): ratio=80/40=2, ln(2)=0.693, max(1, 0.693)=1 → 15*1=15
         $violation = $this->createViolation('design.type-coverage', metricValue: 40, threshold: 80);
 
-        $minutes = $this->registry->getMinutesForViolation($violation);
+        $minutes = $registry->getMinutesForViolation($violation);
 
         self::assertSame(15, $minutes);
     }
 
     #[Test]
-    public function itHandlesComputedHealthWithInvertedMetric(): void
+    public function itHandlesComputedHealthWithInvertedMetricReadFromDefinition(): void
     {
-        // health score=30 (below threshold=50): ratio=50/30=1.667, ln=0.511, max(1, 0.511)=1 → 15*1=15
-        $violation = $this->createViolation('computed.health', metricValue: 30, threshold: 50);
+        // The computed-metric family resolves its direction from
+        // ComputedMetricDefinition::$inverted, not from a metricValue <
+        // threshold heuristic — modelled here by declaring the family's
+        // channel Lower directly, as the real registry would for an
+        // inverted definition.
+        $registry = new RemediationTimeRegistry(
+            new StubChannelDeclarationRegistry([
+                ComputedMetricChannelFamily::PRODUCER_RULE_NAME . '#' . ComputedMetricChannelFamily::PRODUCER_RULE_NAME
+                    => ChannelDeclaration::magnitude(WorseDirection::Lower),
+            ]),
+            StubRemediationMinutes::withRealValues(),
+        );
 
-        $minutes = $this->registry->getMinutesForViolation($violation);
+        // health score=30 (below threshold=50): ratio=50/30=1.667, ln=0.511, max(1, 0.511)=1 → 15*1=15
+        $violation = $this->createViolation(ComputedMetricChannelFamily::PRODUCER_RULE_NAME, metricValue: 30, threshold: 50);
+
+        $minutes = $registry->getMinutesForViolation($violation);
 
         self::assertSame(15, $minutes);
     }
@@ -183,10 +207,18 @@ final class RemediationTimeRegistryTest extends TestCase
     #[Test]
     public function itHandlesComputedHealthWithNormalMetric(): void
     {
-        // Normal computed metric value > threshold: ratio=100/50=2, ln(2)=0.693, max(1, 0.693)=1 → 15*1=15
-        $violation = $this->createViolation('computed.health', metricValue: 100, threshold: 50);
+        $registry = new RemediationTimeRegistry(
+            new StubChannelDeclarationRegistry([
+                ComputedMetricChannelFamily::PRODUCER_RULE_NAME . '#' . ComputedMetricChannelFamily::PRODUCER_RULE_NAME
+                    => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            ]),
+            StubRemediationMinutes::withRealValues(),
+        );
 
-        $minutes = $this->registry->getMinutesForViolation($violation);
+        // Normal computed metric value > threshold: ratio=100/50=2, ln(2)=0.693, max(1, 0.693)=1 → 15*1=15
+        $violation = $this->createViolation(ComputedMetricChannelFamily::PRODUCER_RULE_NAME, metricValue: 100, threshold: 50);
+
+        $minutes = $registry->getMinutesForViolation($violation);
 
         self::assertSame(15, $minutes);
     }
@@ -225,6 +257,73 @@ final class RemediationTimeRegistryTest extends TestCase
         $minutes = $this->registry->getMinutesForViolation($violation);
 
         self::assertSame(5, $minutes);
+    }
+
+    /**
+     * The fail-closed policy, asserted directly against a synthetic channel
+     * whose declaration carries no direction — not by comparing two tables
+     * that would agree from birth. A channel this happens to today is
+     * `coupling.class-rank` (see the dedicated test below); this one proves
+     * the policy itself, independent of any specific rule.
+     */
+    #[Test]
+    public function itDoesNotScaleAViolationOnAChannelWhoseDeclarationCarriesNoDirection(): void
+    {
+        $registry = new RemediationTimeRegistry(
+            new StubChannelDeclarationRegistry([
+                'code-smell.goto#code-smell.goto' => ChannelDeclaration::occurrence(),
+            ]),
+            StubRemediationMinutes::withRealValues(),
+        );
+
+        // Base for code-smell.goto is 15. A huge overshoot would scale to
+        // far more than 15 if direction were assumed rather than read.
+        $violation = $this->createViolation('code-smell.goto', metricValue: 1000, threshold: 1);
+
+        self::assertSame(15, $registry->getMinutesForViolation($violation));
+    }
+
+    /**
+     * Same policy, on an unregistered channel entirely (no static
+     * declaration and not a resolvable computed metric) —
+     * {@see ChannelDeclarationRegistryInterface::declarationFor()} returns
+     * `null`, which must be treated identically to an `occurrence`
+     * declaration: not scaled.
+     */
+    #[Test]
+    public function itDoesNotScaleAViolationOnAChannelWithNoDeclarationAtAll(): void
+    {
+        $registry = new RemediationTimeRegistry(
+            new StubChannelDeclarationRegistry(),
+            StubRemediationMinutes::withRealValues(),
+        );
+
+        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 1000, threshold: 1);
+
+        self::assertSame(30, $registry->getMinutesForViolation($violation));
+    }
+
+    /**
+     * `coupling.class-rank` takes the flat base time: its declaration is
+     * `occurrence` (a project-wide normalised PageRank rescaled per class
+     * count is not comparable across runs — see
+     * `ClassRankRule::channelDeclarations()`), so it is one of the channels
+     * the fail-closed policy above applies to, even though it emits both a
+     * `metricValue` and a `threshold` today.
+     */
+    #[Test]
+    public function itTakesTheFlatBaseTimeForClassRankRegardlessOfMetricAndThreshold(): void
+    {
+        $registry = new RemediationTimeRegistry(
+            new StubChannelDeclarationRegistry([
+                'coupling.class-rank#coupling.class-rank' => ChannelDeclaration::occurrence(),
+            ]),
+            StubRemediationMinutes::withRealValues(),
+        );
+
+        $violation = $this->createViolation('coupling.class-rank', metricValue: 0.9, threshold: 0.01);
+
+        self::assertSame(30, $registry->getMinutesForViolation($violation));
     }
 
     private function createViolation(

@@ -52,6 +52,7 @@ final class DistanceRule extends AbstractRule
     public const string NAME = 'coupling.distance';
     public const string DOCS_PAGE = 'rules/coupling.md';
 
+    public const int REMEDIATION_MINUTES = 30;
     public function __construct(
         RuleOptionsInterface $options,
         private readonly ?ProjectNamespaceResolverInterface $namespaceResolver = null,

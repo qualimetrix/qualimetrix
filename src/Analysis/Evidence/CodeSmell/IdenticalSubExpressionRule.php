@@ -32,6 +32,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
     public const string NAME = 'code-smell.identical-subexpression';
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
+    public const int REMEDIATION_MINUTES = 15;
     /**
      * Finding types with corresponding violation messages.
      * Keys must match the types used by IdenticalSubExpressionCollector.

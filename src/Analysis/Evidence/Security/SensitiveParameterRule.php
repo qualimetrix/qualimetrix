@@ -29,6 +29,7 @@ final class SensitiveParameterRule extends AbstractRule
     public const string NAME = 'security.sensitive-parameter';
     public const string DOCS_PAGE = 'rules/security.md';
 
+    public const int REMEDIATION_MINUTES = 10;
     public function getName(): string
     {
         return self::NAME;

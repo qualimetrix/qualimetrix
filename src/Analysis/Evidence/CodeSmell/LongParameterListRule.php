@@ -37,6 +37,7 @@ final class LongParameterListRule extends AbstractRule
     public const string NAME = 'code-smell.long-parameter-list';
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
+    public const int REMEDIATION_MINUTES = 20;
     public function getName(): string
     {
         return self::NAME;

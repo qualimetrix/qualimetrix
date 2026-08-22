@@ -17,8 +17,15 @@ use Qualimetrix\Core\Symbol\SymbolType;
 /**
  * Base class for security pattern rules.
  *
- * Provides common functionality for analyzing security pattern metrics
- * from SecurityPatternCollector.
+ * Concrete rules are expected to define their metadata via typed class
+ * constants (NAME, DOCS_PAGE, REMEDIATION_MINUTES, DESCRIPTION, PATTERN_TYPE,
+ * MESSAGE_TEMPLATE, RECOMMENDATION), read here via late static binding —
+ * mirrors {@see \Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule},
+ * which keeps concrete code-smell rules free of the same boilerplate hook
+ * methods for the same reason: three near-identical subclasses that only
+ * override a handful of methods returning a literal each were themselves
+ * a duplication finding once a fourth per-rule constant
+ * (`REMEDIATION_MINUTES`) tipped them over the detector's threshold.
  */
 abstract class AbstractSecurityPatternRule extends AbstractRule
 {
@@ -43,35 +50,33 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
      */
     public const string DOCS_PAGE = '';
 
+    /**
+     * Empty (zero) here for the same reason as {@see DOCS_PAGE}: it forces
+     * every concrete subclass to declare its own value, and
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader}
+     * rejects this inherited placeholder via `getDeclaringClass()` rather
+     * than silently accepting it.
+     */
+    public const int REMEDIATION_MINUTES = 0;
+
+    protected const string DESCRIPTION = '';
+    protected const string PATTERN_TYPE = '';
+    protected const string MESSAGE_TEMPLATE = '';
+    protected const ?string RECOMMENDATION = null;
+
+    public function getName(): string
+    {
+        return static::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return static::DESCRIPTION;
+    }
+
     public function getCategory(): RuleCategory
     {
         return RuleCategory::Security;
-    }
-
-    /**
-     * Returns the security pattern type this rule checks.
-     */
-    abstract protected function getPatternType(): string;
-
-    /**
-     * Returns severity for this pattern.
-     */
-    abstract protected function getSeverity(): Severity;
-
-    /**
-     * Returns the violation message template.
-     */
-    abstract protected function getMessageTemplate(): string;
-
-    /**
-     * Returns the actionable recommendation for this security pattern.
-     *
-     * While message describes what is wrong, recommendation tells the user what to do.
-     * Subclasses should override to provide a specific recommendation.
-     */
-    protected function getRecommendation(): ?string
-    {
-        return null;
     }
 
     /**
@@ -79,10 +84,8 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
      */
     public function requires(): array
     {
-        $type = $this->getPatternType();
-
         return [
-            "security.{$type}",
+            'security.' . static::PATTERN_TYPE,
         ];
     }
 
@@ -97,10 +100,10 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
     /**
      * All three concrete subclasses emit their channel through the loop in
      * {@see analyze()} below with a fixed `1.0` occurrence marker projected
-     * by {@see SecurityPatternFinding} and a fixed `getSeverity()` constant — never a
-     * measured magnitude — so `occurrence` is the correct shape uniformly.
-     * `static::NAME` resolves per concrete subclass via late static
-     * binding; {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader} reads
+     * by {@see SecurityPatternFinding} and a fixed {@see Severity::Error} —
+     * never a measured magnitude — so `occurrence` is the correct shape
+     * uniformly. `static::NAME` resolves per concrete subclass via late
+     * static binding; {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader} reads
      * this method by reflection on the concrete rule class, so the binding
      * target is correct without any special-casing on the reader's side.
      *
@@ -123,7 +126,7 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
         }
 
         $violations = [];
-        $type = $this->getPatternType();
+        $type = static::PATTERN_TYPE;
 
         foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
@@ -137,16 +140,15 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
                 $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
                 $violations[] = SecurityPatternFinding::fromEntry($entry, $file)->toViolation(
                     $fileInfo->symbolPath,
-                    $this->getName(),
+                    static::NAME,
                     $type,
-                    $this->getSeverity(),
-                    $this->getMessageTemplate(),
-                    $this->getRecommendation(),
+                    Severity::Error,
+                    static::MESSAGE_TEMPLATE,
+                    static::RECOMMENDATION,
                 );
             }
         }
 
         return $violations;
     }
-
 }

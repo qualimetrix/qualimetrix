@@ -2490,6 +2490,8 @@ function documentationDisposition(string $path): array
         'website/docs/getting-started/configuration.ru.md' => ['Analysis.Run', 'P3'],
         'website/docs/reference/health-scores.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
         'website/docs/reference/health-scores.ru.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
+        'website/docs/reference/remediation-time.md' => ['Analysis.Evidence.Prioritization', 'P5'],
+        'website/docs/reference/remediation-time.ru.md' => ['Analysis.Evidence.Prioritization', 'P5'],
         'website/docs/rules/duplication.md' => ['Analysis.Evidence.Duplication', 'P1'],
         'website/docs/rules/duplication.ru.md' => ['Analysis.Evidence.Duplication', 'P1'],
         'website/docs/rules/architecture.md' => ['Architecture.Governance', 'P2'],

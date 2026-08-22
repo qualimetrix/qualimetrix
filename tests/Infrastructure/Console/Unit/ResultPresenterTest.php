@@ -39,6 +39,7 @@ use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\Report;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -157,7 +158,7 @@ final class ResultPresenterTest extends TestCase
         $session = new ProfileSession();
         $definitions = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $definitions->method('all')->willReturn([]);
-        $remediation = new RemediationTimeRegistry();
+        $remediation = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
 
         return new ResultPresenter(
             $registry,

@@ -20,6 +20,8 @@ use Qualimetrix\Reporting\Formatter\TextFormatter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(TextFormatter::class)]
 final class TextFormatterTest extends TestCase
@@ -29,7 +31,7 @@ final class TextFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
         $this->formatter = new TextFormatter($debtCalculator, new DetailedViolationRenderer($debtCalculator));
         $this->plainContext = new FormatterContext(useColor: false);
     }

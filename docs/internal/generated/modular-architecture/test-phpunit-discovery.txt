@@ -2796,7 +2796,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtCalculatorTest::itCombinesScaledAndFlatDebt
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtCalculatorTest::itExcludesViolationWithNoFileFromPerFile
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtCalculatorTest::itScalesDebtForViolationWithMetricAndThreshold
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtCalculatorTest::itUsesDefaultDebtForUnknownRule
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtCalculatorTest::itThrowsForARuleNameNoRuleDeclares
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itFormatsMinutesStatically"0 minutes"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itFormatsMinutesStatically"1 hour"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itFormatsMinutesStatically"1d 2h 15min"
@@ -2812,50 +2812,85 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itFormatsTotalAsZeroMinutes
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itFormatsTotalByDelegatingToFormatMinutes
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itStoresConstructorProperties
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itDoesNotScaleAViolationOnAChannelWhoseDeclarationCarriesNoDirection
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itDoesNotScaleAViolationOnAChannelWithNoDeclarationAtAll
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itGivesBaseDebtForMinorCcnOvershoot
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itGivesBaseDebtForModerateCcnOvershoot
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itGivesBaseMinutesForMinorOvershootOnSmallRule
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itGivesLargeDebtForExtremeOvershoot
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itHandlesComputedHealthWithInvertedMetric
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itHandlesComputedHealthWithInvertedMetricReadFromDefinition
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itHandlesComputedHealthWithNormalMetric
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itHandlesInvertedRuleForMaintainabilityIndex
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itHandlesInvertedRuleForTypeCoverage
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"architecture.circular-dependency"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.boolean-argument"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.count-in-loop"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.debug-code"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.empty-catch"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.error-suppression"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.eval"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.exit"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.goto"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.long-parameter-list"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.superglobals"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.unreachable-code"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"cohesion.lcom"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"complexity.cognitive"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"complexity.cyclomatic"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"complexity.npath"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"complexity.wmc"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"coupling.cbo"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"coupling.class-rank"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"coupling.distance"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"coupling.instability"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"design.inheritance"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"design.noc"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"design.type-coverage"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"maintainability.index"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"security.command-injection"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"security.hardcoded-credentials"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"security.sensitive-parameter"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"security.sql-injection"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"security.xss"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"size.class-count"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"size.method-count"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"size.property-count"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsDefaultForAnotherUnknownRule
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsDefaultForUnknownRule
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"annotation.directive"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"annotation.invalid-threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"annotation.unresolved-directive"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"annotation.unsupported-threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"annotation.unused-directive"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.circular"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.circular-dependency"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.coverage"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.empty-template"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.layer-violation"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.pending-layer-matched"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.potential-shadow"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.unassigned-class"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.unreachable-layer"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.boolean-argument"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.constructor-overinjection"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.count-in-loop"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.debug-code"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.empty-catch"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.error-suppression"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.eval"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.exit"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.goto"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.identical-subexpression"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.long-parameter-list"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.superglobals"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.unreachable-code"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.unused-private"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"cohesion.lcom"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity.cognitive"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity.cyclomatic"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity.npath"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity.wmc"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"computed.health"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"coupling.cbo"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"coupling.class-rank"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"coupling.distance"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"coupling.instability"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"cyclomatic-complexity"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.data-class"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.god-class"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.inheritance"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.noc"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.type-coverage"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"duplication.code-duplication"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"file-size"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"fixture.rule"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"lcom"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"maintainability.index"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"namespace-size"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"r"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"security.command-injection"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"security.hardcoded-credentials"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"security.sensitive-parameter"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"security.sql-injection"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"security.xss"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"size.class-count"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"size.loc"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"size.method-count"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"size.namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"size.property-count"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"test"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"test-rule"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itScalesDebtAboveBaseForLargeOvershoot
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itTakesTheFlatBaseTimeForClassRankRegardlessOfMetricAndThreshold
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itThrowsForARuleNameNotInTheInjectedMap
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itThrowsWhenTheInjectedMapIsEmpty
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itUsesBaseMinutesForViolationWithoutMetricValue
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itUsesBaseMinutesForViolationWithoutThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itUsesBaseMinutesForZeroMetricValue
@@ -3487,6 +3522,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptCamelSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptKebabSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itStillWarnsAboutAGenuinelyUnknownOption
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRegisteredRuleDeclaresItsOwnRemediationMinutes
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRulesRemediationMinutesMatchTheReferencePage
  - Qualimetrix\Tests\Analysis\Finding\Unit\AbstractRuleSubjectControlTest::itPassesTheMetricSubjectToTheThresholdResolutionSeam
  - Qualimetrix\Tests\Analysis\Finding\Unit\AcceptedLevelTest::itCarriesOnlyACountOnAnOccurrenceChannel
  - Qualimetrix\Tests\Analysis\Finding\Unit\AcceptedLevelTest::itCarriesTheAcceptedMagnitudesOfAMagnitudeChannel
@@ -3510,6 +3547,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itIgnoresAnOverrideThatOnlyPrefixesTheRuleName
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itMethodLevelOverrideTakesPriorityOverClassLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itAttributesDiagnosticChannelsToTheirProducerRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itAttributesRemediationMinutesToADiagnosticsOwnChannelName
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itCarriesTheDeclaredThresholdOverrideSupportRatherThanInferringIt
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itCollectsDeclarationsFromEveryTaggedRuleIntoTheRegistry
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itDoesNothingWhenTheRegistryIsNotRegistered
@@ -3538,6 +3576,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAnOccurrenceDeclarationViaTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAMagnitudeDeclarationWithoutADirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAnOccurrenceDeclarationCarryingADirection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseFalseForAHigherDirection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseNullForAnOccurrenceDeclaration
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseTrueForALowerDirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itFailsLoudWhenTheProducingRuleHasNoDeclaredDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itJoinsTheProducersDescriptionAndDeclaredDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullForACodeNoChannelCarries
@@ -3815,6 +3856,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RulePathExclusionProviderTest::itMatchesGlobPattern
  - Qualimetrix\Tests\Analysis\Finding\Unit\RulePathExclusionProviderTest::itMatchesPathPrefix
  - Qualimetrix\Tests\Analysis\Finding\Unit\RulePathExclusionProviderTest::itReturnsFalseWhenNoExclusions
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itReadsTheRemediationMinutesConstantWithoutInstantiation
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsAClassThatCannotBeLoaded
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsANegativeRemediationMinutesConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsANonIntRemediationMinutesConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsARemediationMinutesConstantOnlyInheritedFromAnAbstractAncestor
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsAZeroRemediationMinutesConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsRulesWithoutARemediationMinutesConstant
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itKeepsAProducerActiveWhenOnlyOneOfItsChannelsIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itLetsDisabledSelectorsOverrideOnlySelectors
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itRecognizesRegisteredChannelSelectorsWithoutTreatingThemAsRuleOptionNames

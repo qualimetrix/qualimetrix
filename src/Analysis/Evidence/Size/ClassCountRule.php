@@ -32,6 +32,7 @@ final class ClassCountRule extends AbstractRule
     public const string NAME = 'size.class-count';
     public const string DOCS_PAGE = 'rules/size.md';
 
+    public const int REMEDIATION_MINUTES = 30;
     public function getName(): string
     {
         return self::NAME;

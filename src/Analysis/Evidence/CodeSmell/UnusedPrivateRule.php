@@ -36,6 +36,7 @@ final class UnusedPrivateRule extends AbstractRule
     public const string NAME = 'code-smell.unused-private';
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
+    public const int REMEDIATION_MINUTES = 15;
     private const ENTRY_KEYS = [
         MetricName::STRUCTURE_UNUSED_PRIVATE_METHOD => 'Unused private method',
         MetricName::STRUCTURE_UNUSED_PRIVATE_PROPERTY => 'Unused private property',

@@ -40,6 +40,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     public const string NAME = 'complexity.npath';
     public const string DOCS_PAGE = 'rules/complexity.md';
 
+    public const int REMEDIATION_MINUTES = 30;
     private const int MAX_DISPLAY = 1_000_000;
 
     public function getName(): string

@@ -474,6 +474,8 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOwnConstantReader'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface'
@@ -1154,6 +1156,7 @@ architecture:
       - analysis-evidence-coupling
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
+      - analysis-evidence-prioritization
       - analysis-finding
       - analysis-policy-architecture
       - analysis-policy-baseline

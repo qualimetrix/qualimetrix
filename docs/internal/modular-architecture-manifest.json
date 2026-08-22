@@ -5158,6 +5158,11 @@
             "closure_package": "P6-D",
             "consumers": [
                 {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
+                    "closes_in": null
+                },
+                {
                     "owner": "Reporting",
                     "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonViolationSection",
                     "closes_in": null
@@ -5775,6 +5780,11 @@
             "visibility": "contract",
             "closure_package": "P6-A",
             "consumers": [
+                {
+                    "owner": "Analysis.Evidence.Prioritization",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Prioritization\\Debt\\RemediationTimeRegistry",
+                    "closes_in": null
+                },
                 {
                     "owner": "Analysis.Policy.Baseline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineCleaner",
@@ -7715,6 +7725,33 @@
                 }
             ]
         },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOwnConstantReader": {
+            "path": "src/Analysis/Finding/Contract/Rule/RuleOwnConstantReader.php",
+            "kind": "class",
+            "owner": "Analysis.Finding",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleRemediationMinutesReader": {
+            "path": "src/Analysis/Finding/Contract/Rule/RuleRemediationMinutesReader.php",
+            "kind": "class",
+            "owner": "Analysis.Finding",
+            "visibility": "contract",
+            "closure_package": "P7",
+            "consumers": [
+                {
+                    "owner": "Analysis.Evidence.Prioritization",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Prioritization\\Debt\\RemediationTimeRegistry",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
+                    "closes_in": null
+                }
+            ]
+        },
         "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleLevel": {
             "path": "src/Analysis/Finding/Contract/Rule/RuleLevel.php",
             "kind": "enum",
@@ -9085,11 +9122,6 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Security",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\CommandInjectionRule",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Security",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\HardcodedCredentialsOptions",
                     "closes_in": null
                 },
@@ -9106,16 +9138,6 @@
                 {
                     "owner": "Analysis.Evidence.Security",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterOptions",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Security",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SqlInjectionRule",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Security",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\XssRule",
                     "closes_in": null
                 },
                 {

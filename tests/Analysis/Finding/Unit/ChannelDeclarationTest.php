@@ -68,4 +68,22 @@ final class ChannelDeclarationTest extends TestCase
         self::assertSame(ChannelShape::Occurrence, $declaration->shape);
         self::assertNull($declaration->direction);
     }
+
+    #[Test]
+    public function itReportsLowerWorseTrueForALowerDirection(): void
+    {
+        self::assertTrue(ChannelDeclaration::magnitude(WorseDirection::Lower)->isLowerWorse());
+    }
+
+    #[Test]
+    public function itReportsLowerWorseFalseForAHigherDirection(): void
+    {
+        self::assertFalse(ChannelDeclaration::magnitude(WorseDirection::Higher)->isLowerWorse());
+    }
+
+    #[Test]
+    public function itReportsLowerWorseNullForAnOccurrenceDeclaration(): void
+    {
+        self::assertNull(ChannelDeclaration::occurrence()->isLowerWorse());
+    }
 }

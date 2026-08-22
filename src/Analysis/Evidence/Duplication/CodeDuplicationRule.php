@@ -29,6 +29,7 @@ final class CodeDuplicationRule extends AbstractRule
     public const string NAME = 'duplication.code-duplication';
     public const string DOCS_PAGE = 'rules/duplication.md';
 
+    public const int REMEDIATION_MINUTES = 15;
     public function __construct(
         RuleOptionsInterface $options,
         private readonly DuplicationResultProvider $resultProvider,

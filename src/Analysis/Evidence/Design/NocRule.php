@@ -36,6 +36,7 @@ final class NocRule extends AbstractRule
     public const string NAME = 'design.noc';
     public const string DOCS_PAGE = 'rules/design.md';
 
+    public const int REMEDIATION_MINUTES = 20;
     public function getName(): string
     {
         return self::NAME;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -17,6 +18,8 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(DebtCalculator::class)]
 final class DebtCalculatorTest extends TestCase
@@ -25,7 +28,10 @@ final class DebtCalculatorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->calculator = new DebtCalculator(new RemediationTimeRegistry());
+        $this->calculator = new DebtCalculator(new RemediationTimeRegistry(
+            StubChannelDeclarationRegistry::alwaysHigherMagnitude(),
+            StubRemediationMinutes::withRealValues(),
+        ));
     }
 
     #[Test]
@@ -88,18 +94,23 @@ final class DebtCalculatorTest extends TestCase
         ], $summary->perRule);
     }
 
+    /**
+     * No `DEFAULT_MINUTES` fallback remains: every registered rule declares
+     * its own minutes, so a name absent from the injected map is not a
+     * legitimately unknown rule to fall back for — it is a bug (a violation
+     * carrying a rule name no rule declared).
+     */
     #[Test]
-    public function itUsesDefaultDebtForUnknownRule(): void
+    public function itThrowsForARuleNameNoRuleDeclares(): void
     {
         $violations = [
             $this->createViolation('src/Foo.php', 'custom.unknown-rule'),
         ];
 
-        $summary = $this->calculator->calculate($violations);
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('No remediation minutes declared for rule "custom.unknown-rule"');
 
-        self::assertSame(15, $summary->totalMinutes);
-        self::assertSame(['src/Foo.php' => 15], $summary->perFile);
-        self::assertSame(['custom.unknown-rule' => 15], $summary->perRule);
+        $this->calculator->calculate($violations);
     }
 
     #[Test]

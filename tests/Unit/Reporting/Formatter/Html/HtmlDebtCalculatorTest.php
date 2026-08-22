@@ -19,6 +19,8 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Html\HtmlDebtCalculator;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(HtmlDebtCalculator::class)]
 final class HtmlDebtCalculatorTest extends TestCase
@@ -28,7 +30,7 @@ final class HtmlDebtCalculatorTest extends TestCase
     protected function setUp(): void
     {
         $this->calculator = new HtmlDebtCalculator(
-            new DebtCalculator(new RemediationTimeRegistry()),
+            new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
         );
     }
 

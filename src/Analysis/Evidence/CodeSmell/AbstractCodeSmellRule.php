@@ -41,6 +41,15 @@ abstract class AbstractCodeSmellRule extends AbstractRule
      */
     public const string DOCS_PAGE = '';
 
+    /**
+     * Empty (zero) here for the same reason as {@see DOCS_PAGE}: it forces
+     * every concrete subclass to declare its own value, and
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader}
+     * rejects this inherited placeholder via `getDeclaringClass()` rather
+     * than silently accepting it.
+     */
+    public const int REMEDIATION_MINUTES = 0;
+
     protected const string DESCRIPTION = '';
     protected const string SMELL_TYPE = '';
     protected const Severity SEVERITY = Severity::Warning;

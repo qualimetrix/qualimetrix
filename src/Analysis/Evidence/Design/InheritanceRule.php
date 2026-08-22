@@ -34,6 +34,7 @@ final class InheritanceRule extends AbstractRule
     public const string NAME = 'design.inheritance';
     public const string DOCS_PAGE = 'rules/design.md';
 
+    public const int REMEDIATION_MINUTES = 30;
     public function getName(): string
     {
         return self::NAME;

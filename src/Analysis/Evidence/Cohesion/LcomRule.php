@@ -37,6 +37,7 @@ final class LcomRule extends AbstractRule
     public const string NAME = 'cohesion.lcom';
     public const string DOCS_PAGE = 'rules/cohesion.md';
 
+    public const int REMEDIATION_MINUTES = 45;
     public function getName(): string
     {
         return self::NAME;

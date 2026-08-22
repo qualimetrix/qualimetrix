@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 use LogicException;
-use ReflectionClass;
 
 /**
  * Reads the documentation page a rule class declares for itself.
  *
  * Reflection-based, on a class-string without instantiation — the same
- * idiom {@see RuleNameReader} already establishes for `NAME`, and for the
- * same reason: rules may take constructor dependencies beyond their Options
- * object, so instantiating one outside the DI container is never safe.
+ * idiom {@see RuleNameReader} already establishes, and for the same reason:
+ * rules may take constructor dependencies beyond their Options object, so
+ * instantiating one outside the DI container is never safe. Ownership
+ * validation (declared on the class itself, not inherited) is
+ * {@see RuleOwnConstantReader}'s job, shared with
+ * {@see RuleRemediationMinutesReader}.
  *
  * The value is a path relative to `website/docs/` (e.g. `rules/complexity.md`),
  * chosen so a single string deterministically yields both the file the guard
@@ -48,35 +50,14 @@ final class RuleDocsPageReader
      */
     public static function read(string $ruleClass): string
     {
-        if (!class_exists($ruleClass)) {
-            throw new LogicException(\sprintf(
-                'Rule class %s does not exist or cannot be autoloaded.',
-                $ruleClass,
-            ));
-        }
-
-        $reflection = new ReflectionClass($ruleClass);
-
-        if (!$reflection->hasConstant(self::CONSTANT)) {
-            throw new LogicException(\sprintf(
-                'Rule class %s must declare a string %s constant naming its documentation page'
-                . ' (e.g. "rules/complexity.md"), relative to website/docs/.',
-                $ruleClass,
+        $constant = RuleOwnConstantReader::read(
+            $ruleClass,
+            self::CONSTANT,
+            \sprintf(
+                'a string %s constant naming its documentation page (e.g. "rules/complexity.md"), relative to website/docs/',
                 self::CONSTANT,
-            ));
-        }
-
-        $constant = $reflection->getReflectionConstant(self::CONSTANT);
-
-        if ($constant === false || $constant->getDeclaringClass()->getName() !== $ruleClass) {
-            throw new LogicException(\sprintf(
-                'Rule class %s must declare its own %s constant rather than inherit one from %s. An inherited'
-                . ' placeholder (e.g. AbstractCodeSmellRule\'s empty string) is not a declaration.',
-                $ruleClass,
-                self::CONSTANT,
-                $constant !== false ? $constant->getDeclaringClass()->getName() : '(unknown)',
-            ));
-        }
+            ),
+        );
 
         $value = $constant->getValue();
 

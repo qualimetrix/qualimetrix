@@ -21,6 +21,8 @@ use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 /**
  * Tests that TextVerboseFormatter correctly delegates to TextFormatter with detail=true.
@@ -34,7 +36,7 @@ final class TextVerboseFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
         $detailedRenderer = new DetailedViolationRenderer($debtCalculator);
         $this->textFormatter = new TextFormatter($debtCalculator, $detailedRenderer);
         $this->formatter = new TextVerboseFormatter($this->textFormatter);

@@ -20,6 +20,8 @@ use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
 use Qualimetrix\Reporting\Formatter\Support\ViolationDetailRenderer;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(DetailedViolationRenderer::class)]
 #[CoversClass(ViolationDetailRenderer::class)]
@@ -32,7 +34,7 @@ final class DetailedViolationRendererTest extends TestCase
 
     protected function setUp(): void
     {
-        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
         $this->renderer = new DetailedViolationRenderer($debtCalculator);
         $this->detailRenderer = new ViolationDetailRenderer();
         $this->debtRenderer = new DebtBreakdownRenderer($debtCalculator);

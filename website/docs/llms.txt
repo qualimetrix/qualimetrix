@@ -58,5 +58,6 @@ Configuration: `qmx.yaml` (auto-discovered) or `--config=path`. Suppression: `@q
 - [Code Smell Rules](https://qualimetrix.dev/rules/code-smell/): Boolean args, eval, goto, god class, data class, unused private, etc.
 - [Security Rules](https://qualimetrix.dev/rules/security/): SQL injection, XSS, command injection, hardcoded credentials
 - [Duplication Rules](https://qualimetrix.dev/rules/duplication/): Code duplication detection
+- [Remediation Time](https://qualimetrix.dev/reference/remediation-time/): Estimated fix time per rule
 - [Other CI Systems](https://qualimetrix.dev/ci-cd/other-ci/): GitLab CI, Jenkins, Bitbucket Pipelines
 - [Usage Scenarios](https://qualimetrix.dev/usage/usage-scenarios/): Common workflows and use cases

@@ -38,6 +38,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     public const string NAME = 'complexity.cognitive';
     public const string DOCS_PAGE = 'rules/complexity.md';
 
+    public const int REMEDIATION_MINUTES = 30;
     public function getName(): string
     {
         return self::NAME;

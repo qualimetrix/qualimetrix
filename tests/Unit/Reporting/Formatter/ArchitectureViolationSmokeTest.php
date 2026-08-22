@@ -54,6 +54,8 @@ use Qualimetrix\Reporting\Health\HealthHintProjector;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresentation;
 
 /**
@@ -104,7 +106,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
     #[Test]
     public function itRendersArchitectureViolationsViaTextVerboseFormatter(): void
     {
-        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
         $detailedRenderer = new DetailedViolationRenderer($debtCalculator);
         $textFormatter = new TextFormatter($debtCalculator, $detailedRenderer);
         $formatter = new TextVerboseFormatter($textFormatter);
@@ -133,7 +135,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
         $sanitizer = new JsonSanitizer();
         $violationFilter = new ViolationFilter();
-        $remediationTimeRegistry = new RemediationTimeRegistry();
+        $remediationTimeRegistry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $formatter = new JsonFormatter(
             new DebtCalculator($remediationTimeRegistry),
             new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
@@ -190,7 +192,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
     {
         $formatter = new HtmlFormatter(
             new HtmlTreeBuilder(
-                new DebtCalculator(new RemediationTimeRegistry()),
+                new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
                 self::createStub(ComputedMetricDefinitionCatalogInterface::class),
             ),
             new HealthHintProjector(new HealthMetricCatalog()),
@@ -335,7 +337,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
     #[Test]
     public function itRendersArchitectureViolationsViaSummaryFormatter(): void
     {
-        $registry = new RemediationTimeRegistry();
+        $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $debtCalculator = new DebtCalculator($registry);
         $hintProvider = new HealthMetricCatalog();
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
@@ -409,7 +411,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
 
     private function createTextFormatter(): TextFormatter
     {
-        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
 
         return new TextFormatter($debtCalculator, new DetailedViolationRenderer($debtCalculator));
     }

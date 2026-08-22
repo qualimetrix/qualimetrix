@@ -18,6 +18,8 @@ use Qualimetrix\Reporting\Formatter\Summary\ViolationSummaryRenderer;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(ViolationSummaryRenderer::class)]
 final class ViolationSummaryRendererTest extends TestCase
@@ -29,7 +31,7 @@ final class ViolationSummaryRendererTest extends TestCase
     {
         $this->renderer = new ViolationSummaryRenderer(
             new ViolationFilter(),
-            new RemediationTimeRegistry(),
+            new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()),
         );
         $this->color = new AnsiColor(false);
     }

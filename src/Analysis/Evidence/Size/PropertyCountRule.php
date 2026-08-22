@@ -34,6 +34,7 @@ final class PropertyCountRule extends AbstractRule
     public const string NAME = 'size.property-count';
     public const string DOCS_PAGE = 'rules/size.md';
 
+    public const int REMEDIATION_MINUTES = 15;
     public function getName(): string
     {
         return self::NAME;
