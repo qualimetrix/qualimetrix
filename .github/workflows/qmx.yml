@@ -79,10 +79,10 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  # Full validation: cs-check + PHPUnit + PHPStan + selfcheck. This is the exact
-  # warning-ratchet gate: `composer selfcheck` runs qmx with `--fail-on=warning`.
-  # `composer check` ends with that selfcheck, so this job subsumes the previous
-  # "Self-Analysis (Direct)" step.
+  # Full validation: cs-check + strict docs build + PHPUnit + PHPStan +
+  # selfcheck. This is the exact warning-ratchet gate: `composer selfcheck` runs
+  # qmx with `--fail-on=warning`. `composer check` ends with that selfcheck, so
+  # this job subsumes the previous "Self-Analysis (Direct)" step.
   check:
     name: Full validation (composer check)
     runs-on: ubuntu-latest
@@ -116,6 +116,18 @@ jobs:
 
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      # `composer check` builds the website with mkdocs --strict, so the docs
+      # toolchain has to be present here too — otherwise that step fails on a
+      # missing interpreter instead of on documentation problems.
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+          cache-dependency-path: 'website/requirements.txt'
+
+      - name: Install documentation dependencies
+        run: pip install -r website/requirements.txt
 
       - name: Run full validation
         env:

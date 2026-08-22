@@ -266,6 +266,29 @@ else
 fi
 
 # ============================================================================
+# 5b. Install documentation dependencies
+# ============================================================================
+#
+# `composer check` builds the website with mkdocs --strict, so this workspace
+# needs the docs toolchain as well; without it the aggregate gate fails on a
+# missing interpreter instead of on documentation problems.
+
+log_info "Checking documentation dependencies..."
+
+if [ ! -x "website/.venv/bin/mkdocs" ]; then
+    log_info "Installing MkDocs into website/.venv..."
+
+    if python3 -m venv website/.venv \
+        && website/.venv/bin/pip install --quiet -r website/requirements.txt; then
+        log_success "MkDocs installed"
+    else
+        log_warning "Failed to install MkDocs — 'composer docs:check' will fail here"
+    fi
+else
+    log_success "MkDocs already installed"
+fi
+
+# ============================================================================
 # 6. Check critical files and directories
 # ============================================================================
 
@@ -274,13 +297,11 @@ log_info "Checking project structure..."
 CRITICAL_DIRS=(
     "src/Core"
     "src/Analysis"
-    "src/Metrics"
-    "src/Rules"
     "src/Reporting"
-    "src/Configuration"
     "src/Infrastructure"
     "tests"
     "docs"
+    "website/docs"
 )
 
 for dir in "${CRITICAL_DIRS[@]}"; do
@@ -354,7 +375,8 @@ log_info "  composer test         - Run PHPUnit tests"
 log_info "  composer test:coverage - Tests with HTML coverage"
 log_info "  composer phpstan      - Static analysis (level 8)"
 log_info "  composer selfcheck    - Analyze this codebase with qmx (architecture included)"
-log_info "  composer check        - All checks (leaks + cs + test + phpstan + selfcheck)"
+log_info "  composer check        - All checks (leaks + cs + docs + test + phpstan + selfcheck)"
+log_info "  composer docs:check   - Build the website with mkdocs --strict"
 log_info "  composer cs-fix       - Fix code style"
 log_info ""
 

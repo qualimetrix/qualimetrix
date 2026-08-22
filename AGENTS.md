@@ -516,7 +516,8 @@ itself contain the private name, so echoing it would leak it into the build log.
 ```bash
 # Project validation
 composer architecture:check # exact manifest policy + generated-artifact freshness
-composer check          # cs-check + tests + phpstan + manifest check + qmx selfcheck
+composer check          # cs-check + strict docs build + tests + phpstan + manifest check + qmx selfcheck
+composer docs:check     # mkdocs --strict build of website/ (broken links, nav gaps)
 composer test           # PHPUnit
 composer phpstan        # PHPStan level 8
 
@@ -562,7 +563,7 @@ bin/qmx check --help
 **Before implementation:** read README.md in the corresponding `src/` directory
 
 **Project-specific steps** (in addition to the global workflow):
-- **Validation**: `composer check` (cs-check + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `src/Reporting/Template/`, also run `composer test:js` and `composer build:js`
+- **Validation**: `composer check` (cs-check + strict docs build + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `src/Reporting/Template/`, also run `composer test:js` and `composer build:js`
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
 ### Efficient validation order
@@ -674,11 +675,17 @@ Key rules:
 - Keep `website/docs/reference/default-thresholds.md` in sync with actual defaults
 - After any documentation changes, verify the site builds without errors or warnings:
   ```bash
-  # If .venv exists (local development):
-  cd website && .venv/bin/mkdocs build --strict
-  # Otherwise (CI / fresh clone):
-  cd website && pip install -r requirements.txt && mkdocs build --strict
+  composer docs:check
   ```
+  It runs `mkdocs build --strict` into a temporary directory and fails on broken
+  links, pages missing from the nav and any other warning. The interpreter comes
+  from `$QMX_MKDOCS`, then `website/.venv/bin/mkdocs`, then `PATH`; when none
+  works it fails with setup instructions instead of skipping. First-time setup:
+  ```bash
+  python3 -m venv website/.venv && website/.venv/bin/pip install -r website/requirements.txt
+  ```
+  The same check runs inside `composer check` (so also in CI) and in the deploy
+  workflow, which builds strictly before publishing.
 
 ---
 
