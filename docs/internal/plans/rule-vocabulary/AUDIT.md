@@ -81,6 +81,34 @@ pair whose left half no consumer reads.
 `Infrastructure/Rule` holds `ChannelUniverse` — the implementation of channel
 identity, whose contract belongs to `Analysis/Finding`.
 
+## Found while closing the level enumeration (Э0), out of scope here
+
+Three defects surfaced by running the tool rather than reading it. None is a
+vocabulary defect, so none is in scope; each is recorded so it is not
+rediscovered.
+
+1. **Group-prefix rule selection does not exist, and three places say it does.**
+   `--only-rule=complexity` and `--disable-rule=complexity` both fail with
+   `Rule selector "complexity" does not match any registered producer, group, or
+   channel` — for every one of the 13 families, with the project's own
+   `qmx.yaml` and with a bare one. Only the dotted producer name resolves.
+   `bin/qmx check --help` ("or group by prefix (e.g., complexity, code-smell)"),
+   the footer of `bin/qmx rules`, and the error message's own "or group" all
+   promise it. Verified 2026-08-22.
+2. **`complexity.npath.class` is disabled by default and its two siblings are
+   not.** `ClassNpathComplexityOptions::$enabled = false`, while the class
+   channels of `complexity.cognitive` and `complexity.cyclomatic` are on. The
+   channel is declared, documented and baselineable, and fires only with an
+   explicit `complexity.npath:class.enabled=true`. Either the default is wrong
+   or the asymmetry needs a stated reason.
+3. **Doc rot in `ChannelDeclarationFixtureDriftTest`.** Its docblock and its
+   failure messages name `tests/Fixtures/Channels/declared.txt` and
+   `tests/Integration/Infrastructure/Rule/ChannelDeclarationFixtureDriftTest.php`;
+   the real paths are `tests/Analysis/Finding/Fixtures/Channels/declared.txt` and
+   `tests/Analysis/Finding/Integration/...`. The fixture's own header comment
+   repeats the stale paths. A reader following the failure message looks in a
+   directory that does not exist.
+
 ## Disposition
 
 In scope for the rules-and-metrics pass: A1, A2, the `ViolationChannel` half of

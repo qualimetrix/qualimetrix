@@ -137,11 +137,27 @@ Measured 2026-08-22 by grepping for `MetricName::` and for dotted rule names.
 - `WmcRule` lives in `Complexity/`, but `wmc` is derived in
   `Measurement/Aggregation/CallableToClassAggregator`, not in that family.
 
-## The measurement level is encoded three times
+## The measurement level is encoded four times
 
 1. channel name suffix — `coupling.cbo.class`
 2. options class prefix — `ClassCboOptions`, `NamespaceCboOptions`,
    `MethodComplexityOptions`
 3. `MetricSubject` kind
+4. `Violation::$level` — a `?RuleLevel` field on the finding itself
 
-Nothing checks the three against each other.
+Nothing checks the four against each other. Measured 2026-08-22 by observing
+every finding constructed across the six corpora of
+`enumeration-channel-levels.tsv`:
+
+- **10 of 63 channels populate `$level`, and that set is byte-identical to the
+  set of channels whose name ends in a level segment.** The other 53 leave it
+  null and carry the level in the subject alone.
+- Where it is set it always equals the subject's level. Zero disagreements —
+  so encodings 1, 3 and 4 agree today by coincidence of construction, not by
+  any check, and encoding 4 is pure duplication of 1.
+- All five `SymbolLevel` values are real reporting levels, `file` included
+  (the four `annotation.*` channels report on the file the directive is written
+  in, never on a declaration it was bound to).
+- The only multi-level channels are the six `health.*`, each on three levels
+  (`class`, `namespace`, `project`) under one name. No static channel reports at
+  more than one level.
