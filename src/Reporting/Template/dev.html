@@ -78,8 +78,8 @@
                 "type": "class",
                 "metrics": { "loc.sum": 450, "health.overall": 28, "health.complexity": 20, "health.coupling": 35, "ccn.sum": 45, "cbo.avg": 12 },
                 "violations": [
-                  { "ruleName": "complexity.cyclomatic", "violationCode": "complexity.cyclomatic.error", "message": "Cyclomatic complexity of process() is 24 (threshold: 20)", "severity": "error", "metricValue": 24, "symbolPath": "App\\Payment\\PaymentProcessor::process", "file": "src/Payment/PaymentProcessor.php", "line": 45 },
-                  { "ruleName": "coupling.cbo", "violationCode": "coupling.cbo.warning", "message": "CBO is 12 (threshold: 10)", "severity": "warning", "metricValue": 12, "symbolPath": "App\\Payment\\PaymentProcessor", "file": "src/Payment/PaymentProcessor.php", "line": 10 }
+                  { "ruleName": "complexity.cyclomatic", "violationCode": "complexity.cyclomatic.callable", "message": "Cyclomatic complexity of process() is 24 (threshold: 20)", "severity": "error", "metricValue": 24, "symbolPath": "App\\Payment\\PaymentProcessor::process", "file": "src/Payment/PaymentProcessor.php", "line": 45 },
+                  { "ruleName": "coupling.cbo", "violationCode": "coupling.cbo.class", "message": "CBO is 12 (threshold: 10)", "severity": "warning", "metricValue": 12, "symbolPath": "App\\Payment\\PaymentProcessor", "file": "src/Payment/PaymentProcessor.php", "line": 10 }
                 ],
                 "violationCountTotal": 2,
                 "debtMinutes": 30
@@ -90,7 +90,7 @@
                 "type": "class",
                 "metrics": { "loc.sum": 200, "health.overall": 55, "health.complexity": 60, "health.coupling": 50 },
                 "violations": [
-                  { "ruleName": "complexity.cyclomatic", "violationCode": "complexity.cyclomatic.warning", "message": "Cyclomatic complexity of refund() is 12 (threshold: 10)", "severity": "warning", "metricValue": 12, "symbolPath": "App\\Payment\\RefundHandler::refund", "file": "src/Payment/RefundHandler.php", "line": 30 }
+                  { "ruleName": "complexity.cyclomatic", "violationCode": "complexity.cyclomatic.callable", "message": "Cyclomatic complexity of refund() is 12 (threshold: 10)", "severity": "warning", "metricValue": 12, "symbolPath": "App\\Payment\\RefundHandler::refund", "file": "src/Payment/RefundHandler.php", "line": 30 }
                 ],
                 "violationCountTotal": 1,
                 "debtMinutes": 15
@@ -101,7 +101,7 @@
                 "type": "class",
                 "metrics": { "loc.sum": 350, "health.overall": 42, "health.complexity": 35, "health.coupling": 60 },
                 "violations": [
-                  { "ruleName": "size.method-count", "violationCode": "size.method-count.warning", "message": "Class has 15 methods (threshold: 12)", "severity": "warning", "metricValue": 15, "symbolPath": "App\\Payment\\InvoiceGenerator", "file": "src/Payment/InvoiceGenerator.php", "line": 1 }
+                  { "ruleName": "size.method-count", "violationCode": "size.method-count", "message": "Class has 15 methods (threshold: 12)", "severity": "warning", "metricValue": 15, "symbolPath": "App\\Payment\\InvoiceGenerator", "file": "src/Payment/InvoiceGenerator.php", "line": 1 }
                 ],
                 "violationCountTotal": 1,
                 "debtMinutes": 10
@@ -141,7 +141,7 @@
                 "type": "class",
                 "metrics": { "loc.sum": 300, "health.overall": 65, "health.complexity": 55, "health.coupling": 70 },
                 "violations": [
-                  { "ruleName": "coupling.cbo", "violationCode": "coupling.cbo.warning", "message": "CBO is 11 (threshold: 10)", "severity": "warning", "metricValue": 11, "symbolPath": "App\\User\\UserService", "file": "src/User/UserService.php", "line": 5 }
+                  { "ruleName": "coupling.cbo", "violationCode": "coupling.cbo.class", "message": "CBO is 11 (threshold: 10)", "severity": "warning", "metricValue": 11, "symbolPath": "App\\User\\UserService", "file": "src/User/UserService.php", "line": 5 }
                 ],
                 "violationCountTotal": 1,
                 "debtMinutes": 10
@@ -152,7 +152,7 @@
                 "type": "class",
                 "metrics": { "loc.sum": 250, "health.overall": 78, "health.complexity": 80, "health.coupling": 75 },
                 "violations": [
-                  { "ruleName": "code-smell.long-parameter-list", "violationCode": "code-smell.long-parameter-list.warning", "message": "Method find() has 6 parameters (threshold: 5)", "severity": "warning", "metricValue": 6, "symbolPath": "App\\User\\UserRepository::find", "file": "src/User/UserRepository.php", "line": 20 }
+                  { "ruleName": "code-smell.long-parameter-list", "violationCode": "code-smell.long-parameter-list", "message": "Method find() has 6 parameters (threshold: 5)", "severity": "warning", "metricValue": 6, "symbolPath": "App\\User\\UserRepository::find", "file": "src/User/UserRepository.php", "line": 20 }
                 ],
                 "violationCountTotal": 1,
                 "debtMinutes": 10
@@ -192,7 +192,7 @@
                 "type": "class",
                 "metrics": { "loc.sum": 400, "health.overall": 50, "health.complexity": 45, "health.coupling": 55 },
                 "violations": [
-                  { "ruleName": "code-smell.boolean-argument", "violationCode": "code-smell.boolean-argument.warning", "message": "Method send() has boolean parameter $html", "severity": "warning", "metricValue": null, "symbolPath": "App\\Notification\\EmailSender::send", "file": "src/Notification/EmailSender.php", "line": 25 }
+                  { "ruleName": "code-smell.boolean-argument", "violationCode": "code-smell.boolean-argument", "message": "Method send() has boolean parameter $html", "severity": "warning", "metricValue": null, "symbolPath": "App\\Notification\\EmailSender::send", "file": "src/Notification/EmailSender.php", "line": 25 }
                 ],
                 "violationCountTotal": 1,
                 "debtMinutes": 5
@@ -212,7 +212,7 @@
                 "type": "class",
                 "metrics": { "loc.sum": 250, "health.overall": 52, "health.complexity": 48, "health.coupling": 56 },
                 "violations": [
-                  { "ruleName": "complexity.cognitive", "violationCode": "complexity.cognitive.warning", "message": "Cognitive complexity of notify() is 18 (threshold: 15)", "severity": "warning", "metricValue": 18, "symbolPath": "App\\Notification\\PushNotifier::notify", "file": "src/Notification/PushNotifier.php", "line": 40 }
+                  { "ruleName": "complexity.cognitive", "violationCode": "complexity.cognitive.callable", "message": "Cognitive complexity of notify() is 18 (threshold: 15)", "severity": "warning", "metricValue": 18, "symbolPath": "App\\Notification\\PushNotifier::notify", "file": "src/Notification/PushNotifier.php", "line": 40 }
                 ],
                 "violationCountTotal": 1,
                 "debtMinutes": 5
@@ -254,7 +254,7 @@
                 "type": "class",
                 "metrics": { "loc.sum": 350, "health.overall": 58, "health.complexity": 50, "health.coupling": 65 },
                 "violations": [
-                  { "ruleName": "complexity.cyclomatic", "violationCode": "complexity.cyclomatic.warning", "message": "Cyclomatic complexity of getConnection() is 11 (threshold: 10)", "severity": "warning", "metricValue": 11, "symbolPath": "Infrastructure\\Database\\ConnectionPool::getConnection", "file": "src/Infrastructure/Database/ConnectionPool.php", "line": 55 }
+                  { "ruleName": "complexity.cyclomatic", "violationCode": "complexity.cyclomatic.callable", "message": "Cyclomatic complexity of getConnection() is 11 (threshold: 10)", "severity": "warning", "metricValue": 11, "symbolPath": "Infrastructure\\Database\\ConnectionPool::getConnection", "file": "src/Infrastructure/Database/ConnectionPool.php", "line": 55 }
                 ],
                 "violationCountTotal": 1,
                 "debtMinutes": 10
@@ -265,7 +265,7 @@
                 "type": "class",
                 "metrics": { "loc.sum": 450, "health.overall": 48, "health.complexity": 40, "health.coupling": 55 },
                 "violations": [
-                  { "ruleName": "size.class-loc", "violationCode": "size.class-loc.warning", "message": "Class LOC is 450 (threshold: 400)", "severity": "warning", "metricValue": 450, "symbolPath": "Infrastructure\\Database\\QueryBuilder", "file": "src/Infrastructure/Database/QueryBuilder.php", "line": 1 }
+                  { "ruleName": "design.god-class", "violationCode": "design.god-class", "message": "God Class detected (3/5 criteria): high WMC, high LOC, low cohesion", "severity": "warning", "metricValue": 3, "symbolPath": "Infrastructure\\Database\\QueryBuilder", "file": "src/Infrastructure/Database/QueryBuilder.php", "line": 1 }
                 ],
                 "violationCountTotal": 1,
                 "debtMinutes": 10
@@ -287,7 +287,7 @@
                 "type": "class",
                 "metrics": { "loc.sum": 300, "health.overall": 72, "health.complexity": 70, "health.coupling": 74 },
                 "violations": [
-                  { "ruleName": "code-smell.empty-catch", "violationCode": "code-smell.empty-catch.warning", "message": "Empty catch block in get()", "severity": "warning", "metricValue": null, "symbolPath": "Infrastructure\\Cache\\RedisAdapter::get", "file": "src/Infrastructure/Cache/RedisAdapter.php", "line": 42 }
+                  { "ruleName": "code-smell.empty-catch", "violationCode": "code-smell.empty-catch", "message": "Empty catch block in get()", "severity": "warning", "metricValue": null, "symbolPath": "Infrastructure\\Cache\\RedisAdapter::get", "file": "src/Infrastructure/Cache/RedisAdapter.php", "line": 42 }
                 ],
                 "violationCountTotal": 1,
                 "debtMinutes": 10
