@@ -1,0 +1,23 @@
+channel_of_reference	probe	files	hits
+direct import: RuleLevel	grep -rl 'Contract\\Rule\\RuleLevel;' src	12	62
+direct import: SymbolLevel	grep -rl 'Contract\\SymbolLevel;' src	31	181
+direct import: SymbolType	grep -rl 'Symbol\\SymbolType;' src	56	174
+string literal: dotted suffix	grep -rnoE "'[.](callable|class|namespace)'" src	5	20
+string literal: bare level	grep -rnoE "'(callable|class|namespace|file|project)'" src	47	184
+configuration: qmx.yaml	grep -nE '^ +(callable|class|namespace):' qmx.yaml qmx.yaml.example	2	4
+artifact: baseline channels	channel halves ending in a level	1	125
+html template / js	grep -rlE '(callable|namespace)' src/Reporting/Template	21	-
+website docs	grep -rlE '[.](callable|class|namespace)\b' website/docs	20	-
+tests	grep -rlE "'[.](callable|class|namespace)'|RuleLevel::" tests	13	-
+reflection / class-string	grep -rn 'class-string' src | grep -i level	0	-
+DI autoconfiguration by level	grep -rni level src/Infrastructure/DependencyInjection	0	-
+# HOW OBTAINED: ripgrep over src/, tests/, website/docs, qmx.yaml* and a python read of qmx-baseline.json, 2026-08-22.
+# BLIND SPOTS of this method, in the order they are likely to bite:
+#  - a level composed at run time (concatenation, sprintf with a variable) is invisible to every literal probe;
+#  - "string literal: bare level" is an UPPER BOUND: it includes legitimate uses where the string is itself the
+#    external contract (a YAML key, a JSON field name, a CLI value). It needs per-hit triage, not a count;
+#  - levels arriving from a user's own qmx.yaml or @qmx-* comments live outside this repo and cannot be counted here;
+#  - levels inside serialized cache payloads are not probed;
+#  - the website/tests/template rows are FILE counts, not occurrence counts;
+#  - external consumers - users' baselines, users' suppression comments, CI configs naming a channel - are out of reach
+#    entirely; they are covered by the breaking-change policy, not by this table.

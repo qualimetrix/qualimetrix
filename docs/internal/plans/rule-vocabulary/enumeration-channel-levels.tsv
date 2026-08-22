@@ -1,0 +1,36 @@
+channel	observed_levels	counts	single_level
+code-smell.boolean-argument#code-smell.boolean-argument	callable	{'callable': 29}	yes
+code-smell.constructor-overinjection#code-smell.constructor-overinjection	callable	{'callable': 6}	yes
+code-smell.error-suppression#code-smell.error-suppression	callable	{'callable': 2}	yes
+code-smell.long-parameter-list#code-smell.long-parameter-list	callable	{'callable': 3}	yes
+complexity.cognitive#complexity.cognitive.callable	callable	{'callable': 34}	yes
+complexity.cyclomatic#complexity.cyclomatic.callable	callable	{'callable': 60}	yes
+complexity.npath#complexity.npath.callable	callable	{'callable': 13}	yes
+complexity.wmc#complexity.wmc	class	{'class': 12}	yes
+computed.health#health.cohesion	class namespace	{'class': 26, 'namespace': 5}	NO
+computed.health#health.typing	class	{'class': 1}	yes
+coupling.cbo#coupling.cbo.class	class	{'class': 7}	yes
+coupling.cbo#coupling.cbo.namespace	namespace	{'namespace': 3}	yes
+coupling.class-rank#coupling.class-rank	class	{'class': 1}	yes
+coupling.distance#coupling.distance	namespace	{'namespace': 2}	yes
+coupling.instability#coupling.instability.class	class	{'class': 6}	yes
+coupling.instability#coupling.instability.namespace	namespace	{'namespace': 2}	yes
+design.data-class#design.data-class	class	{'class': 10}	yes
+design.god-class#design.god-class	class	{'class': 2}	yes
+design.type-coverage#design.type-coverage.param	class	{'class': 1}	yes
+design.type-coverage#design.type-coverage.property	class	{'class': 1}	yes
+duplication.code-duplication#duplication.code-duplication	project	{'project': 15}	yes
+size.class-count#size.class-count	namespace	{'namespace': 5}	yes
+#
+# HOW OBTAINED: `bin/qmx check src/ --format=json --workers=0` on this repository, 2026-08-22, then grouping
+# every emitted finding by its `channel` and by the kind prefix of its `subject`. This is the only method tried
+# that actually observes the reporting level; reading the rule classes does not, because 23 of 31 magnitude
+# channels build their subject outside the rule class (in AbstractRule helpers or in the metric record).
+#
+# BLIND SPOTS:
+#  - only 22 of the 63 known channels fired on this codebase. The other ~41 (security, most architecture,
+#    most code-smell, annotation) emit nothing here and are NOT covered by this table. Covering them needs a
+#    second pass over the rule test fixtures, or a run against a corpus that triggers them.
+#  - a channel that fired at only one level here may still be capable of another level on other code. The table
+#    records what was observed, not what is possible.
+#  - findings removed by an exclusion in qmx.yaml never reach the report and are invisible here.
