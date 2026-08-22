@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # benchmarks/composer.json pins the exact package versions the health-score
+  # baselines in docs/internal/benchmark-baselines.json were calibrated
+  # against. A merged version-update PR here would silently shift the source
+  # under those pinned ranges. Keep this ecosystem entry so a future
+  # repository-wide Dependabot rollout does not implicitly start opening PRs
+  # for it; open-pull-requests-limit: 0 means Dependabot checks but never
+  # proposes updates.
+  - package-ecosystem: "composer"
+    directory: "/benchmarks"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
