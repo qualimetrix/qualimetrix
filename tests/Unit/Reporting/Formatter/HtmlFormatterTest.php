@@ -17,6 +17,8 @@ use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthHintProjector;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(HtmlFormatter::class)]
 final class HtmlFormatterTest extends TestCase
@@ -27,7 +29,7 @@ final class HtmlFormatterTest extends TestCase
     {
         $this->formatter = new HtmlFormatter(
             new HtmlTreeBuilder(
-                new DebtCalculator(new RemediationTimeRegistry()),
+                new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
                 self::createStub(ComputedMetricDefinitionCatalogInterface::class),
             ),
             new HealthHintProjector(new HealthMetricCatalog()),

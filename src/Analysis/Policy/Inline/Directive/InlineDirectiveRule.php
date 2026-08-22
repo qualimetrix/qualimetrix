@@ -51,7 +51,9 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class InlineDirectiveRule extends AbstractRule
 {
     public const string NAME = InlineDirectivePolicy::PRODUCER_RULE_NAME;
+    public const string DOCS_PAGE = 'rules/annotation.md';
 
+    public const int REMEDIATION_MINUTES = 15;
     /**
      * The three channel names, restated here as `self::` constants purely so
      * that the emission guard can read them at each `new Violation(...)`

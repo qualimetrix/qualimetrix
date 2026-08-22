@@ -1,0 +1,75 @@
+# how_obtained: parsed the match arms of SarifRuleCollector::getRuleDescription()
+# and joined them against channel-inventory.tsv by violation code.
+# Blind spot: an arm is 'reachable' here iff some declared channel carries that exact
+# code; a computed.*/health.* code would show as unreachable for the reason named in
+# channel-inventory.tsv, but no arm names one, so the join is complete for this table.
+arm_key	reachable	sarif_text	producer_description
+complexity.cyclomatic	NO (dead arm)	Code complexity exceeds threshold	-
+complexity.cognitive	NO (dead arm)	Code complexity exceeds threshold	-
+complexity.npath	NO (dead arm)	Code complexity exceeds threshold	-
+complexity.wmc	yes	Weighted methods per class exceeds threshold	Checks Weighted Methods per Class (sum of method complexities)
+size.class-count	yes	Code size exceeds threshold	Checks number of classes per namespace
+size.method-count	yes	Code size exceeds threshold	Checks number of methods per class
+size.property-count	yes	Code size exceeds threshold	Checks if classes have too many properties
+size.namespace-size	NO (dead arm)	Code size exceeds threshold	-
+size.loc	NO (dead arm)	Lines of code exceeds threshold	-
+size.long-parameter-list	NO (dead arm)	Too many parameters	-
+maintainability.index	yes	Maintainability index below threshold	Checks Maintainability Index (lower values indicate harder to maintain code)
+design.lcom	yes	Lack of cohesion of methods	Checks Lack of Cohesion of Methods (high values indicate class should be split)
+design.inheritance	yes	Inheritance structure issue	Checks Depth of Inheritance Tree (deep hierarchies increase complexity)
+design.noc	yes	Inheritance structure issue	Checks Number of Children (many direct subclasses indicate wide impact)
+design.type-coverage	NO (dead arm)	Type coverage below threshold	-
+coupling.cbo	NO (dead arm)	Coupling issue	-
+coupling.instability	NO (dead arm)	Coupling issue	-
+coupling.distance	yes	Coupling issue	Checks distance from main sequence at namespace level
+architecture.circular-dependency	yes	Circular dependency detected	Detects circular dependencies between classes
+duplication.code-duplication	yes	Duplicated code block detected	Detects duplicated code blocks
+code-smell.constructor-overinjection	yes	Constructor has too many dependencies	Checks number of constructor parameters (dependencies)
+design.data-class	yes	Data Class detected (public interface is mostly data access, low complexity)	Detects classes whose public interface is mostly data access rather than behavior (Data Classes)
+design.god-class	yes	God Class detected (complex, large, low cohesion)	Detects God Classes (overly complex, large, low cohesion)
+code-smell.unused-private	yes	Unused private member detected	Detects unused private methods, properties, and constants
+
+# channels with no arm at all -> generic ucfirst() fallback
+violation_code	producer_description
+annotation.invalid-threshold	Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.
+annotation.unresolved-directive	Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.
+annotation.unsupported-threshold	Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.
+annotation.unused-directive	Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.
+architecture.coverage	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.empty-template	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.layer-violation	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.pending-layer-matched	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.potential-shadow	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.unassigned-class	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.unreachable-layer	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+code-smell.boolean-argument	Detects boolean arguments in method/function signatures
+code-smell.count-in-loop	Detects count() calls in loop conditions
+code-smell.debug-code	Detects debug code (var_dump, print_r, dd, etc)
+code-smell.empty-catch	Detects empty catch blocks
+code-smell.error-suppression	Detects usage of error suppression operator (@)
+code-smell.eval	Detects usage of eval() function
+code-smell.exit	Detects usage of exit() and die()
+code-smell.goto	Detects usage of goto statement
+code-smell.identical-subexpression	Detects identical sub-expressions indicating copy-paste errors or logic bugs
+code-smell.long-parameter-list	Checks number of parameters per method
+code-smell.superglobals	Detects direct access to superglobals
+code-smell.unreachable-code	Detects unreachable code after terminal statements
+complexity.cognitive.callable	Checks cognitive complexity at method and class levels
+complexity.cognitive.class	Checks cognitive complexity at method and class levels
+complexity.cyclomatic.callable	Checks cyclomatic complexity at method and class levels
+complexity.cyclomatic.class	Checks cyclomatic complexity at method and class levels
+complexity.npath.callable	Checks NPath complexity at method and class levels
+complexity.npath.class	Checks NPath complexity at method and class levels
+coupling.cbo.class	Checks CBO (Coupling Between Objects) at class and namespace levels
+coupling.cbo.namespace	Checks CBO (Coupling Between Objects) at class and namespace levels
+coupling.class-rank	Checks ClassRank (PageRank on dependency graph) to identify critical hub classes
+coupling.instability.class	Checks instability at class and namespace levels
+coupling.instability.namespace	Checks instability at class and namespace levels
+design.type-coverage.param	Checks type coverage of parameters, return types, and properties per class
+design.type-coverage.property	Checks type coverage of parameters, return types, and properties per class
+design.type-coverage.return	Checks type coverage of parameters, return types, and properties per class
+security.command-injection	Detects potential command injection vulnerabilities
+security.hardcoded-credentials	Detects hardcoded credentials in code
+security.sensitive-parameter	Detects sensitive parameters missing #[\SensitiveParameter] attribute
+security.sql-injection	Detects potential SQL injection vulnerabilities
+security.xss	Detects potential XSS vulnerabilities

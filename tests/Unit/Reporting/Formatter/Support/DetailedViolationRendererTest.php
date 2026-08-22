@@ -20,6 +20,8 @@ use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
 use Qualimetrix\Reporting\Formatter\Support\ViolationDetailRenderer;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(DetailedViolationRenderer::class)]
 #[CoversClass(ViolationDetailRenderer::class)]
@@ -32,7 +34,7 @@ final class DetailedViolationRendererTest extends TestCase
 
     protected function setUp(): void
     {
-        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
         $this->renderer = new DetailedViolationRenderer($debtCalculator);
         $this->detailRenderer = new ViolationDetailRenderer();
         $this->debtRenderer = new DebtBreakdownRenderer($debtCalculator);
@@ -284,8 +286,8 @@ final class DetailedViolationRendererTest extends TestCase
             self::violation(
                 location: new Location(RelativePath::fromString('src/Bar.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
-                ruleName: 'design.lcom',
-                violationCode: 'design.lcom',
+                ruleName: 'cohesion.lcom',
+                violationCode: 'cohesion.lcom',
                 message: 'LCOM high',
                 severity: Severity::Warning,
             ),
@@ -296,7 +298,7 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
         self::assertStringContainsString('2 violations', $output);
-        self::assertStringContainsString('design.lcom', $output);
+        self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('1 violation', $output);
     }
 
@@ -317,8 +319,8 @@ final class DetailedViolationRendererTest extends TestCase
         $extra = self::violation(
             location: new Location(RelativePath::fromString('src/Bar.php'), 5),
             symbolPath: SymbolPath::forClass('App', 'Bar'),
-            ruleName: 'design.lcom',
-            violationCode: 'design.lcom',
+            ruleName: 'cohesion.lcom',
+            violationCode: 'cohesion.lcom',
             message: 'LCOM high',
             severity: Severity::Warning,
         );
@@ -328,7 +330,7 @@ final class DetailedViolationRendererTest extends TestCase
         $output = $this->debtRenderer->render($displayed, $allViolations);
 
         // Debt breakdown must include the rule from $allViolations, not just $displayed
-        self::assertStringContainsString('design.lcom', $output);
+        self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
     }
 

@@ -21,6 +21,8 @@ use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 /**
  * Tests that TextVerboseFormatter correctly delegates to TextFormatter with detail=true.
@@ -34,7 +36,7 @@ final class TextVerboseFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
         $detailedRenderer = new DetailedViolationRenderer($debtCalculator);
         $this->textFormatter = new TextFormatter($debtCalculator, $detailedRenderer);
         $this->formatter = new TextVerboseFormatter($this->textFormatter);
@@ -229,8 +231,8 @@ final class TextVerboseFormatterTest extends TestCase
             ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Bar.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
-                ruleName: 'design.lcom',
-                violationCode: 'design.lcom',
+                ruleName: 'cohesion.lcom',
+                violationCode: 'cohesion.lcom',
                 message: 'LCOM is 5',
                 severity: Severity::Warning,
                 metricValue: 5,
@@ -245,7 +247,7 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
         self::assertStringContainsString('2 violations', $output);
-        self::assertStringContainsString('design.lcom', $output);
+        self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('1 violation', $output);
     }
 

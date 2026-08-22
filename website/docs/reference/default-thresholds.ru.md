@@ -40,7 +40,7 @@
 
 | Правило                  | ID                     | Warning   | Error     | Область |
 | ------------------------ | ---------------------- | --------- | --------- | ------- |
-| LCOM                     | `design.lcom`          | 3         | 5         | Класс   |
+| LCOM                     | `cohesion.lcom`        | 3         | 5         | Класс   |
 | NOC                      | `design.noc`           | 10        | 15        | Класс   |
 | DIT                      | `design.inheritance`   | 4         | 6         | Класс   |
 | Type Coverage (param)    | `design.type-coverage` | 80 (ниже) | 50 (ниже) | Класс   |

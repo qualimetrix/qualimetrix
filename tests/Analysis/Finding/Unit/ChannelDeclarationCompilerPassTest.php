@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
@@ -111,6 +112,34 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             'architecture.coverage#architecture.coverage',
             $channelsByProducer[LayerViolationRule::NAME],
         );
+    }
+
+    /**
+     * `architecture.coverage` is emitted by {@see LayerViolationRule} under
+     * its own identity, distinct from the rule's own `NAME`
+     * (`architecture.layer-violation`) — it inherits the same rule's
+     * declared `REMEDIATION_MINUTES` rather than needing a constant of its
+     * own on a class that does not exist.
+     */
+    #[Test]
+    public function itAttributesRemediationMinutesToADiagnosticsOwnChannelName(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(LayerViolationRule::class)
+            ->setClass(LayerViolationRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(RemediationTimeRegistry::class)
+            ->setClass(RemediationTimeRegistry::class)
+            ->setArguments(['$declarations' => null, '$minutesByRule' => []]);
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+
+        $minutesByRule = $container->getDefinition(RemediationTimeRegistry::class)
+            ->getArgument('$minutesByRule');
+
+        self::assertSame(LayerViolationRule::REMEDIATION_MINUTES, $minutesByRule[LayerViolationRule::NAME]);
+        self::assertSame(LayerViolationRule::REMEDIATION_MINUTES, $minutesByRule['architecture.coverage']);
     }
 
     #[Test]
@@ -235,6 +264,10 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
 final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
 {
     public const string NAME = 'fixture.no-channel-declarations';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 15;
 
     public function getName(): string
     {

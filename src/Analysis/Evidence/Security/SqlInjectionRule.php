@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Security;
 
-use Qualimetrix\Analysis\Finding\Contract\Severity;
-
 /**
  * Detects potential SQL injection vulnerabilities.
  *
@@ -15,34 +13,11 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 final class SqlInjectionRule extends AbstractSecurityPatternRule
 {
     public const string NAME = 'security.sql-injection';
+    public const string DOCS_PAGE = 'rules/security.md';
+    public const int REMEDIATION_MINUTES = 60;
 
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Detects potential SQL injection vulnerabilities';
-    }
-
-    protected function getPatternType(): string
-    {
-        return 'sql_injection';
-    }
-
-    protected function getSeverity(): Severity
-    {
-        return Severity::Error;
-    }
-
-    protected function getMessageTemplate(): string
-    {
-        return 'Potential SQL injection — use parameterized queries instead of direct superglobal interpolation';
-    }
-
-    protected function getRecommendation(): string
-    {
-        return 'Use parameterized queries or prepared statements.';
-    }
+    protected const string DESCRIPTION = 'Detects potential SQL injection vulnerabilities';
+    protected const string PATTERN_TYPE = 'sql_injection';
+    protected const string MESSAGE_TEMPLATE = 'Potential SQL injection — use parameterized queries instead of direct superglobal interpolation';
+    protected const ?string RECOMMENDATION = 'Use parameterized queries or prepared statements.';
 }

@@ -13,6 +13,8 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 final class CountInLoopRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.count-in-loop';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+    public const int REMEDIATION_MINUTES = 10;
     protected const string DESCRIPTION = 'Detects count() calls in loop conditions';
     protected const string SMELL_TYPE = 'count_in_loop';
     protected const string MESSAGE_TEMPLATE = 'count() in loop condition detected - store in variable before loop';

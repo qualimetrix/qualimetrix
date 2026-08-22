@@ -29,6 +29,27 @@ use Qualimetrix\Core\Symbol\SymbolType;
 abstract class AbstractCodeSmellRule extends AbstractRule
 {
     public const string NAME = '';
+
+    /**
+     * Empty here for the same reason as {@see NAME}: it exists only so that
+     * concrete subclasses are forced to declare their own value. Unlike
+     * `NAME`, nothing in this class reads `static::DOCS_PAGE` — its sole
+     * purpose is to make an *omitted* declaration on a subclass distinguishable
+     * from a *declared* one by {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader},
+     * which checks `getDeclaringClass()` and rejects this inherited empty
+     * string rather than silently accepting it.
+     */
+    public const string DOCS_PAGE = '';
+
+    /**
+     * Empty (zero) here for the same reason as {@see DOCS_PAGE}: it forces
+     * every concrete subclass to declare its own value, and
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader}
+     * rejects this inherited placeholder via `getDeclaringClass()` rather
+     * than silently accepting it.
+     */
+    public const int REMEDIATION_MINUTES = 0;
+
     protected const string DESCRIPTION = '';
     protected const string SMELL_TYPE = '';
     protected const Severity SEVERITY = Severity::Warning;

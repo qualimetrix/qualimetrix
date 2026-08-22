@@ -32,7 +32,9 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class CircularDependencyRule extends AbstractRule
 {
     public const string NAME = CircularDependencyPreparationInterface::PRODUCER_RULE_NAME;
+    public const string DOCS_PAGE = 'rules/architecture.md';
 
+    public const int REMEDIATION_MINUTES = 120;
     public function __construct(
         RuleOptionsInterface $options,
         private readonly CircularDependencyAnalysis $analysis,

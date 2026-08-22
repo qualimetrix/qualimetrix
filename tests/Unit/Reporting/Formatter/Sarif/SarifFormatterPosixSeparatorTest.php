@@ -16,6 +16,7 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresentation;
 
 /**
  * ADR 0015 Phase 4 regression pin: SARIF output uses POSIX separators
@@ -28,7 +29,7 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
     #[Test]
     public function itEmitsPosixSeparatorsForArtifactLocations(): void
     {
-        $formatter = new SarifFormatter(new SarifRuleCollector());
+        $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
 
         $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Sub/Dir/Foo.php'), 42, true),
@@ -55,7 +56,7 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
     #[Test]
     public function itEmitsPosixSeparatorsForRelatedLocations(): void
     {
-        $formatter = new SarifFormatter(new SarifRuleCollector());
+        $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
 
         $related = new Location(RelativePath::fromString('src/Other/Bar.php'), 7, true);
         $violation = self::violation(

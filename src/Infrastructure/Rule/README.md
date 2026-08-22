@@ -33,11 +33,24 @@ validation must know the universe of the configuration it is validating, and it
 runs before any store has accepted a value. That is the same lifecycle applied
 to a not-yet-committed catalog, not a second lifecycle.
 
+## Computed-metric description override
+
+`ComputedMetricChannelPresentation` decorates Finding's
+`ChannelPresentationView`: for a configured `computed.*`/`health.*` channel it
+prefers `ComputedMetricDefinition::$description` over the producer rule's
+generic one. It lives here rather than in `Analysis\Finding` because
+`ComputedMetricDefinition` is owned by `Analysis\Evidence\ComputedMetrics`,
+which itself depends on Finding for `RuleInterface` — importing it from
+Finding would close a dependency cycle. Infrastructure already depends on both
+capabilities (see `ChannelUniverse` above), so the override is composed here
+and the public `ChannelPresentationInterface` alias resolves to this decorator.
+
 ## Structure
 
 ```text
 Rule/
-├── ChannelUniverse.php              # the one channel-identity instance
+├── ChannelUniverse.php                       # the one channel-identity instance
+├── ComputedMetricChannelPresentation.php     # layers the computed-metric description override
 ├── Contract/
 │   └── RuleChannelSnapshotFactoryInterface.php
 ├── KnownRuleNamesAdapter.php

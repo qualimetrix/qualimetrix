@@ -40,7 +40,9 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class InstabilityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'coupling.instability';
+    public const string DOCS_PAGE = 'rules/coupling.md';
 
+    public const int REMEDIATION_MINUTES = 30;
     public function getName(): string
     {
         return self::NAME;

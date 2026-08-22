@@ -260,7 +260,7 @@ rules:
 !!! warning "Удаляются только агрегатные нарушения уровня Namespace"
     Опция фильтрует нарушения, чей субъект — **неймспейс**. У правила, которое сообщает
     поштучно (`code-smell.*`, `security.*`, `architecture.layer-violation`) или только на
-    уровне класса (`design.lcom`), удалять ей нечего: ключ с таким каналом принимается и
+    уровне класса (`cohesion.lcom`), удалять ей нечего: ключ с таким каналом принимается и
     ничего не делает. Диагностики политики слоёв — `architecture.coverage`,
     `architecture.unreachable-layer`, `architecture.potential-shadow`,
     `architecture.empty-template`, `architecture.pending-layer-matched` — сообщают о проекте целиком и тоже вне её досягаемости;

@@ -255,6 +255,7 @@ const P6_D_PRIORITIZATION_TEST_PATHS = [
     'tests/Analysis/Evidence/Prioritization/Unit/Debt/RemediationTimeRegistryTest.php',
     'tests/Analysis/Evidence/Prioritization/Unit/Impact/ClassRankResolverTest.php',
     'tests/Analysis/Evidence/Prioritization/Unit/Impact/ImpactCalculatorTest.php',
+    'tests/Analysis/Evidence/Prioritization/Support/StubRemediationMinutes.php',
 ];
 
 /** @var list<string> Exact P6-D Infrastructure Git adapter authorities. */

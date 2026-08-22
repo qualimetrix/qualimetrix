@@ -35,6 +35,8 @@ use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(JsonFormatter::class)]
 final class JsonFormatterTest extends TestCase
@@ -49,7 +51,7 @@ final class JsonFormatterTest extends TestCase
         $worstClassDrillDown = new WorstClassDrillDown($definitionCatalog);
         $sanitizer = new JsonSanitizer();
         $violationFilter = new ViolationFilter();
-        $remediationTimeRegistry = new RemediationTimeRegistry();
+        $remediationTimeRegistry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $this->formatter = new JsonFormatter(
             new DebtCalculator($remediationTimeRegistry),
             new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),

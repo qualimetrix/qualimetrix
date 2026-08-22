@@ -22,6 +22,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
 use Qualimetrix\Reporting\Formatter\Json\JsonViolationSection;
 use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(JsonViolationSection::class)]
 final class JsonViolationSectionTest extends TestCase
@@ -31,7 +33,7 @@ final class JsonViolationSectionTest extends TestCase
     protected function setUp(): void
     {
         $this->section = new JsonViolationSection(
-            new RemediationTimeRegistry(),
+            new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()),
             new JsonSanitizer(),
         );
     }

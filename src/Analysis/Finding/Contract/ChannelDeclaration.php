@@ -28,6 +28,8 @@ use Qualimetrix\Core\Observation\WorseDirection;
  * declaring how it compares and declaring that accepting it is illegitimate.
  * The layer-policy diagnostics needed both and got the wrong one — see
  * {@see ChannelAcceptability}.
+ *
+ * @qmx-ignore health.cohesion -- Predicate methods each answer one independent question over disjoint fields of one flat declaration; there is no shared instance state to group them by.
  */
 final readonly class ChannelDeclaration
 {
@@ -89,5 +91,19 @@ final readonly class ChannelDeclaration
     public function isConfigurationError(): bool
     {
         return $this->acceptability === ChannelAcceptability::ConfigurationError;
+    }
+
+    /**
+     * Whether a smaller reported number is worse for this channel — `null`
+     * for an `occurrence` shape, which carries no direction to ask about.
+     *
+     * Exists so a consumer that only ever needs to flip a ratio (e.g.
+     * {@see \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry})
+     * does not have to import {@see WorseDirection} itself just to compare
+     * against one of its two cases.
+     */
+    public function isLowerWorse(): ?bool
+    {
+        return $this->direction === null ? null : $this->direction === WorseDirection::Lower;
     }
 }

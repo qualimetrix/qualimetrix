@@ -419,12 +419,15 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Size\PropertyCountRule'
     - name: analysis-finding
       patterns:
+        - 'Qualimetrix\Analysis\Finding\ChannelPresentationView'
         - 'Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver'
         - 'Qualimetrix\Analysis\Finding\Contract\AcceptedLevel'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelPresentation'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelShape'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides'
@@ -466,10 +469,13 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOwnConstantReader'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface'
@@ -862,6 +868,7 @@ architecture:
     - name: infrastructure-rule
       patterns:
         - 'Qualimetrix\Infrastructure\Rule\ChannelUniverse'
+        - 'Qualimetrix\Infrastructure\Rule\ComputedMetricChannelPresentation'
         - 'Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface'
         - 'Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException'
         - 'Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter'
@@ -1149,6 +1156,7 @@ architecture:
       - analysis-evidence-coupling
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
+      - analysis-evidence-prioritization
       - analysis-finding
       - analysis-policy-architecture
       - analysis-policy-baseline
@@ -1545,7 +1553,7 @@ rules:
     exclude_paths:
       - src/Analysis/Evidence/Measurement/Runtime/CollectorRuntimeConfigurationStore.php
 
-  design.lcom:
+  cohesion.lcom:
     warning: 5
     error: 5
     exclude_paths:

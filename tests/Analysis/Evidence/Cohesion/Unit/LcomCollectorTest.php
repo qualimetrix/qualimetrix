@@ -1459,6 +1459,98 @@ PHP;
     }
 
     #[Test]
+    public function itExcludesConstructorWithExplicitPropertyAssignmentFromLcom(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ShapeD
+{
+    private array $mapA = [];
+    private array $mapB = [];
+
+    public function __construct(array $mapA = [], array $mapB = [])
+    {
+        $this->mapA = $mapA;
+        $this->mapB = $mapB;
+    }
+
+    public function readsA(string $k): int { return $this->mapA[$k] ?? 0; }
+    public function connector(string $k): int { return ($this->mapA[$k] ?? 0) + ($this->mapB[$k] ?? 0); }
+    public function readsB(string $k): int { return $this->mapB[$k] ?? 0; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // connector shares both properties with readsA and readsB => one component.
+        // The constructor is excluded from the graph, so it cannot add a second one.
+        self::assertSame(1, $metrics->get('lcom:App\ShapeD'));
+    }
+
+    #[Test]
+    public function itExcludesPromotedConstructorFromLcom(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ShapeE
+{
+    public function __construct(private array $mapA = [], private array $mapB = []) {}
+
+    public function readsA(string $k): int { return $this->mapA[$k] ?? 0; }
+    public function connector(string $k): int { return ($this->mapA[$k] ?? 0) + ($this->mapB[$k] ?? 0); }
+    public function readsB(string $k): int { return $this->mapB[$k] ?? 0; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Regression: a promoted-property constructor never emits a PropertyFetch
+        // node, so before the fix it landed in the graph as an isolated vertex
+        // and inflated LCOM to 2, even though connector ties the other three
+        // methods into one component just like in ShapeD above.
+        self::assertSame(1, $metrics->get('lcom:App\ShapeE'));
+    }
+
+    #[Test]
+    public function itExcludesDestructorFromLcom(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithDestructor
+{
+    private $handle;
+    private $log;
+
+    public function __construct(private readonly string $path) {}
+
+    public function __destruct()
+    {
+        $this->log = 'closed';
+    }
+
+    public function open(): void { $this->handle = fopen($this->path, 'r'); }
+    public function read(): mixed { return $this->handle; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // __destruct touches only $log, a property no other method shares.
+        // If it were not excluded from the graph, it would land as its own
+        // isolated component (LCOM 2: {open, read} + {__destruct}).
+        self::assertSame(1, $metrics->get('lcom:App\WithDestructor'));
+    }
+
+    #[Test]
     public function itDeliberatelyDoesNotProvideCallableMetrics(): void
     {
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));

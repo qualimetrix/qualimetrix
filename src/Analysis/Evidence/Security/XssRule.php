@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Security;
 
-use Qualimetrix\Analysis\Finding\Contract\Severity;
-
 /**
  * Detects potential Cross-Site Scripting (XSS) vulnerabilities.
  *
@@ -15,34 +13,11 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 final class XssRule extends AbstractSecurityPatternRule
 {
     public const string NAME = 'security.xss';
+    public const string DOCS_PAGE = 'rules/security.md';
+    public const int REMEDIATION_MINUTES = 45;
 
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Detects potential XSS vulnerabilities';
-    }
-
-    protected function getPatternType(): string
-    {
-        return 'xss';
-    }
-
-    protected function getSeverity(): Severity
-    {
-        return Severity::Error;
-    }
-
-    protected function getMessageTemplate(): string
-    {
-        return 'Potential XSS — use htmlspecialchars() or equivalent before outputting user input';
-    }
-
-    protected function getRecommendation(): string
-    {
-        return 'Escape output with htmlspecialchars() or use a template engine with auto-escaping.';
-    }
+    protected const string DESCRIPTION = 'Detects potential XSS vulnerabilities';
+    protected const string PATTERN_TYPE = 'xss';
+    protected const string MESSAGE_TEMPLATE = 'Potential XSS — use htmlspecialchars() or equivalent before outputting user input';
+    protected const ?string RECOMMENDATION = 'Escape output with htmlspecialchars() or use a template engine with auto-escaping.';
 }

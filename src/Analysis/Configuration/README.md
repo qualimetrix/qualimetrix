@@ -125,11 +125,11 @@ this moved README; the user-facing CLI reference remains under `website/docs/`.
 | `--god-class-exclude-readonly=N`          | design.god-class                     | excludeReadonly       |
 | `--dit-warning=N`                         | design.inheritance                   | warning               |
 | `--dit-error=N`                           | design.inheritance                   | error                 |
-| `--lcom-warning=N`                        | design.lcom                          | warning               |
-| `--lcom-error=N`                          | design.lcom                          | error                 |
-| `--lcom-exclude-readonly=N`               | design.lcom                          | excludeReadonly       |
-| `--lcom-min-methods=N`                    | design.lcom                          | minMethods            |
-| `--lcom-exclude-methods=V`                | design.lcom                          | excludeMethods        |
+| `--lcom-warning=N`                        | cohesion.lcom                        | warning               |
+| `--lcom-error=N`                          | cohesion.lcom                        | error                 |
+| `--lcom-exclude-readonly=N`               | cohesion.lcom                        | excludeReadonly       |
+| `--lcom-min-methods=N`                    | cohesion.lcom                        | minMethods            |
+| `--lcom-exclude-methods=V`                | cohesion.lcom                        | excludeMethods        |
 | `--noc-warning=N`                         | design.noc                           | warning               |
 | `--noc-error=N`                           | design.noc                           | error                 |
 | `--type-coverage-param-warning=N`         | design.type-coverage                 | param_warning         |

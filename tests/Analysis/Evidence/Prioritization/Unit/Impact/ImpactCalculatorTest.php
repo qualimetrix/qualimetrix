@@ -22,6 +22,8 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(ImpactCalculator::class)]
 final class ImpactCalculatorTest extends TestCase
@@ -32,7 +34,10 @@ final class ImpactCalculatorTest extends TestCase
     protected function setUp(): void
     {
         $this->resolver = new ClassRankResolver();
-        $this->registry = new RemediationTimeRegistry();
+        $this->registry = new RemediationTimeRegistry(
+            StubChannelDeclarationRegistry::alwaysHigherMagnitude(),
+            StubRemediationMinutes::withRealValues(),
+        );
     }
 
     #[Test]

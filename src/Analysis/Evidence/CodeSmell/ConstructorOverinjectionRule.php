@@ -29,7 +29,9 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 final class ConstructorOverinjectionRule extends AbstractRule
 {
     public const string NAME = 'code-smell.constructor-overinjection';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
 
+    public const int REMEDIATION_MINUTES = 60;
     public function getName(): string
     {
         return self::NAME;

@@ -20,9 +20,15 @@ use Qualimetrix\Core\Observation\WorseDirection;
  */
 final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistryInterface
 {
-    /** @param array<string, ChannelDeclaration> $declarations keyed by {@see ViolationChannel::toKey()} */
+    /**
+     * @param array<string, ChannelDeclaration> $declarations keyed by {@see ViolationChannel::toKey()}
+     * @param ?ChannelDeclaration $default answer for a channel absent from $declarations — for a test
+     *                                     that needs every channel to resolve to the same shape rather
+     *                                     than stating each one, see {@see alwaysHigherMagnitude()}
+     */
     public function __construct(
         private array $declarations = [],
+        private ?ChannelDeclaration $default = null,
     ) {}
 
     /**
@@ -41,6 +47,19 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
         ]);
     }
 
+    /**
+     * Every channel resolves to a higher-is-worse magnitude declaration,
+     * regardless of its name. For a test whose subject is not the
+     * declaration lookup itself (formatter rendering, debt totals) and which
+     * uses rule names that are not necessarily real production rules, this
+     * stands in for "whatever the real declaration would say" without
+     * stating one per name.
+     */
+    public static function alwaysHigherMagnitude(): self
+    {
+        return new self(default: ChannelDeclaration::magnitude(WorseDirection::Higher));
+    }
+
     public function declare(string $channelKey, ChannelDeclaration $declaration): void
     {
         $this->declarations[$channelKey] = $declaration;
@@ -48,7 +67,7 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
 
     public function declarationFor(ViolationChannel $channel): ?ChannelDeclaration
     {
-        return $this->declarations[$channel->toKey()] ?? null;
+        return $this->declarations[$channel->toKey()] ?? $this->default;
     }
 
     public function staticDeclarations(): array

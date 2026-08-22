@@ -87,7 +87,7 @@ Reporting/
     │   └── JsonViolationSection.php       # Formats violations section for JSON output
     ├── Sarif/
     │   ├── SarifFormatter.php             # SARIF 2.1.0
-    │   └── SarifRuleCollector.php         # Collects rule metadata for SARIF tool component
+    │   └── SarifRuleCollector.php         # Collects rule metadata for SARIF tool component, joined from ChannelPresentationInterface
     ├── Health/
     │   └── HealthTextFormatter.php         # Text-based health report with scores and decomposition
     ├── Html/
@@ -454,6 +454,20 @@ SARIF 2.1.0 for GitHub Security, VS Code, Azure DevOps, JetBrains IDEs.
 ### Related Locations
 
 Violations with `relatedLocations` (e.g., code duplication violations pointing to other occurrences) are rendered as SARIF `relatedLocations` entries. This provides clickable cross-references in GitHub Code Scanning, VS Code, and JetBrains IDEs.
+
+### Rule Descriptors
+
+`SarifRuleCollector` carries no description or documentation-URL table of its
+own: both are derived per violation code from
+`Analysis\Finding\Contract\ChannelPresentationInterface`, which joins the
+channel to its producing rule's own description
+(`RuleInterface::getDescription()`) and declared documentation page
+(`RuleDocsPageReader`). A code no channel carries — including a configured
+computed metric whose own description is blank — falls back to a humanised
+rendering of the code and the repository URL rather than throwing. See
+`docs/internal/plans/sarif-channel-descriptions.md` for why this replaced the
+previous hand-kept `match`/category-prefix tables (they had drifted from the
+rules they duplicated).
 
 ### GitHub Actions Integration
 

@@ -34,6 +34,8 @@ use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\Report;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(SummaryFormatter::class)]
 final class SummaryFormatterTest extends TestCase
@@ -43,7 +45,7 @@ final class SummaryFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $registry = new RemediationTimeRegistry();
+        $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $debtCalculator = new DebtCalculator($registry);
         $hintProvider = new HealthMetricCatalog();
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
@@ -1215,8 +1217,8 @@ final class SummaryFormatterTest extends TestCase
         $violations[] = self::violation(
             location: new Location(RelativePath::fromString('src/Bar.php'), 5),
             symbolPath: SymbolPath::forClass('App', 'Bar'),
-            ruleName: 'design.lcom',
-            violationCode: 'design.lcom',
+            ruleName: 'cohesion.lcom',
+            violationCode: 'cohesion.lcom',
             message: 'LCOM high',
             severity: Severity::Warning,
         );
@@ -1228,7 +1230,7 @@ final class SummaryFormatterTest extends TestCase
         // Debt breakdown must show ALL rules, not just those within the display limit
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
-        self::assertStringContainsString('design.lcom', $output);
+        self::assertStringContainsString('cohesion.lcom', $output);
         // Violation counts in breakdown must reflect all violations
         self::assertStringContainsString('3 violations', $output);
         self::assertStringContainsString('1 violation)', $output);

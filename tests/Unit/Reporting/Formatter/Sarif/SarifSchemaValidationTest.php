@@ -18,6 +18,7 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresentation;
 
 /**
  * Validates {@see SarifFormatter} output against the official SARIF 2.1.0
@@ -36,7 +37,7 @@ final class SarifSchemaValidationTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->formatter = new SarifFormatter(new SarifRuleCollector());
+        $this->formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
     }
 
     #[Test]
@@ -69,8 +70,8 @@ final class SarifSchemaValidationTest extends TestCase
             ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/OrderService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'OrderService', 'processOrder'),
-                ruleName: 'design.lcom',
-                violationCode: 'design.lcom',
+                ruleName: 'cohesion.lcom',
+                violationCode: 'cohesion.lcom',
                 message: 'LCOM4 of 8 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 8,

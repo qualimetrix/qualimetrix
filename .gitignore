@@ -67,6 +67,7 @@ examples/
 !/tests/Analysis/Evidence/Measurement/Fixtures/*.json
 !/tests/Analysis/Policy/Architecture/Fixtures/Sample/*.json
 !/tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/memory-ceiling.json
+!/benchmarks/composer.json
 # HTML report build manifest: without these the JS bundle cannot be rebuilt or
 # audited from a fresh clone, and dependency versions cannot be pinned.
 !/src/Reporting/Template/package.json

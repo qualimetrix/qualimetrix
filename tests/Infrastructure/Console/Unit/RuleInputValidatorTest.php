@@ -223,7 +223,7 @@ final class RuleInputValidatorTest extends TestCase
         );
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('none of them produced by "design.lcom"');
+        $this->expectExceptionMessage('none of them produced by "cohesion.lcom"');
         $validator->validate(
             new ArrayInput([], new InputDefinition()),
             $configuration,

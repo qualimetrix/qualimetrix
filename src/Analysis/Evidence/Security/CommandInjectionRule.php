@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Security;
 
-use Qualimetrix\Analysis\Finding\Contract\Severity;
-
 /**
  * Detects potential command injection vulnerabilities.
  *
@@ -16,34 +14,11 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 final class CommandInjectionRule extends AbstractSecurityPatternRule
 {
     public const string NAME = 'security.command-injection';
+    public const string DOCS_PAGE = 'rules/security.md';
+    public const int REMEDIATION_MINUTES = 60;
 
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Detects potential command injection vulnerabilities';
-    }
-
-    protected function getPatternType(): string
-    {
-        return 'command_injection';
-    }
-
-    protected function getSeverity(): Severity
-    {
-        return Severity::Error;
-    }
-
-    protected function getMessageTemplate(): string
-    {
-        return 'Potential command injection — use escapeshellarg() before passing user input to shell commands';
-    }
-
-    protected function getRecommendation(): string
-    {
-        return 'Use escapeshellarg() for arguments or avoid shell commands entirely.';
-    }
+    protected const string DESCRIPTION = 'Detects potential command injection vulnerabilities';
+    protected const string PATTERN_TYPE = 'command_injection';
+    protected const string MESSAGE_TEMPLATE = 'Potential command injection — use escapeshellarg() before passing user input to shell commands';
+    protected const ?string RECOMMENDATION = 'Use escapeshellarg() for arguments or avoid shell commands entirely.';
 }

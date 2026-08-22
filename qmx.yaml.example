@@ -152,15 +152,18 @@
   #   exclude_readonly: true
   #   exclude_promoted_only: true
 
-  # — Design —
-  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/design/
+  # — Cohesion —
+  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/cohesion/
 
   # LCOM4 — Lack of Cohesion of Methods. Lower is better (1 = perfectly cohesive).
-  # design.lcom:
+  # cohesion.lcom:
   #   warning: 3                 # default: 3
   #   error: 5
   #   min_methods: 3             # skip classes with fewer methods
   #   exclude_readonly: true
+
+  # — Design —
+  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/design/
 
   # DIT — Depth of Inheritance Tree.
   # design.inheritance:

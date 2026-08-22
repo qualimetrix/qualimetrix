@@ -31,7 +31,9 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class UnreachableCodeRule extends AbstractRule
 {
     public const string NAME = 'code-smell.unreachable-code';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
 
+    public const int REMEDIATION_MINUTES = 10;
     public function getName(): string
     {
         return self::NAME;

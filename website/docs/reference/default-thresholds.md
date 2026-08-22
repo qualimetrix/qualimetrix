@@ -40,7 +40,7 @@ Rules that check class design and inheritance structure.
 
 | Rule                     | ID                     | Warning    | Error      | Scope |
 | ------------------------ | ---------------------- | ---------- | ---------- | ----- |
-| LCOM                     | `design.lcom`          | 3          | 5          | Class |
+| LCOM                     | `cohesion.lcom`        | 3          | 5          | Class |
 | NOC                      | `design.noc`           | 10         | 15         | Class |
 | DIT                      | `design.inheritance`   | 4          | 6          | Class |
 | Type Coverage (param)    | `design.type-coverage` | 80 (below) | 50 (below) | Class |

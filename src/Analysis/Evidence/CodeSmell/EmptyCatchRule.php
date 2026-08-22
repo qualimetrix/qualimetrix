@@ -15,6 +15,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 final class EmptyCatchRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.empty-catch';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+    public const int REMEDIATION_MINUTES = 10;
     protected const string DESCRIPTION = 'Detects empty catch blocks';
     protected const string SMELL_TYPE = 'empty_catch';
     protected const Severity SEVERITY = Severity::Error;

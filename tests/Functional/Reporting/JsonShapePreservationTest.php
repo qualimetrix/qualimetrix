@@ -31,6 +31,9 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresentation;
 
 /**
  * ADR 0015 Phase 4 contract pin: after the RelativePath VO migration the
@@ -72,7 +75,7 @@ final class JsonShapePreservationTest extends TestCase
     #[Test]
     public function sarifFormatterEmitsArtifactLocationUri(): void
     {
-        $formatter = new SarifFormatter(new SarifRuleCollector());
+        $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
 
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -91,7 +94,7 @@ final class JsonShapePreservationTest extends TestCase
     #[Test]
     public function sarifFormatterOmitsLocationsForProjectViolations(): void
     {
-        $formatter = new SarifFormatter(new SarifRuleCollector());
+        $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
 
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -127,7 +130,7 @@ final class JsonShapePreservationTest extends TestCase
         $healthScoreDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
         $worstClassDrillDown = new WorstClassDrillDown($definitionCatalog);
         $sanitizer = new JsonSanitizer();
-        $registry = new RemediationTimeRegistry();
+        $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $formatter = new JsonFormatter(
             new DebtCalculator($registry),
             new JsonHealthSection(new HealthScoreResolver($healthScoreDrillDown), $sanitizer),

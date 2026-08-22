@@ -85,14 +85,35 @@ final class RuleNameValidator
     /**
      * Finds the closest known rule name via Levenshtein distance.
      *
+     * A rule rename typically changes the group prefix and keeps the leaf
+     * name (`design.lcom` -> `cohesion.lcom`): raw character-edit distance
+     * does not know that the leaf is the semantically stable half, so a
+     * short unrelated name sharing the old prefix can score closer than the
+     * renamed rule itself — `design.lcom` is 3 edits from `design.noc` but 4
+     * from `cohesion.lcom`, so plain Levenshtein suggested the wrong one
+     * after `cohesion.lcom` was renamed from `design.lcom` (see
+     * `docs/internal/plans/sarif-channel-descriptions.md`, "Breaking",
+     * ADR 0028). A known name whose leaf (the segment after the last `.`)
+     * matches the unknown name's leaf exactly is preferred over one merely
+     * closer by raw distance; ties are resolved by the existing distance
+     * rule.
+     *
      * @param list<string> $knownNames
      */
     private static function findClosestMatch(string $unknown, array $knownNames): ?string
     {
+        $sameLeaf = self::matchingLeaf($unknown, $knownNames);
+
+        if (\count($sameLeaf) === 1) {
+            return $sameLeaf[0];
+        }
+
+        $candidates = $sameLeaf !== [] ? $sameLeaf : $knownNames;
+
         $bestMatch = null;
         $bestDistance = self::MAX_LEVENSHTEIN_DISTANCE + 1;
 
-        foreach ($knownNames as $known) {
+        foreach ($candidates as $known) {
             $distance = levenshtein($unknown, $known);
             if ($distance < $bestDistance) {
                 $bestDistance = $distance;
@@ -101,5 +122,28 @@ final class RuleNameValidator
         }
 
         return $bestMatch;
+    }
+
+    /**
+     * @param list<string> $knownNames
+     *
+     * @return list<string> known names sharing the unknown name's last
+     *                      dot-separated segment, or `[]` when the unknown
+     *                      name carries no dot at all
+     */
+    private static function matchingLeaf(string $unknown, array $knownNames): array
+    {
+        $lastDot = strrpos($unknown, '.');
+
+        if ($lastDot === false) {
+            return [];
+        }
+
+        $suffix = '.' . substr($unknown, $lastDot + 1);
+
+        return array_values(array_filter(
+            $knownNames,
+            static fn(string $known): bool => str_ends_with($known, $suffix),
+        ));
     }
 }

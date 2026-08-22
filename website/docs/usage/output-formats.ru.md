@@ -85,7 +85,7 @@ bin/qmx check src/ --detail=50
 
 ```
 src/Service/UserService.php:42: error[complexity.cyclomatic.callable]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
-src/Service/UserService.php:87: warning[size.method-count.class]: Class has 22 methods, max recommended is 20 (UserService)
+src/Service/UserService.php:87: warning[size.method-count]: Class has 22 methods, max recommended is 20 (UserService)
 src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max allowed is 15 (OrderRepository)
 
 3 error(s), 0 warning(s) in 45 file(s)
@@ -363,7 +363,7 @@ Checkstyle 3.0 XML: `<file name="...">` с вложенными `<error line="" 
     <error line="87"
            severity="warning"
            message="Class has 22 methods, max recommended is 20"
-           source="qmx.size.method-count.class"/>
+           source="qmx.size.method-count"/>
   </file>
 </checkstyle>
 ```
@@ -501,7 +501,7 @@ code_quality:
 **Пример вывода:**
 
 ```
-::warning file=src/Service/UserService.php,line=87,title=size.method-count.class::Class has 22 methods, max recommended is 20
+::warning file=src/Service/UserService.php,line=87,title=size.method-count::Class has 22 methods, max recommended is 20
 ::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic.callable::Cyclomatic complexity is 15, max allowed is 10
 ```
 

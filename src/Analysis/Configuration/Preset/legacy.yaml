@@ -36,7 +36,7 @@ rules:
   maintainability.index:
     warning: 25
     error: 10
-  design.lcom:
+  cohesion.lcom:
     warning: 5
     error: 8
   design.noc:

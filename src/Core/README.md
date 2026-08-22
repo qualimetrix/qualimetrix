@@ -445,17 +445,18 @@ A category is not addressable: no directive or selector matches on it, and it
 carries no methods. `qmx rules --group` is its sole consumer, reading
 `RuleMetadata::$category->value` directly.
 
-| Value             | Description                                    |
-| ----------------- | ---------------------------------------------- |
-| `Complexity`      | CCN, NPath, Cognitive, WMC                     |
-| `Size`            | MethodCount, ClassCount, PropertyCount         |
-| `Design`          | LCOM, NOC, Inheritance                         |
-| `Maintainability` | Maintainability Index                          |
-| `Coupling`        | Instability, CBO, Distance                     |
-| `Architecture`    | Layer Policy Violations, Circular Dependencies |
-| `CodeSmell`       | Boolean Arguments, Debug Code, etc.            |
-| `Security`        | Hardcoded Credentials, Sensitive Parameter     |
-| `Duplication`     | Code Duplication                               |
+| Value             | Description                                            |
+| ----------------- | ------------------------------------------------------ |
+| `Complexity`      | CCN, NPath, Cognitive, WMC                             |
+| `Size`            | MethodCount, ClassCount, PropertyCount                 |
+| `Design`          | NOC, Inheritance, Type Coverage, Data Class, God Class |
+| `Cohesion`        | LCOM                                                   |
+| `Maintainability` | Maintainability Index                                  |
+| `Coupling`        | Instability, CBO, Distance                             |
+| `Architecture`    | Layer Policy Violations, Circular Dependencies         |
+| `CodeSmell`       | Boolean Arguments, Debug Code, etc.                    |
+| `Security`        | Hardcoded Credentials, Sensitive Parameter             |
+| `Duplication`     | Code Duplication                                       |
 
 The value happening to equal the first segment of a rule name (and
 `computed.health` disagreeing with `Maintainability`) is a harmless

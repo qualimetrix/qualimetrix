@@ -13,6 +13,8 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 final class ExitRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.exit';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+    public const int REMEDIATION_MINUTES = 10;
     protected const string DESCRIPTION = 'Detects usage of exit() and die()';
     protected const string SMELL_TYPE = 'exit';
     protected const string MESSAGE_TEMPLATE = 'exit()/die() usage detected - use exceptions instead';

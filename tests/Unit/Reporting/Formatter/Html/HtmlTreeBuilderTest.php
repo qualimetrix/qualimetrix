@@ -23,6 +23,8 @@ use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(HtmlTreeBuilder::class)]
 #[CoversClass(HtmlTreeNode::class)]
@@ -35,7 +37,7 @@ final class HtmlTreeBuilderTest extends TestCase
     protected function setUp(): void
     {
         $this->builder = new HtmlTreeBuilder(
-            new DebtCalculator(new RemediationTimeRegistry()),
+            new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
             $this->catalog(),
         );
     }

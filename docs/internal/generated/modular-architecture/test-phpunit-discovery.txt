@@ -194,6 +194,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesListsMultipleUnknowns
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesNoSuggestionForDistantMatch
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesSuggestsCloseMatch
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesSuggestsTheRenamedRuleByItsSharedLeafNotByRawDistance
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesThrowsForUnknownRule
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\CliStageTest::itHasTheHighestSourcePriority
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\CliStageTest::itPublishesAlreadyNormalizedOverridesWithoutSymfonyInput
@@ -918,6 +919,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itDoesNotTreatMethodAccessingPropertyViaCallAsStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itDoesNotTreatMethodCallingInstanceMethodAsStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesAbstractMethodsFromLcom
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesConstructorWithExplicitPropertyAssignmentFromLcom
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesDestructorFromLcom
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesPromotedConstructorFromLcom
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesStaticMethodsFromLcom
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itGetsMetricDefinitions
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itGetsName
@@ -2793,7 +2797,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtCalculatorTest::itCombinesScaledAndFlatDebt
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtCalculatorTest::itExcludesViolationWithNoFileFromPerFile
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtCalculatorTest::itScalesDebtForViolationWithMetricAndThreshold
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtCalculatorTest::itUsesDefaultDebtForUnknownRule
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtCalculatorTest::itThrowsForARuleNameNoRuleDeclares
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itFormatsMinutesStatically"0 minutes"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itFormatsMinutesStatically"1 hour"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itFormatsMinutesStatically"1d 2h 15min"
@@ -2809,50 +2813,85 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itFormatsTotalAsZeroMinutes
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itFormatsTotalByDelegatingToFormatMinutes
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\DebtSummaryTest::itStoresConstructorProperties
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itDoesNotScaleAViolationOnAChannelWhoseDeclarationCarriesNoDirection
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itDoesNotScaleAViolationOnAChannelWithNoDeclarationAtAll
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itGivesBaseDebtForMinorCcnOvershoot
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itGivesBaseDebtForModerateCcnOvershoot
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itGivesBaseMinutesForMinorOvershootOnSmallRule
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itGivesLargeDebtForExtremeOvershoot
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itHandlesComputedHealthWithInvertedMetric
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itHandlesComputedHealthWithInvertedMetricReadFromDefinition
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itHandlesComputedHealthWithNormalMetric
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itHandlesInvertedRuleForMaintainabilityIndex
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itHandlesInvertedRuleForTypeCoverage
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"architecture.circular-dependency"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.boolean-argument"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.count-in-loop"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.debug-code"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.empty-catch"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.error-suppression"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.eval"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.exit"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.goto"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.long-parameter-list"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.superglobals"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"code-smell.unreachable-code"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"complexity.cognitive"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"complexity.cyclomatic"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"complexity.npath"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"complexity.wmc"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"coupling.cbo"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"coupling.class-rank"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"coupling.distance"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"coupling.instability"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"design.inheritance"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"design.lcom"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"design.noc"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"design.type-coverage"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"maintainability.index"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"security.command-injection"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"security.hardcoded-credentials"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"security.sensitive-parameter"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"security.sql-injection"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"security.xss"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"size.class-count"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"size.method-count"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsCorrectBaseMinutesForKnownRule"size.property-count"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsDefaultForAnotherUnknownRule
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsDefaultForUnknownRule
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"annotation.directive"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"annotation.invalid-threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"annotation.unresolved-directive"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"annotation.unsupported-threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"annotation.unused-directive"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.circular"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.circular-dependency"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.coverage"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.empty-template"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.layer-violation"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.pending-layer-matched"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.potential-shadow"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.unassigned-class"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"architecture.unreachable-layer"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.boolean-argument"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.constructor-overinjection"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.count-in-loop"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.debug-code"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.empty-catch"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.error-suppression"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.eval"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.exit"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.goto"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.identical-subexpression"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.long-parameter-list"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.superglobals"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.unreachable-code"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"code-smell.unused-private"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"cohesion.lcom"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity.cognitive"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity.cyclomatic"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity.npath"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity.wmc"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"computed.health"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"coupling.cbo"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"coupling.class-rank"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"coupling.distance"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"coupling.instability"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"cyclomatic-complexity"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.data-class"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.god-class"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.inheritance"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.noc"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.type-coverage"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"duplication.code-duplication"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"file-size"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"fixture.rule"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"lcom"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"maintainability.index"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"namespace-size"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"r"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"security.command-injection"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"security.hardcoded-credentials"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"security.sensitive-parameter"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"security.sql-injection"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"security.xss"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"size.class-count"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"size.loc"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"size.method-count"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"size.namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"size.property-count"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"test"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"test-rule"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itScalesDebtAboveBaseForLargeOvershoot
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itTakesTheFlatBaseTimeForClassRankRegardlessOfMetricAndThreshold
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itThrowsForARuleNameNotInTheInjectedMap
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itThrowsWhenTheInjectedMapIsEmpty
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itUsesBaseMinutesForViolationWithoutMetricValue
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itUsesBaseMinutesForViolationWithoutThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itUsesBaseMinutesForZeroMetricValue
@@ -3466,6 +3505,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::exactlyTheLayerPolicyAndDirectiveDiagnosticsDeclareAConfigurationError
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::noExcludedFixtureLineNamesADeclaredChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyConfiguredComputedMetricChannelAlsoResolvesToARealDescriptionAndAnExistingDocsPage
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyDeclaredChannelHasAProducer
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRegisteredRuleIsAddressableIncludingOnesThatDeclareNoChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRulesDeclaredThresholdSupportMatchesWhatItsOptionsCanHonour
@@ -3473,6 +3514,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::itNamesTheProducerForEveryIdentityMechanismThatDefeatsAScan
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theAssembledUniverseAgreesWithTheRuleClassesReadDirectly
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theEnumerationAgreesWithTheTrackedFixture
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyDeclaredDocsPageCarriesTheRulesOwnAnchor
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyRegisteredRuleDeclaresItsOwnDocsPage
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::theTwoNonPrefixPagesAreDeclaredExplicitly
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::noHandSpelledCodeInAFixtureOrDocPageNamesANonexistentRuleOrChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::noProductionFileOutsideARuleOrChannelsOwningCapabilityHoldsItsLiteral
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesParamErrorViaDedicatedCliFlagWithoutFalseWarning
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesReturnErrorViaRuleOptSnakeCaseSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaConfigFileKebabKey
@@ -3480,6 +3526,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptCamelSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptKebabSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itStillWarnsAboutAGenuinelyUnknownOption
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRegisteredRuleDeclaresItsOwnRemediationMinutes
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRulesRemediationMinutesMatchTheReferencePage
  - Qualimetrix\Tests\Analysis\Finding\Unit\AbstractRuleSubjectControlTest::itPassesTheMetricSubjectToTheThresholdResolutionSeam
  - Qualimetrix\Tests\Analysis\Finding\Unit\AcceptedLevelTest::itCarriesOnlyACountOnAnOccurrenceChannel
  - Qualimetrix\Tests\Analysis\Finding\Unit\AcceptedLevelTest::itCarriesTheAcceptedMagnitudesOfAMagnitudeChannel
@@ -3503,6 +3551,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itIgnoresAnOverrideThatOnlyPrefixesTheRuleName
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itMethodLevelOverrideTakesPriorityOverClassLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itAttributesDiagnosticChannelsToTheirProducerRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itAttributesRemediationMinutesToADiagnosticsOwnChannelName
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itCarriesTheDeclaredThresholdOverrideSupportRatherThanInferringIt
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itCollectsDeclarationsFromEveryTaggedRuleIntoTheRegistry
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itDoesNothingWhenTheRegistryIsNotRegistered
@@ -3531,6 +3580,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAnOccurrenceDeclarationViaTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAMagnitudeDeclarationWithoutADirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAnOccurrenceDeclarationCarryingADirection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseFalseForAHigherDirection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseNullForAnOccurrenceDeclaration
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseTrueForALowerDirection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itFailsLoudWhenTheProducingRuleHasNoDeclaredDocsPage
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itJoinsTheProducersDescriptionAndDeclaredDocsPage
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullForACodeNoChannelCarries
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullWhenTheResolvedDescriptionIsEmpty
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"bare separator"
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty dot segment"
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty rule half"
@@ -3609,6 +3665,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\PredicateFilterStageTest::itPassesThroughTheSameObjectsInTheSameOrder
  - Qualimetrix\Tests\Analysis\Finding\Unit\PredicateFilterStageTest::itReportsTheStageItWasBuiltFor
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfigurationIsolationTest::itClearsEveryPerRunValueBeforeTheNextConfiguration
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itReadsTheDocsPageConstantWithoutInstantiation
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsAClassThatCannotBeLoaded
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsADocsPageConstantOnlyInheritedFromAnAbstractAncestor
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsANonStringDocsPageConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsAnEmptyStringDocsPageConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsRulesWithoutADocsPageConstant
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itAppliesOnlyRulesFilterToHierarchicalRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itCapturesExcludedViolationsWhenCaptureHolderIsEnabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itChannelNamespaceExclusionDoesNotHideClassFindingsInThatNamespace
@@ -3798,6 +3860,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RulePathExclusionProviderTest::itMatchesGlobPattern
  - Qualimetrix\Tests\Analysis\Finding\Unit\RulePathExclusionProviderTest::itMatchesPathPrefix
  - Qualimetrix\Tests\Analysis\Finding\Unit\RulePathExclusionProviderTest::itReturnsFalseWhenNoExclusions
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itReadsTheRemediationMinutesConstantWithoutInstantiation
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsAClassThatCannotBeLoaded
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsANegativeRemediationMinutesConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsANonIntRemediationMinutesConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsARemediationMinutesConstantOnlyInheritedFromAnAbstractAncestor
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsAZeroRemediationMinutesConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleRemediationMinutesReaderTest::itRejectsRulesWithoutARemediationMinutesConstant
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itKeepsAProducerActiveWhenOnlyOneOfItsChannelsIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itLetsDisabledSelectorsOverrideOnlySelectors
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itRecognizesRegisteredChannelSelectorsWithoutTreatingThemAsRuleOptionNames
@@ -3818,6 +3887,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"code-smell.unreachable-code::(top)#0[error]=error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"code-smell.unreachable-code::(top)#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"code-smell.unreachable-code::(top)#0[warning]=warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"cohesion.lcom::(top)#0[error]=error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"cohesion.lcom::(top)#0[threshold]=threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"cohesion.lcom::(top)#0[warning]=warning"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"complexity.cognitive::(top)#0[error]=errorThreshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"complexity.cognitive::(top)#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"complexity.cognitive::(top)#0[warning]=warningThreshold"
@@ -3875,9 +3947,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.inheritance::(top)#0[error]=error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.inheritance::(top)#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.inheritance::(top)#0[warning]=warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.lcom::(top)#0[error]=error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.lcom::(top)#0[threshold]=threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.lcom::(top)#0[warning]=warning"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.noc::(top)#0[error]=error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.noc::(top)#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.noc::(top)#0[warning]=warning"
@@ -3908,6 +3977,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"code-smell.constructor-overinjection::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"code-smell.long-parameter-list::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"code-smell.unreachable-code::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"cohesion.lcom::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"complexity.cognitive::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"complexity.cognitive::callable"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"complexity.cognitive::class"
@@ -3927,7 +3997,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"coupling.instability::class"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"coupling.instability::namespace"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.inheritance::"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.lcom::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.noc::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.type-coverage::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"duplication.code-duplication::"
@@ -3938,6 +4007,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"code-smell.constructor-overinjection::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"code-smell.long-parameter-list::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"code-smell.unreachable-code::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"cohesion.lcom::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"complexity.cognitive::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"complexity.cognitive::callable"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"complexity.cognitive::class"
@@ -3957,7 +4027,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"coupling.instability::class"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"coupling.instability::namespace"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.inheritance::"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.lcom::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.noc::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.type-coverage::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"duplication.code-duplication::"
@@ -5917,6 +5986,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Profiler\Integration\ProfilerIntegrationTest::itPerformsAtomicFileWrite
  - Qualimetrix\Tests\Infrastructure\Profiler\Integration\ProfilerIntegrationTest::itStartsAsADisabledEmptySession
  - Qualimetrix\Tests\Infrastructure\Profiler\Unit\ProfileSessionTest::itClearsRecordedStateOnEveryModeTransition
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itFallsBackToTheProducersOwnPresentationWhenTheConfiguredDefinitionsDescriptionIsEmpty
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itPassesThroughAStaticChannelUnchanged
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itPrefersTheConfiguredDefinitionsOwnDescriptionOverTheProducersGenericOne
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itReturnsNullWhenTheInnerViewAlreadyDoes
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAddsRuntimeComputedMetricChannelsToTheirProducer
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAnswersTheReverseLookupForAConfiguredComputedMetric
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAnswersTheReverseLookupWithTheProducingRuleNotTheChannelsOwnRuleName
@@ -6096,6 +6169,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesAReportNarrowedToAGitScopeContainingNothing
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesNamespaceExclusionCoveringTheNamespace
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesPathExclusionCoveringTheFile
+ - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::anUnknownCodeKeepsTheHumanisedFallbackAndTheRepositoryUrl
+ - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::everyChannelOfTheRealUniverseGetsItsProducersOwnDescriptorAndAWorkingHelpUri
+ - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::everyConfiguredComputedMetricChannelAlsoGetsItsProducersOwnDescriptorAndAWorkingHelpUri
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsEveryRequestFieldToDotProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsNamespaceFiltersToJsonProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"dot"
@@ -7140,17 +7216,19 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itCollectsRulesFromEmptyViolations
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itCollectsRulesWithCorrectStructure
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itDeduplicatesRulesByViolationCode
- - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFallsBackForUnknownRuleDescription
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFallsBackForACodeNoChannelCarries
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFallsBackHelpUriWhenNoDot
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFallsBackToRepositoryUrlForHelpUri
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFallsBackWhenThePresentationResolvesToNull
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFormatsRuleNameConvertingDotSeparated
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFormatsRuleNameConvertingKebabCase
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFormatsRuleNameHandlingSingleWord
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itGivesSubCodesOfOneRuleDistinctIdsAndTheSameDescription
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itMapsErrorLevel
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itMapsWarningLevel
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itPromotesRulesToErrorSeverity
- - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itReturnsDescriptionsForKnownRules
- - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itReturnsHelpUriForKnownCategories
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itReturnsDescriptionsForKnownChannelsFromTheRealPresentation
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itReturnsHelpUriForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifSchemaValidationTest::emptyReport_conformsToSarif2_1_0Schema
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifSchemaValidationTest::itConformsToTheSarifSchemaWhenAReportCarriesAMeasuredBreach
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifSchemaValidationTest::reportWithMixedSeverityViolations_conformsToSarif2_1_0Schema

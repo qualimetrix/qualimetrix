@@ -13,7 +13,7 @@ final class LcomCollectionConfigurationResolver implements LcomCollectionConfigu
     public function resolve(FindingConfiguration $configuration): LcomCollectionConfiguration
     {
         $options = array_replace_recursive($configuration->ruleOptions->rules, $configuration->cliOverrides->options);
-        $value = $options['design.lcom']['exclude_methods'] ?? $options['design.lcom']['excludeMethods'] ?? [];
+        $value = $options['cohesion.lcom']['exclude_methods'] ?? $options['cohesion.lcom']['excludeMethods'] ?? [];
         $methods = \is_string($value) ? array_map('trim', explode(',', $value)) : (\is_array($value) ? array_values($value) : []);
 
         return new LcomCollectionConfiguration(array_values(array_filter($methods, is_string(...))));

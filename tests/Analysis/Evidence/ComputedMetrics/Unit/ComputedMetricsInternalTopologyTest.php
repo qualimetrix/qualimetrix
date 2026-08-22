@@ -42,6 +42,7 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ResolvedComputedMetricDefinitions', 'Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator', 'Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse'],
+        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Infrastructure\\Rule\\ComputedMetricChannelPresentation'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown'],
@@ -115,9 +116,9 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         $expected = [...self::EXPECTED_RELATIONS, ...self::COMPOSED_CARRIER_RELATIONS];
         sort($expected);
         self::assertSame($expected, $relations, 'Every raw cross-owner Contract import must be explicitly classified.');
-        self::assertCount(42, $relations);
-        self::assertCount(37, self::EXPECTED_RELATIONS);
-        self::assertCount(21, array_filter(self::EXPECTED_RELATIONS, static fn(array $relation): bool => !str_contains($relation[0], '\\Health\\Contract\\')));
+        self::assertCount(43, $relations);
+        self::assertCount(38, self::EXPECTED_RELATIONS);
+        self::assertCount(22, array_filter(self::EXPECTED_RELATIONS, static fn(array $relation): bool => !str_contains($relation[0], '\\Health\\Contract\\')));
         self::assertCount(16, array_filter(self::EXPECTED_RELATIONS, static fn(array $relation): bool => str_contains($relation[0], '\\Health\\Contract\\')));
 
         $source = implode("\n", array_map(static fn(string $path): string => (string) file_get_contents($path), $declarations));

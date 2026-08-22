@@ -14,6 +14,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 final class DebugCodeRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.debug-code';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+    public const int REMEDIATION_MINUTES = 5;
     protected const string DESCRIPTION = 'Detects debug code (var_dump, print_r, dd, etc)';
     protected const string SMELL_TYPE = 'debug_code';
     protected const Severity SEVERITY = Severity::Error;

@@ -20,6 +20,8 @@ use Qualimetrix\Reporting\Formatter\TextFormatter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(TextFormatter::class)]
 final class TextFormatterTest extends TestCase
@@ -29,7 +31,7 @@ final class TextFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
         $this->formatter = new TextFormatter($debtCalculator, new DetailedViolationRenderer($debtCalculator));
         $this->plainContext = new FormatterContext(useColor: false);
     }
@@ -585,8 +587,8 @@ final class TextFormatterTest extends TestCase
         $builder->addViolation(self::violation(
             location: new Location(RelativePath::fromString('src/Bar.php'), 5),
             symbolPath: SymbolPath::forClass('App', 'Bar'),
-            ruleName: 'design.lcom',
-            violationCode: 'design.lcom',
+            ruleName: 'cohesion.lcom',
+            violationCode: 'cohesion.lcom',
             message: 'LCOM high',
             severity: Severity::Warning,
         ));
@@ -599,7 +601,7 @@ final class TextFormatterTest extends TestCase
 
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
-        self::assertStringContainsString('design.lcom', $output);
+        self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('... and 2 more', $output);
     }
 

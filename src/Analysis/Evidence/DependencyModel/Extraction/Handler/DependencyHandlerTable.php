@@ -12,13 +12,16 @@ use PhpParser\Node;
  * That list changes when a new kind of dependency is recognised; walking a file
  * and collecting the edges does not. Keeping them apart also keeps the visitor
  * from naming every handler it never calls directly.
+ *
+ * `ClassLikeHandler` is deliberately not one of the table's handlers: entering
+ * a class-like node is also what opens the `DependencyContext` its members are
+ * attributed to, so it must run before generic per-node dispatch even exists,
+ * not be looked up by it. {@see DependencyVisitor} holds and calls it directly.
  */
 final class DependencyHandlerTable
 {
     /** @var array<class-string<Node>, NodeDependencyHandlerInterface> */
     private readonly array $byNodeClass;
-
-    private readonly ClassLikeHandler $classLikeHandler;
 
     public function __construct()
     {
@@ -39,20 +42,10 @@ final class DependencyHandlerTable
         }
 
         $this->byNodeClass = $table;
-        $this->classLikeHandler = new ClassLikeHandler();
     }
 
     public function dispatch(Node $node, DependencyContext $context): void
     {
         ($this->byNodeClass[$node::class] ?? null)?->handle($node, $context);
-    }
-
-    /**
-     * A class-like node is handled on entry rather than by dispatch, because
-     * entering it is also what opens the context its members are attributed to.
-     */
-    public function handleClassLike(Node $node, DependencyContext $context): void
-    {
-        $this->classLikeHandler->handle($node, $context);
     }
 }

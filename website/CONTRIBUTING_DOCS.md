@@ -116,6 +116,7 @@ For LLM consumption, every fact should live in **one canonical place**. Other pa
 | `@qmx-ignore` / `@qmx-threshold` suppression syntax  | `usage/baseline.md`                |
 | GitHub Actions reference                             | `ci-cd/github-actions.md`          |
 | Health score formulas and variables                  | `reference/health-scores.md`       |
+| Remediation time estimate per rule                   | `reference/remediation-time.md`    |
 
 When a fact appears in a non-canonical location (e.g., a threshold value inside a rule page), wrap it with skip markers so it only renders on the website and is stripped from `llms-full.txt`.
 
@@ -222,17 +223,18 @@ Place admonitions immediately after the section they relate to, not grouped at t
 
 ### Website documentation
 
-| Change type                 | Pages to update                                             |
-| --------------------------- | ----------------------------------------------------------- |
-| Rule added/changed/removed  | `rules/{group}.md` + `reference/default-thresholds.md`      |
-| Metric algorithm changed    | `rules/{group}.md` (Implementation notes section)           |
-| CLI option added/changed    | `usage/cli-options.md`                                      |
-| Output format added/changed | `usage/output-formats.md`                                   |
-| Baseline behavior changed   | `usage/baseline.md`                                         |
-| Git integration changed     | `usage/git-integration.md`                                  |
-| Configuration option added  | `getting-started/configuration.md` + `usage/cli-options.md` |
-| CI/CD integration changed   | `ci-cd/`                                                    |
-| Default thresholds changed  | `reference/default-thresholds.md` + `rules/{group}.md`      |
+| Change type                 | Pages to update                                                                          |
+| --------------------------- | ---------------------------------------------------------------------------------------- |
+| Rule added/changed/removed  | `rules/{group}.md` + `reference/default-thresholds.md` + `reference/remediation-time.md` |
+| Remediation minutes changed | `reference/remediation-time.md`                                                          |
+| Metric algorithm changed    | `rules/{group}.md` (Implementation notes section)                                        |
+| CLI option added/changed    | `usage/cli-options.md`                                                                   |
+| Output format added/changed | `usage/output-formats.md`                                                                |
+| Baseline behavior changed   | `usage/baseline.md`                                                                      |
+| Git integration changed     | `usage/git-integration.md`                                                               |
+| Configuration option added  | `getting-started/configuration.md` + `usage/cli-options.md`                              |
+| CI/CD integration changed   | `ci-cd/`                                                                                 |
+| Default thresholds changed  | `reference/default-thresholds.md` + `rules/{group}.md`                                   |
 
 ### Internal documentation
 

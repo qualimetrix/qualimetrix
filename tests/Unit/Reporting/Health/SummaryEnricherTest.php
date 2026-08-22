@@ -27,6 +27,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricRepositoryTestHelper;
+use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(SummaryEnricher::class)]
 final class SummaryEnricherTest extends TestCase
@@ -36,7 +38,7 @@ final class SummaryEnricherTest extends TestCase
 
     protected function setUp(): void
     {
-        $registry = new RemediationTimeRegistry();
+        $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $this->enricher = new SummaryEnricher(
             new DebtCalculator($registry),
             new ImpactCalculator(new ClassRankResolver(), $registry),

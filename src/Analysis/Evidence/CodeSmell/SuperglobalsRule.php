@@ -13,6 +13,8 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 final class SuperglobalsRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.superglobals';
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+    public const int REMEDIATION_MINUTES = 15;
     protected const string DESCRIPTION = 'Detects direct access to superglobals';
     protected const string SMELL_TYPE = 'superglobals';
     protected const string MESSAGE_TEMPLATE = 'Direct superglobal access detected - use dependency injection';

@@ -173,6 +173,26 @@ final class RuleNameValidatorTest extends TestCase
         }
     }
 
+    /**
+     * Regression for the rename in ADR 0028: `design.lcom` is 3 Levenshtein
+     * edits from the unrelated `design.noc` but 4 from the rule it was
+     * actually renamed to, `cohesion.lcom`. Raw distance alone suggested
+     * `design.noc`; the leaf (`lcom`) match must win instead.
+     */
+    #[Test]
+    public function validateRuleNamesSuggestsTheRenamedRuleByItsSharedLeafNotByRawDistance(): void
+    {
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessageMatches('/Unknown rule "design\.lcom".*Did you mean "cohesion\.lcom"\?/');
+
+        RuleNameValidator::validateRuleNames(
+            ['rules' => ['design.lcom' => ['warning' => 10]]],
+            'qmx.yaml',
+            $this->createProvider(['design.noc', 'cohesion.lcom']),
+            '/project/qmx.yaml',
+        );
+    }
+
     #[Test]
     public function validateRuleNamesListsMultipleUnknowns(): void
     {

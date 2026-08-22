@@ -31,7 +31,9 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class MethodCountRule extends AbstractRule
 {
     public const string NAME = 'size.method-count';
+    public const string DOCS_PAGE = 'rules/size.md';
 
+    public const int REMEDIATION_MINUTES = 20;
     public function getName(): string
     {
         return self::NAME;

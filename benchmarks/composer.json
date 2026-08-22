@@ -1,0 +1,25 @@
+{
+    "name": "qualimetrix/benchmarks",
+    "description": "Open-source PHP projects used as a reference corpus for metric calibration and validation. See benchmarks/README.md.",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "composer/composer": "2.9.8",
+        "doctrine/dbal": "4.4.3",
+        "doctrine/orm": "3.6.5",
+        "guzzlehttp/guzzle": "7.10.0",
+        "laravel/framework": "v12.59.0",
+        "league/flysystem": "3.34.0",
+        "monolog/monolog": "3.10.0",
+        "nikic/php-parser": "v5.7.0",
+        "phpunit/phpunit": "12.5.25",
+        "symfony/console": "v7.4.11",
+        "symfony/dependency-injection": "v8.0.10",
+        "symfony/http-foundation": "v7.4.8",
+        "symfony/http-kernel": "v7.4.11",
+        "symfony/routing": "v7.4.9"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

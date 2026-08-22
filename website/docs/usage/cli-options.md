@@ -529,7 +529,7 @@ bin/qmx check src/ --disable-rule=size.class-count
 bin/qmx check src/ --disable-rule=complexity.*
 
 # Disable multiple
-bin/qmx check src/ --disable-rule=complexity.* --disable-rule=design.lcom
+bin/qmx check src/ --disable-rule=complexity.* --disable-rule=cohesion.lcom
 
 # Disable only one computed finding channel
 bin/qmx check src/ --disable-rule=health.complexity
@@ -641,10 +641,10 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 | ------------------------------------ | -------------------- | ------------------- |
 | `--dit-warning=N`                    | design.inheritance   | warning             |
 | `--dit-error=N`                      | design.inheritance   | error               |
-| `--lcom-warning=N`                   | design.lcom          | warning             |
-| `--lcom-error=N`                     | design.lcom          | error               |
-| `--lcom-min-methods=N`               | design.lcom          | minMethods          |
-| `--lcom-exclude-readonly`            | design.lcom          | excludeReadonly     |
+| `--lcom-warning=N`                   | cohesion.lcom        | warning             |
+| `--lcom-error=N`                     | cohesion.lcom        | error               |
+| `--lcom-min-methods=N`               | cohesion.lcom        | minMethods          |
+| `--lcom-exclude-readonly`            | cohesion.lcom        | excludeReadonly     |
 | `--noc-warning=N`                    | design.noc           | warning             |
 | `--noc-error=N`                      | design.noc           | error               |
 | `--type-coverage-param-warning=N`    | design.type-coverage | param_warning       |

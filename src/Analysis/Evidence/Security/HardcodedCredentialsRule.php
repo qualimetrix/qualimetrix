@@ -27,7 +27,9 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class HardcodedCredentialsRule extends AbstractRule
 {
     public const string NAME = 'security.hardcoded-credentials';
+    public const string DOCS_PAGE = 'rules/security.md';
 
+    public const int REMEDIATION_MINUTES = 30;
     public function getName(): string
     {
         return self::NAME;

@@ -35,7 +35,9 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 final class MaintainabilityRule extends AbstractRule
 {
     public const string NAME = 'maintainability.index';
+    public const string DOCS_PAGE = 'rules/maintainability.md';
 
+    public const int REMEDIATION_MINUTES = 60;
     public function getName(): string
     {
         return self::NAME;
