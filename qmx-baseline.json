@@ -123,9 +123,6 @@
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\TreeAwareNamespaceAggregator::aggregate@src/Analysis/Evidence/Measurement/Aggregation/TreeAwareNamespaceAggregator.php": [
       {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[16]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Prioritization\\Debt\\RemediationTimeRegistry::getMinutesForViolation@src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php": [
-      {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[13]}
-    ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Prioritization\\Impact\\ClassRankResolver::resolve@src/Analysis/Evidence/Prioritization/Impact/ClassRankResolver.php": [
       {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[11]}
     ],

@@ -72,6 +72,26 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             . ' and cleared".',
     ];
 
+    /**
+     * Non-PHP files carrying rule names or violation codes by hand — a
+     * fixture, a formatted-output example — have no owning capability to
+     * check *ownership* against, but they still name something real: a
+     * hand-spelled code that names no registered rule or channel is exactly
+     * the drift `fix(reporting): remove hand-spelled violation codes from
+     * dev.html and docs` swept once by hand (severity suffixes mistaken for
+     * sub-codes, a nonexistent `size.class-loc`, a stale
+     * `size.method-count.class` — see `docs/internal/plans/sarif-channel-descriptions.md`,
+     * package P6). Nothing stopped it from coming back the same way, so this
+     * checks existence rather than ownership for exactly the files P6 swept.
+     *
+     * @var list<string>
+     */
+    private const array EXISTENCE_CHECKED_FILES = [
+        'src/Reporting/Template/dev.html',
+        'website/docs/usage/output-formats.md',
+        'website/docs/usage/output-formats.ru.md',
+    ];
+
     #[Test]
     public function noProductionFileOutsideARuleOrChannelsOwningCapabilityHoldsItsLiteral(): void
     {
@@ -141,6 +161,71 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         }
 
         self::assertSame([], $violations, "\n" . implode("\n", $violations));
+    }
+
+    #[Test]
+    public function noHandSpelledCodeInAFixtureOrDocPageNamesANonexistentRuleOrChannel(): void
+    {
+        $container = (new ContainerFactory())->create();
+
+        $knownNames = array_keys(self::ownerByRuleName($container));
+
+        $universe = $container->get(ChannelUniverseInterface::class);
+        \assert($universe instanceof ChannelUniverseInterface);
+        $knownCodes = array_map(static fn($channel) => $channel->violationCode, $universe->channels());
+
+        $known = array_flip([...$knownNames, ...$knownCodes]);
+
+        $root = self::projectRoot();
+        $violations = [];
+
+        foreach (self::EXISTENCE_CHECKED_FILES as $relative) {
+            foreach (self::handSpelledIdentifierLiterals($root . '/' . $relative) as $literal) {
+                if (isset($known[$literal])) {
+                    continue;
+                }
+
+                $violations[] = \sprintf('%s holds "%s", which names no registered rule or channel.', $relative, $literal);
+            }
+        }
+
+        self::assertSame([], $violations, "\n" . implode("\n", $violations));
+    }
+
+    /**
+     * Extracts every value that a fixture or a formatted-output example
+     * spells as a rule name or a violation code, without requiring these
+     * non-PHP files to parse as one well-formed document: `"rule"` /
+     * `"ruleName"` / `"code"` / `"violationCode"` values, both halves of a
+     * `"channel": "producer#code"` value, and the keys of a `"byRule": {...}`
+     * tally block.
+     *
+     * @return list<string>
+     */
+    private static function handSpelledIdentifierLiterals(string $absolutePath): array
+    {
+        $source = file_get_contents($absolutePath);
+
+        if ($source === false) {
+            throw new RuntimeException(\sprintf('Could not read %s.', $absolutePath));
+        }
+
+        $literals = [];
+
+        if (preg_match_all('/"(?:rule|code|ruleName|violationCode)"\s*:\s*"([a-zA-Z][\w.\-]*)"/', $source, $matches) > 0) {
+            $literals = [...$literals, ...$matches[1]];
+        }
+
+        if (preg_match_all('/"channel"\s*:\s*"([a-zA-Z][\w.\-]*)#([a-zA-Z][\w.\-]*)"/', $source, $matches) > 0) {
+            $literals = [...$literals, ...$matches[1], ...$matches[2]];
+        }
+
+        if (preg_match('/"byRule"\s*:\s*\{([^}]*)\}/', $source, $block) === 1
+            && preg_match_all('/"([a-zA-Z][\w.\-]*)"\s*:/', $block[1], $matches) > 0) {
+            $literals = [...$literals, ...$matches[1]];
+        }
+
+        return array_values(array_unique($literals));
     }
 
     /**

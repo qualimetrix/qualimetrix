@@ -55,12 +55,25 @@ final class ChannelPresentationView implements ChannelPresentationInterface
 
     public function presentationFor(string $violationCode): ?ChannelPresentation
     {
+        // A legitimate "no answer", not a wiring bug: an unknown or user-defined
+        // code names no producer at all, which is ordinary input for a consumer
+        // like SarifRuleCollector that falls back for it — contrast the throw
+        // below, which guards a case that should be structurally impossible.
         $producerRuleName = $this->identity->producerOf($violationCode);
 
         if ($producerRuleName === null) {
             return null;
         }
 
+        // Deliberately a hard failure, not a null return like the two checks below:
+        // a producer this method itself just resolved from the identity registry
+        // missing from the compiler pass's own docs-page map is not a legitimate
+        // "no answer" — RuleExecutionInterface::allRules() and
+        // ChannelDeclarationCompilerPass are supposed to walk the exact same
+        // tagged rule services, so this can only mean the container's own build
+        // is internally inconsistent. Returning null here would let a broken
+        // container silently look like "this channel has no docs page" instead
+        // of surfacing the wiring bug.
         $docsPage = $this->docsPageByRule[$producerRuleName]
             ?? throw new LogicException(\sprintf(
                 'Rule "%s" produces channel "%s" but declares no DOCS_PAGE in the map'

@@ -2008,6 +2008,7 @@ Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	Reporting	Qualimetrix\Core\
 Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	contract	P6-A
 Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Violation	Analysis.Finding	contract	P6-A
 Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract	P8
+Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector	Reporting	Qualimetrix\Analysis\Finding\Contract\ChannelPresentation	Analysis.Finding	contract	P7
 Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector	Reporting	Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface	Analysis.Finding	contract	P7
 Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract	P6-A
 Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension	Analysis.Evidence.ComputedMetrics	contract	P5

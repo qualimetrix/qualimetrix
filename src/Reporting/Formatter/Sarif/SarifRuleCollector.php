@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Sarif;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelPresentation;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
@@ -65,16 +66,24 @@ final class SarifRuleCollector
         $rules = [];
 
         foreach ($violationCodes as $code => $info) {
+            // Resolved once per code, not once per field: getRuleDescription()
+            // and getHelpUri() each resolve presentationFor($code) again on their
+            // own, which is the right thing for their public, independently
+            // tested contract, but would mean three redundant resolutions here
+            // for what is a single fact about one code.
+            $presentation = $this->presentation->presentationFor($code);
+            $description = $this->describeFrom($presentation, $code);
+
             $rules[] = [
                 'id' => $code,
                 'name' => $this->formatRuleName($code),
                 'shortDescription' => [
-                    'text' => $this->getRuleDescription($code),
+                    'text' => $description,
                 ],
                 'fullDescription' => [
-                    'text' => $this->getRuleDescription($code),
+                    'text' => $description,
                 ],
-                'helpUri' => $this->getHelpUri($code),
+                'helpUri' => $this->helpUriFrom($presentation),
                 'defaultConfiguration' => [
                     'level' => $this->mapLevel($info['maxSeverity']),
                 ],
@@ -107,8 +116,11 @@ final class SarifRuleCollector
      */
     public function getRuleDescription(string $violationCode): string
     {
-        $presentation = $this->presentation->presentationFor($violationCode);
+        return $this->describeFrom($this->presentation->presentationFor($violationCode), $violationCode);
+    }
 
+    private function describeFrom(?ChannelPresentation $presentation, string $violationCode): string
+    {
         if ($presentation === null) {
             return ucfirst(str_replace(['.', '-'], ' ', $violationCode));
         }
@@ -128,8 +140,11 @@ final class SarifRuleCollector
      */
     public function getHelpUri(string $violationCode): string
     {
-        $presentation = $this->presentation->presentationFor($violationCode);
+        return $this->helpUriFrom($this->presentation->presentationFor($violationCode));
+    }
 
+    private function helpUriFrom(?ChannelPresentation $presentation): string
+    {
         if ($presentation === null) {
             return self::INFORMATION_URI;
         }

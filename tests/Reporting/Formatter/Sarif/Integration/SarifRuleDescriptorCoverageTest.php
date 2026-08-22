@@ -7,11 +7,15 @@ namespace Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -75,6 +79,45 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
         self::assertSame([], $failures, "Channel(s) with a broken SARIF descriptor:\n  - " . implode("\n  - ", $failures));
     }
 
+    /**
+     * The sweep above builds its container without a resolved run
+     * configuration — see this class's own `UNIVERSE_CHANNEL_COUNT` docblock
+     * — so it never exercises a single `computed.*` / `health.*` code. This
+     * resolves the six built-in health-score definitions the same way a real
+     * run would (through {@see ComputedMetricConfiguratorInterface::resolve()}
+     * against an empty config document) and re-sweeps.
+     */
+    #[Test]
+    public function everyConfiguredComputedMetricChannelAlsoGetsItsProducersOwnDescriptorAndAWorkingHelpUri(): void
+    {
+        $container = (new ContainerFactory())->create();
+
+        $configurator = $container->get(ComputedMetricConfiguratorInterface::class);
+        \assert($configurator instanceof ComputedMetricConfiguratorInterface);
+
+        $document = new ConfigurationDocument([], AbsolutePath::fromString('/'));
+        $configurator->replace($configurator->resolve($document));
+
+        $universe = $container->get(ChannelUniverseInterface::class);
+        \assert($universe instanceof ChannelUniverseInterface);
+
+        $presentationView = $container->get(ChannelPresentationInterface::class);
+        \assert($presentationView instanceof ChannelPresentationInterface);
+
+        $collector = new SarifRuleCollector($presentationView);
+
+        $channels = $universe->channels();
+        self::assertCount(self::UNIVERSE_CHANNEL_COUNT + \count(ComputedMetricDefaults::getDefaults()), $channels);
+
+        $failures = [];
+
+        foreach ($channels as $channel) {
+            $failures = [...$failures, ...$this->checkChannel($channel, $universe, $presentationView, $collector)];
+        }
+
+        self::assertSame([], $failures, "Channel(s) with a broken SARIF descriptor:\n  - " . implode("\n  - ", $failures));
+    }
+
     /** @return list<string> */
     private function checkChannel(
         ViolationChannel $channel,
@@ -91,8 +134,12 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
             // for the plain description/docs-page-exists check. Failing loud
             // here rather than skipping is what makes this branch a guard
             // instead of a silent no-op — see the P4 DoD's "must fail the
-            // oracle" requirement, exercised directly for the empty-computed-
-            // description case in SarifRuleCollectorTest::itFallsBackWhenThePresentationResolvesToNull().
+            // oracle" requirement. A `computed.*` / `health.*` definition with a
+            // blank `description:` does NOT land here — see
+            // {@see \Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itFallsBackToTheProducersOwnPresentationWhenTheConfiguredDefinitionsDescriptionIsEmpty()} —
+            // it falls back to the producing rule's own presentation instead of
+            // resolving to null, so this branch only ever fires for a channel the
+            // universe declares but no presenter answers for at all.
             return [\sprintf('%s: no presentation resolved for a channel the universe itself declares.', $code)];
         }
 

@@ -47,11 +47,18 @@ final readonly class ComputedMetricChannelPresentation implements ChannelPresent
 
         // ComputedMetricRule::getDescription() describes the whole computed-metric
         // family, not this specific configured metric — the definition's own
-        // description is preferred. An empty declared description is not display
-        // text; see ChannelPresentationInterface for why that yields null rather
-        // than the producer's generic fallback.
+        // description is preferred when present. A blank `description:` key is a
+        // benign YAML omission, not a broken channel: the family's docs page is
+        // still the right page, so falling back to the inner (family) presentation
+        // keeps that page instead of discarding it — the symmetry this used to
+        // draw with an unknown code doesn't hold, because an unknown code has no
+        // real page to lose and a configured metric always does. Humanising the
+        // metric's own name instead was rejected: that would reintroduce, in this
+        // class, exactly the kind of privately-derived text
+        // `docs/internal/plans/sarif-channel-descriptions.md` exists to remove —
+        // whereas the inner presentation is a fact this capability already owns.
         return $definition->description === ''
-            ? null
+            ? $presentation
             : new ChannelPresentation($definition->description, $presentation->docsPage);
     }
 }

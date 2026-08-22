@@ -1,6 +1,7 @@
 # Facts about a channel come from its owner, not from a private copy in a consumer
 
-Status: proposed (not implemented)
+Status: implemented (P0–P6 landed; see "Implementation record" at the end of
+this document).
 
 ## Problem
 
@@ -336,7 +337,11 @@ DoD: the test drives the collector with one violation per channel **taken from
 the universe, never spelled by hand**, and asserts that no descriptor falls back
 to the humanised default and that every `helpUri` resolves to the page carrying
 that rule's `Rule ID:` anchor. A computed metric whose definition carries an
-empty `description` must fail the oracle, not pass it.
+empty `description` must not silently resolve to no presentation at all — see
+"Implementation record": this was originally stated as "must fail the oracle",
+revised during the closing review round to "must still carry the producing
+rule's own description and docs page", because the earlier phrasing discarded
+a real, valid `docsPage` along with the blank text.
 
 "Red first" is a procedure here, not a slogan, because a commit that leaves the
 suite red is not acceptable and an earlier draft's "write P4 before P3 lands"
@@ -448,7 +453,12 @@ carry; `mkdocs build --strict` green.
 - The three families the old table could not reach at all — architecture
   diagnostics, annotation diagnostics, security rules — are named cases.
 - A configured computed metric's descriptor carries the definition's own
-  description; an empty definition description fails the oracle.
+  description when it declares one, and falls back to the producing rule's own
+  (family) description and docs page — not to `null` — when it declares a
+  blank one. See "Implementation record" below: the original DoD called for
+  the empty case to fail the oracle by resolving to no presentation at all;
+  the review round that closed this plan revised that call, because it
+  discarded a real, valid `docsPage` for a benign YAML omission.
 - Every rule's declared documentation path resolves to the page carrying that
   rule's `Rule ID:` anchor, and the constant is declared on the concrete class
   rather than inherited; the two non-prefix cases (`cohesion.lcom`,
@@ -486,3 +496,40 @@ reader who only sees the current text would otherwise re-open them.
 4. **`helpUri` is declared per rule, not derived from `RuleCategory`.**
    `computed.health` is documented outside `/rules/` entirely, so no category
    value can address it. See the `helpUri` section.
+
+## Implementation record
+
+Landed as `07fd0c68`..`a0c3bd5f`:
+
+- `07fd0c68` — P0, the rename.
+- `0e14063c` / `e2b6f29f` — P1, per-rule `DOCS_PAGE`.
+- `27384f87` / `3afe8f34` — P2, the Finding-owned join
+  (`ChannelPresentationView`).
+- `577e9076` — P3/P4 together: `SarifRuleCollector` consumes the join, and its
+  guard (`SarifRuleDescriptorCoverageTest`) lands in the same commit, matching
+  the "red first, committed together" procedure this document specifies for P4.
+- `8f212b63` — P5, remediation minutes move to the rules.
+- `0e55a863` — P6, hand-spelled codes swept from `dev.html` and the docs.
+- `a0c3bd5f` — the ownership guard (`RuleIdentifierLiteralGuardTest`) that
+  checks no *new* private copy of a rule name or channel code appears outside
+  its owning capability.
+
+A subsequent review round (still `a0c3bd5f` and later, uncommitted at the time
+of this note) revised two things this plan had stated as final:
+
+- **The empty-computed-description case** (P4's DoD, the Test plan bullet
+  above): originally "must fail the oracle", i.e. resolve to no presentation
+  at all — symmetric with an unknown code. Revised to fall back to the
+  producing rule's own description and docs page instead, because the
+  symmetry was only half-defensible: an unknown code has no real docs page to
+  lose, but a configured computed metric always does, and discarding it for a
+  blank `description:` (an optional YAML key, not a broken channel) was a
+  worse outcome than showing the family's generic description. See
+  `ComputedMetricChannelPresentation` and
+  `ComputedMetricChannelPresentationTest::itFallsBackToTheProducersOwnPresentationWhenTheConfiguredDefinitionsDescriptionIsEmpty()`.
+- **The guard's scope**: `RuleIdentifierLiteralGuardTest` originally checked
+  ownership only for `src/**.php`. Extended to check *existence* (not
+  ownership, since these files have no owning capability) of every
+  hand-spelled rule name or violation code in `src/Reporting/Template/dev.html`
+  and `website/docs/usage/output-formats.{md,ru.md}` — the exact files P6 had
+  to sweep by hand, with nothing stopping the same drift from recurring.

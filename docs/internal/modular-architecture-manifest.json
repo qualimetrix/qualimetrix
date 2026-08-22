@@ -17616,6 +17616,11 @@
                     "owner": "Infrastructure.Rule",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ComputedMetricChannelPresentation",
                     "closes_in": null
+                },
+                {
+                    "owner": "Reporting",
+                    "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifRuleCollector",
+                    "closes_in": null
                 }
             ]
         },

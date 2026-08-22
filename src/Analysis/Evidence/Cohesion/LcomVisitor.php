@@ -111,19 +111,21 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
 
             // Constructors and destructors are excluded from the graph, matching
             // the B&K-derived treatment already applied by TccLccVisitor. A
-            // promoted-property parameter (`private array $x`) declares instance
-            // state without ever producing a PropertyFetch node, so a
-            // constructor built entirely from promoted properties has no
-            // recorded property access and no method calls — it lands in the
-            // graph as an isolated vertex and inflates LCOM by one for the 85%
-            // of constructors that use promotion (see cohesion.md). Recording
-            // promoted parameters as property accesses was considered and
-            // rejected: it would turn `__construct` into a hub touching every
-            // promoted property, connecting all methods through it and making
-            // LCOM report 1 almost everywhere — silently defeating the metric
-            // rather than fixing it. Excluding the constructor/destructor
-            // outright, as the constructor's edges say nothing about
-            // behavioral cohesion, is the same call already made for TCC/LCC.
+            // constructor whose assigned fields no other stateful method reads
+            // has no recorded property access shared with the rest of the class
+            // and no method calls — it lands in the graph as an isolated vertex
+            // and inflates LCOM by one, whether the assignment is a body
+            // statement or property promotion (`private array $x` in the
+            // parameter list, which never produces a PropertyFetch node at all —
+            // the guaranteed case, covering the 85% of constructors that use
+            // promotion; see cohesion.md). Recording promoted parameters as
+            // property accesses was considered and rejected: it would turn
+            // `__construct` into a hub touching every promoted property,
+            // connecting all methods through it and making LCOM report 1 almost
+            // everywhere — silently defeating the metric rather than fixing it.
+            // Excluding the constructor/destructor outright, as the
+            // constructor's edges say nothing about behavioral cohesion, is the
+            // same call already made for TCC/LCC.
             if (\in_array($methodName, ['__construct', '__destruct'], true)) {
                 return null;
             }

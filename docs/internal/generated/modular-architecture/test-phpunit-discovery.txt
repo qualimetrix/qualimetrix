@@ -194,6 +194,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesListsMultipleUnknowns
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesNoSuggestionForDistantMatch
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesSuggestsCloseMatch
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesSuggestsTheRenamedRuleByItsSharedLeafNotByRawDistance
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesThrowsForUnknownRule
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\CliStageTest::itHasTheHighestSourcePriority
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\CliStageTest::itPublishesAlreadyNormalizedOverridesWithoutSymfonyInput
@@ -3504,6 +3505,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::exactlyTheLayerPolicyAndDirectiveDiagnosticsDeclareAConfigurationError
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::noExcludedFixtureLineNamesADeclaredChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyConfiguredComputedMetricChannelAlsoResolvesToARealDescriptionAndAnExistingDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyDeclaredChannelHasAProducer
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRegisteredRuleIsAddressableIncludingOnesThatDeclareNoChannel
@@ -3515,6 +3517,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyDeclaredDocsPageCarriesTheRulesOwnAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyRegisteredRuleDeclaresItsOwnDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::theTwoNonPrefixPagesAreDeclaredExplicitly
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::noHandSpelledCodeInAFixtureOrDocPageNamesANonexistentRuleOrChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::noProductionFileOutsideARuleOrChannelsOwningCapabilityHoldsItsLiteral
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesParamErrorViaDedicatedCliFlagWithoutFalseWarning
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesReturnErrorViaRuleOptSnakeCaseSpelling
@@ -5983,9 +5986,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Profiler\Integration\ProfilerIntegrationTest::itPerformsAtomicFileWrite
  - Qualimetrix\Tests\Infrastructure\Profiler\Integration\ProfilerIntegrationTest::itStartsAsADisabledEmptySession
  - Qualimetrix\Tests\Infrastructure\Profiler\Unit\ProfileSessionTest::itClearsRecordedStateOnEveryModeTransition
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itFallsBackToTheProducersOwnPresentationWhenTheConfiguredDefinitionsDescriptionIsEmpty
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itPassesThroughAStaticChannelUnchanged
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itPrefersTheConfiguredDefinitionsOwnDescriptionOverTheProducersGenericOne
- - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itReturnsNullWhenTheConfiguredDefinitionsDescriptionIsEmpty
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itReturnsNullWhenTheInnerViewAlreadyDoes
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAddsRuntimeComputedMetricChannelsToTheirProducer
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAnswersTheReverseLookupForAConfiguredComputedMetric
@@ -6168,6 +6171,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesPathExclusionCoveringTheFile
  - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::anUnknownCodeKeepsTheHumanisedFallbackAndTheRepositoryUrl
  - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::everyChannelOfTheRealUniverseGetsItsProducersOwnDescriptorAndAWorkingHelpUri
+ - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::everyConfiguredComputedMetricChannelAlsoGetsItsProducersOwnDescriptorAndAWorkingHelpUri
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsEveryRequestFieldToDotProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsNamespaceFiltersToJsonProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"dot"

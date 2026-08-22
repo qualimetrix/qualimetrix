@@ -61,13 +61,16 @@ final class ComputedMetricChannelPresentationTest extends TestCase
     }
 
     /**
-     * Sabotaging the join: a definition with a blank description must not
-     * silently keep the producer's generic text, and must not surface an
-     * empty string either — see the package report for the before/after
-     * failure output this specific case was used to demonstrate.
+     * A definition with a blank `description:` is a benign YAML omission
+     * (the key is optional — {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver}
+     * defaults it to `''`), reachable on ordinary input, not a broken join.
+     * Discarding the whole presentation for it — as an earlier version of
+     * this class did — threw away a real, existing `docsPage` along with the
+     * blank text. Falling back to the inner (family) presentation keeps the
+     * page and a legitimate (if generic) description instead.
      */
     #[Test]
-    public function itReturnsNullWhenTheConfiguredDefinitionsDescriptionIsEmpty(): void
+    public function itFallsBackToTheProducersOwnPresentationWhenTheConfiguredDefinitionsDescriptionIsEmpty(): void
     {
         $decorator = $this->decorator(
             innerAnswer: new ChannelPresentation('Checks computed health metrics against thresholds', 'reference/health-scores.md'),
@@ -79,7 +82,11 @@ final class ComputedMetricChannelPresentationTest extends TestCase
             ),
         );
 
-        self::assertNull($decorator->presentationFor('health.cohesion'));
+        $presentation = $decorator->presentationFor('health.cohesion');
+
+        self::assertNotNull($presentation);
+        self::assertSame('Checks computed health metrics against thresholds', $presentation->description);
+        self::assertSame('reference/health-scores.md', $presentation->docsPage);
     }
 
     #[Test]

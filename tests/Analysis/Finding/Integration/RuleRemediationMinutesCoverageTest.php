@@ -62,11 +62,22 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
      * thresholds. A page that drifts from the constants it summarises is
      * worse than no page, so every number on it is checked against the rule
      * that declares it, not merely trusted to have been transcribed right.
+     *
+     * The Russian translation (`remediation-time.ru.md`) carries the same
+     * table and is swept the same way — a page nobody checks is exactly how
+     * the English page could have drifted in the first place.
      */
     #[Test]
     public function everyRulesRemediationMinutesMatchTheReferencePage(): void
     {
-        $page = self::readFile(self::docsRoot() . '/reference/remediation-time.md');
+        foreach (['reference/remediation-time.md', 'reference/remediation-time.ru.md'] as $relativePage) {
+            $this->assertReferencePageMatchesDeclaredMinutes($relativePage);
+        }
+    }
+
+    private function assertReferencePageMatchesDeclaredMinutes(string $relativePage): void
+    {
+        $page = self::readFile(self::docsRoot() . '/' . $relativePage);
 
         $missing = [];
         $mismatched = [];
@@ -88,8 +99,8 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
             }
         }
 
-        self::assertSame([], $missing, "Rules missing from website/docs/reference/remediation-time.md:\n" . implode("\n", $missing));
-        self::assertSame([], $mismatched, "Rules whose page value disagrees with the declared constant:\n" . implode("\n", $mismatched));
+        self::assertSame([], $missing, \sprintf("Rules missing from website/docs/%s:\n%s", $relativePage, implode("\n", $missing)));
+        self::assertSame([], $mismatched, \sprintf("Rules whose page value disagrees with the declared constant on %s:\n%s", $relativePage, implode("\n", $mismatched)));
     }
 
     private static function readFile(string $path): string

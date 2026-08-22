@@ -47,15 +47,22 @@ graph nodes, and the metric is the number of connected components.
     number of disconnected components. Constructors and destructors
     (`__construct`, `__destruct`) are excluded from the method set entirely,
     consistent with how TCC/LCC already treats them (see "Implementation
-    notes" below): a constructor built entirely from promoted properties
-    (`private array $x` in the parameter list) never emits a property-access
-    node, so without this exclusion it would sit in the graph as an isolated
-    vertex and inflate LCOM by one -- this affects the large majority of
-    constructors in modern PHP 8+ code. Recording promoted parameters as
-    property accesses was considered and rejected: it would turn
-    `__construct` into a hub touching every promoted property, connecting
-    unrelated methods through it and pushing LCOM toward 1 almost everywhere,
-    which would defeat the metric rather than fix it.
+    notes" below): a constructor whose assigned fields no other stateful
+    method reads shares no property-access edge with the rest of the class,
+    so without this exclusion it would sit in the graph as an isolated
+    vertex and inflate LCOM by one. Property promotion (`private array $x`
+    in the parameter list) is the guaranteed case -- a promoted parameter
+    never emits a property-access node at all -- affecting the large
+    majority of constructors in modern PHP 8+ code. Recording promoted
+    parameters as property accesses was considered and rejected: it would
+    turn `__construct` into a hub touching every promoted property,
+    connecting unrelated methods through it and pushing LCOM toward 1 almost
+    everywhere, which would defeat the metric rather than fix it. The
+    exclusion is not one-directional: reverting it on php-parser's own
+    source (which has no promoted constructors) changed LCOM for 106 of 260
+    classes -- 97 dropped (the artifact this fix targets) and 9 *rose* (a
+    real disconnection the constructor's edges had been masking), moving
+    `health.cohesion` from 60.40 to 63.13.
 
 !!! note "Comparing with other tools"
     phpmetrics uses the Henderson-Sellers LCOM formula, whose values are on a
