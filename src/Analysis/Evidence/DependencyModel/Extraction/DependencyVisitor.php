@@ -14,6 +14,7 @@ use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyContext;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyHandlerTable;
 use Qualimetrix\Core\Path\RelativePath;
@@ -52,12 +53,21 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
 
     private readonly DependencyHandlerTable $handlers;
 
+    /**
+     * Held and invoked directly rather than through `$handlers` — see
+     * {@see DependencyHandlerTable} for why a class-like node cannot be
+     * looked up by the generic dispatch table.
+     */
+    private readonly ClassLikeHandler $classLikeHandler;
+
     public function __construct(
         ?DependencyResolver $resolver = null,
         ?DependencyHandlerTable $handlers = null,
+        ?ClassLikeHandler $classLikeHandler = null,
     ) {
         $this->resolver = $resolver ?? new DependencyResolver();
         $this->handlers = $handlers ?? new DependencyHandlerTable();
+        $this->classLikeHandler = $classLikeHandler ?? new ClassLikeHandler();
     }
 
     /**
@@ -179,7 +189,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
                 $this->declarationIndex->ordinalOf(DeclarationKey::forLogical($logical), $node->getStartFilePos()),
             ),
         );
-        $this->handlers->handleClassLike($node, $this->currentContext);
+        $this->classLikeHandler->handle($node, $this->currentContext);
 
         return true;
     }
@@ -190,7 +200,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             return false;
         }
 
-        $this->handlers->handleClassLike($node, $this->currentContext);
+        $this->classLikeHandler->handle($node, $this->currentContext);
 
         return true;
     }

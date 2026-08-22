@@ -18,8 +18,6 @@ use Qualimetrix\Analysis\Evidence\Security\SensitiveNameMatcher;
 
 /**
  * Classifies credential-like literal declarations and their safe exclusions.
- *
- * @qmx-ignore health.cohesion -- Stateless credential-literal shapes share one classification policy and location boundary.
  */
 final class CredentialLiterals
 {

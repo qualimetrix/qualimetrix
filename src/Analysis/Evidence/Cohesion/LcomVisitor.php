@@ -30,6 +30,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  * - For each method: set of methods called via $this->method()
  * - Static method markers (excluded from LCOM graph)
  *
+ * Constructors and destructors are excluded from the graph entirely — see the
+ * `__construct`/`__destruct` guard in {@see enterNode()} for why.
+ *
  * Anonymous classes are ignored.
  */
 final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
@@ -103,6 +106,25 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             // Abstract methods have no body and no property access, creating
             // disconnected nodes that inflate LCOM. Skip them from the graph.
             if ($node->isAbstract()) {
+                return null;
+            }
+
+            // Constructors and destructors are excluded from the graph, matching
+            // the B&K-derived treatment already applied by TccLccVisitor. A
+            // promoted-property parameter (`private array $x`) declares instance
+            // state without ever producing a PropertyFetch node, so a
+            // constructor built entirely from promoted properties has no
+            // recorded property access and no method calls — it lands in the
+            // graph as an isolated vertex and inflates LCOM by one for the 85%
+            // of constructors that use promotion (see cohesion.md). Recording
+            // promoted parameters as property accesses was considered and
+            // rejected: it would turn `__construct` into a hub touching every
+            // promoted property, connecting all methods through it and making
+            // LCOM report 1 almost everywhere — silently defeating the metric
+            // rather than fixing it. Excluding the constructor/destructor
+            // outright, as the constructor's edges say nothing about
+            // behavioral cohesion, is the same call already made for TCC/LCC.
+            if (\in_array($methodName, ['__construct', '__destruct'], true)) {
                 return null;
             }
 

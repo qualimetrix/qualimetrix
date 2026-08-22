@@ -149,7 +149,8 @@ final class LcomClassData
      * LCOM4 is the number of connected components in the graph where:
      * - Vertices = methods
      * - Edges = (m1, m2) if m1 and m2 share a property OR one calls the other via $this->
-     * - Static methods are excluded from the graph
+     * - Static, constructor and destructor methods are excluded from the graph
+     *   (see {@see LcomVisitor::enterNode()} for why constructors/destructors are excluded)
      * - Stateless constant methods are merged into a single virtual node to reduce
      *   false positives from interface-mandated metadata methods (e.g., getName())
      *

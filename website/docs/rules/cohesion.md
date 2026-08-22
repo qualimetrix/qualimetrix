@@ -13,8 +13,9 @@ See also: [LCOM (Lack of Cohesion of Methods)](#lcom----lack-of-cohesion-of-meth
 LCOM4 counts disconnected groups of related instance methods. A value of `1`
 means that the class is cohesive; values above `1` indicate independent groups
 of responsibilities that may be split. Qualimetrix connects methods that share
-a property or call one another through `$this->method()`, excludes static
-methods, and groups stateless constant methods into one virtual node.
+a property or call one another through `$this->method()`, excludes static,
+constructor and destructor methods, and groups stateless constant methods
+into one virtual node.
 
 The default warning/error thresholds are `3` and `5`. Readonly classes are
 excluded by default, and classes must have at least three methods. You can also
@@ -43,7 +44,18 @@ graph nodes, and the metric is the number of connected components.
     constant methods with no property access or instance method calls are
     grouped into one virtual node; this prevents interface-mandated metadata
     methods such as `getName()` and `getDescription()` from each inflating the
-    number of disconnected components.
+    number of disconnected components. Constructors and destructors
+    (`__construct`, `__destruct`) are excluded from the method set entirely,
+    consistent with how TCC/LCC already treats them (see "Implementation
+    notes" below): a constructor built entirely from promoted properties
+    (`private array $x` in the parameter list) never emits a property-access
+    node, so without this exclusion it would sit in the graph as an isolated
+    vertex and inflate LCOM by one -- this affects the large majority of
+    constructors in modern PHP 8+ code. Recording promoted parameters as
+    property accesses was considered and rejected: it would turn
+    `__construct` into a hub touching every promoted property, connecting
+    unrelated methods through it and pushing LCOM toward 1 almost everywhere,
+    which would defeat the metric rather than fix it.
 
 !!! note "Comparing with other tools"
     phpmetrics uses the Henderson-Sellers LCOM formula, whose values are on a

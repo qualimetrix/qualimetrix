@@ -231,11 +231,13 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertEqualsWithDelta(1.0, $m->get('lcc'), 0.01, 'UserRepository lcc');
         self::assertSame(1, $m->get('lcom'), 'UserRepository lcom');
 
-        // TokenValidator: tcc=0, lcc=0, lcom=1
+        // TokenValidator: tcc=0, lcc=0, lcom=2 (validate/isExpired touch different
+        // properties and don't call each other; __construct is excluded from the
+        // graph, so it can no longer bridge them the way it did before)
         $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'TokenValidator'));
         self::assertEqualsWithDelta(0.0, $m->get('tcc'), 0.01, 'TokenValidator tcc');
         self::assertEqualsWithDelta(0.0, $m->get('lcc'), 0.01, 'TokenValidator lcc');
-        self::assertSame(1, $m->get('lcom'), 'TokenValidator lcom');
+        self::assertSame(2, $m->get('lcom'), 'TokenValidator lcom');
 
         // SessionManager: tcc=1, lcc=1, lcom=1
         $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'SessionManager'));

@@ -51,9 +51,13 @@ worker payload; it is Cohesion-owned invocation state with an explicit reset
 point.
 
 LCOM4 counts connected groups of instance methods through shared property
-access or `$this->method()` calls. Stateless constant methods are merged into a
-virtual node to avoid false positives from protocol metadata. TCC and LCC
-measure direct and transitive property-sharing connections among public methods.
+access or `$this->method()` calls. Constructors and destructors are excluded
+from the graph entirely (see the deviation note below — a promoted-property
+constructor never emits a property-access node, so leaving it in would inflate
+LCOM for the majority of PHP 8+ constructors). Stateless constant methods are
+merged into a virtual node to avoid false positives from protocol metadata.
+TCC and LCC measure direct and transitive property-sharing connections among
+public methods.
 
 > **Note:** The original LCOM4 specification defines edges only through shared
 > property access. Qualimetrix also creates method-call edges through
@@ -61,7 +65,15 @@ measure direct and transitive property-sharing connections among public methods.
 > access or instance method calls into one virtual node. These deliberate
 > extensions prevent getter-based designs and interface-mandated metadata from
 > inflating the number of disconnected components; Qualimetrix does not claim
-> strict original-spec compliance.
+> strict original-spec compliance. Constructors and destructors are excluded
+> from the method set entirely, matching the treatment TCC/LCC already applies.
+> A promoted-property constructor (`private array $x` in the parameter list)
+> never emits a property-access node, so without the exclusion it would sit in
+> the graph as an isolated vertex and inflate LCOM by one — this affects the
+> large majority of constructors in modern PHP 8+ code. Recording promoted
+> parameters as property accesses was rejected: it would turn `__construct`
+> into a hub touching every promoted property, connecting unrelated methods
+> through it and pushing LCOM toward 1 almost everywhere.
 
 ## Test ownership and Definition of Done
 

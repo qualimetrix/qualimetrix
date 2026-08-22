@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-21T03:44:57+00:00",
+  "generated": "2026-08-22T06:51:45+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -369,12 +369,6 @@
       {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyOptions@src/Analysis/Evidence/CircularDependency/CircularDependencyOptions.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[30]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleMemberLabels@src/Analysis/Evidence/CircularDependency/CycleMemberLabels.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\CodeSmell\\TraitUsageResolver@src/Analysis/Evidence/CodeSmell/TraitUsageResolver.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateClassData@src/Analysis/Evidence/CodeSmell/UnusedPrivateClassData.php": [
@@ -396,8 +390,7 @@
       {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php": [
-      {"channel":"complexity.wmc#complexity.wmc","magnitudes":[60]},
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
+      {"channel":"complexity.wmc#complexity.wmc","magnitudes":[60]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition@src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[30]}
@@ -456,8 +449,7 @@
       {"channel":"design.data-class#design.data-class","magnitudes":[33]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory@src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php": [
-      {"channel":"complexity.wmc#complexity.wmc","magnitudes":[67]},
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
+      {"channel":"complexity.wmc#complexity.wmc","magnitudes":[67]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\Allow\\ParseCapturedState@src/Analysis/Policy/Architecture/Configuration/Allow/ParseCapturedState.php": [
       {"channel":"design.data-class#design.data-class","magnitudes":[0]}
@@ -469,7 +461,7 @@
       {"channel":"coupling.cbo#coupling.cbo.class","magnitudes":[20]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerExpansionResult@src/Analysis/Policy/Architecture/Layer/Expansion/LayerExpansionResult.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[30]}
+      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\TemplateLayerDefinition@src/Analysis/Policy/Architecture/Layer/TemplateLayerDefinition.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[30]}
@@ -478,28 +470,14 @@
       {"channel":"coupling.instability#coupling.instability.class","magnitudes":[0.818182]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryParser@src/Analysis/Policy/Baseline/BaselineEntryParser.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]},
       {"channel":"coupling.instability#coupling.instability.class","magnitudes":[0.846154]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader@src/Analysis/Policy/Baseline/BaselineLoader.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineMigrator@src/Analysis/Policy/Baseline/BaselineMigrator.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[49.9]}
-    ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineUpdater@src/Analysis/Policy/Baseline/BaselineUpdater.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]},
       {"channel":"coupling.instability#coupling.instability.class","magnitudes":[0.866667]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter@src/Analysis/Policy/Baseline/BaselineWriter.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService@src/Analysis/Policy/Baseline/BoundaryExplanationService.php": [
       {"channel":"complexity.wmc#complexity.wmc","magnitudes":[52]},
       {"channel":"coupling.instability#coupling.instability.class","magnitudes":[0.888889]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\CanonicalBaselineReader@src/Analysis/Policy/Baseline/CanonicalBaselineReader.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\V5BaselineReader@src/Analysis/Policy/Baseline/V5BaselineReader.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[30]}
@@ -514,40 +492,28 @@
       {"channel":"complexity.wmc#complexity.wmc","magnitudes":[65]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand@src/Infrastructure/Console/Command/BaselineCleanupCommand.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[30]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds@src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplainCommand@src/Infrastructure/Console/Command/BaselineExplainCommand.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[30]}
+      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineGenerateCommand@src/Infrastructure/Console/Command/BaselineGenerateCommand.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[30]}
+      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand@src/Infrastructure/Console/Command/BaselineUpdateCommand.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[30]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand@src/Infrastructure/Console/Command/CheckCommand.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand@src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[30]}
+      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand@src/Infrastructure/Console/Command/HookUninstallCommand.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[30]}
+      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\FilteredInputDefinition@src/Infrastructure/Console/FilteredInputDefinition.php": [
       {"channel":"design.data-class#design.data-class","magnitudes":[0]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator@src/Infrastructure/Console/ViolationFilterOrchestrator.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[46.5]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator@src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
-    ],
     "declaration:class:Qualimetrix\\Infrastructure\\Git\\ChangedFile@src/Infrastructure/Git/ChangedFile.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[30]}
+      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger@src/Infrastructure/Logging/DelegatingLogger.php": [
       {"channel":"design.type-coverage#design.type-coverage.param","magnitudes":[75]}
@@ -576,15 +542,6 @@
     ],
     "declaration:class:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeNode@src/Reporting/Formatter/Html/HtmlTreeNode.php": [
       {"channel":"design.data-class#design.data-class","magnitudes":[11]}
-    ],
-    "declaration:class:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer@src/Reporting/Formatter/Summary/HealthBarRenderer.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
-    ],
-    "declaration:class:Qualimetrix\\Reporting\\Formatter\\Summary\\HintRenderer@src/Reporting/Formatter/Summary/HintRenderer.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
-    ],
-    "declaration:class:Qualimetrix\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer@src/Reporting/Formatter/Summary/ViolationSummaryRenderer.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Reporting\\Formatter\\Support\\ViolationSorter@src/Reporting/Formatter/Support/ViolationSorter.php": [
       {"channel":"complexity.wmc#complexity.wmc","magnitudes":[54]}
@@ -624,7 +581,7 @@
       {"channel":"coupling.instability#coupling.instability.namespace","magnitudes":[0.92]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Prioritization\\Impact": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
+      {"channel":"computed.health#health.cohesion","magnitudes":[47.5]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Size": [
       {"channel":"size.class-count#size.class-count","magnitudes":[15]}
@@ -639,13 +596,10 @@
       {"channel":"computed.health#health.cohesion","magnitudes":[30]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Html": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[41.7]}
+      {"channel":"computed.health#health.cohesion","magnitudes":[43.3]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Json": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[34]}
-    ],
-    "ns:Qualimetrix\\Reporting\\Formatter\\Sarif": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[46.2]}
+      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "project:": [
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"1eefcbbb02d84e4e","magnitudes":[16]},

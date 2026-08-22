@@ -21,8 +21,6 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 
 /**
  * Extracts Inline-owned source controls and binds them to measured declarations.
- *
- * @qmx-ignore health.cohesion -- One public extraction operation uses both extraction collaborators; TCC is undefined, promoted constructor properties create an LCOM artifact, and private static traversal helpers push the general health methodCount to its >= 6 eligibility cutoff.
  */
 final readonly class SourceControlExtractor implements SourceControlExtractorInterface
 {
