@@ -81,7 +81,7 @@ pair whose left half no consumer reads.
 `Infrastructure/Rule` holds `ChannelUniverse` — the implementation of channel
 identity, whose contract belongs to `Analysis/Finding`.
 
-## Found while closing the level enumeration (Э0), out of scope here
+## Found while closing the level enumeration (Ш0), out of scope here
 
 Three defects surfaced by running the tool rather than reading it. None is a
 vocabulary defect, so none is in scope; each is recorded so it is not
@@ -108,6 +108,29 @@ rediscovered.
    `tests/Analysis/Finding/Integration/...`. The fixture's own header comment
    repeats the stale paths. A reader following the failure message looks in a
    directory that does not exist.
+
+## Consumers that read the level from the channel NAME
+
+Found in round 1 of the plan review, verified against the code. Not defects of
+today's behaviour — defects that the level's removal from the name will create,
+so they belong to the enumeration the plan owes rather than to a later pass.
+
+`Infrastructure/Console/Command/BaselineConfiguredThresholds.php` is the one
+found so far, and it reads the level twice:
+
+- `thresholdFor()` derives the level from the channel name
+  (`axisOf($channel)` -> `RuleLevel::tryFrom($axis)`), then uses it to pick the
+  level's options. Once the level leaves the name, `$axis` is null, the
+  hierarchical branch never runs, and `baseline:explain` silently stops printing
+  the configured boundary for those channels. Nothing fails; a line disappears.
+- `levelOptions()` catches `Throwable` and returns null, commented as "a
+  mismatch worth no more than a missing line here". That is defensible while the
+  addressable domain is three values; when it widens to five, the same catch
+  swallows a user's unsupported `channel:level` instead of rejecting it.
+
+The lesson generalises past this file: a grep for level *literals* does not find
+a consumer that parses the level out of the channel code. That needs its own
+probe — grep for the code-splitting helpers, not for `'.class'`.
 
 ## Disposition
 

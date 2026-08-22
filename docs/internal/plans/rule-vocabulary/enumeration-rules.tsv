@@ -21,6 +21,7 @@ complexity.cognitive	complexity	Analysis/Evidence/Complexity/CognitiveComplexity
 complexity.cyclomatic	complexity	Analysis/Evidence/Complexity/ComplexityRule.php	complexity.cyclomatic.callable complexity.cyclomatic.class	Magnitude	debt	own	Callable Class_	4	no	ClassCognitiveComplexityOptions ClassComplexityOptions ClassNpathComplexityOptions CognitiveComplexityOptions ComplexityOptions MethodCognitiveComplexityOptions MethodComplexityOptions MethodNpathComplexityOptions NpathComplexityOptions WmcOptions
 complexity.npath	complexity	Analysis/Evidence/Complexity/NpathComplexityRule.php	complexity.npath.callable complexity.npath.class	Magnitude	debt	own	Callable Class_	4	no	ClassNpathComplexityOptions MethodNpathComplexityOptions NpathComplexityOptions
 complexity.wmc	complexity	Analysis/Evidence/Complexity/WmcRule.php	complexity.wmc	Magnitude	debt	own	-	0	no	WmcOptions
+computed.health	computed/health	Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	health.complexity health.cohesion health.coupling health.typing health.maintainability health.overall PLUS user-defined computed.*	Magnitude	debt	own	Class_ Namespace_ Project	0	no	ComputedMetricRuleOptions
 coupling.cbo	coupling	Analysis/Evidence/Coupling/CboRule.php	coupling.cbo.class coupling.cbo.namespace	Magnitude	debt	own	Class_ Namespace_	4	no	CboOptions ClassCboOptions NamespaceCboOptions
 coupling.class-rank	coupling	Analysis/Evidence/Coupling/ClassRankRule.php	coupling.class-rank	Occurrence	debt	own	-	0	no	ClassRankOptions
 coupling.distance	coupling	Analysis/Evidence/Coupling/DistanceRule.php	coupling.distance	Magnitude	debt	own	-	0	no	DistanceOptions
@@ -40,3 +41,26 @@ security.xss	security	Analysis/Evidence/Security/XssRule.php	security.xss	Occurr
 size.class-count	size	Analysis/Evidence/Size/ClassCountRule.php	size.class-count	Magnitude	debt	own	-	0	no	ClassCountOptions
 size.method-count	size	Analysis/Evidence/Size/MethodCountRule.php	size.method-count	Magnitude	debt	own	-	0	no	MethodCountOptions
 size.property-count	size	Analysis/Evidence/Size/PropertyCountRule.php	size.property-count	Magnitude	debt	own	-	0	no	PropertyCountOptions
+#
+# HOW OBTAINED: php-parser over src/ plus ChannelDeclarationReader through reflection, 2026-08-22.
+#
+# BOUNDARY OF THE SET — read this before trusting a count taken from this file.
+# The producer set is the 42 rules the container registers (`bin/qmx rules`
+# reports "42 rules available"). This table holds 42 rows. An earlier revision
+# held 41: the missing producer was `computed.health` / ComputedMetricRule,
+# because the extraction walked `*Rule.php` files under the rule-owning
+# capability roots and that rule declares its NAME through
+# ComputedMetricChannelFamily::PRODUCER_RULE_NAME rather than a literal. The
+# omission mattered: `computed.health` is the single producer the whole level
+# argument of R1 rests on, so the enumeration was missing its own witness.
+#
+# BLIND SPOTS:
+#  - `channels` for computed.health is open-ended by construction: six built-in
+#    health dimensions plus any `computed.*` a user declares in qmx.yaml. No
+#    fixed table can enumerate the second half.
+#  - `option_classes` is NOISE for hierarchical rules: the column lists every
+#    options class reachable from the rule file, not the ones it owns. Ten
+#    entries against complexity.cyclomatic is an artefact of that, not a fact
+#    about the rule. Use enumeration-channel-levels.tsv for level facts.
+#  - `literal_level_suffixes` counts single-quoted occurrences only; a suffix
+#    composed at run time is invisible to it.

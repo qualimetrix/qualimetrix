@@ -30,3 +30,23 @@ size.class-count	Magnitude	ClassCountRule	aggregate
 size.method-count	Magnitude	MethodCountRule	NONE-FOUND
 duplication.code-duplication	Magnitude	CodeDuplicationRule	aggregate Project
 architecture.unassigned-class	Magnitude	LayerViolationRule	NONE-FOUND
+#
+# HOW OBTAINED: grep for MetricSubject / SymbolPath factory calls inside each rule
+# class file, 2026-08-22.
+#
+# THIS FILE RECORDS A FAILED METHOD and is kept only as that record. The column
+# `subject_factories_seen_in_producer` reads NONE-FOUND for 23 of 31 magnitude
+# channels — not because those channels have no subject, but because the subject
+# is built outside the rule class (in an AbstractRule helper or already carried by
+# the metric record). Reading rule classes therefore cannot answer "at what level
+# does this channel report".
+#
+# The question is answered by observation instead: see
+# enumeration-channel-levels.tsv, which covers 63 of 63 channels with two
+# independent witnesses. Do not derive a level from this file.
+#
+# BLIND SPOTS (of the failed method, listed so the failure is not repeated):
+#  - a factory call reached through inheritance or a trait is invisible;
+#  - a subject arriving as a constructor argument or inside a value object is
+#    invisible;
+#  - `aggregate` without an argument tells the kind of subject but not its level.
