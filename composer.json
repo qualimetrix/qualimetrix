@@ -89,9 +89,11 @@
             "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M"
         ],
         "check-leaks": "bash scripts/check-private-leaks.sh",
+        "docs:check": "bash scripts/check-docs.sh",
         "check": [
             "@check-leaks",
             "@cs-check",
+            "@docs:check",
             "@test",
             "@test:cross-tool",
             "@phpstan",
@@ -108,13 +110,14 @@
         "build:js": "Rebuild HTML report JS bundle (vite)",
         "cs-check": "Check code style without fixing",
         "check-leaks": "Fail if tracked files contain developer home paths or private project names",
+        "docs:check": "Build the website with mkdocs --strict; fails on broken links and other doc warnings",
         "cs-fix": "Fix code style with PHP-CS-Fixer",
         "benchmark:check": "Run benchmark regression check for health score formulas",
         "benchmark:update": "Update benchmark baselines with current scores (±10 margin)",
         "architecture:generate": "Regenerate modular-architecture governance projections and inventories",
         "architecture:check": "Validate the manifest and generated modular-architecture artifacts without writing",
         "selfcheck": "Validate modular-architecture governance, then run Qualimetrix on its own source code",
-        "check": "Run all checks: leaks, code style, PHP/Python tests, phpstan, selfcheck (selfcheck enforces architecture via qmx.yaml)"
+        "check": "Run all checks: leaks, code style, strict docs build, PHP/Python tests, phpstan, selfcheck (selfcheck enforces architecture via qmx.yaml)"
     },
     "config": {
         "sort-packages": true,

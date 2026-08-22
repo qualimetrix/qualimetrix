@@ -49,6 +49,7 @@ website/site/
 
 # Python venv and cache (MkDocs)
 /.venv/
+website/.venv/
 __pycache__/
 
 # Test fixtures (generated)
