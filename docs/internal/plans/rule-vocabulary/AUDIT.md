@@ -87,14 +87,24 @@ Three defects surfaced by running the tool rather than reading it. None is a
 vocabulary defect, so none is in scope; each is recorded so it is not
 rediscovered.
 
-1. **Group-prefix rule selection does not exist, and three places say it does.**
-   `--only-rule=complexity` and `--disable-rule=complexity` both fail with
-   `Rule selector "complexity" does not match any registered producer, group, or
-   channel` — for every one of the 13 families, with the project's own
-   `qmx.yaml` and with a bare one. Only the dotted producer name resolves.
-   `bin/qmx check --help` ("or group by prefix (e.g., complexity, code-smell)"),
-   the footer of `bin/qmx rules`, and the error message's own "or group" all
-   promise it. Verified 2026-08-22.
+1. **The documented group-selector syntax is not the implemented one.**
+   `--only-rule=complexity` fails with `Rule selector "complexity" does not match
+   any registered producer, group, or channel`, for every one of the 13 families.
+   The working form is `complexity.*` — `NameSelector::GROUP_SUFFIX` is `.*`, the
+   grammar ADR 0024 and ADR 0025 fixed — and it does select the whole family
+   (verified: `--only-rule='complexity.*'` reports on all four complexity rules,
+   `code-smell.*` on all of code-smell). What is wrong is the documentation:
+   `bin/qmx check --help` says "or group by prefix (e.g., complexity,
+   code-smell)" and the footer of `bin/qmx rules` repeats it, both naming a form
+   that does not parse. The error message is also unhelpful — it says the
+   selector matched no "group" without saying what a group looks like.
+
+   Recorded here as the correction it is: an earlier revision of this file
+   claimed the feature did not exist. That was wrong, and wrong in an instructive
+   way — the documented form was tried, it failed, and the conclusion jumped from
+   "this form does not work" to "the feature is absent" without reading the
+   grammar. Verified 2026-08-23.
+
 2. **`complexity.npath.class` is disabled by default and its two siblings are
    not.** `ClassNpathComplexityOptions::$enabled = false`, while the class
    channels of `complexity.cognitive` and `complexity.cyclomatic` are on. The

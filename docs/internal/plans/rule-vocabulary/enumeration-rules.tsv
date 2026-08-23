@@ -1,46 +1,46 @@
-rule	family	file	channels	shapes	acceptability	channel_owner	levels_in_options	literal_level_suffixes	uses_enum_value	option_classes
-annotation.directive	annotation	Analysis/Policy/Inline/Directive/InlineDirectiveRule.php	annotation.unresolved-directive annotation.unsupported-threshold annotation.invalid-threshold annotation.unused-directive	Occurrence	config-error debt	pseudo	-	0	no	InlineDirectiveOptions
-architecture.circular-dependency	architecture	Analysis/Evidence/CircularDependency/CircularDependencyRule.php	architecture.circular-dependency	Magnitude	debt	own	-	0	no	CircularDependencyOptions
-architecture.layer-violation	architecture	Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	architecture.layer-violation architecture.unassigned-class architecture.coverage architecture.unreachable-layer architecture.potential-shadow architecture.empty-template architecture.pending-layer-matched	Occurrence Magnitude	debt config-error	own pseudo	-	0	no	LayerViolationOptions
-code-smell.boolean-argument	code-smell	Analysis/Evidence/CodeSmell/BooleanArgumentRule.php	code-smell.boolean-argument	Occurrence	debt	own	-	0	no	BooleanArgumentOptions
-code-smell.constructor-overinjection	code-smell	Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php	code-smell.constructor-overinjection	Magnitude	debt	own	-	0	no	ConstructorOverinjectionOptions
-code-smell.count-in-loop	code-smell	Analysis/Evidence/CodeSmell/CountInLoopRule.php	code-smell.count-in-loop	Occurrence	debt	own	-	0	no	-
-code-smell.debug-code	code-smell	Analysis/Evidence/CodeSmell/DebugCodeRule.php	code-smell.debug-code	Occurrence	debt	own	-	0	no	-
-code-smell.empty-catch	code-smell	Analysis/Evidence/CodeSmell/EmptyCatchRule.php	code-smell.empty-catch	Occurrence	debt	own	-	0	no	-
-code-smell.error-suppression	code-smell	Analysis/Evidence/CodeSmell/ErrorSuppressionRule.php	code-smell.error-suppression	Occurrence	debt	own	-	0	no	ErrorSuppressionOptions
-code-smell.eval	code-smell	Analysis/Evidence/CodeSmell/EvalRule.php	code-smell.eval	Occurrence	debt	own	-	0	no	-
-code-smell.exit	code-smell	Analysis/Evidence/CodeSmell/ExitRule.php	code-smell.exit	Occurrence	debt	own	-	0	no	-
-code-smell.goto	code-smell	Analysis/Evidence/CodeSmell/GotoRule.php	code-smell.goto	Occurrence	debt	own	-	0	no	-
-code-smell.identical-subexpression	code-smell	Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php	code-smell.identical-subexpression	Occurrence	debt	own	-	0	no	IdenticalSubExpressionOptions
-code-smell.long-parameter-list	code-smell	Analysis/Evidence/CodeSmell/LongParameterListRule.php	code-smell.long-parameter-list	Magnitude	debt	own	-	0	no	LongParameterListOptions
-code-smell.superglobals	code-smell	Analysis/Evidence/CodeSmell/SuperglobalsRule.php	code-smell.superglobals	Occurrence	debt	own	-	0	no	-
-code-smell.unreachable-code	code-smell	Analysis/Evidence/CodeSmell/UnreachableCodeRule.php	code-smell.unreachable-code	Magnitude	debt	own	-	0	no	UnreachableCodeOptions
-code-smell.unused-private	code-smell	Analysis/Evidence/CodeSmell/UnusedPrivateRule.php	code-smell.unused-private	Magnitude	debt	own	-	0	no	UnusedPrivateOptions
-cohesion.lcom	cohesion	Analysis/Evidence/Cohesion/LcomRule.php	cohesion.lcom	Magnitude	debt	own	-	0	no	LcomOptions
-complexity.cognitive	complexity	Analysis/Evidence/Complexity/CognitiveComplexityRule.php	complexity.cognitive.callable complexity.cognitive.class	Magnitude	debt	own	Callable Class_	4	no	ClassCognitiveComplexityOptions CognitiveComplexityOptions MethodCognitiveComplexityOptions
-complexity.cyclomatic	complexity	Analysis/Evidence/Complexity/ComplexityRule.php	complexity.cyclomatic.callable complexity.cyclomatic.class	Magnitude	debt	own	Callable Class_	4	no	ClassCognitiveComplexityOptions ClassComplexityOptions ClassNpathComplexityOptions CognitiveComplexityOptions ComplexityOptions MethodCognitiveComplexityOptions MethodComplexityOptions MethodNpathComplexityOptions NpathComplexityOptions WmcOptions
-complexity.npath	complexity	Analysis/Evidence/Complexity/NpathComplexityRule.php	complexity.npath.callable complexity.npath.class	Magnitude	debt	own	Callable Class_	4	no	ClassNpathComplexityOptions MethodNpathComplexityOptions NpathComplexityOptions
-complexity.wmc	complexity	Analysis/Evidence/Complexity/WmcRule.php	complexity.wmc	Magnitude	debt	own	-	0	no	WmcOptions
-computed.health	computed/health	Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	health.complexity health.cohesion health.coupling health.typing health.maintainability health.overall PLUS user-defined computed.*	Magnitude	debt	own	Class_ Namespace_ Project	0	no	ComputedMetricRuleOptions
-coupling.cbo	coupling	Analysis/Evidence/Coupling/CboRule.php	coupling.cbo.class coupling.cbo.namespace	Magnitude	debt	own	Class_ Namespace_	4	no	CboOptions ClassCboOptions NamespaceCboOptions
-coupling.class-rank	coupling	Analysis/Evidence/Coupling/ClassRankRule.php	coupling.class-rank	Occurrence	debt	own	-	0	no	ClassRankOptions
-coupling.distance	coupling	Analysis/Evidence/Coupling/DistanceRule.php	coupling.distance	Magnitude	debt	own	-	0	no	DistanceOptions
-coupling.instability	coupling	Analysis/Evidence/Coupling/InstabilityRule.php	coupling.instability.class coupling.instability.namespace	Magnitude	debt	own	Class_ Namespace_	4	no	ClassInstabilityOptions InstabilityOptions NamespaceInstabilityOptions
-design.data-class	design	Analysis/Evidence/Design/DataClassRule.php	design.data-class	Magnitude	debt	own	-	0	no	DataClassOptions
-design.god-class	design	Analysis/Evidence/Design/GodClassRule.php	design.god-class	Magnitude	debt	own	-	0	no	GodClassOptions
-design.inheritance	design	Analysis/Evidence/Design/InheritanceRule.php	design.inheritance	Magnitude	debt	own	-	0	no	InheritanceOptions
-design.noc	design	Analysis/Evidence/Design/NocRule.php	design.noc	Magnitude	debt	own	-	0	no	NocOptions
-design.type-coverage	design	Analysis/Evidence/Design/TypeCoverageRule.php	design.type-coverage.param design.type-coverage.return design.type-coverage.property	Magnitude	debt	own	-	0	no	TypeCoverageOptions
-duplication.code-duplication	duplication	Analysis/Evidence/Duplication/CodeDuplicationRule.php	duplication.code-duplication	Magnitude	debt	own	-	0	no	CodeDuplicationOptions
-maintainability.index	maintainability	Analysis/Evidence/Maintainability/MaintainabilityRule.php	maintainability.index	Magnitude	debt	own	-	0	no	MaintainabilityOptions
-security.command-injection	security	Analysis/Evidence/Security/CommandInjectionRule.php	security.command-injection	Occurrence	debt	own	-	0	no	-
-security.hardcoded-credentials	security	Analysis/Evidence/Security/HardcodedCredentialsRule.php	security.hardcoded-credentials	Occurrence	debt	own	-	0	no	HardcodedCredentialsOptions
-security.sensitive-parameter	security	Analysis/Evidence/Security/SensitiveParameterRule.php	security.sensitive-parameter	Occurrence	debt	own	-	0	no	SensitiveParameterOptions
-security.sql-injection	security	Analysis/Evidence/Security/SqlInjectionRule.php	security.sql-injection	Occurrence	debt	own	-	0	no	-
-security.xss	security	Analysis/Evidence/Security/XssRule.php	security.xss	Occurrence	debt	own	-	0	no	-
-size.class-count	size	Analysis/Evidence/Size/ClassCountRule.php	size.class-count	Magnitude	debt	own	-	0	no	ClassCountOptions
-size.method-count	size	Analysis/Evidence/Size/MethodCountRule.php	size.method-count	Magnitude	debt	own	-	0	no	MethodCountOptions
-size.property-count	size	Analysis/Evidence/Size/PropertyCountRule.php	size.property-count	Magnitude	debt	own	-	0	no	PropertyCountOptions
+rule	family	file	channels	shapes	acceptability	channel_owner	levels_in_options	literal_level_suffixes	uses_enum_value	option_classes	RuleCategory	group_equals_category
+annotation.directive	annotation	Analysis/Policy/Inline/Directive/InlineDirectiveRule.php	annotation.unresolved-directive annotation.unsupported-threshold annotation.invalid-threshold annotation.unused-directive	Occurrence	config-error debt	pseudo	-	0	no	InlineDirectiveOptions	annotation	yes
+architecture.circular-dependency	architecture	Analysis/Evidence/CircularDependency/CircularDependencyRule.php	architecture.circular-dependency	Magnitude	debt	own	-	0	no	CircularDependencyOptions	architecture	yes
+architecture.layer-violation	architecture	Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	architecture.layer-violation architecture.unassigned-class architecture.coverage architecture.unreachable-layer architecture.potential-shadow architecture.empty-template architecture.pending-layer-matched	Occurrence Magnitude	debt config-error	own pseudo	-	0	no	LayerViolationOptions	architecture	yes
+code-smell.boolean-argument	code-smell	Analysis/Evidence/CodeSmell/BooleanArgumentRule.php	code-smell.boolean-argument	Occurrence	debt	own	-	0	no	BooleanArgumentOptions	code-smell	yes
+code-smell.constructor-overinjection	code-smell	Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php	code-smell.constructor-overinjection	Magnitude	debt	own	-	0	no	ConstructorOverinjectionOptions	code-smell	yes
+code-smell.count-in-loop	code-smell	Analysis/Evidence/CodeSmell/CountInLoopRule.php	code-smell.count-in-loop	Occurrence	debt	own	-	0	no	-	code-smell	yes
+code-smell.debug-code	code-smell	Analysis/Evidence/CodeSmell/DebugCodeRule.php	code-smell.debug-code	Occurrence	debt	own	-	0	no	-	code-smell	yes
+code-smell.empty-catch	code-smell	Analysis/Evidence/CodeSmell/EmptyCatchRule.php	code-smell.empty-catch	Occurrence	debt	own	-	0	no	-	code-smell	yes
+code-smell.error-suppression	code-smell	Analysis/Evidence/CodeSmell/ErrorSuppressionRule.php	code-smell.error-suppression	Occurrence	debt	own	-	0	no	ErrorSuppressionOptions	code-smell	yes
+code-smell.eval	code-smell	Analysis/Evidence/CodeSmell/EvalRule.php	code-smell.eval	Occurrence	debt	own	-	0	no	-	code-smell	yes
+code-smell.exit	code-smell	Analysis/Evidence/CodeSmell/ExitRule.php	code-smell.exit	Occurrence	debt	own	-	0	no	-	code-smell	yes
+code-smell.goto	code-smell	Analysis/Evidence/CodeSmell/GotoRule.php	code-smell.goto	Occurrence	debt	own	-	0	no	-	code-smell	yes
+code-smell.identical-subexpression	code-smell	Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php	code-smell.identical-subexpression	Occurrence	debt	own	-	0	no	IdenticalSubExpressionOptions	code-smell	yes
+code-smell.long-parameter-list	code-smell	Analysis/Evidence/CodeSmell/LongParameterListRule.php	code-smell.long-parameter-list	Magnitude	debt	own	-	0	no	LongParameterListOptions	code-smell	yes
+code-smell.superglobals	code-smell	Analysis/Evidence/CodeSmell/SuperglobalsRule.php	code-smell.superglobals	Occurrence	debt	own	-	0	no	-	code-smell	yes
+code-smell.unreachable-code	code-smell	Analysis/Evidence/CodeSmell/UnreachableCodeRule.php	code-smell.unreachable-code	Magnitude	debt	own	-	0	no	UnreachableCodeOptions	code-smell	yes
+code-smell.unused-private	code-smell	Analysis/Evidence/CodeSmell/UnusedPrivateRule.php	code-smell.unused-private	Magnitude	debt	own	-	0	no	UnusedPrivateOptions	code-smell	yes
+cohesion.lcom	cohesion	Analysis/Evidence/Cohesion/LcomRule.php	cohesion.lcom	Magnitude	debt	own	-	0	no	LcomOptions	cohesion	yes
+complexity.cognitive	complexity	Analysis/Evidence/Complexity/CognitiveComplexityRule.php	complexity.cognitive.callable complexity.cognitive.class	Magnitude	debt	own	Callable Class_	4	no	ClassCognitiveComplexityOptions CognitiveComplexityOptions MethodCognitiveComplexityOptions	complexity	yes
+complexity.cyclomatic	complexity	Analysis/Evidence/Complexity/ComplexityRule.php	complexity.cyclomatic.callable complexity.cyclomatic.class	Magnitude	debt	own	Callable Class_	4	no	ClassCognitiveComplexityOptions ClassComplexityOptions ClassNpathComplexityOptions CognitiveComplexityOptions ComplexityOptions MethodCognitiveComplexityOptions MethodComplexityOptions MethodNpathComplexityOptions NpathComplexityOptions WmcOptions	complexity	yes
+complexity.npath	complexity	Analysis/Evidence/Complexity/NpathComplexityRule.php	complexity.npath.callable complexity.npath.class	Magnitude	debt	own	Callable Class_	4	no	ClassNpathComplexityOptions MethodNpathComplexityOptions NpathComplexityOptions	complexity	yes
+complexity.wmc	complexity	Analysis/Evidence/Complexity/WmcRule.php	complexity.wmc	Magnitude	debt	own	-	0	no	WmcOptions	complexity	yes
+computed.health	computed/health	Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	health.complexity health.cohesion health.coupling health.typing health.maintainability health.overall PLUS user-defined computed.*	Magnitude	debt	own	Class_ Namespace_ Project	0	no	ComputedMetricRuleOptions	maintainability	NO
+coupling.cbo	coupling	Analysis/Evidence/Coupling/CboRule.php	coupling.cbo.class coupling.cbo.namespace	Magnitude	debt	own	Class_ Namespace_	4	no	CboOptions ClassCboOptions NamespaceCboOptions	coupling	yes
+coupling.class-rank	coupling	Analysis/Evidence/Coupling/ClassRankRule.php	coupling.class-rank	Occurrence	debt	own	-	0	no	ClassRankOptions	coupling	yes
+coupling.distance	coupling	Analysis/Evidence/Coupling/DistanceRule.php	coupling.distance	Magnitude	debt	own	-	0	no	DistanceOptions	coupling	yes
+coupling.instability	coupling	Analysis/Evidence/Coupling/InstabilityRule.php	coupling.instability.class coupling.instability.namespace	Magnitude	debt	own	Class_ Namespace_	4	no	ClassInstabilityOptions InstabilityOptions NamespaceInstabilityOptions	coupling	yes
+design.data-class	design	Analysis/Evidence/Design/DataClassRule.php	design.data-class	Magnitude	debt	own	-	0	no	DataClassOptions	design	yes
+design.god-class	design	Analysis/Evidence/Design/GodClassRule.php	design.god-class	Magnitude	debt	own	-	0	no	GodClassOptions	design	yes
+design.inheritance	design	Analysis/Evidence/Design/InheritanceRule.php	design.inheritance	Magnitude	debt	own	-	0	no	InheritanceOptions	design	yes
+design.noc	design	Analysis/Evidence/Design/NocRule.php	design.noc	Magnitude	debt	own	-	0	no	NocOptions	design	yes
+design.type-coverage	design	Analysis/Evidence/Design/TypeCoverageRule.php	design.type-coverage.param design.type-coverage.return design.type-coverage.property	Magnitude	debt	own	-	0	no	TypeCoverageOptions	design	yes
+duplication.code-duplication	duplication	Analysis/Evidence/Duplication/CodeDuplicationRule.php	duplication.code-duplication	Magnitude	debt	own	-	0	no	CodeDuplicationOptions	duplication	yes
+maintainability.index	maintainability	Analysis/Evidence/Maintainability/MaintainabilityRule.php	maintainability.index	Magnitude	debt	own	-	0	no	MaintainabilityOptions	maintainability	yes
+security.command-injection	security	Analysis/Evidence/Security/CommandInjectionRule.php	security.command-injection	Occurrence	debt	own	-	0	no	-	security	yes
+security.hardcoded-credentials	security	Analysis/Evidence/Security/HardcodedCredentialsRule.php	security.hardcoded-credentials	Occurrence	debt	own	-	0	no	HardcodedCredentialsOptions	security	yes
+security.sensitive-parameter	security	Analysis/Evidence/Security/SensitiveParameterRule.php	security.sensitive-parameter	Occurrence	debt	own	-	0	no	SensitiveParameterOptions	security	yes
+security.sql-injection	security	Analysis/Evidence/Security/SqlInjectionRule.php	security.sql-injection	Occurrence	debt	own	-	0	no	-	security	yes
+security.xss	security	Analysis/Evidence/Security/XssRule.php	security.xss	Occurrence	debt	own	-	0	no	-	security	yes
+size.class-count	size	Analysis/Evidence/Size/ClassCountRule.php	size.class-count	Magnitude	debt	own	-	0	no	ClassCountOptions	size	yes
+size.method-count	size	Analysis/Evidence/Size/MethodCountRule.php	size.method-count	Magnitude	debt	own	-	0	no	MethodCountOptions	size	yes
+size.property-count	size	Analysis/Evidence/Size/PropertyCountRule.php	size.property-count	Magnitude	debt	own	-	0	no	PropertyCountOptions	size	yes
 #
 # HOW OBTAINED: php-parser over src/ plus ChannelDeclarationReader through reflection, 2026-08-22.
 #
