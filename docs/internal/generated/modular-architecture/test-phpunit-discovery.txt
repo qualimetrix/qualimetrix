@@ -2684,6 +2684,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::parent_gets_correct_sum_from_descendant_leaves
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::parent_with_own_symbols_includes_them_in_aggregation
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::symbol_counts_are_computed_for_parent
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\SymbolLevelProjectionTest::itCoversEverySymbolType
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a class"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a file"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a function is the same callable level"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a method is a callable"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"the project"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itAcceptsIterableOfCollectors
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itAcceptsIterableOfDerivedCollectors
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itAppliesDerivedCollectors
@@ -3505,6 +3512,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::exactlyTheLayerPolicyAndDirectiveDiagnosticsDeclareAConfigurationError
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::noExcludedFixtureLineNamesADeclaredChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest::exactlyOnePlaceAssemblesALevelIntoAName
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest::noProductionSourceSpellsALevelSuffixAsALiteral
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyConfiguredComputedMetricChannelAlsoResolvesToARealDescriptionAndAnExistingDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyDeclaredChannelHasAProducer
