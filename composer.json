@@ -93,6 +93,10 @@
             "Composer\\Config::disableProcessTimeout",
             "php scripts/finding-gate.php"
         ],
+        "gate:controls": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/finding-gate-controls.php"
+        ],
         "docs:check": "bash scripts/check-docs.sh",
         "check": [
             "@check-leaks",
