@@ -307,7 +307,7 @@ final class BaselineExplainCommandTest extends TestCase
     ): CommandTester {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(self::CBO_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
-        $declarations->declare(self::LONG_PARAMETER_LIST_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
+        $declarations->declare(self::LONG_PARAMETER_LIST_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable));
 
         $registry = new RuleOptionsRegistry();
         $registry->setConfigFileOptions($ruleOptions);

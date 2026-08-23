@@ -76,12 +76,13 @@ code-smell.long-parameter-list#code-smell.long-parameter-list magnitude:higher c
 code-smell.superglobals#code-smell.superglobals occurrence callable
 code-smell.unreachable-code#code-smell.unreachable-code magnitude:higher callable
 code-smell.unused-private#code-smell.unused-private magnitude:higher class
-complexity.cognitive#complexity.cognitive.class magnitude:higher class
+cohesion.lcom#cohesion.lcom magnitude:higher class
 complexity.cognitive#complexity.cognitive.callable magnitude:higher callable
-complexity.cyclomatic#complexity.cyclomatic.class magnitude:higher class
+complexity.cognitive#complexity.cognitive.class magnitude:higher class
 complexity.cyclomatic#complexity.cyclomatic.callable magnitude:higher callable
-complexity.npath#complexity.npath.class magnitude:higher class
+complexity.cyclomatic#complexity.cyclomatic.class magnitude:higher class
 complexity.npath#complexity.npath.callable magnitude:higher callable
+complexity.npath#complexity.npath.class magnitude:higher class
 complexity.wmc#complexity.wmc magnitude:higher class
 coupling.cbo#coupling.cbo.class magnitude:higher class
 coupling.cbo#coupling.cbo.namespace magnitude:higher namespace
@@ -92,7 +93,6 @@ coupling.instability#coupling.instability.namespace magnitude:higher namespace
 design.data-class#design.data-class magnitude:lower class
 design.god-class#design.god-class magnitude:higher class
 design.inheritance#design.inheritance magnitude:higher class
-cohesion.lcom#cohesion.lcom magnitude:higher class
 design.noc#design.noc magnitude:higher class
 design.type-coverage#design.type-coverage.param magnitude:lower class
 design.type-coverage#design.type-coverage.property magnitude:lower class

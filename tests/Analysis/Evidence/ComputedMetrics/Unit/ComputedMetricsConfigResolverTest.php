@@ -256,6 +256,38 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotContains(SymbolType::Project, $custom->levels);
     }
 
+    /**
+     * A channel cannot declare one level twice, so a configuration that asks
+     * for it has to be refused while the configuration is being read.
+     * {@see ComputedMetricDefinition} owns the invariant; these two cases
+     * pin that the resolver actually reaches it, from a fresh metric and
+     * from an override of a built-in one.
+     */
+    #[Test]
+    public function itRefusesARepeatedLevel(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('declares the same level more than once');
+
+        $this->resolver->resolve([
+            'computed.repeated' => [
+                'formula' => 'loc__avg',
+                'levels' => ['class', 'class'],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function itRefusesARepeatedLevelInAnOverrideToo(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('declares the same level more than once');
+
+        $this->resolver->resolve([
+            'health.overall' => ['levels' => ['namespace', 'namespace']],
+        ]);
+    }
+
     #[Test]
     public function itThrowsForInvalidPrefix(): void
     {

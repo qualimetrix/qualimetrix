@@ -53,6 +53,24 @@ final readonly class ViolationChannel implements Stringable
     }
 
     /**
+     * The channel a producer emits for one level of its own name — the one
+     * place a level is turned into a channel code.
+     *
+     * The suffix is a property of the **static** rules that report at more
+     * than one level, not of multi-level reporting as such: the six
+     * `health.*` channels report at three levels each under one code with no
+     * suffix at all, which is the evidence Р1 uses to take the level out of
+     * the name in Ш5. What the static ones share is that each used to write
+     * its suffix out by hand at both its declaration and its emission point.
+     * That is how `CboRule` came to pick `.class` for any level that was not
+     * `namespace`: a third level would have been mislabelled silently.
+     */
+    public static function leveled(string $ruleName, SymbolLevel $level): self
+    {
+        return new self($ruleName, $ruleName . '.' . $level->value);
+    }
+
+    /**
      * Parses the {@see toKey()} string form back into a channel.
      *
      * The static declaration mechanism (see
@@ -64,21 +82,6 @@ final readonly class ViolationChannel implements Stringable
      * @throws InvalidArgumentException when `$key` does not contain the
      *                                  separator, or either half would be empty
      */
-    /**
-     * The channel a producer emits for one level of its own name — the single
-     * place a level is ever spelled into a channel code.
-     *
-     * Every rule that reports at more than one level names the level in its
-     * violation code, and each used to write the suffix out by hand at both
-     * its declaration and its emission point. That is how
-     * `CboRule` came to pick `.class` for any level that was not
-     * `namespace`: a third level would have been mislabelled silently.
-     */
-    public static function leveled(string $ruleName, SymbolLevel $level): self
-    {
-        return new self($ruleName, $ruleName . '.' . $level->value);
-    }
-
     public static function fromKey(string $key): self
     {
         $parts = explode(self::SEPARATOR, $key, 2);

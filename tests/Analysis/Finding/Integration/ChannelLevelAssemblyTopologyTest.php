@@ -6,13 +6,6 @@ namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 
 use FilesystemIterator;
 use PhpParser\Node;
-use PhpParser\Node\Expr\BinaryOp\Concat;
-use PhpParser\Node\Expr\ClassConstFetch;
-use PhpParser\Node\Expr\PropertyFetch;
-use PhpParser\Node\Expr\Variable;
-use PhpParser\Node\FunctionLike;
-use PhpParser\Node\Identifier;
-use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\NodeFinder;
 use PhpParser\ParserFactory;
@@ -20,33 +13,46 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 
 /**
  * A level reaches a channel code through {@see ViolationChannel::leveled()}
- * and nowhere else.
+ * and agrees with what that channel declares.
  *
- * Two questions, and only the second one is the guard that matters. The
- * first — "is a level suffix written out as a string?" — is what a grep
- * would ask, and `CboRule` passed a grep for years while the ternary
- * `$level === Namespace_ ? '.namespace' : '.class'` sat in it: the literal
- * was there, but so was the enum, and nothing said the two agreed. The
- * second question — "how many places assemble a level into a name?" — is
- * the property the vocabulary actually needs, because it is the number of
- * places that have to change when the level leaves the channel name.
+ * **What an earlier version of this guard got wrong, because it matters.**
+ * It counted syntax: `Concat` nodes with a `SymbolLevel` `->value` operand,
+ * asserting there was exactly one. Three reviewers found the same hole
+ * independently — a second assembly written with `sprintf()`, with string
+ * interpolation, or through a local variable passed unnoticed. Widening the
+ * count to every `->value` read then measured 90 places, and every one of
+ * them was legitimate: a level's string is the key of an aggregation map and
+ * a token in exception messages all over Measurement. So "how many places
+ * spell a level" is both hard to count and not the question.
  *
- * The level vocabulary is read from {@see SymbolLevel::cases()} rather than
- * spelled out here: a sixth level must be covered by this guard the day it
- * is added, not the day someone remembers this file.
+ * The question is whether a channel's *name* and its *declared level* say
+ * the same thing. `CboRule`'s historical defect was exactly that
+ * disagreement — `$level === Namespace_ ? '.namespace' : '.class'` would
+ * have labelled a third level `.class` — and it is visible in the product,
+ * whatever syntax produced it. So this guard compares outcomes: for every
+ * statically declared channel whose code carries a level segment, the code
+ * must be the one {@see ViolationChannel::leveled()} produces for the level
+ * the channel declares.
+ *
+ * That closes one side of a triangle. The other two are
+ * {@see ChannelLevelDeclarationDriftTest}, which compares the declaration
+ * against what the product is observed emitting, and the literal check
+ * below, which keeps the segment from being written out by hand at all. The
+ * level vocabulary is read from {@see SymbolLevel::cases()} rather than
+ * spelled out here: a sixth level is covered the day it is added.
  */
 #[CoversClass(ViolationChannel::class)]
 final class ChannelLevelAssemblyTopologyTest extends TestCase
 {
-    private const string ASSEMBLY_POINT = 'src/Analysis/Finding/Contract/ViolationChannel.php';
-
     #[Test]
     public function noProductionSourceSpellsALevelSuffixAsALiteral(): void
     {
@@ -74,91 +80,67 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
     }
 
     #[Test]
-    public function exactlyOnePlaceAssemblesALevelIntoAName(): void
+    public function everyLevelBearingChannelCodeIsTheOneItsDeclaredLevelProduces(): void
     {
-        $points = [];
+        $checked = [];
 
-        foreach (self::productionFiles() as $file) {
-            foreach (self::assemblyPointsIn($file) as $line) {
-                $points[] = self::relative($file) . ':' . $line;
+        foreach (self::staticDeclarations() as $key => $declaration) {
+            $channel = ViolationChannel::fromKey($key);
+            $level = self::levelSegmentOf($channel);
+
+            if ($level === null) {
+                continue;
             }
+
+            $checked[] = $key;
+
+            self::assertSame(
+                [$level],
+                $declaration->levels,
+                \sprintf(
+                    'Channel "%s" names the level "%s" but declares [%s]. The name and the declaration disagree,'
+                    . ' which is the defect CboRule carried for years.',
+                    $key,
+                    $level->value,
+                    implode(', ', array_map(static fn(SymbolLevel $case): string => $case->value, $declaration->levels)),
+                ),
+            );
+            self::assertSame(
+                ViolationChannel::leveled($channel->ruleName, $level)->violationCode,
+                $channel->violationCode,
+                \sprintf('Channel "%s" was not built by ViolationChannel::leveled().', $key),
+            );
         }
 
-        self::assertCount(
-            1,
-            $points,
-            'A level is concatenated into a name in more than one place: ' . implode(', ', $points)
-            . '. Every such place has to change when the level leaves the channel name.',
-        );
-        self::assertStringStartsWith(self::ASSEMBLY_POINT . ':', $points[0]);
+        self::assertNotEmpty($checked, 'No channel carries a level segment — this guard is measuring nothing.');
     }
 
     /**
-     * Lines of `<something typed SymbolLevel>->value` inside a string
-     * concatenation.
-     *
-     * The operand is recognised by its declared type — an enum case, or a
-     * parameter or promoted property the signature types as
-     * {@see SymbolLevel} — rather than by the variable's name, so renaming
-     * `$level` cannot hide an assembly point from this count.
-     *
-     * @return list<int>
+     * The {@see SymbolLevel} a channel code names after its rule name, or
+     * `null` when the code carries no level segment. A suffix that is not a
+     * level (`design.type-coverage.param` names an aspect) is not this
+     * guard's business.
      */
-    private static function assemblyPointsIn(string $file): array
+    private static function levelSegmentOf(ViolationChannel $channel): ?SymbolLevel
     {
-        $finder = new NodeFinder();
-        $lines = [];
+        $prefix = $channel->ruleName . '.';
 
-        /** @var list<FunctionLike> $scopes */
-        $scopes = $finder->find(self::parse($file), static fn(Node $node): bool => $node instanceof FunctionLike);
-
-        foreach ($scopes as $scope) {
-            $levelVariables = [];
-
-            foreach ($scope->getParams() as $param) {
-                if ($param->type instanceof Name
-                    && $param->type->getLast() === 'SymbolLevel'
-                    && $param->var instanceof Variable
-                    && \is_string($param->var->name)
-                ) {
-                    $levelVariables[] = $param->var->name;
-                }
-            }
-
-            /** @var list<Concat> $concats */
-            $concats = $finder->findInstanceOf($scope, Concat::class);
-
-            foreach ($concats as $concat) {
-                foreach ([$concat->left, $concat->right] as $operand) {
-                    if (self::isLevelValueRead($operand, $levelVariables)) {
-                        $lines[] = $concat->getStartLine();
-                    }
-                }
-            }
+        if (!str_starts_with($channel->violationCode, $prefix)) {
+            return null;
         }
 
-        return array_values(array_unique($lines));
+        return SymbolLevel::tryFrom(substr($channel->violationCode, \strlen($prefix)));
     }
 
     /**
-     * @param list<string> $levelVariables
+     * @return array<string, \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration>
      */
-    private static function isLevelValueRead(Node $operand, array $levelVariables): bool
+    private static function staticDeclarations(): array
     {
-        if (!$operand instanceof PropertyFetch
-            || !$operand->name instanceof Identifier
-            || $operand->name->toString() !== 'value'
-        ) {
-            return false;
-        }
+        $registry = (new ContainerFactory())->create()->get(ChannelDeclarationRegistryInterface::class);
+        \assert($registry instanceof ChannelDeclarationRegistryInterface);
 
-        if ($operand->var instanceof ClassConstFetch && $operand->var->class instanceof Name) {
-            return $operand->var->class->getLast() === 'SymbolLevel';
-        }
-
-        return $operand->var instanceof Variable
-            && \is_string($operand->var->name)
-            && \in_array($operand->var->name, $levelVariables, true);
+        return $registry->staticDeclarations();
     }
 
     /**

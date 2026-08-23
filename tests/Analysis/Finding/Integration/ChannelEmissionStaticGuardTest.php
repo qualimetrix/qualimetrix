@@ -117,6 +117,15 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     /** @var array<string, array<\PhpParser\Node\Stmt>> */
     private static array $astCache = [];
 
+    /**
+     * Level parameters currently being resolved, keyed by class, method and
+     * argument position — the base case a cyclic call chain would otherwise
+     * lack.
+     *
+     * @var array<string, true>
+     */
+    private static array $levelParametersInProgress = [];
+
     #[Test]
     public function everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded(): void
     {
@@ -671,7 +680,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     ): ?array {
         $position = null;
 
-        foreach ($scope->params as $index => $param) {
+        foreach (array_values($scope->params) as $index => $param) {
             if ($param->var instanceof Variable && $param->var->name === $name) {
                 $position = $index;
             }
@@ -684,32 +693,77 @@ final class ChannelEmissionStaticGuardTest extends TestCase
         }
 
         $method = $scope->name->toString();
+        $reentryKey = $selfClass . '::' . $method . '#' . $position;
+
+        // A parameter passed along a cycle of calls would otherwise recurse
+        // without a base case and kill the run with a stack overflow instead
+        // of the readable refusal this guard promises. Re-entry resolves to
+        // nothing, which the caller records as an unresolvable site.
+        if (isset(self::$levelParametersInProgress[$reentryKey])) {
+            return null;
+        }
+
+        self::$levelParametersInProgress[$reentryKey] = true;
+
+        try {
+            return self::resolveLevelArguments($classNode, $method, $position, $selfClass, $staticClass);
+        } finally {
+            unset(self::$levelParametersInProgress[$reentryKey]);
+        }
+    }
+
+    /**
+     * Every value the class passes at the given argument position of the
+     * given method.
+     *
+     * Each argument expression is resolved in the scope of the method that
+     * *writes* it, not of the method that receives it. Resolving it in the
+     * callee's scope is what an earlier version did, and it is wrong in the
+     * silent direction: a variable at the call site whose name happens to
+     * match one of the callee's own parameters would resolve to that other
+     * parameter's values, narrowing the guard without saying so.
+     *
+     * @param class-string $selfClass
+     * @param class-string $staticClass
+     *
+     * @return ?list<string>
+     */
+    private static function resolveLevelArguments(
+        Class_ $classNode,
+        string $method,
+        int $position,
+        string $selfClass,
+        string $staticClass,
+    ): ?array {
+        $finder = new NodeFinder();
         $values = [];
         $foundAny = false;
 
-        /** @var list<MethodCall|StaticCall> $calls */
-        $calls = (new NodeFinder())->find(
-            $classNode,
-            static fn(object $node): bool => ($node instanceof MethodCall || $node instanceof StaticCall)
-                && $node->name instanceof Identifier
-                && $node->name->toString() === $method,
-        );
+        foreach ($classNode->getMethods() as $callerNode) {
+            /** @var list<MethodCall|StaticCall> $calls */
+            $calls = $finder->find(
+                $callerNode,
+                static fn(object $node): bool => ($node instanceof MethodCall || $node instanceof StaticCall)
+                    && $node->name instanceof Identifier
+                    && $node->name->toString() === $method,
+            );
 
-        foreach ($calls as $call) {
-            $argument = $call->args[$position] ?? null;
+            foreach ($calls as $call) {
+                $argument = $call->args[$position] ?? null;
 
-            if (!$argument instanceof Arg || $argument->name !== null) {
-                return null;
+                if (!$argument instanceof Arg || $argument->name !== null) {
+                    return null;
+                }
+
+                $foundAny = true;
+                $resolved = self::resolveLevelValues($argument->value, $selfClass, $staticClass, $callerNode);
+
+                if ($resolved === null) {
+                    return null;
+                }
+
+                $values = [...$values, ...$resolved];
             }
-
-            $foundAny = true;
-            $resolved = self::resolveLevelValues($argument->value, $selfClass, $staticClass, $scope);
-
-            if ($resolved === null) {
-                return null;
-            }
-
-            $values = [...$values, ...$resolved];
         }
 
         return $foundAny ? array_values(array_unique($values)) : null;

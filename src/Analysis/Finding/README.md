@@ -47,9 +47,16 @@ Today the layer-policy diagnostics carry it.
 empty. It governs what the registry accepts. Emission is a separate path — a
 rule builds its finding's subject and the level follows from that — so the two
 can disagree, and `ChannelLevelDeclarationDriftTest` runs the external corpus to
-find out whether they have. A level is spelled into a channel *code* in exactly
-one place, `ViolationChannel::leveled()`, which
-`ChannelLevelAssemblyTopologyTest` counts. Finding neither resolves computed
+find out whether they have.
+
+Three artefacts have to agree about a level, and each pair is compared by a
+test rather than by convention: the channel **name** against the channel's
+**declaration** (`ChannelLevelAssemblyTopologyTest` — a code carrying a level
+segment must be the one `ViolationChannel::leveled()` produces for the level it
+declares, and no level segment may be written as a literal anywhere in `src/`),
+the declaration against what the product is **observed** emitting
+(`ChannelLevelDeclarationDriftTest`), and the declaration against the tracked
+fixture (`ChannelDeclarationFixtureDriftTest`). Finding neither resolves computed
 definitions nor retains Infrastructure-owned definition state.
 
 `ChannelPresentationInterface` (`presentationFor()` → `ChannelPresentation`)

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Unit;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -279,6 +280,56 @@ final class ChannelUniverseTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itProjectsEveryDeclaredLevelOfAComputedMetricOntoTheChannel(): void
+    {
+        $this->definitions = [$this->definitionWithLevels(
+            'health.overall',
+            [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
+        )];
+
+        $declaration = $this->universe()->declarationFor(
+            new ViolationChannel(ComputedMetricRule::NAME, 'health.overall'),
+        );
+
+        self::assertNotNull($declaration);
+        self::assertSame(
+            [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
+            $declaration->levels,
+        );
+    }
+
+    /**
+     * `levels: []` is accepted by the resolver and makes the metric emit
+     * nothing, so it has no channel to declare — the same answer an unknown
+     * name gets, and the one documented behaviour change of the level work.
+     */
+    #[Test]
+    public function itDeclaresNothingForAComputedMetricThatReportsAtNoLevel(): void
+    {
+        $this->definitions = [$this->definitionWithLevels('computed.silent', [])];
+
+        self::assertNull($this->universe()->declarationFor(
+            new ViolationChannel(ComputedMetricRule::NAME, 'computed.silent'),
+        ));
+    }
+
+    /**
+     * A repeated level cannot reach this lookup at all: it is refused when
+     * the {@see ComputedMetricDefinition} carrying it is built, which is
+     * while configuration resolves. Pinned here because the alternative —
+     * refusing it in the channel declaration — would have thrown from a
+     * lookup that every finding makes.
+     */
+    #[Test]
+    public function aRepeatedLevelCannotReachTheChannelDeclaration(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('declares the same level more than once');
+
+        $this->definitionWithLevels('computed.repeated', [SymbolType::Class_, SymbolType::Class_]);
+    }
+
     /**
      * @param array<string, ChannelDeclaration> $declarations
      * @param array<string, list<string>> $channelsByProducer
@@ -306,6 +357,19 @@ final class ChannelUniverseTest extends TestCase
             description: 'Fixture definition',
             levels: [SymbolType::Class_],
             inverted: $inverted,
+        );
+    }
+
+    /**
+     * @param list<SymbolType> $levels
+     */
+    private function definitionWithLevels(string $name, array $levels): ComputedMetricDefinition
+    {
+        return new ComputedMetricDefinition(
+            name: $name,
+            formulas: ['class' => 'ccn__avg'],
+            description: 'Fixture definition',
+            levels: $levels,
         );
     }
 

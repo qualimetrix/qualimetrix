@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-23T12:39:40+00:00",
+  "generated": "2026-08-23T13:28:48+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -388,6 +388,9 @@
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php": [
       {"channel":"complexity.wmc#complexity.wmc","magnitudes":[60]}
+    ],
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition@src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php": [
+      {"channel":"computed.health#health.cohesion","magnitudes":[48.9]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder@src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php": [
       {"channel":"complexity.wmc#complexity.wmc","magnitudes":[60]}

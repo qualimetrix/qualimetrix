@@ -42,6 +42,17 @@ declaration this is, a fact about PHP — and the two meet only in
 `SymbolLevelProjection::ofDeclaration()`, which collapses `method` and
 `function` into `callable`. Do not re-derive that collapse at a call site.
 
+**Why the vocabulary lives here and not in `Core`.** Nearly every rule now
+imports it, and the fan-in is visible in this capability's own numbers — the
+enum's point CBO threshold and its point ClassRank threshold exist for that
+reason. Many imports are nonetheless not an argument for moving it: ADR 0022
+settles this exact case, and settles it against the move — "`Core` holds only
+neutral primitives without a natural leaf owner. Many imports do not make a
+type neutral." A level is the level of the *aggregation tree*, which is this
+capability's own model and not a neutral primitive; `Core\Symbol\SymbolType`
+is the neutral one and already lives there. Revisit only if the aggregation
+tree stops being owned here.
+
 ## Declaration numbering
 
 A declaration's durable identity carries an ordinal — its rank among the

@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
-
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;

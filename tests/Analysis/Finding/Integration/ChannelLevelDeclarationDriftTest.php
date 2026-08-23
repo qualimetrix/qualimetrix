@@ -56,6 +56,11 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
 {
     private const string OBSERVATION_ORACLE = 'docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv';
 
+    private const string DECLARED_CHANNELS = 'tests/Analysis/Finding/Fixtures/Channels/declared.txt';
+
+    /** Exit codes at or above this one mean the analysis did not happen, not that it found something. */
+    private const int EXIT_CANNOT_ANALYSE = 3;
+
     /** @var array<string, list<string>>|null channel key => observed level values */
     private static ?array $observed = null;
 
@@ -100,6 +105,29 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     }
 
     #[Test]
+    public function theOracleCoversEveryStaticallyDeclaredChannel(): void
+    {
+        $oracle = array_keys(self::readOracle());
+        $staticOracle = array_values(array_filter(
+            $oracle,
+            static fn(string $channel): bool => ViolationChannel::fromKey($channel)->ruleName !== ComputedMetricRule::NAME,
+        ));
+        $declared = self::readDeclaredChannels();
+
+        sort($staticOracle);
+        sort($declared);
+
+        self::assertSame(
+            $declared,
+            $staticOracle,
+            'The level oracle and the declared-channel fixture disagree. A channel declared in code but absent from'
+            . ' the oracle has no measured level, and nothing else would notice: the drift test only checks channels'
+            . ' the oracle lists, and only channels the corpus fires. Measure the new channel into the oracle, or'
+            . ' remove the stale line.',
+        );
+    }
+
+    #[Test]
     public function everyChannelDeclaresExactlyTheLevelsItReportsAt(): void
     {
         $observed = self::observe();
@@ -140,12 +168,16 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         $oracle = [];
 
         foreach (explode("\n", $contents) as $line) {
-            if ($line === '' || str_starts_with($line, '#') || str_starts_with($line, 'channel\t')) {
+            if ($line === '' || str_starts_with($line, '#')) {
                 continue;
             }
 
             $fields = explode("\t", $line);
 
+            // The header row is skipped by its own first field, not by a
+            // prefix match: the previous spelling used single quotes around
+            // "channel\t", compared against a literal backslash, and the
+            // row was only ever skipped by the check below it.
             if (\count($fields) < 2 || $fields[0] === 'channel') {
                 continue;
             }
@@ -154,6 +186,39 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         }
 
         return $oracle;
+    }
+
+    /**
+     * The channel keys of the tracked declaration fixture — the same file
+     * {@see ChannelDeclarationFixtureDriftTest} holds against the container,
+     * read here for its key set alone.
+     *
+     * @return list<string>
+     */
+    private static function readDeclaredChannels(): array
+    {
+        $path = self::repositoryRoot() . '/' . self::DECLARED_CHANNELS;
+        $contents = file_get_contents($path);
+
+        if ($contents === false) {
+            throw new RuntimeException(\sprintf('Could not read the declared-channel fixture at %s.', $path));
+        }
+
+        $keys = [];
+
+        foreach (explode("\n", $contents) as $line) {
+            $line = trim($line);
+
+            if ($line === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+
+            $fields = preg_split('/\s+/', $line);
+            self::assertNotFalse($fields, \sprintf('Malformed fixture line: "%s".', $line));
+            $keys[] = $fields[0];
+        }
+
+        return $keys;
     }
 
     /**
@@ -272,12 +337,20 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     {
         $head = explode(':', $subject)[0];
 
+        $unrecognised = static fn(): never => throw new RuntimeException(
+            \sprintf('Unrecognised finding subject "%s".', $subject),
+        );
+
         return match ($head) {
-            'declaration' => explode(':', $subject)[1] === 'callable' ? 'callable' : 'class',
+            'declaration' => match (explode(':', $subject)[1] ?? '') {
+                'callable' => 'callable',
+                'class' => 'class',
+                default => $unrecognised(),
+            },
             'ns' => 'namespace',
             'file' => 'file',
             'project' => 'project',
-            default => throw new RuntimeException(\sprintf('Unrecognised finding subject "%s".', $subject)),
+            default => $unrecognised(),
         };
     }
 
@@ -314,20 +387,67 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         $stdout = stream_get_contents($pipes[1]);
         $stderr = stream_get_contents($pipes[2]);
         array_map(fclose(...), $pipes);
-        proc_close($process);
+        $exit = proc_close($process);
 
         $decoded = json_decode((string) $stdout, true);
 
         if (!\is_array($decoded) || !\is_array($decoded['violations'] ?? null)) {
             throw new RuntimeException(\sprintf(
-                "The corpus case in %s produced no JSON report.\n%s",
+                "The corpus case in %s produced no JSON report (exit %d).\n%s",
                 $directory,
+                $exit,
                 (string) $stderr,
             ));
         }
 
+        self::assertObservationIsComplete($decoded, $directory, $exit, (string) $stderr);
+
         /** @var list<array{channel: string, subject: string}> */
         return array_values($decoded['violations']);
+    }
+
+    /**
+     * A run that analysed less than the whole case, or whose finding list was
+     * truncated, is not an observation — it is a smaller observation wearing
+     * the same shape.
+     *
+     * `qmx check` prints a valid JSON report even when a file failed to
+     * parse, and reports the shortfall in its own `coverage` section rather
+     * than by withholding the document. Reading `violations` and stopping
+     * there would let a broken fixture quietly narrow what this guard sees,
+     * which is the failure mode the whole test exists to rule out. The exit
+     * code is checked too, but it cannot carry this alone: two of the ten
+     * cases exit 2 on a healthy run because they report configuration
+     * errors on purpose.
+     *
+     * @param array<string, mixed> $report
+     */
+    private static function assertObservationIsComplete(array $report, string $directory, int $exit, string $stderr): void
+    {
+        $coverage = $report['coverage'] ?? null;
+        $meta = $report['violationsMeta'] ?? null;
+
+        self::assertIsArray($coverage, \sprintf('The corpus case in %s reported no coverage section.', $directory));
+        self::assertIsArray($meta, \sprintf('The corpus case in %s reported no violation metadata.', $directory));
+
+        self::assertLessThan(
+            self::EXIT_CANNOT_ANALYSE,
+            $exit,
+            \sprintf("The corpus case in %s could not be analysed (exit %d).\n%s", $directory, $exit, $stderr),
+        );
+        self::assertTrue(
+            $coverage['complete'] ?? false,
+            \sprintf('The corpus case in %s did not analyse every discovered file: %s', $directory, json_encode($coverage)),
+        );
+        self::assertSame(
+            0,
+            $coverage['failed'] ?? null,
+            \sprintf('The corpus case in %s failed on %s.', $directory, json_encode($coverage['failures'] ?? null)),
+        );
+        self::assertFalse(
+            $meta['truncated'] ?? true,
+            \sprintf('The corpus case in %s truncated its finding list; the observation is incomplete.', $directory),
+        );
     }
 
     /**

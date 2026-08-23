@@ -78,9 +78,13 @@ final readonly class ChannelDeclaration
      * A `magnitude` declaration in the given direction, reporting at the
      * given levels.
      *
-     * The levels are variadic with a mandatory first one so that a caller
-     * cannot express the empty list at all: non-emptiness is the signature,
-     * not a run-time check every declaration site has to be trusted to pass.
+     * The levels are variadic with a mandatory first one, so a caller
+     * reaching for a factory cannot express the empty list at all. That is a
+     * property of the three factories and not of the type: the constructor
+     * below is the general form, takes a plain array, and enforces the same
+     * invariant at run time. Every production declaration goes through a
+     * factory; a caller that assembles a list itself gets an exception, not
+     * a compile error.
      */
     public static function magnitude(WorseDirection $direction, SymbolLevel $level, SymbolLevel ...$moreLevels): self
     {

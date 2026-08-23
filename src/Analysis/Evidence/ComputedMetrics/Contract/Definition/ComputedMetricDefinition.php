@@ -25,6 +25,7 @@ final readonly class ComputedMetricDefinition
         public ?float $errorThreshold = null,
     ) {
         $this->validateName($name);
+        $this->validateLevels($name, $levels);
     }
 
     /**
@@ -75,6 +76,29 @@ final readonly class ComputedMetricDefinition
     public function hasLevel(SymbolType $level): bool
     {
         return \in_array($level, $this->levels, true);
+    }
+
+    /**
+     * A metric reports at a level once or not at all.
+     *
+     * Checked here, beside {@see validateName()}, because it is an invariant
+     * of the definition rather than of any one consumer: a repeat is a
+     * mistake in the configuration that produced it, and the channel
+     * declaration built downstream has no way to express "class, twice". It
+     * used to reach that declaration and throw from a lookup every finding
+     * makes.
+     *
+     * @param list<SymbolType> $levels
+     */
+    private function validateLevels(string $name, array $levels): void
+    {
+        $values = array_map(static fn(SymbolType $level): string => $level->value, $levels);
+
+        if (\count(array_unique($values)) !== \count($values)) {
+            throw new InvalidArgumentException(
+                \sprintf('Computed metric "%s" declares the same level more than once', $name),
+            );
+        }
     }
 
     private function validateName(string $name): void
