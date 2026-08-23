@@ -54,6 +54,8 @@ fi
 
 missing=0
 total=0
+ambiguous=0
+seen_ids=""
 
 for dir in "$@"; do
     [ -d "$dir" ] || continue
@@ -62,6 +64,28 @@ for dir in "$@"; do
         while read -r id; do
             [ -n "$id" ] || continue
             total=$((total + 1))
+
+            # An id reused by a later round defeats the cross-check: the plan
+            # cites the old finding, the grep below matches, and the new one is
+            # reported as disposed of while nobody has read it. Round 7 walked
+            # into exactly this — bare `codex-01`/`claude-01` collided with
+            # round 1 — and the checker said "all disposed". Ids must therefore
+            # be unique across the whole set of findings directories, which in
+            # practice means carrying their round.
+            case " $seen_ids " in
+                *" $id="*)
+                    previous=$(printf '%s' "$seen_ids" | tr ' ' '\n' | grep -F -- "$id=" | head -1 | cut -d= -f2-)
+                    if [ "$previous" != "$file" ]; then
+                        echo "AMBIGUOUS: $id is used by both ${previous#./} and ${file#./}"
+                        echo "           — citing it in the plan cannot distinguish the two findings."
+                        ambiguous=$((ambiguous + 1))
+                    fi
+                    ;;
+                *)
+                    seen_ids="$seen_ids $id=$file"
+                    ;;
+            esac
+
             # Exact match only: an id must appear spelled out, not abbreviated.
             if ! grep -qF -- "$id" "$plan"; then
                 echo "NOT DISPOSED: $id (${file#./})"
@@ -70,6 +94,13 @@ for dir in "$@"; do
         done < <(grep -ohE '^#+ +[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*-[0-9]+' "$file" | sed -E 's/^#+ +//')
     done
 done
+
+if [ "$ambiguous" -gt 0 ]; then
+    echo
+    echo "$ambiguous id(s) are shared by two findings files, so the cross-check below"
+    echo "cannot tell whether the plan disposed of the old finding or the new one."
+    exit 1
+fi
 
 if [ "$missing" -gt 0 ]; then
     echo

@@ -1,0 +1,261 @@
+subject	channel_of_reference	path	what_it_references	how_found
+A	docs	CHANGELOG.md	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	docs	docs/internal/CLI_CONVENTIONS.md	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	docs	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	config	docs/internal/generated/modular-architecture/production-class-string-targets.tsv	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	config	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	config	docs/internal/generated/modular-architecture/production-extension-families.tsv	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	config	docs/internal/generated/modular-architecture/production-ownership.tsv	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	config	docs/internal/generated/modular-architecture/production-public-imports.tsv	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	config	docs/internal/generated/modular-architecture/test-ownership.tsv	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	config	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	config	docs/internal/modular-architecture-manifest.json	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	docs	docs/internal/plans/baseline-compaction/enumeration-identity.md	design.type-coverage(.param|.return|.property)	grep
+A	docs	docs/internal/plans/channel-identity-substrate.md	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property)	grep
+A	docs	docs/internal/plans/client-requests/threshold-override-exact-matching.md	design.type-coverage(.param|.return|.property)	grep
+A	docs	docs/internal/plans/modular-architecture/p6/p6-relations-ledger.md	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	docs	docs/internal/plans/rule-vocabulary/PLAN.md	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	docs	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	design.type-coverage(.param|.return|.property)	grep
+A	docs	docs/internal/plans/rule-vocabulary/enumeration-magnitude-levels.tsv	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property)	grep
+A	docs	docs/internal/plans/rule-vocabulary/enumeration-renames.tsv	design.type-coverage(.param|.return|.property)	grep
+A	docs	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property)	grep
+A	docs	docs/internal/plans/sarif-channel-descriptions.md	design.type-coverage(.param|.return|.property)	grep
+A	docs	docs/internal/plans/sarif-channel-descriptions/channel-inventory.tsv	design.type-coverage(.param|.return|.property)	grep
+A	docs	docs/internal/plans/sarif-channel-descriptions/sarif-table-coverage.tsv	design.type-coverage(.param|.return|.property)	grep
+A	fixture	finding-gate/cases/design/case.json	design.type-coverage(.param|.return|.property)	grep
+A	fixture	finding-gate/cases/health/case.json	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	config	qmx-baseline.json	design.type-coverage(.param|.return|.property)	grep
+A	config	qmx.yaml	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	config	qmx.yaml.example	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	string-id	scripts/finding-gate/SelfTest.php	design.type-coverage(.param|.return|.property)	grep
+A	string-id	scripts/generate-rename-enumeration.php	design.type-coverage(.param|.return|.property)	grep
+A	config	src/Analysis/Configuration/Preset/legacy.yaml	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	config	src/Analysis/Configuration/Preset/strict.yaml	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	docs	src/Analysis/Configuration/README.md	design.type-coverage(.param|.return|.property);type-coverage-{param,return,property}-{warning,error} CLI alias;{param,return,property}_{warning,error,threshold} option key	grep
+A	docs	src/Analysis/Evidence/Design/README.md	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	string-id	src/Analysis/Evidence/Design/TypeCoverageOptions.php	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	php-symbol	src/Analysis/Evidence/Design/TypeCoverageRule.php	TypeCoverageOptions;TypeCoverageRule::NAME	serena
+A	string-id	src/Analysis/Evidence/Design/TypeCoverageRule.php	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property);type-coverage-{param,return,property}-{warning,error} CLI alias;{param,return,property}_{warning,error,threshold} option key	grep
+A	string-id	src/Analysis/Finding/Contract/Rule/ShorthandOptionKeysInterface.php	design.type-coverage(.param|.return|.property)	grep
+A	string-id	src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	design.type-coverage(.param|.return|.property)	grep
+A	string-id	src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	string-id	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php	design.type-coverage(.param|.return|.property)	grep
+A	php-symbol	tests/Analysis/Evidence/Design/Unit/TypeCoverageOptionsTest.php	TypeCoverageOptions	serena
+A	string-id	tests/Analysis/Evidence/Design/Unit/TypeCoverageOptionsTest.php	TypeCoverageRule/TypeCoverageOptions class-string;{param,return,property}_{warning,error,threshold} option key	grep
+A	php-symbol	tests/Analysis/Evidence/Design/Unit/TypeCoverageRuleTest.php	TypeCoverageRule;TypeCoverageOptions;TypeCoverageRule::NAME	serena
+A	string-id	tests/Analysis/Evidence/Design/Unit/TypeCoverageRuleTest.php	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property);type-coverage-{param,return,property}-{warning,error} CLI alias;{param,return,property}_{warning,error,threshold} option key	grep
+A	string-id	tests/Analysis/Evidence/Prioritization/Support/StubRemediationMinutes.php	design.type-coverage(.param|.return|.property)	grep
+A	string-id	tests/Analysis/Evidence/Prioritization/Unit/Debt/RemediationTimeRegistryTest.php	design.type-coverage(.param|.return|.property)	grep
+A	fixture	tests/Analysis/Finding/Fixtures/Channels/declared.txt	design.type-coverage(.param|.return|.property)	grep
+A	fixture	tests/Analysis/Finding/Fixtures/Channels/order.txt	design.type-coverage(.param|.return|.property)	grep
+A	php-symbol	tests/Analysis/Finding/Integration/ChannelCoverageTest.php	TypeCoverageRule;TypeCoverageOptions	serena
+A	string-id	tests/Analysis/Finding/Integration/ChannelCoverageTest.php	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	string-id	tests/Analysis/Finding/Integration/ChannelEmissionStaticGuardTest.php	design.type-coverage(.param|.return|.property)	grep
+A	string-id	tests/Analysis/Finding/Integration/ChannelLevelAssemblyTopologyTest.php	design.type-coverage(.param|.return|.property)	grep
+A	php-symbol	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	TypeCoverageRule;TypeCoverageRule::NAME	serena
+A	string-id	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property)	grep
+A	php-symbol	tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php	TypeCoverageRule;TypeCoverageOptions	serena
+A	string-id	tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property);type-coverage-{param,return,property}-{warning,error} CLI alias;{param,return,property}_{warning,error,threshold} option key	grep
+A	php-symbol	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	TypeCoverageOptions	serena
+A	string-id	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	string-id	tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryDriftTest.php	design.type-coverage(.param|.return|.property)	grep
+A	string-id	tests/Analysis/Finding/Unit/ThresholdParserTest.php	{param,return,property}_{warning,error,threshold} option key	grep
+A	string-id	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php	design.type-coverage(.param|.return|.property)	grep
+A	string-id	tests/Analysis/Policy/Inline/Integration/InlineDirectiveRuleTest.php	design.type-coverage(.param|.return|.property)	grep
+A	php-symbol	tests/Analysis/Policy/Inline/Integration/ThresholdAnnotationParserPathTest.php	TypeCoverageRule;TypeCoverageOptions;TypeCoverageRule::NAME	serena
+A	string-id	tests/Analysis/Policy/Inline/Integration/ThresholdAnnotationParserPathTest.php	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property)	grep
+A	php-symbol	tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php	TypeCoverageRule;TypeCoverageOptions	serena
+A	string-id	tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php	TypeCoverageRule/TypeCoverageOptions class-string;design.type-coverage(.param|.return|.property)	grep
+A	string-id	tests/Analysis/Run/Unit/Collection/CollectionOrchestratorTest.php	design.type-coverage(.param|.return|.property)	grep
+A	php-symbol	tests/Integration/DependencyInjection/ContainerFactoryTest.php	TypeCoverageRule	serena
+A	string-id	tests/Integration/DependencyInjection/ContainerFactoryTest.php	TypeCoverageRule/TypeCoverageOptions class-string	grep
+A	string-id	tests/Unit/Infrastructure/Console/CliOptionsParserTest.php	design.type-coverage(.param|.return|.property);type-coverage-{param,return,property}-{warning,error} CLI alias	grep
+A	docs	website/docs/getting-started/configuration.md	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	docs	website/docs/getting-started/configuration.ru.md	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	docs	website/docs/reference/default-thresholds.md	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	docs	website/docs/reference/default-thresholds.ru.md	design.type-coverage(.param|.return|.property)	grep
+A	docs	website/docs/reference/remediation-time.md	design.type-coverage(.param|.return|.property)	grep
+A	docs	website/docs/reference/remediation-time.ru.md	design.type-coverage(.param|.return|.property)	grep
+A	docs	website/docs/rules/design.md	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	docs	website/docs/rules/design.ru.md	design.type-coverage(.param|.return|.property);{param,return,property}_{warning,error,threshold} option key	grep
+A	docs	website/docs/rules/index.md	design.type-coverage(.param|.return|.property)	grep
+A	docs	website/docs/rules/index.ru.md	design.type-coverage(.param|.return|.property)	grep
+A	docs	website/docs/usage/baseline.md	design.type-coverage(.param|.return|.property)	grep
+A	docs	website/docs/usage/baseline.ru.md	design.type-coverage(.param|.return|.property)	grep
+A	docs	website/docs/usage/cli-options.md	design.type-coverage(.param|.return|.property);type-coverage-{param,return,property}-{warning,error} CLI alias;{param,return,property}_{warning,error,threshold} option key	grep
+A	docs	website/docs/usage/cli-options.ru.md	design.type-coverage(.param|.return|.property);type-coverage-{param,return,property}-{warning,error} CLI alias;{param,return,property}_{warning,error,threshold} option key	grep
+B	docs	CHANGELOG.md	architecture.unassigned-class channel;layer-violation-unassigned-class CLI alias;unassigned_class option key / UnassignedClassMode	grep
+B	config	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	UnassignedClassSummary/UnassignedClassMode class-string	grep
+B	config	docs/internal/generated/modular-architecture/production-ownership.tsv	UnassignedClassSummary/UnassignedClassMode class-string	grep
+B	config	docs/internal/generated/modular-architecture/production-public-imports.tsv	UnassignedClassSummary/UnassignedClassMode class-string	grep
+B	config	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	architecture.unassigned-class channel	grep
+B	config	docs/internal/modular-architecture-manifest.json	UnassignedClassSummary/UnassignedClassMode class-string	grep
+B	docs	docs/internal/plans/client-requests/architecture-unassigned-class.md	UnassignedClassSummary/UnassignedClassMode class-string;architecture.unassigned-class channel;layer-violation-unassigned-class CLI alias;unassigned_class option key / UnassignedClassMode	grep
+B	docs	docs/internal/plans/rule-vocabulary/AUDIT.md	architecture.unassigned-class channel	grep
+B	docs	docs/internal/plans/rule-vocabulary/FACTS.md	architecture.unassigned-class channel	grep
+B	docs	docs/internal/plans/rule-vocabulary/PLAN.md	architecture.unassigned-class channel	grep
+B	docs	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	architecture.unassigned-class channel;unassigned_class option key / UnassignedClassMode	grep
+B	docs	docs/internal/plans/rule-vocabulary/enumeration-magnitude-levels.tsv	architecture.unassigned-class channel	grep
+B	docs	docs/internal/plans/rule-vocabulary/enumeration-renames.tsv	architecture.unassigned-class channel	grep
+B	docs	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv	architecture.unassigned-class channel	grep
+B	docs	docs/internal/plans/sarif-channel-descriptions/channel-inventory.tsv	architecture.unassigned-class channel	grep
+B	docs	docs/internal/plans/sarif-channel-descriptions/sarif-table-coverage.tsv	architecture.unassigned-class channel	grep
+B	fixture	finding-gate/cases/layers/case.json	architecture.unassigned-class channel;unassigned_class option key / UnassignedClassMode	grep
+B	config	qmx.yaml	UnassignedClassSummary/UnassignedClassMode class-string	grep
+B	docs	src/Analysis/Configuration/README.md	layer-violation-unassigned-class CLI alias;unassigned_class option key / UnassignedClassMode	grep
+B	php-symbol	src/Analysis/Policy/Architecture/Contract/LayerPolicyPreparationInterface.php	LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME	serena
+B	string-id	src/Analysis/Policy/Architecture/Contract/LayerPolicyPreparationInterface.php	architecture.unassigned-class channel	grep
+B	string-id	src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php	UnassignedClassSummary/UnassignedClassMode class-string;architecture.unassigned-class channel	grep
+B	string-id	src/Analysis/Policy/Architecture/LayerViolation/DiagnosticSampleList.php	UnassignedClassSummary/UnassignedClassMode class-string;unassigned_class option key / UnassignedClassMode	grep
+B	string-id	src/Analysis/Policy/Architecture/LayerViolation/LayerEvidence.php	architecture.unassigned-class channel	grep
+B	string-id	src/Analysis/Policy/Architecture/LayerViolation/LayerEvidenceCollector.php	architecture.unassigned-class channel;unassigned_class option key / UnassignedClassMode	grep
+B	php-symbol	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php	UnassignedClassMode	serena
+B	string-id	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php	UnassignedClassSummary/UnassignedClassMode class-string;architecture.unassigned-class channel;unassigned_class option key / UnassignedClassMode	grep
+B	php-symbol	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	UnassignedClassSummary;LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME;LayerViolationRule::UNASSIGNED_CLASS_DIAGNOSTIC_NAME	serena
+B	string-id	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	UnassignedClassSummary/UnassignedClassMode class-string;architecture.unassigned-class channel;layer-violation-unassigned-class CLI alias;unassigned_class option key / UnassignedClassMode	grep
+B	string-id	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassMode.php	UnassignedClassSummary/UnassignedClassMode class-string;architecture.unassigned-class channel	grep
+B	php-symbol	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassSummary.php	UnassignedClassMode;LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME	serena
+B	string-id	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassSummary.php	UnassignedClassSummary/UnassignedClassMode class-string;architecture.unassigned-class channel;unassigned_class option key / UnassignedClassMode	grep
+B	docs	src/Analysis/Policy/Architecture/README.md	UnassignedClassSummary/UnassignedClassMode class-string;architecture.unassigned-class channel;unassigned_class option key / UnassignedClassMode	grep
+B	string-id	src/Reporting/FindingProjection/FindingProjector.php	architecture.unassigned-class channel	grep
+B	string-id	tests/Analysis/Evidence/Prioritization/Support/StubRemediationMinutes.php	architecture.unassigned-class channel	grep
+B	fixture	tests/Analysis/Finding/Fixtures/Channels/declared.txt	architecture.unassigned-class channel	grep
+B	fixture	tests/Analysis/Finding/Fixtures/Channels/order.txt	architecture.unassigned-class channel	grep
+B	php-symbol	tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php	LayerViolationRule::UNASSIGNED_CLASS_DIAGNOSTIC_NAME	serena
+B	string-id	tests/Analysis/Policy/Architecture/Unit/ArchitectureInternalTopologyTest.php	UnassignedClassSummary/UnassignedClassMode class-string	grep
+B	php-symbol	tests/Analysis/Policy/Architecture/Unit/LayerViolationOptionsTest.php	UnassignedClassMode	serena
+B	string-id	tests/Analysis/Policy/Architecture/Unit/LayerViolationOptionsTest.php	UnassignedClassSummary/UnassignedClassMode class-string;unassigned_class option key / UnassignedClassMode	grep
+B	string-id	tests/Analysis/Policy/Architecture/Unit/LayerViolationRuleTest.php	layer-violation-unassigned-class CLI alias;unassigned_class option key / UnassignedClassMode	grep
+B	php-symbol	tests/Analysis/Policy/Architecture/Unit/UnassignedClassDiagnosticsTest.php	UnassignedClassMode;LayerViolationRule::UNASSIGNED_CLASS_DIAGNOSTIC_NAME	serena
+B	string-id	tests/Analysis/Policy/Architecture/Unit/UnassignedClassDiagnosticsTest.php	UnassignedClassSummary/UnassignedClassMode class-string;architecture.unassigned-class channel;unassigned_class option key / UnassignedClassMode	grep
+B	string-id	tests/Infrastructure/Console/Functional/Command/CheckCommandProjectScopedGateTest.php	architecture.unassigned-class channel;unassigned_class option key / UnassignedClassMode	grep
+B	string-id	tests/Reporting/FindingProjection/Unit/ProjectScopedChannelProjectionTest.php	architecture.unassigned-class channel	grep
+B	docs	website/docs/reference/default-thresholds.md	architecture.unassigned-class channel;layer-violation-unassigned-class CLI alias;unassigned_class option key / UnassignedClassMode	grep
+B	docs	website/docs/reference/default-thresholds.ru.md	architecture.unassigned-class channel;layer-violation-unassigned-class CLI alias;unassigned_class option key / UnassignedClassMode	grep
+B	docs	website/docs/rules/architecture.md	architecture.unassigned-class channel;layer-violation-unassigned-class CLI alias;unassigned_class option key / UnassignedClassMode	grep
+B	docs	website/docs/rules/architecture.ru.md	architecture.unassigned-class channel;layer-violation-unassigned-class CLI alias;unassigned_class option key / UnassignedClassMode	grep
+B	docs	website/docs/usage/cli-options.md	layer-violation-unassigned-class CLI alias;unassigned_class option key / UnassignedClassMode	grep
+B	docs	website/docs/usage/cli-options.ru.md	layer-violation-unassigned-class CLI alias;unassigned_class option key / UnassignedClassMode	grep
+C	docs	CHANGELOG.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	docs/adr/0024-channel-identity-and-selector-semantics.md	annotation.unused-directive channel;unused-directive string	grep
+C	config	docs/internal/generated/modular-architecture/production-class-string-targets.tsv	InlineDirectiveRule class-string	grep
+C	config	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	InlineDirectiveRule class-string	grep
+C	config	docs/internal/generated/modular-architecture/production-extension-families.tsv	InlineDirectiveRule class-string	grep
+C	config	docs/internal/generated/modular-architecture/production-ownership.tsv	InlineDirectiveRule class-string	grep
+C	config	docs/internal/generated/modular-architecture/production-public-imports.tsv	InlineDirectiveRule class-string	grep
+C	config	docs/internal/generated/modular-architecture/test-ownership.tsv	InlineDirectiveRule class-string	grep
+C	config	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	InlineDirectiveRule class-string;annotation.unused-directive channel;unused-directive string	grep
+C	config	docs/internal/modular-architecture-manifest.json	InlineDirectiveRule class-string	grep
+C	docs	docs/internal/plans/channel-identity-substrate.md	unused-directive string	grep
+C	docs	docs/internal/plans/client-requests/severity-report-only.md	InlineDirectiveRule class-string;annotation.unused-directive channel;unused-directive string	grep
+C	docs	docs/internal/plans/client-requests/threshold-override-exact-matching.md	InlineDirectiveRule class-string	grep
+C	docs	docs/internal/plans/rule-vocabulary/FACTS.md	InlineDirectiveRule class-string	grep
+C	docs	docs/internal/plans/rule-vocabulary/PLAN.md	InlineDirectiveRule class-string;UnusedDirectiveRule (rename target, pre-existing mention);annotation.unused-directive channel;unused-directive string	grep
+C	docs	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	annotation.unused-directive channel;unused-directive string	grep
+C	docs	docs/internal/plans/rule-vocabulary/enumeration-renames.tsv	annotation.unused-directive channel;unused-directive string	grep
+C	docs	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv	InlineDirectiveRule class-string;annotation.unused-directive channel;unused-directive string	grep
+C	docs	docs/internal/plans/sarif-channel-descriptions/channel-inventory.tsv	annotation.unused-directive channel;unused-directive string	grep
+C	docs	docs/internal/plans/sarif-channel-descriptions/sarif-table-coverage.tsv	annotation.unused-directive channel;unused-directive string	grep
+C	fixture	finding-gate/cases/annotations/case.json	annotation.unused-directive channel;unused-directive string	grep
+C	config	qmx.yaml	InlineDirectiveRule class-string	grep
+C	string-id	src/Analysis/Policy/Inline/Contract/Directive/InlineDirectivePolicyInterface.php	annotation.unused-directive channel;unused-directive string	grep
+C	string-id	src/Analysis/Policy/Inline/Directive/InlineDirectiveOptions.php	InlineDirectiveRule class-string;unused-directive string	grep
+C	string-id	src/Analysis/Policy/Inline/Directive/InlineDirectiveRule.php	InlineDirectiveRule class-string;annotation.unused-directive channel;unused-directive string	grep
+C	string-id	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	InlineDirectiveRule class-string;annotation.unused-directive channel;unused-directive string	grep
+C	docs	src/Analysis/Policy/Inline/README.md	InlineDirectiveRule class-string;annotation.unused-directive channel;unused-directive string	grep
+C	string-id	src/Analysis/Policy/Inline/Suppression/SuppressionFilter.php	annotation.unused-directive channel;unused-directive string	grep
+C	string-id	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php	annotation.unused-directive channel;unused-directive string	grep
+C	string-id	src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php	InlineDirectiveRule class-string;annotation.unused-directive channel;unused-directive string	grep
+C	string-id	tests/Analysis/Evidence/Prioritization/Support/StubRemediationMinutes.php	InlineDirectiveRule class-string;annotation.unused-directive channel;unused-directive string	grep
+C	fixture	tests/Analysis/Finding/Fixtures/Channels/declared.txt	annotation.unused-directive channel;unused-directive string	grep
+C	fixture	tests/Analysis/Finding/Fixtures/Channels/order.txt	annotation.unused-directive channel;unused-directive string	grep
+C	php-symbol	tests/Analysis/Finding/Integration/ChannelCoverageTest.php	InlineDirectiveRule	serena
+C	string-id	tests/Analysis/Finding/Integration/ChannelCoverageTest.php	InlineDirectiveRule class-string	grep
+C	string-id	tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php	annotation.unused-directive channel;unused-directive string	grep
+C	php-symbol	tests/Analysis/Policy/Inline/Integration/InlineDirectiveRuleTest.php	InlineDirectiveRule	serena
+C	string-id	tests/Analysis/Policy/Inline/Integration/InlineDirectiveRuleTest.php	InlineDirectiveRule class-string	grep
+C	php-symbol	tests/Integration/DependencyInjection/ContainerFactoryTest.php	InlineDirectiveRule	serena
+C	string-id	tests/Integration/DependencyInjection/ContainerFactoryTest.php	InlineDirectiveRule class-string	grep
+C	php-symbol	tests/System/DocumentationConsistency/Integration/ChannelPublicationConsistencyTest.php	InlineDirectiveRule	serena
+C	string-id	tests/System/DocumentationConsistency/Integration/ChannelPublicationConsistencyTest.php	InlineDirectiveRule class-string	grep
+C	docs	website/docs/getting-started/configuration.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	website/docs/getting-started/configuration.ru.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	website/docs/reference/default-thresholds.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	website/docs/reference/default-thresholds.ru.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	website/docs/rules/annotation.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	website/docs/rules/annotation.ru.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	website/docs/rules/architecture.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	website/docs/rules/architecture.ru.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	website/docs/rules/index.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	website/docs/rules/index.ru.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	website/docs/usage/baseline.md	annotation.unused-directive channel;unused-directive string	grep
+C	docs	website/docs/usage/baseline.ru.md	annotation.unused-directive channel;unused-directive string	grep
+#
+# HOW THIS WAS PRODUCED.
+#
+# PHP-symbol channel (mcp__serena__find_referencing_symbols, one call per symbol,
+# 9 calls total after get_symbols_overview/find_symbol calibration):
+#   A: TypeCoverageRule (class)                      -> 7 referencing files
+#   A: TypeCoverageOptions (class)                   -> 7 referencing files
+#   A: TypeCoverageRule/NAME (constant)               -> 2 referencing files
+#   A: TypeCoverageRule/DOCS_PAGE (constant)          -> 0 referencing files (reflection-only consumption)
+#   A: TypeCoverageRule/REMEDIATION_MINUTES (constant) -> 0 referencing files (reflection-only consumption)
+#   B: UnassignedClassSummary (class)                 -> 1 referencing file
+#   B: UnassignedClassMode (enum)                     -> 2 referencing files
+#   B: LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME (constant) -> 2 referencing files
+#   B: LayerViolationRule::UNASSIGNED_CLASS_DIAGNOSTIC_NAME (constant)   -> 2 referencing files
+#   C: InlineDirectiveRule (class)                    -> 4 referencing files
+# Each call's own declaration file is included in the union when the symbol
+# is used elsewhere in the same file (e.g. TypeCoverageRule::NAME used inside
+# TypeCoverageRule::channelDeclarations()).
+#
+# String-id channel (git grep -l over tracked files only, i.e. `git ls-files`,
+# which already excludes vendor/, .claude/worktrees/*, .git):
+#   A: -F "design.type-coverage"
+#      -E "type-coverage-(param|return|property)"
+#      -E "(param|return|property)_(warning|error|threshold)"
+#      -E "TypeCoverageRule|TypeCoverageOptions"
+#   B: -F "architecture.unassigned-class"
+#      -E "unassigned_class|unassignedClass"
+#      -F "layer-violation-unassigned-class"
+#      -E "UnassignedClassSummary|UnassignedClassMode"
+#   C: -F "annotation.unused-directive"
+#      -F "unused-directive"
+#      -F "InlineDirectiveRule"
+#      -F "UnusedDirectiveRule" (rename target; the only pre-existing hit is
+#         this plan's own PLAN.md naming the target -- confirms the name is
+#         currently free)
+# Every hit was individually spot-checked with grep -n for false positives
+# (e.g. RuleThresholdKeyGroupRegistry.php's own docblock, generic-sounding
+# "unassigned" mentions in LayerEvidence.php/DeclaredLayerReachability.php);
+# none were rejected as accidental.
+# src/Reporting/Template/ (JS report bundle) and finding-gate/maps/ were
+# grepped for all string identifiers of A/B/C and returned nothing.
+#
+# WHAT THIS METHOD DOES NOT SEE.
+#  - DOCS_PAGE and REMEDIATION_MINUTES on both TypeCoverageRule and
+#    InlineDirectiveRule are read only through AbstractRule's reflection-based
+#    default accessors, never through a direct `Class::CONST` expression --
+#    serena's language-server references are structurally blind to this, and
+#    no string pattern stands in for "whichever rule class reflection is
+#    pointed at right now";
+#  - a class name assembled at runtime (string concatenation, a DI tag value
+#    built from a route/convention rather than written literally) is invisible
+#    to both channels used here;
+#  - the manifest/qmx.yaml/preset grep hits prove the identifier is textually
+#    present in a governance artifact, not that today's checker enforces it --
+#    `composer architecture:check` was not run to confirm freshness;
+#  - a consumer's *own* config file (a user's local qmx.yaml, CI config, or
+#    baseline outside this repository) is invisible by construction -- it is
+#    guarded by the backward-compatibility policy, not by this table;
+#  - docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md and
+#    docs/internal/plans/modular-architecture/p6/p6-relations-ledger.md match
+#    `TypeCoverageRule`/`TypeCoverageOptions` and `InlineDirectiveRule` under
+#    their now-superseded `Qualimetrix\Rules\...` namespace -- historical
+#    planning prose from before the P6 migration, not a live consumer of the
+#    current class; kept in the table because the grep is honest about what
+#    it matched, flagged here so a package-cutting reader does not treat it
+#    as an active dependency;
+#  - counting is by FILE, not by occurrence: a file appearing under several
+#    `what_it_references` values for the same subject is one file with several
+#    reasons to change, collapsed onto one row per (subject, channel, path).

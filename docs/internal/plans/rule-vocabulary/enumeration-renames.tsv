@@ -43,9 +43,9 @@ design.data-class#design.data-class	channel	?	13	14	1	2	20	32	0	4
 design.god-class#design.god-class	channel	?	13	18	1	2	4	35	0	8
 design.inheritance#design.inheritance	channel	?	6	10	2	2	0	20	0	4
 design.noc#design.noc	channel	?	7	10	2	2	0	20	0	4
-design.type-coverage#design.type-coverage.param	channel	?	1	8	0	0	1	2	0	1
-design.type-coverage#design.type-coverage.property	channel	?	1	4	0	0	1	2	0	1
-design.type-coverage#design.type-coverage.return	channel	?	2	4	0	0	0	2	0	1
+design.type-coverage#design.type-coverage.param	channel	design.param-type-coverage#design.param-type-coverage	1	8	0	0	1	2	0	1
+design.type-coverage#design.type-coverage.property	channel	design.property-type-coverage#design.property-type-coverage	1	4	0	0	1	2	0	1
+design.type-coverage#design.type-coverage.return	channel	design.return-type-coverage#design.return-type-coverage	2	4	0	0	0	2	0	1
 duplication.code-duplication#duplication.code-duplication	channel	?	12	51	0	2	24	32	0	2
 maintainability.index#maintainability.index	channel	?	11	55	2	2	0	27	0	4
 security.command-injection#security.command-injection	channel	?	3	6	0	0	0	13	0	2
@@ -149,7 +149,7 @@ complexity.cognitive	producer	?	9	26	2	2	34	46	0	8
 complexity.cyclomatic	producer	?	32	531	2	2	60	110	0	10
 complexity.npath	producer	?	9	9	2	2	13	38	0	7
 complexity.wmc	producer	?	11	17	2	2	24	27	0	5
-computed.health	producer	?	11	182	0	1	32	17	0	7
+computed.health	producer	health.cohesion|health.complexity|health.coupling|health.maintainability|health.overall|health.typing|computed.*	11	182	0	1	32	17	0	7
 coupling.cbo	producer	?	30	118	2	3	10	74	0	6
 coupling.class-rank	producer	?	14	35	0	2	2	22	0	20
 coupling.distance	producer	?	8	31	2	2	4	30	0	22
@@ -158,7 +158,7 @@ design.data-class	producer	?	13	14	1	2	20	32	0	4
 design.god-class	producer	?	13	18	1	2	4	35	0	8
 design.inheritance	producer	?	6	10	2	2	0	20	0	4
 design.noc	producer	?	7	10	2	2	0	20	0	4
-design.type-coverage	producer	?	12	27	2	1	2	42	0	9
+design.type-coverage	producer	design.param-type-coverage|design.return-type-coverage|design.property-type-coverage	12	27	2	1	2	42	0	9
 duplication.code-duplication	producer	?	12	51	0	2	24	32	0	2
 maintainability.index	producer	?	11	55	2	2	0	27	0	4
 security.command-injection	producer	?	3	6	0	0	0	13	0	2

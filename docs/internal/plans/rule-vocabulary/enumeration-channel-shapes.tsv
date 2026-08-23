@@ -1,0 +1,112 @@
+producer	channel	shape	direction	levels	declaring_class	declaring_file
+annotation.directive	annotation.unused-directive#annotation.unused-directive	occurrence		file	InlineDirectiveRule	src/Analysis/Policy/Inline/Directive/InlineDirectiveRule.php
+annotation.directive	annotation.unresolved-directive#annotation.unresolved-directive	occurrence		file	InlineDirectiveValidator	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php
+annotation.directive	annotation.unsupported-threshold#annotation.unsupported-threshold	occurrence		file	InlineDirectiveValidator	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php
+annotation.directive	annotation.invalid-threshold#annotation.invalid-threshold	occurrence		file	InlineDirectiveValidator	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php
+architecture.circular-dependency	architecture.circular-dependency#architecture.circular-dependency	magnitude	higher	project	CircularDependencyRule	src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php
+architecture.layer-violation	architecture.layer-violation#architecture.layer-violation	occurrence		class	LayerViolationRule	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php
+architecture.layer-violation	architecture.unassigned-class#architecture.unassigned-class	magnitude	higher	project	LayerViolationRule (via UnassignedClassSummary::unassignedClassChannel)	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassSummary.php
+architecture.layer-violation	architecture.coverage#architecture.coverage	occurrence		project	LayerDeclarationValidator	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php
+architecture.layer-violation	architecture.unreachable-layer#architecture.unreachable-layer	occurrence		project	LayerDeclarationValidator	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php
+architecture.layer-violation	architecture.potential-shadow#architecture.potential-shadow	occurrence		project	LayerDeclarationValidator	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php
+architecture.layer-violation	architecture.empty-template#architecture.empty-template	occurrence		project	LayerDeclarationValidator	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php
+architecture.layer-violation	architecture.pending-layer-matched#architecture.pending-layer-matched	occurrence		project	LayerDeclarationValidator	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php
+code-smell.boolean-argument	code-smell.boolean-argument#code-smell.boolean-argument	occurrence		callable	AbstractCodeSmellRule (BooleanArgumentRule, inherited)	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+code-smell.count-in-loop	code-smell.count-in-loop#code-smell.count-in-loop	occurrence		callable	AbstractCodeSmellRule (CountInLoopRule, inherited)	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+code-smell.debug-code	code-smell.debug-code#code-smell.debug-code	occurrence		callable	AbstractCodeSmellRule (DebugCodeRule, inherited)	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+code-smell.empty-catch	code-smell.empty-catch#code-smell.empty-catch	occurrence		callable	AbstractCodeSmellRule (EmptyCatchRule, inherited)	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+code-smell.error-suppression	code-smell.error-suppression#code-smell.error-suppression	occurrence		callable	AbstractCodeSmellRule (ErrorSuppressionRule, inherited)	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+code-smell.eval	code-smell.eval#code-smell.eval	occurrence		callable	AbstractCodeSmellRule (EvalRule, inherited)	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+code-smell.exit	code-smell.exit#code-smell.exit	occurrence		callable	AbstractCodeSmellRule (ExitRule, inherited)	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+code-smell.goto	code-smell.goto#code-smell.goto	occurrence		callable	AbstractCodeSmellRule (GotoRule, inherited)	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+code-smell.superglobals	code-smell.superglobals#code-smell.superglobals	occurrence		callable	AbstractCodeSmellRule (SuperglobalsRule, inherited)	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+code-smell.identical-subexpression	code-smell.identical-subexpression#code-smell.identical-subexpression	occurrence		callable	IdenticalSubExpressionRule	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php
+code-smell.constructor-overinjection	code-smell.constructor-overinjection#code-smell.constructor-overinjection	magnitude	higher	callable	ConstructorOverinjectionRule	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php
+code-smell.long-parameter-list	code-smell.long-parameter-list#code-smell.long-parameter-list	magnitude	higher	callable	LongParameterListRule	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php
+code-smell.unreachable-code	code-smell.unreachable-code#code-smell.unreachable-code	magnitude	higher	callable	UnreachableCodeRule	src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php
+code-smell.unused-private	code-smell.unused-private#code-smell.unused-private	magnitude	higher	class	UnusedPrivateRule	src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php
+cohesion.lcom	cohesion.lcom#cohesion.lcom	magnitude	higher	class	LcomRule	src/Analysis/Evidence/Cohesion/LcomRule.php
+complexity.cognitive	complexity.cognitive#complexity.cognitive.callable	magnitude	higher	callable	CognitiveComplexityRule	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php
+complexity.cognitive	complexity.cognitive#complexity.cognitive.class	magnitude	higher	class	CognitiveComplexityRule	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php
+complexity.cyclomatic	complexity.cyclomatic#complexity.cyclomatic.callable	magnitude	higher	callable	ComplexityRule	src/Analysis/Evidence/Complexity/ComplexityRule.php
+complexity.cyclomatic	complexity.cyclomatic#complexity.cyclomatic.class	magnitude	higher	class	ComplexityRule	src/Analysis/Evidence/Complexity/ComplexityRule.php
+complexity.npath	complexity.npath#complexity.npath.callable	magnitude	higher	callable	NpathComplexityRule	src/Analysis/Evidence/Complexity/NpathComplexityRule.php
+complexity.npath	complexity.npath#complexity.npath.class	magnitude	higher	class	NpathComplexityRule	src/Analysis/Evidence/Complexity/NpathComplexityRule.php
+complexity.wmc	complexity.wmc#complexity.wmc	magnitude	higher	class	WmcRule	src/Analysis/Evidence/Complexity/WmcRule.php
+coupling.cbo	coupling.cbo#coupling.cbo.class	magnitude	higher	class	CboRule	src/Analysis/Evidence/Coupling/CboRule.php
+coupling.cbo	coupling.cbo#coupling.cbo.namespace	magnitude	higher	namespace	CboRule	src/Analysis/Evidence/Coupling/CboRule.php
+coupling.class-rank	coupling.class-rank#coupling.class-rank	occurrence		class	ClassRankRule	src/Analysis/Evidence/Coupling/ClassRankRule.php
+coupling.distance	coupling.distance#coupling.distance	magnitude	higher	namespace	DistanceRule	src/Analysis/Evidence/Coupling/DistanceRule.php
+coupling.instability	coupling.instability#coupling.instability.class	magnitude	higher	class	InstabilityRule	src/Analysis/Evidence/Coupling/InstabilityRule.php
+coupling.instability	coupling.instability#coupling.instability.namespace	magnitude	higher	namespace	InstabilityRule	src/Analysis/Evidence/Coupling/InstabilityRule.php
+design.data-class	design.data-class#design.data-class	magnitude	lower	class	DataClassRule	src/Analysis/Evidence/Design/DataClassRule.php
+design.god-class	design.god-class#design.god-class	magnitude	higher	class	GodClassRule	src/Analysis/Evidence/Design/GodClassRule.php
+design.inheritance	design.inheritance#design.inheritance	magnitude	higher	class	InheritanceRule	src/Analysis/Evidence/Design/InheritanceRule.php
+design.noc	design.noc#design.noc	magnitude	higher	class	NocRule	src/Analysis/Evidence/Design/NocRule.php
+design.type-coverage	design.type-coverage#design.type-coverage.param	magnitude	lower	class	TypeCoverageRule	src/Analysis/Evidence/Design/TypeCoverageRule.php
+design.type-coverage	design.type-coverage#design.type-coverage.return	magnitude	lower	class	TypeCoverageRule	src/Analysis/Evidence/Design/TypeCoverageRule.php
+design.type-coverage	design.type-coverage#design.type-coverage.property	magnitude	lower	class	TypeCoverageRule	src/Analysis/Evidence/Design/TypeCoverageRule.php
+duplication.code-duplication	duplication.code-duplication#duplication.code-duplication	magnitude	higher	project	CodeDuplicationRule	src/Analysis/Evidence/Duplication/CodeDuplicationRule.php
+maintainability.index	maintainability.index#maintainability.index	magnitude	lower	callable	MaintainabilityRule	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php
+security.command-injection	security.command-injection#security.command-injection	occurrence		callable	AbstractSecurityPatternRule (CommandInjectionRule, inherited)	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php
+security.xss	security.xss#security.xss	occurrence		callable	AbstractSecurityPatternRule (XssRule, inherited)	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php
+security.sql-injection	security.sql-injection#security.sql-injection	occurrence		callable	AbstractSecurityPatternRule (SqlInjectionRule, inherited)	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php
+security.hardcoded-credentials	security.hardcoded-credentials#security.hardcoded-credentials	occurrence		class	HardcodedCredentialsRule	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php
+security.sensitive-parameter	security.sensitive-parameter#security.sensitive-parameter	occurrence		callable	SensitiveParameterRule	src/Analysis/Evidence/Security/SensitiveParameterRule.php
+size.class-count	size.class-count#size.class-count	magnitude	higher	namespace	ClassCountRule	src/Analysis/Evidence/Size/ClassCountRule.php
+size.method-count	size.method-count#size.method-count	magnitude	higher	class	MethodCountRule	src/Analysis/Evidence/Size/MethodCountRule.php
+size.property-count	size.property-count#size.property-count	magnitude	higher	class	PropertyCountRule	src/Analysis/Evidence/Size/PropertyCountRule.php
+computed.health	(run-time, one per user-defined computed-metric name; none in this project's own qmx.yaml)	magnitude	varies-per-metric(inverted flag)	varies-per-metric	ChannelUniverse::declarationFor (ComputedMetricRule is the static NAME producer)	src/Infrastructure/Rule/ChannelUniverse.php
+#
+# HOW THIS WAS PRODUCED
+#
+# Two independent sources, cross-checked, agree exactly:
+# 1. Static code reading via MCP Serena: `find_symbol` on
+#    src/Analysis/Finding/Contract/ChannelShape.php, then
+#    `find_referencing_symbols` on the enum itself and on
+#    ChannelDeclaration::magnitude/occurrence (3 calls total against the two
+#    factories plus the enum; see enumeration-shape-consumers.tsv footer for
+#    the exact reference-search count), followed by `find_implementations`
+#    of ConfigurationValidatorInterface and a grep for every
+#    "static function channelDeclarations" definition (30 declaring files) to
+#    enumerate every production declaration site by hand.
+# 2. A read-only PHP snippet built on the SAME container assembly the
+#    project's own scripts/generate-rename-enumeration.php uses
+#    (`ContainerFactory::create()` -> `ChannelUniverseInterface`), which
+#    walked `ruleNames()` / `channelsProducedBy()` / `declarationFor()` and
+#    printed every producer's channel shapes, flagging any producer whose
+#    channels do not share one shape. It printed exactly one MIXED PRODUCER
+#    line (architecture.layer-violation) and the same 57 static channel rows
+#    (42 producers, including computed.health with zero static rows) as the
+#    hand enumeration below, and both agree with the tracked fixture
+#    tests/Analysis/Finding/Fixtures/Channels/declared.txt line for line
+#    (57 data lines there too). No discrepancy was found between the three.
+# `producer` is the grouping key the compiler pass
+# (ChannelDeclarationCompilerPass::collectRuleChannels/collectValidatorChannels)
+# actually uses: for a rule class, RuleNameReader::read($class) (its own
+# static::NAME, so a subclass of an abstract base counts as its own
+# producer); for a ConfigurationValidatorInterface implementer,
+# $class::producerRuleName() — the BORROWED rule name whose CLI selection,
+# exclusion, docs page and remediation minutes the validator's channels
+# resolve through. That borrowing is what makes architecture.layer-violation
+# mixed: LayerViolationRule and LayerDeclarationValidator are two declaring
+# classes sharing one producer identity.
+#
+# WHAT THIS METHOD DOES NOT SEE
+#
+# - A channel that would exist only because a project's own qmx.yaml defines
+#   a computed metric: computed.health's real channel set is resolved from
+#   ComputedMetricDefinitionCatalogInterface at run time and is open-ended;
+#   this repository's own qmx.yaml defines none, so the live container
+#   produced zero rows for it. Its SHAPE is always `magnitude` regardless of
+#   the `inverted` flag (which only picks the direction) — confirmed by
+#   reading ChannelUniverse::declarationFor() directly, not by measurement.
+# - Fixture/test-only producers (e.g. StampRule/StampValidator/
+#   OrphanedValidator/PoachingValidator/TrespassingValidator in
+#   ConfigurationErrorClassificationTopologyTest, and the Fixture* classes in
+#   ChannelDeclarationReaderTest) are excluded: they are not tagged into the
+#   production container and never appear in ChannelUniverse.
+# - Any channel key spelled as a string outside a `channelDeclarations()`
+#   method (e.g. in YAML, docs, or a dynamically built key) is invisible to
+#   both the Serena symbol search and the container walk; none was found by
+#   the supplementary grep for "static function channelDeclarations" either.
