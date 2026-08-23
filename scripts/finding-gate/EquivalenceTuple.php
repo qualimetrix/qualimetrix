@@ -71,7 +71,7 @@ final class EquivalenceTuple
             throw new GateError(\sprintf('Cannot derive a unique field list from %s.', self::SOURCE_FILE));
         }
 
-        return new self(array_values($fields));
+        return new self($fields);
     }
 
     public function render(): string

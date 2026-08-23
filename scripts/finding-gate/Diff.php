@@ -67,11 +67,11 @@ final class Diff
         $extra = array_values(array_diff($actual, $expected));
         $lines = [];
 
-        foreach (array_slice($missing, 0, self::MAX_LINES) as $item) {
+        foreach (\array_slice($missing, 0, self::MAX_LINES) as $item) {
             $lines[] = \sprintf('- only in %s: %s', $expectedLabel, $item);
         }
 
-        foreach (array_slice($extra, 0, self::MAX_LINES) as $item) {
+        foreach (\array_slice($extra, 0, self::MAX_LINES) as $item) {
             $lines[] = \sprintf('+ only in %s: %s', $actualLabel, $item);
         }
 

@@ -41,7 +41,7 @@ final class Options
                 $argument === '--incomplete-corpus' => $incomplete = true,
                 str_starts_with($argument, '--candidate=') => $candidate = self::directory($value),
                 str_starts_with($argument, '--reference=') => $reference = $value,
-                str_starts_with($argument, '--cases=') => $cases = array_values(array_filter(explode(',', $value))),
+                str_starts_with($argument, '--cases=') => $cases = self::list($value),
                 str_starts_with($argument, '--report=') => $report = $value,
                 default => throw new GateError(\sprintf("Unknown argument \"%s\".\n%s", $argument, self::usage())),
             };
@@ -81,6 +81,15 @@ final class Options
         $position = strpos($argument, '=');
 
         return $position === false ? '' : substr($argument, $position + 1);
+    }
+
+    /** @return list<string> */
+    private static function list(string $value): array
+    {
+        return array_values(array_filter(
+            explode(',', $value),
+            static fn(string $item): bool => $item !== '',
+        ));
     }
 
     private static function directory(string $path): string

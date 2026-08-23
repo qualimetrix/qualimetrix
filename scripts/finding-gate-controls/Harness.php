@@ -38,7 +38,7 @@ final class Harness
             if (str_starts_with($argument, '--reference=')) {
                 $reference = $value;
             } elseif (str_starts_with($argument, '--only=')) {
-                $only = array_values(array_filter(explode(',', $value)));
+                $only = self::list($value);
             } elseif ($argument === '--detached') {
                 $watchLauncher = false;
             } elseif (str_starts_with($argument, '--report-dir=')) {
@@ -99,6 +99,15 @@ final class Harness
         } finally {
             Scratch::removeAll();
         }
+    }
+
+    /** @return list<string> */
+    private static function list(string $value): array
+    {
+        return array_values(array_filter(
+            explode(',', $value),
+            static fn(string $item): bool => $item !== '',
+        ));
     }
 
     private static function usage(): string

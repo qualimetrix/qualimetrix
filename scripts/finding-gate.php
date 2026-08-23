@@ -18,6 +18,7 @@ namespace QmxFindingGate;
 
 foreach (
     [
+        'CommandLine',
         'FailureClass',
         'GateError',
         'Fs',
@@ -45,7 +46,7 @@ foreach (
     require __DIR__ . '/finding-gate/' . $class . '.php';
 }
 
-exit(main($argv));
+exit(main(CommandLine::arguments()));
 
 /** @param list<string> $argv */
 function main(array $argv): int

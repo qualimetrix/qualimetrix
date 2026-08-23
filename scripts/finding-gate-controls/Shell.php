@@ -72,7 +72,7 @@ final class Shell
             throw new RuntimeException(\sprintf('Cannot start %s.', implode(' ', $command)));
         }
 
-        $pid = (int) proc_get_status($handle)['pid'];
+        $pid = proc_get_status($handle)['pid'];
         self::$live[$pid] = $handle;
 
         try {
@@ -127,7 +127,7 @@ final class Shell
                 $status = proc_get_status($handle);
 
                 if ($status['running'] === false) {
-                    $exit = (int) $status['exitcode'];
+                    $exit = $status['exitcode'];
                 }
             }
         }
@@ -207,7 +207,12 @@ final class Shell
         $output = @shell_exec('pgrep -P ' . escapeshellarg((string) $pid) . ' 2>/dev/null');
         $pids = [];
 
-        foreach (preg_split('~\s+~', (string) $output, -1, \PREG_SPLIT_NO_EMPTY) ?: [] as $candidate) {
+        // Tolerant where the rest of the tool throws: this runs from the
+        // shutdown path, where an exception would replace the failure being
+        // reported with one about killing children.
+        $candidates = preg_split('~\s+~', (string) $output, -1, \PREG_SPLIT_NO_EMPTY);
+
+        foreach ($candidates === false ? [] : $candidates as $candidate) {
             $child = (int) $candidate;
 
             if ($child > 1) {
@@ -274,7 +279,13 @@ final class Shell
             return;
         }
 
-        foreach (scandir($path) ?: [] as $entry) {
+        $entries = scandir($path);
+
+        if ($entries === false) {
+            throw new RuntimeException(\sprintf('Cannot list %s while removing it.', $path));
+        }
+
+        foreach ($entries as $entry) {
             if ($entry === '.' || $entry === '..') {
                 continue;
             }

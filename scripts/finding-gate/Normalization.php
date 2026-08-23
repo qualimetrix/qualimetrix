@@ -238,8 +238,6 @@ final class Normalization
 
     /**
      * @param list<string|int> $keys
-     *
-     * @return string|int
      */
     private static function sameTypeKey(array $keys, string $segment): string|int
     {

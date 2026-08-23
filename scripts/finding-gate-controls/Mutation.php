@@ -27,7 +27,7 @@ final class Mutation
 
     /**
      * @param array<string, string> $replacements old fragment => new fragment,
-     *                                           each required to occur exactly once
+     *                                            each required to occur exactly once
      */
     public static function edit(string $relativePath, array $replacements, string $description): self
     {
@@ -64,6 +64,14 @@ final class Mutation
 
         $before = hash_file('sha256', $original);
 
+        if ($before === false) {
+            throw new RuntimeException(\sprintf(
+                'Cannot hash %s before mutating. Without it the hardlink check below compares false against'
+                . ' false and passes while the working tree is being written through.',
+                $original,
+            ));
+        }
+
         if ($this->replacements === []) {
             if (!@unlink($target)) {
                 throw new RuntimeException(\sprintf('Cannot remove %s from the scratch tree.', $this->relativePath));
@@ -99,7 +107,9 @@ final class Mutation
 
     private function assertRepositoryUntouched(string $original, string $before): void
     {
-        if (hash_file('sha256', $original) !== $before) {
+        $after = hash_file('sha256', $original);
+
+        if ($after === false || $after !== $before) {
             throw new RuntimeException(\sprintf(
                 'The mutation wrote through the hardlink into %s. Stop: the working tree is corrupted.',
                 $original,

@@ -142,6 +142,6 @@ final class GateReport
             return implode(', ', array_map(self::scalar(...), $value));
         }
 
-        return \is_bool($value) ? ($value ? 'yes' : 'no') : (string) $value; // @phpstan-ignore-line
+        return \is_bool($value) ? ($value ? 'yes' : 'no') : (string) $value;
     }
 }

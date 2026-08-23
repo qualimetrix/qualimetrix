@@ -671,7 +671,11 @@ final class Gate
         }
     }
 
-    /** @param list<array<string, mixed>> $findings */
+    /**
+     * @param list<array<string, mixed>> $findings
+     *
+     * @return list<string>
+     */
     private static function observedChannels(array $findings): array
     {
         $channels = [];

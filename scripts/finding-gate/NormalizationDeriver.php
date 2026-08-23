@@ -275,7 +275,13 @@ final class NormalizationDeriver
         $pattern = '';
         $afterQuantity = false;
 
-        foreach (preg_split('~(\s+)~', $label, -1, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY) ?: [] as $token) {
+        $tokens = preg_split('~(\s+)~', $label, -1, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY);
+
+        if ($tokens === false) {
+            throw new GateError(\sprintf('Cannot tokenise the label "%s" into a locator pattern.', $label));
+        }
+
+        foreach ($tokens as $token) {
             if (trim($token) === '') {
                 $pattern .= preg_quote($token, '~');
 

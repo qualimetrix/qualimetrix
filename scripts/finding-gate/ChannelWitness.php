@@ -63,8 +63,8 @@ final class ChannelWitness
     /** @return array{static: list<string>, computed: list<string>} */
     private function probe(?CaseDefinition $case): array
     {
-        $directory = $case?->directory ?? $this->treeRoot;
-        $configuration = $case?->config ?? 'qmx.yaml';
+        $directory = $case === null ? $this->treeRoot : $case->directory;
+        $configuration = $case === null ? 'qmx.yaml' : $case->config;
         $result = Process::run(
             [\PHP_BINARY, __DIR__ . '/probe-channels.php', $this->treeRoot, $directory, $configuration],
             $directory,

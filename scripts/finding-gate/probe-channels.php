@@ -12,6 +12,7 @@ declare(strict_types=1);
  * Usage: probe-channels.php <tree-root> <case-directory> <config-relative-path>
  */
 
+use QmxFindingGate\CommandLine;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
@@ -20,9 +21,11 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
-[$self, $treeRoot, $caseDirectory, $configuration] = $argv + [null, null, null, null];
+require __DIR__ . '/CommandLine.php';
 
-if (!\is_string($treeRoot) || !\is_string($caseDirectory) || !\is_string($configuration)) {
+[$self, $treeRoot, $caseDirectory, $configuration] = CommandLine::arguments() + [null, null, null, null];
+
+if (!is_string($treeRoot) || !is_string($caseDirectory) || !is_string($configuration)) {
     fwrite(\STDERR, "Usage: probe-channels.php <tree-root> <case-directory> <config-relative-path>\n");
     exit(2);
 }
@@ -32,13 +35,13 @@ require $treeRoot . '/vendor/autoload.php';
 $container = (new ContainerFactory())->create();
 
 $registry = $container->get(ChannelDeclarationRegistryInterface::class);
-\assert($registry instanceof ChannelDeclarationRegistryInterface);
+assert($registry instanceof ChannelDeclarationRegistryInterface);
 
 $pipeline = $container->get(ConfigurationPipelineInterface::class);
-\assert($pipeline instanceof ConfigurationPipelineInterface);
+assert($pipeline instanceof ConfigurationPipelineInterface);
 
 $computed = $container->get(ComputedMetricConfiguratorInterface::class);
-\assert($computed instanceof ComputedMetricConfiguratorInterface);
+assert($computed instanceof ComputedMetricConfiguratorInterface);
 
 $document = $pipeline->resolve(
     new ConfigurationResolutionRequest(AbsolutePath::fromString($caseDirectory), $configuration, [], []),

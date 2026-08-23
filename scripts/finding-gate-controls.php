@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
-use QmxFindingGate\FailureClass;
+use QmxFindingGate\CommandLine;
 
 /**
  * The finding-gate's negative controls, as a re-runnable harness.
@@ -23,10 +23,11 @@ use QmxFindingGate\FailureClass;
  * honest verdict — the gate owns `nondeterminism-undeclared` for exactly that.
  */
 
+require __DIR__ . '/finding-gate/CommandLine.php';
 require __DIR__ . '/finding-gate/FailureClass.php';
 
 foreach (['Shell', 'Scratch', 'Mutation', 'Expectation', 'Control', 'Outcome', 'Controls', 'Harness'] as $part) {
     require __DIR__ . '/finding-gate-controls/' . $part . '.php';
 }
 
-exit(Harness::main($argv));
+exit(Harness::main(CommandLine::arguments()));
