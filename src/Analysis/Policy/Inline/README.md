@@ -29,7 +29,8 @@ Inline/
 │   ├── DirectiveRejection.php
 │   ├── InlineDirectiveOptions.php
 │   ├── InlineDirectivePolicy.php   # per-run directives + usage accounting
-│   └── InlineDirectiveRule.php     # owns the four annotation.* channels
+│   ├── InlineDirectiveRule.php     # owns annotation.unused-directive; arms usage reporting
+│   └── InlineDirectiveValidator.php # owns the three annotation.* directive errors
 ├── Suppression/
 │   └── SuppressionFilter.php   # internal annotation matching
 └── ThresholdOverrideExtractionResult.php
@@ -61,17 +62,24 @@ Inline/
 
 ## The directive report
 
-Three of the four channels are declared `ConfigurationError`: a name that
+Three of the four channels belong to `InlineDirectiveValidator`, a
+`ConfigurationValidatorInterface` rather than a rule — which is what makes them
+configuration errors: a name that
 addresses nothing (`annotation.unresolved-directive`), a threshold on a rule
 that declares no override support (`annotation.unsupported-threshold`), and
 values that do not parse or validate (`annotation.invalid-threshold`). None of
 them can be accepted by a baseline, and each fails the run without consulting
-`fail_on` — they say "I cannot do what you asked", not "your code is poor".
+`fail_on` — they say "I cannot do what you asked", not "your code is poor". The
+validator names `annotation.directive` as its producer, so those three are
+registered, addressed, excluded and switched off exactly as they were while the
+rule declared them, and it answers to that rule's `enabled` option.
 
-The fourth, `annotation.unused-directive`, is ordinary debt: a suppression that
+The fourth, `annotation.unused-directive`, stays with `InlineDirectiveRule`
+because it is ordinary debt: a suppression that
 addressed something real and matched nothing this run. It defaults below
 `Warning`, and its accounting is deliberately narrow — only directives naming
-enabled rules, and only files this run analysed.
+enabled rules, and only files this run analysed. The rule emits nothing itself;
+it arms the usage report, which can only be assembled after every rule has run.
 
 **All four channels report once per authored annotation.** The extractor binds
 a class docblock to the class and to every declaration inside it, so a single

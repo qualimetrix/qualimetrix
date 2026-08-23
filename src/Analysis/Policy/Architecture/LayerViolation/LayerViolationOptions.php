@@ -13,20 +13,22 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 /**
  * Options for {@see LayerViolationRule}.
  *
- * The rule emits every channel listed in
- * {@see LayerViolationRule::channelDeclarations()} from this one options set,
- * and only three things are configured here:
- * - {@see $enabled} — short-circuits analysis when false.
+ * One options set for the whole producer: the rule, its configuration
+ * validator and the walk they share all read this instance, because
+ * `--rule-opt=architecture.layer-violation:*` has always addressed the family
+ * as a whole. Only three things are configured here:
+ * - {@see $enabled} — short-circuits the shared walk when false, so both
+ *   verdicts fall silent together.
  * - {@see $severity} — the severity of every reported `architecture.layer-violation`.
  * - {@see $unassignedClass} — the gate for `architecture.unassigned-class`,
  *   off by default. A mode rather than a severity because `ignore` also
- *   decides whether the rule collects the evidence at all.
+ *   decides whether the walk collects the evidence at all.
  *
- * Every remaining channel declares
- * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError} —
- * which ones is read off `channelDeclarations()`, the authority, rather than
- * spelled out here, because a list written twice is a list that disagrees
- * with itself the first time a diagnostic is added.
+ * The five verdicts on the declaration itself belong to
+ * {@see LayerDeclarationValidator} and are configuration errors by virtue of
+ * that — which ones is read off its `channelDeclarations()`, the authority,
+ * rather than spelled out here, because a list written twice is a list that
+ * disagrees with itself the first time a diagnostic is added.
  * They fail the run without consulting `fail_on` and cannot be accepted by
  * the ratchet, so their severity controls nothing but the word printed beside
  * the finding. `unreachable_layer_severity`, `potential_shadow_severity` and

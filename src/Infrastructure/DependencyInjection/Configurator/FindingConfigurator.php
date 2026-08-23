@@ -38,6 +38,7 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
                 '$profiler' => new Reference(ProfilerInterface::class),
                 '$ruleOptionsRegistry' => new Reference($ruleOptionsRegistry),
                 '$ruleSelector' => new Reference(RuleSelector::class),
+                '$configurationValidators' => [],
             ]);
         $container->setAlias(RuleExecutionInterface::class, $ruleExecution)
             ->setPublic(true);

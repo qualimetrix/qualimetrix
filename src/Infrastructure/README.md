@@ -103,6 +103,7 @@ Infrastructure/
 │       ├── RuleCompilerPass.php
 │       ├── RuleRegistryCompilerPass.php
 │       ├── ChannelDeclarationCompilerPass.php
+│       ├── ConfigurationValidatorCompilerPass.php
 │       ├── RuleOptionsCompilerPass.php
 │       ├── FormatterCompilerPass.php
 │       ├── ConfigurationStageCompilerPass.php
@@ -112,6 +113,7 @@ Infrastructure/
 ├── Rule/
 │   ├── RuleRegistryInterface.php
 │   ├── RuleRegistry.php
+│   ├── ConfigurationValidatorRegistry.php  # The same, for the second producer kind
 │   ├── ChannelUniverse.php                 # One channel-identity instance behind Finding's narrow views
 │   └── Exception/
 │       └── ConflictingCliAliasException.php
@@ -264,10 +266,34 @@ remain independent because configuration is keyed by producer rule name.
 - Maintains the metadata boundary without exposing executable rule instances
 
 **ChannelDeclarationCompilerPass:**
-- Builds Finding's channel-declaration registry from the registered rule set
+- Builds Finding's channel-declaration registry in one walk over the container's
+  definitions, rules and configuration validators interleaved in registration order
+- **Channel order is published, so it follows registration order, not producer kind.**
+  A "did you mean" answer breaks ties between equidistant names by the order
+  `ChannelUniverse::channels()` yields, so collecting one producer kind as a block
+  would move the text of a finding. A capability configurator therefore registers its
+  validator in the family's published position — Inline before its rule, Architecture
+  after — and `ChannelOrderFixtureDriftTest` pins the whole order against a tracked
+  fixture
 - Preserves producer-to-channel topology and adds configured computed channels at run
   time for channel-aware `--only-rule` / `--disable-rule` selection
-- Rejects a channel declared by more than one rule class
+- Rejects a channel declared by more than one producer, a validator that names a
+  producer no rule answers to or declares no channels at all, and a tagged service
+  whose definition names no class
+- **The one place a channel becomes a configuration error.** It applies
+  `ChannelDeclaration::asConfigurationError()` to everything a validator declares and
+  to nothing else, registering it under the validator's producer rule name so
+  selection, exclusion, description, docs page and remediation minutes all resolve as
+  before. `ConfigurationErrorClassificationTopologyTest` counts the call sites
+
+**ConfigurationValidatorCompilerPass:**
+- Collects services tagged `qmx.configuration_validator` and hands them to
+  `RuleExecution`, which runs each in its producer rule's slot
+- Refuses a tagged service whose definition names no class, rather than skipping it:
+  a dropped validator would neither run nor declare, and no second reader would notice
+- Fills `ConfigurationValidatorRegistry` with their class strings — the second witness
+  to "which producers are validators", read only by `ChannelUniverseCoverageTest`, so
+  that the check does not read the same universe production reads
 
 **FormatterCompilerPass:**
 - Collects services with tag `qmx.formatter`

@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -132,7 +133,7 @@ final class LayerExcludeIntegrationTest extends TestCase
 
         $unreachableMessages = array_map(
             static fn(Violation $v): string => $v->message,
-            $this->filterByRule($analysis->violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+            $this->filterByRule($analysis->violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
         );
         foreach ($unreachableMessages as $message) {
             self::assertStringNotContainsString(

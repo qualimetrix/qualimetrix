@@ -254,7 +254,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
             self::CONFIG_ERROR_CHANNEL . '#' . self::CONFIG_ERROR_CHANNEL,
-            ChannelDeclaration::configurationError(SymbolLevel::Class_),
+            ChannelDeclaration::occurrence(SymbolLevel::Class_)->asConfigurationError(),
         );
 
         $projector = new FindingProjector(

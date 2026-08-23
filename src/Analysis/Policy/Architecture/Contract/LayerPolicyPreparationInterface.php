@@ -11,11 +11,12 @@ interface LayerPolicyPreparationInterface
     public const string PRODUCER_RULE_NAME = 'architecture.layer-violation';
 
     /**
-     * The six diagnostics the layer-policy rule emits under rule names other
-     * than its own. They are `ruleName`s in their own right — nothing else
-     * declares them — so they live beside {@see PRODUCER_RULE_NAME} for the
-     * same reason it does: one literal, readable by a cross-owner consumer
-     * without importing the rule.
+     * The six diagnostics the layer-policy producer emits under rule names
+     * other than its own: `architecture.unassigned-class` from the rule, the
+     * other five from its configuration validator. They are `ruleName`s in
+     * their own right — nothing else declares them — so they live beside
+     * {@see PRODUCER_RULE_NAME} for the same reason it does: one literal,
+     * readable by a cross-owner consumer without importing either producer.
      */
     public const string COVERAGE_DIAGNOSTIC_NAME = 'architecture.coverage';
 

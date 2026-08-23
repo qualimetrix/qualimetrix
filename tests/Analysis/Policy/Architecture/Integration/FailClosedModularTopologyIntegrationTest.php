@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfigur
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -54,7 +55,7 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
 
         $result = $this->analyze(self::FIXTURE_PATH . '/Boundary', $architecture);
         self::assertSame([], $this->violationsFor($result->violations, LayerViolationRule::NAME));
-        self::assertSame([], $this->violationsFor($result->violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->violationsFor($result->violations, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME));
     }
 
     #[Test]
@@ -137,7 +138,7 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
         self::assertStringContainsString('CycleA', $cycles[0]->message);
         self::assertStringContainsString('CycleB', $cycles[0]->message);
         self::assertSame([], $this->violationsFor($result->violations, LayerViolationRule::NAME));
-        self::assertSame([], $this->violationsFor($result->violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->violationsFor($result->violations, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME));
     }
 
     /**
@@ -175,7 +176,7 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
     /** @param list<Violation> $violations */
     private function singleCoverageDiagnostic(array $violations): Violation
     {
-        $diagnostics = $this->violationsFor($violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME);
+        $diagnostics = $this->violationsFor($violations, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
         self::assertCount(1, $diagnostics);
 
         return $diagnostics[0];

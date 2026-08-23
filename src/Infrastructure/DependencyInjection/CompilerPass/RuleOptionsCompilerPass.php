@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
+use LogicException;
 use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -64,7 +65,7 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface
             // must therefore include both the producer and the Options class: multiple
             // rules may intentionally reuse the same immutable Options implementation
             // while still requiring independently configured instances.
-            $optionsServiceId = $this->optionsServiceId($ruleName, $optionsClass);
+            $optionsServiceId = self::optionsServiceId($ruleName, $optionsClass);
 
             if (!$container->hasDefinition($optionsServiceId)) {
                 $container->register($optionsServiceId, $optionsClass)
@@ -83,11 +84,58 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface
     }
 
     /**
-     * @param class-string<RuleOptionsInterface> $optionsClass
+     * The id of the Options service configured for one producer rule.
+     *
+     * Public because a configuration validator answers to its producer's
+     * options, and its registration therefore has to reference the very same
+     * service rather than build an equal copy — two copies would be two places
+     * for the configuration to be read differently.
+     *
+     * The Options class arrives as a plain string, not a `class-string`: the
+     * capability configurators name their internals by literal so they do not
+     * import them, which is the same convention that keeps the rule and the
+     * policy out of this container's `use` list.
      */
-    private function optionsServiceId(string $ruleName, string $optionsClass): string
+    public static function optionsServiceId(string $ruleName, string $optionsClass): string
     {
         return $ruleName . '.options.' . $optionsClass;
+    }
+
+    /**
+     * The same id, derived from the producer rule class the way this pass
+     * derives it when it registers the service.
+     *
+     * A configurator wiring a validator to its producer's Options needs the id
+     * before the pass has run. Spelling the Options class out there would be a
+     * second statement of a fact whose authority is `getOptionsClass()`: rename
+     * the Options class and the configurator would point at a service nobody
+     * registers. Asking the rule keeps one authority.
+     *
+     * The rule class arrives as a plain string for the same reason the Options
+     * class does above — capability configurators name their internals by
+     * literal rather than importing them.
+     */
+    public static function optionsServiceIdForRule(string $ruleClass): string
+    {
+        if (!is_a($ruleClass, self::RULE_INTERFACE, true)) {
+            throw new LogicException(\sprintf(
+                'Cannot derive an Options service id from %s: it does not implement %s.',
+                $ruleClass,
+                self::RULE_INTERFACE,
+            ));
+        }
+
+        $optionsClass = (new ReflectionClass($ruleClass))->getMethod('getOptionsClass')->invoke(null);
+
+        if (!\is_string($optionsClass) || !is_a($optionsClass, RuleOptionsInterface::class, true)) {
+            throw new LogicException(\sprintf(
+                '%s::getOptionsClass() did not name a %s.',
+                $ruleClass,
+                RuleOptionsInterface::class,
+            ));
+        }
+
+        return self::optionsServiceId(RuleNameReader::read($ruleClass), $optionsClass);
     }
 
     /**

@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -93,10 +94,10 @@ final class ArchitectureViolationSmokeTest extends TestCase
         self::assertNonEmptyOutput($output);
         self::assertStringContainsString(LayerViolationRule::NAME, $output);
         self::assertStringContainsString(CircularDependencyRule::NAME, $output);
-        self::assertStringContainsString(LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME, $output);
-        self::assertStringContainsString(LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, $output);
-        self::assertStringContainsString(LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, $output);
-        self::assertStringContainsString(LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, $output);
         // Source/target class names should appear in the layer-violation row
         self::assertStringContainsString(self::SOURCE_CLASS, $output);
         // Dependency-type detail (the human description) should appear too
@@ -468,8 +469,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
             self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
-                ruleName: LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
-                violationCode: LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
+                ruleName: LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+                violationCode: LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
                 message: 'Architecture coverage: 0 edge(s) with unmatched source layer, 0 edge(s) with unmatched target layer, 7 class(es) outside all declared layers.',
                 severity: Severity::Error,
                 recommendation: 'Declare layers covering the remaining classes or accept the gap by leaving coverage on "ignore".',
@@ -479,8 +480,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
             self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
-                ruleName: LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
-                violationCode: LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+                ruleName: LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+                violationCode: LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
                 message: 'Template layer "module-{name}" expanded to zero concrete layers — no class in the analysed codebase matched the template\'s criteria.',
                 severity: Severity::Warning,
                 recommendation: 'Verify the template patterns against the project structure, or remove the template if no longer relevant.',
@@ -490,8 +491,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
             self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
-                ruleName: LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-                violationCode: LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                ruleName: LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                violationCode: LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 message: 'Layer "legacy" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier, (2) the declared criteria match no class in the analysed codebase.',
                 severity: Severity::Info,
                 recommendation: 'Move the layer above any broader layer that captures its classes, or remove the layer if its pattern intentionally covers no class.',
@@ -501,8 +502,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
             self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
-                ruleName: LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-                violationCode: LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+                ruleName: LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+                violationCode: LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
                 message: 'Layer "core" (pattern App\\Core\\**) shadows layer "core-domain" (pattern App\\Core\\Domain\\**) for 3 class(es).',
                 severity: Severity::Info,
                 recommendation: 'If layer "core-domain" should own these classes, declare it BEFORE "core" (declaration order, first match wins).',
@@ -525,10 +526,10 @@ final class ArchitectureViolationSmokeTest extends TestCase
         return [
             LayerViolationRule::NAME,
             CircularDependencyRule::NAME,
-            LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
-            LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
-            LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         ];
     }
 

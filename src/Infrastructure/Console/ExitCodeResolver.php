@@ -27,8 +27,8 @@ use Qualimetrix\Reporting\ReportCoverage;
  *
  * Two things bypass that comparison entirely, and both do so because they
  * are not judgements about code quality that a user is entitled to filter
- * out: an incomplete run (exit 4), and a finding on a channel declaring
- * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError}. The second is the tool
+ * out: an incomplete run (exit 4), and a finding on a channel declared by a
+ * {@see \Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface}. The second is the tool
  * saying "I cannot do what you asked" — routing it through `fail_on` would
  * mean the default `fail_on: error` decides whether a broken configuration
  * is worth mentioning, and a `fail_on: none` could switch it off completely.
@@ -107,9 +107,9 @@ final class ExitCodeResolver
      * The severity assertion is not defensive noise. A configuration error
      * that a report prints as `Info` would be a finding whose displayed
      * weight contradicts what it does to the build, and the producing rule
-     * is the only place that can be wrong about it — every channel declared
-     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError} is emitted with
-     * `Warning` or `Error` today, and this is what keeps that true.
+     * is the only place that can be wrong about it — every configuration-error
+     * channel is emitted with `Warning` or `Error` today, and this is what
+     * keeps that true.
      *
      * @param list<Violation> $violations
      */

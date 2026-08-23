@@ -7,8 +7,10 @@ namespace Qualimetrix\Tests\Integration\Documentation;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
+use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -417,13 +419,25 @@ final class ChannelPublicationConsistencyTest extends TestCase
 
         $layerPolicy = [];
 
-        foreach (array_keys(LayerViolationRule::channelDeclarations()) as $channelKey) {
+        // Both producer kinds of the family: the rule owns the two findings
+        // about the code, the validator the five about the declaration.
+        $layerPolicyKeys = [
+            ...array_keys(LayerViolationRule::channelDeclarations()),
+            ...array_keys(LayerDeclarationValidator::channelDeclarations()),
+        ];
+
+        foreach ($layerPolicyKeys as $channelKey) {
             $layerPolicy[] = substr($channelKey, 0, (int) strpos($channelKey, '#'));
         }
 
         $annotationChannels = [];
 
-        foreach (array_keys(InlineDirectiveRule::channelDeclarations()) as $channelKey) {
+        $annotationKeys = [
+            ...array_keys(InlineDirectiveRule::channelDeclarations()),
+            ...array_keys(InlineDirectiveValidator::channelDeclarations()),
+        ];
+
+        foreach ($annotationKeys as $channelKey) {
             $annotationChannels[] = substr($channelKey, 0, (int) strpos($channelKey, '#'));
         }
 

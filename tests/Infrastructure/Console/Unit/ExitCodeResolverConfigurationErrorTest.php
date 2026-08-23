@@ -83,7 +83,7 @@ final class ExitCodeResolverConfigurationErrorTest extends TestCase
         $registry = StubChannelDeclarationRegistry::withDefaults();
         $registry->declare(
             self::CHANNEL . '#' . self::CHANNEL,
-            ChannelDeclaration::configurationError(SymbolLevel::Class_),
+            ChannelDeclaration::occurrence(SymbolLevel::Class_)->asConfigurationError(),
         );
 
         return new ExitCodeResolver($registry);

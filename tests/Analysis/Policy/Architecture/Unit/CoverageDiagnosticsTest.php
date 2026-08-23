@@ -22,6 +22,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
@@ -30,6 +32,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\LayerVerdicts;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder;
 use ReflectionMethod;
 
@@ -315,7 +318,8 @@ final class CoverageDiagnosticsTest extends TestCase
     #[Test]
     public function itSkipsUncoveredClassMaterializationInIgnoreModeWithoutSkippingLayerEvidence(): void
     {
-        $rule = $this->buildRule(new LayerViolationOptions());
+        $options = new LayerViolationOptions();
+        $collector = new LayerEvidenceCollector($options, $this->processor);
         $arch = $this->buildArchitecture(
             layers: [
                 'broad' => ['App\\**'],
@@ -330,9 +334,9 @@ final class CoverageDiagnosticsTest extends TestCase
             ['App\\Controller\\OwnedClass', 'Vendor\\Unowned\\LonelyClass'],
         );
 
-        $collectClassEvidence = new ReflectionMethod($rule, 'collectClassEvidence');
+        $collectClassEvidence = new ReflectionMethod($collector, 'collectClassEvidence');
         [$assignedHits, $matchedSymbols, $shadowEvidence, $uncoveredClasses] = $collectClassEvidence->invoke(
-            $rule,
+            $collector,
             $arch,
             $context,
         );
@@ -395,9 +399,9 @@ final class CoverageDiagnosticsTest extends TestCase
         );
     }
 
-    private function buildRule(LayerViolationOptions $options): LayerViolationRule
+    private function buildRule(LayerViolationOptions $options): LayerVerdicts
     {
-        return new LayerViolationRule($options, $this->processor);
+        return new LayerVerdicts($options, $this->processor);
     }
 
     /** @param list<string> $logicalClasses */
@@ -433,7 +437,7 @@ final class CoverageDiagnosticsTest extends TestCase
     {
         return array_values(array_filter(
             $violations,
-            static fn(Violation $v): bool => $v->ruleName === LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
+            static fn(Violation $v): bool => $v->ruleName === LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
         ));
     }
 

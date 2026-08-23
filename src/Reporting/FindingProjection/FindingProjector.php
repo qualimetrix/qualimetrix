@@ -127,8 +127,8 @@ final readonly class FindingProjector
     /**
      * The findings no stage of this projection is allowed to see.
      *
-     * A channel declaring
-     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError}
+     * A channel declared by a
+     * {@see \Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface}
      * reports that the tool cannot do what the configuration asked. That is
      * not a judgement about the code, so it is not something a user is
      * entitled to filter out — and the promise is that *nothing* filters it:

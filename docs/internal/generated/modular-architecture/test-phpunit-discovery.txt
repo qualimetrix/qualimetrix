@@ -3519,6 +3519,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest::everyChannelDeclaresExactlyTheLevelsItReportsAt
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest::theCorpusStillReportsEveryChannelAtTheLevelItWasMeasuredAt
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest::theOracleCoversEveryStaticallyDeclaredChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelOrderFixtureDriftTest::theContainerYieldsChannelsInTheOrderTheFixtureRecords
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyConfiguredComputedMetricChannelAlsoResolvesToARealDescriptionAndAnExistingDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyDeclaredChannelHasAProducer
@@ -3528,6 +3529,41 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::itNamesTheProducerForEveryIdentityMechanismThatDefeatsAScan
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theAssembledUniverseAgreesWithTheRuleClassesReadDirectly
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theEnumerationAgreesWithTheTrackedFixture
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::aChannelDeclaredByBothAProducerKindsFailsTheBuild
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::aValidatorEmittingOnAChannelItDoesNotDeclareEndsTheRun
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::aValidatorNamingAProducerThatIsNotARuleFailsTheBuild
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::exactlyOneProductionSiteTurnsADeclarationIntoAConfigurationError
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::noOtherProductionFileEvenNamesTheWither
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::noProductionSiteCanHandTheFlagToTheConstructorInstead
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::theAssemblyStampsExactlyWhatAValidatorDeclares
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::disablingAProducerByOptionSilencesEveryDiagnosticItOwns"annotation.directive"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::disablingAProducerByOptionSilencesEveryDiagnosticItOwns"architecture.layer-violation"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::eachDiagnosticIsSilencedBySelectingItsOwnNameOff"annotation.invalid-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::eachDiagnosticIsSilencedBySelectingItsOwnNameOff"annotation.unresolved-directive"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::eachDiagnosticIsSilencedBySelectingItsOwnNameOff"annotation.unsupported-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::eachDiagnosticIsSilencedBySelectingItsOwnNameOff"architecture.coverage"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::eachDiagnosticIsSilencedBySelectingItsOwnNameOff"architecture.empty-template"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::eachDiagnosticIsSilencedBySelectingItsOwnNameOff"architecture.pending-layer-matched"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::eachDiagnosticIsSilencedBySelectingItsOwnNameOff"architecture.potential-shadow"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::eachDiagnosticIsSilencedBySelectingItsOwnNameOff"architecture.unreachable-layer"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::everyDiagnosticIsReportedWhenNothingSilencesIt
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::everyDiagnosticResolvesToTheProducerThatOwnsIt"annotation.directive"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::everyDiagnosticResolvesToTheProducerThatOwnsIt"architecture.layer-violation"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::namespaceExclusionReachesNoneOfTheEight
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::pathExclusionReachesTheDirectiveDiagnosticsAndNotTheLayerOnes
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingAProducerOffSilencesEveryDiagnosticItOwns"annotation.directive"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingAProducerOffSilencesEveryDiagnosticItOwns"architecture.layer-violation"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingAProducerOnLeavesExactlyTheDiagnosticsItOwns"annotation.directive"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingAProducerOnLeavesExactlyTheDiagnosticsItOwns"architecture.layer-violation"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"annotation.invalid-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"annotation.unresolved-directive"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"annotation.unsupported-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"architecture.coverage"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"architecture.empty-template"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"architecture.pending-layer-matched"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"architecture.potential-shadow"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"architecture.unreachable-layer"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::theEnumeratedEightAreExactlyTheConfigurationErrorChannels
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyDeclaredDocsPageCarriesTheRulesOwnAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyRegisteredRuleDeclaresItsOwnDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::theTwoNonPrefixPagesAreDeclaredExplicitly
@@ -3571,8 +3607,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itDoesNothingWhenTheRegistryIsNotRegistered
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itPairsAViolationCodeWithTheDeclaringRulesOwnName
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itRecordsEveryTaggedRuleNameEvenWhenItDeclaresNoChannel
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itSkipsServicesWithNullClass
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsOnAChannelDeclaredByTwoDifferentRuleServices
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsOnATaggedServiceWithNoClass
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itReadsARealRulesDeclarationsCorrectly
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itReadsTheDeclaredChannelsWithoutInstantiatingTheRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsAClassThatCannotBeLoaded
@@ -3588,18 +3624,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itThrowsALogicExceptionRatherThanTheVosOwnExceptionWhenReadingAbstractCodeSmellRuleDirectly
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itThrowsALogicExceptionRatherThanTheVosOwnExceptionWhenReadingAbstractSecurityPatternRuleDirectly
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itWrapsAnExceptionThrownFromWithinChannelDeclarationsInALogicException
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itAcceptsAMagnitudeDeclarationWithADirection
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itAcceptsAnOccurrenceDeclarationWithNoDirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAMagnitudeDeclarationViaTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAnOccurrenceDeclarationViaTheFactory
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itKeepsItsConstructorPrivateSoOnlyTheFactoriesCanShapeADeclaration
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itLeavesTheThreeRefusalsUnstatableThroughTheFactorySignatures
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itOrdersDeclaredLevelsCanonicallySoTwoSpellingsOfOneChannelCompareEqual
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRefusesADeclarationWithNoLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRefusesARepeatedLevel
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAMagnitudeDeclarationWithoutADirection
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAnOccurrenceDeclarationCarryingADirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseFalseForAHigherDirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseNullForAnOccurrenceDeclaration
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseTrueForALowerDirection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itYieldsAConfigurationErrorOnlyThroughTheWither
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itFailsLoudWhenTheProducingRuleHasNoDeclaredDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itJoinsTheProducersDescriptionAndDeclaredDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullForACodeNoChannelCarries
@@ -4837,6 +4871,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#5
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsAnUnknownUnassignedClassGateValue
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::allowedEdgeProducesNoViolation
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::anUnpreparedPolicyIsRefusedInsteadOfMemoisedAsAbsentEvidence
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::disabledRuleReturnsNoViolations
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::eachUseSiteProducesItsOwnViolation
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::emptyArchitectureReturnsNoViolations
@@ -4861,7 +4896,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itStaysSilentWhenTheWinningLayerIsNarrowerThanTheShadowedOne
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itUsesTheExactSourceSubjectWhenTheLogicalTargetIsNotOwned
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::metadataMatchesContract
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::nullArchitectureReturnsNoViolations
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::nullDependencyGraphProducesOnlyDiagnostics
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::potentialShadow_deterministicOutputAcrossTwoRuns
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::potentialShadow_disjointPatternsEmitNothing
@@ -4879,7 +4913,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::unreachableLayer_firesForShadowedLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::unreachableLayer_firesWhenPatternMatchesNoClass
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itCollectsEvidenceWhenCoverageIsIgnoredAndOnlyTheGateIsOn
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itDeclaresTheChannelAsAMagnitudeAcceptableAsDebt
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itDeclaresTheChannelAsAMagnitudeThatIsNotAConfigurationError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itEmitsNothingWhenEveryAnalysedDeclarationIsAssigned
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itEmitsNothingWhenNoDeclarationWasAnalysedAtAll
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itEmitsNothingWhenTheGateIsLeftAtItsDefault
@@ -6025,6 +6059,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Unit\ConfigurationStageCompilerPassTest::addsMultipleStages
  - Qualimetrix\Tests\Infrastructure\Unit\ConfigurationStageCompilerPassTest::addsTaggedStagesToPipeline
  - Qualimetrix\Tests\Infrastructure\Unit\ConfigurationStageCompilerPassTest::doesNothingWhenPipelineNotRegistered
+ - Qualimetrix\Tests\Infrastructure\Unit\ConfigurationValidatorCompilerPassTest::itThrowsOnATaggedServiceThatIsNotAValidator
+ - Qualimetrix\Tests\Infrastructure\Unit\ConfigurationValidatorCompilerPassTest::itThrowsOnATaggedServiceWithNoClass
  - Qualimetrix\Tests\Infrastructure\Unit\FileSetInspectionParticipantCompilerPassTest::itInjectsParticipantsInLexicalIdOrderIndependentOfRegistrationOrder
  - Qualimetrix\Tests\Infrastructure\Unit\FileSetInspectionParticipantCompilerPassTest::itReadsStaticMetadataWithoutInstantiatingParticipantServices
  - Qualimetrix\Tests\Infrastructure\Unit\FileSetInspectionParticipantCompilerPassTest::itRejectsAServiceWithoutAResolvableClass

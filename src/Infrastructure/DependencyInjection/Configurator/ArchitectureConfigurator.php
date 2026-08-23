@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -30,6 +31,9 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
     private const string LAYER_ASSIGNMENT_COMMAND = 'Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand';
     private const string LAYER_ASSIGNMENT_RESOLVER = 'Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver';
     private const string RUNTIME_CONFIGURATOR = 'Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator';
+    private const string LAYER_DECLARATION_VALIDATOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerDeclarationValidator';
+    private const string LAYER_EVIDENCE_COLLECTOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector';
+    private const string LAYER_VIOLATION_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule';
 
     public function __construct(
         private readonly string $srcDir,
@@ -51,6 +55,8 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
 
         $container->register(self::ARCHITECTURE_POLICY)
             ->setAutowired(true);
+
+        $this->registerLayerVerdicts($container);
         $container->setAlias(ArchitecturePolicyConfiguratorInterface::class, self::ARCHITECTURE_POLICY)
             ->setPublic(true);
         $container->setAlias(LayerPolicyPreparationInterface::class, self::ARCHITECTURE_POLICY)
@@ -78,5 +84,35 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuleInputValidator::class),
             ])
             ->setPublic(true);
+    }
+
+    /**
+     * The two verdicts on the declared layers and the walk they share.
+     *
+     * Called after the rule scan, and that order is load-bearing: channels
+     * enter the universe in the order their producers are registered, and this
+     * family's published order has the rule's two channels ahead of the
+     * validator's five. See ChannelDeclarationCompilerPass.
+     *
+     * Both answer to one options service — the producer rule's own — because
+     * `--rule-opt=architecture.layer-violation:enabled=false` has always
+     * silenced the whole family, and a second Options instance would be a
+     * second place for that answer to be read. The id is derived from the rule
+     * the same way {@see RuleOptionsCompilerPass} derives it when it registers
+     * the service later in the build; a reference to a service defined by a
+     * later pass resolves at the end of compilation.
+     */
+    private function registerLayerVerdicts(ContainerBuilder $container): void
+    {
+        $options = new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::LAYER_VIOLATION_RULE));
+
+        $container->register(self::LAYER_EVIDENCE_COLLECTOR)
+            ->setArguments([$options, new Reference(self::ARCHITECTURE_POLICY)]);
+
+        $container->register(self::LAYER_DECLARATION_VALIDATOR)
+            ->setArguments([new Reference(self::LAYER_EVIDENCE_COLLECTOR)])
+            ->setAutoconfigured(true)
+            ->setAutowired(false)
+            ->setLazy(true);
     }
 }

@@ -17,8 +17,10 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionClass;
 use RuntimeException;
@@ -149,10 +151,10 @@ final class ChannelUniverseCoverageTest extends TestCase
 
         // Sibling constants: four channels carrying rule names no class owns.
         foreach ([
-            LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
-            LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-            LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
         ] as $siblingCode) {
             self::assertSame(LayerViolationRule::NAME, $universe->producerOf($siblingCode), $siblingCode);
         }
@@ -196,7 +198,7 @@ final class ChannelUniverseCoverageTest extends TestCase
         self::assertFalse($universe->hasRule('architecture'));
         self::assertSame(
             LayerViolationRule::NAME,
-            $universe->producerOf(LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME),
+            $universe->producerOf(LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME),
         );
     }
 
@@ -262,6 +264,15 @@ final class ChannelUniverseCoverageTest extends TestCase
 
             foreach (array_keys(ChannelDeclarationReader::read($ruleClass)) as $key) {
                 $producers[ViolationChannel::fromKey($key)->violationCode] = $ruleName;
+            }
+        }
+
+        // The second producer kind. A validator's channels are registered
+        // under its producer rule's name, so witness B has to read both
+        // registries or it enumerates a different universe than the pass did.
+        foreach (self::validatorClasses() as $validatorClass) {
+            foreach (array_keys($validatorClass::channelDeclarations()) as $key) {
+                $producers[ViolationChannel::fromKey($key)->violationCode] = $validatorClass::producerRuleName();
             }
         }
 
@@ -353,6 +364,17 @@ final class ChannelUniverseCoverageTest extends TestCase
     {
         $registry = (new ContainerFactory())->create()->get(RuleRegistryInterface::class);
         \assert($registry instanceof RuleRegistryInterface);
+
+        return $registry->getClasses();
+    }
+
+    /**
+     * @return list<class-string<\Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface>>
+     */
+    private static function validatorClasses(): array
+    {
+        $registry = (new ContainerFactory())->create()->get(ConfigurationValidatorRegistry::class);
+        \assert($registry instanceof ConfigurationValidatorRegistry);
 
         return $registry->getClasses();
     }

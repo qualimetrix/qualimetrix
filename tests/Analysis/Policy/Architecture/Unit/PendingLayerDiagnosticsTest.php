@@ -12,8 +12,8 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
-use Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -26,6 +26,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
@@ -34,6 +35,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\LayerVerdicts;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder;
 
 /**
@@ -60,8 +62,8 @@ final class PendingLayerDiagnosticsTest extends TestCase
             ['App\\Domain\\Order'],
         );
 
-        self::assertSame([], $this->diagnostics($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
-        self::assertSame([], $this->diagnostics($violations, LayerViolationRule::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->diagnostics($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME));
     }
 
     #[Test]
@@ -72,7 +74,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
             ['App\\Domain\\Order'],
         );
 
-        $unreachable = $this->diagnostics($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        $unreachable = $this->diagnostics($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(1, $unreachable);
         self::assertStringContainsString('Layer "reporting" was never matched', $unreachable[0]->message);
     }
@@ -85,7 +87,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
             ['App\\Reporting\\MonthlyReport'],
         );
 
-        $matched = $this->diagnostics($violations, LayerViolationRule::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
+        $matched = $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
         self::assertCount(1, $matched);
         self::assertSame(Severity::Error, $matched[0]->severity);
         self::assertStringContainsString('Layer "reporting" is declared "pending: true"', $matched[0]->message);
@@ -112,13 +114,13 @@ final class PendingLayerDiagnosticsTest extends TestCase
             ['App\\Reporting\\MonthlyReport'],
         );
 
-        $matched = $this->diagnostics($violations, LayerViolationRule::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
+        $matched = $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
         self::assertCount(1, $matched);
         self::assertStringContainsString('Layer "reporting"', $matched[0]->message);
 
         self::assertSame(
             [],
-            $this->diagnostics($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+            $this->diagnostics($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
             'The pending flag still suppresses unreachable-layer — pending-layer-matched is what must speak instead.',
         );
     }
@@ -135,7 +137,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
             [$this->buildDependency('App\\Domain', 'Order', 'App\\Reporting', 'MonthlyReport')],
         );
 
-        $matched = $this->diagnostics($violations, LayerViolationRule::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
+        $matched = $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
         self::assertCount(1, $matched);
         self::assertStringContainsString('Layer "reporting"', $matched[0]->message);
     }
@@ -159,14 +161,14 @@ final class PendingLayerDiagnosticsTest extends TestCase
             [$this->buildDependency('App\\Domain', 'Order', 'App\\Reporting', 'MonthlyReport')],
         );
 
-        $matched = $this->diagnostics($violations, LayerViolationRule::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
+        $matched = $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
         self::assertCount(1, $matched);
         self::assertStringContainsString('Layer "reporting"', $matched[0]->message);
         self::assertStringContainsString('matched 1 distinct symbol(s)', $matched[0]->message);
 
         self::assertSame(
             [],
-            $this->diagnostics($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+            $this->diagnostics($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
             'Both layers were reached; only the pending declaration is the mistake.',
         );
     }
@@ -190,7 +192,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
             ],
         );
 
-        $matched = $this->diagnostics($violations, LayerViolationRule::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
+        $matched = $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
         self::assertCount(1, $matched);
         self::assertStringContainsString('matched 2 distinct symbol(s)', $matched[0]->message);
     }
@@ -211,7 +213,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
             ['module-{mod}'],
         );
 
-        $emptyTemplates = $this->diagnostics($violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplates = $this->diagnostics($violations, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(1, $emptyTemplates);
         self::assertStringContainsString('Template layer "module-{mod}"', $emptyTemplates[0]->message);
     }
@@ -220,16 +222,28 @@ final class PendingLayerDiagnosticsTest extends TestCase
      * The diagnostic says the declaration lies, which is a mistake in the
      * configuration rather than debt in the code — so no ratchet may accept
      * it and no `@qmx-ignore` may silence it.
+     *
+     * Nothing on the declaration says so. The channel belongs to a
+     * {@see ConfigurationValidatorInterface} rather than to a rule, and that
+     * is the whole statement: registry assembly reads the producing type.
      */
     #[Test]
     public function itDeclaresTheChannelAsAConfigurationError(): void
     {
-        $declaration = LayerViolationRule::channelDeclarations()['architecture.pending-layer-matched#architecture.pending-layer-matched']
+        $declaration = LayerDeclarationValidator::channelDeclarations()['architecture.pending-layer-matched#architecture.pending-layer-matched']
             ?? null;
 
         self::assertNotNull($declaration);
         self::assertSame(ChannelShape::Occurrence, $declaration->shape);
-        self::assertSame(ChannelAcceptability::ConfigurationError, $declaration->acceptability);
+        self::assertContains(
+            ConfigurationValidatorInterface::class,
+            class_implements(LayerDeclarationValidator::class),
+            'The classification is the producing type; nothing on the declaration states it.',
+        );
+        self::assertArrayNotHasKey(
+            'architecture.pending-layer-matched#architecture.pending-layer-matched',
+            LayerViolationRule::channelDeclarations(),
+        );
     }
 
     /**
@@ -266,7 +280,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
 
         ProcessorBuilder::prepared($architecture, $graph, $repository, $this->processor);
 
-        return (new LayerViolationRule(new LayerViolationOptions(), $this->processor))->analyze(
+        return (new LayerVerdicts(new LayerViolationOptions(), $this->processor))->analyze(
             new AnalysisContext(metrics: $repository, dependencyGraph: $graph),
         );
     }

@@ -31,4 +31,17 @@ class Directives
     public function unused(): void
     {
     }
+
+    /**
+     * A name at equal Levenshtein distance from two channels of this same
+     * family, so the "did you mean" list has a tie to break. It breaks it by
+     * the order the channel universe yields, which is the order producers are
+     * registered — so this fixture is what makes that order observable to the
+     * gate.
+     *
+     * @qmx-ignore annotation.unressed-directive -- equidistant from unresolved and unused
+     */
+    public function equidistant(): void
+    {
+    }
 }

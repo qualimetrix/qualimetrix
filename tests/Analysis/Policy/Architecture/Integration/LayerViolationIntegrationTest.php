@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfigur
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -49,7 +50,7 @@ final class LayerViolationIntegrationTest extends TestCase
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         $layerViolations = $this->filterByRule($result->violations, LayerViolationRule::NAME);
-        $coverageDiagnostics = $this->filterByRule($result->violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME);
+        $coverageDiagnostics = $this->filterByRule($result->violations, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
 
         self::assertSame([], $layerViolations, 'No layers declared → rule must short-circuit.');
         self::assertSame([], $coverageDiagnostics, 'Empty config → no coverage diagnostic.');
@@ -111,7 +112,7 @@ final class LayerViolationIntegrationTest extends TestCase
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
-        $diagnostics = $this->filterByRule($result->violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME);
+        $diagnostics = $this->filterByRule($result->violations, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
         self::assertCount(1, $diagnostics, 'Exactly one coverage diagnostic expected in warn mode.');
 
         $diagnostic = $diagnostics[0];
@@ -177,7 +178,7 @@ final class LayerViolationIntegrationTest extends TestCase
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
-        $diagnostics = $this->filterByRule($result->violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME);
+        $diagnostics = $this->filterByRule($result->violations, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
         self::assertSame([], $diagnostics);
     }
 

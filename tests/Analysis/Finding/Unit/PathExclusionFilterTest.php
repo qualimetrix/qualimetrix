@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -68,10 +69,10 @@ final class PathExclusionFilterTest extends TestCase
 
         foreach (
             [
-                LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-                LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-                LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
-                LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+                LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+                LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+                LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
             ] as $ruleName
         ) {
             $violation = new Violation(

@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
-use Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -24,6 +23,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode;
@@ -34,6 +34,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\LayerVerdicts;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder;
 
 /**
@@ -54,7 +55,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     #[Test]
     public function itEmitsNothingWhenTheGateIsLeftAtItsDefault(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions(), $this->processor);
+        $rule = new LayerVerdicts(new LayerViolationOptions(), $this->processor);
         $architecture = $this->buildArchitecture(CoverageMode::Error);
 
         $violations = $rule->analyze($this->buildContext(
@@ -74,7 +75,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     #[Test]
     public function itCollectsEvidenceWhenCoverageIsIgnoredAndOnlyTheGateIsOn(): void
     {
-        $rule = new LayerViolationRule(
+        $rule = new LayerVerdicts(
             new LayerViolationOptions(unassignedClass: UnassignedClassMode::Warn),
             $this->processor,
         );
@@ -101,7 +102,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     #[Test]
     public function itIgnoresDependencyEdgeEndsOutsideTheAnalysedSet(): void
     {
-        $rule = new LayerViolationRule(
+        $rule = new LayerVerdicts(
             new LayerViolationOptions(unassignedClass: UnassignedClassMode::Warn),
             $this->processor,
         );
@@ -130,7 +131,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     #[Test]
     public function itEmitsNothingWhenEveryAnalysedDeclarationIsAssigned(): void
     {
-        $rule = new LayerViolationRule(
+        $rule = new LayerVerdicts(
             new LayerViolationOptions(unassignedClass: UnassignedClassMode::Error),
             $this->processor,
         );
@@ -148,7 +149,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     #[Test]
     public function itEmitsNothingWhenNoDeclarationWasAnalysedAtAll(): void
     {
-        $rule = new LayerViolationRule(
+        $rule = new LayerVerdicts(
             new LayerViolationOptions(unassignedClass: UnassignedClassMode::Error),
             $this->processor,
         );
@@ -162,7 +163,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     #[Test]
     public function itReportsTheAbsoluteCountAndKeepsTheShareInTheMessageOnly(): void
     {
-        $rule = new LayerViolationRule(
+        $rule = new LayerVerdicts(
             new LayerViolationOptions(unassignedClass: UnassignedClassMode::Warn),
             $this->processor,
         );
@@ -189,7 +190,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     #[Test]
     public function itMirrorsTheModeNameInTheReportedSeverity(): void
     {
-        $rule = new LayerViolationRule(
+        $rule = new LayerVerdicts(
             new LayerViolationOptions(unassignedClass: UnassignedClassMode::Error),
             $this->processor,
         );
@@ -211,7 +212,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
      * accept into a baseline — both are deliberate, so both are pinned.
      */
     #[Test]
-    public function itDeclaresTheChannelAsAMagnitudeAcceptableAsDebt(): void
+    public function itDeclaresTheChannelAsAMagnitudeThatIsNotAConfigurationError(): void
     {
         $declaration = LayerViolationRule::channelDeclarations()['architecture.unassigned-class#architecture.unassigned-class']
             ?? null;
@@ -219,7 +220,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         self::assertNotNull($declaration);
         self::assertSame(ChannelShape::Magnitude, $declaration->shape);
         self::assertSame(WorseDirection::Higher, $declaration->direction);
-        self::assertSame(ChannelAcceptability::AcceptableAsDebt, $declaration->acceptability);
+        self::assertFalse($declaration->isConfigurationError());
     }
 
     private function buildArchitecture(CoverageMode $coverage): ArchitectureConfiguration
@@ -299,7 +300,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     {
         return array_values(array_filter(
             $violations,
-            static fn(Violation $v): bool => $v->ruleName === LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
+            static fn(Violation $v): bool => $v->ruleName === LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
         ));
     }
 }

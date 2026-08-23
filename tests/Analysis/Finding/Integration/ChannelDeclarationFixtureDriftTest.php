@@ -8,12 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
-use Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
@@ -181,7 +180,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $configurationErrors = [];
 
         foreach (self::realStaticDeclarations() as $key => $declaration) {
-            if ($declaration->acceptability === ChannelAcceptability::ConfigurationError) {
+            if ($declaration->isConfigurationError()) {
                 $configurationErrors[] = $key;
             }
         }
@@ -292,12 +291,12 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
             $names[] = RuleNameReader::read($ruleClass);
         }
 
-        $names[] = LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME;
+        $names[] = LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME;
         $names[] = LayerViolationRule::UNASSIGNED_CLASS_DIAGNOSTIC_NAME;
-        $names[] = LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
-        $names[] = LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
-        $names[] = LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
-        $names[] = LayerViolationRule::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
+        $names[] = LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
+        $names[] = LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
+        $names[] = LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
+        $names[] = LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
 
         $names[] = InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME;
         $names[] = InlineDirectivePolicyInterface::UNSUPPORTED_THRESHOLD_NAME;
@@ -363,19 +362,29 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
     private static function parseShapeSpec(
         string $shapeSpec,
         string $channelKey,
-        ChannelAcceptability $acceptability,
+        bool $configurationError,
         array $levels,
     ): ChannelDeclaration {
+        $declaration = self::parseShapeOnly($shapeSpec, $channelKey, $levels);
+
+        return $configurationError ? $declaration->asConfigurationError() : $declaration;
+    }
+
+    /**
+     * @param non-empty-list<SymbolLevel> $levels
+     */
+    private static function parseShapeOnly(string $shapeSpec, string $channelKey, array $levels): ChannelDeclaration
+    {
         if ($shapeSpec === 'occurrence') {
-            return new ChannelDeclaration(ChannelShape::Occurrence, null, $acceptability, $levels);
+            return ChannelDeclaration::occurrence(...$levels);
         }
 
         if (str_starts_with($shapeSpec, 'magnitude:')) {
             $direction = substr($shapeSpec, \strlen('magnitude:'));
 
             return match ($direction) {
-                'higher' => new ChannelDeclaration(ChannelShape::Magnitude, WorseDirection::Higher, $acceptability, $levels),
-                'lower' => new ChannelDeclaration(ChannelShape::Magnitude, WorseDirection::Lower, $acceptability, $levels),
+                'higher' => ChannelDeclaration::magnitude(WorseDirection::Higher, ...$levels),
+                'lower' => ChannelDeclaration::magnitude(WorseDirection::Lower, ...$levels),
                 default => throw new RuntimeException(\sprintf(
                     'Unknown direction "%s" for channel "%s" in the fixture.',
                     $direction,
@@ -422,14 +431,14 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
      * whose findings are acceptable as debt — so that the fixture reads as a
      * list of exceptions rather than repeating the default 47 times.
      */
-    private static function parseAcceptabilitySpec(?string $spec, string $channelKey): ChannelAcceptability
+    private static function parseAcceptabilitySpec(?string $spec, string $channelKey): bool
     {
         if ($spec === null) {
-            return ChannelAcceptability::AcceptableAsDebt;
+            return false;
         }
 
         if ($spec === 'config-error') {
-            return ChannelAcceptability::ConfigurationError;
+            return true;
         }
 
         throw new RuntimeException(\sprintf(

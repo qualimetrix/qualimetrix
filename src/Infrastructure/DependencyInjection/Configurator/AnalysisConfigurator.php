@@ -28,6 +28,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -56,6 +57,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
     private const string INLINE_DIRECTIVE_POLICY_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy';
     private const string INLINE_DIRECTIVE_RULE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule';
+    private const string INLINE_DIRECTIVE_VALIDATOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator';
     private const string FILE_DISCOVERY_FACTORY = 'qmx.run.file_discovery_factory';
     private const string FILE_DISCOVERY_FACTORY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FileDiscoveryFactory';
     private const string GENERATED_FILE_FILTER = 'qmx.run.generated_file_filter';
@@ -151,6 +153,28 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setPublic(true);
         $container->setAlias(InlineDirectivePolicyInterface::class, self::INLINE_DIRECTIVE_POLICY_CLASS)
             ->setPublic(true);
+
+        // Registered before the rule, and that order is load-bearing: channels
+        // enter the universe in the order their producers are registered, and
+        // this family's published order has the three directive diagnostics
+        // ahead of `annotation.unused-directive`. See
+        // ChannelDeclarationCompilerPass.
+        //
+        // The validator answers to the rule's own Options service — the one
+        // `--rule-opt=annotation.directive:enabled=false` configures — rather
+        // than to a copy of it. The id is derived from the rule the same way
+        // RuleOptionsCompilerPass derives it when it registers that service
+        // later in the build; a reference to it resolves at the end of
+        // compilation.
+        $container->register(self::INLINE_DIRECTIVE_VALIDATOR_CLASS, self::INLINE_DIRECTIVE_VALIDATOR_CLASS)
+            ->setArguments([
+                new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::INLINE_DIRECTIVE_RULE_CLASS)),
+                new Reference(self::INLINE_DIRECTIVE_POLICY_CLASS),
+                new Reference(ChannelIdentityInterface::class),
+            ])
+            ->setAutoconfigured(true)
+            ->setAutowired(false)
+            ->setLazy(true);
 
         $container->register(self::INLINE_DIRECTIVE_RULE_CLASS, self::INLINE_DIRECTIVE_RULE_CLASS)
             ->setAutoconfigured(true)

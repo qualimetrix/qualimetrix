@@ -16,8 +16,9 @@ External owners use only the contracts in `Contract/`:
 - `LayerPolicyPreparationInterface` is the Run-owned sequential preparation
   boundary. Disabling the rule clears state and does no class-universe or
   template-expansion work. It also carries the literal names of the diagnostic
-  channels the rule emits under rule names other than its own, and the
-  project-scoped subset of them.
+  channels the producer emits under rule names other than its own — one from
+  the rule, five from its configuration validator — and the project-scoped
+  subset of them.
 - `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
   `LayerAssignmentMatch` form the Console debug projection.
 - `ArchitectureConfigurationException` and `ArchitecturePreparationException`
@@ -36,7 +37,7 @@ Architecture/
 │   └── Allow/                  # allow selectors and binding values
 ├── Layer/                      # membership and registry primitives
 │   └── Expansion/              # observed-template expansion
-├── LayerViolation/             # rule, options, finding construction and diagnostics
+├── LayerViolation/             # shared evidence walk, edge rule, declaration validator
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation
 ```
 
@@ -52,19 +53,39 @@ a public API. The generated qmx projection enforces the leaf owner boundary.
 them into typed policy configuration. The central Configuration merger has no
 Architecture-specific branch or deferred-warning transport.
 
-Run prepares the policy after graph construction. `LayerViolationRule` reads
-the prepared policy; it does not traverse the AST or construct lifecycle state.
-It emits seven channels. Six report no magnitude; `architecture.unassigned-class`
-is a magnitude channel gated by the rule's own `unassigned_class` option and is
-the only one of the six diagnostics a baseline may accept. `OutsideLayerSummary`
-owns both per-run summaries of what fell outside the declared layers —
-`architecture.coverage` and `architecture.unassigned-class`.
-`DeclaredLayerReachability` owns the four verdicts on the declaration itself —
-`architecture.unreachable-layer`, `architecture.pending-layer-matched`,
-`architecture.potential-shadow` and `architecture.empty-template`. The rule
-keeps only the per-edge policy decision and the evidence both collaborators
-read: one per-layer tally of what was ASSIGNED to a layer and one of what it
-MATCHED at all. A layer declared `pending: true` — reserved for code not
+Run prepares the policy after graph construction. Neither verdict traverses the
+AST or constructs lifecycle state.
+
+`LayerViolation/` is three subjects, not one. `LayerEvidenceCollector` walks the
+analysed classes and the dependency graph **once per run** — memoised weakly by
+the run's `AnalysisContext`, so nothing survives into the next run — and returns
+one `LayerEvidence`: the edges the allow-list rejects, per-layer tallies of what
+each layer was ASSIGNED and what it MATCHED at all, the shadow evidence, the
+classes outside every layer, and the coverage state. It short-circuits to `null`
+when the producer is disabled or no layers are declared, so "report nothing" has
+one answer rather than two.
+
+`LayerViolationRule` is the verdict on the **code** and emits two channels:
+`architecture.layer-violation` per forbidden edge, and the magnitude channel
+`architecture.unassigned-class`, gated by the rule's own `unassigned_class`
+option and built by `UnassignedClassSummary`. Both are ordinary debt a baseline
+may accept.
+
+`LayerDeclarationValidator` is the verdict on the **declaration** and is a
+`ConfigurationValidatorInterface`, not a rule — which is the whole statement
+that its five channels are configuration errors. `DeclaredLayerReachability`
+builds all five: `architecture.coverage`, `architecture.unreachable-layer`,
+`architecture.pending-layer-matched`, `architecture.potential-shadow` and
+`architecture.empty-template`. The validator declares `architecture.layer-violation`
+as its producer, so all five are registered, addressed, excluded, described and
+switched off exactly as they were while the rule declared them, and it runs in
+the rule's slot so their position in an unsorted report is unchanged.
+`DiagnosticSampleList` formats the bounded FQN samples both
+`architecture.coverage` and `architecture.unassigned-class` print, and is the
+one piece of code shared across the code/declaration split — a narrow
+formatting utility with no policy semantics of its own.
+
+A layer declared `pending: true` — reserved for code not
 written yet — is exempt from `architecture.unreachable-layer` and is reported
 by `architecture.pending-layer-matched` once its criteria match, which the
 matched tally sees even when a broader layer wins every assignment.

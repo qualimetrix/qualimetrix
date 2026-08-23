@@ -33,6 +33,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * has produced its findings, which is after every rule — including this one —
  * has finished. So Run asks twice, and the second answer is assembled here
  * rather than at the call site, so the channel identity stays with its owner.
+ *
+ * @qmx-threshold coupling.instability warning=0.89 -- Ca=2, raw Ce=15 (I=0.882): this class had one consumer (its owning rule) until `InlineDirectiveValidator` became a second; `min_afferent: 2` never measured it before that, so the fifteen outgoing edges are not new, only now counted. The actual fix is splitting directive storage from finding-building, which is not done here — it is recorded as debt in the rule-vocabulary plan's Ш5 "Debt Ш3" section, not accepted as the permanent shape of this class. Raw Ce=15 gets one-edge headroom: at Ce=16, I=0.889, still under 0.89; at Ce=17, I=0.895, over it.
  */
 final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
 {

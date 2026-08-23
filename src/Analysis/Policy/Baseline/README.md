@@ -165,8 +165,9 @@ absent or non-finite, an entry the loader turned inert, a renamed symbol: each r
 the findings unchanged. None of them is evidence that the debt got worse, so promoting
 on one would fail a build over a stale file.
 
-**A configuration error may not be accepted at all.** A channel declaring
-`ChannelAcceptability::ConfigurationError` — today the layer-policy diagnostics —
+**A configuration error may not be accepted at all.** A channel declared by a
+`ConfigurationValidatorInterface` — today the five layer-declaration verdicts and the
+three inline-directive errors —
 reports a mistake in the configuration rather than debt in the code, so no entry bounds
 it on any of the five paths: the loader refuses the line
 (`InertEntryReason::ConfigurationErrorChannel`), `generate` does not capture it
@@ -292,8 +293,8 @@ A valid entry is offered for `Stale` (absent from the measured set, via
 is reported under the second even when it is also stale, since a channel
 nothing declares can never produce a measured finding and the more permanent
 cause is the more useful answer. The third holds even while the finding is
-still being measured: a channel declaring
-`ChannelAcceptability::ConfigurationError` may never be accepted by any
+still being measured: a channel whose declaration answers
+`isConfigurationError()` may never be accepted by any
 entry, so the entry can only be removed. Every
 `InertBaselineEntry` is offered too, under `Inert`, carrying its own
 `InertEntryReason` — it already has a selector, and the user is entitled to

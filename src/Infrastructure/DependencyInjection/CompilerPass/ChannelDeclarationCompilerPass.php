@@ -66,73 +66,59 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 {
     private const string RULE_INTERFACE = 'Qualimetrix\\Analysis\\Finding\\Rule\\RuleInterface';
 
+    private const string VALIDATOR_INTERFACE = 'Qualimetrix\\Analysis\\Finding\\Contract\\ConfigurationValidatorInterface';
+
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition(ChannelUniverse::class)) {
             return;
         }
 
-        /** @var array<string, ChannelDeclaration> $declarations */
-        $declarations = [];
-        /** @var array<string, list<string>> $channelKeysByProducer */
-        $channelKeysByProducer = [];
+        $ruleClasses = $this->taggedClasses($container, RuleRegistryCompilerPass::TAG, self::RULE_INTERFACE);
+        $validatorClasses = $this->taggedClasses($container, ConfigurationValidatorCompilerPass::TAG, self::VALIDATOR_INTERFACE);
+
         /** @var array<string, bool> $thresholdOverrideSupport */
         $thresholdOverrideSupport = [];
-        /** @var array<string, string> $producerByViolationCode */
-        $producerByViolationCode = [];
         /** @var array<string, string> $docsPageByRule */
         $docsPageByRule = [];
         /** @var array<string, int> $minutesByRule */
         $minutesByRule = [];
 
-        foreach ($container->findTaggedServiceIds(RuleRegistryCompilerPass::TAG) as $id => $tags) {
-            $class = $container->getDefinition($id)->getClass();
-
-            if ($class === null) {
-                continue;
-            }
-
-            $this->assertRuleClass($id, $class);
-
+        foreach ($ruleClasses as $class) {
             $producerRuleName = RuleNameReader::read($class);
             $thresholdOverrideSupport[$producerRuleName] = ThresholdOverrideSupportReader::read($class);
             $docsPageByRule[$producerRuleName] = RuleDocsPageReader::read($class);
             $minutesByRule[$producerRuleName] = RuleRemediationMinutesReader::read($class);
+        }
 
-            foreach (ChannelDeclarationReader::read($class) as $key => $declaration) {
-                if (isset($declarations[$key])) {
-                    throw new LogicException(\sprintf(
-                        'Duplicate channel declaration for "%s" — declared by more than one rule class (last seen: %s).',
-                        $key,
-                        $class,
-                    ));
-                }
+        /** @var array<string, ChannelDeclaration> $declarations */
+        $declarations = [];
+        /** @var array<string, list<string>> $channelKeysByProducer */
+        $channelKeysByProducer = [];
+        /** @var array<string, string> $producerByViolationCode */
+        $producerByViolationCode = [];
 
-                $channel = ViolationChannel::fromKey($key);
-                $violationCode = $channel->violationCode;
+        foreach ($container->getDefinitions() as $id => $definition) {
+            if (isset($ruleClasses[$id])) {
+                $this->collectRuleChannels(
+                    $ruleClasses[$id],
+                    $declarations,
+                    $channelKeysByProducer,
+                    $producerByViolationCode,
+                    $minutesByRule,
+                );
 
-                // A channel's own ruleName half does not always equal its producer's
-                // NAME: the architecture and annotation diagnostics are emitted under
-                // their own identity (e.g. "architecture.coverage") by a producer whose
-                // own name is different ("architecture.layer-violation"). Every such
-                // identity a Violation can carry must resolve to a remediation
-                // estimate, so it inherits the declaring rule's minutes here rather
-                // than needing its own constant on a class that does not exist.
-                $minutesByRule[$channel->ruleName] ??= $minutesByRule[$producerRuleName];
+                continue;
+            }
 
-                if (isset($producerByViolationCode[$violationCode])) {
-                    throw new LogicException(\sprintf(
-                        'Violation code "%s" is declared by two producers ("%s" and "%s"). A code names exactly one'
-                        . ' channel, so that a diagnostic can answer which rule produces it.',
-                        $violationCode,
-                        $producerByViolationCode[$violationCode],
-                        $producerRuleName,
-                    ));
-                }
-
-                $producerByViolationCode[$violationCode] = $producerRuleName;
-                $declarations[$key] = $declaration;
-                $channelKeysByProducer[$producerRuleName][] = $key;
+            if (isset($validatorClasses[$id])) {
+                $this->collectValidatorChannels(
+                    $validatorClasses[$id],
+                    $declarations,
+                    $channelKeysByProducer,
+                    $producerByViolationCode,
+                    $minutesByRule,
+                );
             }
         }
 
@@ -154,25 +140,202 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
     }
 
     /**
-     * Validate the exact rule contract before reading metadata. Unlike
-     * RuleOptionsCompilerPass, a failing check here throws rather than skips:
-     * every service reaching this loop is already tagged qmx.rule, which
-     * autoconfiguration only applies to RuleInterface implementers — a
-     * mismatch would mean the tag and the class have drifted apart, and the
-     * rule's declarations should not silently vanish from the universe
-     * because of it.
+     * The class behind every service carrying `$tag`, in container definition
+     * order, checked against `$interface`.
      *
-     * @phpstan-assert class-string $class
+     * A tagged service whose definition names no class is refused rather than
+     * skipped: every other integrity failure in this pass throws, and a
+     * producer silently absent from the universe declares nothing, runs never
+     * and says so nowhere.
+     *
+     * @return array<string, class-string> service id => its class
      */
-    private function assertRuleClass(string $id, string $class): void
+    private function taggedClasses(ContainerBuilder $container, string $tag, string $interface): array
     {
-        if (!is_a($class, self::RULE_INTERFACE, true)) {
+        $classes = [];
+
+        foreach (array_keys($container->findTaggedServiceIds($tag)) as $id) {
+            $class = $container->getDefinition($id)->getClass();
+
+            if ($class === null) {
+                throw new LogicException(\sprintf(
+                    'Service "%s" is tagged "%s" but its definition names no class. A producer is read by'
+                    . ' reflection off its class; without one it would contribute nothing to the channel'
+                    . ' universe and nothing would report the loss.',
+                    $id,
+                    $tag,
+                ));
+            }
+
+            if (!is_a($class, $interface, true)) {
+                throw new LogicException(\sprintf(
+                    'Service "%s" is tagged "%s" but its class %s does not implement %s.',
+                    $id,
+                    $tag,
+                    $class,
+                    $interface,
+                ));
+            }
+
+            /** @var class-string $class */
+            $classes[$id] = $class;
+        }
+
+        return $classes;
+    }
+
+    /**
+     * @param class-string $class
+     * @param array<string, ChannelDeclaration> $declarations
+     * @param array<string, list<string>> $channelKeysByProducer
+     * @param array<string, string> $producerByViolationCode
+     * @param array<string, int> $minutesByRule
+     */
+    private function collectRuleChannels(
+        string $class,
+        array &$declarations,
+        array &$channelKeysByProducer,
+        array &$producerByViolationCode,
+        array &$minutesByRule,
+    ): void {
+        $producerRuleName = RuleNameReader::read($class);
+
+        foreach (ChannelDeclarationReader::read($class) as $key => $declaration) {
+            if (isset($declarations[$key])) {
+                throw new LogicException(\sprintf(
+                    'Duplicate channel declaration for "%s" — declared by more than one rule class (last seen: %s).',
+                    $key,
+                    $class,
+                ));
+            }
+
+            $channel = ViolationChannel::fromKey($key);
+            $violationCode = $channel->violationCode;
+
+            // A channel's own ruleName half does not always equal its producer's
+            // NAME: the architecture and annotation diagnostics are emitted under
+            // their own identity (e.g. "architecture.coverage") by a producer whose
+            // own name is different ("architecture.layer-violation"). Every such
+            // identity a Violation can carry must resolve to a remediation
+            // estimate, so it inherits the declaring rule's minutes here rather
+            // than needing its own constant on a class that does not exist.
+            $minutesByRule[$channel->ruleName] ??= $minutesByRule[$producerRuleName];
+
+            if (isset($producerByViolationCode[$violationCode])) {
+                throw new LogicException(\sprintf(
+                    'Violation code "%s" is declared by two producers ("%s" and "%s"). A code names exactly one'
+                    . ' channel, so that a diagnostic can answer which rule produces it.',
+                    $violationCode,
+                    $producerByViolationCode[$violationCode],
+                    $producerRuleName,
+                ));
+            }
+
+            $producerByViolationCode[$violationCode] = $producerRuleName;
+            $declarations[$key] = $declaration;
+            $channelKeysByProducer[$producerRuleName][] = $key;
+        }
+    }
+
+    /**
+     * The second producer kind. Its channels are collected in the same ordered
+     * walk as the rules', so that the position of a channel in
+     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::channels()}
+     * is a function of the order the container was told about the producers —
+     * not of which producer *kind* it is. That order is published: a "did you
+     * mean" answer breaks ties between equidistant names by it, so a producer
+     * kind sorted as a block would move the text of a finding.
+     *
+     * **This is the single point where a channel becomes a configuration
+     * error.** The classification is not authored anywhere: a rule has no
+     * factory that can express it, and this method applies
+     * {@see ChannelDeclaration::asConfigurationError()} to everything a
+     * {@see \Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface}
+     * declares and to nothing else. A topology test counts the call sites.
+     *
+     * The channels are registered under the *producer rule's* name, not under
+     * some identity of the validator's own, because that name is what
+     * `--disable-rule`, `only_rules`, `exclude_paths`, the channel
+     * description, the documentation page and the remediation estimate all
+     * resolve through today. The producer's own metadata is read in a first
+     * pass over every rule, so a validator may be registered before the rule
+     * whose name it borrows.
+     *
+     * @param class-string $class
+     * @param array<string, ChannelDeclaration> $declarations
+     * @param array<string, list<string>> $channelKeysByProducer
+     * @param array<string, string> $producerByViolationCode
+     * @param array<string, int> $minutesByRule
+     */
+    private function collectValidatorChannels(
+        string $class,
+        array &$declarations,
+        array &$channelKeysByProducer,
+        array &$producerByViolationCode,
+        array &$minutesByRule,
+    ): void {
+        /** @var class-string<\Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface> $class */
+        $producerRuleName = $class::producerRuleName();
+
+        if (!isset($minutesByRule[$producerRuleName])) {
             throw new LogicException(\sprintf(
-                'Service "%s" is tagged "%s" but its class %s does not implement %s.',
-                $id,
-                RuleRegistryCompilerPass::TAG,
+                'Configuration validator %s names producer "%s", which is not a registered rule. A validator'
+                . ' borrows its producer\'s name for selection, exclusion, options and presentation, so the'
+                . ' name must exist.',
                 $class,
-                self::RULE_INTERFACE,
+                $producerRuleName,
+            ));
+        }
+
+        $validatorDeclarations = $class::channelDeclarations();
+
+        if ($validatorDeclarations === []) {
+            throw new LogicException(\sprintf(
+                'Configuration validator %s declares no channels. A validator exists to own diagnostics; one'
+                . ' with none is a producer nothing can address.',
+                $class,
+            ));
+        }
+
+        foreach ($validatorDeclarations as $key => $declaration) {
+            $this->assertUnclaimed($key, $class, $declarations, $producerByViolationCode, $producerRuleName);
+
+            $channel = ViolationChannel::fromKey($key);
+            $minutesByRule[$channel->ruleName] ??= $minutesByRule[$producerRuleName];
+            $producerByViolationCode[$channel->violationCode] = $producerRuleName;
+            $declarations[$key] = $declaration->asConfigurationError();
+            $channelKeysByProducer[$producerRuleName][] = $key;
+        }
+    }
+
+    /**
+     * @param array<string, ChannelDeclaration> $declarations
+     * @param array<string, string> $producerByViolationCode
+     */
+    private function assertUnclaimed(
+        string $key,
+        string $class,
+        array $declarations,
+        array $producerByViolationCode,
+        string $producerRuleName,
+    ): void {
+        if (isset($declarations[$key])) {
+            throw new LogicException(\sprintf(
+                'Duplicate channel declaration for "%s" — declared by more than one producer (last seen: %s).',
+                $key,
+                $class,
+            ));
+        }
+
+        $violationCode = ViolationChannel::fromKey($key)->violationCode;
+
+        if (isset($producerByViolationCode[$violationCode])) {
+            throw new LogicException(\sprintf(
+                'Violation code "%s" is declared by two producers ("%s" and "%s"). A code names exactly one'
+                . ' channel, so that a diagnostic can answer which rule produces it.',
+                $violationCode,
+                $producerByViolationCode[$violationCode],
+                $producerRuleName,
             ));
         }
     }

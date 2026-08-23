@@ -28,6 +28,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
@@ -43,6 +45,7 @@ use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\LayerVerdicts;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder;
 
 #[CoversClass(LayerViolationRule::class)]
@@ -66,7 +69,8 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function metadataMatchesContract(): void
     {
-        $rule = $this->buildRule(new LayerViolationOptions());
+        $options = new LayerViolationOptions();
+        $rule = new LayerViolationRule($options, new LayerEvidenceCollector($options, $this->processor));
 
         self::assertSame('architecture.layer-violation', $rule->getName());
         self::assertSame(RuleCategory::Architecture, $rule->getCategory());
@@ -100,16 +104,51 @@ final class LayerViolationRuleTest extends TestCase
         self::assertSame([], $rule->analyze($this->buildContext($graph, $arch)));
     }
 
+    /**
+     * The shared walk memoises per context, so an answer given before the run
+     * primed the policy would be pinned for the rest of that run — both
+     * verdicts silently reporting nothing. Refusing the state is what keeps
+     * the memo honest; the second half is the part that goes red if the refusal
+     * is replaced by a `return null`.
+     */
     #[Test]
-    public function nullArchitectureReturnsNoViolations(): void
+    public function anUnpreparedPolicyIsRefusedInsteadOfMemoisedAsAbsentEvidence(): void
     {
-        $rule = $this->buildRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions(severity: Severity::Error));
+
+        $arch = $this->buildArchitecture(
+            layers: [
+                'controller' => ['App\\Controller'],
+                'repository' => ['App\\Repository'],
+            ],
+            allow: ['controller' => []],
+        );
+
+        $repo = new InMemoryMetricRepository();
+        $this->registerClass($repo, 'App\\Controller', 'UserController');
+        $this->registerClass($repo, 'App\\Repository', 'UserRepository');
 
         $graph = $this->buildGraph([
             $this->buildDependency('App\\Controller', 'UserController', 'App\\Repository', 'UserRepository'),
         ]);
 
-        self::assertSame([], $rule->analyze($this->buildContext($graph, null)));
+        $context = $this->buildContext($graph, null, $repo);
+
+        try {
+            $rule->analyze($context);
+            self::fail('An unprepared ArchitecturePolicy must be refused, not answered with absent evidence.');
+        } catch (LogicException $exception) {
+            self::assertStringContainsString('unprepared ArchitecturePolicy', $exception->getMessage());
+        }
+
+        ProcessorBuilder::prepared($arch, $graph, $repo, $this->processor);
+
+        self::assertNotSame(
+            [],
+            $this->filterByRule($rule->analyze($context), LayerViolationRule::NAME),
+            'The refusal must leave nothing memoised: once the run prepares the policy, the same context has to'
+            . ' yield the real verdict.',
+        );
     }
 
     #[Test]
@@ -146,7 +185,7 @@ final class LayerViolationRuleTest extends TestCase
         $violations = $rule->analyze($this->buildContext(null, $arch));
         // unreachable-layer fires because the controller layer matched nothing.
         self::assertCount(1, $violations);
-        self::assertSame(LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, $violations[0]->ruleName);
+        self::assertSame(LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, $violations[0]->ruleName);
     }
 
     #[Test]
@@ -762,7 +801,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $unreachable = $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        $unreachable = $this->filterByRule($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(1, $unreachable);
         self::assertSame(Severity::Error, $unreachable[0]->severity);
         self::assertStringContainsString('Layer "controller" was never matched', $unreachable[0]->message);
@@ -791,7 +830,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $unreachable = $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        $unreachable = $this->filterByRule($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(1, $unreachable);
         self::assertStringContainsString('Layer "controller"', $unreachable[0]->message);
     }
@@ -845,7 +884,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $unreachableLayerNames = array_map(
             static fn(\Qualimetrix\Analysis\Finding\Contract\Violation $v): string => self::extractLayerName($v->message),
-            $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+            $this->filterByRule($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
         );
 
         self::assertNotContains(
@@ -885,7 +924,7 @@ final class LayerViolationRuleTest extends TestCase
         // No dependency graph (no outgoing deps from DTO).
         $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $unreachable = $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        $unreachable = $this->filterByRule($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertSame([], $unreachable, 'DTO-only layer with no outgoing deps must NOT trigger unreachable-layer (hit counting is over classes, not graph edges).');
     }
 
@@ -915,7 +954,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($violations, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertCount(1, $shadow);
         self::assertSame(Severity::Error, $shadow[0]->severity);
         self::assertStringContainsString('"any-foo"', $shadow[0]->message);
@@ -945,7 +984,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($violations, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertCount(1, $shadow);
         self::assertStringContainsString('"svc-suffix"', $shadow[0]->message);
         self::assertStringContainsString('"domain"', $shadow[0]->message);
@@ -968,7 +1007,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext(null, $arch, new InMemoryMetricRepository()));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($violations, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertSame([], $shadow);
     }
 
@@ -991,7 +1030,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($violations, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertSame([], $shadow);
     }
 
@@ -1018,7 +1057,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($violations, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertCount(1, $shadow);
 
         $message = $shadow[0]->message;
@@ -1055,7 +1094,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($violations, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertCount(1, $shadow);
         self::assertStringNotContainsString('...and', $shadow[0]->message);
     }
@@ -1091,8 +1130,8 @@ final class LayerViolationRuleTest extends TestCase
         $run1 = $rule->analyze($this->buildContext(null, $arch, $repo1));
         $run2 = $rule->analyze($this->buildContext(null, $arch, $repo2));
 
-        $shadow1 = $this->filterByRule($run1, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
-        $shadow2 = $this->filterByRule($run2, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow1 = $this->filterByRule($run1, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow2 = $this->filterByRule($run2, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
 
         $msgs1 = array_map(static fn($v) => $v->message, $shadow1);
         $msgs2 = array_map(static fn($v) => $v->message, $shadow2);
@@ -1121,7 +1160,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        self::assertSame([], $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->filterByRule($violations, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
     }
 
     #[Test]
@@ -1146,7 +1185,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        self::assertSame([], $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->filterByRule($violations, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
     }
 
     #[Test]
@@ -1168,7 +1207,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $shadow = $this->filterByRule(
             $rule->analyze($this->buildContext(null, $arch, $repo)),
-            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         );
 
         self::assertCount(1, $shadow);
@@ -1196,7 +1235,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $shadow = $this->filterByRule(
             $rule->analyze($this->buildContext(null, $arch, $repo)),
-            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         );
 
         self::assertCount(1, $shadow);
@@ -1225,7 +1264,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $shadow = $this->filterByRule(
             $rule->analyze($this->buildContext(null, $arch, $repo)),
-            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         );
 
         self::assertCount(1, $shadow);
@@ -1245,7 +1284,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext(null, $arch));
 
-        $emptyTemplate = $this->filterByRule($violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplate = $this->filterByRule($violations, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(1, $emptyTemplate);
         self::assertSame(Severity::Error, $emptyTemplate[0]->severity);
         self::assertStringContainsString('domain-{module}', $emptyTemplate[0]->message);
@@ -1273,18 +1312,18 @@ final class LayerViolationRuleTest extends TestCase
         $this->registerClass($repo1, 'App\\Service', 'Foo');
 
         $run1 = $rule->analyze($this->buildContext(null, $arch, $repo1));
-        $shadow1 = $this->filterByRule($run1, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow1 = $this->filterByRule($run1, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertCount(1, $shadow1, 'First analyze() should produce one shadow diagnostic.');
         self::assertStringContainsString('1 class(es)', $shadow1[0]->message);
 
         // Context 2: empty repo — must NOT carry any state from run 1.
         $run2 = $rule->analyze($this->buildContext(null, $arch, new InMemoryMetricRepository()));
-        $shadow2 = $this->filterByRule($run2, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow2 = $this->filterByRule($run2, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertSame([], $shadow2, 'Second analyze() with empty context must produce zero shadow diagnostics — hit counter/shadow evidence must not leak.');
 
         // unreachable-layer for the second run fires on BOTH layers (no classes
         // means no hits anywhere).
-        $unreachable2 = $this->filterByRule($run2, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        $unreachable2 = $this->filterByRule($run2, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(2, $unreachable2, 'Both layers must be reported unreachable on the empty second run.');
     }
 
@@ -1474,9 +1513,9 @@ final class LayerViolationRuleTest extends TestCase
      * Tests call {@see buildContext()} next to prime the processor with the
      * architecture under test.
      */
-    private function buildRule(LayerViolationOptions $options): LayerViolationRule
+    private function buildRule(LayerViolationOptions $options): LayerVerdicts
     {
-        return new LayerViolationRule($options, $this->processor);
+        return new LayerVerdicts($options, $this->processor);
     }
 
     /**

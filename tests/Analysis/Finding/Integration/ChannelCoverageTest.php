@@ -52,6 +52,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
+use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -350,8 +351,8 @@ final class ChannelCoverageTest extends TestCase
             ],
         );
 
-        $rule = new InlineDirectiveRule(new InlineDirectiveOptions(), $policy, self::channelIdentity());
-        $violations = $rule->analyze(new AnalysisContext(self::createStub(MetricRepositoryInterface::class)));
+        $validator = new InlineDirectiveValidator(new InlineDirectiveOptions(), $policy, self::channelIdentity());
+        $violations = $validator->validate(new AnalysisContext(self::createStub(MetricRepositoryInterface::class)));
 
         $emitted = array_map(static fn($violation): string => $violation->violationCode, $violations);
         sort($emitted);
@@ -384,8 +385,10 @@ final class ChannelCoverageTest extends TestCase
             [],
         );
 
-        $rule = new InlineDirectiveRule(new InlineDirectiveOptions(), $policy, self::channelIdentity());
-        self::assertSame([], $rule->analyze(new AnalysisContext(self::createStub(MetricRepositoryInterface::class))));
+        $context = new AnalysisContext(self::createStub(MetricRepositoryInterface::class));
+        $options = new InlineDirectiveOptions();
+        self::assertSame([], (new InlineDirectiveRule($options, $policy))->analyze($context));
+        self::assertSame([], (new InlineDirectiveValidator($options, $policy, self::channelIdentity()))->validate($context));
 
         $unused = $policy->auditDirectiveUsage([]);
         self::assertCount(1, $unused);

@@ -19,9 +19,11 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -103,6 +105,9 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $container->register(LayerViolationRule::class)
             ->setClass(LayerViolationRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(LayerDeclarationValidator::class)
+            ->setClass(LayerDeclarationValidator::class)
+            ->addTag(ConfigurationValidatorCompilerPass::TAG);
 
         (new ChannelDeclarationCompilerPass())->process($container);
 
@@ -116,11 +121,11 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
     }
 
     /**
-     * `architecture.coverage` is emitted by {@see LayerViolationRule} under
-     * its own identity, distinct from the rule's own `NAME`
-     * (`architecture.layer-violation`) — it inherits the same rule's
-     * declared `REMEDIATION_MINUTES` rather than needing a constant of its
-     * own on a class that does not exist.
+     * `architecture.coverage` is emitted by {@see LayerDeclarationValidator}
+     * under its own identity, distinct from the producer rule's `NAME`
+     * (`architecture.layer-violation`) — it inherits that rule's declared
+     * `REMEDIATION_MINUTES` rather than needing a constant of its own on a
+     * class that does not exist.
      */
     #[Test]
     public function itAttributesRemediationMinutesToADiagnosticsOwnChannelName(): void
@@ -130,6 +135,9 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $container->register(LayerViolationRule::class)
             ->setClass(LayerViolationRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(LayerDeclarationValidator::class)
+            ->setClass(LayerDeclarationValidator::class)
+            ->addTag(ConfigurationValidatorCompilerPass::TAG);
         $container->register(RemediationTimeRegistry::class)
             ->setClass(RemediationTimeRegistry::class)
             ->setArguments(['$declarations' => null, '$minutesByRule' => []]);
@@ -156,20 +164,23 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         self::assertFalse($container->hasDefinition(ChannelUniverse::class));
     }
 
+    /**
+     * Refused rather than skipped: a producer that contributes nothing to the
+     * universe and says so nowhere is the one integrity failure in this pass
+     * that used to be silent.
+     */
     #[Test]
-    public function itSkipsServicesWithNullClass(): void
+    public function itThrowsOnATaggedServiceWithNoClass(): void
     {
         $container = new ContainerBuilder();
         self::registerUniverse($container);
         $container->register('rule.null_class')
             ->addTag(RuleRegistryCompilerPass::TAG);
 
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('names no class');
+
         (new ChannelDeclarationCompilerPass())->process($container);
-
-        $declarations = $container->getDefinition(ChannelUniverse::class)
-            ->getArgument('$staticDeclarations');
-
-        self::assertSame([], $declarations);
     }
 
     #[Test]

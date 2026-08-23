@@ -55,8 +55,8 @@ use Qualimetrix\Core\Observation\WorseDirection;
  * the question of whether the entry bounds this channel at all.
  *
  * One case is stronger than inapplicability and sits in the same place: a
- * channel declaring
- * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError}
+ * channel whose findings report a configuration error
+ * ({@see \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::isConfigurationError()})
  * may not be bounded by any entry at all. The others say "this entry cannot
  * be applied"; this one says "no entry could be".
  *

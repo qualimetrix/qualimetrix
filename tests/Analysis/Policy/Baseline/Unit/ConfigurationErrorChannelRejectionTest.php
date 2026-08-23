@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
-use Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -37,7 +36,7 @@ use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 
 /**
  * One place where the whole promise of
- * {@see ChannelAcceptability::ConfigurationError} is visible at once: a
+ * a configuration error is visible at once: a
  * channel that reports a configuration mistake cannot enter the ratchet by
  * **any** of the five routes an ordinary channel can.
  *
@@ -56,7 +55,6 @@ use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
  * "no rule declares this channel" for a channel that is declared would send
  * a user to delete a line when the fix is to repair their configuration.
  */
-#[CoversClass(ChannelAcceptability::class)]
 #[CoversClass(ChannelDeclaration::class)]
 final class ConfigurationErrorChannelRejectionTest extends TestCase
 {
@@ -185,7 +183,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
         $registry = StubChannelDeclarationRegistry::withDefaults();
         $registry->declare(
             self::RULE_NAME . '#' . self::RULE_NAME,
-            ChannelDeclaration::configurationError(SymbolLevel::Class_),
+            ChannelDeclaration::occurrence(SymbolLevel::Class_)->asConfigurationError(),
         );
 
         return $registry;

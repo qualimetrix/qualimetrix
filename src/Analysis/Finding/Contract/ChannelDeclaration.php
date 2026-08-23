@@ -32,14 +32,13 @@ use Qualimetrix\Core\Observation\WorseDirection;
  * reported number (a fixed marker such as `1.0`, or none at all) carries no
  * direction to declare; a `magnitude` channel cannot be compared without one.
  *
- * The second is {@see $acceptability}, and it is deliberately *not* inferred
- * from anything else here. "Not baselineable" used to be expressible only by
- * declaring nothing at all, which meant a channel had to choose between
- * declaring how it compares and declaring that accepting it is illegitimate.
- * The layer-policy diagnostics needed both and got the wrong one — see
- * {@see ChannelAcceptability}.
- *
- * @qmx-ignore health.cohesion -- Predicate methods each answer one independent question over disjoint fields of one flat declaration; there is no shared instance state to group them by.
+ * The second is {@see $configurationError}, and it is **not authored**. A
+ * producer cannot claim it: the constructor is private, the two public
+ * factories both yield `false`, and {@see asConfigurationError()} is the only
+ * expression in the language that yields `true`. Registry assembly calls it
+ * for the channels of a {@see ConfigurationValidatorInterface} and for no
+ * others, so "these findings are about the configuration" is a consequence of
+ * the producer's type rather than a flag a rule can set on itself.
  */
 final readonly class ChannelDeclaration
 {
@@ -47,16 +46,24 @@ final readonly class ChannelDeclaration
     public array $levels;
 
     /**
-     * @param array<SymbolLevel> $levels non-empty, in any order; the factories
-     *                                   guarantee non-emptiness by arity, and
-     *                                   {@see canonicalLevels()} refuses an
-     *                                   empty one at run time for callers
-     *                                   that assemble the list themselves
+     * The constructor is private, so the only callers are the two factories
+     * below. That makes the three refusals in this constructor and in
+     * {@see canonicalLevels()} — magnitude without a direction, occurrence
+     * with one, an empty level list — unreachable from outside the file:
+     * every one of them is already excluded by a factory signature. They are
+     * kept as backstops against an edit to those two factories, which is the
+     * only way to reach them, and
+     * {@see \Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest}
+     * pins the signatures that make them unreachable rather than the
+     * unreachable branches themselves.
+     *
+     * @param array<SymbolLevel> $levels non-empty, in any order; both factories
+     *                                   guarantee non-emptiness by arity
      */
-    public function __construct(
+    private function __construct(
         public ChannelShape $shape,
         public ?WorseDirection $direction,
-        public ChannelAcceptability $acceptability,
+        public bool $configurationError,
         array $levels,
     ) {
         $this->levels = self::canonicalLevels($levels);
@@ -78,41 +85,47 @@ final readonly class ChannelDeclaration
      * A `magnitude` declaration in the given direction, reporting at the
      * given levels.
      *
-     * The levels are variadic with a mandatory first one, so a caller
-     * reaching for a factory cannot express the empty list at all. That is a
-     * property of the three factories and not of the type: the constructor
-     * below is the general form, takes a plain array, and enforces the same
-     * invariant at run time. Every production declaration goes through a
-     * factory; a caller that assembles a list itself gets an exception, not
-     * a compile error.
+     * The levels are variadic with a mandatory first one, so a caller cannot
+     * express the empty list at all, and the direction is non-nullable, so it
+     * cannot express a magnitude without one. With the constructor private,
+     * these two signatures are the whole enforcement of both invariants — the
+     * constructor's own checks only guard against an edit to this factory.
      */
     public static function magnitude(WorseDirection $direction, SymbolLevel $level, SymbolLevel ...$moreLevels): self
     {
-        return new self(ChannelShape::Magnitude, $direction, ChannelAcceptability::AcceptableAsDebt, array_merge([$level], $moreLevels));
+        return new self(ChannelShape::Magnitude, $direction, false, array_merge([$level], $moreLevels));
     }
 
     /**
      * An `occurrence` declaration — no direction, only presence/count matters.
+     *
+     * There is no direction parameter, which is what makes "an occurrence
+     * channel must not declare one" unstatable rather than merely refused.
      */
     public static function occurrence(SymbolLevel $level, SymbolLevel ...$moreLevels): self
     {
-        return new self(ChannelShape::Occurrence, null, ChannelAcceptability::AcceptableAsDebt, array_merge([$level], $moreLevels));
+        return new self(ChannelShape::Occurrence, null, false, array_merge([$level], $moreLevels));
     }
 
     /**
-     * A channel whose findings report a configuration mistake rather than
-     * code debt.
+     * The same declaration, reclassified as reporting a mistake in the
+     * *configuration* rather than debt in the code.
      *
-     * The shape is `occurrence` because a configuration error has no
-     * magnitude to compare — there is no "how much" to ratchet down, only
-     * "the configuration does not describe the code". A named constructor
-     * rather than an acceptability argument on {@see occurrence()} so that a
-     * producer declaring one of these says so in one word, and so that
-     * declaring it does not require reaching for the enum.
+     * The only expression that yields {@see $configurationError} `true`. A
+     * topology test pins two things about it: production code contains exactly
+     * one literal call, and no production file outside the assembly point and
+     * its own documentation so much as names the method — so a call spelled
+     * indirectly (a variable method name, a callable pair) is refused too. The
+     * one call is the point where the channel registry is assembled and the
+     * declaring producer's type is still known. A rule cannot reach that point,
+     * which is the whole content of the classification: it follows from who
+     * declared the channel, not from what the declaration says about itself.
+     *
+     * @internal registry assembly only
      */
-    public static function configurationError(SymbolLevel $level, SymbolLevel ...$moreLevels): self
+    public function asConfigurationError(): self
     {
-        return new self(ChannelShape::Occurrence, null, ChannelAcceptability::ConfigurationError, array_merge([$level], $moreLevels));
+        return new self($this->shape, $this->direction, true, $this->levels);
     }
 
     /**
@@ -145,6 +158,9 @@ final readonly class ChannelDeclaration
             }
         }
 
+        // Unreachable through either factory — both take a mandatory first
+        // level — but not removable: it is what makes the `non-empty-list`
+        // return type above provable, since the list is built by a loop.
         if ($canonical === []) {
             throw new InvalidArgumentException('A channel must declare at least one level it reports at.');
         }
@@ -159,7 +175,7 @@ final readonly class ChannelDeclaration
      */
     public function isConfigurationError(): bool
     {
-        return $this->acceptability === ChannelAcceptability::ConfigurationError;
+        return $this->configurationError;
     }
 
     /**

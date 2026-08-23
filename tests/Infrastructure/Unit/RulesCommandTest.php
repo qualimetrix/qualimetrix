@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
@@ -121,9 +122,10 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itDisplaysTheLayerViolationSeverityAlias(): void
     {
+        $options = new LayerViolationOptions();
         $rule = new LayerViolationRule(
-            new LayerViolationOptions(),
-            new ArchitecturePolicy(),
+            $options,
+            new LayerEvidenceCollector($options, new ArchitecturePolicy()),
         );
 
         $tester = new CommandTester($this->createCommand([$rule]));

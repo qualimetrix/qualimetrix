@@ -7,21 +7,29 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
- * Builds the four diagnostics that compare the declared layer policy against
+ * Builds the five diagnostics that compare the declared layer policy against
  * what the run actually reached.
  *
  * They share one question — "does the declaration still describe the code?" —
  * and one answer shape: a project-subject finding that reports a mistake in
  * the configuration rather than debt in the code. None of them can be
- * accepted by a baseline, which is why they also share {@see DIAGNOSTIC_SEVERITY}
- * instead of taking a severity option.
+ * accepted by a baseline. Four of the five also share {@see DIAGNOSTIC_SEVERITY}
+ * instead of taking a severity option; `coverage()` is the exception, because
+ * its severity has always come from the three-state `coverage:` mode
+ * (`ignore`/`warn`/`error`) rather than a fixed value.
  *
+ * - `architecture.coverage` — dependency-edge ends and analysed classes that
+ *   fall outside every declared layer, seen through the mode that also
+ *   classifies out-of-tree namespaces. That breadth is what makes the number
+ *   unusable as a gate on one's own code — see `architecture.unassigned-class`
+ *   in {@see UnassignedClassSummary} for the narrower one.
  * - `architecture.unreachable-layer` — a declared layer that was ASSIGNED
  *   nothing: no class and no dependency-edge end landed in it.
  * - `architecture.pending-layer-matched` — the opposite reading of the same
@@ -33,17 +41,69 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * - `architecture.empty-template` — a template that expanded to no layers at
  *   all.
  *
- * Extracted from {@see LayerViolationRule} for the reason
- * {@see OutsideLayerSummary} was: the rule carries seven channels, and the
- * per-edge policy decision is the only one that needs the rule's own options
- * and collaborators. Keeping the declaration diagnostics here is what lets it
- * stay within its coupling ceiling.
+ * Extracted from {@see LayerViolationRule}: the rule carries seven channels,
+ * and the per-edge policy decision is the only one that needs the rule's own
+ * options and collaborators. Keeping the declaration diagnostics here is what
+ * lets it stay within its coupling ceiling.
  *
- * @internal Consumed by {@see LayerViolationRule}.
+ * @internal Consumed by {@see LayerDeclarationValidator}.
  */
 final class DeclaredLayerReachability
 {
     private const int SHADOW_SAMPLE_LIMIT = 5;
+
+    /**
+     * The `architecture.coverage` diagnostic, or none when the mode declines
+     * it or nothing was left out of a layer.
+     *
+     * Severity mirrors the mode name exactly (`warn` → {@see Severity::Warning},
+     * `error` → {@see Severity::Error}) — an exhaustive `match` over the two
+     * cases remaining after the {@see CoverageMode::Ignore} guard, rather than
+     * a ternary, so a future {@see CoverageMode} case that isn't also added
+     * here fails PHPStan's exhaustiveness check instead of silently falling
+     * back to a stale default (fixed: `warn` used to report `Severity::Info`,
+     * so `fail_on: warning` never caught it).
+     *
+     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>} $state
+     *
+     * @return list<Violation>
+     */
+    public static function coverage(CoverageMode $mode, array $state): array
+    {
+        if ($mode === CoverageMode::Ignore) {
+            return [];
+        }
+
+        $unmatched = array_values($state['classes']);
+        if ($state['sourceEdges'] + $state['targetEdges'] === 0 && $unmatched === []) {
+            return [];
+        }
+
+        $severity = match ($mode) {
+            CoverageMode::Warn => Severity::Warning,
+            CoverageMode::Error => Severity::Error,
+        };
+
+        $sampleList = DiagnosticSampleList::format($unmatched);
+
+        return [new Violation(
+            location: Location::none(),
+            subject: MetricSubject::aggregate(SymbolPath::forProject()),
+            symbolPath: SymbolPath::forProject(),
+            ruleName: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
+            violationCode: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
+            message: \sprintf(
+                'Architecture coverage: %d edge(s) with unmatched source layer, %d edge(s) with unmatched target layer, %d class(es) outside all declared layers.',
+                $state['sourceEdges'],
+                $state['targetEdges'],
+                \count($unmatched),
+            ),
+            severity: $severity,
+            recommendation: $sampleList === null
+                ? 'Declare layers covering the remaining classes or accept the gap by leaving coverage on "ignore".'
+                : 'Examples of unclassified classes: ' . $sampleList . '. Declare layers covering these classes or accept the gap by leaving coverage on "ignore".',
+        )];
+    }
 
     /**
      * Emits one diagnostic per declared layer whose criteria were assigned
@@ -101,7 +161,7 @@ final class DeclaredLayerReachability
      * **The number reported is how many distinct symbols the layer's criteria
      * matched** — a class counted once however many dependency edges it sits
      * at an end of. The caller counts a set for exactly that reason
-     * ({@see LayerViolationRule::tallyMatchedEnd()}): tallying every match
+     * ({@see LayerEvidenceCollector::tallyMatchedEnd()}): tallying every match
      * event instead reported edge multiplicity, so two classes joined by four
      * edges read as eight and the number answered no question anyone asks.
      *
@@ -155,7 +215,8 @@ final class DeclaredLayerReachability
      * An empty template is a typo, a missing dependency in the scanned paths,
      * or a recent refactor that removed the matching classes — in every case
      * the declared configuration no longer describes the code, which is what
-     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError} names.
+     * a {@see \Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface}'s
+     * channels name.
      *
      * @param list<string> $emptyTemplateNames
      *
@@ -298,8 +359,8 @@ final class DeclaredLayerReachability
      * The severity every layer-declaration diagnostic reports.
      *
      * It is a constant, and the three options that used to set it per
-     * channel are gone, because these channels declare
-     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError}: they fail the run
+     * channel are gone, because these channels belong to
+     * {@see LayerDeclarationValidator}: they fail the run
      * without consulting `fail_on` and cannot be accepted by the ratchet, so
      * a severity knob would have controlled nothing but the word printed
      * beside the finding while looking exactly like a behaviour setting.

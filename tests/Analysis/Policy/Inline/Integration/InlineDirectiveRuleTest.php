@@ -27,6 +27,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
+use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -328,13 +329,11 @@ final class InlineDirectiveRuleTest extends TestCase
             [],
         );
 
-        $rule = new InlineDirectiveRule(
+        self::assertSame([], self::analyzeFamily(
             new InlineDirectiveOptions(enabled: false),
             $policy,
             self::productionUniverse(),
-        );
-
-        self::assertSame([], $rule->analyze(self::context()));
+        ));
         self::assertSame([], $policy->auditDirectiveUsage([]));
     }
 
@@ -358,8 +357,7 @@ final class InlineDirectiveRuleTest extends TestCase
         $policy = self::policy($identity);
         $policy->prepare([self::FILE => self::classDocblockBindings('coupling.instabilty')], [], []);
 
-        $findings = (new InlineDirectiveRule(new InlineDirectiveOptions(), $policy, $identity))
-            ->analyze(self::context());
+        $findings = self::analyzeFamily(new InlineDirectiveOptions(), $policy, $identity);
 
         self::assertCount(1, $findings);
         self::assertSame(
@@ -390,7 +388,7 @@ final class InlineDirectiveRuleTest extends TestCase
 
         self::assertCount(
             2,
-            (new InlineDirectiveRule(new InlineDirectiveOptions(), $policy, $identity))->analyze(self::context()),
+            self::analyzeFamily(new InlineDirectiveOptions(), $policy, $identity),
         );
     }
 
@@ -421,7 +419,7 @@ final class InlineDirectiveRuleTest extends TestCase
 
         $codes = array_map(
             static fn(Violation $violation): string => $violation->violationCode,
-            (new InlineDirectiveRule(new InlineDirectiveOptions(), $policy, $identity))->analyze(self::context()),
+            self::analyzeFamily(new InlineDirectiveOptions(), $policy, $identity),
         );
         sort($codes);
 
@@ -481,7 +479,7 @@ final class InlineDirectiveRuleTest extends TestCase
             [],
         );
 
-        return (new InlineDirectiveRule(new InlineDirectiveOptions(), $policy, $identity))->analyze(self::context());
+        return self::analyzeFamily(new InlineDirectiveOptions(), $policy, $identity);
     }
 
     /**
@@ -500,7 +498,7 @@ final class InlineDirectiveRuleTest extends TestCase
             controlScope: ControlScope::Class_,
         )]], []);
 
-        return (new InlineDirectiveRule(new InlineDirectiveOptions(), $policy, $identity))->analyze(self::context());
+        return self::analyzeFamily(new InlineDirectiveOptions(), $policy, $identity);
     }
 
     private static function policy(?ChannelIdentityInterface $identity = null): InlineDirectivePolicy
@@ -545,5 +543,23 @@ final class InlineDirectiveRuleTest extends TestCase
         \assert($universe instanceof RuleChannelSnapshotFactoryInterface);
 
         return self::$emptyUniverse = $universe;
+    }
+
+    /**
+     * Both producers of the `annotation.directive` family, in the order the
+     * executor runs them: the rule arms the usage report, the validator emits
+     * the three directive errors.
+     *
+     * @return list<Violation>
+     */
+    private static function analyzeFamily(
+        InlineDirectiveOptions $options,
+        InlineDirectivePolicy $policy,
+        ChannelIdentityInterface $identity,
+    ): array {
+        return [
+            ...(new InlineDirectiveRule($options, $policy))->analyze(self::context()),
+            ...(new InlineDirectiveValidator($options, $policy, $identity))->validate(self::context()),
+        ];
     }
 }

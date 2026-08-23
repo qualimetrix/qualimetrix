@@ -21,8 +21,9 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  *
  * "Never gates" is a promise about `fail_on` only. A baseline breach raises
  * the breaching finding to {@see Severity::Error} on its own, and a channel
- * declaring {@see ChannelAcceptability::ConfigurationError} bypasses the
- * comparison entirely — neither asks what severity the rule chose.
+ * whose findings report a configuration error (see
+ * {@see ChannelDeclaration::isConfigurationError()}) bypasses the comparison
+ * entirely — neither asks what severity the rule chose.
  */
 enum Severity: string
 {

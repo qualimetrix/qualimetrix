@@ -38,10 +38,26 @@ the exact `ruleName#violationCode` pair. Neither consults the universe; the
 universe validates and resolves. `ChannelDeclaration` carries
 two further declared properties besides shape and direction.
 
-`ChannelAcceptability`: `ConfigurationError` marks a channel whose findings
-report a mistake in the configuration rather than debt in the code — it is
-refused by every baseline path and fails the run without consulting `fail_on`.
-Today the layer-policy diagnostics carry it.
+`isConfigurationError()`: whether the channel's findings report a mistake in the
+configuration rather than debt in the code — such a finding is refused by every
+baseline path and fails the run without consulting `fail_on`. **It is not
+authored.** `ConfigurationValidatorInterface` is the second kind of finding
+producer, and a channel is a configuration error exactly when a validator
+declared it. `ChannelDeclaration`'s constructor is private, its two factories
+both yield `false`, and `asConfigurationError()` is applied in one place — the
+channel-registry assembly in `ChannelDeclarationCompilerPass`, where the
+declaring type is still known. `ConfigurationErrorClassificationTopologyTest`
+counts that place, and pins that no other production file even names the wither, so
+an indirect call cannot hide from the count. Today the five layer-declaration verdicts and the three
+inline-directive errors carry it.
+
+A validator is not free-standing: `producerRuleName()` names the rule it belongs
+to, and that name is what registers its channels, what `--disable-rule`,
+`only_rules`, `exclude_paths` and `exclude_namespaces` address, what resolves its
+description, documentation page and remediation estimate, and whose options —
+`enabled` included — it answers to. `RuleExecution` runs it in that rule's slot,
+so its findings keep their position in every report that does not sort, and
+refuses a finding on a channel the validator does not declare.
 
 `levels`: the `SymbolLevel`s the channel reports at, declared in full and never
 empty. It governs what the registry accepts. Emission is a separate path — a

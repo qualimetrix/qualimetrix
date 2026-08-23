@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\ComputedMetricChannelPresentation;
+use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
@@ -51,6 +52,12 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
             ->setPublic(false);
 
         $container->setAlias(KnownRuleNamesProviderInterface::class, KnownRuleNamesAdapter::class);
+
+        // Filled in by ConfigurationValidatorCompilerPass, the same way
+        // RuleRegistry is filled in by RuleRegistryCompilerPass.
+        $container->register(ConfigurationValidatorRegistry::class)
+            ->setArguments(['$validatorClasses' => []])
+            ->setPublic(true);
     }
 
     /**
