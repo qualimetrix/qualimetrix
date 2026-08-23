@@ -11,6 +11,14 @@
 # full. An earlier revision compressed them to "claude-01, -03, -08", which
 # reads fine and defeats any cross-check.
 #
+# The id pattern is deliberately permissive about how many name segments precede
+# the number. It used to accept only one plus an optional round marker, and the
+# implementation review of Ш1 walked straight into that: 12 findings named
+# `native-claude-NN` matched nothing, so the script reported every finding
+# disposed of while ignoring two thirds of them. A checker that silently sees
+# fewer findings than exist is worse than no checker — it is the same failure
+# mode it was written to catch, wearing the checker's authority.
+#
 # Usage:
 #   scripts/check-review-disposition.sh <plan.md> <findings-dir>...
 #
@@ -59,7 +67,7 @@ for dir in "$@"; do
                 echo "NOT DISPOSED: $id (${file#./})"
                 missing=$((missing + 1))
             fi
-        done < <(grep -ohE '^#+ +[a-z][a-z0-9]*(-r[0-9]+)?-[0-9]+' "$file" | sed -E 's/^#+ +//')
+        done < <(grep -ohE '^#+ +[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*-[0-9]+' "$file" | sed -E 's/^#+ +//')
     done
 done
 

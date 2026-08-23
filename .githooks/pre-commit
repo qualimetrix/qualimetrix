@@ -39,8 +39,18 @@ elif [ -n "$STAGED_MD_FILES" ]; then
     echo ""
 fi
 
-# Get list of changed PHP files (exclude invalid syntax fixtures)
-STAGED_PHP_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.php$' | grep -v 'Fixtures/Ast/invalid_syntax.php' || true)
+# Get list of changed PHP files.
+#
+# Scoped to src/ and tests/ because that is the scope both tools declare:
+# `paths` in phpstan.neon and the finder in .php-cs-fixer.dist.php. Passing
+# explicit paths OVERRIDES that scope, so an unscoped hook is silently stricter
+# than `composer check` — and it would reject PHP that is deliberately
+# non-conforming, such as the finding-gate corpus, whose fixtures exist to make
+# rules fire.
+STAGED_PHP_FILES=$(git diff --cached --name-only --diff-filter=ACM \
+    | grep -E '^(src|tests)/' \
+    | grep '\.php$' \
+    | grep -v 'Fixtures/Ast/invalid_syntax.php' || true)
 
 if [ -z "$STAGED_PHP_FILES" ]; then
     echo "✅ No PHP files to check"
