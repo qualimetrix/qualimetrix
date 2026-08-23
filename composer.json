@@ -84,6 +84,8 @@
         "benchmark:update": "php scripts/benchmark-regression.php --update-baselines",
         "architecture:generate": "php scripts/generate-modular-architecture.php",
         "architecture:check": "php scripts/generate-modular-architecture.php --check",
+        "enumeration:renames": "php scripts/generate-rename-enumeration.php",
+        "enumeration:renames:check": "php scripts/generate-rename-enumeration.php --check",
         "selfcheck": [
             "@architecture:check",
             "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M"
@@ -105,6 +107,7 @@
             "@test",
             "@test:cross-tool",
             "@phpstan",
+            "@enumeration:renames:check",
             "@selfcheck"
         ]
     },
@@ -124,6 +127,8 @@
         "benchmark:update": "Update benchmark baselines with current scores (±10 margin)",
         "architecture:generate": "Regenerate modular-architecture governance projections and inventories",
         "architecture:check": "Validate the manifest and generated modular-architecture artifacts without writing",
+        "enumeration:renames": "Regenerate docs/internal/plans/rule-vocabulary/enumeration-renames.tsv from the production container and MetricName",
+        "enumeration:renames:check": "Fail if enumeration-renames.tsv is stale against a fresh measurement, without writing",
         "selfcheck": "Validate modular-architecture governance, then run Qualimetrix on its own source code",
         "check": "Run all checks: leaks, code style, strict docs build, PHP/Python tests, phpstan, selfcheck (selfcheck enforces architecture via qmx.yaml)"
     },
