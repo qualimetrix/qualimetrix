@@ -20,14 +20,14 @@
 # ordinary cleanup, not a mistake).
 #
 # The drift guard
-# (tests/Integration/Infrastructure/Rule/ChannelDeclarationFixtureDriftTest.php)
+# (tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php)
 # compares this file against
 # ChannelDeclarationRegistryInterface::staticDeclarations() in both
 # directions: a channel declared in code but missing here fails, and a line
 # here no longer declared in code fails. It is scoped to the STATIC set
 # only — the run-time computed.*/health.* family is guarded separately (see
 # excluded.txt's note and
-# tests/Unit/Infrastructure/Rule/ChannelDeclarationRegistryTest.php's
+# tests/Infrastructure/Unit/ChannelUniverseTest.php's
 # run-time resolution cases) because its vocabulary is open-ended and no
 # fixture line could enumerate it.
 #

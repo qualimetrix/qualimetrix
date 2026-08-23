@@ -328,9 +328,9 @@ Base options interface for all rules.
 Extends `RuleOptionsInterface` with level-specific capabilities.
 
 **Methods:**
-- `forLevel(RuleLevel $level): LevelOptionsInterface` — options for a specific level
-- `isLevelEnabled(RuleLevel $level): bool` — whether a specific level is enabled
-- `getSupportedLevels(): list<RuleLevel>` — all supported levels
+- `forLevel(SymbolLevel $level): LevelOptionsInterface` — options for a specific level
+- `isLevelEnabled(SymbolLevel $level): bool` — whether a specific level is enabled
+- `getSupportedLevels(): list<SymbolLevel>` — all supported levels
 
 ### LevelOptionsInterface
 
@@ -358,19 +358,6 @@ validates keys before creating the Options instance, so such classes return thei
 kebab-case keys from `getAdditionalOptionKeys(): list<string>` to keep valid configuration
 from producing an unknown-option warning. For bare threshold-style keys, use
 `ShorthandOptionKeysInterface` instead; an Options class may implement both contracts.
-
-### RuleLevel (Enum)
-
-Levels of code hierarchy at which rules can operate.
-
-| Value        | Description |
-| ------------ | ----------- |
-| `Callable`   | Callable    |
-| `Class_`     | Class       |
-| `Namespace_` | Namespace   |
-
-**Methods:**
-- `displayName(): string` — human-readable display name
 
 ### NameSelector
 
@@ -528,7 +515,7 @@ A rule violation.
 - `message: string`
 - `severity: Severity`
 - `metricValue: int|float|null` — metric value (for reports)
-- `level: ?RuleLevel` — rule level that produced this violation (null for non-hierarchical rules)
+- `level: ?SymbolLevel` — level the hierarchical rule was analysing (null for non-hierarchical rules); the finding's own level is carried by its `subject`
 - `relatedLocations: list<Location>` — additional locations related to this violation (e.g., other occurrences of duplicated code)
 - `recommendation: ?string` — human-readable message for summary/detail formatters (e.g., "Cyclomatic complexity: 15 (threshold: 10) — too many code paths")
 - `threshold: int|float|null` — threshold that was exceeded (for programmatic comparison)

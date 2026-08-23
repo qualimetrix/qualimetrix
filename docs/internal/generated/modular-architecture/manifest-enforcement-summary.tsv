@@ -12,4 +12,4 @@ singleton_seams	0
 exact_composition_bindings	65
 coarse_composition_binding_edges	13
 internal_enforcement_layers	37
-declared_allow_edges	235
+declared_allow_edges	234

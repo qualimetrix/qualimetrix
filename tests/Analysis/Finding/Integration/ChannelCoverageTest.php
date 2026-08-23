@@ -66,7 +66,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * Real-emission coverage guard: every channel exercised by this suite is
  * checked against the production {@see ChannelDeclarationRegistryInterface}
  * and must resolve to a declaration, or be recorded in
- * `tests/Fixtures/Channels/excluded.txt` as deliberately not baselineable.
+ * `tests/Analysis/Finding/Fixtures/Channels/excluded.txt` as deliberately not baselineable.
  *
  * Every case runs the REAL rule against a hand-built `AnalysisContext` (or,
  * for the inline-directive cases, a real prepared policy) — never a

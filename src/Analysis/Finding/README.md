@@ -36,11 +36,20 @@ Matching stays string comparison in `NameSelector` — and, for the surfaces tha
 address a whole channel rather than a bare code, in `ChannelSelector`, which adds
 the exact `ruleName#violationCode` pair. Neither consults the universe; the
 universe validates and resolves. `ChannelDeclaration` carries
-one further declared property besides shape and direction:
-`ChannelAcceptability`. `ConfigurationError` marks a channel whose findings
+two further declared properties besides shape and direction.
+
+`ChannelAcceptability`: `ConfigurationError` marks a channel whose findings
 report a mistake in the configuration rather than debt in the code — it is
 refused by every baseline path and fails the run without consulting `fail_on`.
-Today the layer-policy diagnostics carry it. Finding neither resolves computed
+Today the layer-policy diagnostics carry it.
+
+`levels`: the `SymbolLevel`s the channel reports at, declared in full and never
+empty. It governs what the registry accepts. Emission is a separate path — a
+rule builds its finding's subject and the level follows from that — so the two
+can disagree, and `ChannelLevelDeclarationDriftTest` runs the external corpus to
+find out whether they have. A level is spelled into a channel *code* in exactly
+one place, `ViolationChannel::leveled()`, which
+`ChannelLevelAssemblyTopologyTest` counts. Finding neither resolves computed
 definitions nor retains Infrastructure-owned definition state.
 
 `ChannelPresentationInterface` (`presentationFor()` → `ChannelPresentation`)

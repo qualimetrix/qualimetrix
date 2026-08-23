@@ -26,6 +26,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * For rules that whitelist individual occurrences (e.g. allowed boolean
  * prefixes, allowed @-suppressed functions) the options class must
  * implement {@see EntryFilteringOptionsInterface}.
+ *
+ * @qmx-threshold coupling.cbo 21 -- Declaring the levels a channel reports at costs every rule one edge onto SymbolLevel; this base sat exactly on the inclusive warning threshold of 20 before it. Raw CBO 20 with no headroom.
  */
 abstract class AbstractCodeSmellRule extends AbstractRule
 {
@@ -94,7 +96,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
      * (every subclass of this base is occurrence-shaped); if one starts
      * overriding `analyze()` to emit a real magnitude, it must also override
      * this method, or the drift guard will catch the mismatch against
-     * `tests/Fixtures/Channels/declared.txt`.
+     * `tests/Analysis/Finding/Fixtures/Channels/declared.txt`.
      *
      * @return array<string, ChannelDeclaration>
      */

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 final readonly class ComputedMetricDefinition
@@ -54,6 +56,20 @@ final readonly class ComputedMetricDefinition
         }
 
         return null;
+    }
+
+    /**
+     * The levels this metric reports at.
+     *
+     * `$levels` names the declaration kinds the rule enumerates subjects
+     * over; a consumer asking what the metric *reports* at should not have
+     * to know that and re-derive the projection itself.
+     *
+     * @return list<SymbolLevel>
+     */
+    public function reportingLevels(): array
+    {
+        return array_map(SymbolLevelProjection::ofDeclaration(...), $this->levels);
     }
 
     public function hasLevel(SymbolType $level): bool

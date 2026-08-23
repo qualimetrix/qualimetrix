@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-22T06:51:45+00:00",
+  "generated": "2026-08-23T12:39:40+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -389,9 +389,6 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php": [
       {"channel":"complexity.wmc#complexity.wmc","magnitudes":[60]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition@src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[30]}
-    ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder@src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php": [
       {"channel":"complexity.wmc#complexity.wmc","magnitudes":[60]}
     ],
@@ -399,7 +396,7 @@
       {"channel":"computed.health#health.cohesion","magnitudes":[45.4]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule@src/Analysis/Evidence/Coupling/CboRule.php": [
-      {"channel":"complexity.wmc#complexity.wmc","magnitudes":[61]},
+      {"channel":"complexity.wmc#complexity.wmc","magnitudes":[60]},
       {"channel":"computed.health#health.cohesion","magnitudes":[30]},
       {"channel":"coupling.cbo#coupling.cbo.class","magnitudes":[21]}
     ],
@@ -416,7 +413,7 @@
       {"channel":"computed.health#health.cohesion","magnitudes":[45.4]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule@src/Analysis/Evidence/Coupling/DistanceRule.php": [
-      {"channel":"coupling.cbo#coupling.cbo.class","magnitudes":[20]}
+      {"channel":"coupling.cbo#coupling.cbo.class","magnitudes":[21]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule@src/Analysis/Evidence/Coupling/InstabilityRule.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[30]}
@@ -455,7 +452,7 @@
       {"channel":"complexity.wmc#complexity.wmc","magnitudes":[52]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php": [
-      {"channel":"coupling.cbo#coupling.cbo.class","magnitudes":[20]}
+      {"channel":"coupling.cbo#coupling.cbo.class","magnitudes":[21]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerExpansionResult@src/Analysis/Policy/Architecture/Layer/Expansion/LayerExpansionResult.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[40]}
@@ -560,7 +557,7 @@
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
       {"channel":"coupling.cbo#coupling.cbo.namespace","magnitudes":[17]},
-      {"channel":"coupling.instability#coupling.instability.namespace","magnitudes":[0.954545]}
+      {"channel":"coupling.instability#coupling.instability.namespace","magnitudes":[0.953846]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
       {"channel":"size.class-count#size.class-count","magnitudes":[21]}
@@ -572,7 +569,7 @@
       {"channel":"coupling.cbo#coupling.cbo.namespace","magnitudes":[16]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract": [
-      {"channel":"coupling.cbo#coupling.cbo.namespace","magnitudes":[38]}
+      {"channel":"coupling.cbo#coupling.cbo.namespace","magnitudes":[45]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor": [
       {"channel":"coupling.instability#coupling.instability.namespace","magnitudes":[0.92]}

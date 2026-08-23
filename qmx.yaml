@@ -1202,7 +1202,6 @@ architecture:
     infrastructure-rule:
       - analysis-configuration
       - analysis-evidence-computedmetrics
-      - analysis-evidence-measurement
       - analysis-finding
       - core-neutral
       - external

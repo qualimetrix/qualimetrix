@@ -35,6 +35,13 @@ include `MetricRepositoryInterface`, `MetricRepositoryFactoryInterface`,
 Consumers must not import repository indexes, visitor state, aggregation helpers,
 or collector implementations.
 
+`SymbolLevel` is the project's one level vocabulary: the rule layer, the
+finding, the channel declaration and the stored metric all name a level with
+it. `Core\Symbol\SymbolType` stays a separate question — what kind of
+declaration this is, a fact about PHP — and the two meet only in
+`SymbolLevelProjection::ofDeclaration()`, which collapses `method` and
+`function` into `callable`. Do not re-derive that collapse at a call site.
+
 ## Declaration numbering
 
 A declaration's durable identity carries an ordinal — its rank among the

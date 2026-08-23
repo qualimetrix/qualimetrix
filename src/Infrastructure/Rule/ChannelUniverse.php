@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Rule;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
@@ -83,12 +82,10 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
                 return null;
             }
 
-            // A computed metric declares the declaration kinds it is computed
-            // over; the levels it reports at are those kinds projected onto
-            // the aggregation tree. Six health dimensions report at three
-            // levels under one name, which is why no static map could hold
-            // this half of the universe.
-            $levels = array_map(SymbolLevelProjection::ofDeclaration(...), $definition->levels);
+            // Six health dimensions report at three levels under one name,
+            // which is why no static map could hold this half of the
+            // universe.
+            $levels = $definition->reportingLevels();
 
             if ($levels === []) {
                 // `levels: []` is accepted by the resolver and makes the

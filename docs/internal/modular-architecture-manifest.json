@@ -5066,8 +5066,8 @@
       "closure_package": "P3",
       "consumers": [
         {
-          "owner": "Infrastructure.Rule",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse",
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition",
           "closes_in": null
         }
       ]

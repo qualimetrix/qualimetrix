@@ -433,6 +433,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver	Anal
 Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver	Analysis.Evidence.ComputedMetrics	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricContributionReader	Analysis.Evidence.ComputedMetrics	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract	P4
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface	Analysis.Evidence.ComputedMetrics	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract	P4
+Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition	Analysis.Evidence.ComputedMetrics	Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection	Analysis.Evidence.Measurement	contract	P3
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition	Analysis.Evidence.ComputedMetrics	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator	Analysis.Evidence.ComputedMetrics	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.Measurement	contract	P3
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator	Analysis.Evidence.ComputedMetrics	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract	P3
@@ -1961,7 +1962,6 @@ Qualimetrix\Infrastructure\Parallel\WorkerBootstrap	Infrastructure.Parallel	Qual
 Qualimetrix\Infrastructure\Parallel\WorkerBootstrap	Infrastructure.Parallel	Qualimetrix\Infrastructure\Cache\FileCache	Infrastructure.Cache	contract	P8
 Qualimetrix\Infrastructure\Profiler\ProfileSession	Infrastructure.Profiler	Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	contract	P8
 Qualimetrix\Infrastructure\Rule\ChannelUniverse	Infrastructure.Rule	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface	Analysis.Evidence.ComputedMetrics	contract	P5
-Qualimetrix\Infrastructure\Rule\ChannelUniverse	Infrastructure.Rule	Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection	Analysis.Evidence.Measurement	contract	P3
 Qualimetrix\Infrastructure\Rule\ChannelUniverse	Infrastructure.Rule	Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	contract	P6-A
 Qualimetrix\Infrastructure\Rule\ChannelUniverse	Infrastructure.Rule	Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	contract	P6-A
 Qualimetrix\Infrastructure\Rule\ChannelUniverse	Infrastructure.Rule	Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector	Analysis.Finding	contract	P6-A
