@@ -1,0 +1,48 @@
+{
+    "id": "design",
+    "description": "A data class, an untyped class, an inheritance chain with a wide parent and namespaces sized above floored size thresholds.",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2",
+        "--rule-opt=design.data-class:wocThreshold=50",
+        "--rule-opt=design.data-class:minMembers=2",
+        "--rule-opt=design.god-class:wmcThreshold=4",
+        "--rule-opt=design.god-class:lcomThreshold=1",
+        "--rule-opt=design.god-class:tccThreshold=0.9",
+        "--rule-opt=design.god-class:classLocThreshold=10",
+        "--rule-opt=design.god-class:minCriteria=2",
+        "--rule-opt=design.god-class:minMethods=2",
+        "--rule-opt=design.noc:warning=2",
+        "--rule-opt=design.noc:error=4",
+        "--rule-opt=design.inheritance:warning=3",
+        "--rule-opt=design.inheritance:error=5",
+        "--rule-opt=size.class-count:warning=2",
+        "--rule-opt=size.class-count:error=6",
+        "--rule-opt=size.method-count:warning=4",
+        "--rule-opt=size.method-count:error=8",
+        "--rule-opt=size.property-count:warning=2",
+        "--rule-opt=size.property-count:error=4"
+    ],
+    "channels": [
+        "design.data-class#design.data-class",
+        "design.god-class#design.god-class",
+        "design.inheritance#design.inheritance",
+        "design.noc#design.noc",
+        "design.type-coverage#design.type-coverage.param",
+        "design.type-coverage#design.type-coverage.property",
+        "design.type-coverage#design.type-coverage.return",
+        "size.class-count#size.class-count",
+        "size.method-count#size.method-count",
+        "size.property-count#size.property-count"
+    ],
+    "explainSubjects": [
+        "declaration:class:Corpus\\Design\\Model\\Untyped@src/Model/Untyped.php",
+        "declaration:class:Corpus\\Design\\Model\\Order@src/Model/Order.php"
+    ]
+}

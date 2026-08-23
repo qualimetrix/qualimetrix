@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/complexity",
+    "description": "Corpus case: complex and incohesive code",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\Complexity\\": "src/"
+        }
+    }
+}

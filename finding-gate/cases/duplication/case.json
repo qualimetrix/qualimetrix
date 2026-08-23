@@ -1,0 +1,20 @@
+{
+    "id": "duplication",
+    "description": "Two classes sharing one copied aggregation block.",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2"
+    ],
+    "channels": [
+        "duplication.code-duplication#duplication.code-duplication"
+    ],
+    "explainSubjects": [
+        "project:"
+    ]
+}

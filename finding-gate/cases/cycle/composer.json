@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/cycle",
+    "description": "Corpus case: a class dependency cycle",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\Cycle\\": "src/"
+        }
+    }
+}

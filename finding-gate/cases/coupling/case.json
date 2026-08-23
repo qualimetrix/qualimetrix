@@ -1,0 +1,36 @@
+{
+    "id": "coupling",
+    "description": "Four namespaces \u2014 stable concrete kernel, abstract contracts, services and wiring \u2014 with CBO, instability and distance thresholds floored.",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.cbo:class.warning=2",
+        "--rule-opt=coupling.cbo:class.error=5",
+        "--rule-opt=coupling.cbo:namespace.warning=2",
+        "--rule-opt=coupling.cbo:namespace.error=5",
+        "--rule-opt=coupling.instability:class.max_warning=0.4",
+        "--rule-opt=coupling.instability:class.max_error=0.9",
+        "--rule-opt=coupling.instability:namespace.max_warning=0.4",
+        "--rule-opt=coupling.instability:namespace.max_error=0.9",
+        "--rule-opt=coupling.distance:max_distance_warning=0.05",
+        "--rule-opt=coupling.distance:max_distance_error=0.9",
+        "--rule-opt=code-smell.long-parameter-list:warning=30",
+        "--rule-opt=code-smell.long-parameter-list:error=40",
+        "--rule-opt=code-smell.long-parameter-list:vo-warning=30",
+        "--rule-opt=code-smell.long-parameter-list:vo-error=40"
+    ],
+    "channels": [
+        "coupling.cbo#coupling.cbo.class",
+        "coupling.cbo#coupling.cbo.namespace",
+        "coupling.class-rank#coupling.class-rank",
+        "coupling.distance#coupling.distance",
+        "coupling.instability#coupling.instability.class",
+        "coupling.instability#coupling.instability.namespace"
+    ],
+    "explainSubjects": [
+        "declaration:class:Corpus\\Coupling\\Service\\CacheService@src/Service/CacheService.php",
+        "declaration:class:Corpus\\Coupling\\Service\\ReportService@src/Service/ReportService.php"
+    ]
+}

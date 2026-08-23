@@ -1,0 +1,28 @@
+{
+    "id": "layers",
+    "description": "A layer policy with a forbidden edge, an unreachable layer, a shadowing pair, a matched pending layer, an empty template and a class outside every layer.",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2",
+        "--rule-opt=architecture.layer-violation:unassigned_class=error"
+    ],
+    "channels": [
+        "architecture.coverage#architecture.coverage",
+        "architecture.empty-template#architecture.empty-template",
+        "architecture.layer-violation#architecture.layer-violation",
+        "architecture.pending-layer-matched#architecture.pending-layer-matched",
+        "architecture.potential-shadow#architecture.potential-shadow",
+        "architecture.unassigned-class#architecture.unassigned-class",
+        "architecture.unreachable-layer#architecture.unreachable-layer"
+    ],
+    "explainSubjects": [
+        "project:",
+        "declaration:class:Corpus\\Layers\\Repository\\UserRepository@src/Repository/UserRepository.php"
+    ]
+}

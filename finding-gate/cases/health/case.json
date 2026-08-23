@@ -1,0 +1,44 @@
+{
+    "id": "health",
+    "description": "Untyped, branch-heavy, incohesive code spread over three namespace roots, with every health dimension thresholded at 100 and one user-defined computed metric.",
+    "paths": [
+        "src",
+        "lib"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2",
+        "--rule-opt=code-smell.long-parameter-list:warning=30",
+        "--rule-opt=code-smell.long-parameter-list:error=40",
+        "--rule-opt=code-smell.long-parameter-list:vo-warning=30",
+        "--rule-opt=code-smell.long-parameter-list:vo-error=40",
+        "--rule-opt=complexity.cognitive:callable.warning=1000",
+        "--rule-opt=complexity.cognitive:callable.error=2000",
+        "--rule-opt=complexity.cyclomatic:callable.warning=1000",
+        "--rule-opt=complexity.cyclomatic:callable.error=2000",
+        "--rule-opt=coupling.instability:class.max_warning=2",
+        "--rule-opt=coupling.instability:class.max_error=2",
+        "--rule-opt=design.type-coverage:param_warning=-1",
+        "--rule-opt=design.type-coverage:param_error=-1",
+        "--rule-opt=design.type-coverage:return_warning=-1",
+        "--rule-opt=design.type-coverage:return_error=-1",
+        "--rule-opt=design.type-coverage:property_warning=-1",
+        "--rule-opt=design.type-coverage:property_error=-1"
+    ],
+    "channels": [
+        "computed.health#computed.branch_load",
+        "computed.health#health.cohesion",
+        "computed.health#health.complexity",
+        "computed.health#health.coupling",
+        "computed.health#health.maintainability",
+        "computed.health#health.overall",
+        "computed.health#health.typing"
+    ],
+    "explainSubjects": [
+        "declaration:class:Corpus\\Health\\Engine\\Pipeline@src/Engine/Pipeline.php",
+        "ns:Corpus\\Health\\Engine"
+    ]
+}

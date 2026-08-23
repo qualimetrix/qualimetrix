@@ -1,0 +1,20 @@
+{
+    "id": "cycle",
+    "description": "A three-class dependency cycle.",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2"
+    ],
+    "channels": [
+        "architecture.circular-dependency#architecture.circular-dependency"
+    ],
+    "explainSubjects": [
+        "project:"
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/layers",
+    "description": "Corpus case: layer policy diagnostics",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\Layers\\": "src/"
+        }
+    }
+}

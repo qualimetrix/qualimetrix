@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/duplication",
+    "description": "Corpus case: duplicated code blocks",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\Duplication\\": "src/"
+        }
+    }
+}

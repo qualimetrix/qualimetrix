@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/annotations",
+    "description": "Corpus case: deliberately broken inline @qmx directives",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\Annotations\\": "src/"
+        }
+    }
+}

@@ -1,0 +1,15 @@
+exclude_paths: []
+computed_metrics:
+  health.complexity: { warning: 100, error: 100 }
+  health.cohesion: { warning: 100, error: 100 }
+  health.coupling: { warning: 100, error: 100 }
+  health.typing: { warning: 100, error: 100 }
+  health.maintainability: { warning: 100, error: 100 }
+  health.overall: { warning: 100, error: 100 }
+  computed.branch_load:
+    formula: "clamp((ccn__avg ?? 0) * 10, 0, 100)"
+    description: "Average cyclomatic complexity scaled to 0-100; the corpus' user-defined computed metric"
+    levels: [class, namespace, project]
+    warning: 0
+    error: 100
+    inverted: false
