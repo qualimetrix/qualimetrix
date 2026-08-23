@@ -89,6 +89,10 @@
             "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M"
         ],
         "check-leaks": "bash scripts/check-private-leaks.sh",
+        "gate": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/finding-gate.php"
+        ],
         "docs:check": "bash scripts/check-docs.sh",
         "check": [
             "@check-leaks",
