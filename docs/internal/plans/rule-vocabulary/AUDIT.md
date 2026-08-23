@@ -83,7 +83,7 @@ identity, whose contract belongs to `Analysis/Finding`.
 
 ## Found while closing the level enumeration (Ш0), out of scope here
 
-Three defects surfaced by running the tool rather than reading it. None is a
+Five defects surfaced by running the tool rather than reading it. None is a
 vocabulary defect, so none is in scope; each is recorded so it is not
 rediscovered.
 
@@ -118,6 +118,26 @@ rediscovered.
    `tests/Analysis/Finding/Integration/...`. The fixture's own header comment
    repeats the stale paths. A reader following the failure message looks in a
    directory that does not exist.
+
+4. **`--show-suppressed` corrupts every machine-readable format.** The
+   suppressed-findings report is written to stdout as plain text *before* the
+   formatter's own output, whatever the format is. With `--format=json` the
+   artifact is a 186-byte text preamble followed by a JSON document, so it does
+   not parse; the JSON violation payload itself is byte-identical with and
+   without the flag (25 findings either way on the `smells` corpus case).
+   Suppression is therefore observable on the text surface only, which is what
+   the equivalence gate captures. Consequence beyond the gate: Ш3's DoD, which
+   asks for the split into suppressible and non-suppressible findings to be
+   identical before and after, can be gated on the text surface alone until this
+   is fixed. Measured 2026-08-23 while building the Ш1 corpus.
+5. **The documented custom-computed-metric example is rejected by the
+   resolver.** `website/docs/reference/health-scores.md:159` shows
+   `computed.code-density:`; a run with exactly that config exits 3 with
+   `Computed metric name segment "code-density" ... must match
+   [a-zA-Z][a-zA-Z0-9_]*`. The validator is right and the documentation is
+   wrong — a hyphen is legal in a rule name and illegal in a computed metric
+   name segment, and the one page teaching the feature uses the illegal form.
+   Measured 2026-08-23.
 
 ## Consumers that read the level from the channel NAME
 
