@@ -9,6 +9,7 @@ final class Options
     public const MODE_COMPARE = 'compare';
     public const MODE_DERIVE_TUPLE = 'derive-tuple';
     public const MODE_DERIVE_NORMALIZATION = 'derive-normalization';
+    public const MODE_DERIVE_DECLARED_DELTA = 'derive-declared-delta';
     public const MODE_SELF_TEST = 'self-test';
 
     /** @param list<string> $cases */
@@ -37,6 +38,7 @@ final class Options
             match (true) {
                 $argument === '--derive-tuple' => $mode = self::MODE_DERIVE_TUPLE,
                 $argument === '--derive-normalization' => $mode = self::MODE_DERIVE_NORMALIZATION,
+                $argument === '--derive-declared-delta' => $mode = self::MODE_DERIVE_DECLARED_DELTA,
                 $argument === '--self-test' => $mode = self::MODE_SELF_TEST,
                 $argument === '--incomplete-corpus' => $incomplete = true,
                 str_starts_with($argument, '--candidate=') => $candidate = self::directory($value),
@@ -47,7 +49,7 @@ final class Options
             };
         }
 
-        if ($mode === self::MODE_COMPARE && $reference === null) {
+        if (\in_array($mode, [self::MODE_COMPARE, self::MODE_DERIVE_DECLARED_DELTA], true) && $reference === null) {
             throw new GateError("--reference=<git-ref> is required.\n" . self::usage());
         }
 
@@ -72,6 +74,10 @@ final class Options
                                       Such a run reports PARTIAL and exits 2, never GREEN.
               --derive-tuple          Regenerate finding-gate/equivalence-tuple.tsv from the publishing code.
               --derive-normalization  Regenerate finding-gate/normalization.tsv by measuring two runs.
+              --derive-declared-delta Regenerate finding-gate/declared-delta.tsv and its diff files by measuring
+                                      every surface that differs from --reference. The `reason` column of an
+                                      existing row is kept; a new row gets "?" and the run refuses to load it
+                                      until someone writes why the surface changed.
               --self-test             Check the gate's own map and normalization mechanics.
             TEXT;
     }

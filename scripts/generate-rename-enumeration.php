@@ -271,10 +271,11 @@ function measure(array $rows, array $surfaceContents, array $surfaceOrder): arra
 }
 
 /**
- * Reads the previously generated file (if any) and returns the `new` value
- * for every row that had one filled in, keyed by "old\tkind".
+ * Reads the previously generated file (if any) and returns the decided columns
+ * — `new` and the `step` that decision belongs to — for every row that had one
+ * filled in, keyed by "old\tkind".
  *
- * @return array<string, string>
+ * @return array<string, array{new: string, step: string}>
  */
 function readExistingNewColumn(string $path): array
 {
@@ -284,6 +285,9 @@ function readExistingNewColumn(string $path): array
 
     $contents = readFileOrFail($path);
     $existing = [];
+    // The column may be absent: this file predates the `step` decision, and a
+    // positional read would take the first occurrence count for a step name.
+    $stepColumn = null;
 
     foreach (explode("\n", $contents) as $line) {
         if ($line === '' || str_starts_with($line, '#')) {
@@ -293,7 +297,10 @@ function readExistingNewColumn(string $path): array
         $columns = explode("\t", $line);
 
         if ($columns[0] === 'old') {
-            continue; // header
+            $index = array_search('step', $columns, true);
+            $stepColumn = $index === false ? null : $index;
+
+            continue;
         }
 
         if (count($columns) < 3) {
@@ -301,13 +308,105 @@ function readExistingNewColumn(string $path): array
         }
 
         [$old, $kind, $new] = $columns;
+        $step = $stepColumn === null ? '' : ($columns[$stepColumn] ?? '');
 
         if ($new !== '' && $new !== '?') {
-            $existing[$old . "\t" . $kind] = $new;
+            $existing[$old . "\t" . $kind] = ['new' => $new, 'step' => $step];
         }
     }
 
     return $existing;
+}
+
+/**
+ * A decision has to say which step makes it, or Ш5's renames leak into the map
+ * a step earlier asks for. The pair is therefore checked in both directions: a
+ * decided `new` without a `step`, and a `step` on a row nobody has decided.
+ *
+ * @param list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string, step: string}> $rows
+ */
+function assertEveryDecisionNamesItsStep(array $rows): void
+{
+    $undated = [];
+    $premature = [];
+
+    foreach ($rows as $row) {
+        $decided = $row['new'] !== '?' && $row['new'] !== '';
+
+        if ($decided && $row['step'] === '') {
+            $undated[] = $row['old'] . ' (' . $row['kind'] . ')';
+        }
+
+        if (!$decided && $row['step'] !== '') {
+            $premature[] = $row['old'] . ' (' . $row['kind'] . ')';
+        }
+
+        if ($row['step'] !== '' && preg_match('/^\x{0428}[0-9]+[a-z]?$/u', $row['step']) !== 1) {
+            throw new RuntimeException(sprintf(
+                'Row "%s" names step "%s", which is not a step of PLAN.md (expected the form Ш4b).',
+                $row['old'],
+                $row['step'],
+            ));
+        }
+    }
+
+    if ($undated !== []) {
+        throw new RuntimeException(
+            'These rows carry a rename decision but no step, so nothing says which map they belong in: '
+            . implode(', ', $undated),
+        );
+    }
+
+    if ($premature !== []) {
+        throw new RuntimeException(
+            'These rows name a step but no decision, and a step with nothing decided emits an empty map: '
+            . implode(', ', $premature),
+        );
+    }
+}
+
+/**
+ * The map rows a step's decisions amount to, as text ready to be appended to
+ * the named map file.
+ *
+ * The mapping from kind to map file is the one the plan's table states: a
+ * channel key is a `channels.tsv` row, a metric key a `metric-keys.tsv` row,
+ * and a producer name is an input — that is where a selector and an option key
+ * write it. A decision with several targets is a split, which no map row can
+ * state, so it is emitted as a comment naming what it is.
+ *
+ * @param list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string, step: string}> $rows
+ */
+function emitMapsForStep(array $rows, string $step): string
+{
+    $files = ['channel' => 'channels.tsv', 'metric-key' => 'metric-keys.tsv', 'producer' => 'inputs.tsv'];
+    $sections = [];
+
+    foreach ($files as $kind => $file) {
+        $lines = [];
+        $splits = [];
+
+        foreach ($rows as $row) {
+            if ($row['step'] !== $step || $row['kind'] !== $kind) {
+                continue;
+            }
+
+            if (str_contains($row['new'], '|')) {
+                $splits[] = sprintf('# %s splits into %s', $row['old'], str_replace('|', ', ', $row['new']));
+
+                continue;
+            }
+
+            $lines[] = implode("\t", [$row['old'], $row['new'], sprintf('%s renames this %s', $step, $kind)]);
+        }
+
+        sort($lines);
+        $sections[] = sprintf('# maps/%s — step %s, %d row(s)', $file, $step, count($lines));
+        $sections = [...$sections, ...$splits, ...$lines];
+        $sections[] = '';
+    }
+
+    return implode("\n", $sections) . "\n";
 }
 
 /**
@@ -317,9 +416,9 @@ function readExistingNewColumn(string $path): array
  * dropped along with the decision recorded against it.
  *
  * @param list<array{old: string, kind: string, search: string, counts: array<string, int>}> $measuredRows
- * @param array<string, string> $existingNew
+ * @param array<string, array{new: string, step: string}> $existingNew
  *
- * @return list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string}>
+ * @return list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string, step: string}>
  */
 function mergeExistingNewColumn(array $measuredRows, array $existingNew): array
 {
@@ -329,7 +428,8 @@ function mergeExistingNewColumn(array $measuredRows, array $existingNew): array
     foreach ($measuredRows as $row) {
         $mergeKey = $row['old'] . "\t" . $row['kind'];
         $seen[$mergeKey] = true;
-        $merged[] = [...$row, 'new' => $existingNew[$mergeKey] ?? '?'];
+        $decided = $existingNew[$mergeKey] ?? ['new' => '?', 'step' => ''];
+        $merged[] = [...$row, 'new' => $decided['new'], 'step' => $decided['step']];
     }
 
     $missing = array_diff(array_keys($existingNew), array_keys($seen));
@@ -346,18 +446,18 @@ function mergeExistingNewColumn(array $measuredRows, array $existingNew): array
 }
 
 /**
- * @param list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string}> $rows
+ * @param list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string, step: string}> $rows
  * @param list<string> $surfaceOrder
  */
 function renderTsv(array $rows, array $surfaceOrder): string
 {
     usort($rows, static fn(array $a, array $b): int => [$a['kind'], $a['old']] <=> [$b['kind'], $b['old']]);
 
-    $header = ['old', 'kind', 'new', ...$surfaceOrder];
+    $header = ['old', 'kind', 'new', 'step', ...$surfaceOrder];
     $lines = [implode("\t", $header)];
 
     foreach ($rows as $row) {
-        $line = [$row['old'], $row['kind'], $row['new']];
+        $line = [$row['old'], $row['kind'], $row['new'], $row['step']];
 
         foreach ($surfaceOrder as $surfaceKey) {
             $line[] = (string) $row['counts'][$surfaceKey];
@@ -415,11 +515,14 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # benchmarks/vendor, __pycache__) and the three preset YAML files, which are
 # counted once, under `presets`, not again under `src`.
 #
-# THE `new` COLUMN IS A DECISION, NOT A MEASUREMENT. This script never invents
-# one: an unfilled row keeps `?`. A row's `new` value, once someone fills it
-# in, survives every later regeneration (merged back in by `old`+`kind`); if
-# the row it was recorded against stops being measured, the script fails
-# instead of quietly dropping the decision.
+# THE `new` AND `step` COLUMNS ARE DECISIONS, NOT MEASUREMENTS. This script
+# never invents either: an unfilled row keeps `?` and an empty `step`. Both
+# survive every later regeneration (merged back in by `old`+`kind`); if the row
+# they were recorded against stops being measured, the script fails instead of
+# quietly dropping the decision. A decided row must name the step that makes the
+# decision, and a step must not name an undecided row: `--emit-maps=<step>`
+# renders one step's decisions as map rows, which is how a step's map stays free
+# of a later step's renames.
 #
 # WHAT THIS METHOD DOES NOT SEE:
 #  - a name assembled at runtime (string concatenation, a value read from
@@ -452,7 +555,7 @@ FOOTER;
  * onto whatever `new` decisions already sit in $outputPath. Used by both the
  * generate and the `--check` path so the two can never measure differently.
  *
- * @return array{content: string, channelCount: int, producerCount: int, metricKeyCount: int}
+ * @return array{content: string, rows: list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string, step: string}>, channelCount: int, producerCount: int, metricKeyCount: int}
  */
 function renderCurrentState(string $root, string $outputPath, ContainerFactory $factory): array
 {
@@ -476,9 +579,11 @@ function renderCurrentState(string $root, string $outputPath, ContainerFactory $
     $measuredRows = measure(array_values($rows), $surfaceContents, $surfaceOrder);
     $existingNew = readExistingNewColumn($outputPath);
     $finalRows = mergeExistingNewColumn($measuredRows, $existingNew);
+    assertEveryDecisionNamesItsStep($finalRows);
 
     return [
         'content' => renderTsv($finalRows, $surfaceOrder),
+        'rows' => $finalRows,
         'channelCount' => count(array_filter($finalRows, static fn(array $row): bool => $row['kind'] === 'channel')),
         'producerCount' => count(array_filter($finalRows, static fn(array $row): bool => $row['kind'] === 'producer')),
         'metricKeyCount' => count(array_filter($finalRows, static fn(array $row): bool => $row['kind'] === 'metric-key')),
@@ -534,7 +639,18 @@ function main(): int
 {
     $arguments = array_slice($_SERVER['argv'] ?? [], 1);
     $check = in_array('--check', $arguments, true);
-    $unknown = array_values(array_filter($arguments, static fn(string $argument): bool => $argument !== '--check'));
+    $emitStep = null;
+
+    foreach ($arguments as $argument) {
+        if (str_starts_with($argument, '--emit-maps=')) {
+            $emitStep = substr($argument, strlen('--emit-maps='));
+        }
+    }
+
+    $unknown = array_values(array_filter(
+        $arguments,
+        static fn(string $argument): bool => $argument !== '--check' && !str_starts_with($argument, '--emit-maps='),
+    ));
 
     if ($unknown !== []) {
         fwrite(STDERR, 'Unknown argument: ' . implode(', ', $unknown) . "\n");
@@ -547,6 +663,18 @@ function main(): int
     $factory = new ContainerFactory();
 
     $state = renderCurrentState($root, $outputPath, $factory);
+
+    if ($emitStep !== null) {
+        if ($emitStep === '') {
+            fwrite(STDERR, "--emit-maps=<step> needs a step, e.g. --emit-maps=\u{0428}4b.\n");
+
+            return 2;
+        }
+
+        fwrite(STDOUT, emitMapsForStep($state['rows'], $emitStep));
+
+        return 0;
+    }
 
     if ($check) {
         $onDisk = is_file($outputPath) ? file_get_contents($outputPath) : false;

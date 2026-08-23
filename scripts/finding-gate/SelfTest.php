@@ -24,6 +24,8 @@ final class SelfTest
     public function run(): array
     {
         $this->maps();
+        $this->ambiguities();
+        $this->declaredDelta();
         $this->normalization();
         $this->deriver();
         $this->tuple();
@@ -45,9 +47,10 @@ final class SelfTest
         $maps = RenameMaps::load($this->candidateRoot . '/finding-gate/maps');
         $this->assert($maps->isIdentity(), 'the tracked maps are empty at this step');
 
+        // One row, and it is the whole key: the halves are expanded from it, so
+        // the two spellings of one rename can never be declared out of step.
         $channel = RenameMaps::fromPairs([
             ['old' => 'design.type-coverage#design.type-coverage.param', 'new' => 'design.param-typing#design.param-typing', 'source' => 'channels.tsv'],
-            ['old' => 'design.type-coverage', 'new' => 'design.param-typing', 'source' => 'channels.tsv'],
         ]);
         $this->same(
             'design.param-typing#design.param-typing',
@@ -59,15 +62,71 @@ final class SelfTest
             $channel->forward('"rule": "design.type-coverage"'),
             'the rule half of a renamed channel maps too',
         );
+        // Forward-only, and the reason is measured: after a collapse the target
+        // is textually the unchanged producer name the corpus writes into its own
+        // arguments, so an inverted channel map would rewrite a legitimate input.
         $this->same(
-            '--rule-opt=design.type-coverage:threshold=1',
-            $channel->reverse('--rule-opt=design.param-typing:threshold=1'),
-            'reverse restates candidate input in the reference vocabulary',
+            '--only-rule=design.param-typing',
+            $channel->reverse('--only-rule=design.param-typing'),
+            'the channel map is not applied backwards',
         );
         $this->same(
-            ['--only-rule=design.type-coverage'],
+            ['--only-rule=design.param-typing'],
             $channel->reverseArguments(['--only-rule=design.param-typing']),
+            'nor when it is handed a list of arguments',
+        );
+
+        // checkstyle prints `source="qmx.<code>"`, and a dot continues a name, so
+        // without the prefixed spelling the boundary assertion refuses the match
+        // and the row translates nothing there — while still counting as fired
+        // everywhere else, which is how a rename leaks into an undeclared diff.
+        $this->same(
+            'source="qmx.design.param-typing"',
+            $channel->forward('source="qmx.design.type-coverage.param"'),
+            'a prefixed spelling of the code is translated too',
+        );
+        $prefixOnly = RenameMaps::fromPairs([
+            ['old' => 'code-smell.eval#code-smell.eval', 'new' => 'code-smell.eval#smell.eval', 'source' => 'channels.tsv'],
+        ]);
+        $prefixOnly->forward('source="qmx.code-smell.eval"');
+        $this->same([], $prefixOnly->staleRows(), 'a row whose only match was the prefixed spelling is not stale');
+
+        $inputs = RenameMaps::fromPairs([
+            ['old' => 'design.type-coverage:param_warning', 'new' => 'design.param-typing:warning', 'source' => 'inputs.tsv'],
+            ['old' => '--type-coverage-param-warning', 'new' => '--param-typing-warning', 'source' => 'inputs.tsv'],
+        ]);
+        $this->same(
+            '--rule-opt=design.type-coverage:param_warning=-1',
+            $inputs->reverse('--rule-opt=design.param-typing:warning=-1'),
+            'an input row restates candidate input in the reference vocabulary',
+        );
+        $this->same(
+            ['--type-coverage-param-warning=2'],
+            $inputs->reverseArguments(['--param-typing-warning=2']),
             'arguments are reversed one by one',
+        );
+        $this->same(
+            '--param-typing-warning (--rule-opt=design.param-typing:warning=…)',
+            $inputs->forward('--type-coverage-param-warning (--rule-opt=design.type-coverage:param_warning=…)'),
+            'an input row also applies forward, because the rules snapshot prints the same tokens',
+        );
+
+        // A row naming a name inside a token would translate the same option key
+        // on some other rule as well, so the shape is checked when it loads.
+        foreach (['param_warning', 'type-coverage-param-warning'] as $partial) {
+            $this->assert(
+                self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                    ['old' => $partial, 'new' => 'whatever.else', 'source' => 'inputs.tsv'],
+                ])),
+                \sprintf('an input row on "%s" is refused: that is a name inside a token, not a token', $partial),
+            );
+        }
+
+        $this->assert(
+            !self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                ['old' => 'design.type-coverage', 'new' => 'design.param-typing', 'source' => 'inputs.tsv'],
+            ])),
+            'a dotted producer name is a whole token, because that is how a selector writes it',
         );
 
         // Measured counterexample, 2026-08-23: with the row above as the only
@@ -83,7 +142,7 @@ final class SelfTest
         );
 
         $levels = RenameMaps::fromPairs([
-            ['old' => 'complexity.cyclomatic', 'new' => 'complexity.ccn', 'source' => 'channels.tsv'],
+            ['old' => 'complexity.cyclomatic', 'new' => 'complexity.ccn', 'source' => 'metric-keys.tsv'],
         ]);
         $this->same(
             '"complexity.cyclomatic.callable" and "complexity.ccn"',
@@ -92,35 +151,36 @@ final class SelfTest
         );
 
         // The other measured counterexample: rows applied one after another
-        // cascade. Row 1 produces `mid.rule#mid.rule.class`, and row 2 renames
-        // `mid.rule.class` — sequentially that yields `mid.rule#new.code`, an
-        // identity no row declares. Neither row is a whole-name chain, so the
-        // load-time checks cannot see it; one pass over the original text can.
+        // cascade. Row 1 produces `new.rule#a.code`, and row 2 renames the name
+        // `a.code` that target contains — sequentially that yields
+        // `new.rule#z.code`, an identity no row declares. Row 2's source equals
+        // no row's target, so the load-time chain check cannot see it; one pass
+        // over the original text can.
         $cascade = RenameMaps::fromPairs([
-            ['old' => 'old.rule#old.rule.class', 'new' => 'mid.rule#mid.rule.class', 'source' => 'channels.tsv'],
-            ['old' => 'mid.rule.class', 'new' => 'new.code', 'source' => 'channels.tsv'],
+            ['old' => 'old.rule#a.code', 'new' => 'new.rule#a.code', 'source' => 'channels.tsv'],
+            ['old' => 'a.code', 'new' => 'z.code', 'source' => 'metric-keys.tsv'],
         ]);
         $this->same(
-            'mid.rule#mid.rule.class',
-            $cascade->forward('old.rule#old.rule.class'),
+            'new.rule#a.code',
+            $cascade->forward('old.rule#a.code'),
             'substitution is one pass over the original text, so rows cannot cascade',
         );
 
         $rejected = [
             'a chain' => [
-                ['old' => 'a.one', 'new' => 'b.one', 'source' => 'channels.tsv'],
-                ['old' => 'b.one', 'new' => 'c.one', 'source' => 'channels.tsv'],
+                ['old' => 'a.one#a.one', 'new' => 'b.one#b.one', 'source' => 'channels.tsv'],
+                ['old' => 'b.one#b.one', 'new' => 'c.one#c.one', 'source' => 'channels.tsv'],
             ],
-            'two rows renaming one name' => [
-                ['old' => 'a.one', 'new' => 'b.one', 'source' => 'channels.tsv'],
-                ['old' => 'a.one', 'new' => 'c.one', 'source' => 'channels.tsv'],
+            'two rows renaming one whole key' => [
+                ['old' => 'a.one#a.one', 'new' => 'b.one#b.one', 'source' => 'channels.tsv'],
+                ['old' => 'a.one#a.one', 'new' => 'c.one#c.one', 'source' => 'channels.tsv'],
             ],
-            'two rows onto one target' => [
-                ['old' => 'a.one', 'new' => 'z.one', 'source' => 'channels.tsv'],
-                ['old' => 'b.one', 'new' => 'z.one', 'source' => 'channels.tsv'],
+            'two reversible rows onto one target' => [
+                ['old' => 'a.one', 'new' => 'z.one', 'source' => 'metric-keys.tsv'],
+                ['old' => 'b.one', 'new' => 'z.one', 'source' => 'metric-keys.tsv'],
             ],
             'a row that renames nothing' => [
-                ['old' => 'a.one', 'new' => 'a.one', 'source' => 'channels.tsv'],
+                ['old' => 'a.one', 'new' => 'a.one', 'source' => 'metric-keys.tsv'],
             ],
         ];
 
@@ -132,11 +192,11 @@ final class SelfTest
         }
 
         $stale = RenameMaps::fromPairs([
-            ['old' => 'never.observed', 'new' => 'nor.published', 'source' => 'channels.tsv'],
+            ['old' => 'never.observed', 'new' => 'nor.published', 'source' => 'metric-keys.tsv'],
         ]);
         $stale->forward('nothing this row can translate');
         $this->same(
-            ['channels.tsv: "never.observed" -> "nor.published"'],
+            ['metric-keys.tsv: "never.observed" -> "nor.published"'],
             $stale->staleRows(),
             'a row that translated nothing is reported stale',
         );
@@ -150,6 +210,107 @@ final class SelfTest
             $symbols->forward('"subject": "declaration:class:Qualimetrix\\\\Analysis\\\\Finding\\\\Contract\\\\Violation@src/x.php"'),
             'a symbol row maps its JSON-escaped form as well as its raw form',
         );
+    }
+
+    /**
+     * The two ambiguities a channel map cannot be a function through, and what
+     * the gate does with each.
+     *
+     * A collapse is correct forwards: two reference names really do become one,
+     * and the map has no backwards direction to lose. A split is not: one old
+     * half has several new names, so no translation of that half is right, and
+     * the record it sits in is explained instead.
+     */
+    private function ambiguities(): void
+    {
+        $collapse = RenameMaps::fromPairs([
+            ['old' => 'complexity.cyclomatic#complexity.cyclomatic.callable', 'new' => 'complexity.cyclomatic#complexity.cyclomatic', 'source' => 'channels.tsv'],
+            ['old' => 'complexity.cyclomatic#complexity.cyclomatic.class', 'new' => 'complexity.cyclomatic#complexity.cyclomatic', 'source' => 'channels.tsv'],
+        ]);
+        $this->same(
+            '"complexity.cyclomatic" and "complexity.cyclomatic"',
+            $collapse->forward('"complexity.cyclomatic.callable" and "complexity.cyclomatic.class"'),
+            'a collapse is allowed forwards, and both codes reach the one new name',
+        );
+        $this->same([], $collapse->splits(), 'a collapse is not a split');
+
+        $split = RenameMaps::fromPairs([
+            ['old' => 'design.type-coverage#design.type-coverage.param', 'new' => 'design.param-typing#design.param-typing', 'source' => 'channels.tsv'],
+            ['old' => 'design.type-coverage#design.type-coverage.return', 'new' => 'design.return-typing#design.return-typing', 'source' => 'channels.tsv'],
+        ]);
+        $this->same(
+            ['design.type-coverage' => ['design.param-typing', 'design.return-typing']],
+            $split->splits(),
+            'one old half with two new names is reported as a split',
+        );
+        $this->same(
+            '"rule": "design.type-coverage"',
+            $split->forward('"rule": "design.type-coverage"'),
+            'the split half is not translated, because no translation of it is right',
+        );
+        $this->same(
+            '"channel": "design.param-typing#design.param-typing"',
+            $split->forward('"channel": "design.type-coverage#design.type-coverage.param"'),
+            'the whole key still maps: only the ambiguous half is left alone',
+        );
+
+        $explanation = ChannelSplit::of($split);
+        $reference = [
+            ['subject' => 'declaration:class:A@a.php', 'rule' => 'design.type-coverage', 'code' => 'design.type-coverage.param', 'channel' => 'design.type-coverage#design.type-coverage.param'],
+        ];
+        $explained = [
+            ['subject' => 'declaration:class:A@a.php', 'rule' => 'design.param-typing', 'code' => 'design.param-typing', 'channel' => 'design.param-typing#design.param-typing'],
+        ];
+        $this->same([], $explanation->unexplained($reference, $explained), 'an occurrence the declared row accounts for is explained');
+        $this->assert($explanation->allows('rule', 'design.type-coverage'), 'an explained record lets a delta show its old value');
+        $this->assert($explanation->allows('rule', 'design.param-typing'), 'and its new one');
+        $this->assert(!$explanation->allows('rule', 'design.god-class'), 'and nothing else');
+
+        $this->same(
+            1,
+            \count(ChannelSplit::of($split)->unexplained($reference, [])),
+            'a declared split whose new key the candidate never publishes is split-unmapped',
+        );
+
+        $undeclaredHalf = [
+            ['subject' => 'declaration:class:B@b.php', 'rule' => 'design.type-coverage', 'code' => 'design.type-coverage.property', 'channel' => 'design.type-coverage#design.type-coverage.property'],
+        ];
+        $this->same(
+            1,
+            \count(ChannelSplit::of($split)->unexplained($undeclaredHalf, $explained)),
+            'the third code of a split rule, left undeclared, is split-unmapped rather than absorbed',
+        );
+    }
+
+    /**
+     * The declared delta's own mechanics: an exact diff, and the staleness that
+     * keeps a declaration honest.
+     */
+    private function declaredDelta(): void
+    {
+        $diff = ExactDiff::between("a\nb\nc\n", "a\nB\nc\n", 'candidate', 'reference (mapped)');
+        $this->same(2, $diff->changedLineCount(), 'an exact diff counts both sides of the change');
+        $this->same(
+            "--- candidate\n+++ reference (mapped)\n@@ -2,1 +2,1 @@\n-b\n+B\n",
+            $diff->render(),
+            'the exact diff is the whole change, with no context and no clipping',
+        );
+        $this->assert(
+            ExactDiff::between("a\n", "a\n", 'l', 'r')->isEmpty(),
+            'two equal artifacts have no exact diff',
+        );
+
+        $long = str_repeat('x', 600);
+        $detail = ExactDiff::between('{"a":"' . $long . '1"}', '{"a":"' . $long . '2"}', 'l', 'r')->tokenDetail();
+        $this->assert($detail !== [], 'a line too long to read as a line also gets a token diff');
+
+        $unclipped = ExactDiff::between($long . "1\n", $long . "2\n", 'l', 'r')->render();
+        $this->assert(str_contains($unclipped, $long . '1'), 'a long line is declared whole, never clipped');
+
+        $delta = DeclaredDelta::load($this->candidateRoot . '/finding-gate');
+        $this->assert($delta->isEmpty(), 'no delta is declared at this step');
+        $this->same([], $delta->staleSurfaces(), 'and nothing is stale');
+        $this->same(null, $delta->claim('case:smells|format:json'), 'a surface nothing declares claims nothing');
     }
 
     private function normalization(): void

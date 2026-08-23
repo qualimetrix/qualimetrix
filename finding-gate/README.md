@@ -25,9 +25,13 @@ finding-gate/
 │   │                      # reported project name — see the HTML note below
 │   └── src/**.php         # the fixtures
 ├── maps/                  # what a step declares it renamed; empty = renames nothing
-│   ├── channels.tsv       # old channel key -> new channel key
+│   ├── channels.tsv       # old channel key -> new channel key; forward only
 │   ├── symbols.tsv        # old FQN or path -> new (generated from git diff --find-renames)
-│   └── metric-keys.tsv    # old metric key -> new metric key
+│   ├── metric-keys.tsv    # old metric key -> new metric key
+│   └── inputs.tsv         # option keys, flag aliases, names inside selectors
+├── declared-delta.tsv     # surfaces that changed structurally, not by rename;
+├── declared-delta/        # with one exact unified diff each. Both appear only
+│                          # when a step declares one, and neither exists now
 ├── normalization.tsv      # fields excluded from comparison, each with its reason
 └── equivalence-tuple.tsv  # the finding fields the gate compares, derived from code
 ```
@@ -38,6 +42,7 @@ finding-gate/
 {
   "id": "smells",                      // == directory name
   "description": "why this case exists, in one line",
+  "coverage": "authoritative",         // or "auxiliary"; optional, defaults to authoritative
   "paths": ["src"],                    // relative to the case directory
   "config": "qmx.yaml",                // relative to the case directory
   "args": ["--rule-opt=complexity.wmc:threshold=0"],   // extra CLI arguments; optional, defaults to []
@@ -51,6 +56,26 @@ stops firing a channel it claims fails, and a channel no case claims fails the
 coverage check. Coverage is also checked for multiplicity: **a channel must fire
 in exactly one case.** Two producers make the deduplicated union blind to a lost
 fixture, so the control that deletes one would pass while proving nothing.
+
+### `coverage`: what a case is for
+
+An **authoritative** case owns the channels it claims — it is what the coverage
+and multiplicity arithmetic counts, so a channel has exactly one of these.
+
+An **auxiliary** case exists for an *input* nothing else exercises. The corpus
+was blind to three of them until Ш4a — `--disable-rule`, `only_rules` and a
+non-empty `exclude_paths` — and adding them as ordinary cases was impossible: the
+channels they fire are already owned, so a second producer would be
+`coverage-multiplicity`. An auxiliary case is therefore compared on every surface
+and still has to fire **exactly** what its `channels` claims; it is only left out
+of the coverage and multiplicity arithmetic. The original guarantee — one
+authoritative owner per channel — is unchanged word for word.
+
+The three that exist address only names later steps do not rename, and each was
+checked to bite: without its selector, both fixtures of the case fire. An
+auxiliary case is not evidence about a selector's *reach* — after a rule is
+split, "does `--disable-rule=<old name>` still find anything" is a question the
+reference's vocabulary cannot even state, and it is closed by a test, not here.
 
 Every run uses the case directory as its working directory, so no path in any
 artifact depends on where the tree is checked out. The `check` runs add
@@ -120,20 +145,112 @@ comparison it is part of:
 ## What a map declares
 
 `maps/*.tsv` is how a step states what it renamed, and the gate holds the
-declaration to three properties:
+declaration to these properties:
 
 - **Whole names only.** A row translates a complete name, never a prefix of a
   longer one: `complexity.cyclomatic` does not rewrite
   `complexity.cyclomatic.callable`. Renaming a family means declaring every
-  member of it.
-- **No chains, no collisions.** A map is refused at load time if one row's
-  target is another row's source, if two rows rename the same name, if two rows
-  produce the same name, or if a row's two sides are equal. Substitution is a
-  single pass over the original text, so rows cannot cascade into an identity no
-  row states.
+  member of it. A name reaches an artifact in more spellings than a row can be
+  written in, and every spelling is substituted by that same row: the
+  JSON-escaped form of a backslash-bearing symbol, and checkstyle's
+  `source="qmx.<code>"` — the only prefix any surface adds, measured across all
+  eleven formats, the baseline file, `baseline:explain` and the rules snapshot.
+- **No chains.** A map is refused at load time if one row's target is another
+  row's source, if two rows rename the same whole name, or if a row's two sides
+  are equal. Substitution is a single pass over the original text, so rows cannot
+  cascade into an identity no row states.
 - **No idle rows.** A declared row that translated nothing anywhere in the run
   fails as `map-stale`, exactly as a normalization rule that redacted nothing
-  fails as `normalization-stale`.
+  fails as `normalization-stale`. Not every map has to fire, though: the corpus
+  is external, so a renamed product symbol reaches no compared artifact and
+  `symbols.tsv` can legitimately stay empty.
+
+### Direction is declared, and it follows from injectivity
+
+A map is applied backwards **if and only if it is injective in both
+directions**, and that is checked when it loads rather than promised.
+
+| Map               | Applied      | To what                                                                                         |
+| ----------------- | ------------ | ----------------------------------------------------------------------------------------------- |
+| `channels.tsv`    | forward only | reference artifacts: the whole `rule#code` key and each unambiguous half                        |
+| `symbols.tsv`     | both ways    | reference artifacts; and input — `baseline:explain` subjects, configuration text                |
+| `metric-keys.tsv` | both ways    | reference artifacts; and input — `computed_metrics` formulas in a case's configuration          |
+| `inputs.tsv`      | both ways    | option keys, flag aliases, names in selectors: they live on the input and in the rules snapshot |
+
+Forward means the *reference's* output restated in the candidate's vocabulary.
+Backward means the *candidate's* input restated in the reference's, because the
+reference binary cannot be addressed in a vocabulary it does not have yet.
+
+`channels.tsv` is forward only, and two measured reasons say so. A collapse
+gives two rows one target and a split gives one old half several, so neither is
+invertible. And after a collapse the target is textually the same string as the
+unchanged **producer** name the corpus writes into its own arguments, so an
+inverted channel map would rewrite a legitimate input the step never touched.
+
+An input that does need translating says so with an `inputs.tsv` row. One that
+needs it and has no row makes the reference refuse its input with exit 3, which
+the gate reports as `reference-input-untranslated` rather than letting it arrive
+as eleven surface diffs and an empty findings section.
+
+An `inputs.tsv` row names a **whole token**: `rule:option-key` as `--rule-opt=`
+writes it, a flag together with its two dashes, or a dotted producer name as a
+selector writes it. A bare undotted word is refused — "the option key without its
+rule" would translate the same key on every other rule too.
+
+### Splitting and collapsing
+
+A channels row translates the whole key and each differing half, so a family
+rename can be stated once. Two ways the halves stop being a function:
+
+- **A collapse is allowed.** Two rows with one target is correct forwards: the
+  two reference names really do become one, and the map has no backwards
+  direction to lose. The findings stay distinguishable because `subject` carries
+  the level in its prefix.
+- **A split is derived, not declared separately.** When the rows disagree about
+  one old half, that half is a split source: it is *not* translated textually,
+  because no translation of it is right. Its protection is not lost — every
+  reference finding carrying that half must have its `(rule, code)` pair named by
+  a declared row, and the candidate must publish the pair that row computes on
+  the same subject. An occurrence nothing accounts for is `split-unmapped`.
+  `rule` and `code` are fields the equivalence tuple compares, so this is the
+  same rule normalization is held to; a declared delta gets no waiver here.
+
+## What a declared delta declares
+
+Some of what a step changes is neither a rename nor an excluded field: splitting
+one rule turns one aggregate group into three and adds rows to the rule
+inventory. `declared-delta.tsv` (`surface`, `file`, `reason`) plus one exact
+unified diff per surface is how that is stated, and the diff files are produced
+by `--derive-declared-delta`, never typed. The `reason` is the one thing a run
+cannot measure: a re-derivation carries existing reasons over and writes `?` for
+a new row, and loading refuses `?`.
+
+Four failure classes keep it from becoming a rubber stamp, and three of them are
+judged on the diff the run **measures**, not on the declared text:
+
+- `delta-mismatch` — the measured diff is not the declared one, byte for byte.
+- `delta-stale` — a delta is declared for a surface the two trees agree on.
+- `delta-too-large` — the diff is past the limit, so the pressure stays on
+  declaring another map row rather than dropping in a blob.
+- `delta-overreach` — a diff line *changes* a field the equivalence tuple
+  compares, and no declared split explains that record. Changed, not mentioned:
+  a compact JSON record names `channel` on the same line as the magnitude it
+  records, so pairing the removed and added lines is what makes the question
+  answerable. Only the published `"field": value` syntax is read — that covers
+  the JSON family and the HTML report's embedded payload; the plain-text surfaces
+  print a bare name no field syntax marks, and there the record-level split check
+  is the guard.
+
+A run with declared deltas still says GREEN, and says loudly how many there are
+and how big they are. Lines longer than 500 characters also get a token-level
+diff in the failure detail: the HTML report's embedded payload is one line of
+roughly 59 thousand characters, and without that nobody can read what moved.
+
+The exact diff is one hunk with no context lines: the shared head and tail are
+dropped and everything between the outermost differing lines is emitted whole.
+That is not a minimal edit script, and deliberately so — a minimal one would need
+a full LCS over artifacts the size of the HTML report, while a stated span is
+exact, cheap, and stops matching as soon as the surface moves.
 
 ## Adding a channel
 

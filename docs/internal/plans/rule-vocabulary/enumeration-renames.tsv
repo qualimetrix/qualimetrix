@@ -1,174 +1,174 @@
-old	kind	new	src	tests	presets	config	baseline	website_docs	benchmarks	finding_gate
-annotation.invalid-threshold#annotation.invalid-threshold	channel	?	2	7	0	0	0	17	0	2
-annotation.unresolved-directive#annotation.unresolved-directive	channel	?	2	10	0	0	0	29	0	2
-annotation.unsupported-threshold#annotation.unsupported-threshold	channel	?	5	7	0	0	0	17	0	2
-annotation.unused-directive#annotation.unused-directive	channel	?	8	8	0	0	0	25	0	2
-architecture.circular-dependency#architecture.circular-dependency	channel	?	8	30	0	2	0	38	0	2
-architecture.coverage#architecture.coverage	channel	?	19	77	0	0	0	43	0	2
-architecture.empty-template#architecture.empty-template	channel	?	9	11	0	0	0	27	0	2
-architecture.layer-violation#architecture.layer-violation	channel	?	26	128	0	3	0	80	0	3
-architecture.pending-layer-matched#architecture.pending-layer-matched	channel	?	8	13	0	0	0	25	0	2
-architecture.potential-shadow#architecture.potential-shadow	channel	?	13	9	0	0	0	32	0	2
-architecture.unassigned-class#architecture.unassigned-class	channel	?	16	10	0	0	0	13	0	2
-architecture.unreachable-layer#architecture.unreachable-layer	channel	?	15	25	0	0	0	41	0	2
-code-smell.boolean-argument#code-smell.boolean-argument	channel	?	4	22	1	2	58	34	0	2
-code-smell.constructor-overinjection#code-smell.constructor-overinjection	channel	?	9	8	2	2	12	21	0	2
-code-smell.count-in-loop#code-smell.count-in-loop	channel	?	1	6	0	0	0	12	0	2
-code-smell.debug-code#code-smell.debug-code	channel	?	1	31	0	0	0	13	0	2
-code-smell.empty-catch#code-smell.empty-catch	channel	?	4	7	0	0	0	12	0	2
-code-smell.error-suppression#code-smell.error-suppression	channel	?	1	11	1	2	4	17	0	2
-code-smell.eval#code-smell.eval	channel	?	1	27	0	0	0	16	0	6
-code-smell.exit#code-smell.exit	channel	?	1	8	0	0	0	16	0	2
-code-smell.goto#code-smell.goto	channel	?	2	157	0	0	0	12	0	2
-code-smell.identical-subexpression#code-smell.identical-subexpression	channel	?	2	6	0	0	0	13	0	2
-code-smell.long-parameter-list#code-smell.long-parameter-list	channel	?	16	44	2	2	6	33	0	10
-code-smell.superglobals#code-smell.superglobals	channel	?	1	6	1	0	0	12	0	2
-code-smell.unreachable-code#code-smell.unreachable-code	channel	?	6	7	0	1	0	23	0	2
-code-smell.unused-private#code-smell.unused-private	channel	?	2	7	0	0	0	15	0	2
-cohesion.lcom#cohesion.lcom	channel	?	19	38	2	2	0	27	0	5
-complexity.cognitive#complexity.cognitive.callable	channel	complexity.cognitive#complexity.cognitive	1	5	0	0	34	2	0	1
-complexity.cognitive#complexity.cognitive.class	channel	complexity.cognitive#complexity.cognitive	0	2	0	0	0	2	0	1
-complexity.cyclomatic#complexity.cyclomatic.callable	channel	complexity.cyclomatic#complexity.cyclomatic	7	137	0	0	60	32	0	2
-complexity.cyclomatic#complexity.cyclomatic.class	channel	complexity.cyclomatic#complexity.cyclomatic	1	9	0	0	0	5	0	1
-complexity.npath#complexity.npath.callable	channel	complexity.npath#complexity.npath	0	3	0	0	13	2	0	1
-complexity.npath#complexity.npath.class	channel	complexity.npath#complexity.npath	0	2	0	0	0	2	0	1
-complexity.wmc#complexity.wmc	channel	?	11	17	2	2	24	27	0	5
-coupling.cbo#coupling.cbo.class	channel	coupling.cbo#coupling.cbo	5	36	0	0	7	20	0	1
-coupling.cbo#coupling.cbo.namespace	channel	coupling.cbo#coupling.cbo	0	11	0	1	3	3	0	1
-coupling.class-rank#coupling.class-rank	channel	?	14	35	0	2	2	22	0	20
-coupling.distance#coupling.distance	channel	?	8	31	2	2	4	30	0	22
-coupling.instability#coupling.instability.class	channel	coupling.instability#coupling.instability	2	17	0	0	6	2	0	1
-coupling.instability#coupling.instability.namespace	channel	coupling.instability#coupling.instability	0	6	0	1	2	2	0	1
-design.data-class#design.data-class	channel	?	13	14	1	2	20	32	0	4
-design.god-class#design.god-class	channel	?	13	18	1	2	4	35	0	8
-design.inheritance#design.inheritance	channel	?	6	10	2	2	0	20	0	4
-design.noc#design.noc	channel	?	7	10	2	2	0	20	0	4
-design.type-coverage#design.type-coverage.param	channel	design.param-type-coverage#design.param-type-coverage	1	8	0	0	1	2	0	1
-design.type-coverage#design.type-coverage.property	channel	design.property-type-coverage#design.property-type-coverage	1	4	0	0	1	2	0	1
-design.type-coverage#design.type-coverage.return	channel	design.return-type-coverage#design.return-type-coverage	2	4	0	0	0	2	0	1
-duplication.code-duplication#duplication.code-duplication	channel	?	12	51	0	2	24	32	0	2
-maintainability.index#maintainability.index	channel	?	11	55	2	2	0	27	0	4
-security.command-injection#security.command-injection	channel	?	3	6	0	0	0	13	0	2
-security.hardcoded-credentials#security.hardcoded-credentials	channel	?	4	10	0	0	0	15	0	2
-security.sensitive-parameter#security.sensitive-parameter	channel	?	3	6	0	0	0	13	0	2
-security.sql-injection#security.sql-injection	channel	?	3	7	0	0	0	13	0	2
-security.xss#security.xss	channel	?	4	18	0	0	0	13	0	2
-size.class-count#size.class-count	channel	?	9	25	2	1	10	24	0	4
-size.method-count#size.method-count	channel	?	9	62	2	2	0	46	0	4
-size.property-count#size.property-count	channel	?	9	8	2	2	0	22	0	4
-abstractClassCount	metric-key	?	14	11	0	0	0	0	0	0
-abstractness	metric-key	?	60	61	0	1	0	9	0	0
-ca	metric-key	?	42	78	0	0	0	2	0	0
-cbo	metric-key	?	48	74	0	0	0	10	0	0
-cbo_app	metric-key	?	8	13	0	0	0	13	0	0
-ccn	metric-key	?	50	320	0	0	0	3	0	0
-ce	metric-key	?	50	99	0	0	0	11	0	0
-ce_framework	metric-key	?	7	12	0	0	0	7	0	0
-ce_packages	metric-key	?	8	14	0	0	0	6	0	0
-classCount	metric-key	?	75	116	0	0	0	6	0	0
-classLoc	metric-key	?	14	45	0	0	0	0	0	0
-classRank	metric-key	?	44	64	0	0	0	1	0	0
-cloc	metric-key	?	11	21	0	0	0	0	0	0
-cognitive	metric-key	?	47	72	0	0	0	20	0	0
-distance	metric-key	?	75	62	0	6	0	8	0	2
-dit	metric-key	?	25	110	0	0	0	0	0	0
-enumCount	metric-key	?	17	18	0	0	0	1	0	0
-functionCount	metric-key	?	12	10	0	0	0	0	0	0
-halstead.bugs	metric-key	?	2	4	0	0	0	0	0	0
-halstead.difficulty	metric-key	?	2	5	0	0	0	0	0	0
-halstead.effort	metric-key	?	2	4	0	0	0	0	0	0
-halstead.time	metric-key	?	2	4	0	0	0	0	0	0
-halstead.volume	metric-key	?	5	38	0	0	0	2	0	0
-implementingEnumCount	metric-key	?	21	9	0	0	0	1	0	0
-instability	metric-key	?	99	75	0	2	0	13	0	1
-interfaceCount	metric-key	?	22	19	0	0	0	0	0	0
-isAbstract	metric-key	?	11	11	0	0	0	0	0	0
-isDataClass	metric-key	?	5	8	0	0	0	1	0	0
-isException	metric-key	?	5	6	0	0	0	0	0	0
-isInterface	metric-key	?	5	6	0	0	0	0	0	0
-isPromotedPropertiesOnly	metric-key	?	2	9	0	0	0	0	0	0
-isReadonly	metric-key	?	8	39	0	0	0	0	0	0
-isVoConstructor	metric-key	?	5	28	0	0	0	0	0	0
-lcc	metric-key	?	11	56	0	0	0	6	0	0
-lcom	metric-key	?	41	134	0	0	0	3	0	0
-lloc	metric-key	?	16	22	0	0	0	3	0	0
-loc	metric-key	?	72	191	0	0	0	5	0	0
-methodCount	metric-key	?	46	127	0	0	0	5	0	0
-methodCountTotal	metric-key	?	12	18	0	0	0	0	0	0
-methodStatementCount	metric-key	?	2	33	0	0	0	5	0	0
-mi	metric-key	?	20	181	0	0	0	0	0	0
-noc	metric-key	?	16	38	0	0	0	0	0	0
-npath	metric-key	?	68	102	0	0	0	0	0	0
-parameterCount	metric-key	?	14	62	0	0	0	0	0	0
-propertyCount	metric-key	?	29	62	0	0	0	2	0	0
-pureMethodCount_cohesion	metric-key	?	3	7	0	0	0	3	0	0
-rfc	metric-key	?	9	46	0	0	0	0	0	0
-rfc_external	metric-key	?	2	16	0	0	0	0	0	0
-rfc_own	metric-key	?	2	16	0	0	0	0	0	0
-security.hardcodedCredentials	metric-key	?	3	23	0	0	0	0	0	0
-security.sensitiveParameter	metric-key	?	3	14	0	0	0	0	0	0
-tcc	metric-key	?	36	101	0	0	0	11	0	0
-traitCount	metric-key	?	19	13	0	0	0	0	0	0
-typeCoverage.param	metric-key	?	6	28	0	0	0	0	0	0
-typeCoverage.paramTotal	metric-key	?	3	22	0	0	0	0	0	0
-typeCoverage.paramTyped	metric-key	?	3	13	0	0	0	0	0	0
-typeCoverage.pct	metric-key	?	13	26	0	0	0	1	0	0
-typeCoverage.property	metric-key	?	6	19	0	0	0	0	0	0
-typeCoverage.propertyTotal	metric-key	?	3	17	0	0	0	0	0	0
-typeCoverage.propertyTyped	metric-key	?	3	10	0	0	0	0	0	0
-typeCoverage.return	metric-key	?	6	23	0	0	0	0	0	0
-typeCoverage.returnTotal	metric-key	?	3	16	0	0	0	0	0	0
-typeCoverage.returnTyped	metric-key	?	3	6	0	0	0	0	0	0
-unreachableCode	metric-key	?	3	31	0	0	0	0	0	0
-unreachableCode.firstLine	metric-key	?	3	10	0	0	0	0	0	0
-unusedPrivate.constant	metric-key	?	2	13	0	0	0	0	0	0
-unusedPrivate.method	metric-key	?	2	42	0	0	0	0	0	0
-unusedPrivate.property	metric-key	?	2	20	0	0	0	0	0	0
-unusedPrivate.total	metric-key	?	2	20	0	0	0	0	0	0
-wmc	metric-key	?	18	95	0	0	0	4	0	0
-woc	metric-key	?	11	12	0	0	0	4	0	0
-annotation.directive	producer	?	4	3	0	0	0	21	0	1
-architecture.circular-dependency	producer	?	8	30	0	2	0	38	0	2
-architecture.layer-violation	producer	?	26	128	0	3	0	80	0	3
-code-smell.boolean-argument	producer	?	4	22	1	2	58	34	0	2
-code-smell.constructor-overinjection	producer	?	9	8	2	2	12	21	0	2
-code-smell.count-in-loop	producer	?	1	6	0	0	0	12	0	2
-code-smell.debug-code	producer	?	1	31	0	0	0	13	0	2
-code-smell.empty-catch	producer	?	4	7	0	0	0	12	0	2
-code-smell.error-suppression	producer	?	1	11	1	2	4	17	0	2
-code-smell.eval	producer	?	1	27	0	0	0	16	0	6
-code-smell.exit	producer	?	1	8	0	0	0	16	0	2
-code-smell.goto	producer	?	2	157	0	0	0	12	0	2
-code-smell.identical-subexpression	producer	?	2	6	0	0	0	13	0	2
-code-smell.long-parameter-list	producer	?	16	44	2	2	6	33	0	10
-code-smell.superglobals	producer	?	1	6	1	0	0	12	0	2
-code-smell.unreachable-code	producer	?	6	7	0	1	0	23	0	2
-code-smell.unused-private	producer	?	2	7	0	0	0	15	0	2
-cohesion.lcom	producer	?	19	38	2	2	0	27	0	5
-complexity.cognitive	producer	?	9	26	2	2	34	46	0	8
-complexity.cyclomatic	producer	?	32	531	2	2	60	110	0	10
-complexity.npath	producer	?	9	9	2	2	13	38	0	7
-complexity.wmc	producer	?	11	17	2	2	24	27	0	5
-computed.health	producer	health.cohesion|health.complexity|health.coupling|health.maintainability|health.overall|health.typing|computed.*	11	182	0	1	32	17	0	7
-coupling.cbo	producer	?	30	118	2	3	10	74	0	6
-coupling.class-rank	producer	?	14	35	0	2	2	22	0	20
-coupling.distance	producer	?	8	31	2	2	4	30	0	22
-coupling.instability	producer	?	12	27	2	2	8	46	0	8
-design.data-class	producer	?	13	14	1	2	20	32	0	4
-design.god-class	producer	?	13	18	1	2	4	35	0	8
-design.inheritance	producer	?	6	10	2	2	0	20	0	4
-design.noc	producer	?	7	10	2	2	0	20	0	4
-design.type-coverage	producer	design.param-type-coverage|design.return-type-coverage|design.property-type-coverage	12	27	2	1	2	42	0	9
-duplication.code-duplication	producer	?	12	51	0	2	24	32	0	2
-maintainability.index	producer	?	11	55	2	2	0	27	0	4
-security.command-injection	producer	?	3	6	0	0	0	13	0	2
-security.hardcoded-credentials	producer	?	4	10	0	0	0	15	0	2
-security.sensitive-parameter	producer	?	3	6	0	0	0	13	0	2
-security.sql-injection	producer	?	3	7	0	0	0	13	0	2
-security.xss	producer	?	4	18	0	0	0	13	0	2
-size.class-count	producer	?	9	25	2	1	10	24	0	4
-size.method-count	producer	?	9	62	2	2	0	46	0	4
-size.property-count	producer	?	9	8	2	2	0	22	0	4
+old	kind	new	step	src	tests	presets	config	baseline	website_docs	benchmarks	finding_gate
+annotation.invalid-threshold#annotation.invalid-threshold	channel	?		2	7	0	0	0	17	0	2
+annotation.unresolved-directive#annotation.unresolved-directive	channel	?		2	10	0	0	0	29	0	2
+annotation.unsupported-threshold#annotation.unsupported-threshold	channel	?		5	7	0	0	0	17	0	2
+annotation.unused-directive#annotation.unused-directive	channel	?		8	8	0	0	0	25	0	2
+architecture.circular-dependency#architecture.circular-dependency	channel	?		8	30	0	2	0	38	0	2
+architecture.coverage#architecture.coverage	channel	?		19	77	0	0	0	43	0	2
+architecture.empty-template#architecture.empty-template	channel	?		9	11	0	0	0	27	0	2
+architecture.layer-violation#architecture.layer-violation	channel	?		26	128	0	3	0	80	0	3
+architecture.pending-layer-matched#architecture.pending-layer-matched	channel	?		8	13	0	0	0	25	0	2
+architecture.potential-shadow#architecture.potential-shadow	channel	?		13	9	0	0	0	32	0	2
+architecture.unassigned-class#architecture.unassigned-class	channel	?		16	10	0	0	0	13	0	2
+architecture.unreachable-layer#architecture.unreachable-layer	channel	?		15	25	0	0	0	41	0	2
+code-smell.boolean-argument#code-smell.boolean-argument	channel	?		4	22	1	2	58	34	0	2
+code-smell.constructor-overinjection#code-smell.constructor-overinjection	channel	?		9	8	2	2	12	21	0	2
+code-smell.count-in-loop#code-smell.count-in-loop	channel	?		1	6	0	0	0	12	0	2
+code-smell.debug-code#code-smell.debug-code	channel	?		1	31	0	0	0	13	0	2
+code-smell.empty-catch#code-smell.empty-catch	channel	?		4	7	0	0	0	12	0	2
+code-smell.error-suppression#code-smell.error-suppression	channel	?		1	11	1	2	4	17	0	2
+code-smell.eval#code-smell.eval	channel	?		1	27	0	0	0	16	0	12
+code-smell.exit#code-smell.exit	channel	?		1	8	0	0	0	16	0	2
+code-smell.goto#code-smell.goto	channel	?		2	157	0	0	0	12	0	4
+code-smell.identical-subexpression#code-smell.identical-subexpression	channel	?		2	6	0	0	0	13	0	2
+code-smell.long-parameter-list#code-smell.long-parameter-list	channel	?		16	44	2	2	6	33	0	10
+code-smell.superglobals#code-smell.superglobals	channel	?		1	6	1	0	0	12	0	2
+code-smell.unreachable-code#code-smell.unreachable-code	channel	?		6	7	0	1	0	23	0	2
+code-smell.unused-private#code-smell.unused-private	channel	?		2	7	0	0	0	15	0	2
+cohesion.lcom#cohesion.lcom	channel	?		19	38	2	2	0	27	0	5
+complexity.cognitive#complexity.cognitive.callable	channel	complexity.cognitive#complexity.cognitive	Ш5	1	5	0	0	34	2	0	1
+complexity.cognitive#complexity.cognitive.class	channel	complexity.cognitive#complexity.cognitive	Ш5	0	2	0	0	0	2	0	1
+complexity.cyclomatic#complexity.cyclomatic.callable	channel	complexity.cyclomatic#complexity.cyclomatic	Ш5	7	137	0	0	60	32	0	2
+complexity.cyclomatic#complexity.cyclomatic.class	channel	complexity.cyclomatic#complexity.cyclomatic	Ш5	1	9	0	0	0	5	0	1
+complexity.npath#complexity.npath.callable	channel	complexity.npath#complexity.npath	Ш5	0	3	0	0	13	2	0	1
+complexity.npath#complexity.npath.class	channel	complexity.npath#complexity.npath	Ш5	0	2	0	0	0	2	0	1
+complexity.wmc#complexity.wmc	channel	?		11	17	2	2	24	27	0	5
+coupling.cbo#coupling.cbo.class	channel	coupling.cbo#coupling.cbo	Ш5	5	36	0	0	7	20	0	1
+coupling.cbo#coupling.cbo.namespace	channel	coupling.cbo#coupling.cbo	Ш5	0	11	0	1	3	3	0	1
+coupling.class-rank#coupling.class-rank	channel	?		14	35	0	2	2	22	0	24
+coupling.distance#coupling.distance	channel	?		8	31	2	2	4	30	0	26
+coupling.instability#coupling.instability.class	channel	coupling.instability#coupling.instability	Ш5	2	17	0	0	6	2	0	1
+coupling.instability#coupling.instability.namespace	channel	coupling.instability#coupling.instability	Ш5	0	6	0	1	2	2	0	1
+design.data-class#design.data-class	channel	?		13	14	1	2	20	32	0	4
+design.god-class#design.god-class	channel	?		13	18	1	2	4	35	0	8
+design.inheritance#design.inheritance	channel	?		6	10	2	2	0	20	0	4
+design.noc#design.noc	channel	?		7	10	2	2	0	20	0	4
+design.type-coverage#design.type-coverage.param	channel	design.param-type-coverage#design.param-type-coverage	Ш4b	1	8	0	0	1	2	0	1
+design.type-coverage#design.type-coverage.property	channel	design.property-type-coverage#design.property-type-coverage	Ш4b	1	4	0	0	1	2	0	1
+design.type-coverage#design.type-coverage.return	channel	design.return-type-coverage#design.return-type-coverage	Ш4b	2	4	0	0	0	2	0	1
+duplication.code-duplication#duplication.code-duplication	channel	?		12	51	0	2	24	32	0	2
+maintainability.index#maintainability.index	channel	?		11	55	2	2	0	27	0	4
+security.command-injection#security.command-injection	channel	?		3	6	0	0	0	13	0	2
+security.hardcoded-credentials#security.hardcoded-credentials	channel	?		4	10	0	0	0	15	0	2
+security.sensitive-parameter#security.sensitive-parameter	channel	?		3	6	0	0	0	13	0	2
+security.sql-injection#security.sql-injection	channel	?		3	7	0	0	0	13	0	2
+security.xss#security.xss	channel	?		4	18	0	0	0	13	0	2
+size.class-count#size.class-count	channel	?		9	25	2	1	10	24	0	4
+size.method-count#size.method-count	channel	?		9	62	2	2	0	46	0	4
+size.property-count#size.property-count	channel	?		9	8	2	2	0	22	0	4
+abstractClassCount	metric-key	?		14	11	0	0	0	0	0	0
+abstractness	metric-key	?		60	61	0	1	0	9	0	0
+ca	metric-key	?		42	78	0	0	0	2	0	0
+cbo	metric-key	?		48	74	0	0	0	10	0	0
+cbo_app	metric-key	?		8	13	0	0	0	13	0	0
+ccn	metric-key	?		50	320	0	0	0	3	0	0
+ce	metric-key	?		50	99	0	0	0	11	0	0
+ce_framework	metric-key	?		7	12	0	0	0	7	0	0
+ce_packages	metric-key	?		8	14	0	0	0	6	0	0
+classCount	metric-key	?		75	116	0	0	0	6	0	0
+classLoc	metric-key	?		14	45	0	0	0	0	0	0
+classRank	metric-key	?		44	64	0	0	0	1	0	0
+cloc	metric-key	?		11	21	0	0	0	0	0	0
+cognitive	metric-key	?		47	72	0	0	0	20	0	0
+distance	metric-key	?		75	62	0	6	0	8	0	2
+dit	metric-key	?		25	110	0	0	0	0	0	0
+enumCount	metric-key	?		17	18	0	0	0	1	0	0
+functionCount	metric-key	?		12	10	0	0	0	0	0	0
+halstead.bugs	metric-key	?		2	4	0	0	0	0	0	0
+halstead.difficulty	metric-key	?		2	5	0	0	0	0	0	0
+halstead.effort	metric-key	?		2	4	0	0	0	0	0	0
+halstead.time	metric-key	?		2	4	0	0	0	0	0	0
+halstead.volume	metric-key	?		5	38	0	0	0	2	0	0
+implementingEnumCount	metric-key	?		21	9	0	0	0	1	0	0
+instability	metric-key	?		99	75	0	2	0	13	0	1
+interfaceCount	metric-key	?		22	19	0	0	0	0	0	0
+isAbstract	metric-key	?		11	11	0	0	0	0	0	0
+isDataClass	metric-key	?		5	8	0	0	0	1	0	0
+isException	metric-key	?		5	6	0	0	0	0	0	0
+isInterface	metric-key	?		5	6	0	0	0	0	0	0
+isPromotedPropertiesOnly	metric-key	?		2	9	0	0	0	0	0	0
+isReadonly	metric-key	?		8	39	0	0	0	0	0	0
+isVoConstructor	metric-key	?		5	28	0	0	0	0	0	0
+lcc	metric-key	?		11	56	0	0	0	6	0	0
+lcom	metric-key	?		41	134	0	0	0	3	0	0
+lloc	metric-key	?		16	22	0	0	0	3	0	0
+loc	metric-key	?		72	191	0	0	0	5	0	0
+methodCount	metric-key	?		46	127	0	0	0	5	0	0
+methodCountTotal	metric-key	?		12	18	0	0	0	0	0	0
+methodStatementCount	metric-key	?		2	33	0	0	0	5	0	0
+mi	metric-key	?		20	181	0	0	0	0	0	0
+noc	metric-key	?		16	38	0	0	0	0	0	0
+npath	metric-key	?		68	102	0	0	0	0	0	0
+parameterCount	metric-key	?		14	62	0	0	0	0	0	0
+propertyCount	metric-key	?		29	62	0	0	0	2	0	0
+pureMethodCount_cohesion	metric-key	?		3	7	0	0	0	3	0	0
+rfc	metric-key	?		9	46	0	0	0	0	0	0
+rfc_external	metric-key	?		2	16	0	0	0	0	0	0
+rfc_own	metric-key	?		2	16	0	0	0	0	0	0
+security.hardcodedCredentials	metric-key	?		3	23	0	0	0	0	0	0
+security.sensitiveParameter	metric-key	?		3	14	0	0	0	0	0	0
+tcc	metric-key	?		36	101	0	0	0	11	0	0
+traitCount	metric-key	?		19	13	0	0	0	0	0	0
+typeCoverage.param	metric-key	?		6	28	0	0	0	0	0	0
+typeCoverage.paramTotal	metric-key	?		3	22	0	0	0	0	0	0
+typeCoverage.paramTyped	metric-key	?		3	13	0	0	0	0	0	0
+typeCoverage.pct	metric-key	?		13	26	0	0	0	1	0	0
+typeCoverage.property	metric-key	?		6	19	0	0	0	0	0	0
+typeCoverage.propertyTotal	metric-key	?		3	17	0	0	0	0	0	0
+typeCoverage.propertyTyped	metric-key	?		3	10	0	0	0	0	0	0
+typeCoverage.return	metric-key	?		6	23	0	0	0	0	0	0
+typeCoverage.returnTotal	metric-key	?		3	16	0	0	0	0	0	0
+typeCoverage.returnTyped	metric-key	?		3	6	0	0	0	0	0	0
+unreachableCode	metric-key	?		3	31	0	0	0	0	0	0
+unreachableCode.firstLine	metric-key	?		3	10	0	0	0	0	0	0
+unusedPrivate.constant	metric-key	?		2	13	0	0	0	0	0	0
+unusedPrivate.method	metric-key	?		2	42	0	0	0	0	0	0
+unusedPrivate.property	metric-key	?		2	20	0	0	0	0	0	0
+unusedPrivate.total	metric-key	?		2	20	0	0	0	0	0	0
+wmc	metric-key	?		18	95	0	0	0	4	0	0
+woc	metric-key	?		11	12	0	0	0	4	0	0
+annotation.directive	producer	?		4	3	0	0	0	21	0	1
+architecture.circular-dependency	producer	?		8	30	0	2	0	38	0	2
+architecture.layer-violation	producer	?		26	128	0	3	0	80	0	3
+code-smell.boolean-argument	producer	?		4	22	1	2	58	34	0	2
+code-smell.constructor-overinjection	producer	?		9	8	2	2	12	21	0	2
+code-smell.count-in-loop	producer	?		1	6	0	0	0	12	0	2
+code-smell.debug-code	producer	?		1	31	0	0	0	13	0	2
+code-smell.empty-catch	producer	?		4	7	0	0	0	12	0	2
+code-smell.error-suppression	producer	?		1	11	1	2	4	17	0	2
+code-smell.eval	producer	?		1	27	0	0	0	16	0	12
+code-smell.exit	producer	?		1	8	0	0	0	16	0	2
+code-smell.goto	producer	?		2	157	0	0	0	12	0	4
+code-smell.identical-subexpression	producer	?		2	6	0	0	0	13	0	2
+code-smell.long-parameter-list	producer	?		16	44	2	2	6	33	0	10
+code-smell.superglobals	producer	?		1	6	1	0	0	12	0	2
+code-smell.unreachable-code	producer	?		6	7	0	1	0	23	0	2
+code-smell.unused-private	producer	?		2	7	0	0	0	15	0	2
+cohesion.lcom	producer	?		19	38	2	2	0	27	0	5
+complexity.cognitive	producer	?		9	26	2	2	34	46	0	8
+complexity.cyclomatic	producer	?		32	531	2	2	60	110	0	10
+complexity.npath	producer	?		9	9	2	2	13	38	0	7
+complexity.wmc	producer	?		11	17	2	2	24	27	0	5
+computed.health	producer	health.cohesion|health.complexity|health.coupling|health.maintainability|health.overall|health.typing|computed.*	Ш5	11	182	0	1	32	17	0	7
+coupling.cbo	producer	?		30	118	2	3	10	74	0	6
+coupling.class-rank	producer	?		14	35	0	2	2	22	0	24
+coupling.distance	producer	?		8	31	2	2	4	30	0	26
+coupling.instability	producer	?		12	27	2	2	8	46	0	8
+design.data-class	producer	?		13	14	1	2	20	32	0	4
+design.god-class	producer	?		13	18	1	2	4	35	0	8
+design.inheritance	producer	?		6	10	2	2	0	20	0	4
+design.noc	producer	?		7	10	2	2	0	20	0	4
+design.type-coverage	producer	design.param-type-coverage|design.return-type-coverage|design.property-type-coverage	Ш4b	12	27	2	1	2	42	0	9
+duplication.code-duplication	producer	?		12	51	0	2	24	32	0	2
+maintainability.index	producer	?		11	55	2	2	0	27	0	4
+security.command-injection	producer	?		3	6	0	0	0	13	0	2
+security.hardcoded-credentials	producer	?		4	10	0	0	0	15	0	2
+security.sensitive-parameter	producer	?		3	6	0	0	0	13	0	2
+security.sql-injection	producer	?		3	7	0	0	0	13	0	2
+security.xss	producer	?		4	18	0	0	0	13	0	2
+size.class-count	producer	?		9	25	2	1	10	24	0	4
+size.method-count	producer	?		9	62	2	2	0	46	0	4
+size.property-count	producer	?		9	8	2	2	0	22	0	4
 #
 # ROW COUNTS: 57 channel, 42 producer, 71 metric-key
 #
@@ -196,11 +196,14 @@ size.property-count	producer	?	9	8	2	2	0	22	0	4
 # benchmarks/vendor, __pycache__) and the three preset YAML files, which are
 # counted once, under `presets`, not again under `src`.
 #
-# THE `new` COLUMN IS A DECISION, NOT A MEASUREMENT. This script never invents
-# one: an unfilled row keeps `?`. A row's `new` value, once someone fills it
-# in, survives every later regeneration (merged back in by `old`+`kind`); if
-# the row it was recorded against stops being measured, the script fails
-# instead of quietly dropping the decision.
+# THE `new` AND `step` COLUMNS ARE DECISIONS, NOT MEASUREMENTS. This script
+# never invents either: an unfilled row keeps `?` and an empty `step`. Both
+# survive every later regeneration (merged back in by `old`+`kind`); if the row
+# they were recorded against stops being measured, the script fails instead of
+# quietly dropping the decision. A decided row must name the step that makes the
+# decision, and a step must not name an undecided row: `--emit-maps=<step>`
+# renders one step's decisions as map rows, which is how a step's map stays free
+# of a later step's renames.
 #
 # WHAT THIS METHOD DOES NOT SEE:
 #  - a name assembled at runtime (string concatenation, a value read from

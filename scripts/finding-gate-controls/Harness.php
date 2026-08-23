@@ -256,8 +256,8 @@ final class Harness
         $paths = [];
 
         foreach ($controls as $control) {
-            if (!$control->mutation->isEmpty()) {
-                $paths[] = $control->mutation->relativePath;
+            foreach ($control->mutation->relativePaths() as $path) {
+                $paths[] = $path;
             }
         }
 
@@ -330,9 +330,7 @@ final class Harness
             $observed = $outcome->observedClasses();
             $lines[] = \sprintf('  %s  [%s]', $control->id, $outcome->asDeclared ? 'AS DECLARED' : 'FAILED CONTROL');
             $lines[] = '      subject    ' . $control->subject;
-            $lines[] = '      mutation   ' . ($control->mutation->isEmpty()
-                ? 'none'
-                : $control->mutation->relativePath . ' — ' . $control->mutation->description);
+            $lines[] = '      mutation   ' . $control->mutation->label();
             $lines[] = '      expected   ' . $control->expectationLabel();
             $lines[] = \sprintf(
                 '      observed   exit %d; %s',

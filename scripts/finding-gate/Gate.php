@@ -22,10 +22,22 @@ final class Gate
 
     private readonly ChannelWitness $witness;
 
+    private readonly DeclaredDelta $declaredDelta;
+
+    private readonly ChannelSplit $split;
+
     private readonly string $temporaryDirectory;
 
     /** @var array<string, list<array<string, mixed>>> */
     private array $findingsByCase = [];
+
+    /**
+     * Surface key => measured diff, while deriving the declared delta instead of
+     * holding the run to it.
+     *
+     * @var array<string, string>|null
+     */
+    private ?array $derived = null;
 
     public function __construct(
         private readonly Options $options,
@@ -34,6 +46,8 @@ final class Gate
         $root = $this->options->candidateRoot . '/finding-gate';
         $this->normalization = Normalization::load($root . '/normalization.tsv');
         $this->maps = RenameMaps::load($root . '/maps');
+        $this->declaredDelta = DeclaredDelta::load($root);
+        $this->split = ChannelSplit::of($this->maps);
         $this->corpus = Corpus::load($this->options->candidateRoot, $this->options->cases);
         $this->witness = new ChannelWitness($this->options->candidateRoot);
         $this->temporaryDirectory = Fs::temporaryDirectory('finding-gate-run-');
@@ -45,8 +59,30 @@ final class Gate
         $this->report->fact('reference', (string) $this->options->reference);
         $this->report->fact('cases', array_map(static fn(CaseDefinition $case): string => $case->id, $this->corpus->cases));
         $this->report->fact('formats', Surfaces::FORMATS);
+        $this->report->fact('auxiliary cases', array_map(
+            static fn(CaseDefinition $case): string => $case->id,
+            array_values(array_filter($this->corpus->cases, static fn(CaseDefinition $case): bool => $case->isAuxiliary())),
+        ));
         $this->report->fact('maps', $this->maps->isIdentity() ? 'empty (identity)' : 'declared');
         $this->report->fact('map rows', \count($this->maps->declaredRows()));
+        $this->report->fact('split halves', $this->split->halves());
+
+        // Loud on purpose. A declared delta is the one declaration that lets a
+        // surface differ, so how many there are and how big they are is the
+        // first thing a reader of a GREEN run has to be able to see.
+        $this->report->fact('declared deltas', \sprintf(
+            '%d surface(s), %d byte(s) total',
+            $this->declaredDelta->count(),
+            $this->declaredDelta->totalBytes(),
+        ));
+
+        if (!$this->declaredDelta->isEmpty()) {
+            $this->report->warn(\sprintf(
+                '%d surface(s) are compared against a declared delta rather than for equality: %s.',
+                $this->declaredDelta->count(),
+                implode(', ', $this->declaredDelta->surfaces()),
+            ));
+        }
 
         if ($this->options->cases !== []) {
             $this->report->limit('the corpus was restricted to ' . implode(', ', $this->options->cases) . ' by --cases');
@@ -72,14 +108,17 @@ final class Gate
 
             $referenceArtifacts = $this->runTree($reference->root, 'reference', reverseInput: true);
 
+            $this->checkReferenceInput($first, $referenceArtifacts);
             $this->checkFindings('candidate', $first, trackObserved: true);
             $this->checkFindings('reference', $referenceArtifacts, trackObserved: false);
+            $this->checkSplitExplanation($first, $referenceArtifacts);
             $this->compareSurfaces($first, $referenceArtifacts);
             $this->checkPathLeaks($first, $referenceArtifacts, $reference->root);
             $this->checkCoverage();
             $this->checkWitnesses();
             $this->checkStaleNormalization();
             $this->checkStaleMaps();
+            $this->checkStaleDeclaredDelta();
         } finally {
             $reference->remove();
             $this->cleanUp();
@@ -116,6 +155,21 @@ final class Gate
         } finally {
             $this->cleanUp();
         }
+    }
+
+    /**
+     * Measures every surface that differs and writes it out as the declared
+     * delta, so no declaration is a diff somebody typed.
+     *
+     * @return list<string> the files written
+     */
+    public function deriveDeclaredDelta(): array
+    {
+        $this->derived = [];
+        $this->compare();
+        $derived = $this->derived ?? [];
+
+        return $this->declaredDelta->rewrite($derived);
     }
 
     /**
@@ -431,15 +485,260 @@ final class Gate
             $left = $this->normalization->normalize($surface, $candidate[$key]);
             $right = $this->normalization->normalize($surface, $this->maps->forward($reference[$key]));
 
-            if ($left !== $right) {
+            if ($left === $right) {
+                continue;
+            }
+
+            $diff = ExactDiff::between($left, $right, 'candidate', 'reference (mapped)');
+
+            if ($this->derived !== null) {
+                $this->derived[$key] = $diff->render();
+
+                continue;
+            }
+
+            $declared = $this->declaredDelta->claim($key);
+
+            if ($declared === null) {
                 $this->report->fail(
                     FailureClass::SURFACE_MISMATCH,
                     $key,
                     'The surface differs beyond what the declared maps and normalization account for.',
                     Diff::between($left, $right, 'candidate', 'reference (mapped)'),
                 );
+
+                continue;
+            }
+
+            $this->checkAgainstDeclaredDelta($key, $diff, $declared);
+        }
+    }
+
+    /**
+     * Holds a differing surface to its declaration, on all four properties.
+     *
+     * Size and reach are judged on the MEASURED diff, not on the declared text:
+     * a declaration that reaches too far must fail for reaching too far, and not
+     * be excused by also failing to match.
+     */
+    private function checkAgainstDeclaredDelta(string $key, ExactDiff $diff, string $declared): void
+    {
+        if ($diff->changedLineCount() > DeclaredDelta::MAX_CHANGED_LINES) {
+            $this->report->fail(
+                FailureClass::DELTA_TOO_LARGE,
+                $key,
+                \sprintf(
+                    'The measured diff is %d changed line(s), and a declaration may be %d. Declare the rename as map'
+                    . ' rows instead of dropping in a blob.',
+                    $diff->changedLineCount(),
+                    DeclaredDelta::MAX_CHANGED_LINES,
+                ),
+            );
+        }
+
+        foreach ($this->overreachingLines($diff) as $problem) {
+            $this->report->fail(
+                FailureClass::DELTA_OVERREACH,
+                $key,
+                $problem . ' A declared delta may change a compared field only inside a record whose (rule, code)'
+                . ' pair a declared split already explains — the waiver normalization was refused is refused here too.',
+            );
+        }
+
+        if ($diff->render() === $declared) {
+            return;
+        }
+
+        $this->report->fail(
+            FailureClass::DELTA_MISMATCH,
+            $key,
+            \sprintf(
+                'The measured diff is not the declared one (%s). Re-derive it with --derive-declared-delta and review'
+                . ' what moved.',
+                $this->declaredDelta->fileOf($key),
+            ),
+            [
+                ...Diff::between($declared, $diff->render(), 'declared delta', 'measured diff'),
+                ...$diff->tokenDetail(),
+            ],
+        );
+    }
+
+    /**
+     * The diff lines that change a field the equivalence tuple compares.
+     *
+     * Changed, not mentioned: a compact JSON record names `channel` on the same
+     * line as the magnitude it records, so "the line contains a compared field"
+     * would flag every such line. Only the published `"field": value` syntax is
+     * read, which covers the JSON family and the HTML report's embedded payload;
+     * the plain-text surfaces print a bare name that no field syntax marks, and
+     * for those the record-level split check is the guard.
+     *
+     * @return list<string>
+     */
+    private function overreachingLines(ExactDiff $diff): array
+    {
+        $fields = EquivalenceTuple::load($this->options->candidateRoot . '/finding-gate/equivalence-tuple.tsv')->fields;
+        $problems = [];
+
+        foreach ($diff->pairs() as $index => [$candidateLine, $referenceLine]) {
+            foreach ($fields as $field) {
+                $onCandidate = self::publishedValues($candidateLine, $field);
+                $onReference = self::publishedValues($referenceLine, $field);
+
+                if ($onCandidate === $onReference) {
+                    continue;
+                }
+
+                $moved = array_merge(
+                    array_diff($onCandidate, $onReference),
+                    array_diff($onReference, $onCandidate),
+                );
+
+                foreach ($moved as $value) {
+                    if ($this->split->allows($field, $value)) {
+                        continue;
+                    }
+
+                    $problems[] = \sprintf(
+                        'Hunk line %d changes the compared field "%s" ("%s"), which no declared split explains.',
+                        $index + 1,
+                        $field,
+                        $value,
+                    );
+                }
             }
         }
+
+        return array_values(array_unique($problems));
+    }
+
+    /**
+     * Every value the line publishes for one field.
+     *
+     * @return list<string>
+     */
+    private static function publishedValues(?string $line, string $field): array
+    {
+        if ($line === null) {
+            return [];
+        }
+
+        $pattern = \sprintf('~"%s"\s*:\s*(?:"((?:[^"\\\\]|\\\\.)*)"|([^,}\]\s]+))~', preg_quote($field, '~'));
+
+        if (preg_match_all($pattern, $line, $matches) === false) {
+            throw new GateError(\sprintf('Cannot read published values of "%s".', $field));
+        }
+
+        $values = [];
+
+        foreach ($matches[2] as $index => $bare) {
+            $values[] = $bare === '' ? $matches[1][$index] : $bare;
+        }
+
+        return $values;
+    }
+
+    /**
+     * A surface a declared delta covers that turned out to be equal.
+     *
+     * The same lie as a stale map row: a declaration of a change nobody can
+     * point at.
+     */
+    private function checkStaleDeclaredDelta(): void
+    {
+        if ($this->derived !== null) {
+            return;
+        }
+
+        foreach ($this->declaredDelta->staleSurfaces() as $surface) {
+            $this->report->fail(
+                FailureClass::DELTA_STALE,
+                $surface,
+                'A delta is declared for this surface, and the two trees agree on it. A declaration of a change that'
+                . ' did not happen fails until it is corrected or removed.',
+            );
+        }
+    }
+
+    /**
+     * The reference binary must be addressable in its own vocabulary.
+     *
+     * Exit code 3 is the product's "config/input error", so a reference run that
+     * exits 3 where the candidate does not was handed a name that does not exist
+     * yet — a rule renamed by the step and written into a case's input with no
+     * `inputs.tsv` row to restate it. Left to itself that arrives as eleven
+     * surface diffs and an empty findings section, which reads as a product
+     * change; it is neither, and it says so.
+     *
+     * @param array<string, string> $candidate
+     * @param array<string, string> $reference
+     */
+    private function checkReferenceInput(array $candidate, array $reference): void
+    {
+        foreach ($reference as $key => $exit) {
+            $separator = strpos($key, '|exit:');
+
+            if ($separator === false || $exit !== '3' || ($candidate[$key] ?? null) === '3') {
+                continue;
+            }
+
+            $stderrKey = substr($key, 0, $separator) . '|stderr:' . substr($key, $separator + \strlen('|exit:'));
+
+            $this->report->fail(
+                FailureClass::REFERENCE_INPUT_UNTRANSLATED,
+                'reference / ' . substr($key, 0, $separator),
+                \sprintf(
+                    'The reference refused its input (exit 3) where the candidate did not, so it was addressed in a'
+                    . ' vocabulary it does not know. Declare the token in %s. Surface: %s. It said: %s',
+                    RenameMaps::INPUTS,
+                    $key,
+                    trim($reference[$stderrKey] ?? '(nothing on stderr)'),
+                ),
+            );
+        }
+    }
+
+    /**
+     * Every occurrence of a split half must be explained by a declared row.
+     *
+     * @param array<string, string> $candidate
+     * @param array<string, string> $reference
+     */
+    private function checkSplitExplanation(array $candidate, array $reference): void
+    {
+        if ($this->split->isEmpty()) {
+            return;
+        }
+
+        foreach ($this->corpus->cases as $case) {
+            $key = Surfaces::key('case:' . $case->id, 'format:json');
+
+            foreach ($this->split->unexplained(
+                self::findings($this->maps->forward($reference[$key] ?? '')),
+                self::findings($candidate[$key] ?? ''),
+            ) as $problem) {
+                $this->report->fail(FailureClass::SPLIT_UNMAPPED, 'case:' . $case->id, $problem);
+            }
+        }
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function findings(string $json): array
+    {
+        $decoded = json_decode($json, true);
+        $findings = [];
+
+        foreach ((array) (\is_array($decoded) ? $decoded['violations'] ?? [] : []) as $finding) {
+            if (\is_array($finding)) {
+                /** @var array<string, mixed> $finding */
+                $findings[] = $finding;
+            }
+        }
+
+        return $findings;
     }
 
     /**
@@ -515,15 +814,24 @@ final class Gate
         $producers = [];
 
         foreach ($this->corpus->cases as $case) {
-            $declared = [...$declared, ...$this->witness->computedChannels($case)];
             $caseObserved = self::observedChannels($this->findingsByCase[$case->id] ?? []);
+            $this->checkCaseClaim($case, $caseObserved);
+
+            // An auxiliary case exists for an input, not for a channel: it fires
+            // what an authoritative case already owns, so counting it would
+            // report a second producer for every channel it touches and take the
+            // sharpness out of the fixture-removal control. Its own claim is
+            // still verified above — that is what makes it prove anything.
+            if ($case->isAuxiliary()) {
+                continue;
+            }
+
+            $declared = [...$declared, ...$this->witness->computedChannels($case)];
             $observed = [...$observed, ...$caseObserved];
 
             foreach ($caseObserved as $channel) {
                 $producers[$channel][] = $case->id;
             }
-
-            $this->checkCaseClaim($case, $caseObserved);
         }
 
         $this->checkSingleProducer($producers);

@@ -9,8 +9,9 @@ use QmxFindingGate\FailureClass;
 /**
  * The controls, as a list.
  *
- * Four negative controls — the four the Ш1 DoD names — plus the positive one
- * without which four reds could all be reds for an environmental reason.
+ * Eight negative controls — the four the Ш1 DoD names and the four Ш4a adds for
+ * the declared delta and the reference's vocabulary — plus the positive one
+ * without which eight reds could all be reds for an environmental reason.
  *
  * Every expectation — required and tolerated alike — pins the surface it must
  * land on. An unpinned class would let an unrelated failure elsewhere in the
@@ -34,6 +35,10 @@ final class Controls
             self::substitutedCeiling(),
             self::changedFindingCount(),
             self::removedFixture(),
+            self::deltaMismatch(),
+            self::deltaStale(),
+            self::deltaOverreach(),
+            self::referenceInputUntranslated(),
         ];
 
         return array_map(
@@ -52,9 +57,11 @@ final class Controls
      * construction are mutated together, so this is a rename of the channel
      * rather than a rule that emits something it does not declare.
      *
-     * The rule name is deliberately left alone: several cases address
+     * The rule name is deliberately left alone: the `complexity` case addresses
      * `cohesion.lcom` through `--rule-opt`, and renaming the rule would make
      * the run fail on an unknown rule instead of comparing two vocabularies.
+     * That failure is a mechanism of its own, and the `reference-input` control
+     * is where it is proved.
      *
      * The blast radius, enumerated rather than gestured at. `cohesion.lcom` is
      * claimed by exactly one case, `complexity`, so the surface diff and the
@@ -70,14 +77,7 @@ final class Controls
         return Control::red(
             'rename-no-map',
             'a channel renamed in product code with finding-gate/maps/channels.tsv left empty',
-            Mutation::edit(
-                'src/Analysis/Evidence/Cohesion/LcomRule.php',
-                [
-                    '(new ViolationChannel(self::NAME, self::NAME))' => "(new ViolationChannel(self::NAME, 'cohesion.lcom4'))",
-                    'violationCode: self::NAME,' => "violationCode: 'cohesion.lcom4',",
-                ],
-                'channel cohesion.lcom#cohesion.lcom -> cohesion.lcom#cohesion.lcom4',
-            ),
+            self::lcomChannelMutation(),
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity')],
             [
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
@@ -123,11 +123,7 @@ final class Controls
         return Control::red(
             'substituted-ceiling',
             'the recorded ceiling moves while the set of findings stays the same',
-            Mutation::edit(
-                'src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php',
-                ['metricValue: $total,' => 'metricValue: $total + 1,'],
-                'the unused-private count each finding records is one higher',
-            ),
+            self::ceilingMutation(),
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells|baseline-file')],
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells')],
         );
@@ -183,6 +179,183 @@ final class Controls
                 new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus'),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:smells'),
             ],
+        );
+    }
+
+    /**
+     * A declared delta that does not state the difference it covers.
+     *
+     * The product perturbation is the ceiling control's, because it is the one
+     * whose blast radius is already measured. The declaration planted next to it
+     * covers the baseline file — where the perturbation lands — with a diff no
+     * measurement produced. A delta the gate does not recompute would make every
+     * later step's delta a rubber stamp, so the mismatch has to be a failure of
+     * its own rather than an absent surface diff.
+     */
+    private static function deltaMismatch(): Control
+    {
+        return Control::red(
+            'delta-mismatch',
+            'a declared delta whose diff is not the one the run measures',
+            self::ceilingMutation()->and(self::declare(
+                'case:smells|baseline-file',
+                'the ceiling control\'s perturbation, declared with a diff nothing measured',
+            )),
+            [new Expectation(FailureClass::DELTA_MISMATCH, 'case:smells|baseline-file')],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells')],
+        );
+    }
+
+    /**
+     * A declared delta on a surface the two trees agree on.
+     *
+     * Nothing is perturbed, so this is the positive control with one declaration
+     * added: the same lie as a map row that translated nothing, and it has to
+     * fail the same way or a delta could outlive the change it described.
+     */
+    private static function deltaStale(): Control
+    {
+        return Control::red(
+            'delta-stale',
+            'a delta declared for a surface that did not change',
+            self::declare('case:smells|baseline-file', 'a delta declared where nothing differs'),
+            [new Expectation(FailureClass::DELTA_STALE, 'case:smells|baseline-file')],
+        );
+    }
+
+    /**
+     * A declared delta reaching a field the equivalence tuple compares.
+     *
+     * The channel rename is the mutation, because the half it moves *is* the
+     * `code` field of every finding it produces — and with no split declared,
+     * nothing explains that record. Without this seam the first user of a
+     * declared delta would have had to breach it: the plan counts nine bare
+     * occurrences of one renamed half across `json` and `html`, all of them the
+     * `rule` field. The delta is also not the measured one, which is tolerated on
+     * that same surface: reach is judged on what the run measures, so a
+     * declaration that overreaches must fail for overreaching rather than be
+     * excused by also failing to match.
+     */
+    private static function deltaOverreach(): Control
+    {
+        return Control::red(
+            'delta-overreach',
+            'a declared delta covering a compared field with no split to explain it',
+            self::lcomChannelMutation()->and(self::declare(
+                'case:complexity|format:json',
+                'a renamed code half declared as a delta instead of a map row',
+            )),
+            [new Expectation(FailureClass::DELTA_OVERREACH, 'case:complexity|format:json')],
+            [
+                new Expectation(FailureClass::DELTA_MISMATCH, 'case:complexity|format:json'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
+                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
+                new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus'),
+                new Expectation(FailureClass::COVERAGE_SURPLUS, 'corpus'),
+                new Expectation(
+                    FailureClass::WITNESS_DISAGREEMENT,
+                    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+                ),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'tree|rules'),
+            ],
+        );
+    }
+
+    /**
+     * The reference addressed in a vocabulary it does not have.
+     *
+     * A rule renamed in product code, and the one case that addresses that rule
+     * through `--rule-opt` repointed onto the new name — which is what a step
+     * that renames a rule has to do — with no `inputs.tsv` row to restate it for
+     * the reference. The reference then refuses its input with the product's
+     * config-error exit code, and the point of the control is that this says so
+     * instead of arriving as eleven surface diffs and an empty findings section,
+     * which would read as a product change.
+     *
+     * The case's `channels` claim is repointed with the arguments on purpose: the
+     * claim is not what is under test here, and leaving it stale would add a
+     * failure of a different mechanism to every line of the table. Our own
+     * `qmx.yaml` is repointed for a harder reason, measured: the channel probe
+     * resolves the candidate tree's own configuration, and that configuration
+     * names `cohesion.lcom` — so without this the probe dies on an unknown rule
+     * and the gate never gets as far as running anything.
+     */
+    private static function referenceInputUntranslated(): Control
+    {
+        return Control::red(
+            'reference-input',
+            'a case input that needs translating, with no inputs.tsv row to translate it',
+            Mutation::edit(
+                'src/Analysis/Evidence/Cohesion/LcomRule.php',
+                ["public const string NAME = 'cohesion.lcom';" => "public const string NAME = 'cohesion.lcom4';"],
+                'the rule and its channel are renamed to cohesion.lcom4',
+            )->and(Mutation::edit(
+                'finding-gate/cases/complexity/case.json',
+                [
+                    '"--rule-opt=cohesion.lcom:warning=2"' => '"--rule-opt=cohesion.lcom4:warning=2"',
+                    '"--rule-opt=cohesion.lcom:error=4"' => '"--rule-opt=cohesion.lcom4:error=4"',
+                    '"--rule-opt=cohesion.lcom:minMethods=2"' => '"--rule-opt=cohesion.lcom4:minMethods=2"',
+                    '"cohesion.lcom#cohesion.lcom"' => '"cohesion.lcom4#cohesion.lcom4"',
+                ],
+                'the case addresses the new name',
+            ))->and(Mutation::edit(
+                'qmx.yaml',
+                ['  cohesion.lcom:' => '  cohesion.lcom4:'],
+                'our own configuration addresses the new name too',
+            )),
+            [new Expectation(FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:complexity')],
+            [
+                new Expectation(FailureClass::RUN_FAILED, 'reference / complexity'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
+                new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:complexity'),
+                new Expectation(
+                    FailureClass::WITNESS_DISAGREEMENT,
+                    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+                ),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'tree|rules'),
+            ],
+        );
+    }
+
+    /** The ceiling perturbation, shared by the control that measured it and the delta control. */
+    private static function ceilingMutation(): Mutation
+    {
+        return Mutation::edit(
+            'src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php',
+            ['metricValue: $total,' => 'metricValue: $total + 1,'],
+            'the unused-private count each finding records is one higher',
+        );
+    }
+
+    /** The channel rename, shared by the map control and the overreach control. */
+    private static function lcomChannelMutation(): Mutation
+    {
+        return Mutation::edit(
+            'src/Analysis/Evidence/Cohesion/LcomRule.php',
+            [
+                '(new ViolationChannel(self::NAME, self::NAME))' => "(new ViolationChannel(self::NAME, 'cohesion.lcom4'))",
+                'violationCode: self::NAME,' => "violationCode: 'cohesion.lcom4',",
+            ],
+            'channel cohesion.lcom#cohesion.lcom -> cohesion.lcom#cohesion.lcom4',
+        );
+    }
+
+    /**
+     * Plants a declared delta for one surface: the index row plus a diff file no
+     * measurement produced.
+     */
+    private static function declare(string $surface, string $reason): Mutation
+    {
+        $slug = trim((string) preg_replace('~[^A-Za-z0-9]+~', '-', $surface), '-');
+        $file = 'declared-delta/' . $slug . '.diff';
+
+        return Mutation::create(
+            [
+                'finding-gate/declared-delta.tsv' => "surface\tfile\treason\n" . $surface . "\t" . $file . "\t" . $reason . "\n",
+                'finding-gate/' . $file => "--- candidate\n+++ reference (mapped)\n@@ -1,1 +1,1 @@\n"
+                    . "-a line no measurement produced\n+nor did it produce this one\n",
+            ],
+            'a delta declared for ' . $surface,
         );
     }
 

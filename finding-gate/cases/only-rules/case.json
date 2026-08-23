@@ -1,0 +1,15 @@
+{
+    "id": "only-rules",
+    "description": "Auxiliary: the only case naming a rule in only_rules, so the gate carries a configured selector on its input rather than never seeing one.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "channels": [
+        "code-smell.eval#code-smell.eval"
+    ],
+    "explainSubjects": [
+        "declaration:callable:Corpus\\OnlyRules\\Statements::run@src/Statements.php"
+    ]
+}

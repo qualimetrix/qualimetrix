@@ -1,0 +1,22 @@
+{
+    "id": "disabled-rule",
+    "description": "Auxiliary: the only case addressing a rule through --disable-rule, so the gate carries a selector on its input rather than never seeing one.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2",
+        "--disable-rule=code-smell.eval"
+    ],
+    "channels": [
+        "code-smell.goto#code-smell.goto"
+    ],
+    "explainSubjects": [
+        "declaration:callable:Corpus\\DisabledRule\\Statements::run@src/Statements.php"
+    ]
+}

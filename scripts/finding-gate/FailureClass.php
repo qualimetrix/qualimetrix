@@ -61,6 +61,24 @@ final class FailureClass
     /** A normalization rule reaches a field the equivalence tuple compares. */
     public const NORMALIZATION_OVERREACH = 'normalization-overreach';
 
+    /** A half a declared split cannot translate occurs where no declared row explains it. */
+    public const SPLIT_UNMAPPED = 'split-unmapped';
+
+    /** The measured diff of a surface is not the one the declared delta states. */
+    public const DELTA_MISMATCH = 'delta-mismatch';
+
+    /** A delta is declared for a surface the two trees agree on. */
+    public const DELTA_STALE = 'delta-stale';
+
+    /** A declared delta is larger than a declaration may be. */
+    public const DELTA_TOO_LARGE = 'delta-too-large';
+
+    /** A declared delta changes a field the equivalence tuple compares, unexplained. */
+    public const DELTA_OVERREACH = 'delta-overreach';
+
+    /** The reference binary was handed input in a vocabulary it does not know. */
+    public const REFERENCE_INPUT_UNTRANSLATED = 'reference-input-untranslated';
+
     /** Two runs of one tree differ after normalization. */
     public const NONDETERMINISM_UNDECLARED = 'nondeterminism-undeclared';
 
@@ -85,6 +103,12 @@ final class FailureClass
         self::NORMALIZATION_STALE,
         self::MAP_STALE,
         self::NORMALIZATION_OVERREACH,
+        self::SPLIT_UNMAPPED,
+        self::DELTA_MISMATCH,
+        self::DELTA_STALE,
+        self::DELTA_TOO_LARGE,
+        self::DELTA_OVERREACH,
+        self::REFERENCE_INPUT_UNTRANSLATED,
         self::NONDETERMINISM_UNDECLARED,
         self::PATH_LEAK,
     ];

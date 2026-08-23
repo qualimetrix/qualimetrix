@@ -5,13 +5,25 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 /**
- * The three declared maps: channel names, symbols (FQN or path) and metric keys.
+ * The four declared maps: channel names, symbols (FQN or path), metric keys and
+ * inputs (option keys, flag aliases, names inside selectors).
  *
- * Direction is not symmetric in purpose. Forward (old -> new) is applied to the
- * REFERENCE tree's artifacts, because the reference predates the rename and its
- * output still speaks the old vocabulary. Reverse (new -> old) is applied to the
- * configuration and CLI arguments handed to that same reference binary, which
+ * Direction is declared per map, not assumed. Forward (old -> new) is applied to
+ * the REFERENCE tree's artifacts, because the reference predates the rename and
+ * its output still speaks the old vocabulary. Reverse (new -> old) is applied to
+ * the configuration and CLI arguments handed to that same reference binary, which
  * cannot be addressed in a vocabulary it does not know yet.
+ *
+ * A map may be applied backwards if and only if it is injective in both
+ * directions, and that is checked here rather than promised. `channels.tsv` is
+ * forward-only: after a collapse two rows share one target, and after a split one
+ * old half has several, so neither can be inverted. It also must not be inverted
+ * even where it looks invertible — a collapsed channel name is textually the same
+ * string as the unchanged producer name the corpus writes into its own input, so
+ * an inverted channel map would rewrite a legitimate argument. An input that does
+ * need the translation says so with an `inputs.tsv` row; one that needs it and has
+ * no row makes the reference run fail loudly on an unknown name, which is what
+ * Gate's `reference-input-untranslated` reports.
  *
  * Two properties make a map a proof of what a step renamed rather than a blanket
  * rewrite, and both are enforced here rather than promised in prose.
@@ -37,12 +49,39 @@ namespace QmxFindingGate;
  */
 final class RenameMaps
 {
-    private const FILES = ['channels.tsv', 'symbols.tsv', 'metric-keys.tsv'];
+    public const CHANNELS = 'channels.tsv';
+    public const SYMBOLS = 'symbols.tsv';
+    public const METRIC_KEYS = 'metric-keys.tsv';
+    public const INPUTS = 'inputs.tsv';
+
+    /** Map file => whether it may also be applied backwards. */
+    private const FILES = [
+        self::CHANNELS => false,
+        self::SYMBOLS => true,
+        self::METRIC_KEYS => true,
+        self::INPUTS => true,
+    ];
 
     /** What continues a name, and therefore what may not end a match. */
     private const NAME_CHARS = 'A-Za-z0-9_.\\-\\\\/';
 
-    /** @var list<array{old: string, new: string, source: string, row: string}> */
+    /**
+     * Prefixes an artifact writes in front of a name, which the boundary
+     * assertion would otherwise refuse to look past.
+     *
+     * Measured across all eleven formats plus the baseline file, `baseline:explain`
+     * and the `bin/qmx rules` snapshot: `qmx.` in checkstyle's `source` attribute
+     * is the only one. A dot continues a name, so `source="qmx.code-smell.eval"`
+     * has no left boundary and the row would translate nothing there — a rename
+     * leaking into an undeclared diff. Handled like the JSON-escaped backslash:
+     * the prefixed spelling is another substitution of the SAME row, so it
+     * counts towards that row's staleness and is never a second declaration.
+     *
+     * @var list<string>
+     */
+    private const PREFIXES = ['qmx.'];
+
+    /** @var list<array{old: string, new: string, source: string, row: string, reversible: bool, ambiguous: bool}> */
     private array $pairs;
 
     /** @var array<int, int> */
@@ -54,17 +93,25 @@ final class RenameMaps
     /** @var array<string, string> */
     private array $patterns = [];
 
+    /**
+     * Old half => the several new halves declared for it, i.e. a split.
+     *
+     * @var array<string, list<string>>
+     */
+    private array $splits = [];
+
+    /** @var array<string, string> old whole channel key => new whole channel key */
+    private array $channelKeys = [];
+
     /** @param list<array{old: string, new: string, source: string, row?: string}> $pairs */
     private function __construct(array $pairs)
     {
-        $unique = [];
-
-        foreach ($pairs as $pair) {
-            $pair['row'] ??= \sprintf('%s: "%s" -> "%s"', $pair['source'], $pair['old'], $pair['new']);
-            $unique[$pair['old'] . "\0" . $pair['new']] = $pair;
-        }
-
-        $this->pairs = array_values($unique);
+        $this->pairs = self::normalize($pairs);
+        $this->splits = $this->collectSplits();
+        $this->pairs = array_values(array_filter(
+            $this->pairs,
+            fn(array $pair): bool => !isset($this->splits[$pair['old']]) || !$pair['ambiguous'],
+        ));
         $this->validate();
     }
 
@@ -72,18 +119,11 @@ final class RenameMaps
     {
         $pairs = [];
 
-        foreach (self::FILES as $file) {
+        foreach (array_keys(self::FILES) as $file) {
             $path = $mapsDirectory . '/' . $file;
 
             foreach (self::rows($path) as [$old, $new]) {
-                $expanded = $file === 'channels.tsv'
-                    ? self::expandChannelRow($old, $new, $path)
-                    : [[$old, $new]];
-                $row = \sprintf('%s: "%s" -> "%s"', $file, $old, $new);
-
-                foreach ($expanded as [$expandedOld, $expandedNew]) {
-                    $pairs[] = ['old' => $expandedOld, 'new' => $expandedNew, 'source' => $file, 'row' => $row];
-                }
+                $pairs[] = ['old' => $old, 'new' => $new, 'source' => $file];
             }
         }
 
@@ -98,7 +138,7 @@ final class RenameMaps
 
     public function isIdentity(): bool
     {
-        return $this->pairs === [];
+        return $this->pairs === [] && $this->splits === [];
     }
 
     /**
@@ -137,16 +177,37 @@ final class RenameMaps
         return array_values(array_diff($declared, array_keys($fired)));
     }
 
+    /**
+     * The halves a declared rename splits, and what it splits them into.
+     *
+     * A half is translated textually only when the whole set of rows agrees on
+     * one target for it. Where they disagree the translation is undecidable, so
+     * the half survives untranslated and the record it sits in is explained
+     * instead — see ChannelSplit.
+     *
+     * @return array<string, list<string>>
+     */
+    public function splits(): array
+    {
+        return $this->splits;
+    }
+
+    /** @return array<string, string> old whole channel key => new whole channel key */
+    public function channelKeys(): array
+    {
+        return $this->channelKeys;
+    }
+
     /** Reference output, restated in the candidate's vocabulary. */
     public function forward(string $text): string
     {
-        return $this->replace($text, old: 'old', new: 'new');
+        return $this->replace($text, old: 'old', new: 'new', reversibleOnly: false);
     }
 
     /** Candidate-side input, restated in the reference's vocabulary. */
     public function reverse(string $text): string
     {
-        return $this->replace($text, old: 'new', new: 'old');
+        return $this->replace($text, old: 'new', new: 'old', reversibleOnly: true);
     }
 
     /**
@@ -159,14 +220,19 @@ final class RenameMaps
         return array_map($this->reverse(...), $arguments);
     }
 
-    private function replace(string $text, string $old, string $new): string
+    private function replace(string $text, string $old, string $new, bool $reversibleOnly): string
     {
         if ($this->pairs === []) {
             return $text;
         }
 
         $direction = $old . '>' . $new;
-        $substitutions = $this->substitutions[$direction] ??= $this->buildSubstitutions($old, $new);
+        $substitutions = $this->substitutions[$direction] ??= $this->buildSubstitutions($old, $new, $reversibleOnly);
+
+        if ($substitutions === []) {
+            return $text;
+        }
+
         $pattern = $this->patterns[$direction] ??= self::buildPattern($substitutions);
         $lookup = [];
 
@@ -193,23 +259,37 @@ final class RenameMaps
     }
 
     /**
-     * A backslash-bearing symbol reaches an artifact both raw (text surfaces)
-     * and JSON-escaped, and a map row can only be written one way. Both forms
-     * are substituted, and both count towards the row's own staleness.
+     * A name reaches an artifact in more spellings than a map row can be written
+     * in: a backslash-bearing symbol appears raw on text surfaces and
+     * JSON-escaped in JSON, and checkstyle prefixes a channel code with `qmx.`.
+     * Every spelling is substituted, and every one counts towards the row's own
+     * staleness.
      *
      * @return list<array{0: string, 1: string, 2: int}>
      */
-    private function buildSubstitutions(string $old, string $new): array
+    private function buildSubstitutions(string $old, string $new, bool $reversibleOnly): array
     {
         $substitutions = [];
 
         foreach ($this->pairs as $index => $pair) {
-            $from = $pair[$old];
-            $to = $pair[$new];
-            $substitutions[] = [$from, $to, $index];
+            if ($reversibleOnly && !$pair['reversible']) {
+                continue;
+            }
+
+            $from = $old === 'old' ? $pair['old'] : $pair['new'];
+            $to = $new === 'new' ? $pair['new'] : $pair['old'];
+            $spellings = [[$from, $to]];
 
             if (str_contains($from, '\\')) {
-                $substitutions[] = [str_replace('\\', '\\\\', $from), str_replace('\\', '\\\\', $to), $index];
+                $spellings[] = [str_replace('\\', '\\\\', $from), str_replace('\\', '\\\\', $to)];
+            }
+
+            foreach (self::PREFIXES as $prefix) {
+                $spellings[] = [$prefix . $from, $prefix . $to];
+            }
+
+            foreach ($spellings as [$spelledFrom, $spelledTo]) {
+                $substitutions[] = [$spelledFrom, $spelledTo, $index];
             }
         }
 
@@ -237,6 +317,117 @@ final class RenameMaps
         );
     }
 
+    /**
+     * Expands the declared rows into the pairs that are actually substituted.
+     *
+     * A channels row is a whole `rule#code` key, and the same rename shows up in
+     * the artifacts three ways: as the whole key, and as each differing half.
+     * Halves are marked ambiguous because several rows may legitimately disagree
+     * about one half — that is a split, not a contradiction.
+     *
+     * @param list<array{old: string, new: string, source: string, row?: string}> $pairs
+     *
+     * @return list<array{old: string, new: string, source: string, row: string, reversible: bool, ambiguous: bool}>
+     */
+    private static function normalize(array $pairs): array
+    {
+        $unique = [];
+
+        foreach ($pairs as $pair) {
+            $source = $pair['source'];
+
+            if (!\array_key_exists($source, self::FILES)) {
+                throw new GateError(\sprintf('"%s" is not one of the declared maps.', $source));
+            }
+
+            $row = $pair['row'] ?? \sprintf('%s: "%s" -> "%s"', $source, $pair['old'], $pair['new']);
+
+            if ($source === self::INPUTS) {
+                self::assertWholeInputToken($pair['old'], $row);
+                self::assertWholeInputToken($pair['new'], $row);
+            }
+
+            $expanded = $source === self::CHANNELS
+                ? self::expandChannelRow($pair['old'], $pair['new'], $source)
+                : [[$pair['old'], $pair['new'], false]];
+
+            foreach ($expanded as [$old, $new, $ambiguous]) {
+                $unique[$old . "\0" . $new . "\0" . $source] = [
+                    'old' => $old,
+                    'new' => $new,
+                    'source' => $source,
+                    'row' => $row,
+                    'reversible' => self::FILES[$source],
+                    'ambiguous' => $ambiguous,
+                ];
+            }
+        }
+
+        return array_values($unique);
+    }
+
+    /**
+     * An `inputs.tsv` row names a whole token, never a name inside one.
+     *
+     * Three shapes are whole tokens on the input: `rule:option-key` as it is
+     * written inside `--rule-opt=`, a flag together with its two dashes, and a
+     * dotted producer name as a selector writes it (`--disable-rule=`,
+     * `only_rules:`). A bare undotted word is refused, because "the option key
+     * without its rule" would also translate the same key on some other rule.
+     */
+    private static function assertWholeInputToken(string $token, string $row): void
+    {
+        $dottedName = '[A-Za-z0-9][A-Za-z0-9_-]*(?:\.[A-Za-z0-9][A-Za-z0-9_-]*)+';
+        $shapes = [
+            'a rule and its option key' => '~^' . $dottedName . ':[A-Za-z0-9][A-Za-z0-9._-]*$~',
+            'a flag with its two dashes' => '~^--[A-Za-z0-9][A-Za-z0-9._-]*$~',
+            'a dotted producer name as a selector writes it' => '~^' . $dottedName . '$~',
+        ];
+
+        foreach ($shapes as $pattern) {
+            if (preg_match($pattern, $token) === 1) {
+                return;
+            }
+        }
+
+        throw new GateError(\sprintf(
+            '%s: "%s" is not a whole input token. An %s row translates %s — never a name inside a token, because'
+            . ' "the option key without its rule" would translate the same key on another rule too.',
+            $row,
+            $token,
+            self::INPUTS,
+            implode(', or ', array_keys($shapes)),
+        ));
+    }
+
+    /**
+     * The halves several rows disagree about, i.e. what a split renames.
+     *
+     * @return array<string, list<string>>
+     */
+    private function collectSplits(): array
+    {
+        $targets = [];
+
+        foreach ($this->pairs as $pair) {
+            if ($pair['ambiguous']) {
+                $targets[$pair['old']][$pair['new']] = $pair['new'];
+            }
+        }
+
+        $splits = [];
+
+        foreach ($targets as $old => $news) {
+            if (\count($news) > 1) {
+                $sorted = array_values($news);
+                sort($sorted);
+                $splits[$old] = $sorted;
+            }
+        }
+
+        return $splits;
+    }
+
     private function validate(): void
     {
         $targets = [];
@@ -256,17 +447,21 @@ final class RenameMaps
                 ));
             }
 
-            if (isset($targets[$pair['new']])) {
+            // Two rows onto one name is a collapse, and forwards a collapse is
+            // correct: the two reference names really do become one. It only
+            // breaks the backwards direction, so it is refused exactly there.
+            if (isset($targets[$pair['new']]) && ($pair['reversible'] || $targets[$pair['new']]['reversible'])) {
                 throw new GateError(\sprintf(
-                    '%s and %s both produce "%s", so two reference names would collapse into one.',
-                    $targets[$pair['new']],
+                    '%s and %s both produce "%s". A map applied backwards must be injective in both directions,'
+                    . ' and a collapse cannot be inverted.',
+                    $targets[$pair['new']]['row'],
                     $pair['row'],
                     $pair['new'],
                 ));
             }
 
             $sources[$pair['old']] = $pair['row'];
-            $targets[$pair['new']] = $pair['row'];
+            $targets[$pair['new']] = $pair;
         }
 
         foreach ($this->pairs as $pair) {
@@ -279,6 +474,12 @@ final class RenameMaps
                 ));
             }
         }
+
+        foreach ($this->pairs as $pair) {
+            if ($pair['source'] === self::CHANNELS && str_contains($pair['old'], '#')) {
+                $this->channelKeys[$pair['old']] = $pair['new'];
+            }
+        }
     }
 
     /**
@@ -286,7 +487,7 @@ final class RenameMaps
      * rename shows up as a whole key in `channel`, and as each half in `rule`
      * and `code`.
      *
-     * @return list<array{0: string, 1: string}>
+     * @return list<array{0: string, 1: string, 2: bool}>
      */
     private static function expandChannelRow(string $old, string $new, string $path): array
     {
@@ -297,11 +498,11 @@ final class RenameMaps
             throw new GateError(\sprintf('%s: "%s" -> "%s" is not a pair of full "rule#code" keys.', $path, $old, $new));
         }
 
-        $pairs = [[$old, $new]];
+        $pairs = [[$old, $new, false]];
 
         foreach ([0, 1] as $half) {
             if ($oldHalves[$half] !== $newHalves[$half]) {
-                $pairs[] = [$oldHalves[$half], $newHalves[$half]];
+                $pairs[] = [$oldHalves[$half], $newHalves[$half], true];
             }
         }
 

@@ -26,11 +26,14 @@ foreach (
         'Process',
         'Surfaces',
         'Diff',
+        'ExactDiff',
         'GateReport',
         'Options',
         'CaseDefinition',
         'Corpus',
         'RenameMaps',
+        'ChannelSplit',
+        'DeclaredDelta',
         'NormalizationRule',
         'Normalization',
         'NormalizationDeriver',
@@ -58,6 +61,7 @@ function main(array $argv): int
             Options::MODE_SELF_TEST => selfTest($options),
             Options::MODE_DERIVE_TUPLE => deriveTuple($options),
             Options::MODE_DERIVE_NORMALIZATION => deriveNormalization($options),
+            Options::MODE_DERIVE_DECLARED_DELTA => deriveDeclaredDelta($options),
             default => compare($options),
         };
     } catch (GateError $error) {
@@ -101,6 +105,26 @@ function deriveNormalization(Options $options): int
     $path = $options->candidateRoot . '/finding-gate/normalization.tsv';
     Fs::write($path, (new Gate($options, new GateReport()))->deriveNormalization());
     echo 'Measured ' . $path . " from repeated runs of the candidate tree.\n";
+
+    return 0;
+}
+
+function deriveDeclaredDelta(Options $options): int
+{
+    $report = new GateReport();
+    $gate = new Gate($options, $report);
+    register_shutdown_function($gate->cleanUp(...));
+    $written = $gate->deriveDeclaredDelta();
+    echo $report->render();
+
+    if ($written === []) {
+        echo "No surface differs from the reference, so no delta was declared.\n";
+
+        return 0;
+    }
+
+    echo 'Measured the declared delta into: ' . implode(', ', $written) . "\n";
+    echo "Fill in the reason of every row marked \"?\" — the gate refuses to load one that is not explained.\n";
 
     return 0;
 }
