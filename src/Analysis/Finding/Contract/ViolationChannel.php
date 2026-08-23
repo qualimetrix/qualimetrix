@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Stringable;
 
 /**
@@ -63,6 +64,21 @@ final readonly class ViolationChannel implements Stringable
      * @throws InvalidArgumentException when `$key` does not contain the
      *                                  separator, or either half would be empty
      */
+    /**
+     * The channel a producer emits for one level of its own name — the single
+     * place a level is ever spelled into a channel code.
+     *
+     * Every rule that reports at more than one level names the level in its
+     * violation code, and each used to write the suffix out by hand at both
+     * its declaration and its emission point. That is how
+     * `CboRule` came to pick `.class` for any level that was not
+     * `namespace`: a third level would have been mislabelled silently.
+     */
+    public static function leveled(string $ruleName, SymbolLevel $level): self
+    {
+        return new self($ruleName, $ruleName . '.' . $level->value);
+    }
+
     public static function fromKey(string $key): self
     {
         $parts = explode(self::SEPARATOR, $key, 2);

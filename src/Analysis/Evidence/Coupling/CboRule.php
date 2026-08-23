@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
@@ -14,7 +15,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
@@ -66,11 +66,11 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     }
 
     /**
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Class_, RuleLevel::Namespace_];
+        return [SymbolLevel::Class_, SymbolLevel::Namespace_];
     }
 
     /**
@@ -78,15 +78,15 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
      *
      * @return list<Violation>
      */
-    public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
+    public function analyzeLevel(SymbolLevel $level, AnalysisContext $context): array
     {
         if (!$this->options instanceof CboOptions) {
             return [];
         }
 
         return match ($level) {
-            RuleLevel::Class_ => $this->options->class->isEnabled() ? $this->analyzeClassLevel($context) : [],
-            RuleLevel::Namespace_ => $this->options->namespace->isEnabled() ? $this->analyzeNamespaceLevel($context) : [],
+            SymbolLevel::Class_ => $this->options->class->isEnabled() ? $this->analyzeClassLevel($context) : [],
+            SymbolLevel::Namespace_ => $this->options->namespace->isEnabled() ? $this->analyzeNamespaceLevel($context) : [],
             default => [],
         };
     }
@@ -125,8 +125,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            (new ViolationChannel(self::NAME, self::NAME . '.namespace'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            ViolationChannel::leveled(self::NAME, SymbolLevel::Class_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            ViolationChannel::leveled(self::NAME, SymbolLevel::Namespace_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
         ];
     }
 
@@ -172,7 +172,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $info,
             $subject,
             $options,
-            RuleLevel::Class_,
+            SymbolLevel::Class_,
             $context,
             ['applicationScope' => $applicationScope, 'frameworkCe' => $frameworkCe],
         );
@@ -213,7 +213,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $info,
             $subject,
             $options,
-            RuleLevel::Namespace_,
+            SymbolLevel::Namespace_,
             $context,
             ['applicationScope' => false, 'frameworkCe' => null],
         );
@@ -229,7 +229,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         SymbolInfo $symbolInfo,
         MetricSubject $subject,
         ClassCboOptions|NamespaceCboOptions $options,
-        RuleLevel $level,
+        SymbolLevel $level,
         AnalysisContext $context,
         array $presentation,
     ): ?Violation {
@@ -245,7 +245,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         }
 
         $threshold = $severity === Severity::Error ? $options->error : $options->warning;
-        $violationCode = self::NAME . ($level === RuleLevel::Namespace_ ? '.namespace' : '.class');
+        $violationCode = ViolationChannel::leveled(self::NAME, $level)->violationCode;
 
         return new Violation(
             location: new Location($symbolInfo->file, $symbolInfo->line),

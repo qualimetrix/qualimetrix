@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -41,8 +42,11 @@ use Throwable;
  * configured `0`. Two shapes are read, and both are conventions the codebase
  * actually holds rather than assumptions about it:
  *
- * - a hierarchical rule's channel names its level (`…#complexity.cyclomatic.callable`),
- *   so the level's own options object is asked;
+ * - a hierarchical rule's channel **declares** exactly one level, so the
+ *   level's own options object is asked. The level is read from the
+ *   declaration, never parsed back out of the channel code: the code spells
+ *   the level today and will not always, and a reader of the name fails by
+ *   printing nothing rather than by failing;
  * - a multi-axis rule's channel names its axis (`…#design.type-coverage.return`),
  *   so a property named after that axis is preferred (`returnWarning`).
  *
@@ -103,8 +107,8 @@ final readonly class BaselineConfiguredThresholds
                 continue;
             }
 
-            foreach (array_keys($declarations) as $channelKey) {
-                $threshold = self::thresholdFor($options, ViolationChannel::fromKey($channelKey));
+            foreach ($declarations as $channelKey => $declaration) {
+                $threshold = self::thresholdFor($options, ViolationChannel::fromKey($channelKey), $declaration);
 
                 if ($threshold !== null) {
                     $thresholds[$channelKey] = $threshold;
@@ -131,16 +135,18 @@ final readonly class BaselineConfiguredThresholds
         }
     }
 
-    private static function thresholdFor(RuleOptionsInterface $options, ViolationChannel $channel): int|float|null
-    {
-        $axis = self::axisOf($channel);
-        $level = $axis !== null ? RuleLevel::tryFrom($axis) : null;
-
-        if ($level !== null && $options instanceof HierarchicalRuleOptionsInterface) {
-            $levelOptions = self::levelOptions($options, $level);
+    private static function thresholdFor(
+        RuleOptionsInterface $options,
+        ViolationChannel $channel,
+        ChannelDeclaration $declaration,
+    ): int|float|null {
+        if (\count($declaration->levels) === 1 && $options instanceof HierarchicalRuleOptionsInterface) {
+            $levelOptions = self::levelOptions($options, $declaration->levels[0]);
 
             return $levelOptions !== null ? self::readProperty($levelOptions, self::GENERIC_PROPERTIES) : null;
         }
+
+        $axis = self::axisOf($channel);
 
         if ($axis !== null) {
             $onAxis = self::readProperty($options, [self::axisProperty($axis)]);
@@ -194,7 +200,7 @@ final readonly class BaselineConfiguredThresholds
         return $found;
     }
 
-    private static function levelOptions(HierarchicalRuleOptionsInterface $options, RuleLevel $level): ?LevelOptionsInterface
+    private static function levelOptions(HierarchicalRuleOptionsInterface $options, SymbolLevel $level): ?LevelOptionsInterface
     {
         try {
             return $options->forLevel($level);

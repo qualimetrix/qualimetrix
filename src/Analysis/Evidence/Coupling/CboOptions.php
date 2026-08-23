@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AdditionalOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
@@ -126,31 +126,31 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface, Sho
         return $this->class->getSeverity($value);
     }
 
-    public function forLevel(RuleLevel $level): LevelOptionsInterface
+    public function forLevel(SymbolLevel $level): LevelOptionsInterface
     {
         return match ($level) {
-            RuleLevel::Class_ => $this->class,
-            RuleLevel::Namespace_ => $this->namespace,
+            SymbolLevel::Class_ => $this->class,
+            SymbolLevel::Namespace_ => $this->namespace,
             default => throw new InvalidArgumentException(
                 \sprintf('Level %s is not supported by CboRule', $level->value),
             ),
         };
     }
 
-    public function isLevelEnabled(RuleLevel $level): bool
+    public function isLevelEnabled(SymbolLevel $level): bool
     {
         return match ($level) {
-            RuleLevel::Class_ => $this->class->isEnabled(),
-            RuleLevel::Namespace_ => $this->namespace->isEnabled(),
+            SymbolLevel::Class_ => $this->class->isEnabled(),
+            SymbolLevel::Namespace_ => $this->namespace->isEnabled(),
             default => false,
         };
     }
 
     /**
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Class_, RuleLevel::Namespace_];
+        return [SymbolLevel::Class_, SymbolLevel::Namespace_];
     }
 }

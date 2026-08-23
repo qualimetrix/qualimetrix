@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
@@ -29,7 +30,7 @@ final class ChannelDeclarationReaderTest extends TestCase
         $key = (new ViolationChannel('fixture.rule', 'fixture.occurrence-channel'))->toKey();
 
         self::assertSame([$key], array_keys($declarations));
-        self::assertEquals(ChannelDeclaration::occurrence(), $declarations[$key]);
+        self::assertEquals(ChannelDeclaration::occurrence(SymbolLevel::Class_), $declarations[$key]);
     }
 
     #[Test]
@@ -48,7 +49,7 @@ final class ChannelDeclarationReaderTest extends TestCase
         $key = (new ViolationChannel(GotoRule::NAME, GotoRule::NAME))->toKey();
 
         self::assertSame([$key], array_keys($declarations));
-        self::assertEquals(ChannelDeclaration::occurrence(), $declarations[$key]);
+        self::assertEquals(ChannelDeclaration::occurrence(SymbolLevel::Callable), $declarations[$key]);
     }
 
     #[Test]
@@ -195,7 +196,7 @@ final class FixtureRuleThatThrowsIfConstructed
      */
     public static function channelDeclarations(): array
     {
-        return [(new ViolationChannel('fixture.rule', 'fixture.occurrence-channel'))->toKey() => ChannelDeclaration::occurrence()];
+        return [(new ViolationChannel('fixture.rule', 'fixture.occurrence-channel'))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
     }
 }
 
@@ -255,7 +256,7 @@ final class FixtureRuleWithEmptyKey
      */
     public static function channelDeclarations(): array
     {
-        return ['' => ChannelDeclaration::occurrence()];
+        return ['' => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
     }
 }
 
@@ -269,7 +270,7 @@ final class FixtureRuleWithKeyMissingSeparator
      */
     public static function channelDeclarations(): array
     {
-        return ['fixture.no-separator' => ChannelDeclaration::occurrence()];
+        return ['fixture.no-separator' => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
     }
 }
 
@@ -283,7 +284,7 @@ final class FixtureRuleWithEmptyRuleNameHalf
      */
     public static function channelDeclarations(): array
     {
-        return ['#fixture.violation-code' => ChannelDeclaration::occurrence()];
+        return ['#fixture.violation-code' => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
     }
 }
 
@@ -297,7 +298,7 @@ final class FixtureRuleWithEmptyViolationCodeHalf
      */
     public static function channelDeclarations(): array
     {
-        return ['fixture.rule-name#' => ChannelDeclaration::occurrence()];
+        return ['fixture.rule-name#' => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
     }
 }
 

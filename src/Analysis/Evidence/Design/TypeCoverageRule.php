@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Design;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
@@ -85,9 +86,9 @@ final class TypeCoverageRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.param'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower),
-            (new ViolationChannel(self::NAME, self::NAME . '.return'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower),
-            (new ViolationChannel(self::NAME, self::NAME . '.property'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower),
+            (new ViolationChannel(self::NAME, self::NAME . '.param'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
+            (new ViolationChannel(self::NAME, self::NAME . '.return'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
+            (new ViolationChannel(self::NAME, self::NAME . '.property'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
         ];
     }
 

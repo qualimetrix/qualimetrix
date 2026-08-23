@@ -8,10 +8,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
@@ -176,10 +176,10 @@ final class ViolationTest extends TestCase
             message: 'Method has complexity of 15',
             severity: Severity::Warning,
             metricValue: 15,
-            level: RuleLevel::Callable,
+            level: SymbolLevel::Callable,
         );
 
-        self::assertSame(RuleLevel::Callable, $violation->level);
+        self::assertSame(SymbolLevel::Callable, $violation->level);
     }
 
     #[Test]
@@ -413,7 +413,7 @@ final class ViolationTest extends TestCase
             message: 'Cyclomatic complexity is 31',
             severity: Severity::Warning,
             metricValue: 31,
-            level: RuleLevel::Callable,
+            level: SymbolLevel::Callable,
             relatedLocations: [new Location(RelativePath::fromString('src/other.php'), 3)],
             recommendation: 'Split the method',
             threshold: 10,

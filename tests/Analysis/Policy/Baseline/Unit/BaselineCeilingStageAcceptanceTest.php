@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\Design\GodClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\GodClassRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -107,7 +108,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
             'design.type-coverage#design.type-coverage.class',
-            ChannelDeclaration::magnitude(WorseDirection::Lower),
+            ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
         );
 
         $recorded = self::findingOn('design.type-coverage', 'design.type-coverage.class', self::someClass(), 60.0);
@@ -127,7 +128,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     public function itAcceptsAnInvertedComputedMetricGroupThatImprovedAndReportsOneThatFell(): void
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
-        $declarations->declare('computed.health#health.overall', ChannelDeclaration::magnitude(WorseDirection::Lower));
+        $declarations->declare('computed.health#health.overall', ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project));
 
         $recorded = self::findingOn('computed.health', 'health.overall', self::someClass(), 55.0);
         $improved = self::findingOn('computed.health', 'health.overall', self::someClass(), 61.0);
@@ -151,7 +152,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     public function itBoundsAContinuousAxisExactly(): void
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
-        $declarations->declare('coupling.distance#coupling.distance', ChannelDeclaration::magnitude(WorseDirection::Higher));
+        $declarations->declare('coupling.distance#coupling.distance', ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_));
 
         $recorded = self::findingOn('coupling.distance', 'coupling.distance', self::someNamespace(), 0.42);
         $same = self::findingOn('coupling.distance', 'coupling.distance', self::someNamespace(), 0.42);
@@ -210,7 +211,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     public function itIgnoresTheNumberAnOccurrenceChannelNeverthelessReports(): void
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
-        $declarations->declare('coupling.class-rank#coupling.class-rank', ChannelDeclaration::occurrence());
+        $declarations->declare('coupling.class-rank#coupling.class-rank', ChannelDeclaration::occurrence(SymbolLevel::Class_));
 
         $recorded = self::findingOn('coupling.class-rank', 'coupling.class-rank', self::someClass(), 0.004);
         $current = self::findingOn('coupling.class-rank', 'coupling.class-rank', self::someClass(), 0.012);
@@ -406,7 +407,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     public function itFormsOneGroupFromTwoProjectKeyedDiagnosticsOfOneChannel(): void
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
-        $declarations->declare('architecture.unreachable-layer#architecture.unreachable-layer', ChannelDeclaration::occurrence());
+        $declarations->declare('architecture.unreachable-layer#architecture.unreachable-layer', ChannelDeclaration::occurrence(SymbolLevel::Project));
 
         $first = self::findingOn('architecture.unreachable-layer', 'architecture.unreachable-layer', SymbolPath::forProject(), null);
         $second = self::findingOn('architecture.unreachable-layer', 'architecture.unreachable-layer', SymbolPath::forProject(), null, 2);

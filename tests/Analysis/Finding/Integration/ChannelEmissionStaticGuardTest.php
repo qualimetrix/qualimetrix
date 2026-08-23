@@ -14,6 +14,8 @@ use PhpParser\Node\Expr\List_;
 use PhpParser\Node\Expr\Match_;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Expr\PropertyFetch;
+use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\Expr\Throw_;
 use PhpParser\Node\Expr\Variable;
@@ -27,6 +29,7 @@ use PhpParser\NodeFinder;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
@@ -73,6 +76,12 @@ use RuntimeException;
  *   is never evaluated — both outcomes are real emissions on different
  *   inputs, e.g. `coupling.cbo`'s class/namespace split);
  * - a `match` expression, resolved to the union of every non-throwing arm;
+ * - `ViolationChannel::leveled($name, $level)->violationCode`, the one place
+ *   a level is spelled into a channel code, resolved by resolving both
+ *   halves — the level from an enum case, or, when it arrives as a
+ *   parameter, from every value passed at every call of that method in the
+ *   same class (`coupling.cbo`'s class/namespace split reaches its emission
+ *   point that way);
  * - a local variable, resolved by finding its assignment(s) in the same
  *   method — including a `[$code, $hint] = match (...) { ... }`
  *   destructuring assignment, resolved per-arm at the destructured index
@@ -413,6 +422,10 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             return array_values(array_unique([...$ifResolved, ...$elseResolved]));
         }
 
+        if ($expr instanceof PropertyFetch) {
+            return self::resolveLeveledChannelProperty($expr, $selfClass, $staticClass, $scope);
+        }
+
         if ($expr instanceof Match_) {
             return self::resolveMatchArms($expr, $selfClass, $staticClass, $scope, null);
         }
@@ -516,6 +529,190 @@ final class ChannelEmissionStaticGuardTest extends TestCase
         }
 
         return self::resolveExpr($onlyStmt->expr, $declaringClass, $staticClass, $methodNode);
+    }
+
+    /**
+     * Resolves `ViolationChannel::leveled($name, $level)->ruleName` and
+     * `->violationCode` — the single assembly point of a level-bearing
+     * channel, and therefore the only shape through which a level reaches an
+     * emitted code at all.
+     *
+     * @param class-string $selfClass
+     * @param class-string $staticClass
+     *
+     * @return ?list<string>
+     */
+    private static function resolveLeveledChannelProperty(
+        PropertyFetch $expr,
+        string $selfClass,
+        string $staticClass,
+        ClassMethod $scope,
+    ): ?array {
+        $call = $expr->var;
+
+        if (!$expr->name instanceof Identifier || !$call instanceof StaticCall) {
+            return null;
+        }
+
+        if (!$call->class instanceof Name || $call->class->getLast() !== 'ViolationChannel') {
+            return null;
+        }
+
+        if (!$call->name instanceof Identifier || $call->name->toString() !== 'leveled') {
+            return null;
+        }
+
+        $arguments = $call->args;
+
+        if (\count($arguments) !== 2 || !$arguments[0] instanceof Arg || !$arguments[1] instanceof Arg) {
+            return null;
+        }
+
+        $ruleNames = self::resolveExpr($arguments[0]->value, $selfClass, $staticClass, $scope);
+
+        if ($ruleNames === null) {
+            return null;
+        }
+
+        if ($expr->name->toString() === 'ruleName') {
+            return $ruleNames;
+        }
+
+        if ($expr->name->toString() !== 'violationCode') {
+            return null;
+        }
+
+        $levels = self::resolveLevelValues($arguments[1]->value, $selfClass, $staticClass, $scope);
+
+        if ($levels === null) {
+            return null;
+        }
+
+        $codes = [];
+
+        foreach ($ruleNames as $ruleName) {
+            foreach ($levels as $level) {
+                $codes[] = $ruleName . '.' . $level;
+            }
+        }
+
+        return array_values(array_unique($codes));
+    }
+
+    /**
+     * The {@see SymbolLevel} values an expression can carry, as strings.
+     *
+     * A parameter is resolved from the values its own class passes at every
+     * call of the enclosing method — an over-approximation in the same
+     * direction as the ternary and match arms: naming one channel too many
+     * asks for one more declaration, naming one too few would reopen the
+     * hole this guard exists to close.
+     *
+     * @param class-string $selfClass
+     * @param class-string $staticClass
+     *
+     * @return ?list<string>
+     */
+    private static function resolveLevelValues(
+        Expr $expr,
+        string $selfClass,
+        string $staticClass,
+        ClassMethod $scope,
+    ): ?array {
+        if ($expr instanceof ClassConstFetch) {
+            return self::resolveLevelConstant($expr, $selfClass, $staticClass);
+        }
+
+        if ($expr instanceof Variable && \is_string($expr->name)) {
+            return self::resolveLevelParameter($expr->name, $selfClass, $staticClass, $scope);
+        }
+
+        return null;
+    }
+
+    /**
+     * @param class-string $selfClass
+     * @param class-string $staticClass
+     *
+     * @return ?list<string>
+     */
+    private static function resolveLevelConstant(ClassConstFetch $expr, string $selfClass, string $staticClass): ?array
+    {
+        if (!$expr->class instanceof Name || !$expr->name instanceof Identifier) {
+            return null;
+        }
+
+        $targetClass = match ($expr->class->toString()) {
+            'self' => $selfClass,
+            'static' => $staticClass,
+            default => $expr->class->getLast() === 'SymbolLevel' ? SymbolLevel::class : null,
+        };
+
+        if ($targetClass === null || !(new ReflectionClass($targetClass))->hasConstant($expr->name->toString())) {
+            return null;
+        }
+
+        $value = (new ReflectionClass($targetClass))->getConstant($expr->name->toString());
+
+        return $value instanceof SymbolLevel ? [$value->value] : null;
+    }
+
+    /**
+     * @param class-string $selfClass
+     * @param class-string $staticClass
+     *
+     * @return ?list<string>
+     */
+    private static function resolveLevelParameter(
+        string $name,
+        string $selfClass,
+        string $staticClass,
+        ClassMethod $scope,
+    ): ?array {
+        $position = null;
+
+        foreach ($scope->params as $index => $param) {
+            if ($param->var instanceof Variable && $param->var->name === $name) {
+                $position = $index;
+            }
+        }
+
+        $classNode = self::findClassNode($selfClass);
+
+        if ($position === null || $classNode === null) {
+            return null;
+        }
+
+        $method = $scope->name->toString();
+        $values = [];
+        $foundAny = false;
+
+        /** @var list<MethodCall|StaticCall> $calls */
+        $calls = (new NodeFinder())->find(
+            $classNode,
+            static fn(object $node): bool => ($node instanceof MethodCall || $node instanceof StaticCall)
+                && $node->name instanceof Identifier
+                && $node->name->toString() === $method,
+        );
+
+        foreach ($calls as $call) {
+            $argument = $call->args[$position] ?? null;
+
+            if (!$argument instanceof Arg || $argument->name !== null) {
+                return null;
+            }
+
+            $foundAny = true;
+            $resolved = self::resolveLevelValues($argument->value, $selfClass, $staticClass, $scope);
+
+            if ($resolved === null) {
+                return null;
+            }
+
+            $values = [...$values, ...$resolved];
+        }
+
+        return $foundAny ? array_values(array_unique($values)) : null;
     }
 
     /**

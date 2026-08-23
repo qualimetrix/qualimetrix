@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
@@ -149,7 +150,7 @@ final class RemediationTimeRegistryTest extends TestCase
         // below its threshold is worse), so the overshoot ratio flips.
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry([
-                'maintainability.index#maintainability.index' => ChannelDeclaration::magnitude(WorseDirection::Lower),
+                'maintainability.index#maintainability.index' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
             ]),
             StubRemediationMinutes::withRealValues(),
         );
@@ -167,7 +168,7 @@ final class RemediationTimeRegistryTest extends TestCase
     {
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry([
-                'design.type-coverage#design.type-coverage' => ChannelDeclaration::magnitude(WorseDirection::Lower),
+                'design.type-coverage#design.type-coverage' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
             ]),
             StubRemediationMinutes::withRealValues(),
         );
@@ -191,7 +192,7 @@ final class RemediationTimeRegistryTest extends TestCase
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry([
                 ComputedMetricChannelFamily::PRODUCER_RULE_NAME . '#' . ComputedMetricChannelFamily::PRODUCER_RULE_NAME
-                    => ChannelDeclaration::magnitude(WorseDirection::Lower),
+                    => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
             ]),
             StubRemediationMinutes::withRealValues(),
         );
@@ -210,7 +211,7 @@ final class RemediationTimeRegistryTest extends TestCase
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry([
                 ComputedMetricChannelFamily::PRODUCER_RULE_NAME . '#' . ComputedMetricChannelFamily::PRODUCER_RULE_NAME
-                    => ChannelDeclaration::magnitude(WorseDirection::Higher),
+                    => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
             ]),
             StubRemediationMinutes::withRealValues(),
         );
@@ -271,7 +272,7 @@ final class RemediationTimeRegistryTest extends TestCase
     {
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry([
-                'code-smell.goto#code-smell.goto' => ChannelDeclaration::occurrence(),
+                'code-smell.goto#code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::Callable),
             ]),
             StubRemediationMinutes::withRealValues(),
         );
@@ -316,7 +317,7 @@ final class RemediationTimeRegistryTest extends TestCase
     {
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry([
-                'coupling.class-rank#coupling.class-rank' => ChannelDeclaration::occurrence(),
+                'coupling.class-rank#coupling.class-rank' => ChannelDeclaration::occurrence(SymbolLevel::Class_),
             ]),
             StubRemediationMinutes::withRealValues(),
         );

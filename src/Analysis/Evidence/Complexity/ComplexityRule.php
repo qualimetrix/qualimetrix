@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Complexity;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
@@ -14,7 +15,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
@@ -71,11 +71,11 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     /**
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Callable, RuleLevel::Class_];
+        return [SymbolLevel::Callable, SymbolLevel::Class_];
     }
 
     /**
@@ -83,7 +83,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
      *
      * @return list<Violation>
      */
-    public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
+    public function analyzeLevel(SymbolLevel $level, AnalysisContext $context): array
     {
         \assert($this->options instanceof ComplexityOptions);
 
@@ -93,8 +93,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         }
 
         return match ($level) {
-            RuleLevel::Callable => $this->analyzeMethodLevel($context),
-            RuleLevel::Class_ => $this->analyzeClassLevel($context),
+            SymbolLevel::Callable => $this->analyzeMethodLevel($context),
+            SymbolLevel::Class_ => $this->analyzeClassLevel($context),
             default => [],
         };
     }
@@ -145,8 +145,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.callable'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            ViolationChannel::leveled(self::NAME, SymbolLevel::Callable)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
+            ViolationChannel::leveled(self::NAME, SymbolLevel::Class_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
         ];
     }
 
@@ -189,11 +189,11 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
                     subject: $subject,
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.callable',
+                    violationCode: ViolationChannel::leveled(self::NAME, SymbolLevel::Callable)->violationCode,
                     message: \sprintf('Cyclomatic complexity is %d, exceeds threshold of %d. Consider extracting methods or simplifying conditions', $ccnValue, $threshold),
                     severity: $severity,
                     metricValue: $ccnValue,
-                    level: RuleLevel::Callable,
+                    level: SymbolLevel::Callable,
                     recommendation: $recommendation,
                     threshold: $threshold,
                 );
@@ -282,11 +282,11 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME . '.class',
+            violationCode: ViolationChannel::leveled(self::NAME, SymbolLevel::Class_)->violationCode,
             message: \sprintf('Maximum method cyclomatic complexity is %d, exceeds threshold of %d. Refactor the most complex methods', $maximum, $threshold),
             severity: $severity,
             metricValue: $maximum,
-            level: RuleLevel::Class_,
+            level: SymbolLevel::Class_,
             recommendation: \sprintf('Max cyclomatic complexity: %d (threshold: %d) — too many code paths', $maximum, $threshold),
             threshold: $threshold,
         );

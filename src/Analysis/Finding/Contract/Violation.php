@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -32,7 +32,7 @@ final readonly class Violation
         public string $message,
         public Severity $severity,
         public int|float|null $metricValue = null,
-        public ?RuleLevel $level = null,
+        public ?SymbolLevel $level = null,
         public array $relatedLocations = [],
         public ?string $recommendation = null,
         public int|float|null $threshold = null,

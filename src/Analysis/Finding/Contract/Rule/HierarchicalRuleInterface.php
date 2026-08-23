@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 
@@ -18,7 +19,7 @@ interface HierarchicalRuleInterface extends RuleInterface
     /**
      * Returns levels at which this rule operates.
      *
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array;
 
@@ -27,5 +28,5 @@ interface HierarchicalRuleInterface extends RuleInterface
      *
      * @return list<Violation>
      */
-    public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array;
+    public function analyzeLevel(SymbolLevel $level, AnalysisContext $context): array;
 }

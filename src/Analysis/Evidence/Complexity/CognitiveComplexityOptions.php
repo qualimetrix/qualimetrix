@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Complexity;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
@@ -86,31 +86,31 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
         return $this->callable->getSeverity($value);
     }
 
-    public function forLevel(RuleLevel $level): LevelOptionsInterface
+    public function forLevel(SymbolLevel $level): LevelOptionsInterface
     {
         return match ($level) {
-            RuleLevel::Callable => $this->callable,
-            RuleLevel::Class_ => $this->class,
+            SymbolLevel::Callable => $this->callable,
+            SymbolLevel::Class_ => $this->class,
             default => throw new InvalidArgumentException(
                 \sprintf('Level %s is not supported by CognitiveComplexityRule', $level->value),
             ),
         };
     }
 
-    public function isLevelEnabled(RuleLevel $level): bool
+    public function isLevelEnabled(SymbolLevel $level): bool
     {
         return match ($level) {
-            RuleLevel::Callable => $this->callable->isEnabled(),
-            RuleLevel::Class_ => $this->class->isEnabled(),
+            SymbolLevel::Callable => $this->callable->isEnabled(),
+            SymbolLevel::Class_ => $this->class->isEnabled(),
             default => false,
         };
     }
 
     /**
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Callable, RuleLevel::Class_];
+        return [SymbolLevel::Callable, SymbolLevel::Class_];
     }
 }

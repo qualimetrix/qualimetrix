@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -184,7 +185,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
         $registry = StubChannelDeclarationRegistry::withDefaults();
         $registry->declare(
             self::RULE_NAME . '#' . self::RULE_NAME,
-            ChannelDeclaration::configurationError(),
+            ChannelDeclaration::configurationError(SymbolLevel::Class_),
         );
 
         return $registry;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -158,19 +159,19 @@ final class LayerViolationRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(),
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_),
             (new ViolationChannel(self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME, self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME))->toKey()
                 => OutsideLayerSummary::unassignedClassChannel(),
             (new ViolationChannel(self::COVERAGE_DIAGNOSTIC_NAME, self::COVERAGE_DIAGNOSTIC_NAME))->toKey()
-                => ChannelDeclaration::configurationError(),
+                => ChannelDeclaration::configurationError(SymbolLevel::Project),
             (new ViolationChannel(self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME))->toKey()
-                => ChannelDeclaration::configurationError(),
+                => ChannelDeclaration::configurationError(SymbolLevel::Project),
             (new ViolationChannel(self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME))->toKey()
-                => ChannelDeclaration::configurationError(),
+                => ChannelDeclaration::configurationError(SymbolLevel::Project),
             (new ViolationChannel(self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME))->toKey()
-                => ChannelDeclaration::configurationError(),
+                => ChannelDeclaration::configurationError(SymbolLevel::Project),
             (new ViolationChannel(self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME, self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME))->toKey()
-                => ChannelDeclaration::configurationError(),
+                => ChannelDeclaration::configurationError(SymbolLevel::Project),
         ];
     }
 

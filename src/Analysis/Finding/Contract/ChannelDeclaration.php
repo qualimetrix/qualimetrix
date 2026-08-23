@@ -5,17 +5,27 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Observation\WorseDirection;
 
 /**
- * What a channel declares for baseline purposes: its shape, — for a
- * `magnitude` shape only — the direction that makes its reported number
- * comparable, and whether its findings may be accepted as debt at all.
+ * What a channel declares: its shape, — for a `magnitude` shape only — the
+ * direction that makes its reported number comparable, whether its findings
+ * may be accepted as debt at all, and the levels of the aggregation tree it
+ * reports at.
  *
  * Nothing else belongs here: no axis name, no threshold binding, no
  * epsilon. A channel that declares no {@see ChannelDeclaration} at all is
  * not an error state — it is simply not baselineable (see
  * {@see ChannelDeclarationRegistryInterface}).
+ *
+ * **Levels are declared in full, never inferred.** The list is what the
+ * registry *accepts* for this channel; emission still derives a finding's
+ * level from its subject, so the two can disagree and a drift test compares
+ * them against an observed run. A channel that reports at one level says so
+ * with one entry — there is no empty list meaning "whatever the subject
+ * turns out to be", because the registry is built before any finding exists
+ * and could not resolve it.
  *
  * Two invariants, and the first is the whole shape contract: a direction is
  * present exactly when the shape is `magnitude`. An `occurrence` channel's
@@ -33,11 +43,24 @@ use Qualimetrix\Core\Observation\WorseDirection;
  */
 final readonly class ChannelDeclaration
 {
+    /** @var non-empty-list<SymbolLevel> the levels this channel reports at, in {@see SymbolLevel} case order */
+    public array $levels;
+
+    /**
+     * @param array<SymbolLevel> $levels non-empty, in any order; the factories
+     *                                   guarantee non-emptiness by arity, and
+     *                                   {@see canonicalLevels()} refuses an
+     *                                   empty one at run time for callers
+     *                                   that assemble the list themselves
+     */
     public function __construct(
         public ChannelShape $shape,
-        public ?WorseDirection $direction = null,
-        public ChannelAcceptability $acceptability = ChannelAcceptability::AcceptableAsDebt,
+        public ?WorseDirection $direction,
+        public ChannelAcceptability $acceptability,
+        array $levels,
     ) {
+        $this->levels = self::canonicalLevels($levels);
+
         if ($shape === ChannelShape::Magnitude && $direction === null) {
             throw new InvalidArgumentException(
                 'A magnitude channel must declare a WorseDirection (higher or lower is worse).',
@@ -52,19 +75,24 @@ final readonly class ChannelDeclaration
     }
 
     /**
-     * A `magnitude` declaration in the given direction.
+     * A `magnitude` declaration in the given direction, reporting at the
+     * given levels.
+     *
+     * The levels are variadic with a mandatory first one so that a caller
+     * cannot express the empty list at all: non-emptiness is the signature,
+     * not a run-time check every declaration site has to be trusted to pass.
      */
-    public static function magnitude(WorseDirection $direction): self
+    public static function magnitude(WorseDirection $direction, SymbolLevel $level, SymbolLevel ...$moreLevels): self
     {
-        return new self(ChannelShape::Magnitude, $direction);
+        return new self(ChannelShape::Magnitude, $direction, ChannelAcceptability::AcceptableAsDebt, array_merge([$level], $moreLevels));
     }
 
     /**
      * An `occurrence` declaration — no direction, only presence/count matters.
      */
-    public static function occurrence(): self
+    public static function occurrence(SymbolLevel $level, SymbolLevel ...$moreLevels): self
     {
-        return new self(ChannelShape::Occurrence);
+        return new self(ChannelShape::Occurrence, null, ChannelAcceptability::AcceptableAsDebt, array_merge([$level], $moreLevels));
     }
 
     /**
@@ -78,9 +106,46 @@ final readonly class ChannelDeclaration
      * producer declaring one of these says so in one word, and so that
      * declaring it does not require reaching for the enum.
      */
-    public static function configurationError(): self
+    public static function configurationError(SymbolLevel $level, SymbolLevel ...$moreLevels): self
     {
-        return new self(ChannelShape::Occurrence, null, ChannelAcceptability::ConfigurationError);
+        return new self(ChannelShape::Occurrence, null, ChannelAcceptability::ConfigurationError, array_merge([$level], $moreLevels));
+    }
+
+    /**
+     * The declared levels in {@see SymbolLevel} case order, so that two
+     * declarations of the same channel compare equal whatever order their
+     * authors wrote them in. A repeated level is refused rather than
+     * collapsed: it says the author believes the channel reports twice at one
+     * level, and that belief is wrong somewhere.
+     *
+     * @param array<SymbolLevel> $levels
+     *
+     * @return non-empty-list<SymbolLevel>
+     */
+    private static function canonicalLevels(array $levels): array
+    {
+        $canonical = [];
+
+        foreach (SymbolLevel::cases() as $case) {
+            $occurrences = \count(array_filter($levels, static fn(SymbolLevel $level): bool => $level === $case));
+
+            if ($occurrences > 1) {
+                throw new InvalidArgumentException(\sprintf(
+                    'A channel declares the level "%s" more than once.',
+                    $case->value,
+                ));
+            }
+
+            if ($occurrences === 1) {
+                $canonical[] = $case;
+            }
+        }
+
+        if ($canonical === []) {
+            throw new InvalidArgumentException('A channel must declare at least one level it reports at.');
+        }
+
+        return $canonical;
     }
 
     /**

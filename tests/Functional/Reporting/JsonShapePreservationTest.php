@@ -194,7 +194,7 @@ final class JsonShapePreservationTest extends TestCase
         string $message,
         \Qualimetrix\Analysis\Finding\Contract\Severity $severity,
         int|float|null $metricValue = null,
-        ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null,
+        ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level = null,
         array $relatedLocations = [],
         ?string $recommendation = null,
         int|float|null $threshold = null,

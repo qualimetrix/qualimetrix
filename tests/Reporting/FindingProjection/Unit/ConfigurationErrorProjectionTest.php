@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -253,7 +254,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
             self::CONFIG_ERROR_CHANNEL . '#' . self::CONFIG_ERROR_CHANNEL,
-            ChannelDeclaration::configurationError(),
+            ChannelDeclaration::configurationError(SymbolLevel::Class_),
         );
 
         $projector = new FindingProjector(

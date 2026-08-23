@@ -2,9 +2,11 @@
 # emission point against the channel declaration registry.
 #
 # Format (one channel per line, sorted, blank lines and '#' comments ignored):
-#   <ruleName>#<violationCode> <shape>[:<direction>] [<acceptability>]
+#   <ruleName>#<violationCode> <shape>[:<direction>] <levels> [<acceptability>]
 #     shape         := magnitude | occurrence
 #     direction     := higher | lower   (magnitude channels only)
+#     levels        := comma-separated SymbolLevel values, in enum case order,
+#                      never empty -- the levels the channel reports at
 #     acceptability := config-error     (omitted = acceptable as debt)
 #
 # `config-error` marks a channel whose findings report a mistake in the
@@ -48,60 +50,60 @@
 # Do not add a line here without reading that channel's own emission point
 # first — never by analogy with a neighbouring line.
 
-annotation.invalid-threshold#annotation.invalid-threshold occurrence config-error
-annotation.unresolved-directive#annotation.unresolved-directive occurrence config-error
-annotation.unsupported-threshold#annotation.unsupported-threshold occurrence config-error
-annotation.unused-directive#annotation.unused-directive occurrence
-architecture.circular-dependency#architecture.circular-dependency magnitude:higher
-architecture.coverage#architecture.coverage occurrence config-error
-architecture.empty-template#architecture.empty-template occurrence config-error
-architecture.layer-violation#architecture.layer-violation occurrence
-architecture.pending-layer-matched#architecture.pending-layer-matched occurrence config-error
-architecture.potential-shadow#architecture.potential-shadow occurrence config-error
-architecture.unassigned-class#architecture.unassigned-class magnitude:higher
-architecture.unreachable-layer#architecture.unreachable-layer occurrence config-error
-code-smell.boolean-argument#code-smell.boolean-argument occurrence
-code-smell.constructor-overinjection#code-smell.constructor-overinjection magnitude:higher
-code-smell.count-in-loop#code-smell.count-in-loop occurrence
-code-smell.debug-code#code-smell.debug-code occurrence
-code-smell.empty-catch#code-smell.empty-catch occurrence
-code-smell.error-suppression#code-smell.error-suppression occurrence
-code-smell.eval#code-smell.eval occurrence
-code-smell.exit#code-smell.exit occurrence
-code-smell.goto#code-smell.goto occurrence
-code-smell.identical-subexpression#code-smell.identical-subexpression occurrence
-code-smell.long-parameter-list#code-smell.long-parameter-list magnitude:higher
-code-smell.superglobals#code-smell.superglobals occurrence
-code-smell.unreachable-code#code-smell.unreachable-code magnitude:higher
-code-smell.unused-private#code-smell.unused-private magnitude:higher
-complexity.cognitive#complexity.cognitive.class magnitude:higher
-complexity.cognitive#complexity.cognitive.callable magnitude:higher
-complexity.cyclomatic#complexity.cyclomatic.class magnitude:higher
-complexity.cyclomatic#complexity.cyclomatic.callable magnitude:higher
-complexity.npath#complexity.npath.class magnitude:higher
-complexity.npath#complexity.npath.callable magnitude:higher
-complexity.wmc#complexity.wmc magnitude:higher
-coupling.cbo#coupling.cbo.class magnitude:higher
-coupling.cbo#coupling.cbo.namespace magnitude:higher
-coupling.class-rank#coupling.class-rank occurrence
-coupling.distance#coupling.distance magnitude:higher
-coupling.instability#coupling.instability.class magnitude:higher
-coupling.instability#coupling.instability.namespace magnitude:higher
-design.data-class#design.data-class magnitude:lower
-design.god-class#design.god-class magnitude:higher
-design.inheritance#design.inheritance magnitude:higher
-cohesion.lcom#cohesion.lcom magnitude:higher
-design.noc#design.noc magnitude:higher
-design.type-coverage#design.type-coverage.param magnitude:lower
-design.type-coverage#design.type-coverage.property magnitude:lower
-design.type-coverage#design.type-coverage.return magnitude:lower
-duplication.code-duplication#duplication.code-duplication magnitude:higher
-maintainability.index#maintainability.index magnitude:lower
-security.command-injection#security.command-injection occurrence
-security.hardcoded-credentials#security.hardcoded-credentials occurrence
-security.sensitive-parameter#security.sensitive-parameter occurrence
-security.sql-injection#security.sql-injection occurrence
-security.xss#security.xss occurrence
-size.class-count#size.class-count magnitude:higher
-size.method-count#size.method-count magnitude:higher
-size.property-count#size.property-count magnitude:higher
+annotation.invalid-threshold#annotation.invalid-threshold occurrence file config-error
+annotation.unresolved-directive#annotation.unresolved-directive occurrence file config-error
+annotation.unsupported-threshold#annotation.unsupported-threshold occurrence file config-error
+annotation.unused-directive#annotation.unused-directive occurrence file
+architecture.circular-dependency#architecture.circular-dependency magnitude:higher project
+architecture.coverage#architecture.coverage occurrence project config-error
+architecture.empty-template#architecture.empty-template occurrence project config-error
+architecture.layer-violation#architecture.layer-violation occurrence class
+architecture.pending-layer-matched#architecture.pending-layer-matched occurrence project config-error
+architecture.potential-shadow#architecture.potential-shadow occurrence project config-error
+architecture.unassigned-class#architecture.unassigned-class magnitude:higher project
+architecture.unreachable-layer#architecture.unreachable-layer occurrence project config-error
+code-smell.boolean-argument#code-smell.boolean-argument occurrence callable
+code-smell.constructor-overinjection#code-smell.constructor-overinjection magnitude:higher callable
+code-smell.count-in-loop#code-smell.count-in-loop occurrence callable
+code-smell.debug-code#code-smell.debug-code occurrence callable
+code-smell.empty-catch#code-smell.empty-catch occurrence callable
+code-smell.error-suppression#code-smell.error-suppression occurrence callable
+code-smell.eval#code-smell.eval occurrence callable
+code-smell.exit#code-smell.exit occurrence callable
+code-smell.goto#code-smell.goto occurrence callable
+code-smell.identical-subexpression#code-smell.identical-subexpression occurrence callable
+code-smell.long-parameter-list#code-smell.long-parameter-list magnitude:higher callable
+code-smell.superglobals#code-smell.superglobals occurrence callable
+code-smell.unreachable-code#code-smell.unreachable-code magnitude:higher callable
+code-smell.unused-private#code-smell.unused-private magnitude:higher class
+complexity.cognitive#complexity.cognitive.class magnitude:higher class
+complexity.cognitive#complexity.cognitive.callable magnitude:higher callable
+complexity.cyclomatic#complexity.cyclomatic.class magnitude:higher class
+complexity.cyclomatic#complexity.cyclomatic.callable magnitude:higher callable
+complexity.npath#complexity.npath.class magnitude:higher class
+complexity.npath#complexity.npath.callable magnitude:higher callable
+complexity.wmc#complexity.wmc magnitude:higher class
+coupling.cbo#coupling.cbo.class magnitude:higher class
+coupling.cbo#coupling.cbo.namespace magnitude:higher namespace
+coupling.class-rank#coupling.class-rank occurrence class
+coupling.distance#coupling.distance magnitude:higher namespace
+coupling.instability#coupling.instability.class magnitude:higher class
+coupling.instability#coupling.instability.namespace magnitude:higher namespace
+design.data-class#design.data-class magnitude:lower class
+design.god-class#design.god-class magnitude:higher class
+design.inheritance#design.inheritance magnitude:higher class
+cohesion.lcom#cohesion.lcom magnitude:higher class
+design.noc#design.noc magnitude:higher class
+design.type-coverage#design.type-coverage.param magnitude:lower class
+design.type-coverage#design.type-coverage.property magnitude:lower class
+design.type-coverage#design.type-coverage.return magnitude:lower class
+duplication.code-duplication#duplication.code-duplication magnitude:higher project
+maintainability.index#maintainability.index magnitude:lower callable
+security.command-injection#security.command-injection occurrence callable
+security.hardcoded-credentials#security.hardcoded-credentials occurrence class
+security.sensitive-parameter#security.sensitive-parameter occurrence callable
+security.sql-injection#security.sql-injection occurrence callable
+security.xss#security.xss occurrence callable
+size.class-count#size.class-count magnitude:higher namespace
+size.method-count#size.method-count magnitude:higher class
+size.property-count#size.property-count magnitude:higher class

@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -60,11 +61,11 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             array_keys($declarations),
         );
         self::assertEquals(
-            ChannelDeclaration::occurrence(),
+            ChannelDeclaration::occurrence(SymbolLevel::Callable),
             $declarations['code-smell.goto#code-smell.goto'],
         );
         self::assertEquals(
-            ChannelDeclaration::magnitude(WorseDirection::Lower),
+            ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
             $declarations['maintainability.index#maintainability.index'],
         );
         self::assertSame(

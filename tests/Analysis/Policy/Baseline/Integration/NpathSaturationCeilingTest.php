@@ -17,9 +17,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFacto
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
@@ -64,7 +64,7 @@ final class NpathSaturationCeilingTest extends TestCase
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
             'complexity.npath#complexity.npath.callable',
-            ChannelDeclaration::magnitude(WorseDirection::Higher),
+            ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
         );
         $stage = new BaselineCeilingStage($baseline, $declarations);
 
@@ -99,7 +99,7 @@ final class NpathSaturationCeilingTest extends TestCase
         $repository->method('getSubject')->willReturn($metrics);
 
         $violations = (new NpathComplexityRule(new NpathComplexityOptions()))
-            ->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
+            ->analyzeLevel(SymbolLevel::Callable, new AnalysisContext($repository));
 
         self::assertCount(1, $violations);
 

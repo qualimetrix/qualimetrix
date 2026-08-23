@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -132,13 +133,13 @@ final class InlineDirectiveRule extends AbstractRule
     {
         return [
             self::key(InlineDirectivePolicy::UNRESOLVED_DIRECTIVE_NAME)
-                => ChannelDeclaration::configurationError(),
+                => ChannelDeclaration::configurationError(SymbolLevel::File),
             self::key(InlineDirectivePolicy::UNSUPPORTED_THRESHOLD_NAME)
-                => ChannelDeclaration::configurationError(),
+                => ChannelDeclaration::configurationError(SymbolLevel::File),
             self::key(InlineDirectivePolicy::INVALID_THRESHOLD_NAME)
-                => ChannelDeclaration::configurationError(),
+                => ChannelDeclaration::configurationError(SymbolLevel::File),
             self::key(InlineDirectivePolicy::UNUSED_DIRECTIVE_NAME)
-                => ChannelDeclaration::occurrence(),
+                => ChannelDeclaration::occurrence(SymbolLevel::File),
         ];
     }
 

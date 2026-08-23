@@ -29,12 +29,12 @@ use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Evidence\Size\PropertyCountOptions;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
@@ -690,7 +690,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             ],
         );
 
-        $violations = (new CboRule(new CboOptions()))->analyzeLevel(RuleLevel::Class_, $context);
+        $violations = (new CboRule(new CboOptions()))->analyzeLevel(SymbolLevel::Class_, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);

@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -119,15 +120,15 @@ final class NamespaceMetricContributions
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
 
-            $sourceLevel = match (true) {
-                $path->getType() === SymbolType::Function_ => SymbolLevel::Callable,
-                $path->type !== null && $path->member !== null => SymbolLevel::Callable,
-                $path->type !== null => SymbolLevel::Class_,
-                default => null,
-            };
-            if ($sourceLevel === null) {
+            $declarationType = $path->getType();
+
+            // Only leaf declarations contribute upward; a symbol already at
+            // file, namespace or project level is an aggregate, not a source.
+            if (!\in_array($declarationType, [SymbolType::Function_, SymbolType::Method, SymbolType::Class_], true)) {
                 continue;
             }
+
+            $sourceLevel = SymbolLevelProjection::ofDeclaration($declarationType);
 
             self::appendValues($repository, $info, $definitions, $values, $sourceLevel);
         }

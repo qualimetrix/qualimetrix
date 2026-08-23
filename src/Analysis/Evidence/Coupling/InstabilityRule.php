@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
@@ -14,7 +15,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
@@ -67,11 +67,11 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     }
 
     /**
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Class_, RuleLevel::Namespace_];
+        return [SymbolLevel::Class_, SymbolLevel::Namespace_];
     }
 
     /**
@@ -79,7 +79,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
      *
      * @return list<Violation>
      */
-    public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
+    public function analyzeLevel(SymbolLevel $level, AnalysisContext $context): array
     {
         if (!$this->options instanceof InstabilityOptions) {
             return [];
@@ -91,8 +91,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         }
 
         return match ($level) {
-            RuleLevel::Class_ => $this->analyzeClassLevel($context),
-            RuleLevel::Namespace_ => $this->analyzeNamespaceLevel($context),
+            SymbolLevel::Class_ => $this->analyzeClassLevel($context),
+            SymbolLevel::Namespace_ => $this->analyzeNamespaceLevel($context),
             default => [],
         };
     }
@@ -137,8 +137,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            (new ViolationChannel(self::NAME, self::NAME . '.namespace'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            ViolationChannel::leveled(self::NAME, SymbolLevel::Class_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            ViolationChannel::leveled(self::NAME, SymbolLevel::Namespace_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
         ];
     }
 
@@ -201,7 +201,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME . '.class',
+            violationCode: ViolationChannel::leveled(self::NAME, SymbolLevel::Class_)->violationCode,
             message: \sprintf(
                 'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                 $instabilityValue,
@@ -211,7 +211,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             ),
             severity: $severity,
             metricValue: $instabilityValue,
-            level: RuleLevel::Class_,
+            level: SymbolLevel::Class_,
             recommendation: \sprintf('Instability: %.2f (threshold: %.2f) — package is highly unstable', $instabilityValue, $threshold),
             threshold: $threshold,
         );
@@ -268,7 +268,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                     subject: $subject,
                     symbolPath: $nsInfo->symbolPath,
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.namespace',
+                    violationCode: ViolationChannel::leveled(self::NAME, SymbolLevel::Namespace_)->violationCode,
                     message: \sprintf(
                         'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,
@@ -278,7 +278,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                     ),
                     severity: $severity,
                     metricValue: $instabilityValue,
-                    level: RuleLevel::Namespace_,
+                    level: SymbolLevel::Namespace_,
                     recommendation: \sprintf('Instability: %.2f (threshold: %.2f) — package is highly unstable', $instabilityValue, $threshold),
                     threshold: $threshold,
                 );

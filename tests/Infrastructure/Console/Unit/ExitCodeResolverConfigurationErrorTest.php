@@ -8,6 +8,7 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -82,7 +83,7 @@ final class ExitCodeResolverConfigurationErrorTest extends TestCase
         $registry = StubChannelDeclarationRegistry::withDefaults();
         $registry->declare(
             self::CHANNEL . '#' . self::CHANNEL,
-            ChannelDeclaration::configurationError(),
+            ChannelDeclaration::configurationError(SymbolLevel::Class_),
         );
 
         return new ExitCodeResolver($registry);

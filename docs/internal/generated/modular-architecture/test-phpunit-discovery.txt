@@ -3578,6 +3578,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itAcceptsAnOccurrenceDeclarationWithNoDirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAMagnitudeDeclarationViaTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAnOccurrenceDeclarationViaTheFactory
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itOrdersDeclaredLevelsCanonicallySoTwoSpellingsOfOneChannelCompareEqual
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRefusesADeclarationWithNoLevel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRefusesARepeatedLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAMagnitudeDeclarationWithoutADirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAnOccurrenceDeclarationCarryingADirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseFalseForAHigherDirection
@@ -3710,13 +3713,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itPathExclusionIncrementsStatsPerRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itPublishesRuleMetadataWithExactAliasMappingWithoutConcreteRuleInstances
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itRunsTheComputedProducerWhenOnlyItsViolationCodeIsSelected
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleLevelTest::itAllCases
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleLevelTest::itDisplayName"callable"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleLevelTest::itDisplayName"class"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleLevelTest::itDisplayName"namespace"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleLevelTest::itEnumValues
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleLevelTest::itFromString
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleLevelTest::itTryFromWithInvalidValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itReadsTheNameConstantWithoutInstantiation
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsAClassThatCannotBeLoaded
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsANonStringNameConstant

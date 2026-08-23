@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Support;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
@@ -39,11 +40,11 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
     public static function withDefaults(): self
     {
         return new self([
-            'complexity.cyclomatic#complexity.cyclomatic.callable' => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            'duplication.code-duplication#duplication.code-duplication' => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            'maintainability.index#maintainability.index.class' => ChannelDeclaration::magnitude(WorseDirection::Lower),
-            'code-smell.goto#code-smell.goto' => ChannelDeclaration::occurrence(),
-            'architecture.layer-violation#architecture.layer-violation' => ChannelDeclaration::occurrence(),
+            'complexity.cyclomatic#complexity.cyclomatic.callable' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
+            'duplication.code-duplication#duplication.code-duplication' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
+            'maintainability.index#maintainability.index.class' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
+            'code-smell.goto#code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            'architecture.layer-violation#architecture.layer-violation' => ChannelDeclaration::occurrence(SymbolLevel::Class_),
         ]);
     }
 
@@ -57,7 +58,7 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
      */
     public static function alwaysHigherMagnitude(): self
     {
-        return new self(default: ChannelDeclaration::magnitude(WorseDirection::Higher));
+        return new self(default: ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
     }
 
     public function declare(string $channelKey, ChannelDeclaration $declaration): void

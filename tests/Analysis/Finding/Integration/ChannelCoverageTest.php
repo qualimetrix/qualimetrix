@@ -31,6 +31,7 @@ use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule;
 use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountOptions;
@@ -39,7 +40,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
@@ -145,7 +145,7 @@ final class ChannelCoverageTest extends TestCase
         $repository->method('allCallables')->willReturn([$methodInfo]);
         $repository->method('getSubject')->willReturn($metricBag);
 
-        $violations = $rule->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
+        $violations = $rule->analyzeLevel(SymbolLevel::Callable, new AnalysisContext($repository));
         self::assertCount(1, $violations);
 
         self::assertDeclared($violations[0]->channel());

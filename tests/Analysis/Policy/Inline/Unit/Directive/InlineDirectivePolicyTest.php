@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -274,7 +275,7 @@ final class InlineDirectivePolicyTest extends TestCase
 
         return new InlineDirectivePolicy(
             new ChannelUniverse(
-                [$channel->toKey() => ChannelDeclaration::occurrence()],
+                [$channel->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_)],
                 ['code-smell.goto' => [$channel->toKey()]],
                 ['code-smell.goto' => false],
                 'computed.health',

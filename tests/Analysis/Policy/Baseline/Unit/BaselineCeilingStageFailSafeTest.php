@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-
 use PHPUnit\Framework\Attributes\DataProvider;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
@@ -279,7 +280,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     {
         $finding = ViolationFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')));
         $declarations = StubChannelDeclarationRegistry::withDefaults();
-        $declarations->declare('code-smell.goto#code-smell.goto', ChannelDeclaration::magnitude(WorseDirection::Higher));
+        $declarations->declare('code-smell.goto#code-smell.goto', ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable));
 
         // The stored entry was captured while the channel was `occurrence`.
         $stage = self::stageOver(self::baselineOf([self::occurrenceEntry($finding, 1)]), $declarations);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -60,7 +61,7 @@ final class OutsideLayerSummary
      */
     public static function unassignedClassChannel(): ChannelDeclaration
     {
-        return ChannelDeclaration::magnitude(WorseDirection::Higher);
+        return ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project);
     }
 
     /**

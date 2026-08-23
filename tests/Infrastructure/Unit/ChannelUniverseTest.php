@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
@@ -38,7 +39,7 @@ final class ChannelUniverseTest extends TestCase
     public function itReturnsTheDeclarationForAStaticallyDeclaredChannel(): void
     {
         $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
-        $declaration = ChannelDeclaration::magnitude(WorseDirection::Higher);
+        $declaration = ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_);
 
         $universe = $this->universe(declarations: [$channel->toKey() => $declaration]);
 
@@ -57,7 +58,7 @@ final class ChannelUniverseTest extends TestCase
     public function itExposesExactlyTheStaticDeclarationsItWasGiven(): void
     {
         $channel = new ViolationChannel('maintainability.index', 'maintainability.index');
-        $declaration = ChannelDeclaration::magnitude(WorseDirection::Lower);
+        $declaration = ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_);
 
         $universe = $this->universe(declarations: [$channel->toKey() => $declaration]);
 

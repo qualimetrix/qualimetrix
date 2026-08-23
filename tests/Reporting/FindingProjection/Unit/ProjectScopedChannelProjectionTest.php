@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -115,7 +116,7 @@ final class ProjectScopedChannelProjectionTest extends TestCase
     {
         $declarations = new StubChannelDeclarationRegistry();
         foreach (self::declaredProjectScopedKeys() as $key) {
-            $declarations->declare($key, ChannelDeclaration::occurrence());
+            $declarations->declare($key, ChannelDeclaration::occurrence(SymbolLevel::Class_));
         }
 
         return new FindingProjector(

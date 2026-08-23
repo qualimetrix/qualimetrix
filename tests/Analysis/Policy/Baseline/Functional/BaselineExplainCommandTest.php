@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
@@ -305,8 +306,8 @@ final class BaselineExplainCommandTest extends TestCase
         ?MetricRepositoryInterface $metrics = null,
     ): CommandTester {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
-        $declarations->declare(self::CBO_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher));
-        $declarations->declare(self::LONG_PARAMETER_LIST_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher));
+        $declarations->declare(self::CBO_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
+        $declarations->declare(self::LONG_PARAMETER_LIST_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
 
         $registry = new RuleOptionsRegistry();
         $registry->setConfigFileOptions($ruleOptions);
@@ -346,7 +347,7 @@ final class BaselineExplainCommandTest extends TestCase
     private function executeForClass(array $measured, array $options): CommandTester
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
-        $declarations->declare(self::CBO_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher));
+        $declarations->declare(self::CBO_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
 
         $command = new BaselineExplainCommand(
             new StubBaselineRun($measured, ['src'], AbsolutePath::fromString($this->tempDir)),

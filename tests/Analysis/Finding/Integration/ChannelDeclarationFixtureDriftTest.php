@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
@@ -340,7 +341,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
             $parts = preg_split('/\s+/', $line);
             self::assertNotFalse($parts, \sprintf('Malformed fixture line: "%s".', $line));
-            self::assertContains(\count($parts), [2, 3], \sprintf('Malformed fixture line: "%s".', $line));
+            self::assertContains(\count($parts), [3, 4], \sprintf('Malformed fixture line: "%s".', $line));
 
             $channelKey = $parts[0];
             $shapeSpec = $parts[1];
@@ -348,28 +349,33 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
             $declarations[$channelKey] = self::parseShapeSpec(
                 $shapeSpec,
                 $channelKey,
-                self::parseAcceptabilitySpec($parts[2] ?? null, $channelKey),
+                self::parseAcceptabilitySpec($parts[3] ?? null, $channelKey),
+                self::parseLevelsSpec($parts[2], $channelKey),
             );
         }
 
         return $declarations;
     }
 
+    /**
+     * @param non-empty-list<SymbolLevel> $levels
+     */
     private static function parseShapeSpec(
         string $shapeSpec,
         string $channelKey,
         ChannelAcceptability $acceptability,
+        array $levels,
     ): ChannelDeclaration {
         if ($shapeSpec === 'occurrence') {
-            return new ChannelDeclaration(ChannelShape::Occurrence, null, $acceptability);
+            return new ChannelDeclaration(ChannelShape::Occurrence, null, $acceptability, $levels);
         }
 
         if (str_starts_with($shapeSpec, 'magnitude:')) {
             $direction = substr($shapeSpec, \strlen('magnitude:'));
 
             return match ($direction) {
-                'higher' => new ChannelDeclaration(ChannelShape::Magnitude, WorseDirection::Higher, $acceptability),
-                'lower' => new ChannelDeclaration(ChannelShape::Magnitude, WorseDirection::Lower, $acceptability),
+                'higher' => new ChannelDeclaration(ChannelShape::Magnitude, WorseDirection::Higher, $acceptability, $levels),
+                'lower' => new ChannelDeclaration(ChannelShape::Magnitude, WorseDirection::Lower, $acceptability, $levels),
                 default => throw new RuntimeException(\sprintf(
                     'Unknown direction "%s" for channel "%s" in the fixture.',
                     $direction,
@@ -382,7 +388,37 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
     }
 
     /**
-     * The optional third token. Absent means the ordinary case — a channel
+     * The third token: the levels the channel reports at.
+     *
+     * Required, and required to be non-empty, because a declaration cannot
+     * express "no level" — see {@see ChannelDeclaration}. A fixture line that
+     * omitted it would be a line the code could never produce.
+     *
+     * @return non-empty-list<SymbolLevel>
+     */
+    private static function parseLevelsSpec(string $spec, string $channelKey): array
+    {
+        $levels = [];
+
+        foreach (explode(',', $spec) as $value) {
+            $level = SymbolLevel::tryFrom($value);
+
+            if ($level === null) {
+                throw new RuntimeException(\sprintf(
+                    'Unknown level "%s" for channel "%s" in the fixture.',
+                    $value,
+                    $channelKey,
+                ));
+            }
+
+            $levels[] = $level;
+        }
+
+        return $levels;
+    }
+
+    /**
+     * The optional fourth token. Absent means the ordinary case — a channel
      * whose findings are acceptable as debt — so that the fixture reads as a
      * list of exceptions rather than repeating the default 47 times.
      */
