@@ -139,6 +139,32 @@ rediscovered.
    name segment, and the one page teaching the feature uses the illegal form.
    Measured 2026-08-23.
 
+## Found while preparing the validator extraction (Ш3), out of scope here
+
+**SARIF result order is insertion order, and nothing pins it.**
+`SarifFormatter::format()` passes `$report->violations` straight into
+`formatResults()` with no sort, and `SarifRuleCollector` builds the
+`tool.driver.rules` array — and therefore every `ruleIndex` — in first-seen
+order. Text, JSON and the baseline all re-sort by content
+(`ViolationSorter`, `JsonViolationSection::identitySortKey()`,
+`BaselineWriter::orderingKey()`); SARIF alone does not. Consequences, in the
+order they will bite:
+
+- any change to rule registration order silently reorders a published artifact,
+  and the finding-equivalence gate compares surfaces as text, so such a change
+  reads as a behaviour change with no behaviour behind it;
+- the order is not even producer order end to end: `FindingProjector` withholds
+  configuration errors from every filter stage and rejoins them at the tail, so
+  the artifact is "everything else, then the configuration errors". Measured on
+  the `layers` corpus case, SARIF prints `architecture.unassigned-class` before
+  `architecture.coverage` although `LayerViolationRule` emits them the other way
+  round.
+
+Not fixed here: sorting SARIF results is an observable change to a published
+artifact, and Ш3 carries a zero delta by decision. It is what makes the
+validator extraction safe, so it is recorded rather than relied on silently.
+Measured 2026-08-23.
+
 ## Consumers that read the level from the channel NAME
 
 Found in round 1 of the plan review, verified against the code. Not defects of
