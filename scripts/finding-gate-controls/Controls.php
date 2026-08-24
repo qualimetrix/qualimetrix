@@ -9,10 +9,11 @@ use QmxFindingGate\FailureClass;
 /**
  * The controls, as a list.
  *
- * Nine negative controls — the four the Ш1 DoD names, the four Ш4a adds for the
- * declared delta and the reference's vocabulary, and the one Ш4b adds for
- * `delta-too-large` — plus the positive one without which nine reds could all be
- * reds for an environmental reason.
+ * Ten negative controls — the four the Ш1 DoD names, the four Ш4a adds for the
+ * declared delta and the reference's vocabulary, the one Ш4b adds for
+ * `delta-too-large` and the one P5.0 adds for a lost level of a multi-level
+ * channel — plus the positive one without which ten reds could all be reds for
+ * an environmental reason.
  *
  * `delta-too-large` was the one class of the five that no control had ever seen
  * red. Ш4a named the gap in its own record; Ш4b rewrote the code that computes
@@ -25,6 +26,12 @@ use QmxFindingGate\FailureClass;
  * for the wrong reason" this harness exists to rule out. Pins are substrings, so
  * `case:design` covers every surface of that case including its baseline file,
  * while `case:smells|baseline-file` covers one artifact and nothing else.
+ *
+ * A toleration also has to be *used*. One that matched nothing in its own
+ * control's run is a claim about a blast radius that nothing supports, and it
+ * fails the run exactly as `map-stale` does — so the lists below are what the
+ * mutations measurably produce, not what they might. See
+ * Outcome::idleTolerations().
  */
 final class Controls
 {
@@ -41,6 +48,7 @@ final class Controls
             self::substitutedCeiling(),
             self::changedFindingCount(),
             self::removedFixture(),
+            self::lostLevelFixture(),
             self::deltaMismatch(),
             self::deltaStale(),
             self::deltaOverreach(),
@@ -70,14 +78,21 @@ final class Controls
      * That failure is a mechanism of its own, and the `reference-input` control
      * is where it is proved.
      *
-     * The blast radius, enumerated rather than gestured at. `cohesion.lcom` is
-     * claimed by exactly one case, `complexity`, so the surface diff and the
-     * broken `channels` claim both land there. Beyond that case the rename
-     * takes the corpus out of balance in both directions at once — one declared
-     * channel now fires nowhere, one fired channel is declared nowhere — and
-     * puts the container at odds with the tracked declaration fixture. The
-     * global `qmx rules` listing is tolerated too, because it enumerates the
-     * vocabulary independently of any case.
+     * The blast radius, enumerated rather than gestured at — and trimmed to what
+     * a run actually produces, because a toleration nothing matches is now a
+     * failed control (see Outcome::idleTolerations()). `cohesion.lcom` is claimed
+     * by exactly one case, `complexity`, so the surface diff and the broken
+     * `channels` claim both land there, and the container stops agreeing with the
+     * tracked declaration fixture.
+     *
+     * Three tolerations were declared here and never fired, measured over a full
+     * PASS run on 2026-08-24: `coverage-shortfall`, `coverage-surplus` and a
+     * surface diff on the `qmx rules` listing. The first two were an argument
+     * about a different mutation: this one renames the channel at its
+     * *declaration*, so the declared set moves with the observed one and the
+     * corpus stays balanced in both directions. The third assumed the rules
+     * listing prints channel codes; it prints rule names and option tokens, and
+     * the rule name is deliberately left alone here.
      */
     private static function renameWithoutMap(): Control
     {
@@ -88,13 +103,10 @@ final class Controls
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity')],
             [
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
-                new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus'),
-                new Expectation(FailureClass::COVERAGE_SURPLUS, 'corpus'),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
                     'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
                 ),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'tree|rules'),
             ],
         );
     }
@@ -190,6 +202,50 @@ final class Controls
     }
 
     /**
+     * The other half of the input control: one LEVEL of a multi-level channel
+     * loses its evidence while the channel keeps firing.
+     *
+     * Why this is not covered by `removed-fixture`. A claim used to be a set of
+     * channel names, and the observed set was keyed by channel too, so a channel
+     * firing at two levels inside one case was one entry on both sides. Take away
+     * the evidence for one of those levels and every check still passed: the
+     * channel fires, the claim lists it, the coverage union is unchanged — and
+     * because both trees read the corpus out of the candidate's case directory,
+     * no surface differs either. That is the shape the collapse of the level
+     * channels walks straight into.
+     *
+     * What the mutation is, and why it is not a deleted file. Measured on
+     * 2026-08-24 over the whole corpus: the only channels firing at more than one
+     * level in one case are the seven `computed.health` ones, and every one of
+     * them is computed for every class, so deleting any single fixture of that
+     * case leaves the level set untouched (measured for all seven of its files),
+     * while deleting the two that carry `health.cohesion` removes the channel
+     * outright — which is the old detector, not this one. The level's evidence in
+     * this corpus is the `levels:` list of the case's own user-defined computed
+     * metric, so that is what is taken away. It is the same kind of loss the
+     * plan's wording points at: a case is its fixtures *and* the configuration
+     * that fires them, and this drops one level of one channel and nothing else —
+     * measured, the channel set is identical before and after.
+     *
+     * Nothing is tolerated, and the absence of `coverage-shortfall` from the
+     * expectations is the assertion: the channel is still declared and still
+     * observed, so the claim is the only place this can be seen.
+     */
+    private static function lostLevelFixture(): Control
+    {
+        return Control::red(
+            'lost-level-fixture',
+            'the corpus stops producing one level of a channel that keeps firing at its other levels',
+            Mutation::edit(
+                'finding-gate/cases/health/qmx.yaml',
+                ['    levels: [class, namespace, project]' => '    levels: [namespace, project]'],
+                'computed.branch_load stops being computed per class, and keeps firing per namespace and project',
+            ),
+            [new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:health')],
+        );
+    }
+
+    /**
      * A declared delta that does not state the difference it covers.
      *
      * The product perturbation is the ceiling control's, because it is the one
@@ -247,6 +303,10 @@ final class Controls
      * that same surface: reach is judged on what the run measures, so a
      * declaration that overreaches must fail for overreaching rather than be
      * excused by also failing to match.
+     *
+     * It shares the rename control's mutation, so it shared that control's three
+     * tolerations that never fired; they are removed here for the same measured
+     * reasons, which are stated there.
      */
     private static function deltaOverreach(): Control
     {
@@ -262,13 +322,10 @@ final class Controls
                 new Expectation(FailureClass::DELTA_MISMATCH, 'case:complexity|format:json'),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
-                new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus'),
-                new Expectation(FailureClass::COVERAGE_SURPLUS, 'corpus'),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
                     'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
                 ),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'tree|rules'),
             ],
         );
     }
@@ -287,7 +344,11 @@ final class Controls
      * The `health` case is the target because it is the largest: two moved
      * lines per finding over its 69 message-bearing findings measure 256 changed
      * lines against a limit of 200, so the control is not sitting on the edge of
-     * the threshold it is testing.
+     * the threshold it is testing. It is also the one case NOT tolerated for a
+     * surface diff: its `json` surface is the declared one, so the failures
+     * there are delta classes, and the twelve tolerations name the twelve other
+     * cases whose `json` surface moves with the formatter. That toleration was
+     * declared and never fired; measured on a full PASS run, 2026-08-24.
      *
      * `delta-mismatch` and `delta-overreach` are tolerated on the same surface
      * for the reason the overreach control gives in reverse: reach and size are
@@ -324,7 +385,6 @@ final class Controls
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:disabled-rule'),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:duplication'),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:excluded-path'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:health'),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:layers'),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:only-rules'),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:security'),
@@ -367,7 +427,13 @@ final class Controls
                     '"--rule-opt=cohesion.lcom:warning=2"' => '"--rule-opt=cohesion.lcom4:warning=2"',
                     '"--rule-opt=cohesion.lcom:error=4"' => '"--rule-opt=cohesion.lcom4:error=4"',
                     '"--rule-opt=cohesion.lcom:minMethods=2"' => '"--rule-opt=cohesion.lcom4:minMethods=2"',
-                    '"cohesion.lcom#cohesion.lcom"' => '"cohesion.lcom4#cohesion.lcom4"',
+                    // The claim carries a level, and the mutation deliberately
+                    // stops short of it: a control coupled to the level
+                    // vocabulary would go stale every time that vocabulary
+                    // moves, which is exactly what Ш5 does to it. Matching the
+                    // pair's channel half keeps "exactly one occurrence" sharp
+                    // without asserting anything about levels.
+                    '"cohesion.lcom#cohesion.lcom' => '"cohesion.lcom4#cohesion.lcom4',
                 ],
                 'the case addresses the new name',
             ))->and(Mutation::edit(

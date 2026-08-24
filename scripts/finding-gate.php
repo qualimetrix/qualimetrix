@@ -26,6 +26,7 @@ foreach (
         'Tsv',
         'Process',
         'Surfaces',
+        'SubjectLevel',
         'Diff',
         'ExactDiff',
         'GateReport',

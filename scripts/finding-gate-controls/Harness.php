@@ -23,6 +23,12 @@ use Throwable;
  * is green with the step's declarations intact and byte-compared, every red
  * control produced its required class at its required surface, and no red
  * control produced anything else anywhere else.
+ *
+ * And one thing it asserts that it did not before: every toleration a control
+ * declares was matched by something. A toleration nothing matches states a blast
+ * radius nobody measured, and it silently widens what the control will accept the
+ * day the product starts producing it — the same defect `map-stale` and
+ * `normalization-stale` fail for. See {@see Outcome::idleTolerations}.
  */
 final class Harness
 {
@@ -390,7 +396,12 @@ final class Harness
                 $observed === [] ? 'no failures' : implode(', ', $observed),
             );
 
-            foreach (['matched' => $outcome->matched, 'tolerated' => $outcome->tolerated, 'unexpected' => $outcome->unexpected] as $label => $failures) {
+            foreach ([
+                'matched' => $outcome->matched,
+                'tolerated' => $outcome->tolerated,
+                'unexpected' => $outcome->unexpected,
+                'idle' => $outcome->idleTolerations,
+            ] as $label => $failures) {
                 foreach ($failures as $failure) {
                     $lines[] = \sprintf('      %-10s %s', $label, $failure);
                 }

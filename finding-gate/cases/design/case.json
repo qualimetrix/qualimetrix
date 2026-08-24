@@ -30,16 +30,16 @@
         "--rule-opt=size.property-count:error=4"
     ],
     "channels": [
-        "design.data-class#design.data-class",
-        "design.god-class#design.god-class",
-        "design.inheritance#design.inheritance",
-        "design.noc#design.noc",
-        "design.param-type-coverage#design.param-type-coverage",
-        "design.property-type-coverage#design.property-type-coverage",
-        "design.return-type-coverage#design.return-type-coverage",
-        "size.class-count#size.class-count",
-        "size.method-count#size.method-count",
-        "size.property-count#size.property-count"
+        "design.data-class#design.data-class@class",
+        "design.god-class#design.god-class@class",
+        "design.inheritance#design.inheritance@class",
+        "design.noc#design.noc@class",
+        "design.param-type-coverage#design.param-type-coverage@class",
+        "design.property-type-coverage#design.property-type-coverage@class",
+        "design.return-type-coverage#design.return-type-coverage@class",
+        "size.class-count#size.class-count@namespace",
+        "size.method-count#size.method-count@class",
+        "size.property-count#size.property-count@class"
     ],
     "explainSubjects": [
         "declaration:class:Corpus\\Design\\Model\\Untyped@src/Model/Untyped.php",

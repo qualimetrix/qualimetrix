@@ -24,6 +24,7 @@ final class SelfTest
     public function run(): array
     {
         $this->maps();
+        $this->claims();
         $this->ambiguities();
         $this->declaredDelta();
         $this->normalization();
@@ -124,6 +125,8 @@ final class SelfTest
             'an input row also applies forward, because the rules snapshot prints the same tokens',
         );
 
+        $this->multivaluedInput();
+
         // A row naming a name inside a token would translate the same option key
         // on some other rule as well, so the shape is checked when it loads.
         foreach (['param_warning', 'type-coverage-param-warning'] as $partial) {
@@ -223,6 +226,226 @@ final class SelfTest
             $symbols->forward('"subject": "declaration:class:Qualimetrix\\\\Analysis\\\\Finding\\\\Contract\\\\Violation@src/x.php"'),
             'a symbol row maps its JSON-escaped form as well as its raw form',
         );
+    }
+
+    /**
+     * The unit of a case's claim: a channel AND the level it fired at.
+     *
+     * Every shape a subject reaches the comparison in is levelled here, and an
+     * unknown one stops the run rather than being defaulted — a subject nothing
+     * can level is a subject whose level the claim would quietly stop checking.
+     * The tracked claims are read through the corpus loader too, so a case.json
+     * left in the old shape fails here rather than in a full run.
+     */
+    private function claims(): void
+    {
+        $shapes = [
+            'declaration:callable:Corpus\\A::b@src/A.php' => 'callable',
+            'declaration:class:Corpus\\A@src/A.php' => 'class',
+            'declaration:class:Corpus\\A@src/A.php#2' => 'class',
+            'declaration:func:Corpus\\A::helper@src/A.php' => 'callable',
+            'class:Corpus\\A' => 'class',
+            'file:src/A.php' => 'file',
+            'ns:Corpus\\A' => 'namespace',
+            'project:' => 'project',
+        ];
+
+        foreach ($shapes as $subject => $level) {
+            $this->same($level, SubjectLevel::of($subject), 'the level of "' . $subject . '"');
+        }
+
+        $this->assert(
+            self::throws(static fn(): mixed => SubjectLevel::of('member:Corpus\\A::$b')),
+            'a subject shape the gate cannot level stops the run instead of claiming a level for it',
+        );
+        $this->same(
+            'a.rule#a.code@class',
+            SubjectLevel::claim('a.rule#a.code', 'class'),
+            'a claim entry is the channel and the level, separated by a character no name may contain',
+        );
+        $this->same(
+            'a.rule#a.code',
+            SubjectLevel::channelOf('a.rule#a.code@class'),
+            'and the channel is readable back out of it, which is what coverage counts',
+        );
+        $this->assert(
+            self::throws(static function (): void {
+                SubjectLevel::assertClaim('a.rule#a.code', 'case.json');
+            }),
+            'a bare channel name is refused as a claim: the old shape claims less than it looks like it claims',
+        );
+        $this->assert(
+            self::throws(static function (): void {
+                SubjectLevel::assertClaim('a.rule#a.code@klass', 'case.json');
+            }),
+            'and so is a level outside the product\'s own vocabulary',
+        );
+
+        $this->claimShapeOnLoad();
+
+        // The tracked corpus is loaded, not described: every case's claim has to
+        // be in the pair shape already, or no run of this step can be green.
+        $corpus = Corpus::load($this->candidateRoot, []);
+        $this->assert($corpus->cases !== [], 'the tracked corpus loads');
+
+        foreach ($corpus->cases as $case) {
+            foreach ($case->channels as $entry) {
+                SubjectLevel::assertClaim($entry, 'case:' . $case->id);
+            }
+        }
+    }
+
+    /**
+     * What `case.json` may claim, checked where a case is loaded.
+     *
+     * A repeated pair is refused rather than tolerated: the observed set is
+     * deduplicated by pair, so a claim listing one twice can never be satisfied,
+     * and a claim nothing can satisfy is the shape a half-done migration leaves
+     * behind. Exercised on a written case rather than on the loader's argument,
+     * because loading is where the tracked corpus meets it.
+     */
+    private function claimShapeOnLoad(): void
+    {
+        $root = Fs::temporaryDirectory('self-test-claim-');
+        $directory = $root . '/probe';
+        mkdir($directory);
+        Fs::write($directory . '/qmx.yaml', "exclude_paths: []\n");
+
+        $write = static function (array $channels) use ($directory): void {
+            Fs::write($directory . '/case.json', (string) json_encode([
+                'id' => 'probe',
+                'description' => 'a written case, so the claim shape is checked where a case is loaded',
+                'paths' => ['src'],
+                'config' => 'qmx.yaml',
+                'channels' => $channels,
+            ]));
+        };
+
+        $write(['a.rule#a.code@class', 'a.rule#a.code@callable']);
+        $this->assert(
+            !self::throws(static fn(): mixed => CaseDefinition::load($directory)),
+            'a case claiming one channel at two levels loads: that is the pair the level segment leaves behind',
+        );
+
+        $write(['a.rule#a.code@class', 'a.rule#a.code@class']);
+        $this->assert(
+            self::throws(static fn(): mixed => CaseDefinition::load($directory)),
+            'a case claiming one pair twice is refused: the observed set could never satisfy it',
+        );
+
+        $write(['a.rule#a.code']);
+        $this->assert(
+            self::throws(static fn(): mixed => CaseDefinition::load($directory)),
+            'and a case still claiming a bare channel name is refused when it loads',
+        );
+
+        Fs::removeRecursively($root);
+    }
+
+    /**
+     * The input row a split producer needs, and the three obligations it keeps.
+     *
+     * One old token, several new ones: backwards — the direction `inputs.tsv`
+     * exists for — the candidate's several names all restate as the one name the
+     * reference knows, so the row is a function exactly where it is applied.
+     * Forwards there is nothing to apply and the row refuses out loud. Without
+     * it a case addressing a split producer by name has no writable row at all:
+     * measured after Ш4b, one old name, three new ones.
+     */
+    private function multivaluedInput(): void
+    {
+        $images = 'design.param-type-coverage|design.property-type-coverage|design.return-type-coverage';
+        $split = RenameMaps::fromPairs([
+            ['old' => 'design.type-coverage', 'new' => $images, 'source' => 'inputs.tsv'],
+        ]);
+
+        foreach (['param', 'property', 'return'] as $aspect) {
+            $this->same(
+                '--disable-rule=design.type-coverage',
+                $split->reverse('--disable-rule=design.' . $aspect . '-type-coverage'),
+                'each new name of a split producer restates as the one name the reference knows (' . $aspect . ')',
+            );
+        }
+
+        $this->same(
+            ['--disable-rule=design.type-coverage'],
+            $split->reverseArguments(['--disable-rule=design.return-type-coverage']),
+            'and so does an argument list',
+        );
+        $this->same(
+            'design.type-coverage-of-something',
+            $split->forward('design.type-coverage-of-something'),
+            'the row still translates a whole token only, so a longer name it merely starts is left alone',
+        );
+
+        // The refusal is the point: with three images there is no forward
+        // translation, and picking the first would publish a rename no row
+        // declared.
+        $this->assert(
+            self::throws(static fn(): mixed => $split->forward('"rule": "design.type-coverage"')),
+            'the forward direction of a multivalued row refuses out loud instead of taking the first image',
+        );
+        $this->assert(
+            self::throws(static fn(): mixed => $split->forward('source="qmx.design.type-coverage"')),
+            'and refuses the prefixed spelling too, rather than silently not seeing it',
+        );
+
+        $rejected = [
+            'an image that is not a whole token' => ['design.type-coverage', 'design.param-type-coverage|warning'],
+            'a repeated image' => ['design.type-coverage', 'design.param-type-coverage|design.param-type-coverage'],
+            'an empty image' => ['design.type-coverage', 'design.param-type-coverage|'],
+            'several tokens on the old side' => ['design.a-coverage|design.b-coverage', 'design.type-coverage'],
+        ];
+
+        foreach ($rejected as $description => [$old, $new]) {
+            $this->assert(
+                self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                    ['old' => $old, 'new' => $new, 'source' => 'inputs.tsv'],
+                ])),
+                $description . ' is refused when the map loads',
+            );
+        }
+
+        $this->assert(
+            self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                ['old' => 'a.one#a.one', 'new' => 'b.one#b.one|c.one#c.one', 'source' => 'channels.tsv'],
+            ])),
+            'only an input row may be multivalued: a channel map is forward-only, so it has no use for the shape',
+        );
+        $this->assert(
+            self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                ['old' => 'design.type-coverage', 'new' => $images, 'source' => 'inputs.tsv'],
+                ['old' => 'design.param-type-coverage', 'new' => 'design.param-typing', 'source' => 'inputs.tsv'],
+            ])),
+            'a chain through one image of a multivalued row is refused like any other chain',
+        );
+
+        // Staleness, and the decision inside it: every image has to have
+        // translated something. One image out of three would leave the other two
+        // as a standing excuse — which is exactly what map-stale exists to
+        // prevent.
+        $partial = RenameMaps::fromPairs([
+            ['old' => 'design.type-coverage', 'new' => $images, 'source' => 'inputs.tsv'],
+        ]);
+        $partial->reverse('--disable-rule=design.param-type-coverage');
+        $stale = $partial->staleRows();
+        $this->same(1, \count($stale), 'a multivalued row with two idle images is stale, not satisfied by the third');
+        $this->assert(
+            str_contains($stale[0] ?? '', 'design.property-type-coverage')
+            && str_contains($stale[0] ?? '', 'design.return-type-coverage')
+            && !str_contains($stale[0] ?? '', 'translated nothing into: design.param-type-coverage'),
+            'and it names the images that translated nothing, not the row as a whole',
+        );
+
+        $whole = RenameMaps::fromPairs([
+            ['old' => 'design.type-coverage', 'new' => $images, 'source' => 'inputs.tsv'],
+        ]);
+
+        foreach (['param', 'property', 'return'] as $aspect) {
+            $whole->reverse('--disable-rule=design.' . $aspect . '-type-coverage');
+        }
+
+        $this->same([], $whole->staleRows(), 'a multivalued row every image of which fired is not stale');
     }
 
     /**

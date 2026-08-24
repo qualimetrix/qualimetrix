@@ -957,8 +957,9 @@ final class Gate
         $producers = [];
 
         foreach ($this->corpus->cases as $case) {
-            $caseObserved = self::observedChannels($this->findingsByCase[$case->id] ?? []);
-            $this->checkCaseClaim($case, $caseObserved);
+            $caseClaims = self::observedClaims($this->findingsByCase[$case->id] ?? []);
+            $caseObserved = self::channelsOf($caseClaims);
+            $this->checkCaseClaim($case, $caseClaims);
 
             // An auxiliary case exists for an input, not for a channel: it fires
             // what an authoritative case already owns, so counting it would
@@ -1026,6 +1027,12 @@ final class Gate
      * one of them loses its fixture, and every other check still passes: the
      * control would be vacuous on precisely the channels it covers twice.
      *
+     * This counts cases per channel, and says nothing about how many times a
+     * channel fires inside one case — the union it guards is a union of names.
+     * Multiplicity *within* a case is the claim's business, and it is a claim
+     * about `channel@level` pairs for exactly that reason: see
+     * {@see checkCaseClaim()}.
+     *
      * @param array<string, list<string>> $producers
      */
     private function checkSingleProducer(array $producers): void
@@ -1071,7 +1078,17 @@ final class Gate
         }
     }
 
-    /** @param list<string> $observed */
+    /**
+     * The claim is verified per channel-and-level pair, not per channel.
+     *
+     * Both sides of the comparison are pair sets, so nothing here deduplicates a
+     * level away: a case that keeps firing a channel but stops firing it at one
+     * of its levels fails, which is the only place a lost level-fixture can be
+     * seen at all — the corpus is shared by both trees, so no surface differs,
+     * and the coverage union still holds the channel.
+     *
+     * @param list<string> $observed
+     */
     private function checkCaseClaim(CaseDefinition $case, array $observed): void
     {
         $claimed = $case->channels;
@@ -1085,8 +1102,8 @@ final class Gate
         $this->report->fail(
             FailureClass::CASE_CLAIM_MISMATCH,
             'case:' . $case->id,
-            'The case no longer fires exactly the channels its case.json claims. The claim is verified, not'
-            . ' documentation.',
+            'The case no longer fires exactly the channel-and-level pairs its case.json claims. The claim is'
+            . ' verified, not documentation.',
             Diff::betweenSets($claimed, $observed, 'claimed', 'fired'),
         );
     }
@@ -1123,18 +1140,53 @@ final class Gate
     }
 
     /**
+     * The channel-and-level pairs a case fired, deduplicated by pair.
+     *
+     * Keyed by the pair rather than by the channel, and that is the whole repair:
+     * a channel firing at two levels inside one case used to collapse into one
+     * observed entry, so the level whose fixture disappeared left no trace in
+     * any check. Both trees read the corpus out of the candidate's case
+     * directory, so a lost fixture produces no surface difference either — the
+     * claim is the only place it can show up.
+     *
      * @param list<array<string, mixed>> $findings
      *
      * @return list<string>
      */
-    private static function observedChannels(array $findings): array
+    private static function observedClaims(array $findings): array
+    {
+        $claims = [];
+
+        foreach ($findings as $finding) {
+            if (\is_string($finding['channel'] ?? null) && \is_string($finding['subject'] ?? null)) {
+                $claim = SubjectLevel::claim($finding['channel'], SubjectLevel::of($finding['subject']));
+                $claims[$claim] = $claim;
+            }
+        }
+
+        return array_values($claims);
+    }
+
+    /**
+     * The channels behind a set of claims.
+     *
+     * Coverage and multiplicity stay accounted per channel, deliberately: the
+     * guarantee they carry — one authoritative owner per channel, so the
+     * fixture-removal control bites — is about names, and pairing it with levels
+     * would let two cases own one channel as long as they fired it at different
+     * levels.
+     *
+     * @param list<string> $claims
+     *
+     * @return list<string>
+     */
+    private static function channelsOf(array $claims): array
     {
         $channels = [];
 
-        foreach ($findings as $finding) {
-            if (\is_string($finding['channel'] ?? null)) {
-                $channels[$finding['channel']] = $finding['channel'];
-            }
+        foreach ($claims as $claim) {
+            $channel = SubjectLevel::channelOf($claim);
+            $channels[$channel] = $channel;
         }
 
         return array_values($channels);

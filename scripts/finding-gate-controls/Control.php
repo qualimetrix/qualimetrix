@@ -26,6 +26,13 @@ use RuntimeException;
  *
  * Everything else the gate reports is unexpected, and an unexpected failure
  * means the control did not do what it claims, even though the gate went red.
+ *
+ * And a toleration that lands nowhere is a failure of the control too. Pinning it
+ * to a surface made the claim precise; it did not make it true. A toleration no
+ * failure matched is an unmeasured blast radius that quietly widens what the
+ * control accepts the day the product starts producing that class there — the
+ * same defect `map-stale` fails for, judged the same way: by what the run
+ * produced. {@see Outcome::idleTolerations}.
  */
 final class Control
 {

@@ -12,12 +12,12 @@
         "--rule-opt=coupling.distance:max_distance_error=2"
     ],
     "channels": [
-        "code-smell.superglobals#code-smell.superglobals",
-        "security.command-injection#security.command-injection",
-        "security.hardcoded-credentials#security.hardcoded-credentials",
-        "security.sensitive-parameter#security.sensitive-parameter",
-        "security.sql-injection#security.sql-injection",
-        "security.xss#security.xss"
+        "code-smell.superglobals#code-smell.superglobals@callable",
+        "security.command-injection#security.command-injection@callable",
+        "security.hardcoded-credentials#security.hardcoded-credentials@class",
+        "security.sensitive-parameter#security.sensitive-parameter@callable",
+        "security.sql-injection#security.sql-injection@callable",
+        "security.xss#security.xss@callable"
     ],
     "explainSubjects": [
         "declaration:callable:Corpus\\Security\\Login::authenticate@src/Login.php",

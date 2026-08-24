@@ -27,7 +27,7 @@ final class CaseDefinition
     /**
      * @param list<string> $paths
      * @param list<string> $args
-     * @param list<string> $channels
+     * @param list<string> $channels each entry is a `rule#code@level` pair; see SubjectLevel
      * @param list<string> $explainSubjects
      */
     private function __construct(
@@ -88,6 +88,19 @@ final class CaseDefinition
 
         if ($case->id !== $id) {
             throw new GateError(\sprintf('%s declares id "%s" but lives in directory "%s".', $file, $case->id, $id));
+        }
+
+        foreach ($case->channels as $entry) {
+            SubjectLevel::assertClaim($entry, $file);
+        }
+
+        if (\count(array_unique($case->channels)) !== \count($case->channels)) {
+            throw new GateError(\sprintf(
+                '%s claims the same channel%slevel pair twice. The observed set is deduplicated by pair, so a'
+                . ' repeated claim can never be satisfied — and a claim nothing can satisfy is not a claim.',
+                $file,
+                SubjectLevel::SEPARATOR,
+            ));
         }
 
         if (!is_file($directory . '/' . $case->config)) {

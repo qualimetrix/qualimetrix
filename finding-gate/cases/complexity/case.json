@@ -32,15 +32,15 @@
         "--rule-opt=maintainability.index:error=60"
     ],
     "channels": [
-        "cohesion.lcom#cohesion.lcom",
-        "complexity.cognitive#complexity.cognitive.callable",
-        "complexity.cognitive#complexity.cognitive.class",
-        "complexity.cyclomatic#complexity.cyclomatic.callable",
-        "complexity.cyclomatic#complexity.cyclomatic.class",
-        "complexity.npath#complexity.npath.callable",
-        "complexity.npath#complexity.npath.class",
-        "complexity.wmc#complexity.wmc",
-        "maintainability.index#maintainability.index"
+        "cohesion.lcom#cohesion.lcom@class",
+        "complexity.cognitive#complexity.cognitive.callable@callable",
+        "complexity.cognitive#complexity.cognitive.class@class",
+        "complexity.cyclomatic#complexity.cyclomatic.callable@callable",
+        "complexity.cyclomatic#complexity.cyclomatic.class@class",
+        "complexity.npath#complexity.npath.callable@callable",
+        "complexity.npath#complexity.npath.class@class",
+        "complexity.wmc#complexity.wmc@class",
+        "maintainability.index#maintainability.index@callable"
     ],
     "explainSubjects": [
         "declaration:class:Corpus\\Complexity\\Router@src/Router.php",

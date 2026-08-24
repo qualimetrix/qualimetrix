@@ -22,6 +22,24 @@ final class Outcome
     /** @var list<string> */
     public array $unexpected = [];
 
+    /**
+     * Declared tolerations no failure of this run matched.
+     *
+     * A toleration is a claim about a mutation's blast radius, and until now
+     * nothing checked that the radius was real. An idle one is the same defect
+     * as `map-stale` and `normalization-stale`: an unfalsifiable claim that
+     * quietly widens what the control is willing to swallow — and it widens it
+     * in the one direction that matters, because whatever it names stops being
+     * an unexpected failure the day the product starts producing it.
+     *
+     * A toleration whose only overlap is with a *required* expectation counts as
+     * idle too: the required expectation is what absorbed those failures, so the
+     * toleration proved nothing.
+     *
+     * @var list<string>
+     */
+    public array $idleTolerations = [];
+
     private function __construct(
         public readonly Control $control,
         public readonly int $exitCode,
@@ -91,11 +109,19 @@ final class Outcome
             $reasons[] = 'failure(s) the mutation does not explain: ' . implode('; ', $unexpected);
         }
 
+        $idle = self::idleTolerations($control, $failures);
+
+        if ($idle !== []) {
+            $reasons[] = 'declared toleration(s) nothing matched, so the stated blast radius is unproven: '
+                . implode('; ', $idle);
+        }
+
         $outcome = new self($control, $run['exit'], $reasons === []);
         $outcome->reasons = $reasons;
         $outcome->matched = $matched;
         $outcome->tolerated = $tolerated;
         $outcome->unexpected = $unexpected;
+        $outcome->idleTolerations = $idle;
 
         return $outcome;
     }
@@ -147,6 +173,34 @@ final class Outcome
             FailureClass::DELTA_STALE,
             FailureClass::DELTA_OVERREACH,
         ], true);
+    }
+
+    /**
+     * @param list<array{0: string, 1: string}> $failures
+     *
+     * @return list<string>
+     */
+    private static function idleTolerations(Control $control, array $failures): array
+    {
+        if ($control->expectsGreen) {
+            return [];
+        }
+
+        $idle = [];
+
+        foreach ($control->tolerated as $expectation) {
+            foreach ($failures as [$failureClass, $scope]) {
+                if ($expectation->matches($failureClass, $scope)
+                    && !self::satisfiesAny($control->required, $failureClass, $scope)
+                ) {
+                    continue 2;
+                }
+            }
+
+            $idle[] = $expectation->label();
+        }
+
+        return $idle;
     }
 
     /** @return list<string> */

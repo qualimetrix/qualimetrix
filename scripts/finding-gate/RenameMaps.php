@@ -15,7 +15,22 @@ namespace QmxFindingGate;
  * cannot be addressed in a vocabulary it does not know yet.
  *
  * A map may be applied backwards if and only if it is injective in both
- * directions, and that is checked here rather than promised. `channels.tsv` is
+ * directions, and that is checked here rather than promised. The one shape that
+ * is allowed to break it does so in one direction only, and the asymmetry is
+ * what makes it admissible: an `inputs.tsv` row may name SEVERAL new tokens for
+ * one old one, because a split producer is addressed in the candidate's
+ * vocabulary by several names and in the reference's by one. Backwards — the
+ * direction that map exists for — the several candidate names all restate as the
+ * one name the reference knows, which is a function. Forwards there is no
+ * function to apply, so the row is not applied forwards at all: an occurrence of
+ * the old token on the way out stops the run instead of silently taking the
+ * first image. Measured 2026-08-24: after Ш4b `design.type-coverage` is three
+ * producers (`design.param-type-coverage`, `design.property-type-coverage`,
+ * `design.return-type-coverage`), so a case addressing the old name through a
+ * selector had no writable row at all and was `reference-input-untranslated`
+ * for good.
+ *
+ * `channels.tsv` is
  * forward-only: after a collapse two rows share one target, and after a split one
  * old half has several, so neither can be inverted. It also must not be inverted
  * even where it looks invertible — a collapsed channel name is textually the same
@@ -81,13 +96,21 @@ final class RenameMaps
      */
     private const PREFIXES = ['qmx.'];
 
-    /** @var list<array{old: string, new: string, source: string, row: string, reversible: bool, ambiguous: bool}> */
+    /**
+     * Separates the several new tokens of one multivalued `inputs.tsv` row.
+     *
+     * Not a name character, so a row carrying it cannot be mistaken for a row
+     * about a single token whose name happens to contain it.
+     */
+    public const IMAGE_SEPARATOR = '|';
+
+    /** @var list<array{old: string, new: string, source: string, row: string, reversible: bool, ambiguous: bool, multivalued: bool}> */
     private array $pairs;
 
     /** @var array<int, int> */
     private array $hits = [];
 
-    /** @var array<string, list<array{0: string, 1: string, 2: int}>> */
+    /** @var array<string, list<array{0: string, 1: string, 2: int, 3: bool}>> */
     private array $substitutions = [];
 
     /** @var array<string, string> */
@@ -159,22 +182,53 @@ final class RenameMaps
      * the same way. Accounted per declared row, not per expanded pair: a channel
      * row that reaches the artifacts only through its halves did its job.
      *
+     * A multivalued row is the deliberate exception, and this is the place where
+     * a guard turns into a rubber stamp if the decision is taken by default.
+     * Such a row is not one rename but one per image, so **every** image has to
+     * have translated something; "one of three fired" would let a step declare
+     * three new names, exercise one, and keep the other two as a standing
+     * excuse. The cost is named: the corpus has to address each new name, which
+     * is the same pressure the coverage rule already applies to channels. The
+     * idle images are named in the returned line, because the row itself is not
+     * the thing that is idle.
+     *
      * @return list<string>
      */
     public function staleRows(): array
     {
-        $fired = [];
         $declared = [];
+        $fired = [];
+        $idle = [];
 
         foreach ($this->pairs as $index => $pair) {
-            $declared[$pair['row']] = $pair['row'];
+            $row = $pair['row'];
+            $declared[$row] = $row;
+            $hit = ($this->hits[$index] ?? 0) > 0;
 
-            if (($this->hits[$index] ?? 0) > 0) {
-                $fired[$pair['row']] = true;
+            if ($hit) {
+                $fired[$row] = true;
+            }
+
+            if ($pair['multivalued'] && !$hit) {
+                $idle[$row][] = $pair['new'];
             }
         }
 
-        return array_values(array_diff($declared, array_keys($fired)));
+        $rows = [];
+
+        foreach ($declared as $row) {
+            if (isset($idle[$row])) {
+                $rows[] = \sprintf('%s [translated nothing into: %s]', $row, implode(', ', $idle[$row]));
+
+                continue;
+            }
+
+            if (!isset($fired[$row])) {
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
     }
 
     /**
@@ -236,14 +290,27 @@ final class RenameMaps
         $pattern = $this->patterns[$direction] ??= self::buildPattern($substitutions);
         $lookup = [];
 
-        foreach ($substitutions as [$from, $to, $index]) {
-            $lookup[$from] = [$to, $index];
+        foreach ($substitutions as [$from, $to, $index, $refusal]) {
+            $lookup[$from] = [$to, $index, $refusal];
         }
 
         $replaced = preg_replace_callback(
             $pattern,
             function (array $match) use ($lookup): string {
-                [$to, $index] = $lookup[$match[0]];
+                [$to, $index, $refusal] = $lookup[$match[0]];
+
+                if ($refusal) {
+                    throw new GateError(\sprintf(
+                        '%s declares several new tokens for "%s", so there is no forward translation of it — and this'
+                        . ' text carries it: "%s". Taking the first image would publish a rename the row never'
+                        . ' declared. Either the surface belongs in a declared delta, or the input that reaches it'
+                        . ' needs a row of its own naming one token.',
+                        $this->pairs[$index]['row'],
+                        $match[0],
+                        implode(', ', $this->imagesOf($this->pairs[$index]['row'])),
+                    ));
+                }
+
                 $this->hits[$index] = ($this->hits[$index] ?? 0) + 1;
 
                 return $to;
@@ -259,25 +326,57 @@ final class RenameMaps
     }
 
     /**
+     * The new tokens one declared row names.
+     *
+     * @return list<string>
+     */
+    private function imagesOf(string $row): array
+    {
+        $images = [];
+
+        foreach ($this->pairs as $pair) {
+            if ($pair['row'] === $row) {
+                $images[] = $pair['new'];
+            }
+        }
+
+        return $images;
+    }
+
+    /**
      * A name reaches an artifact in more spellings than a map row can be written
      * in: a backslash-bearing symbol appears raw on text surfaces and
      * JSON-escaped in JSON, and checkstyle prefixes a channel code with `qmx.`.
      * Every spelling is substituted, and every one counts towards the row's own
      * staleness.
      *
-     * @return list<array{0: string, 1: string, 2: int}>
+     * A multivalued row has no forward direction, and the substitution it
+     * contributes there is a refusal rather than a rewrite: taking the first of
+     * its images would publish a translation the row never declared. One refusal
+     * per row, not per image, because all its images share the one old spelling.
+     *
+     * @return list<array{0: string, 1: string, 2: int, 3: bool}>
      */
     private function buildSubstitutions(string $old, string $new, bool $reversibleOnly): array
     {
         $substitutions = [];
+        $refused = [];
 
         foreach ($this->pairs as $index => $pair) {
             if ($reversibleOnly && !$pair['reversible']) {
                 continue;
             }
 
-            $from = $old === 'old' ? $pair['old'] : $pair['new'];
-            $to = $new === 'new' ? $pair['new'] : $pair['old'];
+            $forward = $old === 'old';
+            $refusal = $pair['multivalued'] && $forward;
+
+            if ($refusal && isset($refused[$pair['row']])) {
+                continue;
+            }
+
+            $refused[$pair['row']] = $refusal;
+            $from = $forward ? $pair['old'] : $pair['new'];
+            $to = $forward ? $pair['new'] : $pair['old'];
             $spellings = [[$from, $to]];
 
             if (str_contains($from, '\\')) {
@@ -289,7 +388,7 @@ final class RenameMaps
             }
 
             foreach ($spellings as [$spelledFrom, $spelledTo]) {
-                $substitutions[] = [$spelledFrom, $spelledTo, $index];
+                $substitutions[] = [$spelledFrom, $spelledTo, $index, $refusal];
             }
         }
 
@@ -330,7 +429,7 @@ final class RenameMaps
      *
      * @param list<array{old: string, new: string, source: string, row?: string}> $pairs
      *
-     * @return list<array{old: string, new: string, source: string, row: string, reversible: bool, ambiguous: bool}>
+     * @return list<array{old: string, new: string, source: string, row: string, reversible: bool, ambiguous: bool, multivalued: bool}>
      */
     private static function normalize(array $pairs): array
     {
@@ -344,15 +443,20 @@ final class RenameMaps
             }
 
             $row = $pair['row'] ?? \sprintf('%s: "%s" -> "%s"', $source, $pair['old'], $pair['new']);
+            $images = self::images($pair['old'], $pair['new'], $source, $row);
 
             if ($source === self::INPUTS) {
                 self::assertWholeInputToken($pair['old'], $row);
-                self::assertWholeInputToken($pair['new'], $row);
+
+                foreach ($images as $image) {
+                    self::assertWholeInputToken($image, $row);
+                }
             }
 
             $expanded = $source === self::CHANNELS
                 ? self::expandChannelRow($pair['old'], $pair['new'], $source)
-                : [[$pair['old'], $pair['new'], false]];
+                : array_map(static fn(string $image): array => [$pair['old'], $image, false], $images);
+            $multivalued = \count($images) > 1;
 
             foreach ($expanded as [$old, $new, $ambiguous]) {
                 $unique[$old . "\0" . $new . "\0" . $source] = [
@@ -362,11 +466,62 @@ final class RenameMaps
                     'row' => $row,
                     'reversible' => self::FILES[$source],
                     'ambiguous' => $ambiguous,
+                    'multivalued' => $multivalued,
                 ];
             }
         }
 
         return array_values($unique);
+    }
+
+    /**
+     * The new tokens one row declares: one, or several for a split input.
+     *
+     * Only `inputs.tsv` may carry several, and only on the new side. The old
+     * side is the reference's vocabulary, where a split producer is one name by
+     * definition; several old tokens onto one new one would make the BACKWARDS
+     * direction the undecidable one, and backwards is the direction this map
+     * exists for — so that shape is refused with its reason rather than half
+     * supported. A channels row expresses the same collapse without needing it,
+     * because it is applied forwards only.
+     *
+     * @return list<string>
+     */
+    private static function images(string $old, string $new, string $source, string $row): array
+    {
+        if (!str_contains($old . $new, self::IMAGE_SEPARATOR)) {
+            return [$new];
+        }
+
+        if ($source !== self::INPUTS) {
+            throw new GateError(\sprintf(
+                '%s: only an %s row may name several tokens with "%s". A channel map is applied forwards only, so a'
+                . ' collapse is already two ordinary rows and a split is derived from them.',
+                $row,
+                self::INPUTS,
+                self::IMAGE_SEPARATOR,
+            ));
+        }
+
+        if (str_contains($old, self::IMAGE_SEPARATOR)) {
+            throw new GateError(\sprintf(
+                '%s: the several tokens belong on the new side. The old side is the reference\'s vocabulary, where a'
+                . ' split producer is one name; several old tokens onto one new one would make the backwards'
+                . ' direction — the one this map exists for — the undecidable one.',
+                $row,
+            ));
+        }
+
+        $images = explode(self::IMAGE_SEPARATOR, $new);
+
+        if (\count($images) !== \count(array_unique($images)) || \in_array('', $images, true)) {
+            throw new GateError(\sprintf(
+                '%s: a multivalued row names each new token once and none of them empty.',
+                $row,
+            ));
+        }
+
+        return $images;
     }
 
     /**
@@ -441,7 +596,11 @@ final class RenameMaps
                 throw new GateError(\sprintf('%s renames nothing: the two sides are the same name.', $pair['row']));
             }
 
-            if (isset($sources[$pair['old']])) {
+            // Two DIFFERENT rows renaming one name leaves the reference's meaning
+            // undecidable and is refused. The several images of ONE multivalued
+            // row are the declared exception: they are undecidable forwards too,
+            // which is why that row is never applied forwards — see images().
+            if (isset($sources[$pair['old']]) && !($pair['multivalued'] && $sources[$pair['old']] === $pair['row'])) {
                 throw new GateError(\sprintf(
                     '%s and %s both rename "%s", so what the reference means by it is undecidable.',
                     $sources[$pair['old']],

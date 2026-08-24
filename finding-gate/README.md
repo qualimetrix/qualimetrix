@@ -46,16 +46,46 @@ finding-gate/
   "paths": ["src"],                    // relative to the case directory
   "config": "qmx.yaml",                // relative to the case directory
   "args": ["--rule-opt=complexity.wmc:threshold=0"],   // extra CLI arguments; optional, defaults to []
-  "channels": ["code-smell.eval#code-smell.eval"],     // channels this case is responsible for
+  "channels": ["code-smell.eval#code-smell.eval@class"],  // channel AND level pairs this case owns
   "explainSubjects": ["declaration:Corpus\\Smells\\Eval_"]  // subjects for baseline:explain
 }
 ```
 
 `channels` is a claim the gate verifies per case, not documentation: a case that
-stops firing a channel it claims fails, and a channel no case claims fails the
+stops firing a pair it claims fails, and a channel no case claims fails the
 coverage check. Coverage is also checked for multiplicity: **a channel must fire
 in exactly one case.** Two producers make the deduplicated union blind to a lost
 fixture, so the control that deletes one would pass while proving nothing.
+
+### A claim is a `channel@level` pair
+
+The unit of a claim is `rule#code@level`, and the level is read out of the
+`subject` field, which carries it in its tag (`declaration:callable:…`,
+`declaration:class:…`, `file:`, `ns:`, `project:`). The spelling is the product's
+own level vocabulary — `callable`, `class`, `file`, `namespace`, `project` — not
+the subject's tag for it, so the claim, a case's `levels:` list and the drift
+test's oracle all say `namespace` for the same thing. A subject shape the gate
+cannot level stops the run instead of being given a default: its level is one the
+claim would otherwise stop checking in silence.
+
+Why the pair and not the name. The observed set is keyed by what it is compared
+against, so with names alone a channel firing at two levels inside one case was
+one entry on either side — and taking away the evidence for one of those levels
+changed nothing anywhere: the channel still fires, the claim still lists it, the
+coverage union is unchanged, and because both trees read the corpus out of the
+candidate's case directory no surface differs either. That is exactly the shape
+the collapse of the level channels produces, so the claim counts pairs and the
+`lost-level-fixture` control holds it to that.
+
+Coverage and multiplicity still count **channels**, deliberately: the guarantee
+they carry is one authoritative owner per channel, and pairing it with levels
+would let two cases own one channel as long as they fired it at different levels.
+The map and the claim are different accountings — the unit of *substitution* stays
+the name.
+
+A bare channel name is refused as a claim entry, and so is a level outside the
+vocabulary: a half-migrated `case.json` would otherwise keep passing while
+claiming less than it looks like it claims.
 
 ### `coverage`: what a case is for
 
@@ -197,6 +227,43 @@ writes it, a flag together with its two dashes, or a dotted producer name as a
 selector writes it. A bare undotted word is refused — "the option key without its
 rule" would translate the same key on every other rule too.
 
+#### One old token, several new ones
+
+An `inputs.tsv` row may name several new tokens, separated by `|`:
+
+```
+old                     new                                                                                   reason
+design.type-coverage    design.param-type-coverage|design.property-type-coverage|design.return-type-coverage   Ш4b split the producer
+```
+
+That is the one shape allowed to break injectivity, and the asymmetry is what
+makes it admissible. A split producer is one name in the reference's vocabulary
+and several in the candidate's, so **backwards** — the direction this map exists
+for — the several candidate names all restate as the one name the reference knows,
+which is a function. **Forwards** there is no function to apply, so the row is not
+applied forwards at all: an occurrence of the old token on the way out stops the
+run and names the row, because taking the first image would publish a rename no
+row declared. Either the surface belongs in a declared delta, or the input that
+reaches it needs a row of its own naming one token. Without the shape there was no
+writable row at all: measured after Ш4b, `design.type-coverage` is three
+producers, so a case addressing the old name by a selector was
+`reference-input-untranslated` for good.
+
+The obligations are the ordinary ones, and one is decided rather than inherited:
+
+- every image is checked to be a whole token, exactly as a single new side is;
+- chains, and rows renaming a name another row produces, are refused as always;
+- **every image has to have translated something.** A row with three images is
+  three renames, not one, so "one of three fired" is refused and the idle images
+  are named in the failure. The weaker rule — any image fires — would let a step
+  declare three new names, exercise one, and keep the other two as a standing
+  excuse, which is the rubber stamp `map-stale` exists to prevent. The cost is
+  that the corpus has to address each new name, which is the same pressure
+  coverage already applies to channels.
+- Several tokens on the **old** side are refused: that would make the backwards
+  direction the undecidable one. A collapse on the way out needs no such shape —
+  `channels.tsv` is forward-only and expresses it with two ordinary rows.
+
 ### Splitting and collapsing
 
 A channels row translates the whole key and each differing half, so a family
@@ -281,4 +348,29 @@ behaviour the hunks exist to remove.
 A new channel needs a fixture in the case that owns its family and a line in
 that case's `channels`. The gate fails until both exist — that is the point:
 coverage is checked in both directions on every step, so neither a fixture lost
-nor a channel added silently narrows what the gate proves.
+nor a channel added silently narrows what the gate proves. A channel reporting at
+more than one level needs one claim line per level, for the reason the claim
+section gives.
+
+## The controls
+
+`composer gate:controls` runs eleven controls: the positive one and ten planted
+breakages, each on its own hardlink clone, each required to produce a named
+failure class at a named surface. Two properties of the declaration are worth
+knowing before adding one:
+
+- A **toleration** — a further failure the mutation cannot avoid producing — pins
+  the surface it lands on, and it also has to *land*. A toleration nothing matched
+  fails the control: it states a blast radius nobody measured, and it widens what
+  the control accepts the day the product starts producing that class there. A
+  toleration whose only overlap is with a required expectation counts as idle too,
+  since the required one is what absorbed those failures.
+- `lost-level-fixture` is the control on a lost level. Its mutation takes the
+  `class` level away from the `health` case's user-defined computed metric, which
+  is the only way this corpus can lose one level of a multi-level channel:
+  measured, the seven `computed.health` channels are the only ones firing at more
+  than one level in a case, they are computed for every class, and deleting any
+  single fixture of that case leaves the level set untouched. Nothing is
+  tolerated, and the absence of `coverage-shortfall` from its expectations is the
+  assertion: the channel is still declared and still observed, so the claim is the
+  only place the loss can be seen.

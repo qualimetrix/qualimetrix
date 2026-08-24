@@ -12,10 +12,10 @@
         "--rule-opt=coupling.distance:max_distance_error=2"
     ],
     "channels": [
-        "annotation.invalid-threshold#annotation.invalid-threshold",
-        "annotation.unresolved-directive#annotation.unresolved-directive",
-        "annotation.unsupported-threshold#annotation.unsupported-threshold",
-        "annotation.unused-directive#annotation.unused-directive"
+        "annotation.invalid-threshold#annotation.invalid-threshold@file",
+        "annotation.unresolved-directive#annotation.unresolved-directive@file",
+        "annotation.unsupported-threshold#annotation.unsupported-threshold@file",
+        "annotation.unused-directive#annotation.unused-directive@file"
     ],
     "explainSubjects": [
         "file:src/Directives.php"
