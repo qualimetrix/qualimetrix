@@ -34,6 +34,18 @@ final class Gate
     private array $findingsByCase = [];
 
     /**
+     * What each side needs to hand its opaque fingerprint surface an identity
+     * instead of a hash: the verified hash-to-identity pairs of that side's own
+     * raw findings, and how many fingerprints that surface published.
+     *
+     * @var array<string, array{preimages: array<string, string>, published: int}>
+     */
+    private array $fingerprintIdentities = [];
+
+    /** Substituted fingerprint values, per side, so a GREEN run can say what was not compared as bytes. */
+    private int $substitutedFingerprints = 0;
+
+    /**
      * Surface key => measured diff, while deriving the declared delta instead of
      * holding the run to it.
      *
@@ -116,6 +128,16 @@ final class Gate
             $this->checkFindings('reference', $referenceArtifacts, trackObserved: false);
             $this->checkSplitExplanation($first, $referenceArtifacts);
             $this->compareSurfaces($first, $referenceArtifacts);
+
+            // Said out loud for the same reason the declared-delta count is: a
+            // reader of a GREEN run has to be able to see that one published
+            // value was compared as the identity it hashes rather than as the
+            // bytes the product wrote.
+            $this->report->fact('fingerprints substituted', \sprintf(
+                '%d value(s) on %s, both sides',
+                $this->substitutedFingerprints,
+                Fingerprints::OPAQUE_SURFACE,
+            ));
             $this->checkPathLeaks($first, $referenceArtifacts, $reference->root);
             $this->checkCoverage();
             $this->checkWitnesses();
@@ -225,6 +247,25 @@ final class Gate
         }
 
         $this->report->fact('tuple fields', \count($derived->fields));
+
+        // The licence for substituting the opaque fingerprint, asserted where
+        // the tuple is loaded rather than argued in a docblock. An input the
+        // tuple does not compare would be a datum only the hash carries, and
+        // replacing the hash would retire it from the comparison — the same hole
+        // `normalization-overreach` exists for.
+        $outside = array_values(array_diff(Fingerprints::INPUT_FIELDS, $derived->fields));
+
+        if ($outside !== []) {
+            $this->report->fail(
+                FailureClass::TUPLE_FIELD_DRIFT,
+                EquivalenceTuple::TRACKED_PATH,
+                \sprintf(
+                    'The fingerprint is composed from published field(s) the tuple does not compare: %s. Until the'
+                    . ' tuple covers them, the GitLab hash cannot be replaced by the identity it states.',
+                    implode(', ', $outside),
+                ),
+            );
+        }
     }
 
     /**
@@ -454,6 +495,17 @@ final class Gate
             static fn(string $raw): array => Fingerprints::publishedInGitLab($raw),
         );
 
+        // Recorded from the RAW findings of this side, before any map touches
+        // them: this is what lets the opaque surface be compared as an identity
+        // rather than as hex, and recomputing it from translated fields is the
+        // one thing that would make it a lie. See Fingerprints' docblock.
+        if ($gitlab !== null) {
+            $this->fingerprintIdentities[$side . '|' . $case->id] = [
+                'preimages' => Fingerprints::preimagesByHash($findings),
+                'published' => \count($gitlab),
+            ];
+        }
+
         $comparisons = [
             'sarif partialFingerprints' => [$expected, $sarif],
             'gitlab fingerprint' => [Fingerprints::md5Of($expected), $gitlab],
@@ -559,8 +611,15 @@ final class Gate
                 continue;
             }
 
-            $left = $this->normalization->normalize($surface, $candidate[$key]);
-            $right = $this->normalization->normalize($surface, $this->maps->forward($reference[$key]));
+            // Substitute first, translate second. The candidate's text is not
+            // translated at all; the reference's is, and by then its hashes have
+            // already become the identities they hash, so a declared row reaches
+            // them like it reaches every other name.
+            $left = $this->normalization->normalize($surface, $this->substituteFingerprints('candidate', $key, $candidate[$key]));
+            $right = $this->normalization->normalize(
+                $surface,
+                $this->maps->forward($this->substituteFingerprints('reference', $key, $reference[$key])),
+            );
 
             if ($left === $right) {
                 continue;
@@ -589,6 +648,51 @@ final class Gate
 
             $this->checkAgainstDeclaredDelta($key, $diff, $declared);
         }
+    }
+
+    /**
+     * Hands one surface its identities in place of its opaque fingerprints.
+     *
+     * Only {@see Fingerprints::OPAQUE_SURFACE} is touched, and only with the
+     * pairs {@see checkFingerprints()} verified for that side and case. A
+     * surface whose findings section or fingerprint artifact was unusable has no
+     * recorded pairs at all; that already failed as `run-failed`, and inventing
+     * a substitution on top would blame the identity for a dead artifact.
+     *
+     * A hash that is published and not replaced is a failure of its own. The
+     * comparison would still run — on hex — and hex compares equal to itself
+     * until the day something renames a channel, which is precisely the day this
+     * mechanism is supposed to speak.
+     */
+    private function substituteFingerprints(string $side, string $key, string $text): string
+    {
+        if (Surfaces::surfaceClass($key) !== Fingerprints::OPAQUE_SURFACE) {
+            return $text;
+        }
+
+        $scope = substr($key, 0, (int) strpos($key, '|'));
+        $identities = $this->fingerprintIdentities[$side . '|' . substr($scope, \strlen('case:'))] ?? null;
+
+        if (!str_starts_with($scope, 'case:') || $identities === null) {
+            return $text;
+        }
+
+        $substitution = Fingerprints::substitute($text, $identities['preimages'], $identities['published']);
+        $this->substitutedFingerprints += $substitution->replaced;
+
+        if (!$substitution->isComplete()) {
+            $this->report->fail(
+                FailureClass::FINGERPRINT_OPAQUE,
+                $side . ' / ' . $key,
+                \sprintf(
+                    'The gate %s, so this surface would be compared as opaque hex: a hash that no longer states the'
+                    . ' identity it hashes agrees with itself under any rename.',
+                    $substitution->shortfall(),
+                ),
+            );
+        }
+
+        return $substitution->text;
     }
 
     /**

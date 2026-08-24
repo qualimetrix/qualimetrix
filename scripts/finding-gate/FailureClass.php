@@ -37,6 +37,12 @@ final class FailureClass
     /** A published fingerprint does not match the one recomputed from the same side's own fields. */
     public const FINGERPRINT_MISMATCH = 'fingerprint-mismatch';
 
+    /**
+     * A published fingerprint the gate could not replace with the identity it
+     * hashes, so that surface would be compared as opaque hex.
+     */
+    public const FINGERPRINT_OPAQUE = 'fingerprint-opaque';
+
     /** A declared channel that no case observes: a lost fixture, or a channel that stopped firing. */
     public const COVERAGE_SHORTFALL = 'coverage-shortfall';
 
@@ -98,6 +104,7 @@ final class FailureClass
         self::FINDING_TUPLE_MISMATCH,
         self::TUPLE_FIELD_DRIFT,
         self::FINGERPRINT_MISMATCH,
+        self::FINGERPRINT_OPAQUE,
         self::COVERAGE_SHORTFALL,
         self::COVERAGE_SURPLUS,
         self::COVERAGE_MULTIPLICITY,

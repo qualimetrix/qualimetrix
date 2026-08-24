@@ -101,6 +101,21 @@ final class Outcome
             $reasons[] = \sprintf('expected exit 0, got %d', $run['exit']);
         }
 
+        // A green control asserts that the declaration absorbed the change. A
+        // run that reached GREEN by comparing a surface against a declared
+        // delta asserts something else entirely, and the exit code cannot tell
+        // the two apart — GREEN is GREEN either way.
+        if ($control->expectsGreen) {
+            $declared = self::declaredDeltaCount($reportPath);
+
+            if ($declared !== 0) {
+                $reasons[] = $declared === null
+                    ? 'the gate report does not state how many surfaces were compared against a declared delta, so'
+                        . ' "green without a delta" cannot be asserted'
+                    : \sprintf('expected no declared delta; %d surface(s) were compared against one', $declared);
+            }
+        }
+
         if (!$control->expectsGreen && $run['exit'] === 0) {
             $reasons[] = 'the gate stayed green on a planted breakage';
         }
@@ -237,6 +252,26 @@ final class Outcome
         }
 
         return false;
+    }
+
+    /**
+     * How many surfaces the run compared against a declaration rather than for
+     * equality, or `null` when the report does not say.
+     *
+     * `null` is not "none": a renamed field would otherwise read as a run with
+     * no declared delta, which is exactly the claim this number exists to
+     * support.
+     */
+    private static function declaredDeltaCount(string $reportPath): ?int
+    {
+        if (!is_file($reportPath)) {
+            return null;
+        }
+
+        $decoded = json_decode(Shell::read($reportPath), true);
+        $count = \is_array($decoded) ? $decoded['declaredDeltaCount'] ?? null : null;
+
+        return \is_int($count) ? $count : null;
     }
 
     /**

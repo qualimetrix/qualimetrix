@@ -25,7 +25,7 @@ code-smell.long-parameter-list#code-smell.long-parameter-list	channel	?		16	45	2
 code-smell.superglobals#code-smell.superglobals	channel	?		1	6	1	0	0	12	0	2
 code-smell.unreachable-code#code-smell.unreachable-code	channel	?		6	7	0	1	0	23	0	2
 code-smell.unused-private#code-smell.unused-private	channel	?		2	7	0	0	0	15	0	2
-cohesion.lcom#cohesion.lcom	channel	?		19	38	2	2	0	27	0	5
+cohesion.lcom#cohesion.lcom	channel	?		19	38	2	2	0	27	0	6
 complexity.cognitive#complexity.cognitive.callable	channel	complexity.cognitive#complexity.cognitive	Ш5	1	5	0	0	33	2	0	1
 complexity.cognitive#complexity.cognitive.class	channel	complexity.cognitive#complexity.cognitive	Ш5	0	2	0	0	0	2	0	1
 complexity.cyclomatic#complexity.cyclomatic.callable	channel	complexity.cyclomatic#complexity.cyclomatic	Ш5	7	137	0	0	58	32	0	2
@@ -90,7 +90,7 @@ isPromotedPropertiesOnly	metric-key	?		2	9	0	0	0	0	0	0
 isReadonly	metric-key	?		8	39	0	0	0	0	0	0
 isVoConstructor	metric-key	?		5	28	0	0	0	0	0	0
 lcc	metric-key	?		11	56	0	0	0	6	0	0
-lcom	metric-key	?		41	134	0	0	0	3	0	0
+lcom	metric-key	?		41	134	0	0	0	3	0	1
 lloc	metric-key	?		16	22	0	0	0	3	0	0
 loc	metric-key	?		72	191	0	0	0	5	0	0
 methodCount	metric-key	?		46	127	0	0	0	5	0	0
@@ -145,9 +145,9 @@ code-smell.long-parameter-list	producer	?		16	45	2	2	6	33	0	10
 code-smell.superglobals	producer	?		1	6	1	0	0	12	0	2
 code-smell.unreachable-code	producer	?		6	7	0	1	0	23	0	2
 code-smell.unused-private	producer	?		2	7	0	0	0	15	0	2
-cohesion.lcom	producer	?		19	38	2	2	0	27	0	5
+cohesion.lcom	producer	?		19	38	2	2	0	27	0	6
 complexity.cognitive	producer	?		9	26	2	2	33	46	0	8
-complexity.cyclomatic	producer	?		32	531	2	2	58	110	0	10
+complexity.cyclomatic	producer	?		32	531	2	2	58	110	0	11
 complexity.npath	producer	?		9	9	2	2	13	38	0	7
 complexity.wmc	producer	?		11	17	2	2	24	27	0	5
 computed.health	producer	health.cohesion|health.complexity|health.coupling|health.maintainability|health.overall|health.typing|computed.*	Ш5	14	185	0	1	32	17	0	22

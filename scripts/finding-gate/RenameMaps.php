@@ -346,7 +346,8 @@ final class RenameMaps
     /**
      * A name reaches an artifact in more spellings than a map row can be written
      * in: a backslash-bearing symbol appears raw on text surfaces and
-     * JSON-escaped in JSON, and checkstyle prefixes a channel code with `qmx.`.
+     * JSON-escaped in JSON, checkstyle prefixes a channel code with `qmx.`, and
+     * SARIF publishes a channel code title-cased as the rule's display name.
      * Every spelling is substituted, and every one counts towards the row's own
      * staleness.
      *
@@ -387,6 +388,15 @@ final class RenameMaps
                 $spellings[] = [$prefix . $from, $prefix . $to];
             }
 
+            $titled = [self::titleCase($from), self::titleCase($to)];
+
+            if ($pair['source'] === self::CHANNELS
+                && !str_contains($pair['old'] . $pair['new'], '#')
+                && $titled !== [$from, $to]
+            ) {
+                $spellings[] = $titled;
+            }
+
             foreach ($spellings as [$spelledFrom, $spelledTo]) {
                 $substitutions[] = [$spelledFrom, $spelledTo, $index, $refusal];
             }
@@ -399,6 +409,27 @@ final class RenameMaps
         usort($substitutions, static fn(array $a, array $b): int => \strlen($b[0]) <=> \strlen($a[0]));
 
         return $substitutions;
+    }
+
+    /**
+     * A channel code as SARIF publishes it: the display name of a rule, each
+     * dot- or dash-separated word capitalised.
+     *
+     * Measured, not guessed — a control renaming a channel code left exactly one
+     * surface differing, `rules[].name` on SARIF, and no row could be written
+     * for a spelling with spaces in it. Only a channel row gets this spelling,
+     * and only where neither of its sides is a whole `rule#code` key: title-
+     * casing a key or a class FQN produces a phrase no artifact contains, and a
+     * substitution nothing can match is exactly the rubber stamp the map rules
+     * refuse elsewhere.
+     *
+     * @see \Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector::formatRuleName()
+     */
+    private static function titleCase(string $name): string
+    {
+        $words = preg_split('~[-.]~', $name);
+
+        return implode(' ', array_map(ucfirst(...), $words === false ? [$name] : $words));
     }
 
     /** @param list<array{0: string, 1: string, 2: int}> $substitutions */
@@ -649,6 +680,20 @@ final class RenameMaps
      * rename shows up as a whole key in `channel`, and as each half in `rule`
      * and `code`.
      *
+     * Three shapes, because a channel key is not a pair for ever. `rule#code ->
+     * rule#code` is the pair-to-pair rename and expands into its halves as
+     * above. `name -> name` is a rename of a channel that is already one name,
+     * and has no halves to expand. `rule#code -> name` is the collapse of the
+     * pair into a single identity, and it expands into the whole key **only**:
+     * the rule survives the collapse as its own published field, so translating
+     * the rule half would rewrite a field the step does not move, and any rename
+     * of the code half is a rename of a name in its own right and needs its own
+     * row rather than being inferred from this one.
+     *
+     * `name -> rule#code` is refused. Nothing in the plan goes that way, and a
+     * half semantics invented for a direction no step takes is a claim nothing
+     * checks.
+     *
      * @return list<array{0: string, 1: string, 2: bool}>
      */
     private static function expandChannelRow(string $old, string $new, string $path): array
@@ -656,11 +701,30 @@ final class RenameMaps
         $oldHalves = explode('#', $old);
         $newHalves = explode('#', $new);
 
-        if (\count($oldHalves) !== 2 || \count($newHalves) !== 2) {
-            throw new GateError(\sprintf('%s: "%s" -> "%s" is not a pair of full "rule#code" keys.', $path, $old, $new));
+        if (\count($oldHalves) > 2 || \count($newHalves) > 2) {
+            throw new GateError(\sprintf(
+                '%s: "%s" -> "%s" is not a channel name or a full "rule#code" key on each side.',
+                $path,
+                $old,
+                $new,
+            ));
+        }
+
+        if (\count($oldHalves) === 1 && \count($newHalves) === 2) {
+            throw new GateError(\sprintf(
+                '%s: "%s" -> "%s" turns one channel name back into a "rule#code" pair. No step does that, and the'
+                . ' halves of the new key would be a translation no row declares.',
+                $path,
+                $old,
+                $new,
+            ));
         }
 
         $pairs = [[$old, $new, false]];
+
+        if (\count($oldHalves) !== 2 || \count($newHalves) !== 2) {
+            return $pairs;
+        }
 
         foreach ([0, 1] as $half) {
             if ($oldHalves[$half] !== $newHalves[$half]) {

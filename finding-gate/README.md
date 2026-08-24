@@ -201,6 +201,53 @@ declared channel set — while cases are being written, and for a one-case
 development loop such as `--cases=annotations --incomplete-corpus`. It turns the
 shortfall into a warning; it cannot turn the run green.
 
+## What a fingerprint is compared by
+
+A finding's fingerprint is `channel:subject[:occurrence][:edge]`, and consumers
+track alerts by it: a fingerprint that moves for no stated reason makes every
+consumer treat every finding as new. It is also the one published value a rename
+*must* move, so it can never be compared for equality across a step that renames
+a channel.
+
+The two publications are not the same problem, and the gate treats them
+differently:
+
+| Publication                                        | Form                | How it is compared                                             |
+| -------------------------------------------------- | ------------------- | -------------------------------------------------------------- |
+| SARIF `partialFingerprints.primaryLocationLineHash` | the identity, plain | as text, through the maps, like any other name                 |
+| GitLab `fingerprint`                               | `md5` of it        | the hash is **substituted** by the identity, then compared     |
+
+Three rules, and each one is a failure class rather than a promise:
+
+- **Each side must agree with itself.** The published value is compared against a
+  recomputation from that side's own published fields, on the **raw** artifact,
+  before any map touches it. A disagreement is `fingerprint-mismatch`.
+- **The opaque publication is substituted, never redacted.** Every GitLab hash is
+  replaced by the identity this side just proved it hashes, and only then is the
+  reference's text translated forward and the two compared. So an identity that
+  moved with a declared row to explain it compares equal, and an identity that
+  moved with nothing to explain it is `surface-mismatch` on that surface — in
+  readable names, not hex. Substituting fewer values than the surface published
+  is `fingerprint-opaque`: a hash left as hex agrees with itself under every
+  rename, which is the one thing this must not do.
+- **Substitute, then translate — never translate, then recompute.** The
+  reference's artifacts are translated forward, so after translation its
+  `channel` field speaks the candidate's vocabulary while the hash beside it is
+  still the old one. Recomputing from translated fields would report a mismatch
+  on every finding of every honest rename; nothing in the gate does it.
+
+The licence for replacing the hash is that every field the composition reads —
+`channel`, `subject`, `occurrence`, `edge` — is a field the equivalence tuple
+already compares, so the hash carries no datum the comparison loses. That is
+checked against the tracked tuple on every run, and a composition reaching
+outside it fails as `tuple-field-drift`.
+
+Measured on 2026-08-24, over the whole corpus, with `FindingChannel::toKey()`
+publishing the code alone (the Ш5b collapse): before substituting, twelve GitLab
+surfaces differed by 376 lines of nothing but hashes — a declaration made of hex,
+which is the blob `delta-too-large` exists to refuse; after substituting, every
+surface of every case agreed under the declared channel rows alone.
+
 ## What normalization may exclude
 
 `normalization.tsv` is measured, never written by taste: a row enters only
@@ -228,9 +275,16 @@ declaration to these properties:
   `complexity.cyclomatic.callable`. Renaming a family means declaring every
   member of it. A name reaches an artifact in more spellings than a row can be
   written in, and every spelling is substituted by that same row: the
-  JSON-escaped form of a backslash-bearing symbol, and checkstyle's
+  JSON-escaped form of a backslash-bearing symbol, checkstyle's
   `source="qmx.<code>"` — the only prefix any surface adds, measured across all
-  eleven formats, the baseline file, `baseline:explain` and the rules snapshot.
+  eleven formats, the baseline file, `baseline:explain` and the rules snapshot —
+  and SARIF's `rules[].name`, which is the channel code title-cased. The
+  title-cased spelling belongs to channel rows whose two sides are plain names:
+  title-casing a whole `rule#code` key or a class FQN produces a phrase no
+  artifact contains, and a substitution nothing can match is the rubber stamp
+  these rules refuse everywhere else. It was measured, not foreseen — a control
+  renaming a channel code left exactly one surface differing, and no row could be
+  written for a spelling with spaces in it.
 - **No chains.** A map is refused at load time if one row's target is another
   row's source, if two rows rename the same whole name, or if a row's two sides
   are equal. Substitution is a single pass over the original text, so rows cannot
@@ -319,6 +373,14 @@ rename can be stated once. Two ways the halves stop being a function:
   two reference names really do become one, and the map has no backwards
   direction to lose. The findings stay distinguishable because `subject` carries
   the level in its prefix.
+- **A channel key stops being a pair.** A row may read `rule#code -> name`: the
+  pair collapsing into one identity. It expands into the whole key **only** — the
+  rule survives the collapse as its own published field, so translating the rule
+  half would rewrite a field the step does not move, and a rename of the code
+  half is a rename in its own right and needs its own row. `name -> name` is the
+  later rename of an already-collapsed channel and has no halves. `name ->
+  rule#code` is refused: no step goes that way, and the halves of the new key
+  would be a translation no row declares.
 - **A split is derived, not declared separately.** When the rows disagree about
   one old half, that half is a split source: it is *not* translated textually,
   because no translation of it is right. Its protection is not lost — every
@@ -400,7 +462,7 @@ survived by luck.
 | Consumer                                                                  | What it reads                                                                                                       |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`                  | every `cases/*/case.json`, as the schema                                                                            |
-| `scripts/finding-gate-controls/Controls.php`                              | three exact paths it mutates: a fixture file, a case `qmx.yaml`, and one `case.json` literal                        |
+| `scripts/finding-gate-controls/Controls.php`                              | five exact corpus paths it mutates: a fixture file, a case `qmx.yaml`, `cases/complexity/case.json`, `maps/channels.tsv`, `declared-delta.tsv` |
 | `tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check` |
 | `scripts/generate-rename-enumeration.php`                                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                  |
 
@@ -421,9 +483,9 @@ while the channel fires.
 
 ## The controls
 
-`composer gate:controls` runs eleven controls: the positive one and ten planted
-breakages, each on its own hardlink clone, each required to produce a named
-failure class at a named surface. Two properties of the declaration are worth
+`composer gate:controls` runs fourteen controls, each on its own hardlink clone:
+twelve planted breakages, each required to produce a named failure class at a
+named surface, and two green ones. Three properties of the declaration are worth
 knowing before adding one:
 
 - A **toleration** — a further failure the mutation cannot avoid producing — pins
@@ -432,6 +494,15 @@ knowing before adding one:
   the control accepts the day the product starts producing that class there. A
   toleration whose only overlap is with a required expectation counts as idle too,
   since the required one is what absorbed those failures.
+- A **green control with a mutation** (`fingerprint-declared-rename`) asserts the
+  other direction: a change the maps declare is absorbed by the declaration and
+  by nothing else. It is held to exit 0 *and* to a run that compared no surface
+  against a declared delta — otherwise "the row absorbed it" would be
+  indistinguishable from "a blob of hashes absorbed it". Its channel is
+  `complexity.cyclomatic`'s callable level rather than `cohesion.lcom`, because
+  lcom's code half is spelled exactly like its rule name and a whole-name map
+  cannot tell the two fields apart: the row would rewrite the rule name too and
+  the run could never be green.
 - `lost-level-fixture` is the control on a lost level. Its mutation takes the
   `class` level away from the `health` case's user-defined computed metric, which
   is the only way this corpus can lose one level of a multi-level channel:

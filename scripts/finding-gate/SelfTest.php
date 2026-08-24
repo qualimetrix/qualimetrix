@@ -24,6 +24,7 @@ final class SelfTest
     public function run(): array
     {
         $this->maps();
+        $this->channelRowShapes();
         $this->claims();
         $this->coverage();
         $this->levelVocabulary();
@@ -239,6 +240,62 @@ final class SelfTest
      * The tracked claims are read through the corpus loader too, so a case.json
      * left in the old shape fails here rather than in a full run.
      */
+    /**
+     * The three shapes a channels row may take, and the spelling SARIF adds.
+     *
+     * Ш5b collapses `rule#code` into one name, so the row that declares it has a
+     * single name on its new side. The map that could not express that shape
+     * refused the row at load time, which would have made the step's own
+     * declaration unwritable.
+     */
+    private function channelRowShapes(): void
+    {
+        $row = static fn(string $old, string $new): array => [
+            'old' => $old,
+            'new' => $new,
+            'source' => RenameMaps::CHANNELS,
+        ];
+        $collapse = RenameMaps::fromPairs([$row('cohesion.lcom#cohesion.lcom', 'cohesion.lcom')]);
+
+        $this->same(
+            '"cohesion.lcom" and "cohesion.lcom"',
+            $collapse->forward('"cohesion.lcom#cohesion.lcom" and "cohesion.lcom"'),
+            'a collapse row translates the whole key and leaves the surviving rule name alone',
+        );
+
+        $renamed = RenameMaps::fromPairs([$row('cohesion.lcom', 'cohesion.lcom4')]);
+        $this->same(
+            '"cohesion.lcom4"',
+            $renamed->forward('"cohesion.lcom"'),
+            'a channel that is already one name is renamed by an ordinary row',
+        );
+
+        $this->assert(
+            self::throws(static fn(): mixed => RenameMaps::fromPairs([$row('cohesion.lcom', 'cohesion.lcom#cohesion.lcom')])),
+            'a row turning one channel name back into a pair is refused',
+        );
+
+        $half = RenameMaps::fromPairs([
+            $row('complexity.cyclomatic#complexity.cyclomatic.callable', 'complexity.cyclomatic#complexity.cyclomatic.call'),
+        ]);
+        $this->same(
+            '"name": "Complexity Cyclomatic Call"',
+            $half->forward('"name": "Complexity Cyclomatic Callable"'),
+            'a renamed code half is translated in the title-cased spelling SARIF publishes as a rule name',
+        );
+
+        $symbols = RenameMaps::fromPairs([[
+            'old' => 'src/old.php',
+            'new' => 'src/new.php',
+            'source' => RenameMaps::SYMBOLS,
+        ]]);
+        $this->same(
+            'Src/old Php',
+            $symbols->forward('Src/old Php'),
+            'the title-cased spelling belongs to channel rows only, so a symbol row does not invent one',
+        );
+    }
+
     private function claims(): void
     {
         $shapes = [
@@ -976,6 +1033,117 @@ final class SelfTest
             [md5('channel:subject')],
             Fingerprints::md5Of(['channel:subject']),
             'the GitLab fingerprint is the md5 of the same string',
+        );
+
+        $this->same(
+            [md5('channel:subject') => 'channel:subject'],
+            Fingerprints::preimagesByHash([['channel' => 'channel', 'subject' => 'subject']]),
+            'each published hash is paired with the identity it hashes',
+        );
+
+        $this->fingerprintSubstitution();
+        $this->collapsedIdentityNeedsNoDelta();
+
+        $this->assert(
+            array_diff(Fingerprints::INPUT_FIELDS, EquivalenceTuple::load($this->candidateRoot)->fields) === [],
+            'every field the fingerprint is composed from is one the tracked tuple compares',
+        );
+    }
+
+    /**
+     * The substitution, and the two ways it is allowed to be incomplete.
+     */
+    private function fingerprintSubstitution(): void
+    {
+        $identity = 'rule#code:declaration:class:App\\Thing@src/Thing.php';
+        $pairs = [md5($identity) => $identity];
+        $document = \sprintf('[{"check_name":"code","fingerprint":"%s"}]', md5($identity));
+        $substituted = Fingerprints::substitute($document, $pairs, 1);
+
+        $this->assert($substituted->isComplete(), 'a published hash is replaced by the identity it hashes');
+        $this->same(1, $substituted->replaced, 'the replacement is counted');
+        $this->same(
+            '[{"check_name":"code","fingerprint":"rule#code:declaration:class:App\\\\Thing@src\\/Thing.php"}]',
+            $substituted->text,
+            'the identity goes in JSON-escaped, so the artifact stays a JSON document',
+        );
+
+        // The analysis-failure issues GitLab also carries hash a path and a
+        // failure kind. Nothing verified them, so nothing substitutes them, and
+        // they must survive untouched rather than be swept along.
+        $withAnalysis = \sprintf(
+            '[{"check_name":"analysis.parse-error","fingerprint":"%s"},{"check_name":"code","fingerprint":"%s"}]',
+            md5('some/path:parse-error'),
+            md5($identity),
+        );
+        $result = Fingerprints::substitute($withAnalysis, $pairs, 1);
+        $this->assert($result->isComplete(), 'a hash nothing verified does not make the substitution incomplete');
+        $this->assert(
+            str_contains($result->text, md5('some/path:parse-error')),
+            'an unverified hash is left exactly as it is',
+        );
+
+        $missing = Fingerprints::substitute('[{"fingerprint":"deadbeef"}]', $pairs, 1);
+        $this->assert(!$missing->isComplete(), 'a verified hash the surface does not carry is a shortfall');
+        $this->same([md5($identity)], $missing->missing, 'the shortfall names the hash it could not find');
+
+        $short = Fingerprints::substitute($document, $pairs, 2);
+        $this->assert(
+            !$short->isComplete(),
+            'replacing fewer values than the surface published is a shortfall even when every pair was found',
+        );
+    }
+
+    /**
+     * The step's own reason for existing, on a synthetic pair.
+     *
+     * The collapse of `rule#code` into `code` moves every fingerprint of every
+     * finding. Compared as published bytes, the GitLab surface differs — and a
+     * declared delta of nothing but hashes is exactly the blob `delta-too-large`
+     * exists to refuse. Substituted, the same surface carries the identity as a
+     * name, the declared row translates it, and the surfaces agree.
+     *
+     * The third assertion is the guarantee that must not be lost: with no row
+     * declaring the collapse, the substituted surfaces still differ. A
+     * fingerprint that moved is only ever absorbed by a declaration, never by
+     * the substitution.
+     */
+    private function collapsedIdentityNeedsNoDelta(): void
+    {
+        $old = 'cohesion.lcom#cohesion.lcom:declaration:class:App\\Thing@src/Thing.php';
+        $new = 'cohesion.lcom:declaration:class:App\\Thing@src/Thing.php';
+        $document = static fn(string $identity): string => \sprintf(
+            '[{"check_name":"cohesion.lcom","fingerprint":"%s"}]',
+            md5($identity),
+        );
+        $reference = $document($old);
+        $candidate = $document($new);
+        $maps = RenameMaps::fromPairs([[
+            'old' => 'cohesion.lcom#cohesion.lcom',
+            'new' => 'cohesion.lcom',
+            'source' => RenameMaps::CHANNELS,
+        ]]);
+
+        $this->assert(
+            $maps->forward($reference) !== $candidate,
+            'before substituting, the collapse moves the published GitLab bytes and would need a declared delta',
+        );
+
+        $substitute = static fn(string $text, string $identity): string => Fingerprints::substitute(
+            $text,
+            [md5($identity) => $identity],
+            1,
+        )->text;
+
+        $this->same(
+            $substitute($candidate, $new),
+            $maps->forward($substitute($reference, $old)),
+            'substituted and then translated, the collapsed identity needs no declared delta',
+        );
+
+        $this->assert(
+            $substitute($candidate, $new) !== RenameMaps::fromPairs([])->forward($substitute($reference, $old)),
+            'with no row declaring the collapse, the substituted surfaces still differ',
         );
     }
 

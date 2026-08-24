@@ -75,6 +75,23 @@ final class Control
     }
 
     /**
+     * A control that plants a breakage and declares the gate stays GREEN anyway.
+     *
+     * Not a second positive control: what it asserts is that a change the step
+     * *declares* is absorbed by the declaration and by nothing else. The mutation
+     * still has to move something — {@see Mutation} refuses one that does not —
+     * so a green run here means the declared row did the absorbing. And GREEN is
+     * judged with the same unconditional rule the positive control uses, plus one
+     * more: the run must have compared no surface against a declared delta, or
+     * "the row absorbed it" would be indistinguishable from "a blob of hashes
+     * absorbed it".
+     */
+    public static function greenWith(string $id, string $subject, Mutation $mutation): self
+    {
+        return new self($id, $subject, $mutation, [], [], expectsGreen: true);
+    }
+
+    /**
      * Scope-matched only. A required class arriving on some *other* surface is
      * not covered by having been required somewhere: that shortcut is how a
      * side effect in another case got absorbed. If the mutation genuinely

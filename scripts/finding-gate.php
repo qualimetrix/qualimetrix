@@ -40,6 +40,7 @@ foreach (
         'Normalization',
         'NormalizationDeriver',
         'EquivalenceTuple',
+        'FingerprintSubstitution',
         'Fingerprints',
         'ChannelWitness',
         'ChannelCoverage',

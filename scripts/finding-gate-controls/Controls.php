@@ -9,11 +9,13 @@ use QmxFindingGate\FailureClass;
 /**
  * The controls, as a list.
  *
- * Ten negative controls — the four the Ш1 DoD names, the four Ш4a adds for the
- * declared delta and the reference's vocabulary, the one Ш4b adds for
- * `delta-too-large` and the one P5.0 adds for a lost level of a multi-level
- * channel — plus the positive one without which ten reds could all be reds for
- * an environmental reason.
+ * Twelve negative controls — the four the Ш1 DoD names, the four Ш4a adds for
+ * the declared delta and the reference's vocabulary, the one Ш4b adds for
+ * `delta-too-large`, the one P5.0 adds for a lost level of a multi-level channel
+ * and the two Ш5b0 adds for the fingerprint mechanism — plus two green ones: the
+ * positive control, without which twelve reds could all be reds for an
+ * environmental reason, and Ш5b0's declared rename, which asserts that a change
+ * the maps declare is absorbed by the declaration and by nothing else.
  *
  * `delta-too-large` was the one class of the five that no control had ever seen
  * red. Ш4a named the gap in its own record; Ш4b rewrote the code that computes
@@ -54,6 +56,9 @@ final class Controls
             self::deltaOverreach(),
             self::deltaTooLarge(),
             self::referenceInputUntranslated(),
+            self::fingerprintUnexplained(),
+            self::fingerprintSelfDisagreement(),
+            self::fingerprintDeclaredRename(),
         ];
 
         return array_map(
@@ -460,6 +465,141 @@ final class Controls
                 ),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'tree|rules'),
             ],
+        );
+    }
+
+    /**
+     * The identity a consumer tracks moves, and no declared row explains it.
+     *
+     * The mutation is the channel rename, and the point of this control is
+     * *where* the required failure is pinned: on the two surfaces that publish
+     * the fingerprint. Ш5b0 stopped comparing the GitLab hash as hex and started
+     * comparing the identity it hashes, and a substitution that quietly redacted
+     * instead of substituting would leave that surface agreeing with itself
+     * under any rename. That is the guard, and this is what watches it.
+     *
+     * SARIF is required beside it because SARIF publishes the same composition in
+     * plain text: the two publications are one mechanism, and a step that hashed
+     * the SARIF one too would have to notice that this control now watches only
+     * half of it.
+     *
+     * The tolerated set is the rename control's measured radius, stated there.
+     */
+    private static function fingerprintUnexplained(): Control
+    {
+        return Control::red(
+            'fingerprint-no-map',
+            'the fingerprinted identity moves with finding-gate/maps/channels.tsv left empty',
+            self::lcomChannelMutation(),
+            [
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity|format:gitlab'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity|format:sarif'),
+            ],
+            [
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
+                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
+                new Expectation(
+                    FailureClass::WITNESS_DISAGREEMENT,
+                    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+                ),
+            ],
+        );
+    }
+
+    /**
+     * A side that does not agree with itself: the published hash is not the hash
+     * of the identity published beside it.
+     *
+     * This is the class the substitution rests on. The gate replaces a hash with
+     * an identity only because it has just proved that this side hashes that
+     * identity; salt the hash and the proof fails, which has to be its own
+     * failure rather than a surface diff somebody reads as a rename.
+     *
+     * `fingerprint-opaque` is required next to it, and the pair is the whole
+     * argument: the mismatch says the hash is not what it claims, and the opaque
+     * class says the comparison therefore could not stop being a comparison of
+     * hex. A run producing only the first would mean the substitution went ahead
+     * on an unproven pair.
+     */
+    private static function fingerprintSelfDisagreement(): Control
+    {
+        return Control::red(
+            'fingerprint-self-disagreement',
+            'the GitLab fingerprint hashes something other than the identity published beside it',
+            Mutation::edit(
+                'src/Reporting/Formatter/GitLabCodeQualityFormatter.php',
+                ['return md5($finding->getFingerprint());' => "return md5(\$finding->getFingerprint() . '-salted');"],
+                'the published hash is the hash of a salted identity',
+            ),
+            [
+                new Expectation(FailureClass::FINGERPRINT_MISMATCH, 'candidate /'),
+                new Expectation(FailureClass::FINGERPRINT_OPAQUE, 'candidate /'),
+            ],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'format:gitlab')],
+        );
+    }
+
+    /**
+     * The positive half of the fingerprint mechanism: a declared row absorbs the
+     * moved identity, and no declared delta is involved.
+     *
+     * Every fingerprint of the renamed channel moves, on both publications, and
+     * before Ш5b0 that meant a diff of hashes on the GitLab surface — a
+     * declaration made of hex, which is the blob `delta-too-large` exists to
+     * refuse and which proves nothing about what moved. This control states that
+     * the row is now enough, and {@see Outcome} holds it to "green **and** zero
+     * declared deltas" so that a delta creeping back in fails it.
+     *
+     * The channel is `complexity.cyclomatic`'s callable level, not
+     * `cohesion.lcom`, and the reason is measured rather than aesthetic: lcom's
+     * code half is spelled exactly like its rule name, so a row renaming the
+     * code half also rewrites every occurrence of the rule name in the
+     * reference's output — a whole-name map cannot tell the two fields apart —
+     * and the run could never be green. A code half that is not also a rule name
+     * is the shape a collapse row will have.
+     *
+     * The claim and the tracked declaration fixture move with the rename because
+     * they are declarations of the channel, not evidence about it: leaving them
+     * stale would make this control fail on two other mechanisms and say nothing
+     * about fingerprints.
+     */
+    private static function fingerprintDeclaredRename(): Control
+    {
+        return Control::greenWith(
+            'fingerprint-declared-rename',
+            'a channel rename that moves every fingerprint, declared as one channels.tsv row',
+            Mutation::edit(
+                'src/Analysis/Evidence/Complexity/ComplexityRule.php',
+                [
+                    'FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->toKey()'
+                        => "(new FindingChannel(self::NAME, 'complexity.cyclomatic.callable2'))->toKey()",
+                    'FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->code'
+                        => "'complexity.cyclomatic.callable2'",
+                ],
+                'the callable-level channel of complexity.cyclomatic is renamed',
+            )->and(Mutation::edit(
+                'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+                [
+                    'complexity.cyclomatic#complexity.cyclomatic.callable higher callable'
+                        => 'complexity.cyclomatic#complexity.cyclomatic.callable2 higher callable',
+                ],
+                'the tracked declaration fixture names the new channel',
+            ))->and(Mutation::edit(
+                'finding-gate/cases/complexity/case.json',
+                [
+                    '"complexity.cyclomatic#complexity.cyclomatic.callable@callable"'
+                        => '"complexity.cyclomatic#complexity.cyclomatic.callable2@callable"',
+                ],
+                'the case claims the new channel',
+            ))->and(Mutation::replace(
+                [
+                    'finding-gate/maps/channels.tsv' => "old\tnew\treason\n"
+                        . "complexity.cyclomatic#complexity.cyclomatic.callable\t"
+                        . "complexity.cyclomatic#complexity.cyclomatic.callable2\t"
+                        . "the control's own rename, declared so the moved fingerprints are explained\n",
+                ],
+                'one channels.tsv row declares it',
+            )),
         );
     }
 

@@ -151,6 +151,10 @@ final class GateReport
             'warnings' => $this->warnings,
             'failures' => $this->failures,
             'failureClasses' => $this->failureClasses(),
+            // Read by the controls harness: a control that declares the gate
+            // stays GREEN under a declared map row has to be able to assert that
+            // it stayed green without a declared delta absorbing the difference.
+            'declaredDeltaCount' => $this->declaredDeltaCount,
         ];
 
         Fs::write($path, json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n");
