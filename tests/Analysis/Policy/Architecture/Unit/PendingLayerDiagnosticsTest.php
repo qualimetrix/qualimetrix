@@ -234,7 +234,8 @@ final class PendingLayerDiagnosticsTest extends TestCase
             ?? null;
 
         self::assertNotNull($declaration);
-        self::assertSame(ChannelShape::Occurrence, $declaration->shape);
+        self::assertNull($declaration->direction, 'An occurrence producer\'s channel carries no direction.');
+        self::assertSame(ChannelShape::Occurrence, LayerDeclarationValidator::shape());
         self::assertContains(
             ConfigurationValidatorInterface::class,
             class_implements(LayerDeclarationValidator::class),

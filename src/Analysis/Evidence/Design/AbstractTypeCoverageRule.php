@@ -8,6 +8,7 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -69,6 +70,9 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
             (new ViolationChannel($name, $name))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
         ];
     }
+
+    /** Shared by all three dimensions — a coverage percentage is a real measured magnitude. */
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
 
     /**
      * @return list<Violation>

@@ -47,14 +47,17 @@ final class SelfTest
         // What the tracked declaration of THIS step is, asserted rather than
         // assumed: loading already refuses chains, duplicate sources and
         // duplicate targets, so what is left to check is that the step's own
-        // shape survived the load — a split derived from the rows, and nothing
-        // else derived beside it.
+        // shape survived the load. Ш4c (ADR 0031 — shape moves off the channel
+        // onto the producer) publishes nothing, so its tracked maps are the
+        // identity and derive no split — Ш4b's own assertion here (a
+        // `design.type-coverage` split) belonged to that step's tracked state
+        // and is retired with it, not carried forward.
         $maps = RenameMaps::load($this->candidateRoot . '/finding-gate/maps');
-        $this->assert(!$maps->isIdentity(), 'this step declares renames, so the tracked maps are not the identity');
+        $this->assert($maps->isIdentity(), 'this step declares no renames, so the tracked maps are the identity');
         $this->same(
-            ['design.type-coverage'],
+            [],
             array_keys($maps->splits()),
-            'the tracked rows derive exactly one split half, and it is the rule this step splits',
+            'the tracked rows derive no split — this step\'s maps are empty',
         );
 
         // One row, and it is the whole key: the halves are expanded from it, so
@@ -493,9 +496,12 @@ final class SelfTest
         // already an explained one. What the self-test adds is that every
         // declared surface carries a diff to compare against: an index row
         // pointing at an empty file would make `delta-mismatch` unreachable for
-        // that surface.
+        // that surface. Ш4c declares no delta — see the note on the tracked
+        // maps above — so the tracked index is empty and there is no surface
+        // left to check a diff file for.
         $delta = DeclaredDelta::load($this->candidateRoot . '/finding-gate');
-        $this->assert(!$delta->isEmpty(), 'this step declares a delta, so the tracked index is not empty');
+        $this->assert($delta->isEmpty(), 'this step declares no delta, so the tracked index is empty');
+        $this->same([], $delta->surfaces(), 'an empty declared delta claims no surface');
 
         foreach ($delta->surfaces() as $surface) {
             $this->assert(

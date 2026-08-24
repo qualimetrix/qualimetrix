@@ -480,6 +480,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOwnConstantReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader'

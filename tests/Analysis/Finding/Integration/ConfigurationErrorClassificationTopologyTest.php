@@ -14,6 +14,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -336,6 +337,11 @@ final class StampRule implements RuleInterface
         return RuleCategory::Architecture;
     }
 
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
     public function requires(): array
     {
         return [];
@@ -385,6 +391,11 @@ final class StampValidator implements ConfigurationValidatorInterface
         return StampRule::NAME;
     }
 
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
     public static function channelDeclarations(): array
     {
         return ['stamp.rule#stamp.diagnostic' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
@@ -401,6 +412,11 @@ final class OrphanedValidator implements ConfigurationValidatorInterface
     public static function producerRuleName(): string
     {
         return 'stamp.nobody';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
     }
 
     public static function channelDeclarations(): array
@@ -421,6 +437,11 @@ final class PoachingValidator implements ConfigurationValidatorInterface
         return StampRule::NAME;
     }
 
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
     public static function channelDeclarations(): array
     {
         return ['stamp.rule#stamp.rule' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
@@ -437,6 +458,11 @@ final class TrespassingValidator implements ConfigurationValidatorInterface
     public static function producerRuleName(): string
     {
         return StampRule::NAME;
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
     }
 
     public static function channelDeclarations(): array

@@ -44,4 +44,18 @@ class Directives
     public function equidistant(): void
     {
     }
+
+    /**
+     * The same tie, in a different family: three edits from both
+     * `design.return-type-coverage` and `design.property-type-coverage`
+     * (ADR 0030's split of `design.type-coverage`), so the "did you mean"
+     * order between them is observable here too. Deliberately not addable
+     * before the reference already knew the three post-split names — see the
+     * Ш4c entry in docs/internal/plans/rule-vocabulary/PLAN.md.
+     *
+     * @qmx-ignore design.repert-type-coverage -- equidistant from return and property
+     */
+    public function equidistantAcrossFamilies(): void
+    {
+    }
 }

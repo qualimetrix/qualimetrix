@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
@@ -34,6 +35,8 @@ final class IdenticalSubExpressionRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
     public const int REMEDIATION_MINUTES = 15;
+
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
     /**
      * Finding types with corresponding violation messages.
      * Keys must match the types used by IdenticalSubExpressionCollector.

@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverI
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -44,6 +45,8 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * - By default, uses ProjectNamespaceResolver to auto-detect project namespaces from composer.json
  * - Use `includeNamespaces` option to override auto-detection
  * - Use `exclude_namespaces` (universal per-rule option) to exclude specific namespaces
+ *
+ * @qmx-threshold coupling.cbo 23 -- Raw CBO 22, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 23 gets one-edge headroom.
  */
 #[CliAlias('distance-warning', 'max_distance_warning')]
 #[CliAlias('distance-error', 'max_distance_error')]
@@ -53,6 +56,8 @@ final class DistanceRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function __construct(
         RuleOptionsInterface $options,
         private readonly ?ProjectNamespaceResolverInterface $namespaceResolver = null,

@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
@@ -27,7 +28,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * prefixes, allowed @-suppressed functions) the options class must
  * implement {@see EntryFilteringOptionsInterface}.
  *
- * @qmx-threshold coupling.cbo 21 -- Declaring the levels a channel reports at costs every rule one edge onto SymbolLevel; this base sat exactly on the inclusive warning threshold of 20 before it. Raw CBO 20 with no headroom.
+ * @qmx-threshold coupling.cbo 22 -- Declaring the levels a channel reports at costs every rule one edge onto SymbolLevel; this base sat exactly on the inclusive warning threshold of 20 before it. Raw CBO 21 now, after ADR 0031 (rule-vocabulary Ш4c) added one more constant-typed dependency (ChannelShape) that every subclass answering shape() through this base needs; 22 gets one-edge headroom again.
  */
 abstract class AbstractCodeSmellRule extends AbstractRule
 {
@@ -79,6 +80,17 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     {
         return CodeSmellOptions::class;
     }
+
+    /**
+     * Shared by every subclass that inherits {@see channelDeclarations()}
+     * below unchanged — a fixed `1.0` occurrence marker is never a magnitude.
+     * The code-smell rules that report a real measured magnitude
+     * (`ConstructorOverinjectionRule`, `LongParameterListRule`,
+     * `UnreachableCodeRule`, `UnusedPrivateRule`) extend `AbstractRule`
+     * directly instead, precisely so this default cannot apply to them by
+     * accident.
+     */
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
 
     /**
      * Every subclass that does not override {@see analyze()} emits its

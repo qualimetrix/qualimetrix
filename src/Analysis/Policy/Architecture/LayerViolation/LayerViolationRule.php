@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -52,6 +53,8 @@ final class LayerViolationRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/architecture.md';
 
     public const int REMEDIATION_MINUTES = 15;
+
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
 
     /**
      * The collector is injected by {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass::resolveExtraDependencies()}.

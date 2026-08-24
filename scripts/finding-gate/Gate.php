@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use JsonException;
+
 /**
  * Proves that the candidate and the reference tree produce equivalent findings
  * over the corpus, modulo the declared maps and the declared normalization.
@@ -434,18 +436,38 @@ final class Gate
     {
         $expected = Fingerprints::expected($findings);
         $scope = 'case:' . $case->id;
+
+        $sarif = $this->decodeFingerprintSurface(
+            $side,
+            $case,
+            $scope,
+            'format:sarif',
+            $artifacts,
+            static fn(string $raw): array => Fingerprints::publishedInSarif($raw),
+        );
+        $gitlab = $this->decodeFingerprintSurface(
+            $side,
+            $case,
+            $scope,
+            'format:gitlab',
+            $artifacts,
+            static fn(string $raw): array => Fingerprints::publishedInGitLab($raw),
+        );
+
         $comparisons = [
-            'sarif partialFingerprints' => [
-                $expected,
-                Fingerprints::publishedInSarif($artifacts[Surfaces::key($scope, 'format:sarif')] ?? '{}'),
-            ],
-            'gitlab fingerprint' => [
-                Fingerprints::md5Of($expected),
-                Fingerprints::publishedInGitLab($artifacts[Surfaces::key($scope, 'format:gitlab')] ?? '[]'),
-            ],
+            'sarif partialFingerprints' => [$expected, $sarif],
+            'gitlab fingerprint' => [Fingerprints::md5Of($expected), $gitlab],
         ];
 
         foreach ($comparisons as $label => [$recomputed, $published]) {
+            // A surface that failed to decode already reported RUN_FAILED
+            // below and has nothing left to compare against — reporting a
+            // mismatch on top would blame the finding identity for what is
+            // really a dead artifact.
+            if ($published === null) {
+                continue;
+            }
+
             if ($recomputed === $published) {
                 continue;
             }
@@ -457,6 +479,60 @@ final class Gate
                 . ' fields, so the identity consumers track has moved for a reason the fields do not show.',
                 Diff::betweenSets($recomputed, $published, 'recomputed', 'published'),
             );
+        }
+    }
+
+    /**
+     * Decodes one fingerprint surface, or reports RUN_FAILED and returns
+     * `null` when it cannot be decoded.
+     *
+     * Ш4b left this uncaught: a non-parsing artifact threw `JsonException` out
+     * of {@see Fingerprints::publishedInSarif()} / {@see Fingerprints::publishedInGitLab()}
+     * and killed the whole gate process without writing a report, so the
+     * harness could not tell a broken product from a broken instrument (see
+     * the Ш4c entry in docs/internal/plans/rule-vocabulary/PLAN.md). Every
+     * decode now goes through here, named by the artifact and the exit code
+     * of the `check` invocation that produced it — the same two facts
+     * {@see checkBaselineSurface()} already reports for a missing baseline
+     * file, so a dead artifact and a dead run read the same way.
+     *
+     * @param array<string, string> $artifacts
+     * @param callable(string): list<string> $decode
+     *
+     * @return list<string>|null
+     */
+    private function decodeFingerprintSurface(
+        string $side,
+        CaseDefinition $case,
+        string $scope,
+        string $surface,
+        array $artifacts,
+        callable $decode,
+    ): ?array {
+        $raw = $artifacts[Surfaces::key($scope, $surface)] ?? null;
+
+        if ($raw === null) {
+            return null;
+        }
+
+        try {
+            return $decode($raw);
+        } catch (JsonException $exception) {
+            $exit = $artifacts[Surfaces::key($scope, 'exit:' . $surface)] ?? null;
+
+            $this->report->fail(
+                FailureClass::RUN_FAILED,
+                \sprintf('%s / %s / %s', $side, $case->id, $surface),
+                \sprintf(
+                    'The %s artifact does not parse as JSON (%s). Its producing run exited %s, so this is a dead'
+                    . ' artifact, not a fingerprint disagreement.',
+                    $surface,
+                    $exception->getMessage(),
+                    $exit ?? 'nothing',
+                ),
+            );
+
+            return null;
         }
     }
 

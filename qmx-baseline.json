@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-23T13:28:48+00:00",
+  "generated": "2026-08-24T09:22:08+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -166,10 +166,6 @@
       {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[16]},
       {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[10]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Finding\\RuleExecution::execute@src/Analysis/Finding/RuleExecution.php": [
-      {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[24]},
-      {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[11]}
-    ],
     "declaration:callable:Qualimetrix\\Analysis\\Finding\\Rule\\Override\\StandardOverrideValidator::validate@src/Analysis/Finding/Rule/Override/StandardOverrideValidator.php": [
       {"channel":"code-smell.boolean-argument#code-smell.boolean-argument","occurrence":"6ce45ee1c2a7cf2b","count":1}
     ],
@@ -182,9 +178,6 @@
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\WildcardSelfAllowDetector::detect@src/Analysis/Policy/Architecture/Configuration/WildcardSelfAllowDetector.php": [
       {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[16]}
-    ],
-    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule::collectEdgeViolations@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php": [
-      {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[10]}
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\CapturePattern::compile@src/Analysis/Policy/Architecture/Layer/CapturePattern.php": [
       {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[25]},
@@ -400,8 +393,7 @@
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule@src/Analysis/Evidence/Coupling/CboRule.php": [
       {"channel":"complexity.wmc#complexity.wmc","magnitudes":[60]},
-      {"channel":"computed.health#health.cohesion","magnitudes":[30]},
-      {"channel":"coupling.cbo#coupling.cbo.class","magnitudes":[21]}
+      {"channel":"computed.health#health.cohesion","magnitudes":[30]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankCollector@src/Analysis/Evidence/Coupling/ClassRankCollector.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[45.4]}
@@ -414,9 +406,6 @@
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceCollector@src/Analysis/Evidence/Coupling/DistanceCollector.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[45.4]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule@src/Analysis/Evidence/Coupling/DistanceRule.php": [
-      {"channel":"coupling.cbo#coupling.cbo.class","magnitudes":[21]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule@src/Analysis/Evidence/Coupling/InstabilityRule.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[30]}
@@ -453,9 +442,6 @@
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayersValidator@src/Analysis/Policy/Architecture/Configuration/LayersValidator.php": [
       {"channel":"complexity.wmc#complexity.wmc","magnitudes":[52]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php": [
-      {"channel":"coupling.cbo#coupling.cbo.class","magnitudes":[21]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\LayerExpansionResult@src/Analysis/Policy/Architecture/Layer/Expansion/LayerExpansionResult.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[40]}
@@ -560,7 +546,7 @@
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
       {"channel":"coupling.cbo#coupling.cbo.namespace","magnitudes":[17]},
-      {"channel":"coupling.instability#coupling.instability.namespace","magnitudes":[0.953846]}
+      {"channel":"coupling.instability#coupling.instability.namespace","magnitudes":[0.954545]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
       {"channel":"size.class-count#size.class-count","magnitudes":[24]}
@@ -586,6 +572,9 @@
     "ns:Qualimetrix\\Analysis\\Evidence\\Size": [
       {"channel":"size.class-count#size.class-count","magnitudes":[15]}
     ],
+    "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass": [
+      {"channel":"coupling.instability#coupling.instability.namespace","magnitudes":[0.903226]}
+    ],
     "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [
       {"channel":"size.class-count#size.class-count","magnitudes":[22]}
     ],
@@ -606,12 +595,13 @@
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"26a58f2d85548561","magnitudes":[31]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"31b8775fc4e026b1","magnitudes":[29]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"34b279d1e8cbb107","magnitudes":[21]},
+      {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"463a8fb59c712c80","magnitudes":[37]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"67c3f109dc2d3e97","magnitudes":[28]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"9964fabbf3e849d9","magnitudes":[46]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"cf1eed47dd349df2","magnitudes":[45]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"d3feecf066ef9d58","magnitudes":[30]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"d4a10c7cb6a1893d","magnitudes":[32]},
-      {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"fd45a3650ac682e6","magnitudes":[20,20,20,20]},
+      {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"fd45a3650ac682e6","magnitudes":[20,20,20]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"ffe945d02651bf40","magnitudes":[24]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"fffecc238d6441b0","magnitudes":[41]}
     ]

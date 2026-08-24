@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
@@ -36,6 +37,8 @@ final class UnusedDirectiveRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/annotation.md';
 
     public const int REMEDIATION_MINUTES = 15;
+
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
 
     public function __construct(
         RuleOptionsInterface $options,

@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Security;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
@@ -116,6 +117,14 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
             (new ViolationChannel(static::NAME, static::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Callable),
         ];
     }
+
+    /**
+     * Shared by every subclass — a fixed marker, never a measured magnitude.
+     * {@see HardcodedCredentialsRule} and {@see SensitiveParameterRule} are
+     * the same family but extend {@see AbstractRule} directly, so they
+     * declare their own `occurrence` value instead of inheriting this one.
+     */
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
 
     /**
      * @return list<Violation>

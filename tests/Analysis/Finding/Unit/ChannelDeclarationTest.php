@@ -10,7 +10,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Core\Observation\WorseDirection;
 use ReflectionClass;
 use ReflectionParameter;
@@ -19,11 +18,13 @@ use ReflectionParameter;
 final class ChannelDeclarationTest extends TestCase
 {
     /**
-     * The pairing "magnitude without a direction" and "occurrence with one"
-     * are not tested by constructing them, because they cannot be
-     * constructed: the constructor is private and neither factory can express
-     * either. This is half of what makes the two missing tests unnecessary
-     * rather than forgotten; the other half is the signature test below.
+     * ADR 0031 moved {@see \Qualimetrix\Analysis\Finding\Contract\ChannelShape} off this class onto the producer, so
+     * a magnitude-without-direction / occurrence-with-a-direction pairing is
+     * no longer a runtime refusal here at all — there is no `$shape` field
+     * left to disagree with `$direction`. What remains representable-or-not
+     * is `$direction` itself, and the constructor being private plus neither
+     * factory taking the other shape's parameters is the whole reason it
+     * cannot be built any way but the two below.
      */
     #[Test]
     public function itKeepsItsConstructorPrivateSoOnlyTheFactoriesCanShapeADeclaration(): void
@@ -35,37 +36,17 @@ final class ChannelDeclarationTest extends TestCase
     }
 
     /**
-     * The private constructor alone does not make the three refusals inside it
-     * unreachable — the factory signatures do, and they are what this pins.
-     *
-     * `magnitude()` takes a non-nullable direction, so "a magnitude channel
-     * must declare a direction" cannot be stated. `occurrence()` has no
-     * direction parameter at all, so "an occurrence channel must not declare
-     * one" cannot be stated either. Both take a mandatory first level, so the
-     * empty list cannot be stated. Widening any of these — a nullable
-     * direction, a direction parameter on `occurrence()`, a variadic-only
-     * level list — puts the corresponding refusal back in reach, and this test
-     * is what says so out loud instead of leaving three branches that look
-     * live and are not.
+     * The one refusal left inside the constructor — an empty level list — is
+     * unreachable through either factory, because both take a mandatory first
+     * level. Widening either signature to a variadic-only list puts it back
+     * in reach, and this test is what says so out loud instead of leaving a
+     * branch that looks live and is not.
      */
     #[Test]
-    public function itLeavesTheThreeRefusalsUnstatableThroughTheFactorySignatures(): void
+    public function itLeavesTheEmptyLevelListRefusalUnstatableThroughTheFactorySignatures(): void
     {
         $magnitude = (new ReflectionClass(ChannelDeclaration::class))->getMethod('magnitude');
         $occurrence = (new ReflectionClass(ChannelDeclaration::class))->getMethod('occurrence');
-
-        $direction = $magnitude->getParameters()[0];
-        self::assertSame('direction', $direction->getName());
-        self::assertFalse($direction->allowsNull(), 'A nullable direction would make the magnitude refusal reachable.');
-
-        self::assertSame(
-            ['level', 'moreLevels'],
-            array_map(
-                static fn(ReflectionParameter $parameter): string => $parameter->getName(),
-                $occurrence->getParameters(),
-            ),
-            'An occurrence factory that accepted a direction would make the occurrence refusal reachable.',
-        );
 
         foreach ([$magnitude, $occurrence] as $factory) {
             $levels = array_values(array_filter(
@@ -79,12 +60,42 @@ final class ChannelDeclarationTest extends TestCase
         }
     }
 
+    /**
+     * Neither factory can express the other shape's direction state:
+     * `magnitude()`'s direction parameter is non-nullable, and `occurrence()`
+     * has no direction parameter at all. Nothing in {@see ChannelDeclaration}
+     * checks this at run time any more — {@see \Qualimetrix\Analysis\Finding\Contract\ChannelShape} is a producer
+     * property now, and registry assembly is what checks a producer's
+     * declared shape against this nullability (see
+     * {@see \Qualimetrix\Tests\Infrastructure\Unit\ChannelDeclarationCompilerPassTest}).
+     * This pins that the two signatures still make the mismatch
+     * unrepresentable in the first place.
+     */
+    #[Test]
+    public function itLeavesTheDirectionPairingUnrepresentableThroughTheFactorySignatures(): void
+    {
+        $magnitude = (new ReflectionClass(ChannelDeclaration::class))->getMethod('magnitude');
+        $occurrence = (new ReflectionClass(ChannelDeclaration::class))->getMethod('occurrence');
+
+        $direction = $magnitude->getParameters()[0];
+        self::assertSame('direction', $direction->getName());
+        self::assertFalse($direction->allowsNull(), 'A nullable direction would make a shapeless magnitude representable.');
+
+        self::assertSame(
+            ['level', 'moreLevels'],
+            array_map(
+                static fn(ReflectionParameter $parameter): string => $parameter->getName(),
+                $occurrence->getParameters(),
+            ),
+            'An occurrence factory that accepted a direction would make a directed occurrence representable.',
+        );
+    }
+
     #[Test]
     public function itBuildsAMagnitudeDeclarationViaTheFactory(): void
     {
         $declaration = ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_);
 
-        self::assertSame(ChannelShape::Magnitude, $declaration->shape);
         self::assertSame(WorseDirection::Lower, $declaration->direction);
     }
 
@@ -93,7 +104,6 @@ final class ChannelDeclarationTest extends TestCase
     {
         $declaration = ChannelDeclaration::occurrence(SymbolLevel::Class_);
 
-        self::assertSame(ChannelShape::Occurrence, $declaration->shape);
         self::assertNull($declaration->direction);
     }
 

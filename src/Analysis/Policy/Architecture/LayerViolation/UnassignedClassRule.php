@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -38,6 +39,12 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInte
 final class UnassignedClassRule extends AbstractRule
 {
     public const string NAME = LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME;
+
+    /**
+     * How much of the analysed code is unclaimed is a real measured count,
+     * unlike the sibling rule's occurrence-shaped forbidden edges.
+     */
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
 
     /**
      * The collector is injected by {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass::resolveExtraDependencies()}.

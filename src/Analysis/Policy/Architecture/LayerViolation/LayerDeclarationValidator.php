@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
@@ -57,6 +58,16 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
     public static function producerRuleName(): string
     {
         return LayerPolicyPreparationInterface::PRODUCER_RULE_NAME;
+    }
+
+    /**
+     * Shared with {@see LayerViolationRule}, the rule this validator belongs
+     * to: registry assembly refuses the two declaring different shapes under
+     * one producer name.
+     */
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
     }
 
     /**

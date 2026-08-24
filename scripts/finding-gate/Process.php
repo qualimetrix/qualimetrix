@@ -51,8 +51,18 @@ final class Process
             $write = [];
             $except = [];
 
+            // `false` here is the underlying `select()` syscall failing, most
+            // commonly EINTR — a signal delivered mid-call, plausible under
+            // the process pressure of several scratch clones running at once.
+            // Breaking on it stopped draining with pipes still open, which is
+            // a truncated capture: a JSON artifact that stops mid-object,
+            // parses as nothing, and used to reach Fingerprints::publishedInSarif()
+            // / ::publishedInGitLab() as an uncaught JsonException (the Ш4c
+            // долг in docs/internal/plans/rule-vocabulary/PLAN.md). Retrying
+            // is the standard EINTR-safe idiom; a truly broken descriptor
+            // still terminates the loop the next time `fread()` reports EOF.
             if (stream_select($read, $write, $except, 1) === false) {
-                break;
+                continue;
             }
 
             foreach ($open as $stream => $pipe) {

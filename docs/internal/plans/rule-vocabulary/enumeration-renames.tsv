@@ -6,10 +6,10 @@ annotation.unused-directive#annotation.unused-directive	channel	?		8	8	0	0	0	25	
 architecture.circular-dependency#architecture.circular-dependency	channel	?		8	30	0	2	0	38	0	2
 architecture.coverage#architecture.coverage	channel	?		19	78	0	0	0	43	0	2
 architecture.empty-template#architecture.empty-template	channel	?		9	12	0	0	0	27	0	2
-architecture.layer-violation#architecture.layer-violation	channel	?		27	129	0	3	0	79	0	3
+architecture.layer-violation#architecture.layer-violation	channel	?		27	129	0	3	0	79	0	2
 architecture.pending-layer-matched#architecture.pending-layer-matched	channel	?		8	14	0	0	0	25	0	2
 architecture.potential-shadow#architecture.potential-shadow	channel	?		13	10	0	0	0	32	0	2
-architecture.unassigned-class#architecture.unassigned-class	channel	?		25	17	0	0	0	21	0	7
+architecture.unassigned-class#architecture.unassigned-class	channel	?		25	17	0	0	0	21	0	3
 architecture.unreachable-layer#architecture.unreachable-layer	channel	?		15	26	0	0	0	41	0	2
 code-smell.boolean-argument#code-smell.boolean-argument	channel	?		4	22	1	2	58	34	0	2
 code-smell.constructor-overinjection#code-smell.constructor-overinjection	channel	?		9	8	2	2	12	21	0	2
@@ -26,27 +26,27 @@ code-smell.superglobals#code-smell.superglobals	channel	?		1	6	1	0	0	12	0	2
 code-smell.unreachable-code#code-smell.unreachable-code	channel	?		6	7	0	1	0	23	0	2
 code-smell.unused-private#code-smell.unused-private	channel	?		2	7	0	0	0	15	0	2
 cohesion.lcom#cohesion.lcom	channel	?		19	38	2	2	0	27	0	5
-complexity.cognitive#complexity.cognitive.callable	channel	complexity.cognitive#complexity.cognitive	Ш5	1	5	0	0	34	2	0	1
+complexity.cognitive#complexity.cognitive.callable	channel	complexity.cognitive#complexity.cognitive	Ш5	1	5	0	0	33	2	0	1
 complexity.cognitive#complexity.cognitive.class	channel	complexity.cognitive#complexity.cognitive	Ш5	0	2	0	0	0	2	0	1
-complexity.cyclomatic#complexity.cyclomatic.callable	channel	complexity.cyclomatic#complexity.cyclomatic	Ш5	7	137	0	0	60	32	0	2
+complexity.cyclomatic#complexity.cyclomatic.callable	channel	complexity.cyclomatic#complexity.cyclomatic	Ш5	7	137	0	0	58	32	0	2
 complexity.cyclomatic#complexity.cyclomatic.class	channel	complexity.cyclomatic#complexity.cyclomatic	Ш5	1	9	0	0	0	5	0	1
 complexity.npath#complexity.npath.callable	channel	complexity.npath#complexity.npath	Ш5	0	3	0	0	13	2	0	1
 complexity.npath#complexity.npath.class	channel	complexity.npath#complexity.npath	Ш5	0	2	0	0	0	2	0	1
 complexity.wmc#complexity.wmc	channel	?		11	17	2	2	24	27	0	5
-coupling.cbo#coupling.cbo.class	channel	coupling.cbo#coupling.cbo	Ш5	5	36	0	0	7	20	0	1
+coupling.cbo#coupling.cbo.class	channel	coupling.cbo#coupling.cbo	Ш5	5	36	0	0	4	20	0	1
 coupling.cbo#coupling.cbo.namespace	channel	coupling.cbo#coupling.cbo	Ш5	0	11	0	1	3	3	0	1
 coupling.class-rank#coupling.class-rank	channel	?		14	35	0	2	2	22	0	24
 coupling.distance#coupling.distance	channel	?		8	31	2	2	6	30	0	26
 coupling.instability#coupling.instability.class	channel	coupling.instability#coupling.instability	Ш5	2	17	0	0	6	2	0	1
-coupling.instability#coupling.instability.namespace	channel	coupling.instability#coupling.instability	Ш5	0	6	0	1	2	2	0	1
+coupling.instability#coupling.instability.namespace	channel	coupling.instability#coupling.instability	Ш5	0	6	0	1	3	2	0	1
 design.data-class#design.data-class	channel	?		13	14	1	2	20	32	0	4
 design.god-class#design.god-class	channel	?		13	18	1	2	4	35	0	8
 design.inheritance#design.inheritance	channel	?		6	10	2	2	0	20	0	4
-design.noc#design.noc	channel	?		7	10	2	2	0	20	0	6
-design.param-type-coverage#design.param-type-coverage	channel	?		5	27	2	1	2	24	0	18
-design.property-type-coverage#design.property-type-coverage	channel	?		5	8	2	1	2	22	0	18
-design.return-type-coverage#design.return-type-coverage	channel	?		5	11	2	1	0	22	0	18
-duplication.code-duplication#duplication.code-duplication	channel	?		12	51	0	2	24	32	0	2
+design.noc#design.noc	channel	?		7	10	2	2	0	20	0	4
+design.param-type-coverage#design.param-type-coverage	channel	?		5	27	2	1	2	24	0	4
+design.property-type-coverage#design.property-type-coverage	channel	?		5	8	2	1	2	22	0	5
+design.return-type-coverage#design.return-type-coverage	channel	?		5	11	2	1	0	22	0	5
+duplication.code-duplication#duplication.code-duplication	channel	?		14	51	0	2	26	32	0	2
 maintainability.index#maintainability.index	channel	?		11	55	2	2	0	27	0	4
 security.command-injection#security.command-injection	channel	?		3	6	0	0	0	13	0	2
 security.hardcoded-credentials#security.hardcoded-credentials	channel	?		4	10	0	0	0	15	0	2
@@ -54,8 +54,8 @@ security.sensitive-parameter#security.sensitive-parameter	channel	?		3	6	0	0	0	1
 security.sql-injection#security.sql-injection	channel	?		3	7	0	0	0	13	0	2
 security.xss#security.xss	channel	?		4	18	0	0	0	13	0	2
 size.class-count#size.class-count	channel	?		9	25	2	1	10	24	0	4
-size.method-count#size.method-count	channel	?		9	62	2	2	0	46	0	6
-size.property-count#size.property-count	channel	?		9	8	2	2	0	22	0	6
+size.method-count#size.method-count	channel	?		9	62	2	2	0	46	0	4
+size.property-count#size.property-count	channel	?		9	8	2	2	0	22	0	4
 abstractClassCount	metric-key	?		14	11	0	0	0	0	0	0
 abstractness	metric-key	?		60	61	0	1	0	9	0	0
 ca	metric-key	?		42	78	0	0	0	2	0	0
@@ -80,7 +80,7 @@ halstead.effort	metric-key	?		2	4	0	0	0	0	0	0
 halstead.time	metric-key	?		2	4	0	0	0	0	0	0
 halstead.volume	metric-key	?		5	38	0	0	0	2	0	0
 implementingEnumCount	metric-key	?		21	9	0	0	0	1	0	0
-instability	metric-key	?		99	75	0	2	0	13	0	1
+instability	metric-key	?		100	75	0	2	0	13	0	1
 interfaceCount	metric-key	?		22	19	0	0	0	0	0	0
 isAbstract	metric-key	?		11	12	0	0	0	0	0	0
 isDataClass	metric-key	?		5	8	0	0	0	1	0	0
@@ -129,8 +129,8 @@ wmc	metric-key	?		18	95	0	0	0	4	0	0
 woc	metric-key	?		11	12	0	0	0	4	0	0
 annotation.directive	producer	?		4	3	0	0	0	21	0	1
 architecture.circular-dependency	producer	?		8	30	0	2	0	38	0	2
-architecture.layer-violation	producer	?		27	129	0	3	0	79	0	3
-architecture.unassigned-class	producer	?		25	17	0	0	0	21	0	7
+architecture.layer-violation	producer	?		27	129	0	3	0	79	0	2
+architecture.unassigned-class	producer	?		25	17	0	0	0	21	0	3
 code-smell.boolean-argument	producer	?		4	22	1	2	58	34	0	2
 code-smell.constructor-overinjection	producer	?		9	8	2	2	12	21	0	2
 code-smell.count-in-loop	producer	?		1	6	0	0	0	12	0	2
@@ -146,23 +146,23 @@ code-smell.superglobals	producer	?		1	6	1	0	0	12	0	2
 code-smell.unreachable-code	producer	?		6	7	0	1	0	23	0	2
 code-smell.unused-private	producer	?		2	7	0	0	0	15	0	2
 cohesion.lcom	producer	?		19	38	2	2	0	27	0	5
-complexity.cognitive	producer	?		9	26	2	2	34	46	0	8
-complexity.cyclomatic	producer	?		32	531	2	2	60	110	0	10
+complexity.cognitive	producer	?		9	26	2	2	33	46	0	8
+complexity.cyclomatic	producer	?		32	531	2	2	58	110	0	10
 complexity.npath	producer	?		9	9	2	2	13	38	0	7
 complexity.wmc	producer	?		11	17	2	2	24	27	0	5
-computed.health	producer	health.cohesion|health.complexity|health.coupling|health.maintainability|health.overall|health.typing|computed.*	Ш5	11	185	0	1	32	17	0	7
-coupling.cbo	producer	?		30	119	2	3	10	74	0	6
+computed.health	producer	health.cohesion|health.complexity|health.coupling|health.maintainability|health.overall|health.typing|computed.*	Ш5	14	185	0	1	32	17	0	7
+coupling.cbo	producer	?		36	119	2	3	7	74	0	6
 coupling.class-rank	producer	?		14	35	0	2	2	22	0	24
 coupling.distance	producer	?		8	31	2	2	6	30	0	26
-coupling.instability	producer	?		12	27	2	2	8	46	0	8
+coupling.instability	producer	?		12	27	2	2	9	46	0	8
 design.data-class	producer	?		13	14	1	2	20	32	0	4
 design.god-class	producer	?		13	18	1	2	4	35	0	8
 design.inheritance	producer	?		6	10	2	2	0	20	0	4
-design.noc	producer	?		7	10	2	2	0	20	0	6
-design.param-type-coverage	producer	?		5	27	2	1	2	24	0	18
-design.property-type-coverage	producer	?		5	8	2	1	2	22	0	18
-design.return-type-coverage	producer	?		5	11	2	1	0	22	0	18
-duplication.code-duplication	producer	?		12	51	0	2	24	32	0	2
+design.noc	producer	?		7	10	2	2	0	20	0	4
+design.param-type-coverage	producer	?		5	27	2	1	2	24	0	4
+design.property-type-coverage	producer	?		5	8	2	1	2	22	0	5
+design.return-type-coverage	producer	?		5	11	2	1	0	22	0	5
+duplication.code-duplication	producer	?		14	51	0	2	26	32	0	2
 maintainability.index	producer	?		11	55	2	2	0	27	0	4
 security.command-injection	producer	?		3	6	0	0	0	13	0	2
 security.hardcoded-credentials	producer	?		4	10	0	0	0	15	0	2
@@ -170,8 +170,8 @@ security.sensitive-parameter	producer	?		3	6	0	0	0	13	0	2
 security.sql-injection	producer	?		3	7	0	0	0	13	0	2
 security.xss	producer	?		4	18	0	0	0	13	0	2
 size.class-count	producer	?		9	25	2	1	10	24	0	4
-size.method-count	producer	?		9	62	2	2	0	46	0	6
-size.property-count	producer	?		9	8	2	2	0	22	0	6
+size.method-count	producer	?		9	62	2	2	0	46	0	4
+size.property-count	producer	?		9	8	2	2	0	22	0	4
 #
 # ROW COUNTS: 57 channel, 45 producer, 71 metric-key
 #

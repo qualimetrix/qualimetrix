@@ -9,10 +9,12 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetri
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\ChannelPresentationView;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
@@ -28,13 +30,16 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * and the rule name => remediation minutes map into
  * {@see RemediationTimeRegistry}, which no longer keeps that fact itself.
  *
- * Five facts are read off each rule class by reflection, none of which
- * instantiates it: its name ({@see RuleNameReader}), the channels it declares
+ * Six facts are read off each rule class, none of which instantiates it: its
+ * name ({@see RuleNameReader}), the channels it declares
  * ({@see ChannelDeclarationReader}), whether it declares support for
  * `@qmx-threshold` ({@see ThresholdOverrideSupportReader}), its declared
- * documentation page ({@see RuleDocsPageReader}), and its declared
- * remediation estimate ({@see RuleRemediationMinutesReader}). `$minutesByRule`
- * additionally inherits an entry for every channel's own `ruleName` half, not
+ * documentation page ({@see RuleDocsPageReader}), its declared remediation
+ * estimate ({@see RuleRemediationMinutesReader}), and its declared
+ * {@see ChannelShape} ({@see RuleShapeReader}).
+ *
+ * `$minutesByRule` additionally inherits an entry for every channel's own
+ * `ruleName` half, not
  * only the producer's — the architecture and annotation diagnostics are
  * emitted under their own identity (`architecture.coverage`,
  * `annotation.unused-directive`, …), distinct from the rule class's own
@@ -57,10 +62,43 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * a function at all — without it, a "did you mean" answer would depend on
  * service iteration order.
  *
+ * **Two more properties guard {@see ChannelShape} (ADR 0031), which moved off
+ * {@see ChannelDeclaration} onto the producer.** First: a producer's declared
+ * shape must agree with whether its own channels carry a
+ * {@see \Qualimetrix\Core\Observation\WorseDirection} — `magnitude` channels
+ * have one, `occurrence` channels do not, and a producer that declares one
+ * shape while building the other kind of channel is refused. Second: a
+ * validator borrows its producer rule's name (see
+ * {@see collectValidatorChannels()}), so two distinct classes — the rule and
+ * its validator — answer `shape()` under one producer name, and a
+ * disagreement between them is refused before either class's channels are
+ * even inspected. Both checks read `$shapeByRule`, built alongside
+ * `$minutesByRule` in the same first pass over every rule.
+ *
  * The capability-owned channel family contract supplies the computed-metric
  * producer name as a plain string constructor argument. The pass never imports
  * the internal rule, and `Infrastructure\Rule` remains independent of
  * capability internals.
+ *
+ * **Accepted, not fixed: this file's own `RuleShapeReader::read()` call
+ * (ADR 0031) pushed `ns:Infrastructure\DependencyInjection\CompilerPass`'s
+ * instability from under warning to Ca=3, Ce=28 (I=0.903226), recorded in
+ * `qmx-baseline.json`.** Namespace-scoped channels have no `@qmx-threshold`
+ * anchor — {@see \Qualimetrix\Analysis\Finding\Contract\Control\ControlScope}
+ * has no `Namespace_` case — so a directive cannot state this the way
+ * {@see \Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule}'s
+ * `coupling.cbo` override states its own class-scoped cost. The read itself
+ * is not misplaced: it is one more call in the same first pass over every
+ * rule that already calls {@see RuleNameReader}, {@see RuleDocsPageReader},
+ * {@see RuleRemediationMinutesReader} and {@see ThresholdOverrideSupportReader}
+ * for the same reason (a fact every rule must answer, gathered before any
+ * validator needs it), and the cross-producer shape check
+ * ({@see collectValidatorChannels()}) can only run where both a rule's and
+ * its validator's declarations are both in hand — registry assembly, not a
+ * single class's own reader. What would actually undo this entry is a step
+ * that collapses those five per-rule reader calls into one aggregate
+ * "rule metadata" read, cutting this file's own efferent count rather than
+ * moving the read elsewhere; no such step is planned.
  */
 final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 {
@@ -83,12 +121,15 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         $docsPageByRule = [];
         /** @var array<string, int> $minutesByRule */
         $minutesByRule = [];
+        /** @var array<string, ChannelShape> $shapeByRule */
+        $shapeByRule = [];
 
         foreach ($ruleClasses as $class) {
             $producerRuleName = RuleNameReader::read($class);
             $thresholdOverrideSupport[$producerRuleName] = ThresholdOverrideSupportReader::read($class);
             $docsPageByRule[$producerRuleName] = RuleDocsPageReader::read($class);
             $minutesByRule[$producerRuleName] = RuleRemediationMinutesReader::read($class);
+            $shapeByRule[$producerRuleName] = RuleShapeReader::read($class);
         }
 
         /** @var array<string, ChannelDeclaration> $declarations */
@@ -106,6 +147,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                     $channelKeysByProducer,
                     $producerByViolationCode,
                     $minutesByRule,
+                    $shapeByRule,
                 );
 
                 continue;
@@ -118,6 +160,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                     $channelKeysByProducer,
                     $producerByViolationCode,
                     $minutesByRule,
+                    $shapeByRule,
                 );
             }
         }
@@ -190,6 +233,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
      * @param array<string, list<string>> $channelKeysByProducer
      * @param array<string, string> $producerByViolationCode
      * @param array<string, int> $minutesByRule
+     * @param array<string, ChannelShape> $shapeByRule
      */
     private function collectRuleChannels(
         string $class,
@@ -197,6 +241,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         array &$channelKeysByProducer,
         array &$producerByViolationCode,
         array &$minutesByRule,
+        array $shapeByRule,
     ): void {
         $producerRuleName = RuleNameReader::read($class);
 
@@ -208,6 +253,8 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                     $class,
                 ));
             }
+
+            $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shapeByRule[$producerRuleName], $declaration);
 
             $channel = ViolationChannel::fromKey($key);
             $violationCode = $channel->violationCode;
@@ -266,6 +313,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
      * @param array<string, list<string>> $channelKeysByProducer
      * @param array<string, string> $producerByViolationCode
      * @param array<string, int> $minutesByRule
+     * @param array<string, ChannelShape> $shapeByRule
      */
     private function collectValidatorChannels(
         string $class,
@@ -273,6 +321,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         array &$channelKeysByProducer,
         array &$producerByViolationCode,
         array &$minutesByRule,
+        array $shapeByRule,
     ): void {
         /** @var class-string<\Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface> $class */
         $producerRuleName = $class::producerRuleName();
@@ -284,6 +333,20 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                 . ' name must exist.',
                 $class,
                 $producerRuleName,
+            ));
+        }
+
+        $shape = $class::shape();
+
+        if ($shape !== $shapeByRule[$producerRuleName]) {
+            throw new LogicException(\sprintf(
+                'Configuration validator %s declares shape "%s" for producer "%s", but the rule declares "%s".'
+                . ' A validator and the rule it belongs to are one producer and must agree on what their'
+                . ' findings mean for baseline purposes.',
+                $class,
+                $shape->value,
+                $producerRuleName,
+                $shapeByRule[$producerRuleName]->value,
             ));
         }
 
@@ -299,12 +362,45 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 
         foreach ($validatorDeclarations as $key => $declaration) {
             $this->assertUnclaimed($key, $class, $declarations, $producerByViolationCode, $producerRuleName);
+            $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shape, $declaration);
 
             $channel = ViolationChannel::fromKey($key);
             $minutesByRule[$channel->ruleName] ??= $minutesByRule[$producerRuleName];
             $producerByViolationCode[$channel->violationCode] = $producerRuleName;
             $declarations[$key] = $declaration->asConfigurationError();
             $channelKeysByProducer[$producerRuleName][] = $key;
+        }
+    }
+
+    /**
+     * The per-channel half of the shape guarantee: a `magnitude` producer's
+     * channel must carry a direction, an `occurrence` producer's channel must
+     * not. Shared by both producer kinds so the message and the rule are one
+     * thing, checked once.
+     *
+     * @param class-string $class
+     */
+    private function assertShapeAgreesWithDirection(
+        string $key,
+        string $class,
+        string $producerRuleName,
+        ChannelShape $declaredShape,
+        ChannelDeclaration $declaration,
+    ): void {
+        $channelIsMagnitude = $declaration->direction !== null;
+        $shapeIsMagnitude = $declaredShape === ChannelShape::Magnitude;
+
+        if ($channelIsMagnitude !== $shapeIsMagnitude) {
+            throw new LogicException(\sprintf(
+                'Channel "%s" declared by %s carries %s, but producer "%s" declares shape "%s". A magnitude'
+                . ' producer\'s channels must all carry a WorseDirection, and an occurrence producer\'s must'
+                . ' carry none.',
+                $key,
+                $class,
+                $channelIsMagnitude ? 'a direction' : 'no direction',
+                $producerRuleName,
+                $declaredShape->value,
+            ));
         }
     }
 

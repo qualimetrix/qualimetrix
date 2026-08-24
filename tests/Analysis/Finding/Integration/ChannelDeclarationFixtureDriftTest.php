@@ -342,10 +342,10 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
             self::assertContains(\count($parts), [3, 4], \sprintf('Malformed fixture line: "%s".', $line));
 
             $channelKey = $parts[0];
-            $shapeSpec = $parts[1];
+            $directionSpec = $parts[1];
 
-            $declarations[$channelKey] = self::parseShapeSpec(
-                $shapeSpec,
+            $declarations[$channelKey] = self::parseDirectionSpec(
+                $directionSpec,
                 $channelKey,
                 self::parseAcceptabilitySpec($parts[3] ?? null, $channelKey),
                 self::parseLevelsSpec($parts[2], $channelKey),
@@ -356,15 +356,21 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
     }
 
     /**
+     * ADR 0031: shape moved off the channel onto the producer, so this file
+     * — and this parser — knows only direction now. `-` means the channel
+     * carries none (its producer's declared {@see ChannelShape} is
+     * `occurrence`); `higher`/`lower` builds a `magnitude` declaration the
+     * same way the old `magnitude:<direction>` spec did.
+     *
      * @param non-empty-list<SymbolLevel> $levels
      */
-    private static function parseShapeSpec(
-        string $shapeSpec,
+    private static function parseDirectionSpec(
+        string $directionSpec,
         string $channelKey,
         bool $configurationError,
         array $levels,
     ): ChannelDeclaration {
-        $declaration = self::parseShapeOnly($shapeSpec, $channelKey, $levels);
+        $declaration = self::parseDirectionOnly($directionSpec, $channelKey, $levels);
 
         return $configurationError ? $declaration->asConfigurationError() : $declaration;
     }
@@ -372,27 +378,18 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
     /**
      * @param non-empty-list<SymbolLevel> $levels
      */
-    private static function parseShapeOnly(string $shapeSpec, string $channelKey, array $levels): ChannelDeclaration
+    private static function parseDirectionOnly(string $directionSpec, string $channelKey, array $levels): ChannelDeclaration
     {
-        if ($shapeSpec === 'occurrence') {
-            return ChannelDeclaration::occurrence(...$levels);
-        }
-
-        if (str_starts_with($shapeSpec, 'magnitude:')) {
-            $direction = substr($shapeSpec, \strlen('magnitude:'));
-
-            return match ($direction) {
-                'higher' => ChannelDeclaration::magnitude(WorseDirection::Higher, ...$levels),
-                'lower' => ChannelDeclaration::magnitude(WorseDirection::Lower, ...$levels),
-                default => throw new RuntimeException(\sprintf(
-                    'Unknown direction "%s" for channel "%s" in the fixture.',
-                    $direction,
-                    $channelKey,
-                )),
-            };
-        }
-
-        throw new RuntimeException(\sprintf('Unknown shape spec "%s" for channel "%s" in the fixture.', $shapeSpec, $channelKey));
+        return match ($directionSpec) {
+            '-' => ChannelDeclaration::occurrence(...$levels),
+            'higher' => ChannelDeclaration::magnitude(WorseDirection::Higher, ...$levels),
+            'lower' => ChannelDeclaration::magnitude(WorseDirection::Lower, ...$levels),
+            default => throw new RuntimeException(\sprintf(
+                'Unknown direction "%s" for channel "%s" in the fixture.',
+                $directionSpec,
+                $channelKey,
+            )),
+        };
     }
 
     /**

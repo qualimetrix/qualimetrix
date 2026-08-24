@@ -14,6 +14,8 @@ use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -201,6 +203,50 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         (new ChannelDeclarationCompilerPass())->process($container);
     }
 
+    /**
+     * ADR 0031 / Р3: shape moved off {@see ChannelDeclaration} onto the
+     * producer. Registry assembly is the one place left that can catch a
+     * producer whose declared {@see ChannelShape} disagrees with the
+     * direction its own channel carries.
+     */
+    #[Test]
+    public function itThrowsWhenAProducersDeclaredShapeDisagreesWithItsChannelDirection(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleWithShapeMismatch::class)
+            ->setClass(FixtureRuleWithShapeMismatch::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('carries no direction, but producer "fixture.shape-mismatch" declares shape "magnitude"');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    /**
+     * A validator borrows its producer rule's name (ADR 0030); ADR 0031 adds
+     * that the two must also agree on what their shared producer's findings
+     * mean for baseline purposes.
+     */
+    #[Test]
+    public function itThrowsWhenTwoClassesUnderOneProducerNameDeclareDifferentShapes(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleForShapeAgreement::class)
+            ->setClass(FixtureRuleForShapeAgreement::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(FixtureValidatorWithDisagreeingShape::class)
+            ->setClass(FixtureValidatorWithDisagreeingShape::class)
+            ->addTag(ConfigurationValidatorCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('declares shape "magnitude" for producer "fixture.shape-agreement", but the rule declares "occurrence"');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
     #[Test]
     public function itRecordsEveryTaggedRuleNameEvenWhenItDeclaresNoChannel(): void
     {
@@ -296,6 +342,11 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
         return RuleCategory::CodeSmell;
     }
 
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
     /**
      * @return list<string>
      */
@@ -318,6 +369,179 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
     public static function getOptionsClass(): string
     {
         return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+}
+
+/**
+ * @internal
+ *
+ * Declares one `magnitude` channel while claiming `occurrence` — the
+ * per-channel half of the shape guarantee
+ * {@see ChannelDeclarationCompilerPassTest::itThrowsWhenAProducersDeclaredShapeDisagreesWithItsChannelDirection()}
+ * exercises.
+ */
+final class FixtureRuleWithShapeMismatch implements RuleInterface
+{
+    public const string NAME = 'fixture.shape-mismatch';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 5;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule whose declared shape disagrees with its channel.';
+    }
+
+    public function getCategory(): RuleCategory
+    {
+        return RuleCategory::CodeSmell;
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Magnitude;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+
+    /**
+     * Occurrence — no direction — while {@see shape()} above claims
+     * `magnitude`. Registry assembly must refuse this, not silently trust
+     * the constant.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [self::NAME . '#' . self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+    }
+}
+
+/**
+ * @internal
+ *
+ * A rule and a validator that share one producer name but disagree on
+ * {@see ConfigurationValidatorInterface::shape()} —
+ * {@see ChannelDeclarationCompilerPassTest::itThrowsWhenTwoClassesUnderOneProducerNameDeclareDifferentShapes()}.
+ */
+final class FixtureRuleForShapeAgreement implements RuleInterface
+{
+    public const string NAME = 'fixture.shape-agreement';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 5;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule half of a mismatched producer pair.';
+    }
+
+    public function getCategory(): RuleCategory
+    {
+        return RuleCategory::CodeSmell;
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+
+    /**
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [self::NAME . '#' . self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+    }
+}
+
+/** @internal Declares `magnitude`, disagreeing with {@see FixtureRuleForShapeAgreement::shape()}. */
+final class FixtureValidatorWithDisagreeingShape implements ConfigurationValidatorInterface
+{
+    public static function producerRuleName(): string
+    {
+        return FixtureRuleForShapeAgreement::NAME;
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Magnitude;
+    }
+
+    /**
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            'fixture.shape-agreement#fixture.diagnostic' => ChannelDeclaration::magnitude(
+                WorseDirection::Higher,
+                SymbolLevel::Project,
+            ),
+        ];
+    }
+
+    public function validate(AnalysisContext $context): array
+    {
+        return [];
     }
 }
 

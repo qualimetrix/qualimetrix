@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -912,6 +913,10 @@ final class RuleExecutorTest extends TestCase
             {
                 return $this->category;
             }
+            public static function shape(): ChannelShape
+            {
+                return ChannelShape::Occurrence;
+            }
             public function requires(): array
             {
                 return [];
@@ -1137,6 +1142,10 @@ final readonly class RuleMetadataFixtureRule implements RuleInterface
     public function getCategory(): RuleCategory
     {
         return RuleCategory::Complexity;
+    }
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
     }
     public function requires(): array
     {

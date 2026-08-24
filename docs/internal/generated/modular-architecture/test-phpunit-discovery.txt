@@ -3528,6 +3528,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelOrderFixtureDriftTest::theContainerYieldsChannelsInTheOrderTheFixtureRecords
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyConfiguredComputedMetricChannelAlsoResolvesToARealDescriptionAndAnExistingDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelShapeNotDeclaredByChannelTopologyTest::noMethodThatBuildsAChannelDeclarationAlsoReferencesChannelShape
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::aTieIsReachableBetweenTheThreeTypeCoverageChannels
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::noInputCanTieTheChannelThatChangedPositionAgainstAnythingItMovedPast
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::theTiedTypeCoverageChannelsAreYieldedInTheDeclaredOrder
@@ -3618,6 +3619,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itRecordsEveryTaggedRuleNameEvenWhenItDeclaresNoChannel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsOnAChannelDeclaredByTwoDifferentRuleServices
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsOnATaggedServiceWithNoClass
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsWhenAProducersDeclaredShapeDisagreesWithItsChannelDirection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsWhenTwoClassesUnderOneProducerNameDeclareDifferentShapes
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itReadsARealRulesDeclarationsCorrectly
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itReadsTheDeclaredChannelsWithoutInstantiatingTheRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsAClassThatCannotBeLoaded
@@ -3636,7 +3639,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAMagnitudeDeclarationViaTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAnOccurrenceDeclarationViaTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itKeepsItsConstructorPrivateSoOnlyTheFactoriesCanShapeADeclaration
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itLeavesTheThreeRefusalsUnstatableThroughTheFactorySignatures
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itLeavesTheDirectionPairingUnrepresentableThroughTheFactorySignatures
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itLeavesTheEmptyLevelListRefusalUnstatableThroughTheFactorySignatures
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itOrdersDeclaredLevelsCanonicallySoTwoSpellingsOfOneChannelCompareEqual
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRefusesARepeatedLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseFalseForAHigherDirection

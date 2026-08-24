@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\CircularDependency;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
@@ -36,6 +37,8 @@ final class CircularDependencyRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/architecture.md';
 
     public const int REMEDIATION_MINUTES = 120;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function __construct(
         RuleOptionsInterface $options,
         private readonly CircularDependencyAnalysis $analysis,

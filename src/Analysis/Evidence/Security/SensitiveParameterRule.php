@@ -8,6 +8,7 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
@@ -31,6 +32,8 @@ final class SensitiveParameterRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/security.md';
 
     public const int REMEDIATION_MINUTES = 10;
+
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
     public function getName(): string
     {
         return self::NAME;

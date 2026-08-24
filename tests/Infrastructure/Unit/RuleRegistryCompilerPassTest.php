@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
@@ -139,6 +140,11 @@ final class FixtureNamelessRule implements RuleInterface
     public function getCategory(): RuleCategory
     {
         return RuleCategory::Complexity;
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
     }
 
     public function requires(): array

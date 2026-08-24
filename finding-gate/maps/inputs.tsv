@@ -1,15 +1,1 @@
 old	new	reason
-design.type-coverage:param_warning	design.param-type-coverage:warning	Ш4b splits design.type-coverage; each dimension owns its own bare threshold keys
---type-coverage-param-warning	--param-type-coverage-warning	Ш4b renames the CLI alias to {rule-short-name}-{option}
-design.type-coverage:param_error	design.param-type-coverage:error	Ш4b splits design.type-coverage; each dimension owns its own bare threshold keys
---type-coverage-param-error	--param-type-coverage-error	Ш4b renames the CLI alias to {rule-short-name}-{option}
-design.type-coverage:return_warning	design.return-type-coverage:warning	Ш4b splits design.type-coverage; each dimension owns its own bare threshold keys
---type-coverage-return-warning	--return-type-coverage-warning	Ш4b renames the CLI alias to {rule-short-name}-{option}
-design.type-coverage:return_error	design.return-type-coverage:error	Ш4b splits design.type-coverage; each dimension owns its own bare threshold keys
---type-coverage-return-error	--return-type-coverage-error	Ш4b renames the CLI alias to {rule-short-name}-{option}
-design.type-coverage:property_warning	design.property-type-coverage:warning	Ш4b splits design.type-coverage; each dimension owns its own bare threshold keys
---type-coverage-property-warning	--property-type-coverage-warning	Ш4b renames the CLI alias to {rule-short-name}-{option}
-design.type-coverage:property_error	design.property-type-coverage:error	Ш4b splits design.type-coverage; each dimension owns its own bare threshold keys
---type-coverage-property-error	--property-type-coverage-error	Ш4b renames the CLI alias to {rule-short-name}-{option}
-architecture.layer-violation:unassigned_class	architecture.unassigned-class:mode	Ш4b moves the gate to its own producer, whose single key is mode
---layer-violation-unassigned-class	--unassigned-class-mode	Ш4b renames the CLI alias to {rule-short-name}-{option}

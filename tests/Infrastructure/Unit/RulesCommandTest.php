@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -240,6 +241,11 @@ final class FixtureRuleWithCyclomaticAlias implements RuleInterface
     public function getCategory(): RuleCategory
     {
         return RuleCategory::Complexity;
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Magnitude;
     }
 
     public function requires(): array

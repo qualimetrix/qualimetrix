@@ -9,10 +9,20 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Observation\WorseDirection;
 
 /**
- * What a channel declares: its shape, — for a `magnitude` shape only — the
- * direction that makes its reported number comparable, whether its findings
- * may be accepted as debt at all, and the levels of the aggregation tree it
- * reports at.
+ * What a channel declares: — for a producer whose shape is `magnitude` —
+ * the direction that makes its reported number comparable, whether its
+ * findings may be accepted as debt at all, and the levels of the aggregation
+ * tree it reports at.
+ *
+ * **Shape itself is not here.** It is a property of the producer, declared
+ * once via {@see \Qualimetrix\Analysis\Finding\Rule\RuleInterface::shape()} or
+ * {@see ConfigurationValidatorInterface::shape()}, not repeated per channel —
+ * see {@see ChannelShape}'s own docblock for why (`computed.health`: one
+ * producer, one shape, six per-channel directions). What this class carries
+ * instead is `$direction` alone: non-null for every channel of a `magnitude`
+ * producer, null for every channel of an `occurrence` one. Registry assembly
+ * is what checks the two agree — see
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}.
  *
  * Nothing else belongs here: no axis name, no threshold binding, no
  * epsilon. A channel that declares no {@see ChannelDeclaration} at all is
@@ -27,18 +37,14 @@ use Qualimetrix\Core\Observation\WorseDirection;
  * turns out to be", because the registry is built before any finding exists
  * and could not resolve it.
  *
- * Two invariants, and the first is the whole shape contract: a direction is
- * present exactly when the shape is `magnitude`. An `occurrence` channel's
- * reported number (a fixed marker such as `1.0`, or none at all) carries no
- * direction to declare; a `magnitude` channel cannot be compared without one.
- *
- * The second is {@see $configurationError}, and it is **not authored**. A
- * producer cannot claim it: the constructor is private, the two public
- * factories both yield `false`, and {@see asConfigurationError()} is the only
- * expression in the language that yields `true`. Registry assembly calls it
- * for the channels of a {@see ConfigurationValidatorInterface} and for no
- * others, so "these findings are about the configuration" is a consequence of
- * the producer's type rather than a flag a rule can set on itself.
+ * The one invariant this class still owns is {@see $configurationError}, and
+ * it is **not authored**. A producer cannot claim it: the constructor is
+ * private, the two public factories both yield `false`, and
+ * {@see asConfigurationError()} is the only expression in the language that
+ * yields `true`. Registry assembly calls it for the channels of a
+ * {@see ConfigurationValidatorInterface} and for no others, so "these
+ * findings are about the configuration" is a consequence of the producer's
+ * type rather than a flag a rule can set on itself.
  */
 final readonly class ChannelDeclaration
 {
@@ -47,64 +53,50 @@ final readonly class ChannelDeclaration
 
     /**
      * The constructor is private, so the only callers are the two factories
-     * below. That makes the three refusals in this constructor and in
-     * {@see canonicalLevels()} — magnitude without a direction, occurrence
-     * with one, an empty level list — unreachable from outside the file:
-     * every one of them is already excluded by a factory signature. They are
-     * kept as backstops against an edit to those two factories, which is the
-     * only way to reach them, and
+     * below. That makes the refusal in {@see canonicalLevels()} — an empty
+     * level list — unreachable from outside the file: it is already excluded
+     * by both factory signatures, which take a mandatory first level. It is
+     * kept as a backstop against an edit to those two factories, and
      * {@see \Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest}
-     * pins the signatures that make them unreachable rather than the
-     * unreachable branches themselves.
+     * pins the signatures that make it unreachable rather than the
+     * unreachable branch itself.
      *
      * @param array<SymbolLevel> $levels non-empty, in any order; both factories
      *                                   guarantee non-emptiness by arity
      */
     private function __construct(
-        public ChannelShape $shape,
         public ?WorseDirection $direction,
         public bool $configurationError,
         array $levels,
     ) {
         $this->levels = self::canonicalLevels($levels);
-
-        if ($shape === ChannelShape::Magnitude && $direction === null) {
-            throw new InvalidArgumentException(
-                'A magnitude channel must declare a WorseDirection (higher or lower is worse).',
-            );
-        }
-
-        if ($shape === ChannelShape::Occurrence && $direction !== null) {
-            throw new InvalidArgumentException(
-                'An occurrence channel must not declare a WorseDirection — its reported number is not a magnitude.',
-            );
-        }
     }
 
     /**
-     * A `magnitude` declaration in the given direction, reporting at the
-     * given levels.
+     * A declaration in the given direction, reporting at the given levels —
+     * for a producer whose declared {@see ChannelShape} is `magnitude`.
      *
      * The levels are variadic with a mandatory first one, so a caller cannot
      * express the empty list at all, and the direction is non-nullable, so it
-     * cannot express a magnitude without one. With the constructor private,
-     * these two signatures are the whole enforcement of both invariants — the
-     * constructor's own checks only guard against an edit to this factory.
+     * cannot express a channel with no direction through this factory. With
+     * the constructor private, this signature is the whole enforcement of
+     * "a channel built here always carries a direction".
      */
     public static function magnitude(WorseDirection $direction, SymbolLevel $level, SymbolLevel ...$moreLevels): self
     {
-        return new self(ChannelShape::Magnitude, $direction, false, array_merge([$level], $moreLevels));
+        return new self($direction, false, array_merge([$level], $moreLevels));
     }
 
     /**
-     * An `occurrence` declaration — no direction, only presence/count matters.
+     * A declaration with no direction, reporting at the given levels — for a
+     * producer whose declared {@see ChannelShape} is `occurrence`.
      *
      * There is no direction parameter, which is what makes "an occurrence
-     * channel must not declare one" unstatable rather than merely refused.
+     * channel carries no direction" unstatable rather than merely refused.
      */
     public static function occurrence(SymbolLevel $level, SymbolLevel ...$moreLevels): self
     {
-        return new self(ChannelShape::Occurrence, null, false, array_merge([$level], $moreLevels));
+        return new self(null, false, array_merge([$level], $moreLevels));
     }
 
     /**
@@ -125,7 +117,7 @@ final readonly class ChannelDeclaration
      */
     public function asConfigurationError(): self
     {
-        return new self($this->shape, $this->direction, true, $this->levels);
+        return new self($this->direction, true, $this->levels);
     }
 
     /**

@@ -155,11 +155,18 @@ final readonly class BaselineUpdater
             ];
         }
 
-        if ($declaration->shape !== $entry->shape()) {
+        // The channel's own shape moved to the producer (ADR 0031);
+        // `$declaration->direction` is null exactly when the producer
+        // declared `occurrence`, since registry assembly refuses any other
+        // combination. Comparing nullability against the entry's
+        // self-derived shape is the same check as before.
+        $declarationIsOccurrence = $declaration->direction === null;
+
+        if ($declarationIsOccurrence !== ($entry->shape() === ChannelShape::Occurrence)) {
             return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, BaselineUpdateRefusalReason::ShapeMismatch)];
         }
 
-        return $entry->shape() === ChannelShape::Occurrence
+        return $declarationIsOccurrence
             ? $this->reconcileOccurrence($entry, $group)
             : $this->reconcileMagnitude($entry, $declaration, $group);
     }
@@ -196,8 +203,8 @@ final readonly class BaselineUpdater
 
         if ($stored === null) {
             // Unreachable: BaselineEntry::shape() is Magnitude exactly when
-            // magnitudes is non-null, and reconcile() already matched
-            // $entry->shape() against $declaration->shape before calling
+            // magnitudes is non-null, and reconcile() already matched that
+            // against $declaration->direction being non-null before calling
             // here. Kept only to narrow $stored's type for static analysis.
             throw new LogicException('BaselineEntry::shape() reported Magnitude with no magnitudes stored.');
         }

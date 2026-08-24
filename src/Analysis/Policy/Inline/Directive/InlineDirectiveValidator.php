@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -81,6 +82,16 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
     public static function producerRuleName(): string
     {
         return InlineDirectivePolicy::PRODUCER_RULE_NAME;
+    }
+
+    /**
+     * Shared with {@see UnusedDirectiveRule}, the rule this validator belongs
+     * to: registry assembly refuses the two declaring different shapes under
+     * one producer name.
+     */
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
     }
 
     /**

@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\Duplication;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
@@ -31,6 +32,8 @@ final class CodeDuplicationRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/duplication.md';
 
     public const int REMEDIATION_MINUTES = 15;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function __construct(
         RuleOptionsInterface $options,
         private readonly DuplicationResultProvider $resultProvider,

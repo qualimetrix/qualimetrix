@@ -35,8 +35,21 @@ expands to) — and Infrastructure supplies the single instance behind them.
 Matching stays string comparison in `NameSelector` — and, for the surfaces that
 address a whole channel rather than a bare code, in `ChannelSelector`, which adds
 the exact `ruleName#violationCode` pair. Neither consults the universe; the
-universe validates and resolves. `ChannelDeclaration` carries
-two further declared properties besides shape and direction.
+universe validates and resolves. `ChannelDeclaration` carries `direction`
+(present only for a `magnitude` producer's channel), `levels`, and
+`configurationError`.
+
+`ChannelShape` (ADR 0031) is a producer property, not a channel one:
+`RuleInterface::shape()` and `ConfigurationValidatorInterface::shape()` answer
+it once per producer, read by a plain static call the same way
+`getOptionsClass()` already is. `computed.health` is why direction stayed on
+the channel instead of moving with shape — its per-dimension direction comes
+from each `ComputedMetricDefinition`'s own `inverted` flag at run time, so one
+producer answers both `higher` and `lower` depending on the channel, while its
+shape is uniformly `magnitude`. `ChannelDeclarationCompilerPass` checks two
+things registry assembly alone can: that a producer's declared shape agrees
+with whether its own channels carry a direction, and that a validator agrees
+with the rule whose name it borrows.
 
 `isConfigurationError()`: whether the channel's findings report a mistake in the
 configuration rather than debt in the code — such a finding is refused by every

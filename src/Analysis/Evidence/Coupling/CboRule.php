@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -31,6 +32,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - Low CBO (<14): weakly coupled, easy to test
  * - Medium CBO (14-19): acceptable (warning)
  * - High CBO (>=20): tightly coupled, hard to isolate (error)
+ *
+ * @qmx-threshold coupling.cbo 23 -- Raw CBO 22, from declaring both its own channel (per-rule) and its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this hierarchical rule's dependencies; 23 gets one-edge headroom.
  */
 #[CliAlias('cbo-warning', 'class.warning')]
 #[CliAlias('cbo-error', 'class.error')]
@@ -42,6 +45,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     public const int REMEDIATION_MINUTES = 45;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;

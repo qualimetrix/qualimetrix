@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -17,6 +18,36 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  */
 abstract class AbstractRule implements RuleInterface
 {
+    /**
+     * Never the real answer for any concrete rule — every subclass reachable
+     * from a container declares its own `SHAPE` (ADR 0031), directly or
+     * through one of the three shared abstract bases
+     * ({@see \Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule},
+     * {@see \Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule},
+     * {@see \Qualimetrix\Analysis\Evidence\Design\AbstractTypeCoverageRule}).
+     * `ChannelDeclarationCompilerPass` refuses a rule class whose `SHAPE`
+     * constant resolves to this one — the same "declaring class" check
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader}
+     * already applies to an omitted `DOCS_PAGE`, aimed at a constant instead
+     * of a method. This placeholder exists only so `shape()` below has
+     * something to bind `static::SHAPE` to; PHP has no abstract class
+     * constant to declare the intent directly.
+     */
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
+
+    /**
+     * Shared by every concrete rule, so that "read the declared shape" is
+     * written once instead of once per rule class — {@see UnusedPrivateRule},
+     * to name one, repeated exactly this body before this method existed, and
+     * `duplication.code-duplication` said so first. A rule expresses its own
+     * answer entirely through the `SHAPE` constant it declares; this method
+     * never varies.
+     */
+    public static function shape(): ChannelShape
+    {
+        return static::SHAPE;
+    }
+
     /**
      * @param RuleOptionsInterface $options Rule options
      */

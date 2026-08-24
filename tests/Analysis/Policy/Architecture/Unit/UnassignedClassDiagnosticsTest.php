@@ -264,6 +264,8 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     /**
      * The only magnitude channel of this rule, and the only one a project may
      * accept into a baseline — both are deliberate, so both are pinned.
+     * {@see UnassignedClassRule::SHAPE} is the producer-level declaration
+     * (ADR 0031); this pins that its one channel agrees with it.
      */
     #[Test]
     public function itDeclaresTheChannelAsAMagnitudeThatIsNotAConfigurationError(): void
@@ -272,7 +274,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
             ?? null;
 
         self::assertNotNull($declaration);
-        self::assertSame(ChannelShape::Magnitude, $declaration->shape);
+        self::assertSame(ChannelShape::Magnitude, UnassignedClassRule::shape());
         self::assertSame(WorseDirection::Higher, $declaration->direction);
         self::assertFalse($declaration->isConfigurationError());
     }

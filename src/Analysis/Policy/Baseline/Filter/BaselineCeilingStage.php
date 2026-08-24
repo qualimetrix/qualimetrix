@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Policy\Baseline\Filter;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStageInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStageResult;
@@ -236,7 +235,11 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
             return GroupCeilingVerdict::reported();
         }
 
-        return $declaration->shape === ChannelShape::Occurrence
+        // The channel's own shape moved to the producer (ADR 0031);
+        // `$declaration->direction` is null exactly when the producer
+        // declared `occurrence`, since registry assembly refuses any other
+        // combination.
+        return $declaration->direction === null
             ? self::judgeOccurrence($entry, $group)
             : self::judgeMagnitude($entry, $declaration->direction, $group);
     }

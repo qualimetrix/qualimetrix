@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -41,6 +42,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     public const string DOCS_PAGE = 'rules/complexity.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     private const int MAX_DISPLAY = 1_000_000;
 
     public function getName(): string

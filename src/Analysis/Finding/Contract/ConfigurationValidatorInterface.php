@@ -42,6 +42,15 @@ interface ConfigurationValidatorInterface
     public static function producerRuleName(): string;
 
     /**
+     * What every channel this validator declares means for baseline purposes
+     * (ADR 0031 / {@see ChannelShape}) — one answer for the whole validator,
+     * not per channel. Registry assembly refuses a value that disagrees with
+     * {@see producerRuleName()}'s own rule, and refuses a channel here whose
+     * direction disagrees with it.
+     */
+    public static function shape(): ChannelShape;
+
+    /**
      * The diagnostic channels this validator emits, keyed by
      * {@see ViolationChannel::toKey()}. Every one of them is registered as a
      * configuration error by that fact alone.

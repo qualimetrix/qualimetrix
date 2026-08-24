@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -62,6 +63,8 @@ final class SubjectControlHarness extends AbstractRule
     {
         return RuleCategory::Complexity;
     }
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
 
     public function requires(): array
     {

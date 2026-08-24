@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -28,6 +29,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * - Method level: checks individual method CCN
  * - Class level: checks maximum CCN among class methods
+ *
+ * @qmx-threshold coupling.cbo 21 -- Raw CBO 20, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 21 gets one-edge headroom.
  */
 #[CliAlias('cyclomatic-warning', 'callable.warning')]
 #[CliAlias('cyclomatic-error', 'callable.error')]
@@ -39,6 +42,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     public const string DOCS_PAGE = 'rules/complexity.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;

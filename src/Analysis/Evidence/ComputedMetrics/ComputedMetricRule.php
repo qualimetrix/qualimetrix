@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -24,6 +25,17 @@ final class ComputedMetricRule extends AbstractRule
     public const string DOCS_PAGE = 'reference/health-scores.md';
 
     public const int REMEDIATION_MINUTES = 15;
+
+    /**
+     * Uniform across every `computed.*` / `health.*` dimension (Р3 of the
+     * rule-vocabulary plan): a computed metric always reports a real measured
+     * value. Its per-channel {@see \Qualimetrix\Core\Observation\WorseDirection}
+     * still varies — it comes from each definition's own `inverted` flag,
+     * resolved at run time — which is exactly why shape and direction are two
+     * separate facts rather than one.
+     */
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
+
     public function __construct(
         ComputedMetricRuleOptions $options,
         private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,

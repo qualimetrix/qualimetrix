@@ -1,6 +1,6 @@
 {
     "id": "annotations",
-    "description": "Five deliberately broken inline @qmx directives: unresolved, unsupported, unparseable, unused, and one equidistant from two channels so the \"did you mean\" tie-break — i.e. the channel universe's order — reaches a published message.",
+    "description": "Six deliberately broken inline @qmx directives: unresolved, unsupported, unparseable, unused, and two equidistant-name ties (one within annotation.*, one against the design.*-type-coverage split) so the \"did you mean\" tie-break -- i.e. the channel universe's order -- reaches a published message.",
     "paths": [
         "src"
     ],

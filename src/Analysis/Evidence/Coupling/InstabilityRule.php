@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -32,6 +33,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * Classes/namespaces with high instability are fragile — they depend on many
  * other components, so changes in dependencies may break them.
+ *
+ * @qmx-threshold coupling.cbo 21 -- Raw CBO 20, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 21 gets one-edge headroom.
  */
 #[CliAlias('instability-class-warning', 'class.max_warning')]
 #[CliAlias('instability-class-error', 'class.max_error')]
@@ -43,6 +46,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;

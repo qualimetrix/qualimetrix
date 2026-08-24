@@ -8,6 +8,7 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -38,6 +39,8 @@ final class UnusedPrivateRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
     public const int REMEDIATION_MINUTES = 15;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     private const ENTRY_KEYS = [
         MetricName::STRUCTURE_UNUSED_PRIVATE_METHOD => 'Unused private method',
         MetricName::STRUCTURE_UNUSED_PRIVATE_PROPERTY => 'Unused private property',

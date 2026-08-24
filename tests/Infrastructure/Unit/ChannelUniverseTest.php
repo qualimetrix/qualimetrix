@@ -76,7 +76,7 @@ final class ChannelUniverseTest extends TestCase
         );
 
         self::assertNotNull($declaration);
-        self::assertSame(ChannelShape::Magnitude, $declaration->shape);
+        self::assertSame(ChannelShape::Magnitude, ComputedMetricRule::shape());
         self::assertSame(
             WorseDirection::Lower,
             $declaration->direction,
@@ -94,7 +94,7 @@ final class ChannelUniverseTest extends TestCase
         );
 
         self::assertNotNull($declaration);
-        self::assertSame(ChannelShape::Magnitude, $declaration->shape);
+        self::assertSame(ChannelShape::Magnitude, ComputedMetricRule::shape());
         self::assertSame(WorseDirection::Higher, $declaration->direction);
     }
 
