@@ -5,11 +5,14 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Regenerates `docs/internal/plans/rule-vocabulary/enumeration-renames.tsv`.
@@ -932,7 +935,7 @@ function renderCurrentState(string $root, string $outputPath, string $executedPa
  * values (see mergeExistingNewColumn()), so a human decision recorded on
  * disk is reproduced verbatim, not recomputed.
  */
-function describeMismatch(string $onDisk, string $fresh, string $path): string
+function describeMismatch(string $onDisk, string $fresh, string $path, string $command = 'composer enumeration:renames'): string
 {
     $onDiskLines = explode("\n", $onDisk);
     $freshLines = explode("\n", $fresh);
@@ -956,10 +959,11 @@ function describeMismatch(string $onDisk, string $fresh, string $path): string
 
     $shown = array_slice($diffs, 0, 10);
     $summary = sprintf(
-        "%s is stale: %d of %d line(s) differ from a fresh measurement. Run `composer enumeration:renames` to refresh it.\n",
+        "%s is stale: %d of %d line(s) differ from a fresh measurement. Run `%s` to refresh it.\n",
         $path,
         count($diffs),
         $lineCount,
+        $command,
     );
 
     if (count($diffs) > count($shown)) {
@@ -969,10 +973,222 @@ function describeMismatch(string $onDisk, string $fresh, string $path): string
     return $summary . implode("\n", $shown) . "\n";
 }
 
+/**
+ * The runtime half of the channel universe, which `staticDeclarations()` cannot
+ * see and this file's other mode therefore never enumerated.
+ *
+ * `ChannelUniverse` resolves every `computed.health#<name>` channel from the
+ * *resolved* definition catalog, so the set exists only once a configuration
+ * document has been read. It splits in two, and the two halves are knowable in
+ * different ways:
+ *
+ *  - the built-in health dimensions are a CLOSED set, and it is derived here
+ *    from {@see ComputedMetricDefaults::getDefaults()} — the same array the
+ *    resolver starts from. Adding a seventh dimension there therefore adds a
+ *    seventh row here, with no edit to this script;
+ *  - a user-defined computed metric is OPEN by construction: its name comes out
+ *    of somebody's own `qmx.yaml`. It cannot be enumerated, only OBSERVED, so
+ *    this file narrows it explicitly to the corpus the finding gate runs
+ *    (`finding-gate/cases/*​/qmx.yaml`) and says so in the `origin` column.
+ *
+ * The producer half of the key is read from
+ * {@see ComputedMetricChannelFamily::PRODUCER_RULE_NAME} rather than spelled
+ * out, because that constant is what the universe compares against.
+ *
+ * The `new` column is the Р5 decision applied mechanically: the producer name
+ * is taken from the channel, so every key becomes `<code>#<code>`. Both halves
+ * of the decision are held fail-closed — a built-in name that is not
+ * `health.*`, or an observed name that is not `computed.*`, is a name Р5 says
+ * nothing about, and this refuses to invent an answer for it.
+ *
+ * @return list<array{old: string, origin: string, source: string, new: string, step: string}>
+ */
+function runtimeChannelRows(string $root): array
+{
+    $producer = ComputedMetricChannelFamily::PRODUCER_RULE_NAME;
+    $defaultsFile = relativeToRoot((string) (new ReflectionClass(ComputedMetricDefaults::class))->getFileName(), $root);
+
+    $builtin = [];
+
+    foreach (ComputedMetricDefaults::getDefaults() as $definition) {
+        if (!str_starts_with($definition->name, 'health.')) {
+            throw new RuntimeException(sprintf(
+                'Built-in computed metric "%s" is not a `health.*` name, so Р5 (see PLAN.md, "Р5. Словари имён")'
+                . ' does not say what its channel becomes. Decide that before regenerating this enumeration.',
+                $definition->name,
+            ));
+        }
+
+        $builtin[$definition->name] = true;
+    }
+
+    if ($builtin === []) {
+        throw new RuntimeException(sprintf(
+            '%s returned no definitions. An empty built-in half is a broken measurement, not a valid state.',
+            ComputedMetricDefaults::class,
+        ));
+    }
+
+    $rows = [];
+
+    foreach (array_keys($builtin) as $name) {
+        $rows[$name] = [
+            'old' => $producer . '#' . $name,
+            'origin' => 'builtin',
+            'source' => $defaultsFile,
+            'new' => $name . '#' . $name,
+            'step' => "\u{0428}5",
+        ];
+    }
+
+    foreach (observedComputedMetricNames($root) as $name => $sources) {
+        if (isset($builtin[$name])) {
+            continue;
+        }
+
+        if (!str_starts_with($name, 'computed.')) {
+            throw new RuntimeException(sprintf(
+                'The corpus declares computed metric "%s", which is neither a built-in `health.*` dimension nor a'
+                . ' `computed.*` user metric. Р5 names the target for those two shapes only, so this cannot be'
+                . ' translated without a new decision. Declared in: %s',
+                $name,
+                implode(', ', $sources),
+            ));
+        }
+
+        $rows[$name] = [
+            'old' => $producer . '#' . $name,
+            'origin' => 'corpus-observed',
+            'source' => implode(',', $sources),
+            'new' => $name . '#' . $name,
+            'step' => "\u{0428}5",
+        ];
+    }
+
+    $rows = array_values($rows);
+    usort($rows, static fn(array $a, array $b): int => [$a['origin'], $a['old']] <=> [$b['origin'], $b['old']]);
+
+    return $rows;
+}
+
+/**
+ * Every `computed_metrics:` key the gate corpus writes, with the case files that
+ * write it. Keys are returned verbatim: telling a built-in threshold override
+ * apart from a user-defined metric is the caller's job, and it does it by
+ * subtracting the measured built-in set rather than by matching a prefix.
+ *
+ * @return array<string, list<string>> metric name => project-relative case config paths
+ */
+function observedComputedMetricNames(string $root): array
+{
+    $pattern = $root . '/finding-gate/cases/*/qmx.yaml';
+    $files = glob($pattern);
+
+    if ($files === false || $files === []) {
+        throw new RuntimeException(sprintf(
+            'No corpus configuration matched "%s". The observed half of this enumeration would silently come out'
+            . ' empty, which reads as "the corpus defines no computed metric" — a claim nothing measured.',
+            $pattern,
+        ));
+    }
+
+    sort($files);
+    $names = [];
+
+    foreach ($files as $file) {
+        $document = Yaml::parseFile($file);
+
+        if (!is_array($document)) {
+            throw new RuntimeException(sprintf('%s does not parse to a YAML mapping.', $file));
+        }
+
+        $section = $document['computed_metrics'] ?? [];
+
+        if (!is_array($section)) {
+            throw new RuntimeException(sprintf('%s has a non-mapping `computed_metrics` section.', $file));
+        }
+
+        foreach (array_keys($section) as $name) {
+            $names[(string) $name][] = relativeToRoot($file, $root);
+        }
+    }
+
+    ksort($names);
+
+    return $names;
+}
+
+function relativeToRoot(string $path, string $root): string
+{
+    $real = realpath($path);
+    $absolute = $real === false ? $path : $real;
+
+    return str_starts_with($absolute, $root . '/') ? substr($absolute, strlen($root) + 1) : $absolute;
+}
+
+/**
+ * @param list<array{old: string, origin: string, source: string, new: string, step: string}> $rows
+ */
+function renderRuntimeChannelsTsv(array $rows): string
+{
+    $builtinCount = count(array_filter($rows, static fn(array $row): bool => $row['origin'] === 'builtin'));
+    $observedCount = count($rows) - $builtinCount;
+
+    $header = <<<HEADER
+# RUNTIME channels: the `computed.health#*` half of the channel universe, which
+# `ChannelDeclarationRegistryInterface::staticDeclarations()` does not contain
+# and enumeration-renames.tsv therefore does not list. Its `computed.health`
+# producer row carries a `|`-separated decision, which is a record of a SPLIT and
+# not a map row — `RenameMaps` knows neither `|` nor a wildcard.
+#
+# Do not hand-edit. Regenerate with:
+#   php scripts/generate-rename-enumeration.php --runtime-channels
+#
+# ROW COUNTS: {$builtinCount} builtin, {$observedCount} corpus-observed
+#
+# HOW THIS WAS PRODUCED
+# - `builtin` rows are DERIVED from
+#   `ComputedMetricDefaults::getDefaults()` — the array the config resolver
+#   itself starts from — not written out here. A seventh health dimension added
+#   there appears here on the next run, with no edit to the generator.
+# - `corpus-observed` rows are the keys of `computed_metrics:` in
+#   finding-gate/cases/*/qmx.yaml minus the built-in set. A user-defined
+#   computed metric is open-ended by construction (it is a name in somebody's
+#   own qmx.yaml), so it is not enumerable — only observable, and only over the
+#   corpus this run read. That narrowing is the `origin` column's whole point.
+# - the producer half of every key comes from
+#   `ComputedMetricChannelFamily::PRODUCER_RULE_NAME`.
+#
+# `new` IS A DECISION, applied mechanically. Р5 takes the producer name from the
+# channel, so `computed.health#health.X` becomes `health.X#health.X` and
+# `computed.health#computed.<name>` becomes `computed.<name>#computed.<name>`.
+# A built-in name that is not `health.*`, or an observed name that is not
+# `computed.*`, fails the generator instead of getting an invented target: Р5
+# names those two shapes and no others.
+#
+# WHAT THIS DOES NOT SEE
+# - a computed metric defined in a qmx.yaml outside the gate corpus (a user's
+#   own project). That set has no upper bound and no measurement can close it;
+# - whether a channel listed here actually FIRES. A case may disable a built-in
+#   dimension (`enabled: false`) or threshold it out of range; what fires is
+#   measured by the gate's coverage check, against each case's `channels` claim.
+old	origin	source	new	step
+HEADER;
+
+    $lines = [];
+
+    foreach ($rows as $row) {
+        $lines[] = implode("\t", [$row['old'], $row['origin'], $row['source'], $row['new'], $row['step']]);
+    }
+
+    return $header . "\n" . ($lines === [] ? '' : implode("\n", $lines) . "\n");
+}
+
 function main(): int
 {
     $arguments = array_slice($_SERVER['argv'] ?? [], 1);
     $check = in_array('--check', $arguments, true);
+    $runtimeChannels = in_array('--runtime-channels', $arguments, true);
     $emitStep = null;
 
     foreach ($arguments as $argument) {
@@ -983,7 +1199,9 @@ function main(): int
 
     $unknown = array_values(array_filter(
         $arguments,
-        static fn(string $argument): bool => $argument !== '--check' && !str_starts_with($argument, '--emit-maps='),
+        static fn(string $argument): bool => $argument !== '--check'
+            && $argument !== '--runtime-channels'
+            && !str_starts_with($argument, '--emit-maps='),
     ));
 
     if ($unknown !== []) {
@@ -995,6 +1213,40 @@ function main(): int
     $root = dirname(__DIR__);
     $outputPath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-renames.tsv';
     $executedPath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-renames-executed.tsv';
+
+    // Handled before anything touches the container: this half is resolved from
+    // the definition catalog, not from the static declarations, so it needs no
+    // container — and running the measured half here would rewrite
+    // enumeration-renames.tsv as a side effect of asking about runtime channels.
+    if ($runtimeChannels) {
+        $runtimePath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv';
+        $content = renderRuntimeChannelsTsv(runtimeChannelRows($root));
+
+        if ($check) {
+            $onDisk = is_file($runtimePath) ? file_get_contents($runtimePath) : false;
+
+            if ($onDisk === false || $onDisk !== $content) {
+                fwrite(STDERR, describeMismatch(
+                    $onDisk === false ? '' : $onDisk,
+                    $content,
+                    $runtimePath,
+                    'php scripts/generate-rename-enumeration.php --runtime-channels',
+                ));
+
+                return 1;
+            }
+
+            fwrite(STDOUT, sprintf("Checked %s: up to date.\n", $runtimePath));
+
+            return 0;
+        }
+
+        writeAtomically($runtimePath, $content);
+        fwrite(STDOUT, sprintf("Wrote %s.\n", $runtimePath));
+
+        return 0;
+    }
+
     $factory = new ContainerFactory();
 
     $state = renderCurrentState($root, $outputPath, $executedPath, $factory);

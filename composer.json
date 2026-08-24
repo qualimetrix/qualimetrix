@@ -86,6 +86,8 @@
         "architecture:check": "php scripts/generate-modular-architecture.php --check",
         "enumeration:renames": "php scripts/generate-rename-enumeration.php",
         "enumeration:renames:check": "php scripts/generate-rename-enumeration.php --check",
+        "enumeration:runtime-channels": "php scripts/generate-rename-enumeration.php --runtime-channels",
+        "enumeration:runtime-channels:check": "php scripts/generate-rename-enumeration.php --runtime-channels --check",
         "selfcheck": [
             "@architecture:check",
             "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M"
@@ -108,6 +110,7 @@
             "@test:cross-tool",
             "@phpstan",
             "@enumeration:renames:check",
+            "@enumeration:runtime-channels:check",
             "@selfcheck"
         ]
     },
