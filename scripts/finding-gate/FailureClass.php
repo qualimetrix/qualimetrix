@@ -49,6 +49,9 @@ final class FailureClass
     /** The container and the tracked fixture disagree about the static declarations. */
     public const WITNESS_DISAGREEMENT = 'witness-disagreement';
 
+    /** The gate's level vocabulary is not the product's own. */
+    public const LEVEL_VOCABULARY_DRIFT = 'level-vocabulary-drift';
+
     /** A case's own `channels` claim is not what the case fires. */
     public const CASE_CLAIM_MISMATCH = 'case-claim-mismatch';
 
@@ -99,6 +102,7 @@ final class FailureClass
         self::COVERAGE_SURPLUS,
         self::COVERAGE_MULTIPLICITY,
         self::WITNESS_DISAGREEMENT,
+        self::LEVEL_VOCABULARY_DRIFT,
         self::CASE_CLAIM_MISMATCH,
         self::NORMALIZATION_STALE,
         self::MAP_STALE,

@@ -11,7 +11,7 @@
 # Format (one channel per line):
 #   <ruleName>#<violationCode> -- <reason>
 #
-# Used by tests/Integration/Violation/ChannelCoverageTest.php to distinguish
+# Used by tests/Analysis/Finding/Integration/ChannelCoverageTest.php to distinguish
 # a deliberate exclusion from an undeclared channel that should have been
 # covered by this package's own corpus.
 

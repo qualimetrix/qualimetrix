@@ -316,6 +316,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellLinePrecisionTest::ruleShouldCreatePerOccurrenceFindingsWithCorrectLines
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellLinePrecisionTest::visitorCollectsLineDataAndCollectorPropagatesIt
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellRuleContractTest::everySubclassDeclaresMandatoryConstants
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellRuleContractTest::theScanFindsExactlyTheRegisteredCodeSmellRules
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\LongParameterListVoPropagationTest::itReportsNoFindingForVoConstructorBelowVoThresholds
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\LongParameterListVoPropagationTest::itReportsVoWarningWhenVoThresholdIsExceeded
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\LongParameterListVoPropagationTest::itUsesRegularThresholdsForNonVoConstructorEvenWithRelaxedVoThresholds
@@ -2613,6 +2614,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\RatchetKeyGrammarTest::itSplitsADeclarationKeyIntoItsFileAndItsOrdinal"plain method"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\RatchetKeyGrammarTest::itSplitsADeclarationKeyIntoItsFileAndItsOrdinal"second declaration of one identity"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\TraversalCompletenessTest::itFindsNoTraversalControlReturnInProductionVisitors
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\TraversalCompletenessTest::theForbiddenNamesAreTheVisitorContractsOwnAndTheScanReadsFiles
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::percentile5IsIncludedInAggregationStrategyEnum
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::percentile5ReturnsExpectedValue"100 values 1..100"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::percentile5ReturnsExpectedValue"MI-like distribution"
@@ -3519,7 +3521,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyStaticallyDeclaredChannelIsListedInTheFixture
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::exactlyTheLayerPolicyAndDirectiveDiagnosticsDeclareAConfigurationError
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::noExcludedFixtureLineNamesADeclaredChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::everyFindingConstructionInSourceIsInspectedOrDeclaredDelegated
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::theResolvedArgumentNamesAreTheFindingConstructorsOwn
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest::everyLevelBearingChannelCodeIsTheOneItsDeclaredLevelProduces
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest::noProductionSourceSpellsALevelSuffixAsALiteral
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest::everyChannelDeclaresExactlyTheLevelsItReportsAt

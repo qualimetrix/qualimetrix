@@ -115,7 +115,7 @@ final class DetailedFindingRendererTest extends TestCase
         $context = new FormatterContext(useColor: false, groupBy: GroupBy::None, isGroupByExplicit: true);
         $output = $this->detailRenderer->render($findings, $context);
 
-        // Should NOT have file group headers (but debt breakdown may mention "finding")
+        // Should NOT have file group headers (but debt breakdown may mention "violation")
         self::assertStringNotContainsString('src/Foo.php (1 violation)', $output);
         // But should have the finding with full path in the finding line (without line number for non-precise)
         self::assertStringContainsString('src/Foo.php', $output);

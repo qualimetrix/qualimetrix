@@ -211,13 +211,13 @@ final class Gate
 
     private function checkTuple(): void
     {
-        $tracked = EquivalenceTuple::load($this->options->candidateRoot . '/finding-gate/equivalence-tuple.tsv');
+        $tracked = EquivalenceTuple::load($this->options->candidateRoot);
         $derived = EquivalenceTuple::derive($this->options->candidateRoot);
 
         if (!$tracked->equals($derived)) {
             $this->report->fail(
                 FailureClass::TUPLE_FIELD_DRIFT,
-                'finding-gate/equivalence-tuple.tsv',
+                EquivalenceTuple::TRACKED_PATH,
                 'The published finding fields no longer match the tracked tuple. Re-derive it with --derive-tuple and'
                 . ' review what a step added to or removed from the published surface.',
                 Diff::betweenSets($tracked->fields, $derived->fields, 'tracked tuple', 'publishing code'),
@@ -239,7 +239,7 @@ final class Gate
      */
     private function checkNormalizationScope(): void
     {
-        $fields = EquivalenceTuple::load($this->options->candidateRoot . '/finding-gate/equivalence-tuple.tsv')->fields;
+        $fields = EquivalenceTuple::load($this->options->candidateRoot)->fields;
 
         foreach ($this->normalization->rules() as $rule) {
             if ($rule->kind === NormalizationRule::KIND_LINE_REGEX) {
@@ -336,7 +336,7 @@ final class Gate
     /** @param array<string, string> $artifacts */
     private function checkFindings(string $side, array $artifacts, bool $trackObserved): void
     {
-        $tuple = EquivalenceTuple::load($this->options->candidateRoot . '/finding-gate/equivalence-tuple.tsv');
+        $tuple = EquivalenceTuple::load($this->options->candidateRoot);
 
         foreach ($this->corpus->cases as $case) {
             $key = Surfaces::key('case:' . $case->id, 'format:json');
@@ -655,7 +655,7 @@ final class Gate
      */
     private function overreachingLines(ExactDiff $diff): array
     {
-        $fields = EquivalenceTuple::load($this->options->candidateRoot . '/finding-gate/equivalence-tuple.tsv')->fields;
+        $fields = EquivalenceTuple::load($this->options->candidateRoot)->fields;
         $problems = [];
 
         foreach ($diff->pairs() as $index => [$candidateLine, $referenceLine]) {
@@ -950,9 +950,17 @@ final class Gate
         }
     }
 
+    /**
+     * Coverage, per channel-and-level pair, against a derived declaration.
+     *
+     * The declared side comes from the witnesses and never from a `case.json`:
+     * a claim is hand-written on purpose, and an accounting whose two sides are
+     * both hand-written cannot see a pair nobody wrote down twice. See
+     * {@see ChannelCoverage} for what that hid.
+     */
     private function checkCoverage(): void
     {
-        $declared = $this->witness->staticChannels();
+        $declared = $this->witness->staticPairs();
         $observed = [];
         $producers = [];
 
@@ -970,8 +978,8 @@ final class Gate
                 continue;
             }
 
-            $declared = [...$declared, ...$this->witness->computedChannels($case)];
-            $observed = [...$observed, ...$caseObserved];
+            $declared = [...$declared, ...$this->witness->computedPairs($case)];
+            $observed = [...$observed, ...$caseClaims];
 
             foreach ($caseObserved as $channel) {
                 $producers[$channel][] = $case->id;
@@ -980,42 +988,7 @@ final class Gate
 
         $this->checkSingleProducer($producers);
 
-        $declared = array_values(array_unique($declared));
-        $observed = array_values(array_unique($observed));
-        sort($declared);
-        sort($observed);
-
-        $this->report->fact('declared channels', \count($declared));
-        $this->report->fact('observed channels', \count($observed));
-
-        $shortfall = array_values(array_diff($declared, $observed));
-        $surplus = array_values(array_diff($observed, $declared));
-
-        if ($shortfall !== []) {
-            $detail = \sprintf(
-                '%d declared channel(s) no case observes: a fixture lost, or a channel that stopped firing.',
-                \count($shortfall),
-            );
-
-            if ($this->options->incompleteCorpus) {
-                $this->report->warn($detail . ' Downgraded by --incomplete-corpus: ' . implode(', ', \array_slice($shortfall, 0, 8)) . (\count($shortfall) > 8 ? ', …' : ''));
-                $this->report->limit(\sprintf(
-                    '%d declared channel(s) were observed by no case, and --incomplete-corpus downgraded that shortfall',
-                    \count($shortfall),
-                ));
-            } else {
-                $this->report->fail(FailureClass::COVERAGE_SHORTFALL, 'corpus', $detail, \array_slice($shortfall, 0, 20));
-            }
-        }
-
-        if ($surplus !== []) {
-            $this->report->fail(
-                FailureClass::COVERAGE_SURPLUS,
-                'corpus',
-                'Channel(s) observed that nothing declares.',
-                $surplus,
-            );
-        }
+        ChannelCoverage::check($this->report, $declared, $observed, $this->options->incompleteCorpus);
     }
 
     /**
@@ -1110,21 +1083,8 @@ final class Gate
 
     private function checkWitnesses(): void
     {
-        $container = $this->witness->staticChannels();
-        sort($container);
-        $fixture = $this->witness->fixtureChannels();
-
-        if ($container === $fixture) {
-            return;
-        }
-
-        $this->report->fail(
-            FailureClass::WITNESS_DISAGREEMENT,
-            'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
-            'The container and the tracked fixture disagree about the static declarations. Two artifacts disagreeing'
-            . ' is the cheapest detector we have, so neither is trusted over the other here.',
-            Diff::betweenSets($fixture, $container, 'fixture', 'container'),
-        );
+        ChannelWitness::checkAgreement($this->report, $this->witness->fixturePairs(), $this->witness->staticPairs());
+        ChannelWitness::checkLevelVocabulary($this->report, $this->witness->productLevels());
     }
 
     private function checkStaleNormalization(): void
@@ -1170,11 +1130,11 @@ final class Gate
     /**
      * The channels behind a set of claims.
      *
-     * Coverage and multiplicity stay accounted per channel, deliberately: the
-     * guarantee they carry — one authoritative owner per channel, so the
-     * fixture-removal control bites — is about names, and pairing it with levels
-     * would let two cases own one channel as long as they fired it at different
-     * levels.
+     * Multiplicity stays accounted per channel, deliberately: the guarantee it
+     * carries — one authoritative owner per channel, so the fixture-removal
+     * control bites — is about names, and pairing it with levels would let two
+     * cases own one channel as long as they fired it at different levels.
+     * Coverage counts pairs; see {@see ChannelCoverage}.
      *
      * @param list<string> $claims
      *

@@ -16,7 +16,7 @@ use Qualimetrix\Core\Util\PathMatcher;
  * Findings on a channel its owner declared **project-scoped** are exempt for
  * the same reason as in {@see NamespaceExclusionFilter}: `exclude_paths` means
  * "I don't want metrics for this code", but a project-level finding such as an
- * architecture boundary finding is not a metric — silently dropping it would
+ * architecture boundary violation is not a metric — silently dropping it would
  * let a noisy-metric exclusion double as an undocumented way to disable
  * layer-policy enforcement. Which channels those are is declared, not read off
  * the rule name's spelling; see {@see ChannelFileScope}. What remains available

@@ -32,7 +32,7 @@ use Stringable;
  *
  * **Why SHA-256 and not xxh3.** The selector is printed to users and ends up
  * in their scripts, so it must not depend on how their PHP was built. The
- * retired `FindingHasher` used `xxh3` when the extension offered it and
+ * hasher this one replaced used `xxh3` when the extension offered it and
  * SHA-256 otherwise, which made the same finding hash differently on two
  * machines. SHA-256 is always available and its truncation is uniformly
  * distributed.

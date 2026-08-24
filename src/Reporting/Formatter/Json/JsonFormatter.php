@@ -77,7 +77,6 @@ final class JsonFormatter implements FormatterInterface
             ],
         ];
 
-        // Add findingGroups when group-by is active (not None)
         if ($context->groupBy !== GroupBy::None) {
             $data['violationGroups'] = $this->buildFindingGroups(
                 $outputFindings,

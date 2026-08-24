@@ -972,7 +972,6 @@ final class SummaryFormatterTest extends TestCase
         $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 0);
         $output = $this->formatter->format($report, $context);
 
-        // Should NOT contain "Findings" section
         self::assertStringNotContainsString('Violations', $output);
         self::assertStringContainsString('No violations found.', $output);
     }

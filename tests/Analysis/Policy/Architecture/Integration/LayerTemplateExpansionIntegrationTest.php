@@ -31,7 +31,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  *   produce three concrete layers.
  * - An empty (typo'd) template emits one {@code architecture.empty-template}
  *   warning.
- * - Layer-finding messages reference the expanded names, not the template.
+ * - Layer-violation messages reference the expanded names, not the template.
  * - Setting the {@code max_expanded_layers} ceiling below the observed-tuple
  *   count produces an actionable runtime error.
  */

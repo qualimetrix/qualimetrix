@@ -299,7 +299,7 @@ new MetricDefinition(
 
 **Class Count** — number of classes in the project. Useful for understanding the architecture and code organization.
 
-**Property Count** — indicator of class state complexity. A high value may indicate an SRP finding.
+**Property Count** — indicator of class state complexity. A high value may indicate an SRP violation.
 
 **Method Count** — shows the class API surface. Many methods (especially public) may indicate overly broad responsibility.
 

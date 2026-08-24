@@ -97,11 +97,11 @@ const P7_MEASUREMENT_PATHS = [
 const P3_TEST_PATHS = [
     'tests/Analysis/Configuration/Integration/ConfigSchemaCoverageTest.php',
     'tests/Analysis/Configuration/Integration/ConfigurationPipelineIntegrationTest.php',
-    'tests/Analysis/Configuration/Integration/ArchitectureConfigurationWarningIntegrationTest.php',
+    'tests/Analysis/Policy/Architecture/Integration/ArchitectureConfigurationWarningIntegrationTest.php',
     'tests/Analysis/Configuration/Integration/FullPipelineIntegrationTest.php',
     'tests/Analysis/Configuration/Integration/Loader/YamlNormalizationCharacterizationTest.php',
     'tests/Analysis/Configuration/Integration/PresetIntegrationTest.php',
-    'tests/Analysis/Configuration/Integration/RuleOptionKeyNormalizationTest.php',
+    'tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php',
     'tests/Analysis/Configuration/Integration/YamlKeyReachabilityTest.php',
     'tests/Analysis/Configuration/Unit/AnalysisConfigurationCacheDirResolutionTest.php',
     'tests/Analysis/Configuration/Unit/AnalysisConfigurationTest.php',
@@ -119,11 +119,11 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/DefaultsStageTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/PresetStageTest.php',
     'tests/Analysis/Configuration/Unit/Preset/PresetResolverTest.php',
-    'tests/Analysis/Configuration/Unit/RuleNamespaceExclusionProviderTest.php',
-    'tests/Analysis/Configuration/Unit/RuleOptionsFactoryTest.php',
-    'tests/Analysis/Configuration/Unit/RuleOptionsParserTest.php',
-    'tests/Analysis/Configuration/Unit/RulePathExclusionProviderTest.php',
-    'tests/Analysis/Configuration/Unit/RuleThresholdKeyGroupRegistryDriftTest.php',
+    'tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php',
+    'tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php',
+    'tests/Analysis/Finding/Unit/RuleOptionsParserTest.php',
+    'tests/Analysis/Finding/Unit/RulePathExclusionProviderTest.php',
+    'tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryDriftTest.php',
     'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/DependencyResolverTest.php',
     'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/DependencyVisitorTest.php',
     'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/Handler/TypeDependencyHelperTest.php',
@@ -138,7 +138,6 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Evidence/Measurement/Unit/Aggregation/NamespaceMetricContributionsTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/Aggregation/NamespaceToProjectAggregatorTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/Aggregation/TreeAwareNamespaceAggregatorTest.php',
-    'tests/Analysis/Evidence/Measurement/Unit/Contract/CollectorRuntimeConfigurationTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/CompositeCollectorTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/DerivedCollectorRunnerTest.php',
     'tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/DerivedCollectorSortTest.php',
@@ -151,7 +150,6 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Run/Integration/Pipeline/AnalysisPipelineIntegrationTest.php',
     'tests/Analysis/Run/Integration/Pipeline/MultiNamespaceAnalysisTest.php',
     'tests/Analysis/Run/Unit/Collection/CollectionOrchestratorTest.php',
-    'tests/Analysis/Run/Unit/Collection/Declaration/DeclarationBindingsTest.php',
     'tests/Analysis/Run/Unit/Collection/FileProcessingResultTest.php',
     'tests/Analysis/Run/Unit/Collection/FileProcessorTest.php',
     'tests/Analysis/Run/Unit/Contract/Collection/CollectionPhaseOutputTest.php',
@@ -164,10 +162,9 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Run/Unit/Pipeline/AnalysisPipelineTest.php',
     'tests/Analysis/Run/Unit/Pipeline/AnalysisResultTest.php',
     'tests/Analysis/Run/Unit/Pipeline/DependencyGraphAnalyzerTest.php',
-    'tests/Analysis/Run/Unit/Pipeline/MetricEnricherTest.php',
     'tests/Analysis/Run/Unit/RuleProducerPreparationTest.php',
-    'tests/Unit/Analysis/RuleExecution/RuleExclusionStatsTest.php',
-    'tests/Unit/Analysis/RuleExecution/RuleExecutorTest.php',
+    'tests/Analysis/Finding/Unit/RuleExclusionStatsTest.php',
+    'tests/Analysis/Finding/Unit/RuleExecutorTest.php',
     'tests/Unit/Infrastructure/Console/CheckScopeResolverTest.php',
     'tests/Unit/Infrastructure/Console/RuntimeLoggerConfiguratorTest.php',
 ];
@@ -181,13 +178,12 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Integration/ChannelEmissionStaticGuardTest.php',
     'tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php',
     'tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php',
-    'tests/Analysis/Finding/Support/ViolationFactory.php',
+    'tests/Analysis/Finding/Support/FindingFactory.php',
     'tests/Analysis/Finding/Unit/AbstractRuleSubjectControlTest.php',
     'tests/Analysis/Finding/Unit/AcceptedLevelTest.php',
     'tests/Analysis/Finding/Unit/AnalysisContextTest.php',
     'tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php',
     'tests/Analysis/Finding/Unit/ChannelDeclarationReaderTest.php',
-    'tests/Analysis/Finding/Unit/ChannelDeclarationRegistryTest.php',
     'tests/Analysis/Finding/Unit/ChannelDeclarationTest.php',
     'tests/Analysis/Finding/Unit/LocationNullFileTest.php',
     'tests/Analysis/Finding/Unit/LocationTest.php',
@@ -195,10 +191,7 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/OccurrenceKeyTest.php',
     'tests/Analysis/Finding/Unit/PathExclusionFilterTest.php',
     'tests/Analysis/Finding/Unit/PredicateFilterStageTest.php',
-    'tests/Analysis/Finding/Unit/RuleExclusionCaptureHolderTest.php',
     'tests/Analysis/Finding/Unit/RuleExecutorTest.php',
-    'tests/Analysis/Finding/Unit/RuleLevelTest.php',
-    'tests/Analysis/Finding/Unit/RuleMatcherTest.php',
     'tests/Analysis/Finding/Unit/RuleNameReaderTest.php',
     'tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php',
     'tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php',
@@ -210,8 +203,8 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/ThresholdParserTest.php',
     'tests/Analysis/Finding/Unit/ThresholdValidatorAssignmentTest.php',
     'tests/Analysis/Finding/Unit/FindingChannelTest.php',
-    'tests/Analysis/Finding/Unit/ViolationFilterStageTest.php',
-    'tests/Analysis/Finding/Unit/ViolationTest.php',
+    'tests/Analysis/Finding/Unit/FindingFilterStageTest.php',
+    'tests/Analysis/Finding/Unit/FindingTest.php',
 ];
 
 /** @var list<string> Exact P6-B additions to the Finding test closure. */
@@ -314,10 +307,30 @@ const P8_ORPHAN_DISPOSITIONS = [
     'tests/Fixtures/CouplingProject/Service/UserService.php' => ['CouplingProject', 'move', 'AnalysisPipelineIntegrationTest reads the owner-local fixture path.'],
 ];
 
+/**
+ * @var array<string, string> Artifacts a package listed and a later step then
+ *                            removed. Kept because the alternative to naming
+ *                            them is a closure that silently shrinks, and
+ *                            checked in the other direction: a path here that
+ *                            exists again is a defect too.
+ */
+const RETIRED_PATH_ASSERTIONS = [
+    'tests/Analysis/Finding/Unit/ChannelDeclarationRegistryTest.php' => 'P6-A closure; the test was removed after the package.',
+    'tests/Analysis/Finding/Unit/RuleExclusionCaptureHolderTest.php' => 'P6-A closure; the test was removed after the package.',
+    'tests/Analysis/Finding/Unit/RuleLevelTest.php' => 'P6-A closure; the test was removed after the package.',
+    'tests/Analysis/Finding/Unit/RuleMatcherTest.php' => 'P6-A closure; the test was removed after the package.',
+    'tests/Analysis/Evidence/Measurement/Unit/Contract/CollectorRuntimeConfigurationTest.php' => 'P3 closure; the test was removed after the package.',
+    'tests/Analysis/Run/Unit/Collection/Declaration/DeclarationBindingsTest.php' => 'P3 closure; the test was removed after the package.',
+    'tests/Analysis/Run/Unit/Pipeline/MetricEnricherTest.php' => 'P3 closure; the test was removed after the package.',
+    'tests/Infrastructure/Logging/LoggerFactoryTest.php' => 'EXPLICIT_PATH_DISPOSITIONS; the P8 consolidation this disposition described has happened.',
+    'tests/Unit/Infrastructure/Logging/LoggerFactoryTest.php' => 'EXPLICIT_PATH_DISPOSITIONS; the P8 consolidation this disposition described has happened.',
+];
+
 $projectRoot = realpath(__DIR__ . '/..');
 if ($projectRoot === false) {
     fail('Cannot resolve the project root.');
 }
+assertPathLiteralsResolve($projectRoot);
 $p6CBaselinePaths = p6CBaselinePaths($projectRoot);
 if (hash('sha256', implode("\n", $p6CBaselinePaths) . "\n") !== P6_C_BASELINE_PATHS_SHA256) {
     fail('P6-C Baseline test artifact set differs from the reviewed finite path digest.');
@@ -1545,6 +1558,72 @@ function inventorySummary(array $rows, array $fixtureDirectories, array $discove
         'suite_file_counts' => $suiteFileCounts,
         'closure_package_counts' => $packageCounts,
     ];
+}
+
+/**
+ * Every path literal this file asserts something about, resolved against the
+ * worktree.
+ *
+ * The closures below are matched against discovered paths, so a literal that
+ * matches nothing does not fail — it just stops meaning anything. That is how
+ * one rename left seven paths in two closures pointing at files no longer on
+ * disk while every generation stayed green, and the mechanism does not care
+ * which rename it was: a name is either checked or it rots.
+ *
+ * Both directions are checked, because both rot: a closure entry must exist,
+ * and a retired entry must not. The prefix and pattern literals inside
+ * `classifyOwner()`, `currentSuite()`, `dispositionFor()` and `targetPath()`
+ * are deliberately outside this check — they classify an arbitrary input path,
+ * including pre-migration ones handed in through `--classification-probe=`,
+ * and are claims about inputs rather than about the tree.
+ */
+function assertPathLiteralsResolve(string $projectRoot): void
+{
+    $closures = [
+        'P4_IGNORED_FIXTURE_PATHS' => P4_IGNORED_FIXTURE_PATHS,
+        'P7_MEASUREMENT_PATHS' => P7_MEASUREMENT_PATHS,
+        'P3_TEST_PATHS' => P3_TEST_PATHS,
+        'P6_A_FINDING_TEST_PATHS' => P6_A_FINDING_TEST_PATHS,
+        'P6_B_FINDING_TEST_PATHS' => P6_B_FINDING_TEST_PATHS,
+        'P6_B_INLINE_TEST_PATHS' => P6_B_INLINE_TEST_PATHS,
+        'P6_D_REPORTING_TEST_PATHS' => P6_D_REPORTING_TEST_PATHS,
+        'P6_D_PRIORITIZATION_TEST_PATHS' => P6_D_PRIORITIZATION_TEST_PATHS,
+        'P6_D_GIT_TEST_PATHS' => P6_D_GIT_TEST_PATHS,
+    ];
+
+    foreach ($closures as $constant => $paths) {
+        foreach ($paths as $path) {
+            if (!is_file($projectRoot . '/' . $path)) {
+                fail(sprintf(
+                    '%s names %s, which the worktree does not have. Follow the rename, or move the entry to'
+                    . ' RETIRED_PATH_ASSERTIONS with the reason it is gone.',
+                    $constant,
+                    $path,
+                ));
+            }
+        }
+    }
+
+    $retired = RETIRED_PATH_ASSERTIONS;
+
+    foreach (array_keys(ORPHAN_CANDIDATE_PREFIXES) as $prefix) {
+        $retired[$prefix] = 'ORPHAN_CANDIDATE_PREFIXES; the P8 orphan disposition for it has been carried out.';
+    }
+
+    foreach (array_keys(P8_ORPHAN_DISPOSITIONS) as $path) {
+        $retired[$path] = 'P8_ORPHAN_DISPOSITIONS; the recorded disposition has been carried out.';
+    }
+
+    foreach ($retired as $path => $reason) {
+        if (file_exists($projectRoot . '/' . rtrim($path, '/'))) {
+            fail(sprintf(
+                '%s is recorded as retired (%s) but exists again. Either the record is wrong, or the artifact'
+                . ' came back and needs a live disposition.',
+                $path,
+                $reason,
+            ));
+        }
+    }
 }
 
 function fail(string $message): never

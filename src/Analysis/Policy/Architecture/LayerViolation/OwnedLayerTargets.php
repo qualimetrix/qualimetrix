@@ -11,7 +11,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 /**
  * Resolves the exact declarations owned by each logical layer target.
  *
- * A dependency graph deliberately uses logical classes. Layer-finding
+ * A dependency graph deliberately uses logical classes. Layer-violation
  * findings, however, must be independently controllable at each declaration
  * selected by that logical target. This index bridges those two projections
  * without assigning policy evaluation or Finding construction to the

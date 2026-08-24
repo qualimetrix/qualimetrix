@@ -29,7 +29,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - Wide reuse through inheritance
  * - High impact of changes (affects many subclasses)
  * - Potential need for interface instead of class inheritance
- * - Possible finding of Liskov Substitution Principle
+ * - Possible violation of Liskov Substitution Principle
  */
 #[CliAlias('noc-warning', 'warning')]
 #[CliAlias('noc-error', 'error')]

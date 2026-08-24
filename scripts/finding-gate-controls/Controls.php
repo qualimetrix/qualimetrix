@@ -228,8 +228,16 @@ final class Controls
      * measured, the channel set is identical before and after.
      *
      * Nothing is tolerated, and the absence of `coverage-shortfall` from the
-     * expectations is the assertion: the channel is still declared and still
-     * observed, so the claim is the only place this can be seen.
+     * expectations is the assertion. Coverage now counts declared
+     * channel-and-level pairs, and for the run-time family the declaration *is*
+     * the case's own resolved configuration — the very thing this mutation edits
+     * — so the declared pair and its evidence leave together and no shortfall can
+     * arise. The claim, written by hand in `case.json`, is the only place the
+     * loss shows. For a *static* channel the two do not move together: the levels
+     * come from product code and the fixtures from the corpus, and there a lost
+     * level is a `coverage-shortfall`. That is the case Ш5c creates, and the
+     * control for it needs a static multi-level channel, which this corpus does
+     * not have yet.
      */
     private static function lostLevelFixture(): Control
     {

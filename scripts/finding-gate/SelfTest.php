@@ -25,6 +25,8 @@ final class SelfTest
     {
         $this->maps();
         $this->claims();
+        $this->coverage();
+        $this->levelVocabulary();
         $this->ambiguities();
         $this->declaredDelta();
         $this->normalization();
@@ -293,6 +295,103 @@ final class SelfTest
                 SubjectLevel::assertClaim($entry, 'case:' . $case->id);
             }
         }
+    }
+
+    /**
+     * Coverage has a declared side of its own, and it counts pairs.
+     *
+     * The universe below is the one the old accounting was blind to, and both
+     * verdicts are asserted from it: as pairs it is a shortfall, as the names
+     * behind those same pairs it is green. That green is not a curiosity — it is
+     * what every run before this check reported for a declared pair that fires
+     * in no case and is claimed in no case, so it is kept as the reason the pair
+     * accounting exists rather than deleted once it went red.
+     *
+     * Exercised on a synthetic universe because the alternative is a full
+     * comparison run: the pairs a real corpus fires need two trees, and a check
+     * that can only be tried by the thing it is supposed to certify is not
+     * checked at all.
+     */
+    private function coverage(): void
+    {
+        $declared = ['a.rule#a.code@class', 'a.rule#a.code@callable'];
+        $observed = ['a.rule#a.code@class'];
+
+        $shortfall = new GateReport();
+        ChannelCoverage::check($shortfall, $declared, $observed, incompleteCorpus: false);
+        $this->same(
+            [FailureClass::COVERAGE_SHORTFALL],
+            $shortfall->failureClasses(),
+            'a declared pair that fires in no case and is claimed in no case is a coverage shortfall',
+        );
+
+        $names = static fn(array $pairs): array => array_values(array_unique(array_map(SubjectLevel::channelOf(...), $pairs)));
+        $byName = new GateReport();
+        ChannelCoverage::check($byName, $names($declared), $names($observed), incompleteCorpus: false);
+        $this->same(
+            GateReport::VERDICT_GREEN,
+            $byName->verdict(),
+            'and the same universe counted by channel name is green, which is what the name accounting reported',
+        );
+
+        $downgraded = new GateReport();
+        ChannelCoverage::check($downgraded, $declared, $observed, incompleteCorpus: true);
+        $this->same(
+            GateReport::VERDICT_PARTIAL,
+            $downgraded->verdict(),
+            '--incomplete-corpus downgrades a pair shortfall exactly as it downgraded a name shortfall',
+        );
+
+        $surplus = new GateReport();
+        ChannelCoverage::check($surplus, $observed, $declared, incompleteCorpus: false);
+        $this->same(
+            [FailureClass::COVERAGE_SURPLUS],
+            $surplus->failureClasses(),
+            'a level a declared channel does not declare is a coverage surplus, not a silent pass',
+        );
+
+        // The declared side is derived from two witnesses, so their disagreement
+        // is its own answer: a fixture whose levels column drifts from the
+        // declaration in code must not read as a corpus that lost a fixture.
+        $disagreement = new GateReport();
+        ChannelWitness::checkAgreement($disagreement, ['a.rule#a.code@class'], ['a.rule#a.code@callable']);
+        $this->same(
+            [FailureClass::WITNESS_DISAGREEMENT],
+            $disagreement->failureClasses(),
+            'two witnesses differing on a level is its own failure, distinct from a coverage shortfall',
+        );
+
+        $agreed = new GateReport();
+        ChannelWitness::checkAgreement($agreed, ['a.rule#a.code@class'], ['a.rule#a.code@class']);
+        $this->same(GateReport::VERDICT_GREEN, $agreed->verdict(), 'and two witnesses agreeing is not a failure');
+    }
+
+    /**
+     * The gate holds one copy of the level vocabulary, and the product holds the
+     * original.
+     *
+     * Asked of the candidate tree itself, so the check runs wherever
+     * `--self-test` runs — including inside `composer check`, which is the only
+     * place it can run without a reference tree. The synthetic half proves the
+     * comparison bites; the real half proves the tracked copy is current.
+     */
+    private function levelVocabulary(): void
+    {
+        $drifted = new GateReport();
+        ChannelWitness::checkLevelVocabulary($drifted, ['callable', 'klass', 'file', 'namespace', 'project']);
+        $this->same(
+            [FailureClass::LEVEL_VOCABULARY_DRIFT],
+            $drifted->failureClasses(),
+            'a level the product does not spell that way is drift, not a matter of taste',
+        );
+
+        $current = new GateReport();
+        ChannelWitness::checkLevelVocabulary($current, (new ChannelWitness($this->candidateRoot))->productLevels());
+        $this->same(
+            GateReport::VERDICT_GREEN,
+            $current->verdict(),
+            'the gate\'s tag map spells every level the way this tree\'s SymbolLevel does',
+        );
     }
 
     /**
@@ -801,9 +900,54 @@ final class SelfTest
     private function tuple(): void
     {
         $derived = EquivalenceTuple::derive($this->candidateRoot);
-        $tracked = EquivalenceTuple::load($this->candidateRoot . '/finding-gate/equivalence-tuple.tsv');
+        $tracked = EquivalenceTuple::load($this->candidateRoot);
         $this->assert($derived->fields !== [], 'the tuple derivation reads fields out of the publishing code');
         $this->assert($tracked->equals($derived), 'the tracked tuple is what the publishing code publishes');
+        $this->tupleProvenanceOnLoad();
+    }
+
+    /**
+     * The `source` column named a deleted publisher for a whole step, and every
+     * run stayed green, because nothing resolved it. Written as a probe on a
+     * fabricated tree rather than on the tracked file, so the refusal is proved
+     * without a rename having to happen first.
+     */
+    private function tupleProvenanceOnLoad(): void
+    {
+        $root = Fs::temporaryDirectory('self-test-tuple-');
+        $write = static function (string $source) use ($root): void {
+            Fs::write(
+                $root . '/' . EquivalenceTuple::TRACKED_PATH,
+                Tsv::render(EquivalenceTuple::COLUMNS, [['channel', $source]]),
+            );
+        };
+        Fs::write($root . '/src/Publisher.php', "<?php\n\nprivate function formatFinding(): array\n{\n}\n");
+
+        $write('src/Publisher.php::formatFinding');
+        $this->assert(
+            !self::throws(static fn(): mixed => EquivalenceTuple::load($root)),
+            'a tuple whose source names a file and a method that exist loads',
+        );
+
+        $write('src/Gone.php::formatFinding');
+        $this->assert(
+            self::throws(static fn(): mixed => EquivalenceTuple::load($root)),
+            'a tuple whose source names a file the tree no longer has is refused',
+        );
+
+        $write('src/Publisher.php::formatViolation');
+        $this->assert(
+            self::throws(static fn(): mixed => EquivalenceTuple::load($root)),
+            'a tuple whose source names a method the publisher no longer declares is refused',
+        );
+
+        $write('src/Publisher.php');
+        $this->assert(
+            self::throws(static fn(): mixed => EquivalenceTuple::load($root)),
+            'a source cell that is not "<file>::<method>" is refused rather than read as a caption',
+        );
+
+        Fs::removeRecursively($root);
     }
 
     private function fingerprints(): void

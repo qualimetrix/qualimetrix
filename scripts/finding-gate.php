@@ -42,6 +42,7 @@ foreach (
         'EquivalenceTuple',
         'Fingerprints',
         'ChannelWitness',
+        'ChannelCoverage',
         'TreeRun',
         'ReferenceTree',
         'Gate',
@@ -95,7 +96,7 @@ function compare(Options $options): int
 
 function deriveTuple(Options $options): int
 {
-    $path = $options->candidateRoot . '/finding-gate/equivalence-tuple.tsv';
+    $path = $options->candidateRoot . '/' . EquivalenceTuple::TRACKED_PATH;
     Fs::write($path, EquivalenceTuple::derive($options->candidateRoot)->render());
     echo 'Derived ' . $path . " from the publishing code.\n";
 

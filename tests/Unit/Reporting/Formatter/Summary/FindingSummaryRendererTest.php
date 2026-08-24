@@ -106,8 +106,6 @@ final class FindingSummaryRendererTest extends TestCase
     #[Test]
     public function itShowsNoFindingsFoundForNonEmptyReportWithNoScope(): void
     {
-        // Non-empty report (filesAnalyzed > 0) with no findings and no scope filter
-        // isEmpty() returns true => shows "No findings found."
         $report = new Report(
             findings: [],
             filesAnalyzed: 10,
@@ -120,7 +118,6 @@ final class FindingSummaryRendererTest extends TestCase
         $lines = [];
         $this->renderer->render($report, new FormatterContext(), $this->color, $lines);
 
-        // isEmpty() is true, so "No findings found." is shown
         self::assertSame(['No violations found.', ''], $lines);
     }
 

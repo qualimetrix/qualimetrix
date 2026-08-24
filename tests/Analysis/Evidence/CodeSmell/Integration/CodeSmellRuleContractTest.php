@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellCollector;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -50,6 +52,42 @@ final class CodeSmellRuleContractTest extends TestCase
         }
 
         self::assertSame([], $issues, "Code smell rule contract violations:\n" . implode("\n", $issues));
+    }
+
+    /**
+     * The scan is a filename convention over a directory path, and every
+     * `continue` above is a rule this test then never checks. With nothing
+     * matched it reports green on an empty set, so what it found is compared
+     * against the registry — which learns about a rule from the container, not
+     * from a path — and a disagreement names the rules only one side knows.
+     */
+    #[Test]
+    public function theScanFindsExactlyTheRegisteredCodeSmellRules(): void
+    {
+        $registry = (new ContainerFactory())->create()->get(RuleRegistryInterface::class);
+        \assert($registry instanceof RuleRegistryInterface);
+
+        $registered = array_values(array_filter(
+            $registry->getClasses(),
+            static fn(string $class): bool => is_subclass_of($class, AbstractCodeSmellRule::class),
+        ));
+        sort($registered);
+
+        $scanned = [];
+
+        foreach ($this->scanCodeSmellRules() as $reflection) {
+            $scanned[] = $reflection->getName();
+        }
+
+        sort($scanned);
+
+        self::assertSame(
+            $registered,
+            $scanned,
+            'The directory scan and the rule registry disagree about which code-smell rules exist. A rule the'
+            . ' scan misses is a rule this test\'s contract checks never see.',
+        );
+        self::assertNotSame([], $scanned, 'The scan found no code-smell rule at all.');
     }
 
     /**

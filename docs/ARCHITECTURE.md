@@ -99,7 +99,7 @@ mutable state only inside the owner that needs a per-container store.
 ```
 Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
                 |                        |              |               |
-             MetricBag[]          AggregatedMetrics  Violation[]      Output
+             MetricBag[]          AggregatedMetrics  Finding[]        Output
 ```
 
 | Phase         | % of time | Parallel             |
@@ -117,7 +117,7 @@ Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
 | Component     | State             | Task                            |
 | ------------- | ----------------- | ------------------------------- |
 | **Collector** | Stateful per-file | AST traversal -> MetricBag      |
-| **Rule**      | Stateless         | MetricRepository -> Violation[] |
+| **Rule**      | Stateless         | MetricRepository -> Finding[]   |
 
 **Collectors** gather metrics (one metric = one AST pass).
 **Rules** analyze pre-computed metrics (do NOT perform AST traversal).
@@ -134,7 +134,7 @@ SymbolPath::forFile('src/Service/UserService.php');
 ```
 
 Used for:
-- Identifying violations
+- Identifying findings
 - Baseline (ignoring known issues)
 - Accessing metrics via MetricRepository
 - Dependency graph (class and namespace coupling)

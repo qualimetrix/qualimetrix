@@ -52,7 +52,7 @@ finding-gate/
 ```
 
 `channels` is a claim the gate verifies per case, not documentation: a case that
-stops firing a pair it claims fails, and a channel no case claims fails the
+stops firing a pair it claims fails, and a declared pair no case fires fails the
 coverage check. Coverage is also checked for multiplicity: **a channel must fire
 in exactly one case.** Two producers make the deduplicated union blind to a lost
 fixture, so the control that deletes one would pass while proving nothing.
@@ -62,9 +62,10 @@ fixture, so the control that deletes one would pass while proving nothing.
 The unit of a claim is `rule#code@level`, and the level is read out of the
 `subject` field, which carries it in its tag (`declaration:callable:…`,
 `declaration:class:…`, `file:`, `ns:`, `project:`). The spelling is the product's
-own level vocabulary — `callable`, `class`, `file`, `namespace`, `project` — not
-the subject's tag for it, so the claim, a case's `levels:` list and the drift
-test's oracle all say `namespace` for the same thing. A subject shape the gate
+own level vocabulary (`SymbolLevel`), not the subject's tag for it, so the claim,
+a case's `levels:` list and the drift test's oracle all say `namespace` for the
+same thing. The values are not repeated here on purpose: the gate keeps one copy
+of them (see below), and a list in prose is a second one. A subject shape the gate
 cannot level stops the run instead of being given a default: its level is one the
 claim would otherwise stop checking in silence.
 
@@ -77,11 +78,56 @@ candidate's case directory no surface differs either. That is exactly the shape
 the collapse of the level channels produces, so the claim counts pairs and the
 `lost-level-fixture` control holds it to that.
 
-Coverage and multiplicity still count **channels**, deliberately: the guarantee
-they carry is one authoritative owner per channel, and pairing it with levels
-would let two cases own one channel as long as they fired it at different levels.
-The map and the claim are different accountings — the unit of *substitution* stays
-the name.
+Multiplicity still counts **channels**, deliberately: the guarantee it carries is
+one authoritative owner per channel, and pairing it with levels would let two
+cases own one channel as long as they fired it at different levels. The map and
+the claim are different accountings too — the unit of *substitution* stays the
+name.
+
+### Coverage counts pairs, against a *derived* declaration
+
+The claim direction and the coverage direction are different questions. A claim
+says what *one case* fires; coverage asks whether anything at all fires what the
+product declares — and its declared side must not be hand-written, or a pair the
+product can produce that fires in no case and is claimed in no case is invisible
+from both sides at once. That pair passed every check the gate had: not claimed
+and not observed, so no claim mismatch; the channel observed at its other level,
+so no shortfall. It is also exactly what the collapse of the level channels has
+to be proved against, since after the collapse the level is the only thing
+telling two former channels apart.
+
+So the declared side is **derived, from two witnesses**, and the hand-written
+claim stays beside them as a third, independent voice:
+
+| Witness                                              | Half it answers for | Where the levels come from                                                                  |
+| ---------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
+| the candidate container (`probe-channels.php`)       | static and run-time | `ChannelDeclaration::$levels`, and the resolved `ComputedMetricDefinition` for `computed.*` |
+| `tests/…/Fixtures/Channels/declared.txt`, `<levels>` | static only         | the tracked fixture's third column                                                          |
+| `case.json`'s `channels`                             | per case            | hand-written, and verified per pair                                                         |
+
+The two declaration witnesses disagreeing is its own failure class,
+`witness-disagreement` — not a coverage shortfall, and not a tie broken in
+silence. The run-time half has **one** witness for levels, exactly as it has for
+names: `computed.*` is open-ended and no fixture line could enumerate it. One
+consequence is worth stating, because a control rests on it: a run-time channel's
+levels come from the case's own configuration, so that level and the corpus that
+fires it move together and pair coverage cannot see one leave —
+`lost-level-fixture` is caught by the claim. A static channel's levels come from
+product code, so they *can* part company with the corpus, and there a lost level
+is a `coverage-shortfall`. Every static channel declares exactly one level today;
+Ш5c is what makes that stop being true.
+
+`--incomplete-corpus` downgrades a pair shortfall exactly as it downgraded a name
+shortfall. A pair observed that nothing declares — including a level a declared
+channel does not say it reports at — is `coverage-surplus`.
+
+The gate's own level vocabulary lives in exactly one place, the tag map in
+`scripts/finding-gate/SubjectLevel.php`, and it is held against the product's
+`SymbolLevel` on every comparison run and by `--self-test` (failure class
+`level-vocabulary-drift`). It has to be measured rather than asserted: the level
+the gate derives never reaches a compared artifact — it is checked against a
+claim written in the same gate-internal spelling — so a renamed `SymbolLevel`
+case would leave every claim matching and every run green.
 
 A bare channel name is refused as a claim entry, and so is a level outside the
 vocabulary: a half-migrated `case.json` would otherwise keep passing while
@@ -343,14 +389,35 @@ a differing span whose line pairs exceed the search budget is **refused** rather
 than emitted as one padded hunk — falling back would silently restore the
 behaviour the hunks exist to remove.
 
+## Who reads the corpus
+
+`case.json` and the case directories have a schema, and **four** consumers read
+it — two of them outside this directory. Changing the schema is a change that has
+to touch this list; it exists because the last change to the claim format
+recorded its blast radius as "one literal, one mutation" and two of these four
+survived by luck.
+
+| Consumer                                                                  | What it reads                                                                                                       |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`                  | every `cases/*/case.json`, as the schema                                                                            |
+| `scripts/finding-gate-controls/Controls.php`                              | three exact paths it mutates: a fixture file, a case `qmx.yaml`, and one `case.json` literal                        |
+| `tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check` |
+| `scripts/generate-rename-enumeration.php`                                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                  |
+
+Measured, not recalled: `git grep -E "finding-gate/cases|case\.json"` over a
+stopped tree, minus prose. The product test is one field-read away from breaking
+on a claim-format change and nothing warns it; the enumeration generator is what
+made `composer check` red the last time a case file moved.
+
 ## Adding a channel
 
 A new channel needs a fixture in the case that owns its family and a line in
 that case's `channels`. The gate fails until both exist — that is the point:
 coverage is checked in both directions on every step, so neither a fixture lost
 nor a channel added silently narrows what the gate proves. A channel reporting at
-more than one level needs one claim line per level, for the reason the claim
-section gives.
+more than one level needs a fixture *and* a claim line **per declared level**:
+coverage counts pairs, so a level with no fixture anywhere is a shortfall even
+while the channel fires.
 
 ## The controls
 

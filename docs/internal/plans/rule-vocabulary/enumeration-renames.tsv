@@ -6,7 +6,7 @@ annotation.unused-directive#annotation.unused-directive	channel	?		8	8	0	0	0	25	
 architecture.circular-dependency#architecture.circular-dependency	channel	?		8	30	0	2	0	38	0	2
 architecture.coverage#architecture.coverage	channel	?		19	78	0	0	0	43	0	2
 architecture.empty-template#architecture.empty-template	channel	?		9	12	0	0	0	27	0	2
-architecture.layer-violation#architecture.layer-violation	channel	?		27	129	0	3	0	80	0	2
+architecture.layer-violation#architecture.layer-violation	channel	?		27	129	0	3	0	79	0	2
 architecture.pending-layer-matched#architecture.pending-layer-matched	channel	?		8	14	0	0	0	25	0	2
 architecture.potential-shadow#architecture.potential-shadow	channel	?		13	10	0	0	0	32	0	2
 architecture.unassigned-class#architecture.unassigned-class	channel	?		25	17	0	0	0	21	0	3
@@ -129,7 +129,7 @@ wmc	metric-key	?		18	95	0	0	0	4	0	0
 woc	metric-key	?		11	12	0	0	0	4	0	0
 annotation.directive	producer	?		4	3	0	0	0	21	0	1
 architecture.circular-dependency	producer	?		8	30	0	2	0	38	0	2
-architecture.layer-violation	producer	?		27	129	0	3	0	80	0	2
+architecture.layer-violation	producer	?		27	129	0	3	0	79	0	2
 architecture.unassigned-class	producer	?		25	17	0	0	0	21	0	3
 code-smell.boolean-argument	producer	?		4	22	1	2	58	34	0	2
 code-smell.constructor-overinjection	producer	?		9	8	2	2	12	21	0	2

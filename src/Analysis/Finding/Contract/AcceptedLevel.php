@@ -13,9 +13,9 @@ use InvalidArgumentException;
  * A finding carries one only when it was measured against an applicable
  * baseline entry and exceeded it; see {@see Finding::reportedAsBreach()}.
  *
- * **Why this lives in `Core\Finding` rather than in `Baseline`.** The field
- * that holds it is a field of {@see Finding}, and `Core` may depend on
- * nothing — least of all on `Baseline`, which depends on `Core`. So the
+ * **Why this lives beside {@see Finding} rather than in `Baseline`.** The field
+ * that holds it is a field of {@see Finding}, and `Finding` may not depend on
+ * `Baseline`, which depends on `Finding`. So the
  * *shape* of an accepted level is a finding-level fact and lives here; the
  * mechanism that decides when a level was exceeded stays in `Baseline`.
  *
