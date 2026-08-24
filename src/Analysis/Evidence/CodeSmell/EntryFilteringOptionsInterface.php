@@ -15,7 +15,7 @@ interface EntryFilteringOptionsInterface
 {
     /**
      * Returns true when the given extra value is whitelisted and the
-     * corresponding entry must be excluded from violations.
+     * corresponding entry must be excluded from findings.
      */
     public function isExtraAllowed(string $extra): bool;
 }

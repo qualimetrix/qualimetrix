@@ -18,9 +18,9 @@ final class EquivalenceTuple
 {
     public const COLUMNS = ['field', 'source'];
 
-    private const SOURCE_FILE = 'src/Reporting/Formatter/Json/JsonViolationSection.php';
+    private const SOURCE_FILE = 'src/Reporting/Formatter/Json/JsonFindingSection.php';
 
-    private const SOURCE_METHOD = 'formatViolation';
+    private const SOURCE_METHOD = 'formatFinding';
 
     /** @param list<string> $fields */
     private function __construct(public readonly array $fields) {}

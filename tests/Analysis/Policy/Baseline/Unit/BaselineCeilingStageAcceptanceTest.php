@@ -13,9 +13,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Filter\GroupCeilingVerdict;
@@ -27,8 +27,8 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
-use Qualimetrix\Tests\Analysis\Finding\Support\ViolationFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\CeilingStageFixtures;
 
 /**
@@ -54,21 +54,21 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     #[Test]
     public function itAcceptsAHigherIsWorseGroupThatDidNotWorsen(): void
     {
-        $finding = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($finding, [15])]));
 
-        self::assertSame([], $stage->apply([$finding])->violations);
+        self::assertSame([], $stage->apply([$finding])->findings);
     }
 
     #[Test]
     public function itReportsAHigherIsWorseGroupThatWorsenedByOneStep(): void
     {
-        $recorded = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
-        $current = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 16);
+        $recorded = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $current = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 16);
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [15])]));
 
-        self::assertSame([Severity::Error], self::severitiesOf($stage->apply([$current])->violations));
+        self::assertSame([Severity::Error], self::severitiesOf($stage->apply([$current])->findings));
     }
 
     /**
@@ -83,7 +83,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [40])]));
 
-        self::assertSame([], $stage->apply([$current])->violations);
+        self::assertSame([], $stage->apply([$current])->findings);
     }
 
     #[Test]
@@ -94,7 +94,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [40])]));
 
-        self::assertSame([Severity::Error], self::severitiesOf($stage->apply([$current])->violations));
+        self::assertSame([Severity::Error], self::severitiesOf($stage->apply([$current])->findings));
     }
 
     /**
@@ -116,7 +116,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [60.0])]), $declarations);
 
-        self::assertSame([], $stage->apply([$current])->violations);
+        self::assertSame([], $stage->apply([$current])->findings);
     }
 
     /**
@@ -136,10 +136,10 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         $baseline = self::baselineOf([self::magnitudeEntry($recorded, [55.0])]);
 
-        self::assertSame([], self::stageOver($baseline, $declarations)->apply([$improved])->violations);
+        self::assertSame([], self::stageOver($baseline, $declarations)->apply([$improved])->findings);
         self::assertSame(
             [Severity::Error],
-            self::severitiesOf(self::stageOver($baseline, $declarations)->apply([$worsened])->violations),
+            self::severitiesOf(self::stageOver($baseline, $declarations)->apply([$worsened])->findings),
         );
     }
 
@@ -160,22 +160,22 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         $baseline = self::baselineOf([self::magnitudeEntry($recorded, [0.42])]);
 
-        self::assertSame([], self::stageOver($baseline, $declarations)->apply([$same])->violations);
+        self::assertSame([], self::stageOver($baseline, $declarations)->apply([$same])->findings);
         self::assertSame(
             [Severity::Error],
-            self::severitiesOf(self::stageOver($baseline, $declarations)->apply([$worse])->violations),
+            self::severitiesOf(self::stageOver($baseline, $declarations)->apply([$worse])->findings),
         );
     }
 
     #[Test]
     public function itAcceptsAnOccurrenceGroupNoLargerThanItsStoredCount(): void
     {
-        $first = ViolationFactory::occurrence(self::someFile());
-        $second = ViolationFactory::occurrence(self::someFile());
+        $first = FindingFactory::occurrence(self::someFile());
+        $second = FindingFactory::occurrence(self::someFile());
 
         $stage = self::stageOver(self::baselineOf([self::occurrenceEntry($first, 3)]));
 
-        self::assertSame([], $stage->apply([$first, $second])->violations);
+        self::assertSame([], $stage->apply([$first, $second])->findings);
     }
 
     /**
@@ -188,7 +188,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     #[Test]
     public function itDoesNotReadAMarkerChannelsFixedValueAsAMagnitude(): void
     {
-        $marker = ViolationFactory::occurrence(self::someFile());
+        $marker = FindingFactory::occurrence(self::someFile());
         self::assertSame(1.0, $marker->metricValue);
 
         $withinCount = self::stageOver(self::baselineOf([self::occurrenceEntry($marker, 2)]))
@@ -196,8 +196,8 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
         $overCount = self::stageOver(self::baselineOf([self::occurrenceEntry($marker, 2)]))
             ->apply([$marker, $marker, $marker]);
 
-        self::assertSame([], $withinCount->violations);
-        self::assertCount(3, $overCount->violations);
+        self::assertSame([], $withinCount->findings);
+        self::assertCount(3, $overCount->findings);
     }
 
     /**
@@ -218,7 +218,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         $stage = self::stageOver(self::baselineOf([self::occurrenceEntry($recorded, 1)]), $declarations);
 
-        self::assertSame([], $stage->apply([$current])->violations);
+        self::assertSame([], $stage->apply([$current])->findings);
     }
 
     /**
@@ -230,14 +230,14 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     public function itReportsAnEdgeBearingGroupWhenOneForbiddenEdgeIsSwappedForAnother(): void
     {
         $source = SymbolPath::forClass('App\Web', 'Controller');
-        $recorded = ViolationFactory::edge($source, SymbolPath::forClass('App\Db', 'Connection'));
-        $current = ViolationFactory::edge($source, SymbolPath::forClass('App\Db', 'Session'));
+        $recorded = FindingFactory::edge($source, SymbolPath::forClass('App\Db', 'Connection'));
+        $current = FindingFactory::edge($source, SymbolPath::forClass('App\Db', 'Session'));
 
         $stage = self::stageOver(self::baselineOf([self::occurrenceEntry($recorded, 1)]));
         $result = $stage->apply([$current]);
 
-        self::assertCount(1, $result->violations);
-        self::assertNull($result->violations[0]->acceptedLevel, 'a new identity is not a breach of the old one');
+        self::assertCount(1, $result->findings);
+        self::assertNull($result->findings[0]->acceptedLevel, 'a new identity is not a breach of the old one');
     }
 
     // ------------------------------------------------------- multi-member
@@ -254,7 +254,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     {
         $stage = self::duplicationStage([40, 100]);
 
-        self::assertSame([], $stage->apply(self::duplicationGroup([100]))->violations);
+        self::assertSame([], $stage->apply(self::duplicationGroup([100]))->findings);
     }
 
     /**
@@ -268,7 +268,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     {
         $stage = self::duplicationStage([40, 100]);
 
-        self::assertSame([], $stage->apply(self::duplicationGroup([95]))->violations);
+        self::assertSame([], $stage->apply(self::duplicationGroup([95]))->findings);
     }
 
     /**
@@ -282,7 +282,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         self::assertSame(
             [Severity::Error],
-            self::severitiesOf($stage->apply(self::duplicationGroup([101]))->violations),
+            self::severitiesOf($stage->apply(self::duplicationGroup([101]))->findings),
         );
     }
 
@@ -298,7 +298,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         self::assertSame(
             [Severity::Error, Severity::Error],
-            self::severitiesOf($stage->apply(self::duplicationGroup([60, 100]))->violations),
+            self::severitiesOf($stage->apply(self::duplicationGroup([60, 100]))->findings),
         );
     }
 
@@ -307,7 +307,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     {
         $stage = self::duplicationStage([40, 100]);
 
-        self::assertSame([], $stage->apply(self::duplicationGroup([40]))->violations);
+        self::assertSame([], $stage->apply(self::duplicationGroup([40]))->findings);
     }
 
     /**
@@ -321,7 +321,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         self::assertSame(
             [Severity::Error],
-            self::severitiesOf($stage->apply(self::duplicationGroup([110]))->violations),
+            self::severitiesOf($stage->apply(self::duplicationGroup([110]))->findings),
         );
     }
 
@@ -345,7 +345,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         self::assertSame(
             [Severity::Error, Severity::Error],
-            self::severitiesOf($stage->apply(self::duplicationGroup([40, 60]))->violations),
+            self::severitiesOf($stage->apply(self::duplicationGroup([40, 60]))->findings),
         );
     }
 
@@ -363,7 +363,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         self::assertNotSame($recorded[0]->location, $current[0]->location);
         self::assertNotSame($recorded[1]->location, $current[1]->location);
-        self::assertSame([], $stage->apply($current)->violations);
+        self::assertSame([], $stage->apply($current)->findings);
     }
 
     /**
@@ -395,7 +395,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
         self::assertNotSame($recorded->message, $current->message);
         self::assertSame(3, $recorded->metricValue);
         self::assertSame(3, $current->metricValue);
-        self::assertSame([], $stage->apply([$current])->violations);
+        self::assertSame([], $stage->apply([$current])->findings);
     }
 
     /**
@@ -417,8 +417,8 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
         $overCount = self::stageOver(self::baselineOf([self::occurrenceEntry($first, 1)]), $declarations)
             ->apply([$first, $second]);
 
-        self::assertSame([], $withinCount->violations, 'one group, bounded by its count');
-        self::assertSame([Severity::Error, Severity::Error], self::severitiesOf($overCount->violations));
+        self::assertSame([], $withinCount->findings, 'one group, bounded by its count');
+        self::assertSame([Severity::Error, Severity::Error], self::severitiesOf($overCount->findings));
     }
 
     // ------------------------------------- multi-member, lower is worse
@@ -456,7 +456,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     {
         $stage = self::maintainabilityStage([40, 70]);
 
-        self::assertSame([], $stage->apply(self::maintainabilityGroup([40]))->violations);
+        self::assertSame([], $stage->apply(self::maintainabilityGroup([40]))->findings);
     }
 
     /**
@@ -471,7 +471,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         self::assertSame(
             [Severity::Error],
-            self::severitiesOf($stage->apply(self::maintainabilityGroup([39]))->violations),
+            self::severitiesOf($stage->apply(self::maintainabilityGroup([39]))->findings),
         );
     }
 
@@ -490,7 +490,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
         self::assertSame(
             [Severity::Error, Severity::Error],
-            self::severitiesOf($stage->apply(self::maintainabilityGroup([55, 70]))->violations),
+            self::severitiesOf($stage->apply(self::maintainabilityGroup([55, 70]))->findings),
         );
     }
 
@@ -499,14 +499,14 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     #[Test]
     public function itAcceptsAWorsenedGroupWhenTheEntrySaysSuppress(): void
     {
-        $recorded = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
-        $current = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 90);
+        $recorded = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $current = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 90);
 
         $stage = self::stageOver(self::baselineOf([
             self::magnitudeEntry($recorded, [15], BaselineEntryMode::Suppress),
         ]));
 
-        self::assertSame([], $stage->apply([$current, $current])->violations);
+        self::assertSame([], $stage->apply([$current, $current])->findings);
     }
 
     /**
@@ -518,13 +518,13 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     #[Test]
     public function itAcceptsAnOverCountOccurrenceGroupWhenTheEntrySaysSuppress(): void
     {
-        $goto = ViolationFactory::occurrence(self::someFile());
+        $goto = FindingFactory::occurrence(self::someFile());
 
         $stage = self::stageOver(self::baselineOf([
             self::occurrenceEntry($goto, 1, BaselineEntryMode::Suppress),
         ]));
 
-        self::assertSame([], $stage->apply([$goto, $goto, $goto])->violations);
+        self::assertSame([], $stage->apply([$goto, $goto, $goto])->findings);
     }
 
     // ------------------------------------------------------------ helpers
@@ -545,7 +545,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     /**
      * @param list<int|float> $magnitudes
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private static function duplicationGroup(array $magnitudes): array
     {
@@ -558,7 +558,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
         return $group;
     }
 
-    private static function duplicationFinding(int|float $magnitude, int $line = 1): Violation
+    private static function duplicationFinding(int|float $magnitude, int $line = 1): Finding
     {
         return self::findingOn(self::DUPLICATION, self::DUPLICATION, self::someFile(), $magnitude, $line);
     }
@@ -580,7 +580,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     /**
      * @param list<int|float> $magnitudes
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private static function maintainabilityGroup(array $magnitudes): array
     {
@@ -593,7 +593,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
         return $group;
     }
 
-    private static function maintainability(int|float $magnitude, int $line = 1): Violation
+    private static function maintainability(int|float $magnitude, int $line = 1): Finding
     {
         return self::findingOn(
             'maintainability.index',
@@ -609,7 +609,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
         return SymbolPath::forClass('App\Service', 'OrderService');
     }
 
-    private static function godClassFinding(int $wmc): Violation
+    private static function godClassFinding(int $wmc): Finding
     {
         $symbolPath = self::someClass();
         $classInfo = new SymbolInfo(

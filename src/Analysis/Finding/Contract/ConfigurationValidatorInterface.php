@@ -28,7 +28,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
  * that is behaviour the diagnostics already had while they lived inside the
  * rule class; naming the owner is what preserves it once they no longer do.
  *
- * A validator's findings are ordinary {@see Violation}s. A second finding type
+ * A validator's findings are ordinary {@see Finding}s. A second finding type
  * would have to be carried through suppression, exclusion, report scope, every
  * formatter and the exit code separately, and each of those passes would be a
  * new place for the two to diverge.
@@ -52,7 +52,7 @@ interface ConfigurationValidatorInterface
 
     /**
      * The diagnostic channels this validator emits, keyed by
-     * {@see ViolationChannel::toKey()}. Every one of them is registered as a
+     * {@see FindingChannel::toKey()}. Every one of them is registered as a
      * configuration error by that fact alone.
      *
      * @return array<string, ChannelDeclaration>
@@ -60,7 +60,7 @@ interface ConfigurationValidatorInterface
     public static function channelDeclarations(): array;
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function validate(AnalysisContext $context): array;
 }

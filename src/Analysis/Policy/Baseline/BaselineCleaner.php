@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
@@ -44,7 +44,7 @@ final readonly class BaselineCleaner
      * measured finding. The two reasons are not independent for that entry,
      * and the more specific, more permanent cause is the more useful answer.
      *
-     * @param list<Violation> $measured the run's measured set (ADR 0017)
+     * @param list<Finding> $measured the run's measured set (ADR 0017)
      *
      * @return list<BaselineCleanupCandidate>
      */
@@ -54,8 +54,8 @@ final readonly class BaselineCleaner
         ChannelDeclarationRegistryInterface $declarations,
     ): array {
         $measuredKeys = [];
-        foreach ($measured as $violation) {
-            $measuredKeys[] = BaselineIdentity::forViolation($violation)->key();
+        foreach ($measured as $finding) {
+            $measuredKeys[] = BaselineIdentity::forFinding($finding)->key();
         }
 
         $staleKeys = [];

@@ -8,7 +8,7 @@ use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Support\CoverageNarrator;
-use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
+use Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -17,18 +17,18 @@ use Qualimetrix\Reporting\Report;
  * Summary formatter -- default CLI output.
  *
  * Shows health overview, worst offenders, and contextual hints in one screen.
- * For detailed violation listing, use --format=text.
+ * For detailed finding listing, use --format=text.
  */
 final class SummaryFormatter implements FormatterInterface
 {
     private const int DEFAULT_TERMINAL_WIDTH = 80;
 
     public function __construct(
-        private readonly DetailedViolationRenderer $detailedRenderer,
+        private readonly DetailedFindingRenderer $detailedRenderer,
         private readonly HealthBarRenderer $healthBarRenderer,
         private readonly OffenderListRenderer $offenderListRenderer,
         private readonly TopIssuesRenderer $topIssuesRenderer,
-        private readonly ViolationSummaryRenderer $violationSummaryRenderer,
+        private readonly FindingSummaryRenderer $findingSummaryRenderer,
         private readonly HintRenderer $hintRenderer,
     ) {}
 
@@ -49,22 +49,22 @@ final class SummaryFormatter implements FormatterInterface
         $this->offenderListRenderer->renderWorstNamespaces($report, $color, $context, $lines);
         $this->offenderListRenderer->renderWorstClasses($report, $color, $context, $lines);
         $this->topIssuesRenderer->render($report, $context, $color, $lines);
-        $this->violationSummaryRenderer->render($report, $context, $color, $lines);
+        $this->findingSummaryRenderer->render($report, $context, $color, $lines);
 
         $this->hintRenderer->render($report, $context, $color, $lines);
 
-        // Append detailed violation list when --detail is used
+        // Append detailed finding list when --detail is used
         if ($context->isDetailEnabled() && !$report->isEmpty()) {
-            $detailViolations = $report->violations;
-            if ($detailViolations !== []) {
+            $detailFindings = $report->findings;
+            if ($detailFindings !== []) {
                 $limit = $context->detailLimit;
-                $totalCount = \count($detailViolations);
+                $totalCount = \count($detailFindings);
                 $showAll = $limit === null || $limit === 0 || $totalCount <= $limit;
-                $displayViolations = $showAll ? $detailViolations : \array_slice($detailViolations, 0, $limit);
+                $displayFindings = $showAll ? $detailFindings : \array_slice($detailFindings, 0, $limit);
 
                 $lines[] = '';
                 $lines[] = $color->bold('Violations');
-                $lines[] = $this->detailedRenderer->render($displayViolations, $context, $detailViolations);
+                $lines[] = $this->detailedRenderer->render($displayFindings, $context, $detailFindings);
 
                 if (!$showAll) {
                     $remaining = $totalCount - $limit;

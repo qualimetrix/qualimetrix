@@ -43,7 +43,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions(enabled: false));
 
@@ -56,7 +56,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function noUnusedMembersProducesNoViolations(): void
+    public function noUnusedMembersProducesNoFindings(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -77,7 +77,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function unusedMethodProducesViolation(): void
+    public function unusedMethodProducesFinding(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -94,18 +94,18 @@ final class UnusedPrivateRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(15, $violations[0]->location->line);
-        self::assertSame('Unused private method `doLoadMappingFile`', $violations[0]->message);
-        self::assertSame('code-smell.unused-private', $violations[0]->ruleName);
-        self::assertSame(1, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(15, $findings[0]->location->line);
+        self::assertSame('Unused private method `doLoadMappingFile`', $findings[0]->message);
+        self::assertSame('code-smell.unused-private', $findings[0]->ruleName);
+        self::assertSame(1, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function unusedPropertyProducesViolation(): void
+    public function unusedPropertyProducesFinding(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -122,14 +122,14 @@ final class UnusedPrivateRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame('Unused private property `cache`', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame('Unused private property `cache`', $findings[0]->message);
     }
 
     #[Test]
-    public function unusedConstantProducesViolation(): void
+    public function unusedConstantProducesFinding(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -146,15 +146,15 @@ final class UnusedPrivateRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame('Unused private constant `MAX_RETRIES`', $violations[0]->message);
-        self::assertSame(8, $violations[0]->location->line);
+        self::assertCount(1, $findings);
+        self::assertSame('Unused private constant `MAX_RETRIES`', $findings[0]->message);
+        self::assertSame(8, $findings[0]->location->line);
     }
 
     #[Test]
-    public function multipleUnusedMembersProduceMultipleViolations(): void
+    public function multipleUnusedMembersProduceMultipleFindings(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -174,19 +174,19 @@ final class UnusedPrivateRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(4, $violations);
+        self::assertCount(4, $findings);
 
         self::assertSame([
             'Unused private method `foo`',
             'Unused private method `bar`',
             'Unused private property `baz`',
             'Unused private constant `QUX`',
-        ], array_map(static fn($violation): string => $violation->message, $violations));
-        self::assertSame([10, 15, 7, 8], array_map(static fn($violation): ?int => $violation->location->line, $violations));
-        self::assertSame([4, 4, 4, 4], array_map(static fn($violation): int|float|null => $violation->metricValue, $violations));
-        self::assertSame([true, true, true, true], array_map(static fn($violation): bool => $violation->location->precise, $violations));
+        ], array_map(static fn($finding): string => $finding->message, $findings));
+        self::assertSame([10, 15, 7, 8], array_map(static fn($finding): ?int => $finding->location->line, $findings));
+        self::assertSame([4, 4, 4, 4], array_map(static fn($finding): int|float|null => $finding->metricValue, $findings));
+        self::assertSame([true, true, true, true], array_map(static fn($finding): bool => $finding->location->precise, $findings));
     }
 
     #[Test]
@@ -201,12 +201,12 @@ final class UnusedPrivateRuleTest extends TestCase
                 ->withEntry('unusedPrivate.property', ['line' => 9]),
         );
 
-        $violations = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
+        $findings = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame('Unused private property', $violations[0]->message);
-        self::assertSame('Remove the unused symbol to reduce dead code.', $violations[0]->recommendation);
-        self::assertSame($classInfo->subject?->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertCount(1, $findings);
+        self::assertSame('Unused private property', $findings[0]->message);
+        self::assertSame('Remove the unused symbol to reduce dead code.', $findings[0]->recommendation);
+        self::assertSame($classInfo->subject?->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
     #[Test]
@@ -255,11 +255,11 @@ final class UnusedPrivateRuleTest extends TestCase
                 ->withEntry('unusedPrivate.method', ['line' => 15, 'name' => 'stale']),
         );
 
-        $violations = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
+        $findings = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        self::assertSame($first->subject?->toCanonical(), $violations[0]->subject->toCanonical());
-        self::assertSame($second->subject?->toCanonical(), $violations[1]->subject->toCanonical());
+        self::assertCount(2, $findings);
+        self::assertSame($first->subject?->toCanonical(), $findings[0]->subject->toCanonical());
+        self::assertSame($second->subject?->toCanonical(), $findings[1]->subject->toCanonical());
     }
 
     #[Test]

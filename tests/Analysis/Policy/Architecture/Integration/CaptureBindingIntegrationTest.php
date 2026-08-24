@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
@@ -48,11 +48,11 @@ final class CaptureBindingIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $layerViolations = $this->filterByRule($analysis->violations, LayerViolationRule::NAME);
+        $layerViolations = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
 
-        $messages = array_map(static fn(Violation $v): string => $v->message, $layerViolations);
+        $messages = array_map(static fn(Finding $v): string => $v->message, $layerViolations);
 
-        // Exactly one cross-module violation: OrderController → Stock.
+        // Exactly one cross-module finding: OrderController → Stock.
         $crossModule = array_filter(
             $messages,
             static fn(string $m): bool => str_contains($m, 'app-Order') && str_contains($m, 'domain-Inventory'),
@@ -80,7 +80,7 @@ final class CaptureBindingIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $layerViolations = $this->filterByRule($analysis->violations, LayerViolationRule::NAME);
+        $layerViolations = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
         self::assertSame([], $layerViolations, 'allow_cross_instance must lift the binding-identity check.');
     }
 
@@ -110,7 +110,7 @@ final class CaptureBindingIntegrationTest extends TestCase
             $loaded = (new YamlConfigLoader())->load($yamlPath);
             $analysis = $this->runPipelineWithConfig($loaded['architecture']);
 
-            $layerViolations = $this->filterByRule($analysis->violations, LayerViolationRule::NAME);
+            $layerViolations = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
             self::assertSame(
                 [],
                 $layerViolations,
@@ -166,15 +166,15 @@ final class CaptureBindingIntegrationTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function filterByRule(array $violations, string $ruleName): array
+    private function filterByRule(array $findings, string $ruleName): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $v): bool => $v->ruleName === $ruleName,
+            $findings,
+            static fn(Finding $v): bool => $v->ruleName === $ruleName,
         ));
     }
 }

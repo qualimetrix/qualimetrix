@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Filter;
 
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 
 /**
  * Which channels are **file-scoped** — that is, which findings are about a
@@ -37,14 +37,14 @@ final readonly class ChannelFileScope
     private array $projectScoped;
 
     /**
-     * @param list<string> $projectScopedChannelKeys {@see ViolationChannel::toKey()} form
+     * @param list<string> $projectScopedChannelKeys {@see FindingChannel::toKey()} form
      */
     public function __construct(array $projectScopedChannelKeys)
     {
         $this->projectScoped = array_fill_keys($projectScopedChannelKeys, true);
     }
 
-    public function isFileScoped(ViolationChannel $channel): bool
+    public function isFileScoped(FindingChannel $channel): bool
     {
         return !isset($this->projectScoped[$channel->toKey()]);
     }

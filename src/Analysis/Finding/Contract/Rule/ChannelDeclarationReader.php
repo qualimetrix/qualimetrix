@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 use InvalidArgumentException;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -18,18 +18,18 @@ use Throwable;
  *
  * A rule declares its channels via an optional static
  * `channelDeclarations(): array<string, ChannelDeclaration>` method, keyed by
- * the **full channel key** — exactly {@see ViolationChannel::toKey()}'s
+ * the **full channel key** — exactly {@see FindingChannel::toKey()}'s
  * `ruleName#violationCode` form, the same form ADR 0017
  * plan stores in the file. There is deliberately no shorthand that accepts a
- * bare `violationCode` paired with the declaring rule's own name: a rule may
+ * bare `code` paired with the declaring rule's own name: a rule may
  * emit a channel under a `ruleName` other than its own (`LayerViolationRule`
- * does this for all but one of its channels — see {@see ViolationChannel}'s
+ * does this for all but one of its channels — see {@see FindingChannel}'s
  * docblock), and a shorthand that assumed otherwise would make exactly those
  * channels undeclarable. One form means one behaviour; the cost is that the
  * ~40 simple rules whose emitted `ruleName` always equals their own `NAME`
  * repeat it in every key, which is cheap and self-documenting (e.g.
  * `self::NAME . '#' . self::NAME`, or
- * `(new ViolationChannel(self::NAME, self::NAME))->toKey()`).
+ * `(new FindingChannel(self::NAME, self::NAME))->toKey()`).
  *
  * This is deliberately not part of `RuleInterface` and not an attribute: an
  * interface method would force every rule — including the majority that
@@ -59,12 +59,12 @@ final class ChannelDeclarationReader
      *                        when invoking the method itself throws — e.g.
      *                        an abstract base's `channelDeclarations()`
      *                        binding an empty `static::NAME` into a
-     *                        {@see ViolationChannel} that rejects it. Every
+     *                        {@see FindingChannel} that rejects it. Every
      *                        exit from this method is a `LogicException`;
      *                        no other exception type escapes it.
      *
      * @return array<string, ChannelDeclaration> keyed by
-     *                                           {@see ViolationChannel::toKey()}
+     *                                           {@see FindingChannel::toKey()}
      */
     public static function read(string $ruleClass): array
     {
@@ -124,7 +124,7 @@ final class ChannelDeclarationReader
         } catch (Throwable $exception) {
             // Wrapped unconditionally, even though InvalidArgumentException
             // (the case an abstract base's empty static::NAME triggers, via
-            // ViolationChannel's own validation) already extends
+            // FindingChannel's own validation) already extends
             // LogicException by PHP's own hierarchy: the type contract
             // technically holds either way, but the raw message names
             // neither the rule class nor channelDeclarations() — exactly
@@ -158,7 +158,7 @@ final class ChannelDeclarationReader
             }
 
             try {
-                ViolationChannel::fromKey($key);
+                FindingChannel::fromKey($key);
             } catch (InvalidArgumentException $exception) {
                 throw new LogicException(\sprintf(
                     '%s::%s() key "%s" is not a valid channel key: %s',

@@ -47,7 +47,7 @@ final class ExitRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new ExitRule(new CodeSmellOptions(enabled: false));
 
@@ -60,7 +60,7 @@ final class ExitRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoViolations(): void
+    public function noSmellsProducesNoFindings(): void
     {
         $rule = new ExitRule(new CodeSmellOptions());
 
@@ -81,7 +81,7 @@ final class ExitRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesViolation(): void
+    public function smellDetectedProducesFinding(): void
     {
         $rule = new ExitRule(new CodeSmellOptions());
 
@@ -99,14 +99,14 @@ final class ExitRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(10, $violations[0]->location->line);
-        self::assertSame(35, $violations[1]->location->line);
-        self::assertSame('exit()/die() usage detected - use exceptions instead', $violations[0]->message);
-        self::assertSame('code-smell.exit', $violations[0]->ruleName);
-        self::assertSame(1.0, $violations[0]->metricValue);
+        self::assertCount(2, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertSame(35, $findings[1]->location->line);
+        self::assertSame('exit()/die() usage detected - use exceptions instead', $findings[0]->message);
+        self::assertSame('code-smell.exit', $findings[0]->ruleName);
+        self::assertSame(1.0, $findings[0]->metricValue);
     }
 }

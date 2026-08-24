@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
@@ -122,14 +122,14 @@ final class BaselineWriterTest extends TestCase
 
         $duplication = $reloaded->findByIdentity(new BaselineIdentity(
             'file:src/Legacy/dup.php',
-            new ViolationChannel('duplication.code-duplication', 'duplication.code-duplication'),
+            new FindingChannel('duplication.code-duplication', 'duplication.code-duplication'),
         ));
         self::assertNotNull($duplication);
         self::assertSame([40.0, 100.0], $duplication->magnitudes);
 
         $edge = $reloaded->findByIdentity(new BaselineIdentity(
             'class:App\Web\Controller',
-            new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation'),
+            new FindingChannel('architecture.layer-violation', 'architecture.layer-violation'),
             null,
             new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
         ));
@@ -461,7 +461,7 @@ final class BaselineWriterTest extends TestCase
     #[Test]
     public function itRefusesToWriteTwoIdentitiesThatCollapseOnRelativization(): void
     {
-        $channel = new ViolationChannel('code-smell.goto', 'code-smell.goto');
+        $channel = new FindingChannel('code-smell.goto', 'code-smell.goto');
 
         $baseline = new Baseline(
             generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
@@ -578,7 +578,7 @@ final class BaselineWriterTest extends TestCase
             entries: [new BaselineEntry(
                 new BaselineIdentity(
                     'file:' . $this->tempDir . '/src/Foo.php',
-                    new ViolationChannel('code-smell.goto', 'code-smell.goto'),
+                    new FindingChannel('code-smell.goto', 'code-smell.goto'),
                 ),
                 null,
                 1,
@@ -695,7 +695,7 @@ final class BaselineWriterTest extends TestCase
             new BaselineEntry(
                 new BaselineIdentity(
                     'callable:App\Foo::bar',
-                    new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
+                    new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
                 ),
                 [25],
                 1,
@@ -703,7 +703,7 @@ final class BaselineWriterTest extends TestCase
             new BaselineEntry(
                 new BaselineIdentity(
                     'file:src/Legacy/dup.php',
-                    new ViolationChannel('duplication.code-duplication', 'duplication.code-duplication'),
+                    new FindingChannel('duplication.code-duplication', 'duplication.code-duplication'),
                 ),
                 [100, 40],
                 2,
@@ -711,7 +711,7 @@ final class BaselineWriterTest extends TestCase
             new BaselineEntry(
                 new BaselineIdentity(
                     'class:App\Web\Controller',
-                    new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation'),
+                    new FindingChannel('architecture.layer-violation', 'architecture.layer-violation'),
                     null,
                     new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
                 ),
@@ -735,7 +735,7 @@ final class BaselineWriterTest extends TestCase
             entries: [new BaselineEntry(
                 new BaselineIdentity(
                     'callable:App\Foo::bar',
-                    new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
+                    new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
                 ),
                 [0.1, 1.2345678, 40.0, 1234.5678912],
                 4,

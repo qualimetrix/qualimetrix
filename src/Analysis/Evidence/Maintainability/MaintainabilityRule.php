@@ -9,14 +9,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -26,7 +26,7 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
  * Rule that checks Maintainability Index at method level.
  *
  * MI thresholds (lower is worse):
- * - MI >= 40: good (no violation)
+ * - MI >= 40: good (no finding)
  * - MI 20-39: warning
  * - MI < 20: error
  */
@@ -66,7 +66,7 @@ final class MaintainabilityRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -74,7 +74,7 @@ final class MaintainabilityRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allCallables() as $methodInfo) {
             $subject = $methodInfo->subject ?? throw new LogicException('Maintainability findings require an exact callable subject');
@@ -100,21 +100,21 @@ final class MaintainabilityRule extends AbstractRule
             $miValue = (float) $mi;
             /** @var MaintainabilityOptions $effectiveOptions */
             $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
-            $violation = $this->violationForMetric($methodInfo, $subject, $miValue, $effectiveOptions);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->findingForMetric($methodInfo, $subject, $miValue, $effectiveOptions);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function violationForMetric(
+    private function findingForMetric(
         SymbolInfo $methodInfo,
         MetricSubject $subject,
         float $miValue,
         MaintainabilityOptions $options,
-    ): ?Violation {
+    ): ?Finding {
         $severity = $options->getSeverity($miValue);
         if ($severity === null) {
             return null;
@@ -122,12 +122,12 @@ final class MaintainabilityRule extends AbstractRule
 
         $threshold = $severity === Severity::Error ? $options->error : $options->warning;
 
-        return new Violation(
+        return new Finding(
             location: new Location($methodInfo->file, $methodInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf(
                 'Maintainability Index is %.1f, below threshold of %.1f. Reduce complexity and size to improve maintainability',
                 $miValue,
@@ -164,7 +164,7 @@ final class MaintainabilityRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
         ];
     }
 

@@ -13,7 +13,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
 /**
  * ADR 0017 cumulative rule, tested directly against the primitive rather than
  * through {@see \Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage}'s
- * `Violation`-shaped scaffolding — this is the type `baseline:update` also
+ * `Finding`-shaped scaffolding — this is the type `baseline:update` also
  * has to call (ADR 0017), so it must be checkable on its own.
  *
  * The two cases below are chosen to actually distinguish the cumulative rule

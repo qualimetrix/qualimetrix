@@ -11,12 +11,12 @@ use InvalidArgumentException;
  * "accepted at 25, now 31" (ADR 0017).
  *
  * A finding carries one only when it was measured against an applicable
- * baseline entry and exceeded it; see {@see Violation::reportedAsBreach()}.
+ * baseline entry and exceeded it; see {@see Finding::reportedAsBreach()}.
  *
- * **Why this lives in `Core\Violation` rather than in `Baseline`.** The field
- * that holds it is a field of {@see Violation}, and `Core` may depend on
+ * **Why this lives in `Core\Finding` rather than in `Baseline`.** The field
+ * that holds it is a field of {@see Finding}, and `Core` may depend on
  * nothing — least of all on `Baseline`, which depends on `Core`. So the
- * *shape* of an accepted level is a violation-level fact and lives here; the
+ * *shape* of an accepted level is a finding-level fact and lives here; the
  * mechanism that decides when a level was exceeded stays in `Baseline`.
  *
  * The two shapes of {@see ChannelShape} are both expressible, and neither is

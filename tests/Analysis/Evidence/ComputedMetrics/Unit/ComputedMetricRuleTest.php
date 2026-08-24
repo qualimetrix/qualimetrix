@@ -72,7 +72,7 @@ final class ComputedMetricRuleTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenDisabled(): void
+    public function itReturnsNoFindingsWhenDisabled(): void
     {
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn([]);
@@ -92,7 +92,7 @@ final class ComputedMetricRuleTest extends TestCase
     }
 
     #[Test]
-    public function itEmitsNoViolationWhenMetricAbsent(): void
+    public function itEmitsNoFindingWhenMetricAbsent(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.score',
@@ -113,13 +113,13 @@ final class ComputedMetricRuleTest extends TestCase
         $repository->method('get')
             ->willReturn(new MetricBag());
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
-    public function itEmitsNoViolationsWhenNoThresholdsDefined(): void
+    public function itEmitsNoFindingsWhenNoThresholdsDefined(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.info',
@@ -133,9 +133,9 @@ final class ComputedMetricRuleTest extends TestCase
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->expects(self::never())->method('allDeclarations');
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -171,11 +171,11 @@ final class ComputedMetricRuleTest extends TestCase
                     ->with('health.beta', 200.0),
             );
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
+        self::assertCount(2, $findings);
 
-        $codes = array_map(static fn($v) => $v->violationCode, $violations);
+        $codes = array_map(static fn($v) => $v->code, $findings);
         self::assertContains('health.alpha', $codes);
         self::assertContains('health.beta', $codes);
     }
@@ -213,9 +213,9 @@ final class ComputedMetricRuleTest extends TestCase
                 return new MetricBag();
             });
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
+        self::assertCount(2, $findings);
     }
 
     #[Test]
@@ -237,11 +237,11 @@ final class ComputedMetricRuleTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.project', 8.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertTrue($violations[0]->location->isNone());
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertTrue($findings[0]->location->isNone());
+        self::assertSame(Severity::Warning, $findings[0]->severity);
     }
 
     #[Test]
@@ -264,10 +264,10 @@ final class ComputedMetricRuleTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.ns', 8.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertTrue($violations[0]->location->isNone());
+        self::assertCount(1, $findings);
+        self::assertTrue($findings[0]->location->isNone());
     }
 
     #[Test]
@@ -291,11 +291,11 @@ final class ComputedMetricRuleTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.cls', 10.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame('src/Foo.php', $violations[0]->location->pathString());
-        self::assertSame(42, $violations[0]->location->line);
+        self::assertCount(1, $findings);
+        self::assertSame('src/Foo.php', $findings[0]->location->pathString());
+        self::assertSame(42, $findings[0]->location->line);
     }
 
     #[Test]
@@ -319,11 +319,11 @@ final class ComputedMetricRuleTest extends TestCase
             42,
         );
 
-        $violations = $this->createRuleWithDefinitions([$definition])->analyze(new AnalysisContext($repository));
+        $findings = $this->createRuleWithDefinitions([$definition])->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame('src/Foo.php', $violations[0]->location->pathString());
-        self::assertSame(42, $violations[0]->location->line);
+        self::assertCount(1, $findings);
+        self::assertSame('src/Foo.php', $findings[0]->location->pathString());
+        self::assertSame(42, $findings[0]->location->line);
     }
 
     #[Test]
@@ -342,10 +342,10 @@ final class ComputedMetricRuleTest extends TestCase
         $second = $this->repositoryWithExactClassDeclaration($class, 'src/B.php', 200, 22);
 
         foreach ([$first->mergeWith($second), $second->mergeWith($first)] as $repository) {
-            $violations = $this->createRuleWithDefinitions([$definition])->analyze(new AnalysisContext($repository));
+            $findings = $this->createRuleWithDefinitions([$definition])->analyze(new AnalysisContext($repository));
 
-            self::assertCount(2, $violations);
-            $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+            self::assertCount(2, $findings);
+            $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
             sort($subjects);
             self::assertSame([
                 'declaration:class:App\\Foo@src/A.php',
@@ -387,9 +387,9 @@ final class ComputedMetricRuleTest extends TestCase
             null,
         );
 
-        $violations = $this->createRuleWithDefinitions([$definition])->analyze(new AnalysisContext($repository));
+        $findings = $this->createRuleWithDefinitions([$definition])->analyze(new AnalysisContext($repository));
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     /**

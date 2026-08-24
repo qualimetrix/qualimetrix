@@ -156,16 +156,16 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
         self::assertSame(
             'Distance from main sequence is 0.35 (A=0.20, I=0.45), exceeds threshold of 0.30. Balance abstractness and stability',
-            $violations[0]->message,
+            $findings[0]->message,
         );
-        self::assertSame(0.35, $violations[0]->metricValue);
-        self::assertSame('coupling.distance', $violations[0]->ruleName);
+        self::assertSame(0.35, $findings[0]->metricValue);
+        self::assertSame('coupling.distance', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -189,15 +189,15 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(0.6, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(0.6, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function itEmitsNoViolationWhenOnMainSequence(): void
+    public function itEmitsNoFindingWhenOnMainSequence(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
@@ -217,9 +217,9 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -253,11 +253,11 @@ final class DistanceRuleTest extends TestCase
             });
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(Severity::Error, $violations[1]->severity);
+        self::assertCount(2, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(Severity::Error, $findings[1]->severity);
     }
 
     // Options tests
@@ -338,13 +338,13 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -371,7 +371,7 @@ final class DistanceRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // classCount.sum=2 is below minClassCount=3, so no violation despite high distance
+        // classCount.sum=2 is below minClassCount=3, so no finding despite high distance
         $metricBag = (new MetricBag())
             ->with('distance', 0.6)
             ->with('abstractness', 0.1)
@@ -385,13 +385,13 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
-    public function itReportsViolationWhenClassCountMeetsMinimum(): void
+    public function itReportsFindingWhenClassCountMeetsMinimum(): void
     {
         $rule = new DistanceRule(
             new DistanceOptions(includeNamespaces: ['App'], minClassCount: 3),
@@ -400,7 +400,7 @@ final class DistanceRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // classCount.sum=3 meets minClassCount=3, so violation is reported
+        // classCount.sum=3 meets minClassCount=3, so finding is reported
         $metricBag = (new MetricBag())
             ->with('distance', 0.6)
             ->with('abstractness', 0.1)
@@ -414,10 +414,10 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -454,11 +454,11 @@ final class DistanceRuleTest extends TestCase
         );
 
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 1));
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
         self::assertSame(1, $repository->get(SymbolPath::forNamespace($namespace))->get('classCount.sum'));
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -484,10 +484,10 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -557,9 +557,9 @@ final class DistanceRuleTest extends TestCase
             ->willReturn([$nsInfo]);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     #[Test]
@@ -646,9 +646,9 @@ final class DistanceRuleTest extends TestCase
             ->willReturn([$nsInfo1, $nsInfo2]);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     #[Test]
@@ -670,15 +670,15 @@ final class DistanceRuleTest extends TestCase
             ]),
         );
 
-        $violations = (new DistanceRule(
+        $findings = (new DistanceRule(
             new DistanceOptions(includeNamespaces: ['App\\'], minClassCount: 0),
             $resolver,
         ))->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
+        self::assertCount(2, $findings);
         self::assertSame(
             ['ns:App', 'ns:App\\Service'],
-            array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations),
+            array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings),
         );
     }
 
@@ -705,12 +705,12 @@ final class DistanceRuleTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects(self::never())->method('warning');
 
-        $violations = (new DistanceRule(
+        $findings = (new DistanceRule(
             new DistanceOptions(includeNamespaces: ['App'], minClassCount: 3),
             logger: $logger,
         ))->analyze(new AnalysisContext($repository));
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

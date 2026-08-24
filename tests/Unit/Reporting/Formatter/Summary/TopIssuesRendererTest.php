@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer;
@@ -34,7 +34,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itRendersTopIssues(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -75,7 +75,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itSkipsRenderingWhenNoTopIssues(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -96,7 +96,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itSkipsRenderingWhenLimitIsZero(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -119,7 +119,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itRespectsLimit(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -146,17 +146,17 @@ final class TopIssuesRendererTest extends TestCase
     #[Test]
     public function itRendersLineNumberWhenPrecise(): void
     {
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('project/src/Service.php'), 42, precise: true),
             symbolPath: SymbolPath::forMethod('App\Service', 'Service', 'process'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Cyclomatic complexity is 45',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
@@ -164,7 +164,7 @@ final class TopIssuesRendererTest extends TestCase
             warningCount: 0,
             topIssues: [
                 new RankedIssue(
-                    violation: $violation,
+                    finding: $finding,
                     impactScore: 10.0,
                     classRank: 0.05,
                     debtMinutes: 30,
@@ -184,19 +184,19 @@ final class TopIssuesRendererTest extends TestCase
     }
 
     #[Test]
-    public function itRendersNamespaceLevelViolations(): void
+    public function itRendersNamespaceLevelFindings(): void
     {
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('project/src/Common/ApiResource/AbstractApiKey.php'), null),
             symbolPath: SymbolPath::forNamespace('App\Common\ApiResource'),
             ruleName: 'size.namespace-size',
-            violationCode: 'size.namespace-size',
+            code: 'size.namespace-size',
             message: 'Namespace contains 25 classes, exceeds threshold of 15',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -204,7 +204,7 @@ final class TopIssuesRendererTest extends TestCase
             warningCount: 0,
             topIssues: [
                 new RankedIssue(
-                    violation: $violation,
+                    finding: $finding,
                     impactScore: 3.14,
                     classRank: null,
                     debtMinutes: 45,
@@ -233,17 +233,17 @@ final class TopIssuesRendererTest extends TestCase
     #[Test]
     public function itRendersClassLevelWithoutSymbolSuffix(): void
     {
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('project/src/Service/UserService.php'), 5),
             symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
             ruleName: 'coupling.cbo',
-            violationCode: 'coupling.cbo',
+            code: 'coupling.cbo',
             message: 'Coupling between objects is 20, exceeds threshold of 13',
             severity: Severity::Warning,
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -251,7 +251,7 @@ final class TopIssuesRendererTest extends TestCase
             warningCount: 1,
             topIssues: [
                 new RankedIssue(
-                    violation: $violation,
+                    finding: $finding,
                     impactScore: 2.5,
                     classRank: 0.03,
                     debtMinutes: 30,
@@ -277,24 +277,24 @@ final class TopIssuesRendererTest extends TestCase
     #[Test]
     public function itRendersFunctionLevelSymbol(): void
     {
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('project/src/helpers.php'), 10, precise: true),
             symbolPath: SymbolPath::forGlobalFunction('App\Utils', 'calculateHash'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Cyclomatic complexity is 30',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
             errorCount: 1,
             warningCount: 0,
             topIssues: [
-                new RankedIssue(violation: $violation, impactScore: 5.0, classRank: null, debtMinutes: 20, severityWeight: 3),
+                new RankedIssue(finding: $finding, impactScore: 5.0, classRank: null, debtMinutes: 20, severityWeight: 3),
             ],
         );
 
@@ -311,24 +311,24 @@ final class TopIssuesRendererTest extends TestCase
     #[Test]
     public function itRendersFileLevelWithoutSymbolSuffix(): void
     {
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('project/src/config.php'), null),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/config.php')),
             ruleName: 'security.hardcoded-credentials',
-            violationCode: 'security.hardcoded-credentials',
+            code: 'security.hardcoded-credentials',
             message: 'Hardcoded credentials detected',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
             errorCount: 1,
             warningCount: 0,
             topIssues: [
-                new RankedIssue(violation: $violation, impactScore: 8.0, classRank: null, debtMinutes: 15, severityWeight: 3),
+                new RankedIssue(finding: $finding, impactScore: 8.0, classRank: null, debtMinutes: 15, severityWeight: 3),
             ],
         );
 
@@ -347,24 +347,24 @@ final class TopIssuesRendererTest extends TestCase
     #[Test]
     public function itHandlesLocationNone(): void
     {
-        $violation = self::violation(
+        $finding = self::finding(
             location: Location::none(),
             symbolPath: SymbolPath::forProject(),
             ruleName: 'architecture.circular-dependency',
-            violationCode: 'architecture.circular-dependency',
+            code: 'architecture.circular-dependency',
             message: 'Circular dependency detected: A -> B -> A',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
             errorCount: 1,
             warningCount: 0,
             topIssues: [
-                new RankedIssue(violation: $violation, impactScore: 1.0, classRank: null, debtMinutes: 60, severityWeight: 3),
+                new RankedIssue(finding: $finding, impactScore: 1.0, classRank: null, debtMinutes: 60, severityWeight: 3),
             ],
         );
 
@@ -382,25 +382,25 @@ final class TopIssuesRendererTest extends TestCase
     #[Test]
     public function itPrefersRecommendationOverMessage(): void
     {
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('project/src/Service.php'), 5),
             symbolPath: SymbolPath::forClass('App\Service', 'Service'),
             ruleName: 'cohesion.lcom',
-            violationCode: 'cohesion.lcom',
+            code: 'cohesion.lcom',
             message: 'LCOM4 value 3 exceeds threshold of 2',
             severity: Severity::Warning,
             recommendation: 'Class could be split into 3 cohesive parts',
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
             errorCount: 0,
             warningCount: 1,
             topIssues: [
-                new RankedIssue(violation: $violation, impactScore: 2.0, classRank: 0.01, debtMinutes: 45, severityWeight: 1),
+                new RankedIssue(finding: $finding, impactScore: 2.0, classRank: 0.01, debtMinutes: 45, severityWeight: 1),
             ],
         );
 
@@ -424,17 +424,17 @@ final class TopIssuesRendererTest extends TestCase
         int $line,
         int $debt,
     ): RankedIssue {
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString(ltrim($file, '/')), $line),
             symbolPath: SymbolPath::forMethod('App\Service', $symbol, 'process'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Cyclomatic complexity is 45',
             severity: $severity,
         );
 
         return new RankedIssue(
-            violation: $violation,
+            finding: $finding,
             impactScore: $score,
             classRank: 0.05,
             debtMinutes: $debt,
@@ -443,13 +443,13 @@ final class TopIssuesRendererTest extends TestCase
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
-        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+        return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
 }

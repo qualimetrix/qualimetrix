@@ -15,9 +15,9 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankResolver;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
@@ -33,7 +33,7 @@ use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Reporting\Contract\OutputFormat;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
@@ -82,11 +82,11 @@ final class ResultPresenterTest extends TestCase
         $formatter->method('format')->willReturn('');
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
-        $violation = $this->violation(Severity::Warning);
+        $finding = $this->finding(Severity::Warning);
 
         $exit = $this->presenter($registry)->presentResults(
-            [$violation],
-            $this->analysisResult([$violation]),
+            [$finding],
+            $this->analysisResult([$finding]),
             $this->input(),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
@@ -105,11 +105,11 @@ final class ResultPresenterTest extends TestCase
         $formatter->method('format')->willReturn('');
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
-        $violation = $this->violation(Severity::Warning);
+        $finding = $this->finding(Severity::Warning);
 
         self::assertSame(0, $this->presenter($registry)->presentResults(
-            [$violation],
-            $this->analysisResult([$violation]),
+            [$finding],
+            $this->analysisResult([$finding]),
             $this->input(),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
@@ -170,7 +170,7 @@ final class ResultPresenterTest extends TestCase
             ),
             new ProfilePresenter($session),
             new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
-            new ViolationFilter(),
+            new FindingFilter(),
             new FormatterContextFactory(),
         );
     }
@@ -195,28 +195,28 @@ final class ResultPresenterTest extends TestCase
         return new ArrayInput($options, $definition);
     }
 
-    /** @param list<Violation> $violations */
-    private function analysisResult(array $violations = [], ?AnalysisCoverage $coverage = null): AnalysisResult
+    /** @param list<Finding> $findings */
+    private function analysisResult(array $findings = [], ?AnalysisCoverage $coverage = null): AnalysisResult
     {
         return new AnalysisResult(
-            $violations,
+            $findings,
             0.1,
             new InMemoryMetricRepository(),
             $coverage ?? new AnalysisCoverage([], [], []),
         );
     }
 
-    private function violation(Severity $severity): Violation
+    private function finding(Severity $severity): Finding
     {
         $path = RelativePath::fromString('src/Subject.php');
         $symbol = SymbolPath::forFile($path);
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, 1),
             subject: MetricSubject::aggregate($symbol),
             symbolPath: $symbol,
             ruleName: 'fixture.rule',
-            violationCode: 'fixture.rule',
+            code: 'fixture.rule',
             message: 'Fixture',
             severity: $severity,
         );

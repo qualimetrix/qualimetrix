@@ -10,10 +10,10 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
@@ -92,12 +92,12 @@ final class ProjectScopedChannelProjectionTest extends TestCase
     private function assertEveryDeclaredChannelSurvives(FindingProjectionOptions $options): void
     {
         foreach (self::declaredProjectScopedKeys() as $key) {
-            $channel = ViolationChannel::fromKey($key);
-            $result = $this->createProjector()->project([$this->violation($channel)], [], $options);
+            $channel = FindingChannel::fromKey($key);
+            $result = $this->createProjector()->project([$this->finding($channel)], [], $options);
 
             self::assertCount(
                 1,
-                $result->violations,
+                $result->findings,
                 \sprintf('%s is declared project-scoped but the projection dropped it', $key),
             );
         }
@@ -127,17 +127,17 @@ final class ProjectScopedChannelProjectionTest extends TestCase
         );
     }
 
-    private function violation(ViolationChannel $channel): Violation
+    private function finding(FindingChannel $channel): Finding
     {
         $path = RelativePath::fromString(self::FILE);
         $symbol = SymbolPath::forClass(self::NAMESPACE, 'UserService');
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, 10),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: $channel->ruleName,
-            violationCode: $channel->violationCode,
+            code: $channel->code,
             message: 'A statement about the project',
             severity: Severity::Error,
         );

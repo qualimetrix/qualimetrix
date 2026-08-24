@@ -10,7 +10,7 @@ capability: it publishes no `Contract/` namespace.
 Collectors consume Measurement's existing collection and repository contracts.
 `DitGlobalCollector` and `NocCollector` also consume DependencyModel's public
 graph contracts. Rules consume Finding's execution, option, channel, and
-violation contracts. No consumer imports a Design collector or rule as a
+finding contracts. No consumer imports a Design collector or rule as a
 cross-capability contract.
 
 ## Structure

@@ -12,6 +12,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -19,8 +21,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -90,7 +90,7 @@ final class DistanceRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -98,7 +98,7 @@ final class DistanceRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
         $totalNamespaces = 0;
         $analyzedNamespaces = 0;
 
@@ -106,8 +106,8 @@ final class DistanceRule extends AbstractRule
             $result = $this->namespaceResult($nsInfo, $context);
             $totalNamespaces += (int) $result['present'];
             $analyzedNamespaces += (int) $result['projectMatched'];
-            if ($result['violation'] !== null) {
-                $violations[] = $result['violation'];
+            if ($result['finding'] !== null) {
+                $findings[] = $result['finding'];
             }
         }
 
@@ -120,11 +120,11 @@ final class DistanceRule extends AbstractRule
             );
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
-     * @return array{present: bool, projectMatched: bool, violation: ?Violation}
+     * @return array{present: bool, projectMatched: bool, finding: ?Finding}
      */
     private function namespaceResult(SymbolInfo $namespaceInfo, AnalysisContext $context): array
     {
@@ -132,21 +132,21 @@ final class DistanceRule extends AbstractRule
 
         $namespace = $namespaceInfo->symbolPath->namespace;
         if ($namespace === null) {
-            return ['present' => false, 'projectMatched' => false, 'violation' => null];
+            return ['present' => false, 'projectMatched' => false, 'finding' => null];
         }
 
         if (!$this->shouldAnalyzeNamespace($namespace)) {
-            return ['present' => true, 'projectMatched' => false, 'violation' => null];
+            return ['present' => true, 'projectMatched' => false, 'finding' => null];
         }
 
         return [
             'present' => true,
             'projectMatched' => true,
-            'violation' => $this->matchedNamespaceViolation($namespaceInfo, $context),
+            'finding' => $this->matchedNamespaceFinding($namespaceInfo, $context),
         ];
     }
 
-    private function matchedNamespaceViolation(SymbolInfo $info, AnalysisContext $context): ?Violation
+    private function matchedNamespaceFinding(SymbolInfo $info, AnalysisContext $context): ?Finding
     {
         \assert($this->options instanceof DistanceOptions);
 
@@ -170,12 +170,12 @@ final class DistanceRule extends AbstractRule
         $instability = (float) ($metrics->get(MetricName::COUPLING_INSTABILITY) ?? 0.0);
         $threshold = $severity === Severity::Error ? $effectiveOptions->maxDistanceError : $effectiveOptions->maxDistanceWarning;
 
-        return new Violation(
+        return new Finding(
             location: new Location($info->file, $info->line),
             subject: $subject,
             symbolPath: $info->symbolPath,
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf(
                 'Distance from main sequence is %.2f (A=%.2f, I=%.2f), exceeds threshold of %.2f. Balance abstractness and stability',
                 $distanceValue,
@@ -244,7 +244,7 @@ final class DistanceRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
         ];
     }
 

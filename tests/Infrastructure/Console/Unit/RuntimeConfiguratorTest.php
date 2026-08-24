@@ -167,7 +167,7 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertFalse($this->cacheStore->current()->enabled);
         self::assertSame(3, $this->parallelStore->current()->workers);
         self::assertSame(['getName'], $this->lcomStore->current()->excludedMethods);
-        self::assertTrue($this->rules->capturesExcludedViolations());
+        self::assertTrue($this->rules->capturesExcludedFindings());
         self::assertTrue($this->profile->isEnabled());
     }
 
@@ -232,7 +232,7 @@ final class RuntimeConfiguratorTest extends TestCase
             self::assertTrue($this->cacheStore->current()->enabled);
             self::assertNull($this->parallelStore->current()->workers);
             self::assertSame([], $this->rules->all());
-            self::assertFalse($this->rules->capturesExcludedViolations());
+            self::assertFalse($this->rules->capturesExcludedFindings());
             self::assertSame([], $this->lcomStore->current()->excludedMethods);
             self::assertFalse($this->profile->isEnabled());
         }
@@ -267,7 +267,7 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertSame([], $this->rules->all());
         self::assertSame([], $this->rules->selection()->only);
         self::assertSame([], $this->rules->selection()->disabled);
-        self::assertFalse($this->rules->capturesExcludedViolations());
+        self::assertFalse($this->rules->capturesExcludedFindings());
         self::assertSame([], $this->lcomStore->current()->excludedMethods);
         self::assertFalse($this->profile->isEnabled());
     }
@@ -323,7 +323,7 @@ final class RuntimeConfiguratorTest extends TestCase
             self::assertNull($this->parallelStore->current()->workers);
             self::assertTrue($this->cacheStore->current()->enabled);
             self::assertSame([], $this->rules->all());
-            self::assertFalse($this->rules->capturesExcludedViolations());
+            self::assertFalse($this->rules->capturesExcludedFindings());
             self::assertSame([], $this->lcomStore->current()->excludedMethods);
             self::assertFalse($this->profile->isEnabled());
         }

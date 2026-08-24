@@ -11,8 +11,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
@@ -22,8 +22,8 @@ use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
-use Qualimetrix\Tests\Analysis\Finding\Support\ViolationFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\CeilingStageFixtures;
 
 /**
@@ -75,13 +75,13 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     #[Test]
     public function itReportsAGroupOnAChannelNoRuleDeclares(): void
     {
-        $finding = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $stage = self::stageOver(
             self::baselineOf([self::magnitudeEntry($finding, [15])]),
             new StubChannelDeclarationRegistry(),
         );
 
-        self::assertReportedUntouched($stage->apply([$finding])->violations, $finding);
+        self::assertReportedUntouched($stage->apply([$finding])->findings, $finding);
     }
 
     /**
@@ -102,13 +102,13 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     #[Test]
     public function itDoesNotLetASuppressEntryHideAGroupOnAChannelNoRuleDeclares(): void
     {
-        $finding = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $stage = self::stageOver(
             self::baselineOf([self::magnitudeEntry($finding, [15], BaselineEntryMode::Suppress)]),
             new StubChannelDeclarationRegistry(),
         );
 
-        self::assertReportedUntouched($stage->apply([$finding])->violations, $finding);
+        self::assertReportedUntouched($stage->apply([$finding])->findings, $finding);
     }
 
     /**
@@ -119,41 +119,41 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     #[Test]
     public function itDoesNotLetASuppressEntryHideAGroupWhoseShapeDisagreesWithItsChannel(): void
     {
-        $finding = ViolationFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')));
+        $finding = FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')));
 
         $stage = self::stageOver(self::baselineOf([
             self::magnitudeEntry($finding, [1.0], BaselineEntryMode::Suppress),
         ]));
 
-        self::assertReportedUntouched($stage->apply([$finding])->violations, $finding);
+        self::assertReportedUntouched($stage->apply([$finding])->findings, $finding);
     }
 
     #[Test]
     public function itReportsAMagnitudeGroupWhoseEntryStoresNoMagnitudes(): void
     {
-        $finding = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
 
         // A magnitude channel bounded only by a count would silently accept
         // unbounded growth, so the entry is not applied at all.
         $stage = self::stageOver(self::baselineOf([self::occurrenceEntry($finding, 1)]));
 
-        self::assertReportedUntouched($stage->apply([$finding])->violations, $finding);
+        self::assertReportedUntouched($stage->apply([$finding])->findings, $finding);
     }
 
     #[Test]
     public function itReportsAnOccurrenceGroupWhoseEntryStoresMagnitudes(): void
     {
-        $finding = ViolationFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')));
+        $finding = FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')));
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($finding, [1.0])]));
 
-        self::assertReportedUntouched($stage->apply([$finding])->violations, $finding);
+        self::assertReportedUntouched($stage->apply([$finding])->findings, $finding);
     }
 
     #[Test]
     public function itReportsAMagnitudeGroupWhoseMemberReportsNoNumberAtAll(): void
     {
-        $recorded = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $recorded = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $current = self::findingOn(
             'complexity.cyclomatic',
             'complexity.cyclomatic.callable',
@@ -163,7 +163,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [15])]));
 
-        self::assertReportedUntouched($stage->apply([$current])->violations, $current);
+        self::assertReportedUntouched($stage->apply([$current])->findings, $current);
     }
 
     /**
@@ -187,7 +187,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($withNumber, [40, 100])]));
 
-        $reported = $stage->apply([$withNumber, $withoutNumber])->violations;
+        $reported = $stage->apply([$withNumber, $withoutNumber])->findings;
 
         self::assertSame([$withNumber, $withoutNumber], $reported, 'the whole group is reported, untouched');
         self::assertSame([Severity::Warning, Severity::Warning], self::severitiesOf($reported));
@@ -199,7 +199,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     #[DataProvider('provideNonFiniteMagnitudes')]
     public function itReportsAMagnitudeGroupWhoseMemberReportsANonFiniteNumber(float $metricValue): void
     {
-        $recorded = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $recorded = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $current = self::findingOn(
             'complexity.cyclomatic',
             'complexity.cyclomatic.callable',
@@ -209,25 +209,25 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [15])]));
 
-        self::assertReportedUntouched($stage->apply([$current])->violations, $current);
+        self::assertReportedUntouched($stage->apply([$current])->findings, $current);
     }
 
     #[Test]
     #[DataProvider('provideInertReasons')]
     public function itReportsAGroupWhoseOnlyEntryTheLoaderCouldNotApply(InertEntryReason $reason): void
     {
-        $finding = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
 
         $stage = self::stageOver(self::baselineOf([], [
             InertBaselineEntry::forIdentity(
-                BaselineIdentity::forViolation($finding),
+                BaselineIdentity::forFinding($finding),
                 $reason,
                 'the file said something this build does not read',
                 ['channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable'],
             ),
         ]));
 
-        self::assertReportedUntouched($stage->apply([$finding])->violations, $finding);
+        self::assertReportedUntouched($stage->apply([$finding])->findings, $finding);
     }
 
     /**
@@ -238,13 +238,13 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     #[Test]
     public function itReportsARenamedSymbolAndStrandsItsEntry(): void
     {
-        $before = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'calculate'), 15);
-        $after = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'compute'), 15);
+        $before = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'calculate'), 15);
+        $after = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'compute'), 15);
 
         $entry = self::magnitudeEntry($before, [15]);
         $stage = self::stageOver(self::baselineOf([$entry]));
 
-        self::assertReportedUntouched($stage->apply([$after])->violations, $after);
+        self::assertReportedUntouched($stage->apply([$after])->findings, $after);
         self::assertSame([$entry], $stage->judgeAll([$after])->staleEntries);
     }
 
@@ -256,8 +256,8 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     #[Test]
     public function itKeepsApplyingItsOtherEntriesWhileOneIsStale(): void
     {
-        $repaired = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'gone'), 15);
-        $accepted = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'kept'), 15);
+        $repaired = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'gone'), 15);
+        $accepted = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'kept'), 15);
 
         $stage = self::stageOver(self::baselineOf([
             self::magnitudeEntry($repaired, [15]),
@@ -266,7 +266,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
 
         $result = $stage->apply([$accepted]);
 
-        self::assertSame([], $result->violations);
+        self::assertSame([], $result->findings);
         self::assertCount(1, $stage->judgeAll([$accepted])->staleEntries);
     }
 
@@ -278,17 +278,17 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     #[Test]
     public function itDoesNotTurnAChannelRedWhenItsDeclaredShapeChanges(): void
     {
-        $finding = ViolationFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')));
+        $finding = FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')));
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare('code-smell.goto#code-smell.goto', ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable));
 
         // The stored entry was captured while the channel was `occurrence`.
         $stage = self::stageOver(self::baselineOf([self::occurrenceEntry($finding, 1)]), $declarations);
 
-        self::assertReportedUntouched($stage->apply([$finding])->violations, $finding);
+        self::assertReportedUntouched($stage->apply([$finding])->findings, $finding);
     }
 
-    private static function duplicationFinding(int|float|null $magnitude, int $line): Violation
+    private static function duplicationFinding(int|float|null $magnitude, int $line): Finding
     {
         return self::findingOn(
             'duplication.code-duplication',
@@ -300,9 +300,9 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $reported
+     * @param list<Finding> $reported
      */
-    private static function assertReportedUntouched(array $reported, Violation $expected): void
+    private static function assertReportedUntouched(array $reported, Finding $expected): void
     {
         self::assertCount(1, $reported);
         self::assertSame($expected->severity, $reported[0]->severity);

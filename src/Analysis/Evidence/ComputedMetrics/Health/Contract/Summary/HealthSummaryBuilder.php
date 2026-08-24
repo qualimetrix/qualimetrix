@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -44,15 +44,15 @@ final readonly class HealthSummaryBuilder
         $this->offenderBuilder = new WorstOffenderBuilder();
     }
 
-    /** @param list<Violation> $violations */
+    /** @param list<Finding> $findings */
     public function build(
         MetricRepositoryInterface $metrics,
         NamespaceTree $tree,
-        array $violations,
+        array $findings,
     ): HealthSummary {
         $healthScores = $this->buildHealthScores($metrics);
-        $worstNamespaces = $this->buildWorstOffenders($metrics, $violations, SymbolType::Namespace_, self::DEFAULT_TOP_NAMESPACES, $tree);
-        $worstClasses = $this->buildWorstOffenders($metrics, $violations, SymbolType::Class_, self::DEFAULT_TOP_CLASSES, $tree);
+        $worstNamespaces = $this->buildWorstOffenders($metrics, $findings, SymbolType::Namespace_, self::DEFAULT_TOP_NAMESPACES, $tree);
+        $worstClasses = $this->buildWorstOffenders($metrics, $findings, SymbolType::Class_, self::DEFAULT_TOP_CLASSES, $tree);
 
         return new HealthSummary(
             healthScores: $healthScores,
@@ -208,13 +208,13 @@ final readonly class HealthSummaryBuilder
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return list<WorstOffender>
      */
     private function buildWorstOffenders(
         MetricRepositoryInterface $repository,
-        array $violations,
+        array $findings,
         SymbolType $symbolType,
         int $limit,
         NamespaceTree $tree,
@@ -250,7 +250,7 @@ final readonly class HealthSummaryBuilder
         usort($candidates, static fn(array $a, array $b): int => ($a['score'] <=> $b['score']) !== 0 ? ($a['score'] <=> $b['score'])
                 : ($a['info']->symbolPath->toCanonical() <=> $b['info']->symbolPath->toCanonical()));
 
-        $violationCounts = $this->countViolationsPerSymbol($violations, $symbolType, $tree);
+        $violationCounts = $this->countFindingsPerSymbol($findings, $symbolType, $tree);
 
         $offenders = [];
 
@@ -317,29 +317,29 @@ final readonly class HealthSummaryBuilder
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return array<string, int>
      */
-    private function countViolationsPerSymbol(array $violations, SymbolType $symbolType, NamespaceTree $tree): array
+    private function countFindingsPerSymbol(array $findings, SymbolType $symbolType, NamespaceTree $tree): array
     {
         $counts = [];
 
-        foreach ($violations as $violation) {
+        foreach ($findings as $finding) {
             if ($symbolType === SymbolType::Class_) {
-                // Count violations by class
+                // Count findings by class
                 $classPath = SymbolPath::forClass(
-                    $violation->symbolPath->namespace ?? '',
-                    $violation->symbolPath->type ?? '',
+                    $finding->symbolPath->namespace ?? '',
+                    $finding->symbolPath->type ?? '',
                 );
 
-                if ($violation->symbolPath->type !== null) {
+                if ($finding->symbolPath->type !== null) {
                     $key = $classPath->toCanonical();
                     $counts[$key] = ($counts[$key] ?? 0) + 1;
                 }
             } elseif ($symbolType === SymbolType::Namespace_) {
-                // Count violations by namespace, walking up the hierarchy via NamespaceTree
-                $ns = $violation->symbolPath->namespace;
+                // Count findings by namespace, walking up the hierarchy via NamespaceTree
+                $ns = $finding->symbolPath->namespace;
 
                 if ($ns !== null && $ns !== '') {
                     $nsPath = SymbolPath::forNamespace($ns);

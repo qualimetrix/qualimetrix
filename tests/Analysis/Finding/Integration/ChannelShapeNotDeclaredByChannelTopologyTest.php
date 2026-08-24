@@ -55,7 +55,7 @@ use RuntimeException;
  * private helper the enclosing method invokes would not be caught — the same
  * class of gap this file's own model, {@see ChannelLevelAssemblyTopologyTest},
  * names for its level-suffix check. Verified by deliberately reintroducing the
- * violation in a scratch copy of a production rule during this guard's own
+ * finding in a scratch copy of a production rule during this guard's own
  * development: a reference in the *same* method fails loudly; one routed
  * through a second method does not.
  */

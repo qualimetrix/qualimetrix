@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 
-final readonly class MeasuredViolationSet
+final readonly class MeasuredFindingSet
 {
     public function __construct(
         private AnalysisPipelineInterface $analyzer,
@@ -20,11 +20,11 @@ final readonly class MeasuredViolationSet
     ) {}
 
     /**
-     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
     public function forRun(RunConfiguration $configuration, ?FileDiscoveryInterface $fileDiscovery = null, FindingProjectionOptions $options = new FindingProjectionOptions()): array
     {
-        return $this->run($configuration, $fileDiscovery, $options)->violations;
+        return $this->run($configuration, $fileDiscovery, $options)->findings;
     }
 
     public function run(RunConfiguration $configuration, ?FileDiscoveryInterface $fileDiscovery = null, FindingProjectionOptions $options = new FindingProjectionOptions()): MeasuredAnalysisRun
@@ -34,10 +34,10 @@ final readonly class MeasuredViolationSet
             $fileDiscovery ?? $this->fileDiscoveryFactory->create($configuration->pathExcludes),
         );
         $projection = $this->projector->project(
-            $result->violations,
+            $result->findings,
             $result->suppressions,
             $options,
         );
-        return new MeasuredAnalysisRun($result, $projection->measuredViolations);
+        return new MeasuredAnalysisRun($result, $projection->measuredFindings);
     }
 }

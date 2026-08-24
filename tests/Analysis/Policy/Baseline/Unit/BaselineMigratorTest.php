@@ -8,7 +8,7 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCapture;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
@@ -23,7 +23,7 @@ use Qualimetrix\Analysis\Policy\Baseline\V5UnreadableRecord;
 
 /**
  * A v5 file carries only `(symbolKey, rule)` — no magnitude, no
- * `violationCode`, no edge — so {@see BaselineMigrator} can only match on
+ * `code`, no edge — so {@see BaselineMigrator} can only match on
  * that pair against the fresh capture's v10 entries. The fixture below is
  * built so every migration-report group defined by ADR 0017 is exercised by one run:
  *
@@ -172,7 +172,7 @@ final class BaselineMigratorTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'callable:App\Foo::bar',
-                        new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
+                        new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
                     ),
                     [25],
                     1,
@@ -180,7 +180,7 @@ final class BaselineMigratorTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'callable:App\Foo::bar',
-                        new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.class'),
+                        new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.class'),
                     ),
                     [30],
                     1,
@@ -188,7 +188,7 @@ final class BaselineMigratorTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'class:App\Foo',
-                        new ViolationChannel('design.god-class', 'design.god-class'),
+                        new FindingChannel('design.god-class', 'design.god-class'),
                     ),
                     null,
                     1,
@@ -196,7 +196,7 @@ final class BaselineMigratorTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'callable:App\Foo::qux',
-                        new ViolationChannel('size.method-count', 'size.method-count'),
+                        new FindingChannel('size.method-count', 'size.method-count'),
                     ),
                     null,
                     1,
@@ -206,7 +206,7 @@ final class BaselineMigratorTest extends TestCase
 
         $uncaptured = [
             new UncapturedGroup(
-                new BaselineIdentity('callable:App\Foo::quux', new ViolationChannel('computed.custom', 'computed.custom')),
+                new BaselineIdentity('callable:App\Foo::quux', new FindingChannel('computed.custom', 'computed.custom')),
                 UncapturedReason::UndeclaredChannel,
                 1,
             ),

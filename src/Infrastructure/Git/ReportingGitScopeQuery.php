@@ -12,12 +12,12 @@ use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
 
 /**
- * Filters violations to show only those in changed files.
+ * Filters findings to show only those in changed files.
  *
- * This filter is used for --report=git:... to show only violations
+ * This filter is used for --report=git:... to show only findings
  * in files that were changed according to the git scope.
  *
- * By default, it also includes violations for parent namespaces of changed files.
+ * By default, it also includes findings for parent namespaces of changed files.
  * This can be disabled with --report-strict.
  */
 final readonly class ReportingGitScopeQuery implements GitScopeQueryInterface

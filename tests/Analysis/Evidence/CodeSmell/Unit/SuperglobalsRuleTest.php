@@ -47,7 +47,7 @@ final class SuperglobalsRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new SuperglobalsRule(new CodeSmellOptions(enabled: false));
 
@@ -60,7 +60,7 @@ final class SuperglobalsRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoViolations(): void
+    public function noSmellsProducesNoFindings(): void
     {
         $rule = new SuperglobalsRule(new CodeSmellOptions());
 
@@ -81,7 +81,7 @@ final class SuperglobalsRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesViolation(): void
+    public function smellDetectedProducesFinding(): void
     {
         $rule = new SuperglobalsRule(new CodeSmellOptions());
 
@@ -100,15 +100,15 @@ final class SuperglobalsRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(3, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(5, $violations[0]->location->line);
-        self::assertSame(18, $violations[1]->location->line);
-        self::assertSame(33, $violations[2]->location->line);
-        self::assertSame('Direct superglobal access detected - use dependency injection', $violations[0]->message);
-        self::assertSame('code-smell.superglobals', $violations[0]->ruleName);
-        self::assertSame(1.0, $violations[0]->metricValue);
+        self::assertCount(3, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(5, $findings[0]->location->line);
+        self::assertSame(18, $findings[1]->location->line);
+        self::assertSame(33, $findings[2]->location->line);
+        self::assertSame('Direct superglobal access detected - use dependency injection', $findings[0]->message);
+        self::assertSame('code-smell.superglobals', $findings[0]->ruleName);
+        self::assertSame(1.0, $findings[0]->metricValue);
     }
 }

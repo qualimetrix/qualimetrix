@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
@@ -26,10 +26,10 @@ use Symfony\Component\Console\Output\OutputInterface;
  * findings.
  *
  * This class is where `InputInterface` stops: the pipeline and
- * {@see MeasuredViolationSet} below it take values, which is what lets a
+ * {@see MeasuredFindingSet} below it take values, which is what lets a
  * command with a different option surface measure the same set.
  */
-final readonly class ViolationFilterOrchestrator
+final readonly class FindingFilterOrchestrator
 {
     public function __construct(
         private FindingProjector $findingProjector,
@@ -69,7 +69,7 @@ final readonly class ViolationFilterOrchestrator
     }
 
     /**
-     * Loads suppressions, filters violations, and outputs filter-related messages.
+     * Loads suppressions, filters findings, and outputs filter-related messages.
      */
     public function filterAndReport(
         AnalysisResult $result,
@@ -80,7 +80,7 @@ final readonly class ViolationFilterOrchestrator
     ): FindingProjectionResult {
         $output = $this->diagnosticOutput->stream($output);
         $filterResult = $this->findingProjector->project(
-            $result->violations,
+            $result->findings,
             $result->suppressions,
             $options,
         );
@@ -88,7 +88,7 @@ final readonly class ViolationFilterOrchestrator
         $this->reportBaselineEntries($filterResult, $input, $output);
         $this->reportInertEntries($filterResult, $output);
         $this->reportScopeMismatch($filterResult, $scopeResolution, $output);
-        $this->reportSuppressedViolations($filterResult, $input, $output);
+        $this->reportSuppressedFindings($filterResult, $input, $output);
         $this->reportExclusionCounts($filterResult, $output);
         $this->reportRuleExclusions($input, $output);
 
@@ -241,12 +241,12 @@ final readonly class ViolationFilterOrchestrator
         );
     }
 
-    private function reportSuppressedViolations(
+    private function reportSuppressedFindings(
         FindingProjectionResult $filterResult,
         InputInterface $input,
         OutputInterface $output,
     ): void {
-        $suppressed = $filterResult->removedBy(ViolationFilterStage::Suppression);
+        $suppressed = $filterResult->removedBy(FindingFilterStage::Suppression);
 
         if ($input->getOption('show-suppressed') !== true || $suppressed === []) {
             return;
@@ -268,8 +268,8 @@ final readonly class ViolationFilterOrchestrator
         }
 
         $counts = [
-            'path exclusion patterns' => $filterResult->removedCountBy(ViolationFilterStage::PathExclusion),
-            'namespace exclusion patterns' => $filterResult->removedCountBy(ViolationFilterStage::NamespaceExclusion),
+            'path exclusion patterns' => $filterResult->removedCountBy(FindingFilterStage::PathExclusion),
+            'namespace exclusion patterns' => $filterResult->removedCountBy(FindingFilterStage::NamespaceExclusion),
         ];
 
         foreach ($counts as $patterns => $count) {
@@ -280,26 +280,26 @@ final readonly class ViolationFilterOrchestrator
     }
 
     /**
-     * Reports violations suppressed by per-rule `exclude_namespaces`,
+     * Reports findings suppressed by per-rule `exclude_namespaces`,
      * `exclude_namespace_channels`, or `exclude_paths` (any rule, set via
      * `rules: {<rule-name>: {...}}` in `qmx.yaml` —
      * {@see RuleExclusionStats}). Unlike the global exclusion filters above, this
      * mechanism runs inside {@see RuleExecutionInterface::execute()}, before the
-     * violations even reach {@see FindingProjector}, so it needs its own
+     * findings even reach {@see FindingProjector}, so it needs its own
      * reporting path.
      */
     private function reportRuleExclusions(InputInterface $input, OutputInterface $output): void
     {
         $stats = $this->ruleExecutor->exclusionStats();
 
-        if ($input->getOption('show-suppressed') === true && $stats->excludedViolations !== []) {
+        if ($input->getOption('show-suppressed') === true && $stats->excludedFindings !== []) {
             $output->writeln('');
             $output->writeln(\sprintf(
                 '<info>%d violation(s) suppressed by per-rule exclude_namespaces/exclude_namespace_channels/exclude_paths:</info>',
-                \count($stats->excludedViolations),
+                \count($stats->excludedFindings),
             ));
 
-            self::listByFile($stats->excludedViolations, $output);
+            self::listByFile($stats->excludedFindings, $output);
         }
 
         if (!$output->isVerbose()) {
@@ -327,26 +327,26 @@ final readonly class ViolationFilterOrchestrator
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private static function listByFile(array $violations, OutputInterface $output): void
+    private static function listByFile(array $findings, OutputInterface $output): void
     {
         $byFile = [];
 
-        foreach ($violations as $violation) {
-            $file = $violation->location->isNone() ? '(no file)' : $violation->location->pathString();
-            $byFile[$file][] = $violation;
+        foreach ($findings as $finding) {
+            $file = $finding->location->isNone() ? '(no file)' : $finding->location->pathString();
+            $byFile[$file][] = $finding;
         }
 
-        foreach ($byFile as $file => $fileViolations) {
+        foreach ($byFile as $file => $fileFindings) {
             $output->writeln(\sprintf('  <comment>%s</comment>', $file));
 
-            foreach ($fileViolations as $violation) {
+            foreach ($fileFindings as $finding) {
                 $output->writeln(\sprintf(
                     '    line %s — %s [%s]',
-                    $violation->location->line ?? '?',
-                    $violation->getDisplayMessage(),
-                    $violation->ruleName,
+                    $finding->location->line ?? '?',
+                    $finding->getDisplayMessage(),
+                    $finding->ruleName,
                 ));
             }
         }

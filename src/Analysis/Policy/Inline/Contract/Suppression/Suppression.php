@@ -60,7 +60,7 @@ final readonly class Suppression
      * Checks whether this suppression addresses the given channel.
      *
      * The directive addresses a **channel**, fully qualified: an exact
-     * `violationCode`, the explicit `ruleName#violationCode` pair, or `X.*`
+     * `code`, the explicit `ruleName#violationCode` pair, or `X.*`
      * for the strict descendants of `X`. A rule name is not a channel —
      * `@qmx-ignore coupling.instability` no longer covers
      * `coupling.instability.class`. The one form that filters on nothing is
@@ -71,8 +71,8 @@ final readonly class Suppression
      * meaningless without the rule name — reading only the code would make
      * `a#x` and `b#x` the same directive.
      */
-    public function matches(string $ruleName, string $violationCode): bool
+    public function matches(string $ruleName, string $code): bool
     {
-        return $this->target->matches($ruleName, $violationCode);
+        return $this->target->matches($ruleName, $code);
     }
 }

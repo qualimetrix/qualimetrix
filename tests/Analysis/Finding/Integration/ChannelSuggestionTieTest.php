@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveNameHints;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
@@ -160,7 +160,7 @@ final class ChannelSuggestionTieTest extends TestCase
         \assert($universe instanceof ChannelUniverseInterface);
 
         return array_map(
-            static fn(ViolationChannel $channel): string => $channel->violationCode,
+            static fn(FindingChannel $channel): string => $channel->code,
             $universe->channels(),
         );
     }

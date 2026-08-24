@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
@@ -72,7 +72,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
             ),
         ]);
 
-        // Self-allow only — every cross-layer edge becomes a violation, which
+        // Self-allow only — every cross-layer edge becomes a finding, which
         // is what we use as evidence of correct classification.
         $policy = AllowListBuilder::policyFromExactMap([
             'contracts-impls' => ['markers'],
@@ -89,10 +89,10 @@ final class LayerCriteriaIntegrationTest extends TestCase
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
-        $layerOf = $this->buildPerSourceLayerMap($result->violations);
+        $layerOf = $this->buildPerSourceLayerMap($result->findings);
 
         // Each expected source class shows up at least once as the source
-        // of a violation under the expected layer label.
+        // of a finding under the expected layer label.
         self::assertSame(
             'contracts-impls',
             $layerOf[self::FIXTURE_NAMESPACE . '\\ContractsImpl\\QueryBackend'] ?? null,
@@ -151,7 +151,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         $layerSources = $this->collectSourceFqns(
-            $this->filterByRule($result->violations, LayerViolationRule::NAME),
+            $this->filterByRule($result->findings, LayerViolationRule::NAME),
         );
 
         self::assertNotContains(
@@ -195,9 +195,9 @@ final class LayerCriteriaIntegrationTest extends TestCase
             ),
         ]);
 
-        // Self-allow only — every cross-layer edge becomes a violation. The
+        // Self-allow only — every cross-layer edge becomes a finding. The
         // Notifier edge on CustomerRepository is the load-bearing one: a
-        // violation under that source FQN proves the class was classified.
+        // finding under that source FQN proves the class was classified.
         $policy = AllowListBuilder::policyFromExactMap([
             'strict-repository' => [],
             'tagged' => [],
@@ -211,7 +211,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         $layerSources = $this->collectSourceFqns(
-            $this->filterByRule($result->violations, LayerViolationRule::NAME),
+            $this->filterByRule($result->findings, LayerViolationRule::NAME),
         );
 
         self::assertContains(
@@ -234,11 +234,11 @@ final class LayerCriteriaIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function violationMessageNamesMatchedCriterionWhenNotPattern(): void
+    public function findingMessageNamesMatchedCriterionWhenNotPattern(): void
     {
         // Build a registry where every test class is caught by a different
         // non-pattern criterion (suffix, attribute, implements, extends). The
-        // violation message for each source class must surface the matched
+        // finding message for each source class must surface the matched
         // criterion descriptor.
         $registry = new LayerRegistry([
             new LayerDefinition(
@@ -277,7 +277,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
 
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
-        $violations = $this->filterByRule($result->violations, LayerViolationRule::NAME);
+        $findings = $this->filterByRule($result->findings, LayerViolationRule::NAME);
 
         $expectedTrailers = [
             self::FIXTURE_NAMESPACE . '\\Suffixed\\OrderRepository' => 'source matched by suffix "Repository"',
@@ -288,8 +288,8 @@ final class LayerCriteriaIntegrationTest extends TestCase
 
         foreach ($expectedTrailers as $sourceFqn => $expectedTrailer) {
             $matching = array_values(array_filter(
-                $violations,
-                static fn(Violation $v): bool => $v->symbolPath->toString() === $sourceFqn,
+                $findings,
+                static fn(Finding $v): bool => $v->symbolPath->toString() === $sourceFqn,
             ));
 
             self::assertNotEmpty(
@@ -297,10 +297,10 @@ final class LayerCriteriaIntegrationTest extends TestCase
                 $sourceFqn . ' should produce at least one violation to inspect.',
             );
 
-            foreach ($matching as $violation) {
+            foreach ($matching as $finding) {
                 self::assertStringContainsString(
                     $expectedTrailer,
-                    $violation->message,
+                    $finding->message,
                     'Violation message for ' . $sourceFqn . ' must name the matched criterion.',
                 );
             }
@@ -322,50 +322,50 @@ final class LayerCriteriaIntegrationTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function filterByRule(array $violations, string $ruleName): array
+    private function filterByRule(array $findings, string $ruleName): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $v): bool => $v->ruleName === $ruleName,
+            $findings,
+            static fn(Finding $v): bool => $v->ruleName === $ruleName,
         ));
     }
 
     /**
-     * Per source class FQN, captures the layer name from the violation
+     * Per source class FQN, captures the layer name from the finding
      * message. The message format is pinned at
      * {@code 'Layer "$source" must not depend on layer "..."'}.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return array<string, string>
      */
-    private function buildPerSourceLayerMap(array $violations): array
+    private function buildPerSourceLayerMap(array $findings): array
     {
         $map = [];
-        foreach ($this->filterByRule($violations, LayerViolationRule::NAME) as $violation) {
-            if (preg_match('/^Layer "([^"]+)" must not depend/', $violation->message, $matches) !== 1) {
+        foreach ($this->filterByRule($findings, LayerViolationRule::NAME) as $finding) {
+            if (preg_match('/^Layer "([^"]+)" must not depend/', $finding->message, $matches) !== 1) {
                 continue;
             }
-            $map[$violation->symbolPath->toString()] = $matches[1];
+            $map[$finding->symbolPath->toString()] = $matches[1];
         }
 
         return $map;
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return list<string>
      */
-    private function collectSourceFqns(array $violations): array
+    private function collectSourceFqns(array $findings): array
     {
         $seen = [];
-        foreach ($violations as $violation) {
-            $seen[$violation->symbolPath->toString()] = true;
+        foreach ($findings as $finding) {
+            $seen[$finding->symbolPath->toString()] = true;
         }
 
         return array_keys($seen);

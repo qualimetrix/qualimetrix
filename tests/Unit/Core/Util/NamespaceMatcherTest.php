@@ -31,7 +31,7 @@ final class NamespaceMatcherTest extends TestCase
         'src/Analysis/Evidence/Coupling/DistanceRule.php' => 1,
         'src/Analysis/Policy/Architecture/Layer/Expansion/TupleExtractor.php' => 1,
         'src/Analysis/Policy/Architecture/Layer/LayerCriteriaMatcher.php' => 1,
-        'src/Reporting/Filter/ViolationFilter.php' => 2,
+        'src/Reporting/Filter/FindingFilter.php' => 2,
     ];
 
     #[Test]

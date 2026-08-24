@@ -83,7 +83,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function itPairsAViolationCodeWithTheDeclaringRulesOwnName(): void
+    public function itPairsACodeWithTheDeclaringRulesOwnName(): void
     {
         $container = new ContainerBuilder();
         self::registerUniverse($container);
@@ -356,7 +356,7 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
     }
 
     /**
-     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -417,7 +417,7 @@ final class FixtureRuleWithShapeMismatch implements RuleInterface
     }
 
     /**
-     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -489,7 +489,7 @@ final class FixtureRuleForShapeAgreement implements RuleInterface
     }
 
     /**
-     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
     public function analyze(AnalysisContext $context): array
     {

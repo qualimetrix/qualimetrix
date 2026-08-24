@@ -226,21 +226,21 @@ final class TypeCoverageRuleTest extends TestCase
     {
         $label = $dimension['label'];
         $hint = $dimension['hint'];
-        $violations = self::analyze($dimension['class'], [$dimension['total'] => 10, $dimension['coverage'] => 20.0]);
+        $findings = self::analyze($dimension['class'], [$dimension['total'] => 10, $dimension['coverage'] => 20.0]);
 
-        self::assertCount(1, $violations);
-        self::assertSame($dimension['name'], $violations[0]->ruleName);
-        self::assertSame($dimension['name'], $violations[0]->violationCode);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(20.0, $violations[0]->metricValue);
-        self::assertSame(50.0, $violations[0]->threshold);
+        self::assertCount(1, $findings);
+        self::assertSame($dimension['name'], $findings[0]->ruleName);
+        self::assertSame($dimension['name'], $findings[0]->code);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(20.0, $findings[0]->metricValue);
+        self::assertSame(50.0, $findings[0]->threshold);
         self::assertSame(
             \sprintf('%s type coverage is 20.0%% (minimum: 50.0%%). %s', $label, $hint),
-            $violations[0]->message,
+            $findings[0]->message,
         );
         self::assertSame(
             \sprintf('%s type coverage: 20.0%% (threshold: 50.0%%) — missing type declarations', $label),
-            $violations[0]->recommendation,
+            $findings[0]->recommendation,
         );
     }
 
@@ -251,11 +251,11 @@ final class TypeCoverageRuleTest extends TestCase
     #[DataProvider('dimensions')]
     public function itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects(array $dimension): void
     {
-        $violations = self::analyze($dimension['class'], [$dimension['total'] => 2]);
+        $findings = self::analyze($dimension['class'], [$dimension['total'] => 2]);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(0.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(0.0, $findings[0]->metricValue);
     }
 
     /**
@@ -286,18 +286,18 @@ final class TypeCoverageRuleTest extends TestCase
         ?Severity $expectedSeverity,
         ?float $expectedThreshold,
     ): void {
-        $violations = self::analyze($ruleClass, [$totalMetric => 1, $coverageMetric => $coverage]);
+        $findings = self::analyze($ruleClass, [$totalMetric => 1, $coverageMetric => $coverage]);
 
         if ($expectedSeverity === null) {
-            self::assertSame([], $violations);
+            self::assertSame([], $findings);
 
             return;
         }
 
-        self::assertCount(1, $violations);
-        self::assertSame($expectedSeverity, $violations[0]->severity);
-        self::assertSame($expectedThreshold, $violations[0]->threshold);
-        self::assertSame(17, $violations[0]->location->line);
+        self::assertCount(1, $findings);
+        self::assertSame($expectedSeverity, $findings[0]->severity);
+        self::assertSame($expectedThreshold, $findings[0]->threshold);
+        self::assertSame(17, $findings[0]->location->line);
     }
 
     /**
@@ -344,11 +344,11 @@ final class TypeCoverageRuleTest extends TestCase
             MetricName::TYPE_COVERAGE_PARAM => 25.0,
         ]));
 
-        $violations = (new ParamTypeCoverageRule(new TypeCoverageOptions()))
+        $findings = (new ParamTypeCoverageRule(new TypeCoverageOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',
@@ -360,7 +360,7 @@ final class TypeCoverageRuleTest extends TestCase
      * @param class-string<AbstractTypeCoverageRule> $ruleClass
      * @param array<string, int|float> $metrics
      *
-     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
     private static function analyze(string $ruleClass, array $metrics, ?TypeCoverageOptions $options = null): array
     {

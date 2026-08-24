@@ -27,7 +27,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * - `@qmx-ignore-next-line <channel> [-- reason]`
  * - `@qmx-ignore-file [channel] [-- reason]`
  *
- * The argument names a **channel**: an exact `violationCode`, the explicit
+ * The argument names a **channel**: an exact `code`, the explicit
  * `ruleName#violationCode` pair, or `X.*` for the strict descendants of `X`.
  * The two "everything here" spellings survive unchanged: `*` on the symbol
  * and next-line forms, and an omitted argument on the file form. Both mean

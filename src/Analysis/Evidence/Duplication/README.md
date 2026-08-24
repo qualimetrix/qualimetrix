@@ -75,7 +75,7 @@ completion log through its implementation.
 | `FileSetInspectionParticipantInterface`                                                    | Run                     | Run -> Duplication           | `list<SplFileInfo>` -> provider-owned result | Run invokes a selected participant without importing the detector.                    |
 | `RuleConfigurationInterface` and Run file-set input                                        | Finding / Run           | Duplication -> Finding / Run | named rule options and project root          | Detection reads its named rule and receives root only through Run's participant call. |
 | Path and symbol primitives                                                                 | Core.Path / Core.Symbol | Duplication -> Core          | absolute/relative paths and metric subjects  | Stable file, subject, and report identities.                                          |
-| Rule/finding contracts, including `Rules\AbstractRule` and `Rules\Support\ThresholdParser` | Analysis.Finding        | Duplication -> Finding       | rule/options/threshold APIs and violations   | The owned rule participates in Finding's current execution and reporting boundary.    |
+| Rule/finding contracts, including `Rules\AbstractRule` and `Rules\Support\ThresholdParser` | Analysis.Finding        | Duplication -> Finding       | rule/options/threshold APIs and findings     | The owned rule participates in Finding's current execution and reporting boundary.    |
 
 ## Test ownership
 

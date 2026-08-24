@@ -59,7 +59,7 @@ final readonly class NameSelector implements Stringable
     }
 
     /**
-     * Whether this selector addresses the given rule name or violation code.
+     * Whether this selector addresses the given rule name or finding code.
      */
     public function matches(string $subject): bool
     {

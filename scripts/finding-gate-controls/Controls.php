@@ -162,7 +162,7 @@ final class Controls
             'one finding fewer, with the channel set unchanged',
             Mutation::edit(
                 'src/Analysis/Evidence/Size/PropertyCountRule.php',
-                ['        return $violations;' => '        return \array_slice($violations, 1);'],
+                ['        return $findings;' => '        return \array_slice($findings, 1);'],
                 'size.property-count drops its first finding',
             ),
             [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design')],
@@ -333,7 +333,7 @@ final class Controls
     /**
      * A declared delta bigger than a declaration may be.
      *
-     * The perturbation is a formatter, not a rule: `JsonViolationSection` gains
+     * The perturbation is a formatter, not a rule: `JsonFindingSection` gains
      * a field on every finding, so every line of the `json` surface of a case
      * moves and the measured diff runs to hundreds of changed lines. The
      * declaration planted beside it names that surface, so the run reaches the
@@ -363,10 +363,10 @@ final class Controls
             'delta-too-large',
             'a declared delta whose measured diff is past the limit a declaration may be',
             Mutation::edit(
-                'src/Reporting/Formatter/Json/JsonViolationSection.php',
+                'src/Reporting/Formatter/Json/JsonFindingSection.php',
                 [
-                    "'message' => \$violation->message," => "'message' => '(padded) ' . \$violation->message,",
-                    "'recommendation' => \$violation->recommendation," => "'recommendation' => '(padded) ' . \$violation->recommendation,",
+                    "'message' => \$finding->message," => "'message' => '(padded) ' . \$finding->message,",
+                    "'recommendation' => \$finding->recommendation," => "'recommendation' => '(padded) ' . \$finding->recommendation,",
                 ],
                 'two lines of every JSON finding move, which on the largest case is past the declaration limit',
             )->and(self::declare(
@@ -471,8 +471,8 @@ final class Controls
         return Mutation::edit(
             'src/Analysis/Evidence/Cohesion/LcomRule.php',
             [
-                '(new ViolationChannel(self::NAME, self::NAME))' => "(new ViolationChannel(self::NAME, 'cohesion.lcom4'))",
-                'violationCode: self::NAME,' => "violationCode: 'cohesion.lcom4',",
+                '(new FindingChannel(self::NAME, self::NAME))' => "(new FindingChannel(self::NAME, 'cohesion.lcom4'))",
+                'code: self::NAME,' => "code: 'cohesion.lcom4',",
             ],
             'channel cohesion.lcom#cohesion.lcom -> cohesion.lcom#cohesion.lcom4',
         );

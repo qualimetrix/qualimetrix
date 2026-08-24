@@ -151,7 +151,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function analyze_noViolationBelowThreshold(): void
+    public function analyze_noFindingBelowThreshold(): void
     {
         // With 100 classes, scale factor = 1.0, so thresholds are unchanged
         $rule = new ClassRankRule(new ClassRankOptions());
@@ -168,10 +168,10 @@ final class ClassRankRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // All 100 classes have rank 0.01, below warning threshold 0.02
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -198,16 +198,16 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Only the target class exceeds the warning threshold
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('ClassRank is 0.0300', $violations[0]->message);
-        self::assertStringContainsString('scaled for 100 classes', $violations[0]->message);
-        self::assertEqualsWithDelta(0.03, $violations[0]->metricValue, 0.001);
-        self::assertSame('coupling.class-rank', $violations[0]->ruleName);
-        self::assertSame('coupling.class-rank', $violations[0]->violationCode);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('ClassRank is 0.0300', $findings[0]->message);
+        self::assertStringContainsString('scaled for 100 classes', $findings[0]->message);
+        self::assertEqualsWithDelta(0.03, $findings[0]->metricValue, 0.001);
+        self::assertSame('coupling.class-rank', $findings[0]->ruleName);
+        self::assertSame('coupling.class-rank', $findings[0]->code);
     }
 
     #[Test]
@@ -234,11 +234,11 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertEqualsWithDelta(0.08, $violations[0]->metricValue, 0.001);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertEqualsWithDelta(0.08, $findings[0]->metricValue, 0.001);
     }
 
     #[Test]
@@ -272,19 +272,19 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        // Filter to just the target class violations
-        $targetViolations = array_values(array_filter(
-            $violations,
+        // Filter to just the target class findings
+        $targetFindings = array_values(array_filter(
+            $findings,
             static fn($v) => $v->symbolPath === $targetPath,
         ));
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $targetViolations);
+            self::assertCount(0, $targetFindings);
         } else {
-            self::assertCount(1, $targetViolations);
-            self::assertSame($expectedSeverity, $targetViolations[0]->severity);
+            self::assertCount(1, $targetFindings);
+            self::assertSame($expectedSeverity, $targetFindings[0]->severity);
         }
     }
 
@@ -353,15 +353,15 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        $targetViolations = array_values(array_filter(
-            $violations,
+        $targetFindings = array_values(array_filter(
+            $findings,
             static fn($v) => $v->symbolPath === $targetPath,
         ));
 
-        self::assertCount(1, $targetViolations);
-        self::assertSame(Severity::Warning, $targetViolations[0]->severity);
+        self::assertCount(1, $targetFindings);
+        self::assertSame(Severity::Warning, $targetFindings[0]->severity);
     }
 
     #[Test]
@@ -375,7 +375,7 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/SmallHub.php'), 10);
 
         // 0.03 would normally be a warning with default thresholds,
-        // but with 25 classes, scaled warning = 0.04, so no violation
+        // but with 25 classes, scaled warning = 0.04, so no finding
         $targetBag = (new MetricBag())->with('classRank', 0.03);
         $normalBag = (new MetricBag())->with('classRank', 0.001);
 
@@ -390,14 +390,14 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        $targetViolations = array_values(array_filter(
-            $violations,
+        $targetFindings = array_values(array_filter(
+            $findings,
             static fn($v) => $v->symbolPath === $targetPath,
         ));
 
-        self::assertCount(0, $targetViolations);
+        self::assertCount(0, $targetFindings);
     }
 
     #[Test]
@@ -425,15 +425,15 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        $targetViolations = array_values(array_filter(
-            $violations,
+        $targetFindings = array_values(array_filter(
+            $findings,
             static fn($v) => $v->symbolPath === $targetPath,
         ));
 
-        self::assertCount(1, $targetViolations);
-        self::assertSame(Severity::Error, $targetViolations[0]->severity);
+        self::assertCount(1, $targetFindings);
+        self::assertSame(Severity::Error, $targetFindings[0]->severity);
     }
 
     #[Test]
@@ -458,15 +458,15 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        $targetViolations = array_values(array_filter(
-            $violations,
+        $targetFindings = array_values(array_filter(
+            $findings,
             static fn($v) => $v->symbolPath === $targetPath,
         ));
 
-        self::assertCount(1, $targetViolations);
-        self::assertStringContainsString('scaled for 100 classes', $targetViolations[0]->message);
+        self::assertCount(1, $targetFindings);
+        self::assertStringContainsString('scaled for 100 classes', $targetFindings[0]->message);
     }
 
     // --- Options tests ---
@@ -559,11 +559,11 @@ final class ClassRankRuleTest extends TestCase
         $repository->method('allDeclarations')->willReturn([$first, $second]);
         $repository->method('get')->willReturn((new MetricBag())->with('classRank', 0.03));
 
-        $violations = (new ClassRankRule(new ClassRankOptions()))
+        $findings = (new ClassRankRule(new ClassRankOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

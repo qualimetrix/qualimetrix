@@ -36,7 +36,7 @@ final class JsonHealthSectionTest extends TestCase
     private function buildReport(array $healthScores = []): Report
     {
         return new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,

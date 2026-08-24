@@ -8,9 +8,9 @@ use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -210,7 +210,7 @@ final class BaselineGenerateCommandTest extends TestCase
     #[Test]
     public function itNamesTheGroupsItCouldNotCapture(): void
     {
-        $tester = $this->execute([], [self::violation('no-such-rule', 'no-such-rule')]);
+        $tester = $this->execute([], [self::finding('no-such-rule', 'no-such-rule')]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('were not recorded and will be reported again', $tester->getDisplay());
@@ -219,18 +219,18 @@ final class BaselineGenerateCommandTest extends TestCase
 
     /**
      * @param array<string, mixed> $options
-     * @param ?list<Violation> $violations
+     * @param ?list<Finding> $findings
      * @param ?Closure(): void $duringAnalysis what happens to the world while the run is
      *                                         measuring — the window the overwrite decision
      *                                         has to survive
      */
-    private function execute(array $options, ?array $violations = null, ?Closure $duringAnalysis = null): CommandTester
+    private function execute(array $options, ?array $findings = null, ?Closure $duringAnalysis = null): CommandTester
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
 
         $command = new BaselineGenerateCommand(
             new StubBaselineRun(
-                $violations ?? [self::violation('code-smell.goto', 'code-smell.goto')],
+                $findings ?? [self::finding('code-smell.goto', 'code-smell.goto')],
                 ['src'],
                 AbsolutePath::fromString($this->tempDir),
                 onMeasure: $duringAnalysis,
@@ -245,17 +245,17 @@ final class BaselineGenerateCommandTest extends TestCase
         return $tester;
     }
 
-    private static function violation(string $ruleName, string $violationCode): Violation
+    private static function finding(string $ruleName, string $code): Finding
     {
         $path = RelativePath::fromString('src/Legacy.php');
         $symbol = SymbolPath::forFile($path);
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, 3),
             subject: MetricSubject::aggregate($symbol),
             symbolPath: $symbol,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: 'finding',
             severity: Severity::Warning,
         );

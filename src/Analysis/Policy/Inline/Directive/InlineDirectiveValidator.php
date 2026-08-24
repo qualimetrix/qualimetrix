@@ -9,12 +9,12 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -31,7 +31,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * What is deliberately *not* reported here is a directive that addressed
  * something real and merely did not fire. That is what ordinary debt cleanup
  * looks like, it stays with the rule on `annotation.unused-directive`, and
- * conflating the two would fail every project that fixed a violation and left
+ * conflating the two would fail every project that fixed a finding and left
  * its annotation behind.
  *
  * **The check runs after configuration has resolved, and that is load-bearing.**
@@ -50,7 +50,7 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
 {
     /**
      * The three channel names, restated here as `self::` constants purely so
-     * that the emission guard can read them at each `new Violation(...)`
+     * that the emission guard can read them at each `new Finding(...)`
      * site: it resolves `self::CONST`, not a string handed in as a parameter.
      * The values still come from the owning contract.
      */
@@ -122,7 +122,7 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function validate(AnalysisContext $context): array
     {
@@ -137,7 +137,7 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
         ];
     }
 
-    /** @return list<Violation> */
+    /** @return list<Finding> */
     private function suppressionFindings(): array
     {
         $findings = [];
@@ -158,7 +158,7 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
         return $findings;
     }
 
-    /** @return list<Violation> */
+    /** @return list<Finding> */
     private function thresholdFindings(): array
     {
         $findings = [];
@@ -174,7 +174,7 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
         return array_values(array_filter($findings));
     }
 
-    private function thresholdFinding(RelativePath $path, ThresholdOverride $override): ?Violation
+    private function thresholdFinding(RelativePath $path, ThresholdOverride $override): ?Finding
     {
         $rejection = $this->addressability->problemWithThreshold($override);
         if ($rejection === null) {
@@ -187,12 +187,12 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
 
         $subject = self::authoringSubject($path);
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, $override->line, precise: true),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: self::UNSUPPORTED_CHANNEL,
-            violationCode: self::UNSUPPORTED_CHANNEL,
+            code: self::UNSUPPORTED_CHANNEL,
             message: $rejection->message,
             severity: Severity::Error,
         );
@@ -202,11 +202,11 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
      * Malformed values are the same class of mistake as an unaddressable
      * name, and they arrive already diagnosed by the extractor.
      *
-     * The validator's stable code used to be spliced into the violation code,
+     * The validator's stable code used to be spliced into the finding code,
      * which made every new validator outcome a new channel nobody declared.
      * It is data about this finding, so it is reported as data.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function invalidThresholdFindings(): array
     {
@@ -217,12 +217,12 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
 
             foreach ($diagnostics as $diagnostic) {
                 $subject = self::authoringSubject($path);
-                $findings[] = new Violation(
+                $findings[] = new Finding(
                     location: new Location($path, $diagnostic->line, precise: true),
                     subject: $subject,
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: self::INVALID_CHANNEL,
-                    violationCode: self::INVALID_CHANNEL,
+                    code: self::INVALID_CHANNEL,
                     message: $this->addressability->describeDiagnostic($diagnostic),
                     severity: Severity::Error,
                     recommendation: $diagnostic->hint,
@@ -257,15 +257,15 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
         RelativePath $path,
         int $line,
         string $message,
-    ): Violation {
+    ): Finding {
         $subject = self::authoringSubject($path);
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, $line, precise: true),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: self::UNRESOLVED_CHANNEL,
-            violationCode: self::UNRESOLVED_CHANNEL,
+            code: self::UNRESOLVED_CHANNEL,
             message: $message,
             severity: Severity::Error,
         );

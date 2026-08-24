@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
@@ -98,7 +98,7 @@ final class BaselineEntryTest extends TestCase
     {
         $identity = new BaselineIdentity(
             'class:App\Web\Controller',
-            new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation'),
+            new FindingChannel('architecture.layer-violation', 'architecture.layer-violation'),
             null,
             new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
         );
@@ -164,7 +164,7 @@ final class BaselineEntryTest extends TestCase
     {
         return new BaselineIdentity(
             'callable:App\Foo::bar',
-            new ViolationChannel('code-smell.goto', 'code-smell.goto'),
+            new FindingChannel('code-smell.goto', 'code-smell.goto'),
         );
     }
 }

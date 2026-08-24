@@ -18,7 +18,7 @@ use ReflectionClass;
  *
  * AbstractCodeSmellRule reads metadata from typed class constants (NAME, SMELL_TYPE,
  * MESSAGE_TEMPLATE, ...) with permissive empty-string defaults. A subclass that forgets
- * to override one of them would silently produce zero violations at runtime — this test
+ * to override one of them would silently produce zero findings at runtime — this test
  * fails fast when that happens.
  */
 final class CodeSmellRuleContractTest extends TestCase

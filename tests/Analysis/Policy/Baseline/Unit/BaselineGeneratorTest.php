@@ -11,11 +11,11 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCapture;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
@@ -27,8 +27,8 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Time\ClockInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
-use Qualimetrix\Tests\Analysis\Finding\Support\ViolationFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 
 #[CoversClass(BaselineGenerator::class)]
@@ -68,8 +68,8 @@ final class BaselineGeneratorTest extends TestCase
         $generator = new BaselineGenerator(StubChannelDeclarationRegistry::withDefaults(), $clock);
 
         $generator->generate([
-            ViolationFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/A.php'))),
-            ViolationFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/A.php'))),
+            FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/A.php'))),
+            FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/A.php'))),
         ], ['src']);
 
         self::assertSame(1, $clock->calls);
@@ -84,7 +84,7 @@ final class BaselineGeneratorTest extends TestCase
 
             public function __construct(private StubChannelDeclarationRegistry $delegate) {}
 
-            public function declarationFor(ViolationChannel $channel): ?ChannelDeclaration
+            public function declarationFor(FindingChannel $channel): ?ChannelDeclaration
             {
                 ++$this->queries;
 
@@ -101,9 +101,9 @@ final class BaselineGeneratorTest extends TestCase
         $second = SymbolPath::forFile(RelativePath::fromString('src/Second.php'));
 
         $baseline = $generator->generate([
-            ViolationFactory::occurrence($first),
-            ViolationFactory::occurrence($second),
-            ViolationFactory::occurrence($first),
+            FindingFactory::occurrence($first),
+            FindingFactory::occurrence($second),
+            FindingFactory::occurrence($first),
         ], ['src'])->baseline;
 
         self::assertSame(2, $registry->queries);
@@ -118,7 +118,7 @@ final class BaselineGeneratorTest extends TestCase
     public function itCapturesTheMagnitudeOfASingleFinding(): void
     {
         $baseline = $this->capture(
-            [ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 25)],
+            [FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 25)],
             ['src'],
         );
 
@@ -133,13 +133,13 @@ final class BaselineGeneratorTest extends TestCase
         $file = SymbolPath::forFile(RelativePath::fromString('src/Legacy/dup.php'));
 
         $baseline = $this->capture([
-            ViolationFactory::magnitude($file, 100, 'duplication.code-duplication', 'duplication.code-duplication'),
-            ViolationFactory::magnitude($file, 40, 'duplication.code-duplication', 'duplication.code-duplication'),
+            FindingFactory::magnitude($file, 100, 'duplication.code-duplication', 'duplication.code-duplication'),
+            FindingFactory::magnitude($file, 40, 'duplication.code-duplication', 'duplication.code-duplication'),
         ], ['src']);
 
         self::assertSame(1, $baseline->count());
         self::assertSame(
-            BaselineIdentity::forViolation(ViolationFactory::magnitude(
+            BaselineIdentity::forFinding(FindingFactory::magnitude(
                 $file,
                 100,
                 'duplication.code-duplication',
@@ -158,9 +158,9 @@ final class BaselineGeneratorTest extends TestCase
         $file = SymbolPath::forFile(RelativePath::fromString('src/Legacy/bootstrap.php'));
 
         $baseline = $this->capture([
-            ViolationFactory::occurrence($file),
-            ViolationFactory::occurrence($file),
-            ViolationFactory::occurrence($file),
+            FindingFactory::occurrence($file),
+            FindingFactory::occurrence($file),
+            FindingFactory::occurrence($file),
         ], ['src']);
 
         self::assertSame(1, $baseline->count());
@@ -174,8 +174,8 @@ final class BaselineGeneratorTest extends TestCase
         $source = SymbolPath::forClass('App\Web', 'Controller');
 
         $baseline = $this->capture([
-            ViolationFactory::edge($source, SymbolPath::forClass('App\Db', 'Connection')),
-            ViolationFactory::edge($source, SymbolPath::forClass('App\Db', 'Statement')),
+            FindingFactory::edge($source, SymbolPath::forClass('App\Db', 'Connection')),
+            FindingFactory::edge($source, SymbolPath::forClass('App\Db', 'Statement')),
         ], ['src']);
 
         self::assertSame(2, $baseline->count());
@@ -191,7 +191,7 @@ final class BaselineGeneratorTest extends TestCase
         $baseline = $this->capture([$first, $second], ['src']);
 
         self::assertSame(
-            [BaselineIdentity::forViolation($first)->key(), BaselineIdentity::forViolation($second)->key()],
+            [BaselineIdentity::forFinding($first)->key(), BaselineIdentity::forFinding($second)->key()],
             array_map(static fn($entry): string => $entry->identity->key(), $baseline->entries),
         );
         self::assertSame(
@@ -211,13 +211,13 @@ final class BaselineGeneratorTest extends TestCase
         $source = SymbolPath::forClass('App', 'Source');
         $target = SymbolPath::forClass('Vendor', 'Target');
         $subject = MetricSubject::declaration(DeclarationPath::of($source, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)));
-        $typed = ViolationFactory::edge($source, $target, DependencyType::New_, $subject);
+        $typed = FindingFactory::edge($source, $target, DependencyType::New_, $subject);
         $untyped = $this->edgeWithType($source, $target, $subject, null);
 
         $baseline = $this->capture([$typed, $untyped], ['src']);
 
         self::assertSame(
-            [BaselineIdentity::forViolation($typed)->key(), BaselineIdentity::forViolation($untyped)->key()],
+            [BaselineIdentity::forFinding($typed)->key(), BaselineIdentity::forFinding($untyped)->key()],
             array_map(static fn($entry): string => $entry->identity->key(), $baseline->entries),
         );
         self::assertSame(
@@ -239,7 +239,7 @@ final class BaselineGeneratorTest extends TestCase
     public function itSkipsAChannelNoRuleDeclares(): void
     {
         $baseline = $this->capture([
-            ViolationFactory::magnitude(
+            FindingFactory::magnitude(
                 SymbolPath::forMethod('App', 'Foo', 'bar'),
                 5,
                 'nobody.declares',
@@ -258,20 +258,20 @@ final class BaselineGeneratorTest extends TestCase
     #[Test]
     public function itNamesTheGroupsItRefusedToCapture(): void
     {
-        $first = ViolationFactory::magnitude(
+        $first = FindingFactory::magnitude(
             SymbolPath::forMethod('App', 'Foo', 'bar'),
             5,
             'nobody.declares',
             'this.channel',
         );
-        $second = $this->violationWithoutMagnitude();
+        $second = $this->findingWithoutMagnitude();
 
         $capture = $this->generator->generate([$first, $second, $first], ['src']);
 
         self::assertSame(0, $capture->baseline->count());
         self::assertCount(2, $capture->uncaptured);
         self::assertSame(
-            [BaselineIdentity::forViolation($first)->key(), BaselineIdentity::forViolation($second)->key()],
+            [BaselineIdentity::forFinding($first)->key(), BaselineIdentity::forFinding($second)->key()],
             array_map(static fn($group): string => $group->identity->key(), $capture->uncaptured),
         );
         self::assertSame(
@@ -291,7 +291,7 @@ final class BaselineGeneratorTest extends TestCase
         $baseline = $this->capture([], ['src']);
         $identity = new BaselineIdentity(
             'project:',
-            new ViolationChannel('nobody.declares', 'this.channel'),
+            new FindingChannel('nobody.declares', 'this.channel'),
         );
 
         $empty = BaselineCapture::fromRejectedGroups($baseline, []);
@@ -311,7 +311,7 @@ final class BaselineGeneratorTest extends TestCase
     #[Test]
     public function itSkipsAMagnitudeGroupWhoseMemberReportsNoNumber(): void
     {
-        $capture = $this->generator->generate([$this->violationWithoutMagnitude()], ['src']);
+        $capture = $this->generator->generate([$this->findingWithoutMagnitude()], ['src']);
 
         self::assertSame(0, $capture->baseline->count());
         self::assertCount(1, $capture->uncaptured);
@@ -321,53 +321,53 @@ final class BaselineGeneratorTest extends TestCase
     #[Test]
     public function itRejectsANonFiniteMagnitudeWithoutLosingItsIdentity(): void
     {
-        $violation = $this->violationWithMagnitude(\INF);
+        $finding = $this->findingWithMagnitude(\INF);
 
-        $capture = $this->generator->generate([$violation], ['src']);
+        $capture = $this->generator->generate([$finding], ['src']);
 
         self::assertSame([], $capture->baseline->entries);
         self::assertSame(
-            [BaselineIdentity::forViolation($violation)->key()],
+            [BaselineIdentity::forFinding($finding)->key()],
             array_map(static fn($group): string => $group->identity->key(), $capture->uncaptured),
         );
         self::assertSame(UncapturedReason::MagnitudeUnavailable, $capture->uncaptured[0]->reason);
     }
 
-    private function violationWithoutMagnitude(): Violation
+    private function findingWithoutMagnitude(): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'no magnitude reported',
             severity: Severity::Warning,
         );
     }
 
-    private function violationWithMagnitude(float $magnitude): Violation
+    private function findingWithMagnitude(float $magnitude): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'magnitude reported',
             severity: Severity::Warning,
             metricValue: $magnitude,
         );
     }
 
-    private function occurrenceWithKey(SymbolPath $symbol, OccurrenceKey $occurrenceKey): Violation
+    private function occurrenceWithKey(SymbolPath $symbol, OccurrenceKey $occurrenceKey): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Occurrence.php'), 7),
             subject: MetricSubject::aggregate($symbol),
             symbolPath: $symbol,
             ruleName: 'code-smell.goto',
-            violationCode: 'code-smell.goto',
+            code: 'code-smell.goto',
             message: 'occurrence finding',
             severity: Severity::Warning,
             metricValue: 1.0,
@@ -380,13 +380,13 @@ final class BaselineGeneratorTest extends TestCase
         SymbolPath $target,
         MetricSubject $subject,
         ?DependencyType $type,
-    ): Violation {
-        return new Violation(
+    ): Finding {
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 11),
             subject: $subject,
             symbolPath: $source,
             ruleName: 'architecture.layer-violation',
-            violationCode: 'architecture.layer-violation',
+            code: 'architecture.layer-violation',
             message: 'forbidden dependency',
             severity: Severity::Error,
             dependencyTarget: $target,
@@ -400,8 +400,8 @@ final class BaselineGeneratorTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'Duplicated', 'run');
 
         $baseline = $this->capture([
-            ViolationFactory::magnitude($symbol, 12, subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/a/Duplicated.php'), DeclarationOrdinal::fromRank(0)))),
-            ViolationFactory::magnitude($symbol, 30, subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/b/Duplicated.php'), DeclarationOrdinal::fromRank(0)))),
+            FindingFactory::magnitude($symbol, 12, subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/a/Duplicated.php'), DeclarationOrdinal::fromRank(0)))),
+            FindingFactory::magnitude($symbol, 30, subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/b/Duplicated.php'), DeclarationOrdinal::fromRank(0)))),
         ], ['src']);
 
         self::assertSame(2, $baseline->count());
@@ -424,23 +424,23 @@ final class BaselineGeneratorTest extends TestCase
     #[Test]
     public function itProducesEntriesAddressableByTheIdentityOfTheirFindings(): void
     {
-        $violation = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 25);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 25);
 
-        $baseline = $this->capture([$violation], ['src']);
+        $baseline = $this->capture([$finding], ['src']);
 
-        self::assertSame(BaselineIdentity::forViolation($violation)->key(), $baseline->entries[0]->identity->key());
+        self::assertSame(BaselineIdentity::forFinding($finding)->key(), $baseline->entries[0]->identity->key());
         self::assertSame(
-            BaselineIdentity::forViolation($violation)->selector()->value,
+            BaselineIdentity::forFinding($finding)->selector()->value,
             $baseline->entries[0]->selector()->value,
         );
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param list<string> $scope
      */
-    private function capture(array $violations, array $scope): Baseline
+    private function capture(array $findings, array $scope): Baseline
     {
-        return $this->generator->generate($violations, $scope)->baseline;
+        return $this->generator->generate($findings, $scope)->baseline;
     }
 }

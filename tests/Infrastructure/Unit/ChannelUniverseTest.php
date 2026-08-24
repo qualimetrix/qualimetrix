@@ -15,8 +15,8 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedCo
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
@@ -39,7 +39,7 @@ final class ChannelUniverseTest extends TestCase
     #[Test]
     public function itReturnsTheDeclarationForAStaticallyDeclaredChannel(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $channel = new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
         $declaration = ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_);
 
         $universe = $this->universe(declarations: [$channel->toKey() => $declaration]);
@@ -50,7 +50,7 @@ final class ChannelUniverseTest extends TestCase
     #[Test]
     public function itReturnsNullForAnUndeclaredChannel(): void
     {
-        $result = $this->universe()->declarationFor(new ViolationChannel('code-smell.eval', 'code-smell.eval'));
+        $result = $this->universe()->declarationFor(new FindingChannel('code-smell.eval', 'code-smell.eval'));
 
         self::assertNull($result, 'An undeclared channel is not baselineable — that is observable, not an exception.');
     }
@@ -58,7 +58,7 @@ final class ChannelUniverseTest extends TestCase
     #[Test]
     public function itExposesExactlyTheStaticDeclarationsItWasGiven(): void
     {
-        $channel = new ViolationChannel('maintainability.index', 'maintainability.index');
+        $channel = new FindingChannel('maintainability.index', 'maintainability.index');
         $declaration = ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_);
 
         $universe = $this->universe(declarations: [$channel->toKey() => $declaration]);
@@ -72,7 +72,7 @@ final class ChannelUniverseTest extends TestCase
         $this->definitions = [$this->definition('health.complexity', inverted: true)];
 
         $declaration = $this->universe()->declarationFor(
-            new ViolationChannel(ComputedMetricRule::NAME, 'health.complexity'),
+            new FindingChannel(ComputedMetricRule::NAME, 'health.complexity'),
         );
 
         self::assertNotNull($declaration);
@@ -90,7 +90,7 @@ final class ChannelUniverseTest extends TestCase
         $this->definitions = [$this->definition('computed.risk_score', inverted: false)];
 
         $declaration = $this->universe()->declarationFor(
-            new ViolationChannel(ComputedMetricRule::NAME, 'computed.risk_score'),
+            new FindingChannel(ComputedMetricRule::NAME, 'computed.risk_score'),
         );
 
         self::assertNotNull($declaration);
@@ -104,7 +104,7 @@ final class ChannelUniverseTest extends TestCase
         $this->definitions = [$this->definition('health.overall', inverted: true)];
 
         // A stale entry for a definition the user has since removed from config.
-        $channel = new ViolationChannel(ComputedMetricRule::NAME, 'computed.removed_metric');
+        $channel = new FindingChannel(ComputedMetricRule::NAME, 'computed.removed_metric');
 
         self::assertNull($this->universe()->declarationFor($channel));
     }
@@ -122,7 +122,7 @@ final class ChannelUniverseTest extends TestCase
         self::assertSame(
             ['architecture.layer-violation#architecture.layer-violation', 'architecture.coverage#architecture.coverage'],
             array_map(
-                static fn(ViolationChannel $channel): string => $channel->toKey(),
+                static fn(FindingChannel $channel): string => $channel->toKey(),
                 $universe->channelsProducedBy('architecture.layer-violation'),
             ),
         );
@@ -137,7 +137,7 @@ final class ChannelUniverseTest extends TestCase
 
         self::assertSame(
             ['computed.health#health.complexity'],
-            array_map(static fn(ViolationChannel $channel): string => $channel->toKey(), $channels),
+            array_map(static fn(FindingChannel $channel): string => $channel->toKey(), $channels),
         );
     }
 
@@ -207,7 +207,7 @@ final class ChannelUniverseTest extends TestCase
 
         self::assertSame(
             ['coupling.cbo#coupling.cbo.class', 'coupling.cbo#coupling.cbo.namespace'],
-            array_map(static fn(ViolationChannel $c): string => $c->toKey(), $universe->expand($selector)),
+            array_map(static fn(FindingChannel $c): string => $c->toKey(), $universe->expand($selector)),
         );
     }
 
@@ -225,7 +225,7 @@ final class ChannelUniverseTest extends TestCase
 
         self::assertSame(
             ['coupling.cbo#coupling.cbo.class'],
-            array_map(static fn(ViolationChannel $c): string => $c->toKey(), $universe->expand($exact)),
+            array_map(static fn(FindingChannel $c): string => $c->toKey(), $universe->expand($exact)),
         );
         self::assertSame(
             [],
@@ -247,7 +247,7 @@ final class ChannelUniverseTest extends TestCase
 
         self::assertSame(
             ['computed.health#health.cohesion', 'computed.health#health.coupling'],
-            array_map(static fn(ViolationChannel $c): string => $c->toKey(), $this->universe()->expand($selector)),
+            array_map(static fn(FindingChannel $c): string => $c->toKey(), $this->universe()->expand($selector)),
         );
     }
 
@@ -266,7 +266,7 @@ final class ChannelUniverseTest extends TestCase
         self::assertSame(
             ['computed.health#health.candidate'],
             array_map(
-                static fn(ViolationChannel $c): string => $c->toKey(),
+                static fn(FindingChannel $c): string => $c->toKey(),
                 $candidate->channelsProducedBy(ComputedMetricRule::NAME),
             ),
         );
@@ -289,7 +289,7 @@ final class ChannelUniverseTest extends TestCase
         )];
 
         $declaration = $this->universe()->declarationFor(
-            new ViolationChannel(ComputedMetricRule::NAME, 'health.overall'),
+            new FindingChannel(ComputedMetricRule::NAME, 'health.overall'),
         );
 
         self::assertNotNull($declaration);
@@ -310,7 +310,7 @@ final class ChannelUniverseTest extends TestCase
         $this->definitions = [$this->definitionWithLevels('computed.silent', [])];
 
         self::assertNull($this->universe()->declarationFor(
-            new ViolationChannel(ComputedMetricRule::NAME, 'computed.silent'),
+            new FindingChannel(ComputedMetricRule::NAME, 'computed.silent'),
         ));
     }
 

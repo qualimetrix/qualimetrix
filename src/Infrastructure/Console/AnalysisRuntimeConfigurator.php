@@ -79,9 +79,9 @@ final readonly class AnalysisRuntimeConfigurator
         $this->ruleInputValidator->replaceChannels($channels);
     }
 
-    public function captureExcludedViolations(): void
+    public function captureExcludedFindings(): void
     {
-        $this->ruleOptionsRegistry->captureExcludedViolations();
+        $this->ruleOptionsRegistry->captureExcludedFindings();
     }
 
     /** Clears state that must never leak into logger setup or the next run. */

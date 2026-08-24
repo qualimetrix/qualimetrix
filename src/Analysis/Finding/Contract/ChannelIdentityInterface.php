@@ -47,20 +47,20 @@ interface ChannelIdentityInterface
      * Every channel of this configuration — the statically declared ones and
      * the computed-metric ones resolved from the configured definitions.
      *
-     * @return list<ViolationChannel>
+     * @return list<FindingChannel>
      */
     public function channels(): array;
 
-    public function hasChannel(string $violationCode): bool;
+    public function hasChannel(string $code): bool;
 
     /**
-     * The rule that produces the channel with this violation code, or `null`
+     * The rule that produces the channel with this finding code, or `null`
      * when no channel carries that code.
      *
      * The answer is the **producing rule**, which may differ from the
      * channel's own `ruleName` half.
      */
-    public function producerOf(string $violationCode): ?string;
+    public function producerOf(string $code): ?string;
 
     /**
      * Whether the rule declares that `@qmx-threshold` can retune it.
@@ -74,11 +74,11 @@ interface ChannelIdentityInterface
 
     /**
      * Resolves a selector into the concrete channels it addresses, by
-     * violation code: exactly one for an equality selector, the strict
+     * finding code: exactly one for an equality selector, the strict
      * descendants for the `X.*` form, and none when the selector covers
      * nothing.
      *
-     * @return list<ViolationChannel>
+     * @return list<FindingChannel>
      */
     public function expand(NameSelector $selector): array;
 }

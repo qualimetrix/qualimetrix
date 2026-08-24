@@ -68,7 +68,7 @@ final class AnalysisPipelineTest extends TestCase
         $result = $pipeline->analyze($configuration);
 
         self::assertSame([$relative], $result->coverage->analyzedFiles);
-        self::assertSame([], $result->violations);
+        self::assertSame([], $result->findings);
     }
 
     #[Test]

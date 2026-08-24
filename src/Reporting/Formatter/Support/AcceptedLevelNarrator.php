@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Support;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 
 /**
  * Renders the "accepted at 25, now 31" fragment a measured breach carries
  * (ADR 0017) — what makes a breach distinguishable
- * from a fresh violation without running `explain`.
+ * from a fresh finding without running `explain`.
  *
  * Shared by every formatter that decided to carry the accepted level in its
  * output (see `src/Reporting/README.md`), so the wording stays identical
@@ -19,13 +19,13 @@ use Qualimetrix\Analysis\Finding\Contract\Violation;
 final class AcceptedLevelNarrator
 {
     /**
-     * Returns the breach fragment, or `null` for every violation that is
-     * not a measured breach — {@see Violation::$acceptedLevel} is `null` on
+     * Returns the breach fragment, or `null` for every finding that is
+     * not a measured breach — {@see Finding::$acceptedLevel} is `null` on
      * all of them, including findings a baseline never judged.
      */
-    public static function describe(Violation $violation): ?string
+    public static function describe(Finding $finding): ?string
     {
-        $accepted = $violation->acceptedLevel;
+        $accepted = $finding->acceptedLevel;
 
         if ($accepted === null) {
             return null;
@@ -34,11 +34,11 @@ final class AcceptedLevelNarrator
         if ($accepted->shape() === ChannelShape::Occurrence) {
             // An occurrence channel's accepted level is a count. The group
             // size the mechanism compared it against is not something a
-            // single Violation carries, so there is no honest "now" to print.
+            // single Finding carries, so there is no honest "now" to print.
             return \sprintf('accepted at %s', $accepted->describe());
         }
 
-        $current = self::formatCurrent($violation->metricValue);
+        $current = self::formatCurrent($finding->metricValue);
 
         if ($current === null) {
             return \sprintf('accepted at %s', $accepted->describe());

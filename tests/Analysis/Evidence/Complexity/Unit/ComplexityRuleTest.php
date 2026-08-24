@@ -152,16 +152,15 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Cyclomatic complexity is 15, exceeds threshold of 10. Consider extracting methods or simplifying conditions', $violations[0]->message);
-        self::assertSame(15, $violations[0]->metricValue);
-        self::assertSame('complexity.cyclomatic', $violations[0]->ruleName);
-        self::assertSame(SymbolLevel::Callable, $violations[0]->level);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('Cyclomatic complexity is 15, exceeds threshold of 10. Consider extracting methods or simplifying conditions', $findings[0]->message);
+        self::assertSame(15, $findings[0]->metricValue);
+        self::assertSame('complexity.cyclomatic', $findings[0]->ruleName);
         // Both CCN and cognitive are high — standard recommendation
-        self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
+        self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -186,14 +185,14 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('mechanical branching', $violations[0]->recommendation);
-        self::assertStringContainsString('Lower refactoring priority', $violations[0]->recommendation);
-        self::assertStringContainsString('cognitive complexity (5)', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('mechanical branching', $findings[0]->recommendation);
+        self::assertStringContainsString('Lower refactoring priority', $findings[0]->recommendation);
+        self::assertStringContainsString('cognitive complexity (5)', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -218,10 +217,10 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -246,10 +245,10 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -273,11 +272,11 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(25, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(25, $findings[0]->metricValue);
     }
 
     // Class-level tests
@@ -320,13 +319,12 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Maximum method cyclomatic complexity is 35, exceeds threshold of 30', $violations[0]->message);
-        self::assertSame(35, $violations[0]->metricValue);
-        self::assertSame(SymbolLevel::Class_, $violations[0]->level);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('Maximum method cyclomatic complexity is 35, exceeds threshold of 30', $findings[0]->message);
+        self::assertSame(35, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -350,11 +348,11 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(55, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(55, $findings[0]->metricValue);
     }
 
     // Legacy analyze() tests
@@ -387,11 +385,9 @@ final class ComplexityRuleTest extends TestCase
             });
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(SymbolLevel::Callable, $violations[0]->level);
-        self::assertSame(SymbolLevel::Class_, $violations[1]->level);
+        self::assertCount(2, $findings);
     }
 
     // Options tests
@@ -526,13 +522,13 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -558,11 +554,11 @@ final class ComplexityRuleTest extends TestCase
         ]);
         $repository->method('get')->willReturn((new MetricBag())->with('ccn.max', 35));
 
-        $violations = (new ComplexityRule(new ComplexityOptions()))
+        $findings = (new ComplexityRule(new ComplexityOptions()))
             ->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',
@@ -581,11 +577,11 @@ final class ComplexityRuleTest extends TestCase
         ]);
         $repository->method('getSubject')->willReturn((new MetricBag())->with('ccn', 15));
 
-        $violations = (new ComplexityRule(new ComplexityOptions()))
+        $findings = (new ComplexityRule(new ComplexityOptions()))
             ->analyzeLevel(SymbolLevel::Callable, new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:callable:App\\Service\\Twin::run@src/A.php',

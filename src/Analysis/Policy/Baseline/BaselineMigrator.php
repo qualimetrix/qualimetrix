@@ -18,10 +18,10 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
  * **Matching is on `($symbolKey, $rule)` only**, because that pair is the
  * one thing a v5 record and a v10 finding both carry: the v5 key already is
  * `SymbolPath::toCanonical()`, and `$rule` is the prefix of a v10 channel
- * key up to `#`. Everything finer — `violationCode`, the dependency edge,
+ * key up to `#`. Everything finer — `code`, the dependency edge,
  * the magnitude itself — exists only on one side and cannot be matched
  * across the format boundary. A symbol/rule pair that produced two v10
- * entries (two violation codes, or two edges) still counts as one carried
+ * entries (two finding codes, or two edges) still counts as one carried
  * pair; {@see MigrationReport::$carriedV10EntryCount} is where that shows up.
  *
  * A v5 row that never parsed into a record belongs to no pair at all, so it

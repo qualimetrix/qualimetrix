@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope;
 
@@ -31,7 +31,7 @@ final class DeclaredChannelFileScopeTest extends TestCase
 
         foreach (self::declaredKeys() as $key) {
             self::assertFalse(
-                $scope->isFileScoped(ViolationChannel::fromKey($key)),
+                $scope->isFileScoped(FindingChannel::fromKey($key)),
                 \sprintf('%s is declared project-scoped but the assembled scope does not say so', $key),
             );
         }
@@ -42,11 +42,11 @@ final class DeclaredChannelFileScopeTest extends TestCase
     {
         $scope = DeclaredChannelFileScope::create();
 
-        self::assertTrue($scope->isFileScoped(new ViolationChannel('computed.health', 'health.cohesion')));
-        self::assertTrue($scope->isFileScoped(new ViolationChannel('coupling.cbo', 'coupling.cbo.class')));
+        self::assertTrue($scope->isFileScoped(new FindingChannel('computed.health', 'health.cohesion')));
+        self::assertTrue($scope->isFileScoped(new FindingChannel('coupling.cbo', 'coupling.cbo.class')));
         // A dotted descendant of a declared channel is a different channel and
         // inherits nothing.
-        self::assertTrue($scope->isFileScoped(new ViolationChannel(
+        self::assertTrue($scope->isFileScoped(new FindingChannel(
             LayerPolicyPreparationInterface::PRODUCER_RULE_NAME,
             LayerPolicyPreparationInterface::PRODUCER_RULE_NAME . '.invented',
         )));

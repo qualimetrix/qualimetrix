@@ -8,7 +8,7 @@ rules that interpret that evidence: `complexity.cyclomatic`,
 `complexity.cognitive`, `complexity.npath`, and `complexity.wmc`.
 
 The leaf does not publish a `Contract/` surface. It consumes Measurement's
-collector, metric and aggregation contracts and Finding's rule and violation
+collector, metric and aggregation contracts and Finding's rule and finding
 contracts. Measurement retains `CallableToClassAggregator` and the
 `MetricName::STRUCTURE_WMC` derived metric: WMC is the class-level sum of
 callable CCN, while this leaf owns its rule and options.

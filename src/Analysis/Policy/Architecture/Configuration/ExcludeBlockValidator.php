@@ -73,7 +73,7 @@ final class ExcludeBlockValidator
      *                                             {@code match} mode).
      *
      * @throws ArchitectureConfigurationException On any shape, key, or capture-placement
-     *                                            violation.
+     *                                            finding.
      */
     public static function parse(
         int $index,

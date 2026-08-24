@@ -167,13 +167,13 @@ final class GodClassRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(4, $violations[0]->metricValue);
-        self::assertSame('design.god-class', $violations[0]->ruleName);
-        self::assertSame('design.god-class', $violations[0]->violationCode);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(4, $findings[0]->metricValue);
+        self::assertSame('design.god-class', $findings[0]->ruleName);
+        self::assertSame('design.god-class', $findings[0]->code);
     }
 
     #[Test]
@@ -201,11 +201,11 @@ final class GodClassRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(3, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(3, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -319,11 +319,11 @@ final class GodClassRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(3, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(3, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -349,11 +349,11 @@ final class GodClassRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(3, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(3, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -364,7 +364,7 @@ final class GodClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        // Only WMC and classLoc — 2 evaluable, minCriteria=3 → no violation
+        // Only WMC and classLoc — 2 evaluable, minCriteria=3 → no finding
         $metricBag = (new MetricBag())
             ->with('wmc', 50)
             ->with('classLoc', 350)
@@ -410,10 +410,10 @@ final class GodClassRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -439,14 +439,14 @@ final class GodClassRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('high WMC (50 >= 47)', $violations[0]->message);
-        self::assertStringContainsString('high LCOM (4 >= 3)', $violations[0]->message);
-        self::assertStringContainsString('low TCC (0.10 < 0.33)', $violations[0]->message);
-        self::assertStringContainsString('large size (350 >= 300 LOC)', $violations[0]->message);
-        self::assertStringContainsString('4/4 criteria', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('high WMC (50 >= 47)', $findings[0]->message);
+        self::assertStringContainsString('high LCOM (4 >= 3)', $findings[0]->message);
+        self::assertStringContainsString('low TCC (0.10 < 0.33)', $findings[0]->message);
+        self::assertStringContainsString('large size (350 >= 300 LOC)', $findings[0]->message);
+        self::assertStringContainsString('4/4 criteria', $findings[0]->message);
     }
 
     #[Test]
@@ -535,11 +535,11 @@ final class GodClassRuleTest extends TestCase
                 ->with('isReadonly', 0),
         );
 
-        $violations = (new GodClassRule(new GodClassOptions()))
+        $findings = (new GodClassRule(new GodClassOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

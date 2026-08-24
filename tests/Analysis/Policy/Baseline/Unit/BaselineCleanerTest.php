@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason;
@@ -20,8 +20,8 @@ use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
-use Qualimetrix\Tests\Analysis\Finding\Support\ViolationFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 
 /**
@@ -34,8 +34,8 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itListsAStaleEntryWhoseIdentityDidNotAppearInTheRun(): void
     {
-        $repaired = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($repaired), [15], 1);
+        $repaired = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($repaired), [15], 1);
 
         $candidates = $this->cleaner()->candidates(
             self::baselineOf($entry),
@@ -51,12 +51,12 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itListsAnEntryWhoseChannelIsNoLongerDeclared(): void
     {
-        $violation = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15, 'nobody.declares', 'this.channel');
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($violation), [15], 1);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15, 'nobody.declares', 'this.channel');
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [15], 1);
 
         $candidates = $this->cleaner()->candidates(
             self::baselineOf($entry),
-            [$violation],
+            [$finding],
             new StubChannelDeclarationRegistry(),
         );
 
@@ -72,8 +72,8 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itPrefersChannelNotDeclaredOverStaleWhenBothApply(): void
     {
-        $violation = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15, 'nobody.declares', 'this.channel');
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($violation), [15], 1);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15, 'nobody.declares', 'this.channel');
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [15], 1);
 
         $candidates = $this->cleaner()->candidates(
             self::baselineOf($entry),
@@ -88,12 +88,12 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itDoesNotListAnEntryThatIsStillMeasuredAndDeclared(): void
     {
-        $violation = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($violation), [15], 1);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [15], 1);
 
         $candidates = $this->cleaner()->candidates(
             self::baselineOf($entry),
-            [$violation],
+            [$finding],
             StubChannelDeclarationRegistry::withDefaults(),
         );
 
@@ -118,8 +118,8 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itNeverRemovesAnythingWhenOnlyListingCandidates(): void
     {
-        $repaired = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($repaired), [15], 1);
+        $repaired = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($repaired), [15], 1);
         $baseline = self::baselineOf($entry);
 
         $this->cleaner()->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults());
@@ -152,7 +152,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itRemovesOneOfTwoEntriesDifferingOnlyByEdge(): void
     {
-        $channel = new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation');
+        $channel = new FindingChannel('architecture.layer-violation', 'architecture.layer-violation');
         $toConnection = new BaselineEntry(
             new BaselineIdentity('class:App\Web\Controller', $channel, null, new BaselineEdge('class:App\Db\Connection', DependencyType::New_)),
             null,
@@ -299,9 +299,9 @@ final class BaselineCleanerTest extends TestCase
         return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: array_values($entries));
     }
 
-    private static function gotoChannel(): ViolationChannel
+    private static function gotoChannel(): FindingChannel
     {
-        return new ViolationChannel('code-smell.goto', 'code-smell.goto');
+        return new FindingChannel('code-smell.goto', 'code-smell.goto');
     }
 
     private static function inertEntry(string $symbolKey, InertEntryReason $reason, ?EntrySelector $selector = null): InertBaselineEntry

@@ -66,7 +66,7 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown', 'Qualimetrix\\Reporting\\Health\\HealthScoreResolver'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonOffenderSection'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown', 'Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer'],
-        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\WorstOffender', 'Qualimetrix\\Reporting\\Filter\\ViolationFilter'],
+        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\WorstOffender', 'Qualimetrix\\Reporting\\Filter\\FindingFilter'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\WorstOffender', 'Qualimetrix\\Reporting\\Formatter\\Json\\JsonOffenderSection'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\WorstOffender', 'Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder', 'Qualimetrix\\Reporting\\Health\\SummaryEnricher'],

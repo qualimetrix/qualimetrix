@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 
 /**
- * Applies rule filters to producer rules and full violation channels.
+ * Applies rule filters to producer rules and full finding channels.
  *
  * A one-part selector is a {@see NameSelector}: an exact name, or `X.*` for
  * its strict descendants. It may address a producer rule, a channel's rule
- * name, or a channel's violation code — selection is the one surface that
+ * name, or a channel's finding code — selection is the one surface that
  * deliberately reads both halves, because `--disable-rule` has always been
  * asked to mean both "stop running this rule" and "stop reporting this
  * channel".
@@ -71,7 +71,7 @@ final class RuleSelector
      */
     public function isChannelEnabled(
         string $producerRuleName,
-        ViolationChannel $channel,
+        FindingChannel $channel,
         array $onlySelectors,
         array $disabledSelectors,
     ): bool {
@@ -117,7 +117,7 @@ final class RuleSelector
     /**
      * Whether a name addresses a registered producer **exactly**. This is for
      * rule-option ownership — `rules:` keys and `--rule-opt RULE:...` — whose
-     * keys cannot address violation channels and cannot address a group
+     * keys cannot address finding channels and cannot address a group
      * either: options are applied by exact key, so a group key configured
      * nothing while looking as if it did.
      *
@@ -183,7 +183,7 @@ final class RuleSelector
     private function anyMatchesProducerOrChannel(
         array $selectors,
         string $producerRuleName,
-        ViolationChannel $channel,
+        FindingChannel $channel,
     ): bool {
         foreach ($selectors as $selector) {
             if (!ChannelSelector::looksLikePair($selector) && self::matchesName($selector, $producerRuleName)) {
@@ -198,11 +198,11 @@ final class RuleSelector
         return false;
     }
 
-    private function matchesChannel(string $selector, ViolationChannel $channel): bool
+    private function matchesChannel(string $selector, FindingChannel $channel): bool
     {
         if (!ChannelSelector::looksLikePair($selector)) {
             return self::matchesName($selector, $channel->ruleName)
-                || self::matchesName($selector, $channel->violationCode);
+                || self::matchesName($selector, $channel->code);
         }
 
         return ChannelSelector::tryParse($selector)?->exactChannel()?->equals($channel) === true;

@@ -7,33 +7,33 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Html;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode;
-use Qualimetrix\Reporting\Formatter\Html\HtmlViolationPartitioner;
 use Qualimetrix\Reporting\FormatterContext;
 
-#[CoversClass(HtmlViolationPartitioner::class)]
-final class HtmlViolationPartitionerTest extends TestCase
+#[CoversClass(HtmlFindingPartitioner::class)]
+final class HtmlFindingPartitionerTest extends TestCase
 {
-    private HtmlViolationPartitioner $partitioner;
+    private HtmlFindingPartitioner $partitioner;
 
     protected function setUp(): void
     {
-        $this->partitioner = new HtmlViolationPartitioner();
+        $this->partitioner = new HtmlFindingPartitioner();
     }
 
     // --- partition() tests ---
 
     #[Test]
-    public function itPartitionsEmptyViolationsList(): void
+    public function itPartitionsEmptyFindingsList(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -43,82 +43,82 @@ final class HtmlViolationPartitionerTest extends TestCase
     }
 
     #[Test]
-    public function itAttachesClassViolationToClassNode(): void
+    public function itAttachesClassFindingToClassNode(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$violation], ['App\\Service' => $node]);
+        $result = $this->partitioner->partition([$finding], ['App\\Service' => $node]);
 
         self::assertCount(1, $result);
         self::assertArrayHasKey('App\\Service', $result);
-        self::assertSame([$violation], $result['App\\Service']);
+        self::assertSame([$finding], $result['App\\Service']);
     }
 
     #[Test]
-    public function itAttachesMethodViolationToParentClassNode(): void
+    public function itAttachesMethodFindingToParentClassNode(): void
     {
         $classNode = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 25),
             symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
             ruleName: 'complexity.cognitive',
-            violationCode: 'complexity.cognitive',
+            code: 'complexity.cognitive',
             message: 'Too cognitive',
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$violation], ['App\\Service' => $classNode]);
+        $result = $this->partitioner->partition([$finding], ['App\\Service' => $classNode]);
 
         self::assertCount(1, $result);
         self::assertArrayHasKey('App\\Service', $result);
-        self::assertSame([$violation], $result['App\\Service']);
+        self::assertSame([$finding], $result['App\\Service']);
     }
 
     #[Test]
-    public function itPartitionsNamespaceViolation(): void
+    public function itPartitionsNamespaceFinding(): void
     {
         $nsNode = new HtmlTreeNode('App\\Service', 'App\\Service', 'namespace');
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: Location::none(),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             ruleName: 'size.namespace-size',
-            violationCode: 'size.namespace-size',
+            code: 'size.namespace-size',
             message: 'Too many classes',
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$violation], ['App\\Service' => $nsNode]);
+        $result = $this->partitioner->partition([$finding], ['App\\Service' => $nsNode]);
 
         self::assertCount(1, $result);
         self::assertArrayHasKey('App\\Service', $result);
     }
 
     #[Test]
-    public function itSkipsFileViolationDuringPartition(): void
+    public function itSkipsFileFindingDuringPartition(): void
     {
         $classNode = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/helpers.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
             ruleName: 'size.loc',
-            violationCode: 'size.loc',
+            code: 'size.loc',
             message: 'File too large',
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$violation], ['App\\Service' => $classNode]);
+        $result = $this->partitioner->partition([$finding], ['App\\Service' => $classNode]);
 
         self::assertSame([], $result);
     }
@@ -128,21 +128,21 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $nsNode = new HtmlTreeNode('App', 'App', 'namespace');
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
         // No class node exists, only the namespace node
-        $result = $this->partitioner->partition([$violation], ['App' => $nsNode]);
+        $result = $this->partitioner->partition([$finding], ['App' => $nsNode]);
 
         self::assertCount(1, $result);
         self::assertArrayHasKey('App', $result);
-        self::assertSame([$violation], $result['App']);
+        self::assertSame([$finding], $result['App']);
     }
 
     #[Test]
@@ -150,65 +150,65 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $nsNode = new HtmlTreeNode('App', 'App', 'namespace');
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$violation], ['App' => $nsNode]);
+        $result = $this->partitioner->partition([$finding], ['App' => $nsNode]);
 
         self::assertCount(1, $result);
         self::assertArrayHasKey('App', $result);
     }
 
     #[Test]
-    public function itDropsMethodViolationWhenNoClassAndNoNamespaceNode(): void
+    public function itDropsMethodFindingWhenNoClassAndNoNamespaceNode(): void
     {
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$violation], []);
+        $result = $this->partitioner->partition([$finding], []);
 
         self::assertSame([], $result);
     }
 
     #[Test]
-    public function itPartitionsViolationsAcrossMultipleFilesAndTypes(): void
+    public function itPartitionsFindingsAcrossMultipleFilesAndTypes(): void
     {
         $classA = new HtmlTreeNode('ClassA', 'App\\A\\ClassA', 'class');
         $classB = new HtmlTreeNode('ClassB', 'App\\B\\ClassB', 'class');
 
-        $v1 = self::violation(
+        $v1 = self::finding(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 10),
             symbolPath: SymbolPath::forClass('App\\A', 'ClassA'),
             ruleName: 'r1',
-            violationCode: 'r1',
+            code: 'r1',
             message: 'm1',
             severity: Severity::Error,
         );
-        $v2 = self::violation(
+        $v2 = self::finding(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 20),
             symbolPath: SymbolPath::forMethod('App\\A', 'ClassA', 'foo'),
             ruleName: 'r2',
-            violationCode: 'r2',
+            code: 'r2',
             message: 'm2',
             severity: Severity::Warning,
         );
-        $v3 = self::violation(
+        $v3 = self::finding(
             location: new Location(RelativePath::fromString('src/B/ClassB.php'), 5),
             symbolPath: SymbolPath::forClass('App\\B', 'ClassB'),
             ruleName: 'r3',
-            violationCode: 'r3',
+            code: 'r3',
             message: 'm3',
             severity: Severity::Warning,
         );
@@ -228,7 +228,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     // --- attach() tests ---
 
     #[Test]
-    public function itAttachesNothingWhenNoViolations(): void
+    public function itAttachesNothingWhenNoFindings(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -238,19 +238,19 @@ final class HtmlViolationPartitionerTest extends TestCase
             new FormatterContext(),
         );
 
-        self::assertSame([], $node->violations);
+        self::assertSame([], $node->findings);
     }
 
     #[Test]
-    public function itFormatsViolationDataOnAttach(): void
+    public function itFormatsFindingDataOnAttach(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Too complex',
             severity: Severity::Warning,
             metricValue: 15,
@@ -262,12 +262,12 @@ final class HtmlViolationPartitionerTest extends TestCase
         // verbatim (the VO is already project-relative).
         $this->partitioner->attach(
             ['App\\Service' => $node],
-            ['App\\Service' => [$violation]],
+            ['App\\Service' => [$finding]],
             new FormatterContext(),
         );
 
-        self::assertCount(1, $node->violations);
-        $v = $node->violations[0];
+        self::assertCount(1, $node->findings);
+        $v = $node->findings[0];
         self::assertSame('complexity.cyclomatic', $v['ruleName']);
         self::assertSame('complexity.cyclomatic', $v['violationCode']);
         self::assertSame('Too complex', $v['message']);
@@ -286,13 +286,13 @@ final class HtmlViolationPartitionerTest extends TestCase
         $logical = SymbolPath::forMethod('App', 'Service', 'run');
         $subject = MetricSubject::declaration(DeclarationPath::of($logical, RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0)));
         $occurrence = OccurrenceKey::semantic('test', ['id' => 1]);
-        $violation = self::violation(new Location(RelativePath::fromString('src/Service.php'), 10), $logical, 'r', 'r', 'message', Severity::Warning, occurrenceKey: $occurrence, subject: $subject);
+        $finding = self::finding(new Location(RelativePath::fromString('src/Service.php'), 10), $logical, 'r', 'r', 'message', Severity::Warning, occurrenceKey: $occurrence, subject: $subject);
 
-        $this->partitioner->attach(['App\\Service' => $node], ['App\\Service' => [$violation]], new FormatterContext());
+        $this->partitioner->attach(['App\\Service' => $node], ['App\\Service' => [$finding]], new FormatterContext());
 
-        self::assertSame($subject->toCanonical(), $node->violations[0]['subject']);
-        self::assertSame($occurrence->value, $node->violations[0]['occurrence']);
-        self::assertSame($logical->toString(), $node->violations[0]['symbolPath']);
+        self::assertSame($subject->toCanonical(), $node->findings[0]['subject']);
+        self::assertSame($occurrence->value, $node->findings[0]['occurrence']);
+        self::assertSame($logical->toString(), $node->findings[0]['symbolPath']);
     }
 
     #[Test]
@@ -310,7 +310,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         $this->partitioner->attach(
             ['App\\Service' => $node],
             ['App\\Service' => [
-                self::violation(
+                self::finding(
                     new Location(RelativePath::fromString('src/Service.php'), 10),
                     $logical,
                     'r',
@@ -319,7 +319,7 @@ final class HtmlViolationPartitionerTest extends TestCase
                     Severity::Warning,
                     subject: $firstSubject,
                 ),
-                self::violation(
+                self::finding(
                     new Location(RelativePath::fromString('src/Service.php'), 20),
                     $logical,
                     'r',
@@ -332,12 +332,12 @@ final class HtmlViolationPartitionerTest extends TestCase
             new FormatterContext(),
         );
 
-        self::assertCount(2, $node->violations);
+        self::assertCount(2, $node->findings);
         self::assertSame(
             [$firstSubject->toCanonical(), $secondSubject->toCanonical()],
-            array_column($node->violations, 'subject'),
+            array_column($node->findings, 'subject'),
         );
-        self::assertSame([$logical->toString(), $logical->toString()], array_column($node->violations, 'symbolPath'));
+        self::assertSame([$logical->toString(), $logical->toString()], array_column($node->findings, 'symbolPath'));
     }
 
     #[Test]
@@ -345,21 +345,21 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $nanViolation = self::violation(
+        $nanFinding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'r1',
-            violationCode: 'r1',
+            code: 'r1',
             message: 'm1',
             severity: Severity::Warning,
             metricValue: \NAN,
         );
 
-        $infViolation = self::violation(
+        $infFinding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 20),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'r2',
-            violationCode: 'r2',
+            code: 'r2',
             message: 'm2',
             severity: Severity::Warning,
             metricValue: \INF,
@@ -367,13 +367,13 @@ final class HtmlViolationPartitionerTest extends TestCase
 
         $this->partitioner->attach(
             ['App\\Service' => $node],
-            ['App\\Service' => [$nanViolation, $infViolation]],
+            ['App\\Service' => [$nanFinding, $infFinding]],
             new FormatterContext(),
         );
 
-        self::assertCount(2, $node->violations);
-        self::assertNull($node->violations[0]['metricValue']);
-        self::assertNull($node->violations[1]['metricValue']);
+        self::assertCount(2, $node->findings);
+        self::assertNull($node->findings[0]['metricValue']);
+        self::assertNull($node->findings[1]['metricValue']);
     }
 
     #[Test]
@@ -381,22 +381,22 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Other.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Other'),
             ruleName: 'r1',
-            violationCode: 'r1',
+            code: 'r1',
             message: 'm1',
             severity: Severity::Warning,
         );
 
         $this->partitioner->attach(
             ['App\\Service' => $node],
-            ['App\\Other' => [$violation]],
+            ['App\\Other' => [$finding]],
             new FormatterContext(),
         );
 
-        self::assertSame([], $node->violations);
+        self::assertSame([], $node->findings);
     }
 
     #[Test]
@@ -404,34 +404,34 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $node = new HtmlTreeNode('NS', 'App', 'namespace');
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: Location::none(),
             symbolPath: SymbolPath::forNamespace('App'),
             ruleName: 'arch.circular',
-            violationCode: 'arch.circular',
+            code: 'arch.circular',
             message: 'Circular dependency',
             severity: Severity::Error,
         );
 
         $this->partitioner->attach(
             ['App' => $node],
-            ['App' => [$violation]],
+            ['App' => [$finding]],
             new FormatterContext(),
         );
 
-        self::assertCount(1, $node->violations);
-        self::assertSame('', $node->violations[0]['file']);
-        self::assertNull($node->violations[0]['line']);
+        self::assertCount(1, $node->findings);
+        self::assertSame('', $node->findings[0]['file']);
+        self::assertNull($node->findings[0]['line']);
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
-        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+        return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
 }

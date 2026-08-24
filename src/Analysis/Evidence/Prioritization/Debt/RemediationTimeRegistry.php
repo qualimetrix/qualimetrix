@@ -6,13 +6,13 @@ namespace Qualimetrix\Analysis\Evidence\Prioritization\Debt;
 
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 
 /**
  * Registry of estimated remediation times (in minutes) per rule.
  *
- * Base times represent the average effort for a typical violation. When a violation
+ * Base times represent the average effort for a typical finding. When a finding
  * carries metricValue and threshold, the time is scaled by how far the metric
  * exceeds the threshold: base * max(1, ln(metricValue / threshold)).
  *
@@ -68,7 +68,7 @@ final class RemediationTimeRegistry
      *
      * @throws LogicException when `$ruleName` names no registered rule — the injected
      *                        map is built from every rule the container knows about, so a
-     *                        miss means a violation carries a rule name no rule declared,
+     *                        miss means a finding carries a rule name no rule declared,
      *                        not a legitimately unknown one to fall back for.
      */
     public function getBaseMinutes(string $ruleName): int
@@ -82,18 +82,18 @@ final class RemediationTimeRegistry
     }
 
     /**
-     * Returns the estimated remediation time in minutes for a specific violation.
+     * Returns the estimated remediation time in minutes for a specific finding.
      *
-     * When the violation carries metricValue and threshold, the base time is scaled
+     * When the finding carries metricValue and threshold, the base time is scaled
      * by the natural log of the overshoot ratio: base * max(1, ln(value / threshold)).
-     * This means minor overshoots get ~base time, while extreme violations get much more.
+     * This means minor overshoots get ~base time, while extreme findings get much more.
      *
      * Falls back to the flat base time when metricValue or threshold is missing.
      */
-    public function getMinutesForViolation(Violation $violation): int
+    public function getMinutesForFinding(Finding $finding): int
     {
-        $base = $this->getBaseMinutes($violation->ruleName);
-        $ratio = $this->overshootRatio($violation);
+        $base = $this->getBaseMinutes($finding->ruleName);
+        $ratio = $this->overshootRatio($finding);
 
         // Below/at 1.0 means not exceeding threshold (edge case) — use base;
         // null covers every reason scaling does not apply (missing metric
@@ -109,29 +109,29 @@ final class RemediationTimeRegistry
     }
 
     /**
-     * How far the violation's metric overshoots its threshold, already
+     * How far the finding's metric overshoots its threshold, already
      * flipped into "bigger means worse" terms — or `null` when there is no
      * usable overshoot to scale by.
      *
-     * Split out of {@see getMinutesForViolation()} because the two guard
+     * Split out of {@see getMinutesForFinding()} because the two guard
      * chains (missing/unusable metric data, then the fail-closed direction
      * lookup) multiply the containing method's NPath when inlined; as a
      * separate method each chain's branches only add.
      */
-    private function overshootRatio(Violation $violation): ?float
+    private function overshootRatio(Finding $finding): ?float
     {
-        if ($violation->metricValue === null || $violation->threshold === null) {
+        if ($finding->metricValue === null || $finding->threshold === null) {
             return null;
         }
 
-        $metricValue = (float) $violation->metricValue;
-        $threshold = (float) $violation->threshold;
+        $metricValue = (float) $finding->metricValue;
+        $threshold = (float) $finding->threshold;
 
         if (!self::isUsableMagnitude($metricValue) || !self::isUsableMagnitude($threshold)) {
             return null;
         }
 
-        $isLowerWorse = $this->declarations->declarationFor($violation->channel())?->isLowerWorse();
+        $isLowerWorse = $this->declarations->declarationFor($finding->channel())?->isLowerWorse();
 
         // Fail-closed: a channel whose declaration carries no direction (no
         // declaration at all, or an `occurrence` shape) is not scaled.

@@ -9,13 +9,13 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -66,7 +66,7 @@ final class HardcodedCredentialsRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -74,7 +74,7 @@ final class HardcodedCredentialsRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
@@ -84,22 +84,22 @@ final class HardcodedCredentialsRule extends AbstractRule
                 continue;
             }
 
-            array_push($violations, ...$this->violationsForEntries($fileInfo, $entries, $context));
+            array_push($findings, ...$this->findingsForEntries($fileInfo, $entries, $context));
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
      * @param list<array<string, bool|float|int|string>> $entries
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function violationsForEntries(SymbolInfo $fileInfo, array $entries, AnalysisContext $context): array
+    private function findingsForEntries(SymbolInfo $fileInfo, array $entries, AnalysisContext $context): array
     {
         \assert($this->options instanceof HardcodedCredentialsOptions);
         $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
-        $violations = [];
+        $findings = [];
 
         foreach ($entries as $entry) {
             $line = (int) $entry['line'];
@@ -109,12 +109,12 @@ final class HardcodedCredentialsRule extends AbstractRule
             if ($severity === null) {
                 continue;
             }
-            $violations[] = new Violation(
+            $findings[] = new Finding(
                 location: new Location($file, $line, precise: true),
                 subject: $subject,
                 symbolPath: $fileInfo->symbolPath,
                 ruleName: $this->getName(),
-                violationCode: self::NAME,
+                code: self::NAME,
                 message: $this->messageForPattern($pattern),
                 severity: $severity,
                 metricValue: 1.0,
@@ -123,7 +123,7 @@ final class HardcodedCredentialsRule extends AbstractRule
             );
         }
 
-        return $violations;
+        return $findings;
     }
 
     private function messageForPattern(string $pattern): string
@@ -156,7 +156,7 @@ final class HardcodedCredentialsRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_),
         ];
     }
 }

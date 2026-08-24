@@ -12,9 +12,9 @@ namespace QmxFindingGate;
  * rename moves them. Excluding them would drop the only guard against a silent
  * fingerprint reset — a reset that would make every consumer treat every finding
  * as new. So the gate rebuilds the expected value from the same composition
- * `Violation::getFingerprint()` uses and asserts the published one matches.
+ * `Finding::getFingerprint()` uses and asserts the published one matches.
  *
- * @see \Qualimetrix\Analysis\Finding\Contract\Violation::getFingerprint()
+ * @see \Qualimetrix\Analysis\Finding\Contract\Finding::getFingerprint()
  * @see \Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter
  * @see \Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter
  */

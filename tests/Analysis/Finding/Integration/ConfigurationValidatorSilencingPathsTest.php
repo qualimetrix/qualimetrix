@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -173,7 +173,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
         $fromRegistry = [];
         foreach ($registry->staticDeclarations() as $key => $declaration) {
             if ($declaration->isConfigurationError()) {
-                $fromRegistry[] = ViolationChannel::fromKey($key)->violationCode;
+                $fromRegistry[] = FindingChannel::fromKey($key)->code;
             }
         }
         sort($fromRegistry);
@@ -411,8 +411,8 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
         self::assertIsArray($report['violations'] ?? null);
 
         $reported = [];
-        foreach ($report['violations'] as $violation) {
-            $reported[] = ViolationChannel::fromKey($violation['channel'])->violationCode;
+        foreach ($report['violations'] as $finding) {
+            $reported[] = FindingChannel::fromKey($finding['channel'])->code;
         }
 
         return array_values(array_filter(

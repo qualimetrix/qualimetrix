@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * High NOC indicates:
  * - Wide reuse/inheritance
  * - High impact of changes (affects many subclasses)
- * - Potential violation of Liskov Substitution Principle
+ * - Potential finding of Liskov Substitution Principle
  *
  * Thresholds based on Chidamber & Kemerer research:
  * - Warning: 10 (many direct children, changes affect many classes)

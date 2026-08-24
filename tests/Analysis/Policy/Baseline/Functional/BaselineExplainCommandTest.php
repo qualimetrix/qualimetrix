@@ -16,12 +16,12 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
@@ -254,7 +254,7 @@ final class BaselineExplainCommandTest extends TestCase
     /**
      * The case ADR 0017 gives as the reason `$symbolLocations` exists: an
      * `@qmx-threshold` that raised the limit is normally *why* the rule no
-     * longer fires, so the symbol most worth explaining has no violation to
+     * longer fires, so the symbol most worth explaining has no finding to
      * read a declaration site off. Without the run's metric repository,
      * `locationForSymbol()` has nothing to search and the annotation prints
      * as "(none)" even though one covers the symbol.
@@ -288,7 +288,7 @@ final class BaselineExplainCommandTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $measured
+     * @param list<Finding> $measured
      * @param array<string, mixed> $options
      * @param array<string, list<ThresholdOverride>> $overrides
      * @param array<string, mixed> $ruleOptions
@@ -341,7 +341,7 @@ final class BaselineExplainCommandTest extends TestCase
     /**
      * The same run, asked about a class-level symbol.
      *
-     * @param list<Violation> $measured
+     * @param list<Finding> $measured
      * @param array<string, mixed> $options
      */
     private function executeForClass(array $measured, array $options): CommandTester
@@ -403,19 +403,19 @@ final class BaselineExplainCommandTest extends TestCase
 
     private static function identity(SymbolPath $symbol, string $channelKey): BaselineIdentity
     {
-        return new BaselineIdentity(self::subject($symbol)->toCanonical(), ViolationChannel::fromKey($channelKey));
+        return new BaselineIdentity(self::subject($symbol)->toCanonical(), FindingChannel::fromKey($channelKey));
     }
 
-    private static function finding(SymbolPath $symbol, string $channelKey, float $magnitude): Violation
+    private static function finding(SymbolPath $symbol, string $channelKey, float $magnitude): Finding
     {
-        $channel = ViolationChannel::fromKey($channelKey);
+        $channel = FindingChannel::fromKey($channelKey);
 
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString(self::SYMBOL_FILE), 12),
             subject: self::subject($symbol),
             symbolPath: $symbol,
             ruleName: $channel->ruleName,
-            violationCode: $channel->violationCode,
+            code: $channel->code,
             message: 'finding',
             severity: Severity::Warning,
             metricValue: $magnitude,

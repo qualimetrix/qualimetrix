@@ -6,7 +6,7 @@ namespace Qualimetrix\Reporting\Formatter\Json;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
 
@@ -14,7 +14,7 @@ final class JsonOffenderSection
 {
     public function __construct(
         private readonly WorstClassDrillDown $namespaceDrillDown,
-        private readonly ViolationFilter $filter,
+        private readonly FindingFilter $filter,
         private readonly JsonSanitizer $sanitizer,
     ) {}
 
@@ -52,7 +52,7 @@ final class JsonOffenderSection
             $nsClasses = $this->namespaceDrillDown->buildWorstClasses(
                 $report->metrics,
                 $context->namespace,
-                $report->violations,
+                $report->findings,
                 includeNotableMetrics: true,
             );
             $ranked = $this->rankOffenders($nsClasses, $context);

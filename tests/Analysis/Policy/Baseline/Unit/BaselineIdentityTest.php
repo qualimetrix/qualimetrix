@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -21,17 +21,17 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Tests\Analysis\Finding\Support\ViolationFactory;
+use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 
 #[CoversClass(BaselineIdentity::class)]
 #[CoversClass(BaselineEdge::class)]
 final class BaselineIdentityTest extends TestCase
 {
     #[Test]
-    public function itTakesTheExactSubjectAndChannelOfAViolation(): void
+    public function itTakesTheExactSubjectAndChannelOfAFinding(): void
     {
-        $identity = BaselineIdentity::forViolation(
-            ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15),
+        $identity = BaselineIdentity::forFinding(
+            FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15),
         );
 
         self::assertSame('declaration:callable:App\Foo::bar@src/Foo.php', $identity->subjectKey);
@@ -42,7 +42,7 @@ final class BaselineIdentityTest extends TestCase
     #[Test]
     public function itCarriesTheDependencyEdgeWhenTheFindingHasOne(): void
     {
-        $identity = BaselineIdentity::forViolation(ViolationFactory::edge(
+        $identity = BaselineIdentity::forFinding(FindingFactory::edge(
             SymbolPath::forClass('App\Web', 'Controller'),
             SymbolPath::forClass('App\Db', 'Connection'),
         ));
@@ -61,11 +61,11 @@ final class BaselineIdentityTest extends TestCase
     {
         $source = SymbolPath::forClass('App\Web', 'Controller');
 
-        $first = BaselineIdentity::forViolation(
-            ViolationFactory::edge($source, SymbolPath::forClass('App\Db', 'Connection')),
+        $first = BaselineIdentity::forFinding(
+            FindingFactory::edge($source, SymbolPath::forClass('App\Db', 'Connection')),
         );
-        $second = BaselineIdentity::forViolation(
-            ViolationFactory::edge($source, SymbolPath::forClass('App\Db', 'Statement')),
+        $second = BaselineIdentity::forFinding(
+            FindingFactory::edge($source, SymbolPath::forClass('App\Db', 'Statement')),
         );
 
         self::assertNotSame($first->key(), $second->key());
@@ -79,8 +79,8 @@ final class BaselineIdentityTest extends TestCase
         $target = SymbolPath::forClass('App\Db', 'Connection');
 
         self::assertNotSame(
-            BaselineIdentity::forViolation(ViolationFactory::edge($source, $target, DependencyType::New_))->key(),
-            BaselineIdentity::forViolation(ViolationFactory::edge($source, $target, DependencyType::TypeHint))->key(),
+            BaselineIdentity::forFinding(FindingFactory::edge($source, $target, DependencyType::New_))->key(),
+            BaselineIdentity::forFinding(FindingFactory::edge($source, $target, DependencyType::TypeHint))->key(),
         );
     }
 
@@ -90,15 +90,15 @@ final class BaselineIdentityTest extends TestCase
         $source = SymbolPath::forClass('App\\Web', 'Controller');
         $alpha = self::targetOnlyEdge($source, SymbolPath::forClass('App', 'Alpha'));
         $beta = self::targetOnlyEdge($source, SymbolPath::forClass('App', 'Beta'));
-        $typedAlpha = ViolationFactory::edge($source, SymbolPath::forClass('App', 'Alpha'));
+        $typedAlpha = FindingFactory::edge($source, SymbolPath::forClass('App', 'Alpha'));
 
-        $alphaIdentity = BaselineIdentity::forViolation($alpha);
+        $alphaIdentity = BaselineIdentity::forFinding($alpha);
 
         self::assertNotNull($alphaIdentity->edge);
         self::assertSame('class:App\\Alpha', $alphaIdentity->edge->target);
         self::assertNull($alphaIdentity->edge->type);
-        self::assertNotSame($alphaIdentity->key(), BaselineIdentity::forViolation($beta)->key());
-        self::assertNotSame($alphaIdentity->key(), BaselineIdentity::forViolation($typedAlpha)->key());
+        self::assertNotSame($alphaIdentity->key(), BaselineIdentity::forFinding($beta)->key());
+        self::assertNotSame($alphaIdentity->key(), BaselineIdentity::forFinding($typedAlpha)->key());
     }
 
     #[Test]
@@ -107,19 +107,19 @@ final class BaselineIdentityTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
 
         self::assertNotSame(
-            (new BaselineIdentity($symbol->toCanonical(), new ViolationChannel('a.rule', 'a.code')))->key(),
-            (new BaselineIdentity($symbol->toCanonical(), new ViolationChannel('a.rule', 'other.code')))->key(),
+            (new BaselineIdentity($symbol->toCanonical(), new FindingChannel('a.rule', 'a.code')))->key(),
+            (new BaselineIdentity($symbol->toCanonical(), new FindingChannel('a.rule', 'other.code')))->key(),
         );
     }
 
-    private static function targetOnlyEdge(SymbolPath $source, SymbolPath $target): Violation
+    private static function targetOnlyEdge(SymbolPath $source, SymbolPath $target): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 11),
             subject: MetricSubject::declaration(DeclarationPath::of($source, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $source,
             ruleName: 'architecture.layer-violation',
-            violationCode: 'architecture.layer-violation',
+            code: 'architecture.layer-violation',
             message: 'untyped forbidden dependency',
             severity: Severity::Error,
             dependencyTarget: $target,
@@ -132,30 +132,30 @@ final class BaselineIdentityTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
         $subject = MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)));
 
-        $first = new Violation(
+        $first = new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 20),
             subject: $subject,
             symbolPath: $symbol,
             ruleName: 'code-smell.debug-code',
-            violationCode: 'code-smell.debug-code',
+            code: 'code-smell.debug-code',
             message: 'first presentation',
             severity: Severity::Warning,
             occurrenceKey: OccurrenceKey::semantic('debug-code', ['kind' => 'var_dump']),
         );
-        $second = new Violation(
+        $second = new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 200),
             subject: $subject,
             symbolPath: $symbol,
             ruleName: 'code-smell.debug-code',
-            violationCode: 'code-smell.debug-code',
+            code: 'code-smell.debug-code',
             message: 'second presentation',
             severity: Severity::Warning,
             occurrenceKey: OccurrenceKey::semantic('debug-code', ['kind' => 'print_r']),
         );
 
         self::assertNotSame(
-            BaselineIdentity::forViolation($first)->key(),
-            BaselineIdentity::forViolation($second)->key(),
+            BaselineIdentity::forFinding($first)->key(),
+            BaselineIdentity::forFinding($second)->key(),
         );
     }
 
@@ -164,7 +164,7 @@ final class BaselineIdentityTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new BaselineIdentity('', new ViolationChannel('a.rule', 'a.code'));
+        new BaselineIdentity('', new FindingChannel('a.rule', 'a.code'));
     }
 
     /**
@@ -175,30 +175,30 @@ final class BaselineIdentityTest extends TestCase
     {
         $symbol = SymbolPath::forMethod('App', 'Duplicated', 'run');
 
-        $fromFirstFile = new Violation(
+        $fromFirstFile = new Finding(
             location: new Location(RelativePath::fromString('src/a/Duplicated.php'), 10),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/a/Duplicated.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'from the first declaration',
             severity: Severity::Warning,
             metricValue: 12,
         );
-        $fromSecondFile = new Violation(
+        $fromSecondFile = new Finding(
             location: new Location(RelativePath::fromString('src/b/Duplicated.php'), 10),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/b/Duplicated.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'from the second declaration',
             severity: Severity::Warning,
             metricValue: 30,
         );
 
         self::assertNotSame(
-            BaselineIdentity::forViolation($fromFirstFile)->key(),
-            BaselineIdentity::forViolation($fromSecondFile)->key(),
+            BaselineIdentity::forFinding($fromFirstFile)->key(),
+            BaselineIdentity::forFinding($fromSecondFile)->key(),
         );
     }
 
@@ -213,7 +213,7 @@ final class BaselineIdentityTest extends TestCase
     #[Test]
     public function itKeepsNamespaceLevelsApartAcrossAggregationDepths(): void
     {
-        $channel = new ViolationChannel('coupling.cbo', 'coupling.cbo.namespace');
+        $channel = new FindingChannel('coupling.cbo', 'coupling.cbo.namespace');
 
         $parent = new BaselineIdentity(SymbolPath::forNamespace('App')->toCanonical(), $channel);
         $child = new BaselineIdentity(SymbolPath::forNamespace('App\Service')->toCanonical(), $channel);
@@ -241,7 +241,7 @@ final class BaselineIdentityTest extends TestCase
     #[Test]
     public function itDescribesItselfWithSymbolChannelAndEdge(): void
     {
-        $identity = BaselineIdentity::forViolation(ViolationFactory::edge(
+        $identity = BaselineIdentity::forFinding(FindingFactory::edge(
             SymbolPath::forClass('App\Web', 'Controller'),
             SymbolPath::forClass('App\Db', 'Connection'),
         ));

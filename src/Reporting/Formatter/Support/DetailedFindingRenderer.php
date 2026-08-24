@@ -5,30 +5,30 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Support;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Reporting\FormatterContext;
 
-/** Composes detailed violation output and its technical-debt breakdown. */
-final class DetailedViolationRenderer
+/** Composes detailed finding output and its technical-debt breakdown. */
+final class DetailedFindingRenderer
 {
-    private readonly ViolationDetailRenderer $violationDetailRenderer;
+    private readonly FindingDetailRenderer $findingDetailRenderer;
     private readonly DebtBreakdownRenderer $debtBreakdownRenderer;
 
     public function __construct(DebtCalculator $debtCalculator)
     {
-        $this->violationDetailRenderer = new ViolationDetailRenderer();
+        $this->findingDetailRenderer = new FindingDetailRenderer();
         $this->debtBreakdownRenderer = new DebtBreakdownRenderer($debtCalculator);
     }
 
     /**
-     * @param list<Violation> $violations Violations to display (may be truncated by --detail limit)
-     * @param list<Violation>|null $allViolations Full violation list for debt calculation (defaults to $violations)
+     * @param list<Finding> $findings Findings to display (may be truncated by --detail limit)
+     * @param list<Finding>|null $allFindings Full finding list for debt calculation (defaults to $findings)
      *
      * @return string Formatted detail block (without trailing newline)
      */
-    public function render(array $violations, FormatterContext $context, ?array $allViolations = null): string
+    public function render(array $findings, FormatterContext $context, ?array $allFindings = null): string
     {
-        if ($violations === []) {
+        if ($findings === []) {
             $label = $context->namespace !== null || $context->class !== null
                 ? 'No violations in this scope.'
                 : 'No violations found.';
@@ -37,8 +37,8 @@ final class DetailedViolationRenderer
         }
 
         return implode("\n", [
-            $this->violationDetailRenderer->render($violations, $context),
-            $this->debtBreakdownRenderer->render($violations, $allViolations),
+            $this->findingDetailRenderer->render($findings, $context),
+            $this->debtBreakdownRenderer->render($findings, $allFindings),
         ]);
     }
 }

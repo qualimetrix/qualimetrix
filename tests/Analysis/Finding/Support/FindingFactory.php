@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Support;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -16,10 +16,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
- * Builds the violations the baseline tests reason about, so each test states
+ * Builds the findings the baseline tests reason about, so each test states
  * only the parts it is actually about.
  */
-final class ViolationFactory
+final class FindingFactory
 {
     /**
      * A finding on a declared `magnitude` channel.
@@ -28,15 +28,15 @@ final class ViolationFactory
         SymbolPath $symbolPath,
         int|float $metricValue,
         string $ruleName = 'complexity.cyclomatic',
-        string $violationCode = 'complexity.cyclomatic.callable',
+        string $code = 'complexity.cyclomatic.callable',
         ?MetricSubject $subject = null,
-    ): Violation {
-        return new Violation(
+    ): Finding {
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             subject: $subject ?? self::subjectFor($symbolPath, 42),
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: 'magnitude finding',
             severity: Severity::Warning,
             metricValue: $metricValue,
@@ -49,15 +49,15 @@ final class ViolationFactory
     public static function occurrence(
         SymbolPath $symbolPath,
         string $ruleName = 'code-smell.goto',
-        string $violationCode = 'code-smell.goto',
+        string $code = 'code-smell.goto',
         ?MetricSubject $subject = null,
-    ): Violation {
-        return new Violation(
+    ): Finding {
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 7),
             subject: $subject ?? self::subjectFor($symbolPath, 7),
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: 'occurrence finding',
             severity: Severity::Warning,
             metricValue: 1.0,
@@ -73,13 +73,13 @@ final class ViolationFactory
         SymbolPath $target,
         DependencyType $type = DependencyType::New_,
         ?MetricSubject $subject = null,
-    ): Violation {
-        return new Violation(
+    ): Finding {
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 11),
             subject: $subject ?? self::subjectFor($symbolPath, 11),
             symbolPath: $symbolPath,
             ruleName: 'architecture.layer-violation',
-            violationCode: 'architecture.layer-violation',
+            code: 'architecture.layer-violation',
             message: 'forbidden dependency',
             severity: Severity::Error,
             dependencyTarget: $target,

@@ -9,14 +9,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -81,12 +81,12 @@ final class UnreachableCodeRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -94,16 +94,16 @@ final class UnreachableCodeRule extends AbstractRule
             return [];
         }
 
-        return $this->violationsForReachableSymbols($context);
+        return $this->findingsForReachableSymbols($context);
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function violationsForReachableSymbols(AnalysisContext $context): array
+    private function findingsForReachableSymbols(AnalysisContext $context): array
     {
         \assert($this->options instanceof UnreachableCodeOptions);
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allCallables() as $symbolInfo) {
             $subject = $symbolInfo->subject ?? throw new LogicException('Unreachable code findings require an exact callable subject');
@@ -126,10 +126,10 @@ final class UnreachableCodeRule extends AbstractRule
 
             $firstLine = $metrics->get(MetricName::CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE);
             $line = \is_int($firstLine) ? $firstLine : ($symbolInfo->line ?? 1);
-            $violations[] = $this->checkSymbol($symbolInfo, $subject, $line, $unreachableCountValue, $severity);
+            $findings[] = $this->checkSymbol($symbolInfo, $subject, $line, $unreachableCountValue, $severity);
         }
 
-        return $violations;
+        return $findings;
     }
 
     private function checkSymbol(
@@ -138,13 +138,13 @@ final class UnreachableCodeRule extends AbstractRule
         int $line,
         int $unreachableCountValue,
         Severity $severity,
-    ): Violation {
-        return new Violation(
+    ): Finding {
+        return new Finding(
             location: new Location($symbolInfo->file, $line, precise: true),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf(
                 'Found %d unreachable statement(s) after terminal statement (return/throw/exit/break/continue). Dead code should be removed',
                 $unreachableCountValue,

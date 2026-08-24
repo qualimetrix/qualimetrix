@@ -8,11 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -25,7 +25,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
+use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -48,8 +48,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * `-v` and `--show-suppressed` output, mirroring the existing global-filter
  * reporting (path/namespace exclusion counters).
  */
-#[CoversClass(ViolationFilterOrchestrator::class)]
-final class ViolationFilterOrchestratorTest extends TestCase
+#[CoversClass(FindingFilterOrchestrator::class)]
+final class FindingFilterOrchestratorTest extends TestCase
 {
     /** @var list<string> */
     private array $tempFiles = [];
@@ -146,23 +146,23 @@ final class ViolationFilterOrchestratorTest extends TestCase
     }
 
     #[Test]
-    public function itPrintsExcludedViolationDetailsWithShowSuppressed(): void
+    public function itPrintsExcludedFindingDetailsWithShowSuppressed(): void
     {
         $path = RelativePath::fromString('src/Service/UserService.php');
         $symbol = SymbolPath::forClass('App\\Tests', 'UserServiceTest');
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location($path, 42),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
             severity: Severity::Warning,
         );
 
         $stats = new RuleExclusionStats(
             namespaceExclusionsByRule: ['complexity.cyclomatic' => 1],
-            excludedViolations: [$violation],
+            excludedFindings: [$finding],
         );
         $orchestrator = $this->createOrchestrator($stats);
 
@@ -186,23 +186,23 @@ final class ViolationFilterOrchestratorTest extends TestCase
     }
 
     #[Test]
-    public function itDoesNotPrintExcludedViolationDetailsWithoutShowSuppressed(): void
+    public function itDoesNotPrintExcludedFindingDetailsWithoutShowSuppressed(): void
     {
         $path = RelativePath::fromString('src/Service/UserService.php');
         $symbol = SymbolPath::forClass('App\\Tests', 'UserServiceTest');
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location($path, 42),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
             severity: Severity::Warning,
         );
 
         $stats = new RuleExclusionStats(
             namespaceExclusionsByRule: ['complexity.cyclomatic' => 1],
-            excludedViolations: [$violation],
+            excludedFindings: [$finding],
         );
         $orchestrator = $this->createOrchestrator($stats);
 
@@ -230,7 +230,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
     #[Test]
     public function itReportsAStaleEntryWithoutFailingTheRunOrDisablingItsNeighbour(): void
     {
-        $stillFiring = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $stillFiring = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
         $baselinePath = $this->writeBaseline([
             $stillFiring->subject->toCanonical() => [
                 ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
@@ -249,7 +249,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
 
         $display = $output->fetch();
 
-        self::assertSame([], $result->violations, 'The surviving entry must still suppress its finding.');
+        self::assertSame([], $result->findings, 'The surviving entry must still suppress its finding.');
         self::assertStringContainsString('1 baseline entries did not appear in this run', $display);
         self::assertStringContainsString('code-smell.goto', $display);
         self::assertStringNotContainsString('Error:', $display);
@@ -262,7 +262,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
     #[Test]
     public function itNamesAMovedDeclarationAmongTheCausesOfStaleness(): void
     {
-        $stillFiring = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $stillFiring = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
         $baselinePath = $this->writeBaseline([
             $stillFiring->subject->toCanonical() => [
                 ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
@@ -297,7 +297,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
     #[Test]
     public function itPrintsResolvedEntriesOnARunThatStaysGreen(): void
     {
-        $stillFiring = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $stillFiring = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
         $baselinePath = $this->writeBaseline([
             $stillFiring->subject->toCanonical() => [
                 ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
@@ -317,17 +317,17 @@ final class ViolationFilterOrchestratorTest extends TestCase
         self::assertStringContainsString('1 baseline entries have been resolved!', $output->fetch());
     }
 
-    private static function violation(string $file, string $namespace, string $class): Violation
+    private static function finding(string $file, string $namespace, string $class): Finding
     {
         $path = RelativePath::fromString($file);
         $symbol = SymbolPath::forClass($namespace, $class);
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, 10),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(1))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
             severity: Severity::Error,
             metricValue: 25,
@@ -353,7 +353,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
     }
 
     private function filterAndReport(
-        ViolationFilterOrchestrator $orchestrator,
+        FindingFilterOrchestrator $orchestrator,
         AnalysisResult $result,
         ArrayInput $input,
         OutputInterface $output,
@@ -372,7 +372,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         );
     }
 
-    private function createOrchestrator(RuleExclusionStats $stats): ViolationFilterOrchestrator
+    private function createOrchestrator(RuleExclusionStats $stats): FindingFilterOrchestrator
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
 
@@ -391,7 +391,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $ruleExecutor = self::createStub(RuleExecutionInterface::class);
         $ruleExecutor->method('exclusionStats')->willReturn($stats);
 
-        return new ViolationFilterOrchestrator($pipeline, $ruleExecutor);
+        return new FindingFilterOrchestrator($pipeline, $ruleExecutor);
     }
 
     private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput
@@ -421,14 +421,14 @@ final class ViolationFilterOrchestratorTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private function createAnalysisResult(array $violations = []): AnalysisResult
+    private function createAnalysisResult(array $findings = []): AnalysisResult
     {
         $repository = self::createStub(MetricRepositoryInterface::class);
 
         return new AnalysisResult(
-            violations: $violations,
+            findings: $findings,
             duration: 0.1,
             metrics: $repository,
             coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),

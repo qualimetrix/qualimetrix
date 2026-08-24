@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -20,7 +20,7 @@ final class ComputedMetricFindingBuilder
         SymbolPath $symbolPath,
         Location $location,
         string $ruleName,
-    ): ?Violation {
+    ): ?Finding {
         $severity = $this->severity($definition, $value);
         if ($severity === null) {
             return null;
@@ -30,12 +30,12 @@ final class ComputedMetricFindingBuilder
         \assert($threshold !== null);
         $operator = $definition->inverted ? 'below' : 'above';
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $definition->name,
+            code: $definition->name,
             message: \sprintf('%s: %s = %.1f (%s threshold: %s %.1f)', $symbolPath->toString(), $definition->name, $value, $severity->value, $operator, $threshold),
             severity: $severity,
             metricValue: round($value, 1),

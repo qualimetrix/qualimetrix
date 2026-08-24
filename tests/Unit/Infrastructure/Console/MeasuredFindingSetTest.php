@@ -8,10 +8,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -30,7 +30,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
+use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
@@ -43,14 +43,14 @@ use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
  * `InputInterface` anywhere — which is what lets a command that does not
  * declare `check`'s options measure exactly what `check` measures.
  */
-#[CoversClass(MeasuredViolationSet::class)]
-final class MeasuredViolationSetTest extends TestCase
+#[CoversClass(MeasuredFindingSet::class)]
+final class MeasuredFindingSetTest extends TestCase
 {
     #[Test]
     public function itLeavesOutWhatTheSourcesOwnIgnoreTagsRemoved(): void
     {
-        $ignored = self::violation('src/Legacy/Service.php', 'App\\Legacy', 'Service');
-        $reported = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $ignored = self::finding('src/Legacy/Service.php', 'App\\Legacy', 'Service');
+        $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
         $set = $this->createSet(
             [$ignored, $reported],
@@ -68,9 +68,9 @@ final class MeasuredViolationSetTest extends TestCase
     #[Test]
     public function itLeavesOutWhatTheConfiguredExclusionsRemoved(): void
     {
-        $excludedByPath = self::violation('generated/Proxy.php', 'App\\Generated', 'Proxy');
-        $excludedByNamespace = self::violation('src/Vendor/Thing.php', 'App\\Vendor', 'Thing');
-        $reported = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $excludedByPath = self::finding('generated/Proxy.php', 'App\\Generated', 'Proxy');
+        $excludedByNamespace = self::finding('src/Vendor/Thing.php', 'App\\Vendor', 'Thing');
+        $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
         $options = new FindingProjectionOptions(
             excludePaths: ['generated'],
@@ -97,7 +97,7 @@ final class MeasuredViolationSetTest extends TestCase
     #[Test]
     public function itDefinesTheSetFromConfigurationAloneAndNotFromCheckFlags(): void
     {
-        $onlyExcludedByAFlag = self::violation('vendor/library/SomeClass.php', 'App\\Vendor', 'SomeClass');
+        $onlyExcludedByAFlag = self::finding('vendor/library/SomeClass.php', 'App\\Vendor', 'SomeClass');
 
         $set = $this->createSet([$onlyExcludedByAFlag], new FindingProjectionOptions());
 
@@ -122,7 +122,7 @@ final class MeasuredViolationSetTest extends TestCase
             excludeNamespaces: ['App\\Vendor'],
         ));
 
-        foreach ([ViolationFilterStage::Suppression, ViolationFilterStage::PathExclusion, ViolationFilterStage::NamespaceExclusion] as $stage) {
+        foreach ([FindingFilterStage::Suppression, FindingFilterStage::PathExclusion, FindingFilterStage::NamespaceExclusion] as $stage) {
             self::assertTrue($stage->definesMeasuredSet());
         }
     }
@@ -136,8 +136,8 @@ final class MeasuredViolationSetTest extends TestCase
     #[Test]
     public function itReturnsTheRunAlongsideTheSameMeasuredSetForPathsReturns(): void
     {
-        $ignored = self::violation('src/Legacy/Service.php', 'App\\Legacy', 'Service');
-        $reported = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $ignored = self::finding('src/Legacy/Service.php', 'App\\Legacy', 'Service');
+        $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
         $set = $this->createSet(
             [$ignored, $reported],
@@ -151,8 +151,8 @@ final class MeasuredViolationSetTest extends TestCase
 
         $run = $set->run($this->configuration());
 
-        self::assertSame([$reported], $run->violations);
-        self::assertSame([$ignored, $reported], $run->result->violations);
+        self::assertSame([$reported], $run->findings);
+        self::assertSame([$ignored, $reported], $run->result->findings);
     }
 
     #[Test]
@@ -199,19 +199,19 @@ final class MeasuredViolationSetTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param array<string, list<Suppression>> $suppressions
      */
     private function createSet(
-        array $violations,
+        array $findings,
         FindingProjectionOptions $configuration,
         array $suppressions = [],
         ?AnalysisPipelineInterface $analyzer = null,
         ?FileDiscoveryFactoryInterface $discoveryFactory = null,
-    ): MeasuredViolationSet {
+    ): MeasuredFindingSet {
         if ($analyzer === null) {
             $analyzer = self::createStub(AnalysisPipelineInterface::class);
-            $analyzer->method('analyze')->willReturn(self::analysisResult($violations, $suppressions));
+            $analyzer->method('analyze')->willReturn(self::analysisResult($findings, $suppressions));
         }
         if ($discoveryFactory === null) {
             $discoveryFactory = self::createStub(FileDiscoveryFactoryInterface::class);
@@ -231,17 +231,17 @@ final class MeasuredViolationSetTest extends TestCase
             },
         );
 
-        return new MeasuredViolationSet($analyzer, $projector, $discoveryFactory);
+        return new MeasuredFindingSet($analyzer, $projector, $discoveryFactory);
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param array<string, list<Suppression>> $suppressions
      */
-    private static function analysisResult(array $violations, array $suppressions = []): AnalysisResult
+    private static function analysisResult(array $findings, array $suppressions = []): AnalysisResult
     {
         return new AnalysisResult(
-            violations: $violations,
+            findings: $findings,
             duration: 0.1,
             metrics: self::createStub(MetricRepositoryInterface::class),
             coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
@@ -256,17 +256,17 @@ final class MeasuredViolationSetTest extends TestCase
         return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Exclude);
     }
 
-    private static function violation(string $file, string $namespace, string $class): Violation
+    private static function finding(string $file, string $namespace, string $class): Finding
     {
         $path = RelativePath::fromString($file);
         $symbol = SymbolPath::forClass($namespace, $class);
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, 10),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
             severity: Severity::Warning,
             metricValue: 25,

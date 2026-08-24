@@ -23,7 +23,7 @@ final class RuleConfigurationIsolationTest extends TestCase
             new FindingCliOverrides(['size.loc' => ['error' => 20]]),
             new RuleSelection(['size'], ['security']),
         ));
-        $registry->captureExcludedViolations();
+        $registry->captureExcludedFindings();
 
         $registry->resetRuntimeState();
 
@@ -31,6 +31,6 @@ final class RuleConfigurationIsolationTest extends TestCase
         self::assertSame([], $registry->cliOptions());
         self::assertSame([], $registry->selection()->only);
         self::assertSame([], $registry->selection()->disabled);
-        self::assertFalse($registry->capturesExcludedViolations());
+        self::assertFalse($registry->capturesExcludedFindings());
     }
 }

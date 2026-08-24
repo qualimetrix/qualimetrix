@@ -6,9 +6,9 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -64,7 +64,7 @@ final class UnassignedClassSummary
      *
      * @param array<string, string> $unassigned Canonical key => display FQN.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public static function unassignedClasses(
         UnassignedClassMode $mode,
@@ -83,12 +83,12 @@ final class UnassignedClassSummary
 
         $count = \count($unassigned);
 
-        return [new Violation(
+        return [new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
-            violationCode: LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
+            code: LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
             message: \sprintf(
                 '%d of %d analysed class-like declaration(s) (%.1f%%) are not assigned to any declared layer.',
                 $count,

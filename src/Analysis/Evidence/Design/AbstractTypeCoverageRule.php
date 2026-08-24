@@ -9,13 +9,13 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -67,7 +67,7 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
         $name = static::channelName();
 
         return [
-            (new ViolationChannel($name, $name))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
+            (new FindingChannel($name, $name))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
         ];
     }
 
@@ -75,7 +75,7 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -83,7 +83,7 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Type coverage findings require an exact class declaration subject');
@@ -92,14 +92,14 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
                 continue;
             }
 
-            $violation = $this->judge($context, $subject, $classInfo, $context->metrics->get($subject->toSymbolPath()));
+            $finding = $this->judge($context, $subject, $classInfo, $context->metrics->get($subject->toSymbolPath()));
 
-            if ($violation !== null) {
-                $violations[] = $violation;
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -114,7 +114,7 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
         MetricSubject $subject,
         SymbolInfo $classInfo,
         MetricBag $metrics,
-    ): ?Violation {
+    ): ?Finding {
         $total = $metrics->get($this->totalMetric());
 
         if ($total === null || (int) $total <= 0) {
@@ -133,12 +133,12 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
 
         $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
 
-        return new Violation(
+        return new Finding(
             location: new Location($classInfo->file, $classInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: $this->getName(),
+            code: $this->getName(),
             message: \sprintf(
                 '%s type coverage is %.1f%% (minimum: %.1f%%). %s',
                 $this->label(),

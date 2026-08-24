@@ -13,9 +13,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -270,7 +270,7 @@ final class HtmlTreeBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itAttachesViolationToTreeNode(): void
+    public function itAttachesFindingToTreeNode(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -281,12 +281,12 @@ final class HtmlTreeBuilderTest extends TestCase
             10,
         );
 
-        // Method-level violation should be attached to the class
-        $violation = self::violation(
+        // Method-level finding should be attached to the class
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 25),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculate'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Cyclomatic complexity is 15',
             severity: Severity::Warning,
             metricValue: 15,
@@ -297,7 +297,7 @@ final class HtmlTreeBuilderTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->metrics($metrics)
-            ->addViolation($violation)
+            ->addFinding($finding)
             ->build();
 
         // ADR 0015 Phase 4: Location::$file is already project-relative, so
@@ -324,7 +324,7 @@ final class HtmlTreeBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itCountsViolationsTotalBottomUp(): void
+    public function itCountsFindingsTotalBottomUp(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -341,29 +341,29 @@ final class HtmlTreeBuilderTest extends TestCase
             1,
         );
 
-        $v1 = self::violation(
+        $v1 = self::finding(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 10),
             symbolPath: SymbolPath::forClass('App\\A', 'ClassA'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Too complex',
             severity: Severity::Error,
             metricValue: 10,
         );
-        $v2 = self::violation(
+        $v2 = self::finding(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 20),
             symbolPath: SymbolPath::forMethod('App\\A', 'ClassA', 'doStuff'),
             ruleName: 'complexity.cognitive',
-            violationCode: 'complexity.cognitive',
+            code: 'complexity.cognitive',
             message: 'Too cognitive',
             severity: Severity::Warning,
             metricValue: 8,
         );
-        $v3 = self::violation(
+        $v3 = self::finding(
             location: new Location(RelativePath::fromString('src/B/ClassB.php'), 5),
             symbolPath: SymbolPath::forClass('App\\B', 'ClassB'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Complex',
             severity: Severity::Warning,
             metricValue: 5,
@@ -374,22 +374,22 @@ final class HtmlTreeBuilderTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->metrics($metrics)
-            ->addViolation($v1)
-            ->addViolation($v2)
-            ->addViolation($v3)
+            ->addFinding($v1)
+            ->addFinding($v2)
+            ->addFinding($v3)
             ->build();
 
         $result = $this->builder->build($report, new FormatterContext());
 
         $tree = $result['tree'];
-        // Root should have 3 total violations
+        // Root should have 3 total findings
         self::assertSame(3, $tree['violationCountTotal']);
 
         // App node should also have 3
         $appNode = $tree['children'][0];
         self::assertSame(3, $appNode['violationCountTotal']);
 
-        // ClassA has 2 violations (1 class-level + 1 callable-level attached to class)
+        // ClassA has 2 findings (1 class-level + 1 callable-level attached to class)
         $aNode = null;
         $bNode = null;
         foreach ($appNode['children'] as $child) {
@@ -450,11 +450,11 @@ final class HtmlTreeBuilderTest extends TestCase
             1,
         );
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Too complex',
             severity: Severity::Warning,
             metricValue: 10,
@@ -465,7 +465,7 @@ final class HtmlTreeBuilderTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->metrics($metrics)
-            ->addViolation($violation)
+            ->addFinding($finding)
             ->build();
 
         $result = $this->builder->build($report, new FormatterContext());
@@ -647,7 +647,7 @@ final class HtmlTreeBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itNullsNanMetricValueInViolation(): void
+    public function itNullsNanMetricValueInFinding(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -658,11 +658,11 @@ final class HtmlTreeBuilderTest extends TestCase
             1,
         );
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'maintainability.index',
-            violationCode: 'maintainability.index',
+            code: 'maintainability.index',
             message: 'Low maintainability',
             severity: Severity::Warning,
             metricValue: \NAN,
@@ -673,7 +673,7 @@ final class HtmlTreeBuilderTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->metrics($metrics)
-            ->addViolation($violation)
+            ->addFinding($finding)
             ->build();
 
         $result = $this->builder->build($report, new FormatterContext());
@@ -774,7 +774,7 @@ final class HtmlTreeBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsFileViolationDuringBuild(): void
+    public function itSkipsFileFindingDuringBuild(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -785,12 +785,12 @@ final class HtmlTreeBuilderTest extends TestCase
             1,
         );
 
-        // File-level violation should be skipped (not attached to any node)
-        $violation = self::violation(
+        // File-level finding should be skipped (not attached to any node)
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/helpers.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
             ruleName: 'size.loc',
-            violationCode: 'size.loc',
+            code: 'size.loc',
             message: 'File too large',
             severity: Severity::Warning,
             metricValue: 500,
@@ -801,13 +801,13 @@ final class HtmlTreeBuilderTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->metrics($metrics)
-            ->addViolation($violation)
+            ->addFinding($finding)
             ->build();
 
         $result = $this->builder->build($report, new FormatterContext());
 
         $tree = $result['tree'];
-        // Violation count in tree should be 0 (file-level skipped)
+        // Finding count in tree should be 0 (file-level skipped)
         self::assertSame(0, $tree['violationCountTotal']);
     }
 
@@ -837,29 +837,29 @@ final class HtmlTreeBuilderTest extends TestCase
             1,
         );
 
-        // Class-level violation (30 min debt via RemediationTimeRegistry)
-        $classViolation = self::violation(
+        // Class-level finding (30 min debt via RemediationTimeRegistry)
+        $classFinding = self::finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Complex',
             severity: Severity::Error,
         );
 
-        // File-level violation — won't be partitioned into any node
-        $fileViolation = self::violation(
+        // File-level finding — won't be partitioned into any node
+        $fileFinding = self::finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), null),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Foo.php')),
             ruleName: 'size.loc',
-            violationCode: 'size.loc',
+            code: 'size.loc',
             message: 'File too long',
             severity: Severity::Warning,
         );
 
-        // Report with techDebtMinutes = 50 (includes both violations)
+        // Report with techDebtMinutes = 50 (includes both findings)
         $report = new \Qualimetrix\Reporting\Report(
-            violations: [$classViolation, $fileViolation],
+            findings: [$classFinding, $fileFinding],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
@@ -872,7 +872,7 @@ final class HtmlTreeBuilderTest extends TestCase
         $result = $this->builder->build($report, new FormatterContext());
 
         // Both tree root and summary should show 50 (report's techDebtMinutes),
-        // not the bottom-up aggregation which misses file-level violations (30)
+        // not the bottom-up aggregation which misses file-level findings (30)
         self::assertSame(50, $result['tree']['debtMinutes']);
         self::assertSame(50, $result['summary']['totalDebtMinutes']);
     }
@@ -886,13 +886,13 @@ final class HtmlTreeBuilderTest extends TestCase
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
-        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+        return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
 }

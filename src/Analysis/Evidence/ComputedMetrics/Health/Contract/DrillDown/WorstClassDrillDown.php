@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\Worst
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -33,14 +33,14 @@ final readonly class WorstClassDrillDown
     /**
      * Builds worst class offenders within a namespace subtree.
      *
-     * @param list<Violation> $violations All violations (for counting per class)
+     * @param list<Finding> $findings All findings (for counting per class)
      *
      * @return list<WorstOffender> Sorted by health score ascending (worst first).
      */
     public function buildWorstClasses(
         MetricRepositoryInterface $metrics,
         string $namespace,
-        array $violations,
+        array $findings,
         bool $includeNotableMetrics = false,
     ): array {
         [$warnThreshold, $errThreshold] = $this->overallThresholds();
@@ -51,7 +51,7 @@ final readonly class WorstClassDrillDown
         $offenders = $this->offenderBuilder->buildWorstClasses(
             $this->snapshots($metrics, $notableMetricNames),
             $namespace,
-            $violations,
+            $findings,
             $warnThreshold,
             $errThreshold,
         );

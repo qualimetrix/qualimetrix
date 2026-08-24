@@ -11,12 +11,12 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedCo
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -53,7 +53,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $findings = $policy->auditDirectiveUsage([]);
 
         self::assertCount(1, $findings);
-        self::assertSame(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->violationCode);
+        self::assertSame(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->code);
         self::assertSame(Severity::Info, $findings[0]->severity);
     }
 
@@ -271,7 +271,7 @@ final class InlineDirectivePolicyTest extends TestCase
 
     private static function policy(?RuleOptionsRegistry $configuration = null): InlineDirectivePolicy
     {
-        $channel = new ViolationChannel('code-smell.goto', 'code-smell.goto');
+        $channel = new FindingChannel('code-smell.goto', 'code-smell.goto');
 
         return new InlineDirectivePolicy(
             new ChannelUniverse(
@@ -308,14 +308,14 @@ final class InlineDirectivePolicyTest extends TestCase
         return MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString(self::FILE)));
     }
 
-    private static function finding(MetricSubject $subject, int $line): Violation
+    private static function finding(MetricSubject $subject, int $line): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString(self::FILE), $line, precise: true),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: 'code-smell.goto',
-            violationCode: 'code-smell.goto',
+            code: 'code-smell.goto',
             message: 'goto',
             severity: Severity::Warning,
         );

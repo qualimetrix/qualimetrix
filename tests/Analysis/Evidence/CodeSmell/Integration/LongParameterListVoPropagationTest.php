@@ -47,7 +47,7 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 final class LongParameterListVoPropagationTest extends TestCase
 {
     #[Test]
-    public function itReportsNoViolationForVoConstructorBelowVoThresholds(): void
+    public function itReportsNoFindingForVoConstructorBelowVoThresholds(): void
     {
         // final readonly class, 10 promoted parameters, empty constructor body.
         $code = <<<'PHP'
@@ -72,16 +72,16 @@ final readonly class BigDto
 }
 PHP;
 
-        $violations = $this->analyzeConstruct(
+        $findings = $this->analyzeConstruct(
             $code,
             'App\Dto',
             'BigDto',
             new LongParameterListOptions(warning: 4, error: 6, voWarning: 20, voError: 30),
         );
 
-        // 10 < vo-warning (20) — no violation at all, despite exceeding the
+        // 10 < vo-warning (20) — no finding at all, despite exceeding the
         // regular (non-VO) error threshold of 6.
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     #[Test]
@@ -109,16 +109,16 @@ final readonly class BigDto
 }
 PHP;
 
-        $violations = $this->analyzeConstruct(
+        $findings = $this->analyzeConstruct(
             $code,
             'App\Dto',
             'BigDto',
             new LongParameterListOptions(warning: 4, error: 6, voWarning: 5, voError: 30),
         );
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('VO constructor has 10 promoted parameters', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('VO constructor has 10 promoted parameters', $findings[0]->message);
     }
 
     #[Test]
@@ -148,20 +148,20 @@ class BigService
 }
 PHP;
 
-        $violations = $this->analyzeConstruct(
+        $findings = $this->analyzeConstruct(
             $code,
             'App\Service',
             'BigService',
             new LongParameterListOptions(warning: 4, error: 6, voWarning: 20, voError: 30),
         );
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('Method has 10 parameters, exceeds threshold of 6. Consider introducing a parameter object', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame('Method has 10 parameters, exceeds threshold of 6. Consider introducing a parameter object', $findings[0]->message);
     }
 
     /**
-     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
     private function analyzeConstruct(
         string $code,

@@ -19,17 +19,17 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCa
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
+use Qualimetrix\Reporting\Formatter\Json\JsonFindingSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
-use Qualimetrix\Reporting\Formatter\Json\JsonViolationSection;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
@@ -50,13 +50,13 @@ final class JsonFormatterTest extends TestCase
         $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
         $worstClassDrillDown = new WorstClassDrillDown($definitionCatalog);
         $sanitizer = new JsonSanitizer();
-        $violationFilter = new ViolationFilter();
+        $findingFilter = new FindingFilter();
         $remediationTimeRegistry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $this->formatter = new JsonFormatter(
             new DebtCalculator($remediationTimeRegistry),
             new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
-            new JsonOffenderSection($worstClassDrillDown, $violationFilter, $sanitizer),
-            new JsonViolationSection($remediationTimeRegistry, $sanitizer),
+            new JsonOffenderSection($worstClassDrillDown, $findingFilter, $sanitizer),
+            new JsonFindingSection($remediationTimeRegistry, $sanitizer),
         );
     }
 
@@ -133,25 +133,25 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsReportWithViolations(): void
+    public function itFormatsReportWithFindings(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Cyclomatic complexity of 25 exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 25,
                 threshold: 10,
                 recommendation: 'Cyclomatic complexity: 25 (threshold: 10) — too many code paths',
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Cyclomatic complexity of 12 exceeds threshold of 10',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -166,7 +166,7 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Violations are flat list, sorted by severity (error first)
+        // Findings are flat list, sorted by severity (error first)
         self::assertCount(2, $data['violations']);
 
         $v1 = $data['violations'][0];
@@ -194,14 +194,14 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itUsesDisplayMessageFallbackForViolation(): void
+    public function itUsesDisplayMessageFallbackForFinding(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'Technical message only',
                 severity: Severity::Warning,
             ))
@@ -213,7 +213,7 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // message field always uses the raw violation message
+        // message field always uses the raw finding message
         self::assertSame('Technical message only', $data['violations'][0]['message']);
     }
 
@@ -221,7 +221,7 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesHealthScores(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
@@ -285,7 +285,7 @@ final class JsonFormatterTest extends TestCase
     public function itShowsHealthInScopedReporting(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 8,
             filesSkipped: 0,
             duration: 0.4,
@@ -309,7 +309,7 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesWorstNamespaces(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
@@ -352,7 +352,7 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesWorstClasses(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
@@ -391,7 +391,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itIncludesAllViolationsByDefault(): void
+    public function itIncludesAllFindingsByDefault(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -399,11 +399,11 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation {$i}",
                 severity: Severity::Warning,
             ));
@@ -419,7 +419,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itShowsAllViolationsWhenDetailEnabled(): void
+    public function itShowsAllFindingsWhenDetailEnabled(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -427,11 +427,11 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation {$i}",
                 severity: Severity::Warning,
             ));
@@ -454,11 +454,11 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 20; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation {$i}",
                 severity: Severity::Warning,
             ));
@@ -478,11 +478,11 @@ final class JsonFormatterTest extends TestCase
     public function itShowsNoViolationsWhenFormatOptViolationsIsZero(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'Test',
                 severity: Severity::Warning,
             ))
@@ -508,11 +508,11 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation {$i}",
                 severity: Severity::Warning,
             ));
@@ -527,24 +527,24 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFiltersViolationsByNamespace(): void
+    public function itFiltersFindingsByNamespace(): void
     {
-        // Violations are pre-filtered by ResultPresenter before reaching the formatter.
-        // Only in-scope violations are passed to the report builder.
+        // Findings are pre-filtered by ResultPresenter before reaching the formatter.
+        // Only in-scope findings are passed to the report builder.
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Payment/Pay.php'), 10),
                 symbolPath: SymbolPath::forClass('App\Payment', 'PayService'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'In Payment',
                 severity: Severity::Error,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Payment/Gateway/Stripe.php'), 20),
                 symbolPath: SymbolPath::forClass('App\Payment\Gateway', 'Stripe'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'In Payment Gateway',
                 severity: Severity::Warning,
             ))
@@ -557,7 +557,7 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Only Payment violations (boundary-aware: App\Payment and App\Payment\Gateway)
+        // Only Payment findings (boundary-aware: App\Payment and App\Payment\Gateway)
         self::assertCount(2, $data['violations']);
         self::assertSame('In Payment Gateway', $data['violations'][0]['message']);
         self::assertSame('In Payment', $data['violations'][1]['message']);
@@ -568,12 +568,12 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(1, $data['summary']['warningCount']);
         // filesAnalyzed stays global
         self::assertSame(3, $data['summary']['filesAnalyzed']);
-        // techDebtMinutes recalculated for filtered violations (2 × 15min default)
+        // techDebtMinutes recalculated for filtered findings (2 × 15min default)
         self::assertSame(30, $data['summary']['techDebtMinutes']);
     }
 
     #[Test]
-    public function itFiltersViolationsByNamespaceBoundaryAware(): void
+    public function itFiltersFindingsByNamespaceBoundaryAware(): void
     {
         // App\PaymentGateway is NOT in App\Payment scope — ResultPresenter
         // would filter it out before reaching the formatter. Empty report.
@@ -591,15 +591,15 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFiltersViolationsByClass(): void
+    public function itFiltersFindingsByClass(): void
     {
-        // Only the matching class violation is passed (pre-filtered by ResultPresenter)
+        // Only the matching class finding is passed (pre-filtered by ResultPresenter)
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Payment/Pay.php'), 10),
                 symbolPath: SymbolPath::forMethod('App\Payment', 'PayService', 'process'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'In PayService',
                 severity: Severity::Error,
             ))
@@ -623,20 +623,20 @@ final class JsonFormatterTest extends TestCase
     public function itProducesNullForNanAndInfMetricValues(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'maintainability.index',
-                violationCode: 'maintainability.index',
+                code: 'maintainability.index',
                 message: 'MI is NaN',
                 severity: Severity::Warning,
                 metricValue: \NAN,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'maintainability.index',
-                violationCode: 'maintainability.index',
+                code: 'maintainability.index',
                 message: 'MI is INF',
                 severity: Severity::Warning,
                 metricValue: \INF,
@@ -656,44 +656,44 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itSortsViolationsByCanonicalIdentity(): void
+    public function itSortsFindingsByCanonicalIdentity(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test.a',
+                code: 'test.a',
                 message: 'Warning low exceedance',
                 severity: Severity::Warning,
                 metricValue: 11,
                 threshold: 10,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
-                violationCode: 'test.b',
+                code: 'test.b',
                 message: 'Error low exceedance',
                 severity: Severity::Error,
                 metricValue: 11,
                 threshold: 10,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/C.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'test',
-                violationCode: 'test.c',
+                code: 'test.c',
                 message: 'Warning high exceedance',
                 severity: Severity::Warning,
                 metricValue: 50,
                 threshold: 10,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/D.php'), 40),
                 symbolPath: SymbolPath::forClass('App', 'D'),
                 ruleName: 'test',
-                violationCode: 'test.d',
+                code: 'test.d',
                 message: 'Error high exceedance',
                 severity: Severity::Error,
                 metricValue: 50,
@@ -717,29 +717,29 @@ final class JsonFormatterTest extends TestCase
     public function itRendersInfoSeverityWithoutUsingItAsTheSortKey(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'architecture.coverage',
-                violationCode: 'architecture.coverage',
+                code: 'architecture.coverage',
                 message: 'Class not assigned to a layer',
                 severity: Severity::Info,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Complexity 12',
                 severity: Severity::Warning,
                 metricValue: 12,
                 threshold: 10,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/C.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Complexity 25',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -757,35 +757,35 @@ final class JsonFormatterTest extends TestCase
         $severities = array_map(static fn(array $v): string => $v['severity'], $data['violations']);
         self::assertSame(['info', 'warning', 'error'], $severities);
 
-        // Find the info violation and verify its rendered string
-        $infoViolation = null;
-        foreach ($data['violations'] as $violation) {
-            if ($violation['severity'] === 'info') {
-                $infoViolation = $violation;
+        // Find the info finding and verify its rendered string
+        $infoFinding = null;
+        foreach ($data['violations'] as $finding) {
+            if ($finding['severity'] === 'info') {
+                $infoFinding = $finding;
                 break;
             }
         }
-        self::assertNotNull($infoViolation);
-        self::assertSame('info', $infoViolation['severity']);
+        self::assertNotNull($infoFinding);
+        self::assertSame('info', $infoFinding['severity']);
     }
 
     #[Test]
-    public function itSortsNullThresholdViolationsByIdentity(): void
+    public function itSortsNullThresholdFindingsByIdentity(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'code-smell',
-                violationCode: 'code-smell.eval',
+                code: 'code-smell.eval',
                 message: 'No threshold',
                 severity: Severity::Warning,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'Has threshold',
                 severity: Severity::Warning,
                 metricValue: 20,
@@ -804,14 +804,14 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsNamespaceLevelViolation(): void
+    public function itFormatsNamespaceLevelFinding(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php')),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'size.namespace',
-                violationCode: 'size.namespace',
+                code: 'size.namespace',
                 message: 'Namespace too large',
                 severity: Severity::Error,
                 metricValue: 16,
@@ -831,14 +831,14 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsFilelessViolation(): void
+    public function itFormatsFilelessFinding(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace('App'),
                 ruleName: 'architecture.circular',
-                violationCode: 'architecture.circular',
+                code: 'architecture.circular',
                 message: 'Circular dependency detected',
                 severity: Severity::Error,
             ))
@@ -859,7 +859,7 @@ final class JsonFormatterTest extends TestCase
     public function itLimitsWorstNamespacesWithTopNOption(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
@@ -883,7 +883,7 @@ final class JsonFormatterTest extends TestCase
     public function itSanitizesNanInHealthScores(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
@@ -926,7 +926,7 @@ final class JsonFormatterTest extends TestCase
     public function itFiltersWorstOffendersByNamespace(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
@@ -957,11 +957,11 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation {$i}",
                 severity: Severity::Warning,
             ));
@@ -980,7 +980,7 @@ final class JsonFormatterTest extends TestCase
     public function itShowsOffendersInScopedReporting(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 8,
             filesSkipped: 0,
             duration: 0.4,
@@ -1007,21 +1007,21 @@ final class JsonFormatterTest extends TestCase
     public function itSortsNanMetricValueByIdentity(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test.a',
+                code: 'test.a',
                 message: 'NaN metric',
                 severity: Severity::Warning,
                 metricValue: \NAN,
                 threshold: 10,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
-                violationCode: 'test.b',
+                code: 'test.b',
                 message: 'Normal metric',
                 severity: Severity::Warning,
                 metricValue: 25,
@@ -1067,7 +1067,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
@@ -1128,7 +1128,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
@@ -1162,7 +1162,7 @@ final class JsonFormatterTest extends TestCase
         $metrics->method('all')->willReturn([]);
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
@@ -1183,7 +1183,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itIncludesShownCountInViolationsMeta(): void
+    public function itIncludesShownCountInFindingsMeta(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -1191,11 +1191,11 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation {$i}",
                 severity: Severity::Warning,
             ));
@@ -1212,7 +1212,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itShowsShownEqualsTotalInViolationsMeta(): void
+    public function itShowsShownEqualsTotalInFindingsMeta(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -1220,11 +1220,11 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 10; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation {$i}",
                 severity: Severity::Warning,
             ));
@@ -1248,11 +1248,11 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 20; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation {$i}",
                 severity: Severity::Warning,
             ));
@@ -1270,7 +1270,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itShowsAllViolationsWhenFormatOptLimitIsZero(): void
+    public function itShowsAllFindingsWhenFormatOptLimitIsZero(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -1278,11 +1278,11 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation {$i}",
                 severity: Severity::Warning,
             ));
@@ -1309,11 +1309,11 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 20; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation {$i}",
                 severity: Severity::Warning,
             ));
@@ -1321,7 +1321,7 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
 
-        // When both are set, violations takes precedence
+        // When both are set, findings takes precedence
         $context = new FormatterContext(options: ['violations' => '3', 'limit' => '10']);
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -1331,14 +1331,14 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itDoesNotIncludeViolationGroupsWhenGroupByNone(): void
+    public function itDoesNotIncludeFindingGroupsWhenGroupByNone(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'Test',
                 severity: Severity::Warning,
             ))
@@ -1356,30 +1356,30 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itIncludesViolationGroupsWhenGroupByClassName(): void
+    public function itIncludesFindingGroupsWhenGroupByClassName(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'process'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Also complex',
                 severity: Severity::Warning,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Model/Order.php'), 15),
                 symbolPath: SymbolPath::forClass('App\Model', 'Order'),
                 ruleName: 'size.class-count',
-                violationCode: 'size.class-count',
+                code: 'size.class-count',
                 message: 'Too large',
                 severity: Severity::Warning,
             ))
@@ -1396,11 +1396,11 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Flat violations are always present
+        // Flat findings are always present
         self::assertArrayHasKey('violations', $data);
         self::assertCount(3, $data['violations']);
 
-        // Grouped violations are present
+        // Grouped findings are present
         self::assertArrayHasKey('violationGroups', $data);
         self::assertArrayHasKey('App\Service\UserService', $data['violationGroups']);
         self::assertArrayHasKey('App\Model\Order', $data['violationGroups']);
@@ -1415,30 +1415,30 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itIncludesViolationGroupsWhenGroupByNamespaceName(): void
+    public function itIncludesFindingGroupsWhenGroupByNamespaceName(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Model/Order.php'), 15),
                 symbolPath: SymbolPath::forClass('App\Model', 'Order'),
                 ruleName: 'size.class-count',
-                violationCode: 'size.class-count',
+                code: 'size.class-count',
                 message: 'Too large',
                 severity: Severity::Warning,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Model/Product.php'), 20),
                 symbolPath: SymbolPath::forClass('App\Model', 'Product'),
                 ruleName: 'size.class-count',
-                violationCode: 'size.class-count',
+                code: 'size.class-count',
                 message: 'Also large',
                 severity: Severity::Warning,
             ))
@@ -1459,10 +1459,10 @@ final class JsonFormatterTest extends TestCase
         self::assertArrayHasKey('App\Service', $data['violationGroups']);
         self::assertArrayHasKey('App\Model', $data['violationGroups']);
 
-        // App\Model has 2 violations — sorted first (worst first)
-        $violationGroups = $data['violationGroups'];
-        \assert(\is_array($violationGroups));
-        $keys = array_keys($violationGroups);
+        // App\Model has 2 findings — sorted first (worst first)
+        $findingGroups = $data['violationGroups'];
+        \assert(\is_array($findingGroups));
+        $keys = array_keys($findingGroups);
         self::assertSame('App\Model', $keys[0]);
         self::assertSame('App\Service', $keys[1]);
 
@@ -1471,22 +1471,22 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itIncludesViolationGroupsWhenGroupByFile(): void
+    public function itIncludesFindingGroupsWhenGroupByFile(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'Test A',
                 severity: Severity::Warning,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'Test B',
                 severity: Severity::Warning,
             ))
@@ -1508,31 +1508,31 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itBuildsViolationGroupsFromTruncatedList(): void
+    public function itBuildsFindingGroupsFromTruncatedList(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
             ->filesSkipped(0)
             ->duration(0.1);
 
-        // Add 5 violations to ClassA, 3 to ClassB
+        // Add 5 findings to ClassA, 3 to ClassB
         for ($i = 0; $i < 5; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation A{$i}",
                 severity: Severity::Warning,
             ));
         }
 
         for ($i = 0; $i < 3; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Violation B{$i}",
                 severity: Severity::Warning,
             ));
@@ -1540,7 +1540,7 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
 
-        // Limit to 4 violations — groups should be built from the truncated list
+        // Limit to 4 findings — groups should be built from the truncated list
         $context = new FormatterContext(
             groupBy: GroupBy::ClassName,
             isGroupByExplicit: true,
@@ -1553,7 +1553,7 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(8, $data['violationsMeta']['total']);
         self::assertTrue($data['violationsMeta']['truncated']);
 
-        // Groups are built from the 4 shown violations
+        // Groups are built from the 4 shown findings
         $totalGrouped = 0;
         foreach ($data['violationGroups'] as $group) {
             $totalGrouped += $group['count'];
@@ -1562,7 +1562,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsEmptyViolationGroupsWhenNoViolations(): void
+    public function itReturnsEmptyFindingGroupsWhenNoFindings(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -1582,42 +1582,42 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itSortsViolationGroupsByCountDescending(): void
+    public function itSortsFindingGroupsByCountDescending(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
             ->filesSkipped(0)
             ->duration(0.1);
 
-        // 1 violation for ClassA
-        $builder->addViolation(self::violation(
+        // 1 finding for ClassA
+        $builder->addFinding(self::finding(
             location: new Location(RelativePath::fromString('src/A.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'A'),
             ruleName: 'test',
-            violationCode: 'test',
+            code: 'test',
             message: 'Test',
             severity: Severity::Warning,
         ));
 
-        // 3 violations for ClassB
+        // 3 findings for ClassB
         for ($i = 0; $i < 3; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Test B{$i}",
                 severity: Severity::Warning,
             ));
         }
 
-        // 2 violations for ClassC
+        // 2 findings for ClassC
         for ($i = 0; $i < 2; $i++) {
-            $builder->addViolation(self::violation(
+            $builder->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/C.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: "Test C{$i}",
                 severity: Severity::Warning,
             ));
@@ -1640,21 +1640,20 @@ final class JsonFormatterTest extends TestCase
     }
 
     /**
-     * Builds a violation fixture with an explicit declaration or aggregate
+     * Builds a finding fixture with an explicit declaration or aggregate
      * subject, preserving the production contract without hiding it behind a
      * legacy fallback.
      *
      * @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations
      */
-    private static function violation(
+    private static function finding(
         \Qualimetrix\Analysis\Finding\Contract\Location $location,
         \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
         string $ruleName,
-        string $violationCode,
+        string $code,
         string $message,
         \Qualimetrix\Analysis\Finding\Contract\Severity $severity,
         int|float|null $metricValue = null,
-        ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level = null,
         array $relatedLocations = [],
         ?string $recommendation = null,
         int|float|null $threshold = null,
@@ -1663,7 +1662,7 @@ final class JsonFormatterTest extends TestCase
         ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
-    ): Violation {
+    ): Finding {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File,
             \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
@@ -1671,16 +1670,15 @@ final class JsonFormatterTest extends TestCase
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: $message,
             severity: $severity,
             metricValue: $metricValue,
-            level: $level,
             relatedLocations: $relatedLocations,
             recommendation: $recommendation,
             threshold: $threshold,

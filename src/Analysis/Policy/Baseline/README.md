@@ -61,16 +61,16 @@ Baseline/
 ├── BoundaryExplanationStatus.php # Current, baseline-only, or unknown symbol classification
 │
 ├── Filter/
-│   ├── BaselineCeilingStage.php # ViolationFilterStageInterface: applies entries as ceilings over groups
+│   ├── BaselineCeilingStage.php # FindingFilterStageInterface: applies entries as ceilings over groups
 │   └── GroupCeilingVerdict.php  # VO: accepted / measured breach / reported, for one group
 ```
 
 ## Baseline Workflow
 
 ```
-Violations -> BaselineGenerator -> BaselineCapture -> BaselineWriter -> JSON file
+Findings -> BaselineGenerator -> BaselineCapture -> BaselineWriter -> JSON file
                                     |          `-> uncaptured groups -> reported
-JSON file -> BaselineLoader -> Baseline -> BaselineCeilingStage -> Violations
+JSON file -> BaselineLoader -> Baseline -> BaselineCeilingStage -> Findings
                                                                    (accepted dropped,
                                                                     breaches promoted)
 ```
@@ -94,7 +94,7 @@ report it otherwise, and "Baseline with 0 entries written" would read as success
 **Version history:**
 - **Version 2**: Introduced canonical symbol path keys
 - **Version 3**: Rule naming scheme update (`group.rule-name` format)
-- **Version 4**: 16-char violation hashes (was 8-char in v3)
+- **Version 4**: 16-char finding hashes (was 8-char in v3)
 - **Version 5**: Relative file paths in canonical keys (no path resolution needed)
 - **Version 10**: Entries record accepted magnitudes under logical symbol keys
 - **Version 11**: Identity uses exact typed subjects and may include semantic
@@ -124,8 +124,8 @@ either.
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | `BaselineEntryParser`        | `parse(string, mixed): BaselineEntry\|InertBaselineEntry`                                                                     | Reads the outer JSON object and exact identity/occurrence/edge, delegates count/magnitudes/mode to `BaselineEntryValues`, validates channel declaration shape, and converts every rejection into a raw-preserving inert entry. Known identities retain their exact v13 selector; unknown identities receive a deterministic raw selector.                                                                                                           | `BaselineEntryParserTest`, `BaselineWorkflowTest`        |
 | `BaselineEntryValues`        | `decode(array): BaselineEntryValues` exposing readonly `count`, `?list<int\|float> magnitudes`, and `?BaselineEntryMode mode` | Owns only strict JSON value decoding. `count` is required and must be an integer for an occurrence-shaped entry, and is rejected as malformed when it appears (non-null) alongside `magnitudes`; it also rejects non-list/empty/non-numeric magnitudes and unknown modes, with the parser's existing reason/detail. `BaselineEntry` remains the owner of positive count, finite values, and count/list agreement.                                   | `BaselineEntryValuesTest`, `BaselineEntryParserTest`     |
-| `BaselineGenerator`          | `generate(list<Violation>, list<string>): BaselineCapture`                                                                    | Groups once by complete `BaselineIdentity`, preserves first-seen group/refusal order, asks the channel registry only while capturing a group, and reads the injected clock exactly once after grouping. It passes typed rejected records to `BaselineCapture::fromRejectedGroups`, which alone materializes `UncapturedGroup`. Occurrence is identified by the declaration's null direction; magnitude groups require one finite number per member. | `BaselineGeneratorTest`, `BaselineWorkflowTest`          |
-| `BoundaryExplanationService` | measured violations, threshold maps, optional `MetricRepositoryInterface` -> `BoundaryExplanation`                            | Builds one typed repository index from declarations, callables, logical classes, and aggregate rows. Measured evidence wins over the repository. Annotation matching requires the exact subject and `ThresholdOverride::matches()`; highest control specificity wins, then smallest finite span, then first extraction on a tie. Baseline, configured, and annotation sources stay independently nullable and zero remains a value.                 | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
+| `BaselineGenerator`          | `generate(list<Finding>, list<string>): BaselineCapture`                                                                      | Groups once by complete `BaselineIdentity`, preserves first-seen group/refusal order, asks the channel registry only while capturing a group, and reads the injected clock exactly once after grouping. It passes typed rejected records to `BaselineCapture::fromRejectedGroups`, which alone materializes `UncapturedGroup`. Occurrence is identified by the declaration's null direction; magnitude groups require one finite number per member. | `BaselineGeneratorTest`, `BaselineWorkflowTest`          |
+| `BoundaryExplanationService` | measured findings, threshold maps, optional `MetricRepositoryInterface` -> `BoundaryExplanation`                              | Builds one typed repository index from declarations, callables, logical classes, and aggregate rows. Measured evidence wins over the repository. Annotation matching requires the exact subject and `ThresholdOverride::matches()`; highest control specificity wins, then smallest finite span, then first extraction on a tie. Baseline, configured, and annotation sources stay independently nullable and zero remains a value.                 | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
 
 These owners retain only their subject dependencies: baseline and capture VOs,
 channel declarations and the clock, or repository/subject/path and Finding-owned
@@ -191,7 +191,7 @@ tolerance.
 `judgeAll()` judges a whole list in one pass and returns a `CeilingOutcome` bundling
 the filtered/promoted result together with the stale entries and the entries the
 loader could not apply, as ADR 0017 requires — one call, one measured set, so the three cannot be read
-from different lists by accident. `apply()`, required by `ViolationFilterStageInterface`,
+from different lists by accident. `apply()`, required by `FindingFilterStageInterface`,
 is `judgeAll()->result`.
 
 ## The Writing Commands' Domain Services
@@ -247,7 +247,7 @@ and never fails on it.
 
 ### `BaselineUpdater` — direction-aware monotonic tightening
 
-`BaselineUpdater::update(Baseline $baseline, list<Violation> $measured, RunScope $scope): BaselineUpdateResult`
+`BaselineUpdater::update(Baseline $baseline, list<Finding> $measured, RunScope $scope): BaselineUpdateResult`
 reconciles every entry the loaded baseline holds against the run's measured
 set (ADR 0017):
 
@@ -285,7 +285,7 @@ every later narrow run would cover it and the guard would never fire again.
 
 ### `BaselineCleaner` — candidate enumeration and selector removal
 
-`BaselineCleaner::candidates(Baseline $baseline, list<Violation> $measured, ChannelDeclarationRegistryInterface $declarations): list<BaselineCleanupCandidate>`
+`BaselineCleaner::candidates(Baseline $baseline, list<Finding> $measured, ChannelDeclarationRegistryInterface $declarations): list<BaselineCleanupCandidate>`
 lists every entry `cleanup` would offer to remove — **and changes nothing**.
 A valid entry is offered for `Stale` (absent from the measured set, via
 `Baseline::staleEntries()`), `ChannelNotDeclared`, or
@@ -329,7 +329,7 @@ it does not make the record applicable to the current schema.
 
 `BoundaryExplanationService` is unrelated to migration but shares this
 package's "read-only against the measured set" shape: `baseline:explain`
-gives it the loaded baseline, the run's violations, and configuration read
+gives it the loaded baseline, the run's findings, and configuration read
 by its own command (thresholds, annotations), and it answers with one
 `EffectiveBoundary` per relevant identity — never touching a file itself.
 
@@ -342,7 +342,7 @@ and is labelled as absent from the current scope or result.
 
 It also takes the run's `MetricRepositoryInterface` (optional, last argument)
 as exact typed-subject evidence for symbols with no current finding. Current
-violations take precedence by canonical subject alone: a different semantic
+findings take precedence by canonical subject alone: a different semantic
 occurrence or dependency edge does not change annotation ownership. The
 repository then supplies the exact declaration/callable subject when needed;
 logical and aggregate projections may prove that a subject is current but do
@@ -353,7 +353,7 @@ reported absent rather than guessed.
 
 An entry is about an **identity**: the symbol, the channel (`ruleName#violationCode`),
 and — when the finding carries one — the dependency edge (target plus reference kind).
-The set of violations in a run sharing one identity is that entry's **group**.
+The set of findings in a run sharing one identity is that entry's **group**.
 
 **Deliberately excluded** (for stability across refactoring):
 - Line number (shifts when code is added above)
@@ -433,7 +433,7 @@ Entry invariants:
   semantic evidence, via {@see \Qualimetrix\Analysis\Finding\Contract\OccurrenceKey}
   — not the full digest: the domain it distinguishes within is one (subject,
   channel) pair, units of members, so 64 bits of headroom is far more than it
-  needs. This value also feeds `Violation::getFingerprint()`, so shortening it
+  needs. This value also feeds `Finding::getFingerprint()`, so shortening it
   is a breaking change to the GitLab Code Quality `fingerprint` and the SARIF
   `partialFingerprints.primaryLocationLineHash` it derives — every previously
   computed fingerprint changes.
@@ -522,7 +522,7 @@ than merged.
 
 ## Related Documents
 
-- [Finding](../../Finding/README.md) — violation and filtering contracts
+- [Finding](../../Finding/README.md) — finding and filtering contracts
 - [Inline policy](../Inline/README.md) — source suppressions and threshold extraction
 - [Infrastructure](../../../Infrastructure/README.md) — Console adapters and filter ordering
 - [Baseline usage](../../../../website/docs/usage/baseline.md) — user-facing documentation

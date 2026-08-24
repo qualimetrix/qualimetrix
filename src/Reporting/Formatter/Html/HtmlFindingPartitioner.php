@@ -4,38 +4,38 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Html;
 
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\FormatterContext;
 
 /**
- * Partitions violations by tree node and attaches formatted violation data.
+ * Partitions findings by tree node and attaches formatted finding data.
  *
- * Method-level violations are attached to the parent class node.
- * Class-level violations are attached to the class node.
- * Namespace-level violations are attached to the namespace node.
- * File-level / unresolvable violations are skipped.
+ * Method-level findings are attached to the parent class node.
+ * Class-level findings are attached to the class node.
+ * Namespace-level findings are attached to the namespace node.
+ * File-level / unresolvable findings are skipped.
  *
  * @internal
  */
-final readonly class HtmlViolationPartitioner
+final readonly class HtmlFindingPartitioner
 {
     /**
-     * Partitions violations by tree node path.
+     * Partitions findings by tree node path.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param array<string, HtmlTreeNode> $nodesByPath
      *
-     * @return array<string, list<Violation>> node path -> violations
+     * @return array<string, list<Finding>> node path -> findings
      */
-    public function partition(array $violations, array $nodesByPath): array
+    public function partition(array $findings, array $nodesByPath): array
     {
-        /** @var array<string, list<Violation>> $result */
+        /** @var array<string, list<Finding>> $result */
         $result = [];
 
-        foreach ($violations as $violation) {
-            $symbolPath = $violation->symbolPath;
+        foreach ($findings as $finding) {
+            $symbolPath = $finding->symbolPath;
             $type = $symbolPath->getType();
 
             $nodePath = match ($type) {
@@ -46,11 +46,11 @@ final readonly class HtmlViolationPartitioner
             };
 
             if ($nodePath === null || !isset($nodesByPath[$nodePath])) {
-                // Try attaching to namespace for method/class violations whose class node doesn't exist
+                // Try attaching to namespace for method/class findings whose class node doesn't exist
                 if ($type === SymbolType::Method || $type === SymbolType::Class_) {
                     $nsPath = $symbolPath->namespace ?? '';
                     if ($nsPath !== '' && isset($nodesByPath[$nsPath])) {
-                        $result[$nsPath][] = $violation;
+                        $result[$nsPath][] = $finding;
 
                         continue;
                     }
@@ -59,52 +59,52 @@ final readonly class HtmlViolationPartitioner
                 continue;
             }
 
-            $result[$nodePath][] = $violation;
+            $result[$nodePath][] = $finding;
         }
 
         return $result;
     }
 
     /**
-     * Attaches formatted violation data to tree nodes.
+     * Attaches formatted finding data to tree nodes.
      *
      * @param array<string, HtmlTreeNode> $nodesByPath
-     * @param array<string, list<Violation>> $violationsByNode
+     * @param array<string, list<Finding>> $findingsByNode
      *
      * @qmx-threshold complexity.cyclomatic warning=11 error=11 — Finite attachment projection keeps node lookup, magnitude normalization, and payload fields together.
      */
     public function attach(
         array $nodesByPath,
-        array $violationsByNode,
+        array $findingsByNode,
         FormatterContext $context,
     ): void {
-        foreach ($violationsByNode as $nodePath => $violations) {
+        foreach ($findingsByNode as $nodePath => $findings) {
             if (!isset($nodesByPath[$nodePath])) {
                 continue;
             }
 
             $node = $nodesByPath[$nodePath];
 
-            foreach ($violations as $violation) {
-                $metricValue = $violation->metricValue;
+            foreach ($findings as $finding) {
+                $metricValue = $finding->metricValue;
                 if ($metricValue !== null && \is_float($metricValue) && (is_nan($metricValue) || is_infinite($metricValue))) {
                     $metricValue = null;
                 }
 
-                $node->violations[] = [
-                    'subject' => $violation->subject->toCanonical(),
-                    'ruleName' => $violation->ruleName,
-                    'violationCode' => $violation->violationCode,
-                    'message' => $violation->message,
-                    'recommendation' => $violation->recommendation,
-                    'severity' => $violation->severity->value,
+                $node->findings[] = [
+                    'subject' => $finding->subject->toCanonical(),
+                    'ruleName' => $finding->ruleName,
+                    'violationCode' => $finding->code,
+                    'message' => $finding->message,
+                    'recommendation' => $finding->recommendation,
+                    'severity' => $finding->severity->value,
                     'metricValue' => $metricValue,
-                    'symbolPath' => $violation->symbolPath->toString(),
-                    'occurrence' => $violation->occurrenceKey?->value,
-                    'file' => $violation->location->file === null
+                    'symbolPath' => $finding->symbolPath->toString(),
+                    'occurrence' => $finding->occurrenceKey?->value,
+                    'file' => $finding->location->file === null
                         ? ''
-                        : $context->relativizePath($violation->location->file),
-                    'line' => $violation->location->line,
+                        : $context->relativizePath($finding->location->file),
+                    'line' => $finding->location->line,
                 ];
             }
         }

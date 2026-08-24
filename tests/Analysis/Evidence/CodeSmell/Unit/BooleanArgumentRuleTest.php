@@ -50,7 +50,7 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions(enabled: false));
 
@@ -63,7 +63,7 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoViolations(): void
+    public function noSmellsProducesNoFindings(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
@@ -116,11 +116,11 @@ final class BooleanArgumentRuleTest extends TestCase
             (new MetricBag())->withEntry('codeSmell.boolean_argument', $entry),
         );
 
-        $violations = (new BooleanArgumentRule(new BooleanArgumentOptions(allowedPrefixes: [])))
+        $findings = (new BooleanArgumentRule(new BooleanArgumentOptions(allowedPrefixes: [])))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame($expectedSubject, $violations[0]->subject->toCanonical());
+        self::assertCount(1, $findings);
+        self::assertSame($expectedSubject, $findings[0]->subject->toCanonical());
     }
 
     /**
@@ -154,7 +154,7 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesViolation(): void
+    public function smellDetectedProducesFinding(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
@@ -172,19 +172,19 @@ final class BooleanArgumentRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(10, $violations[0]->location->line);
-        self::assertSame(25, $violations[1]->location->line);
-        self::assertSame('Boolean argument detected - consider splitting methods or using enums', $violations[0]->message);
-        self::assertSame('code-smell.boolean-argument', $violations[0]->ruleName);
-        self::assertSame('code-smell.boolean-argument', $violations[0]->violationCode);
-        self::assertSame(1.0, $violations[0]->metricValue);
-        self::assertSame('file:src/Smelly.php', $violations[0]->subject->toCanonical());
-        self::assertTrue($violations[0]->location->precise);
-        self::assertSame('Replace boolean parameter with two explicit methods or use an enum.', $violations[0]->recommendation);
+        self::assertCount(2, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertSame(25, $findings[1]->location->line);
+        self::assertSame('Boolean argument detected - consider splitting methods or using enums', $findings[0]->message);
+        self::assertSame('code-smell.boolean-argument', $findings[0]->ruleName);
+        self::assertSame('code-smell.boolean-argument', $findings[0]->code);
+        self::assertSame(1.0, $findings[0]->metricValue);
+        self::assertSame('file:src/Smelly.php', $findings[0]->subject->toCanonical());
+        self::assertTrue($findings[0]->location->precise);
+        self::assertSame('Replace boolean parameter with two explicit methods or use an enum.', $findings[0]->recommendation);
         self::assertSame(
             OccurrenceKey::semantic('boolean_argument', [
                 'type' => 'boolean_argument',
@@ -193,7 +193,7 @@ final class BooleanArgumentRuleTest extends TestCase
                 'promoted' => false,
                 'hasPromoted' => false,
             ])->value,
-            $violations[0]->occurrenceKey?->value,
+            $findings[0]->occurrenceKey?->value,
         );
     }
 
@@ -216,11 +216,11 @@ final class BooleanArgumentRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame('Boolean argument $overwrite detected - consider splitting methods or using enums', $violations[0]->message);
-        self::assertSame('Boolean argument $silent detected - consider splitting methods or using enums', $violations[1]->message);
+        self::assertCount(2, $findings);
+        self::assertSame('Boolean argument $overwrite detected - consider splitting methods or using enums', $findings[0]->message);
+        self::assertSame('Boolean argument $silent detected - consider splitting methods or using enums', $findings[1]->message);
     }
 
     #[Test]
@@ -241,10 +241,10 @@ final class BooleanArgumentRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame('Boolean argument detected - consider splitting methods or using enums', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame('Boolean argument detected - consider splitting methods or using enums', $findings[0]->message);
     }
 
     #[Test]
@@ -268,11 +268,11 @@ final class BooleanArgumentRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(30, $violations[0]->location->line);
-        self::assertSame(40, $violations[1]->location->line);
+        self::assertCount(2, $findings);
+        self::assertSame(30, $findings[0]->location->line);
+        self::assertSame(40, $findings[1]->location->line);
     }
 
     #[Test]
@@ -294,9 +294,9 @@ final class BooleanArgumentRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
+        self::assertCount(2, $findings);
     }
 
     #[Test]
@@ -317,12 +317,12 @@ final class BooleanArgumentRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         self::assertSame(
             'Boolean argument detected - consider splitting methods or using enums',
-            $violations[0]->message,
+            $findings[0]->message,
         );
     }
 
@@ -344,9 +344,9 @@ final class BooleanArgumentRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
     }
 
     #[Test]
@@ -367,9 +367,9 @@ final class BooleanArgumentRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     #[Test]
@@ -390,9 +390,9 @@ final class BooleanArgumentRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
     }
 
     #[Test]
@@ -413,9 +413,9 @@ final class BooleanArgumentRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
     }
 
     #[Test]
@@ -438,8 +438,8 @@ final class BooleanArgumentRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 }

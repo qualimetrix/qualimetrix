@@ -14,7 +14,7 @@ final class SuppressionTargetTest extends TestCase
 {
     /**
      * The rule half of a channel, for the spellings that do not read it: a
-     * one-part selector filters on the violation code alone, so any producer
+     * one-part selector filters on the finding code alone, so any producer
      * name proves the same thing.
      */
     private const string ANY_RULE = 'any.producer';

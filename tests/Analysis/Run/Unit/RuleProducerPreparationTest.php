@@ -11,10 +11,10 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
@@ -160,7 +160,7 @@ final class RuleProducerPreparationTest extends TestCase
             public function channelsProducedBy(string $producerRuleName): array
             {
                 return $producerRuleName === LayerPolicyPreparationInterface::PRODUCER_RULE_NAME
-                    ? [new ViolationChannel('architecture.coverage', 'architecture.coverage')]
+                    ? [new FindingChannel('architecture.coverage', 'architecture.coverage')]
                     : [];
             }
         };

@@ -187,10 +187,10 @@ final class DataClassRuleTest extends TestCase
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
     }
 
     #[Test]
@@ -227,10 +227,10 @@ final class DataClassRuleTest extends TestCase
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
     }
 
     #[Test]
@@ -267,17 +267,17 @@ final class DataClassRuleTest extends TestCase
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('only 10% of the public interface is behavior', $violations[0]->message);
-        self::assertStringContainsString('threshold 33%', $violations[0]->message);
-        self::assertStringContainsString('WMC=5', $violations[0]->message);
-        self::assertStringContainsString('threshold 10', $violations[0]->message);
-        self::assertSame(10, $violations[0]->metricValue);
-        self::assertSame('design.data-class', $violations[0]->ruleName);
-        self::assertSame('design.data-class', $violations[0]->violationCode);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('only 10% of the public interface is behavior', $findings[0]->message);
+        self::assertStringContainsString('threshold 33%', $findings[0]->message);
+        self::assertStringContainsString('WMC=5', $findings[0]->message);
+        self::assertStringContainsString('threshold 10', $findings[0]->message);
+        self::assertSame(10, $findings[0]->metricValue);
+        self::assertSame('design.data-class', $findings[0]->ruleName);
+        self::assertSame('design.data-class', $findings[0]->code);
     }
 
     #[Test]
@@ -439,10 +439,10 @@ final class DataClassRuleTest extends TestCase
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
     }
 
     // --- Options tests ---
@@ -521,11 +521,11 @@ final class DataClassRuleTest extends TestCase
         ]);
         $repository->method('get')->willReturn($this->makeMetricBag());
 
-        $violations = (new DataClassRule(new DataClassOptions()))
+        $findings = (new DataClassRule(new DataClassOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

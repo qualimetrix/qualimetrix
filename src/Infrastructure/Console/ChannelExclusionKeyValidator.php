@@ -6,9 +6,9 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 
 /**
  * Whether one `exclude_namespace_channels` key addresses a channel the rule it
@@ -65,7 +65,7 @@ final readonly class ChannelExclusionKeyValidator
      * What the key addresses in the whole universe, before asking who produces
      * it — so the refusal can tell "no such channel" from "not this rule's".
      *
-     * @return list<ViolationChannel>
+     * @return list<FindingChannel>
      */
     private function addressedChannels(ChannelSelector $parsed): array
     {
@@ -76,7 +76,7 @@ final readonly class ChannelExclusionKeyValidator
 
         return array_values(array_filter(
             $this->channels->channels(),
-            static fn(ViolationChannel $channel): bool => $channel->equals($target),
+            static fn(FindingChannel $channel): bool => $channel->equals($target),
         ));
     }
 }

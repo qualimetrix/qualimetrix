@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 
 /**
  * What the author could have meant, when a directive names something the run
@@ -78,15 +78,15 @@ final readonly class DirectiveNameHints
      * `ruleName#violationCode` pair that addresses no channel.
      *
      * Both halves are exact, so the useful answer is *which half* is wrong.
-     * A violation code that exists under some other rule name is the common
+     * A finding code that exists under some other rule name is the common
      * mistake — a report prints the channel code, not the pair — so it is
      * answered with the pair the author should have written.
      */
-    public function forChannelPair(string $ruleName, string $violationCode): string
+    public function forChannelPair(string $ruleName, string $code): string
     {
         $spellings = [];
         foreach ($this->identity->channels() as $channel) {
-            if ($channel->violationCode === $violationCode) {
+            if ($channel->code === $code) {
                 $spellings[] = $channel->toKey();
             }
         }
@@ -97,12 +97,12 @@ final readonly class DirectiveNameHints
             return \sprintf(
                 'No channel of rule "%s" carries the code "%s"; it is spelled: %s.',
                 $ruleName,
-                $violationCode,
+                $code,
                 implode(', ', $spellings),
             );
         }
 
-        return self::listOrNothing($this->nearestChannels($violationCode));
+        return self::listOrNothing($this->nearestChannels($code));
     }
 
     /**
@@ -126,8 +126,8 @@ final readonly class DirectiveNameHints
         $codes = [];
 
         foreach ($this->identity->channels() as $channel) {
-            if ($this->identity->producerOf($channel->violationCode) === $ruleName) {
-                $codes[] = $channel->violationCode;
+            if ($this->identity->producerOf($channel->code) === $ruleName) {
+                $codes[] = $channel->code;
             }
         }
 
@@ -151,7 +151,7 @@ final readonly class DirectiveNameHints
     private function nearestChannels(string $name): array
     {
         $near = self::nearest($name, array_map(
-            static fn(ViolationChannel $channel): string => $channel->violationCode,
+            static fn(FindingChannel $channel): string => $channel->code,
             $this->identity->channels(),
         ));
 

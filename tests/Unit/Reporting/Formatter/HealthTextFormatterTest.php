@@ -394,7 +394,7 @@ final class HealthTextFormatterTest extends TestCase
         int $filesAnalyzed = 10,
     ): Report {
         return new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: $filesAnalyzed,
             filesSkipped: 0,
             duration: 0.5,

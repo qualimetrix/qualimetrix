@@ -7,9 +7,9 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
@@ -31,18 +31,18 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
     {
         $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Sub/Dir/Foo.php'), 42, true),
             symbolPath: SymbolPath::forClass('App\\Sub\\Dir', 'Foo'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'too complex',
             severity: Severity::Warning,
         );
 
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
-            ->addViolations([$violation])
+            ->addFindings([$finding])
             ->build();
 
         $output = $formatter->format($report, new FormatterContext());
@@ -59,11 +59,11 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
         $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
 
         $related = new Location(RelativePath::fromString('src/Other/Bar.php'), 7, true);
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Main/Foo.php'), 12, true),
             symbolPath: SymbolPath::forClass('App\\Main', 'Foo'),
             ruleName: 'architecture.layer-violation',
-            violationCode: 'architecture.layer-violation',
+            code: 'architecture.layer-violation',
             message: 'crosses layer boundary',
             severity: Severity::Error,
             relatedLocations: [$related],
@@ -71,7 +71,7 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
 
         $report = ReportBuilder::create()
             ->filesAnalyzed(2)
-            ->addViolations([$violation])
+            ->addFindings([$finding])
             ->build();
 
         $output = $formatter->format($report, new FormatterContext());
@@ -87,21 +87,20 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
     }
 
     /**
-     * Builds a violation fixture with an explicit declaration or aggregate
+     * Builds a finding fixture with an explicit declaration or aggregate
      * subject, preserving the production contract without hiding it behind a
      * legacy fallback.
      *
      * @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations
      */
-    private static function violation(
+    private static function finding(
         \Qualimetrix\Analysis\Finding\Contract\Location $location,
         \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
         string $ruleName,
-        string $violationCode,
+        string $code,
         string $message,
         \Qualimetrix\Analysis\Finding\Contract\Severity $severity,
         int|float|null $metricValue = null,
-        ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level = null,
         array $relatedLocations = [],
         ?string $recommendation = null,
         int|float|null $threshold = null,
@@ -110,7 +109,7 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
         ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
-    ): Violation {
+    ): Finding {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File,
             \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
@@ -118,16 +117,15 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: $message,
             severity: $severity,
             metricValue: $metricValue,
-            level: $level,
             relatedLocations: $relatedLocations,
             recommendation: $recommendation,
             threshold: $threshold,

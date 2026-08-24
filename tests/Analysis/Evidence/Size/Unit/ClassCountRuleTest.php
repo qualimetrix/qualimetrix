@@ -146,14 +146,14 @@ final class ClassCountRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Class count is 18, exceeds threshold of 15. Consider splitting into sub-namespaces', $violations[0]->message);
-        self::assertSame(18, $violations[0]->metricValue);
-        self::assertSame('size.class-count', $violations[0]->ruleName);
-        self::assertSame('size.class-count', $violations[0]->violationCode);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('Class count is 18, exceeds threshold of 15. Consider splitting into sub-namespaces', $findings[0]->message);
+        self::assertSame(18, $findings[0]->metricValue);
+        self::assertSame('size.class-count', $findings[0]->ruleName);
+        self::assertSame('size.class-count', $findings[0]->code);
     }
 
     #[Test]
@@ -174,11 +174,11 @@ final class ClassCountRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('Class count is 30, exceeds threshold of 25. Consider splitting into sub-namespaces', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame('Class count is 30, exceeds threshold of 25. Consider splitting into sub-namespaces', $findings[0]->message);
     }
 
     #[Test]
@@ -203,13 +203,13 @@ final class ClassCountRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 

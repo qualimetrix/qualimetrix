@@ -187,14 +187,14 @@ final class ConstructorOverinjectionRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Constructor of UserService has 8 parameters (threshold 8). Consider using a parameter object or splitting responsibilities', $violations[0]->message);
-        self::assertSame(8, $violations[0]->metricValue);
-        self::assertSame('code-smell.constructor-overinjection', $violations[0]->ruleName);
-        self::assertSame('code-smell.constructor-overinjection', $violations[0]->violationCode);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('Constructor of UserService has 8 parameters (threshold 8). Consider using a parameter object or splitting responsibilities', $findings[0]->message);
+        self::assertSame(8, $findings[0]->metricValue);
+        self::assertSame('code-smell.constructor-overinjection', $findings[0]->ruleName);
+        self::assertSame('code-smell.constructor-overinjection', $findings[0]->code);
     }
 
     #[Test]
@@ -213,11 +213,11 @@ final class ConstructorOverinjectionRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('Constructor of UserService has 12 parameters (threshold 12). Consider using a parameter object or splitting responsibilities', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame('Constructor of UserService has 12 parameters (threshold 12). Consider using a parameter object or splitting responsibilities', $findings[0]->message);
     }
 
     #[Test]
@@ -236,11 +236,11 @@ final class ConstructorOverinjectionRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(15, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(15, $findings[0]->metricValue);
     }
 
     #[DataProvider('thresholdDataProvider')]
@@ -264,13 +264,13 @@ final class ConstructorOverinjectionRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 

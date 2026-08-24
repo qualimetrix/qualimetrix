@@ -16,8 +16,8 @@ use Qualimetrix\Analysis\Evidence\Design\DataClassRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 
@@ -181,7 +181,7 @@ final class DataClassDetectionTest extends TestCase
     public function itFlagsDataAccessInterfacesAndSparesBehaviourOnes(string $code, string $class, bool $expected): void
     {
         $reported = array_map(
-            static fn(Violation $violation): string => $violation->symbolPath->toString(),
+            static fn(Finding $finding): string => $finding->symbolPath->toString(),
             $this->analyze($code),
         );
 
@@ -193,14 +193,14 @@ final class DataClassDetectionTest extends TestCase
     }
 
     #[Test]
-    public function itTreatsTheThresholdItselfAsAViolation(): void
+    public function itTreatsTheThresholdItselfAsAFinding(): void
     {
         // One functional method against three public members: exactly 33%.
         // The bound is inclusive, so the canonical one-third is reported.
-        $violations = $this->analyze(self::ON_THE_THRESHOLD);
+        $findings = $this->analyze(self::ON_THE_THRESHOLD);
 
-        self::assertCount(1, $violations);
-        self::assertSame(33, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(33, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -214,10 +214,10 @@ final class DataClassDetectionTest extends TestCase
             self::ACCESSOR_ONLY,
         );
 
-        $violations = $this->analyze($withConstructor);
+        $findings = $this->analyze($withConstructor);
 
-        self::assertCount(1, $violations);
-        self::assertSame(0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(0, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -226,7 +226,7 @@ final class DataClassDetectionTest extends TestCase
         // The base is the Data Class; the subclass that inherits its accessors
         // and adds behaviour is not measured through them.
         $reported = array_map(
-            static fn(Violation $violation): string => $violation->symbolPath->toString(),
+            static fn(Finding $finding): string => $finding->symbolPath->toString(),
             $this->analyze(self::INHERITED_ACCESSORS),
         );
 
@@ -236,23 +236,23 @@ final class DataClassDetectionTest extends TestCase
     #[Test]
     public function itSparesAClassWhoseComplexityExceedsTheWmcGate(): void
     {
-        $violations = $this->analyze(self::ACCESSOR_ONLY, wmc: 11);
+        $findings = $this->analyze(self::ACCESSOR_ONLY, wmc: 11);
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     #[Test]
     public function itReportsTheWocShareItGatedOn(): void
     {
-        $violations = $this->analyze(self::ACCESSOR_ONLY);
+        $findings = $this->analyze(self::ACCESSOR_ONLY);
 
-        self::assertCount(1, $violations);
-        self::assertSame(0, $violations[0]->metricValue);
-        self::assertStringContainsString('only 0% of the public interface is behavior', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(0, $findings[0]->metricValue);
+        self::assertStringContainsString('only 0% of the public interface is behavior', $findings[0]->message);
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyze(string $code, int $wmc = 5): array
     {

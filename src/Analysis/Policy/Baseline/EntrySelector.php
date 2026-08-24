@@ -12,7 +12,7 @@ use Stringable;
  *
  * **Why an entry needs one at all.** The obvious spelling
  * `<symbol>#<channel>` cannot address an entry: `#` already separates
- * `ruleName` from `violationCode` inside a channel key, and two forbidden
+ * `ruleName` from `code` inside a channel key, and two forbidden
  * edges out of one class on one channel agree on every other component
  * (ADR 0017). The selector is therefore a digest of the *complete* identity —
  * symbol, channel and edge — so that whatever the identity distinguishes,
@@ -32,8 +32,8 @@ use Stringable;
  *
  * **Why SHA-256 and not xxh3.** The selector is printed to users and ends up
  * in their scripts, so it must not depend on how their PHP was built. The
- * retired `ViolationHasher` used `xxh3` when the extension offered it and
- * SHA-256 otherwise, which made the same violation hash differently on two
+ * retired `FindingHasher` used `xxh3` when the extension offered it and
+ * SHA-256 otherwise, which made the same finding hash differently on two
  * machines. SHA-256 is always available and its truncation is uniformly
  * distributed.
  *

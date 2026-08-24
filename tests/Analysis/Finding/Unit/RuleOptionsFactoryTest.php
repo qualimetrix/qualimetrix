@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
@@ -1021,7 +1021,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itExtractsViolationCodeScopedNamespaceExclusions(): void
+    public function itExtractsCodeScopedNamespaceExclusions(): void
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
@@ -1036,18 +1036,18 @@ final class RuleOptionsFactoryTest extends TestCase
 
         self::assertTrue($this->registry->isNamespaceChannelExcluded(
             'computed.health',
-            new ViolationChannel('computed.health', 'health.cohesion'),
+            new FindingChannel('computed.health', 'health.cohesion'),
             'App\\Metrics',
         ));
         self::assertTrue($this->registry->isNamespaceChannelExcluded(
             'computed.health',
-            new ViolationChannel('computed.health', 'health.typing'),
+            new FindingChannel('computed.health', 'health.typing'),
             'App\\Generated',
         ));
     }
 
     #[Test]
-    public function itRejectsEmptyViolationCodeScopedNamespaceExclusions(): void
+    public function itRejectsEmptyCodeScopedNamespaceExclusions(): void
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
@@ -1092,7 +1092,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsEmptyViolationCodeSelectorsInNamespaceChannelExclusions(): void
+    public function itRejectsEmptyCodeSelectorsInNamespaceChannelExclusions(): void
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [

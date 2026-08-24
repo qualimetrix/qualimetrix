@@ -42,7 +42,7 @@ final class XssRuleTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenDisabled(): void
+    public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new XssRule(new SecurityPatternOptions(enabled: false));
 
@@ -54,7 +54,7 @@ final class XssRuleTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenNoFindings(): void
+    public function itReturnsNoFindingsWhenNoFindings(): void
     {
         $rule = new XssRule(new SecurityPatternOptions());
 
@@ -64,7 +64,7 @@ final class XssRuleTest extends TestCase
     }
 
     #[Test]
-    public function itCreatesViolationForSingleFinding(): void
+    public function itCreatesFindingForSingleFinding(): void
     {
         $rule = new XssRule(new SecurityPatternOptions());
 
@@ -73,20 +73,20 @@ final class XssRuleTest extends TestCase
                 ->withEntry('security.xss', ['subjectKind' => 'file', 'line' => 8, 'superglobal' => '']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(8, $violations[0]->location->line);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('security.xss', $violations[0]->ruleName);
-        self::assertSame('Potential XSS — use htmlspecialchars() or equivalent before outputting user input', $violations[0]->message);
-        self::assertSame('file:src/View/Template.php', $violations[0]->subject->toCanonical());
-        self::assertSame('Escape output with htmlspecialchars() or use a template engine with auto-escaping.', $violations[0]->recommendation);
-        self::assertTrue($violations[0]->location->precise);
+        self::assertCount(1, $findings);
+        self::assertSame(8, $findings[0]->location->line);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame('security.xss', $findings[0]->ruleName);
+        self::assertSame('Potential XSS — use htmlspecialchars() or equivalent before outputting user input', $findings[0]->message);
+        self::assertSame('file:src/View/Template.php', $findings[0]->subject->toCanonical());
+        self::assertSame('Escape output with htmlspecialchars() or use a template engine with auto-escaping.', $findings[0]->recommendation);
+        self::assertTrue($findings[0]->location->precise);
     }
 
     #[Test]
-    public function itCreatesMultipleViolationsForMultipleFindings(): void
+    public function itCreatesMultipleFindingsForMultipleFindings(): void
     {
         $rule = new XssRule(new SecurityPatternOptions());
 
@@ -96,15 +96,15 @@ final class XssRuleTest extends TestCase
                 ->withEntry('security.xss', ['subjectKind' => 'file', 'line' => 12, 'superglobal' => '']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(5, $violations[0]->location->line);
-        self::assertSame(12, $violations[1]->location->line);
+        self::assertCount(2, $findings);
+        self::assertSame(5, $findings[0]->location->line);
+        self::assertSame(12, $findings[1]->location->line);
     }
 
     #[Test]
-    public function itIncludesSuperglobalInViolationMessage(): void
+    public function itIncludesSuperglobalInFindingMessage(): void
     {
         $rule = new XssRule(new SecurityPatternOptions());
 
@@ -113,11 +113,11 @@ final class XssRuleTest extends TestCase
                 ->withEntry('security.xss', ['subjectKind' => 'file', 'line' => 8, 'superglobal' => '_POST']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('($_POST)', $violations[0]->message);
-        self::assertStringContainsString('XSS', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('($_POST)', $findings[0]->message);
+        self::assertStringContainsString('XSS', $findings[0]->message);
     }
 
     #[Test]

@@ -14,10 +14,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
@@ -57,24 +57,24 @@ final class PendingLayerDiagnosticsTest extends TestCase
     #[Test]
     public function itDoesNotReportAPendingLayerAsUnreachable(): void
     {
-        $violations = $this->analyze(
+        $findings = $this->analyze(
             [new LayerDefinition('reporting', new MembershipSpec(['App\\Reporting\\**']), lifecycle: LayerLifecycle::Pending)],
             ['App\\Domain\\Order'],
         );
 
-        self::assertSame([], $this->diagnostics($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
-        self::assertSame([], $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->diagnostics($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->diagnostics($findings, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME));
     }
 
     #[Test]
     public function itStillReportsTheSameEmptyLayerAsUnreachableWithoutTheFlag(): void
     {
-        $violations = $this->analyze(
+        $findings = $this->analyze(
             [new LayerDefinition('reporting', new MembershipSpec(['App\\Reporting\\**']))],
             ['App\\Domain\\Order'],
         );
 
-        $unreachable = $this->diagnostics($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        $unreachable = $this->diagnostics($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(1, $unreachable);
         self::assertStringContainsString('Layer "reporting" was never matched', $unreachable[0]->message);
     }
@@ -82,12 +82,12 @@ final class PendingLayerDiagnosticsTest extends TestCase
     #[Test]
     public function itReportsAPendingLayerThatMatchedAClass(): void
     {
-        $violations = $this->analyze(
+        $findings = $this->analyze(
             [new LayerDefinition('reporting', new MembershipSpec(['App\\Reporting\\**']), lifecycle: LayerLifecycle::Pending)],
             ['App\\Reporting\\MonthlyReport'],
         );
 
-        $matched = $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
+        $matched = $this->diagnostics($findings, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
         self::assertCount(1, $matched);
         self::assertSame(Severity::Error, $matched[0]->severity);
         self::assertStringContainsString('Layer "reporting" is declared "pending: true"', $matched[0]->message);
@@ -106,7 +106,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
     #[Test]
     public function itReportsAPendingLayerWhoseEveryMatchWasStolenByABroaderLayer(): void
     {
-        $violations = $this->analyze(
+        $findings = $this->analyze(
             [
                 new LayerDefinition('legacy', new MembershipSpec(['App\\**'])),
                 new LayerDefinition('reporting', new MembershipSpec(['App\\Reporting\\**']), lifecycle: LayerLifecycle::Pending),
@@ -114,13 +114,13 @@ final class PendingLayerDiagnosticsTest extends TestCase
             ['App\\Reporting\\MonthlyReport'],
         );
 
-        $matched = $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
+        $matched = $this->diagnostics($findings, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
         self::assertCount(1, $matched);
         self::assertStringContainsString('Layer "reporting"', $matched[0]->message);
 
         self::assertSame(
             [],
-            $this->diagnostics($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+            $this->diagnostics($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
             'The pending flag still suppresses unreachable-layer — pending-layer-matched is what must speak instead.',
         );
     }
@@ -128,7 +128,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
     #[Test]
     public function itReportsAPendingLayerMatchedOnlyAsADependencyEdgeEnd(): void
     {
-        $violations = $this->analyze(
+        $findings = $this->analyze(
             [
                 new LayerDefinition('domain', new MembershipSpec(['App\\Domain\\**'])),
                 new LayerDefinition('reporting', new MembershipSpec(['App\\Reporting\\**']), lifecycle: LayerLifecycle::Pending),
@@ -137,7 +137,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
             [$this->buildDependency('App\\Domain', 'Order', 'App\\Reporting', 'MonthlyReport')],
         );
 
-        $matched = $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
+        $matched = $this->diagnostics($findings, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
         self::assertCount(1, $matched);
         self::assertStringContainsString('Layer "reporting"', $matched[0]->message);
     }
@@ -152,7 +152,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
     #[Test]
     public function itReportsAPendingLayerWhoseEdgeEndMatchWasStolenByABroaderLayer(): void
     {
-        $violations = $this->analyze(
+        $findings = $this->analyze(
             [
                 new LayerDefinition('legacy', new MembershipSpec(['App\\**'])),
                 new LayerDefinition('reporting', new MembershipSpec(['App\\Reporting\\**']), lifecycle: LayerLifecycle::Pending),
@@ -161,14 +161,14 @@ final class PendingLayerDiagnosticsTest extends TestCase
             [$this->buildDependency('App\\Domain', 'Order', 'App\\Reporting', 'MonthlyReport')],
         );
 
-        $matched = $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
+        $matched = $this->diagnostics($findings, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
         self::assertCount(1, $matched);
         self::assertStringContainsString('Layer "reporting"', $matched[0]->message);
         self::assertStringContainsString('matched 1 distinct symbol(s)', $matched[0]->message);
 
         self::assertSame(
             [],
-            $this->diagnostics($violations, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+            $this->diagnostics($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
             'Both layers were reached; only the pending declaration is the mistake.',
         );
     }
@@ -181,7 +181,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
     #[Test]
     public function itCountsEachMatchedSymbolOnceAcrossEveryEdgeItTouches(): void
     {
-        $violations = $this->analyze(
+        $findings = $this->analyze(
             [new LayerDefinition('reporting', new MembershipSpec(['App\\Reporting\\**']), lifecycle: LayerLifecycle::Pending)],
             ['App\\Reporting\\Alpha', 'App\\Reporting\\Beta'],
             [
@@ -192,7 +192,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
             ],
         );
 
-        $matched = $this->diagnostics($violations, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
+        $matched = $this->diagnostics($findings, LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME);
         self::assertCount(1, $matched);
         self::assertStringContainsString('matched 2 distinct symbol(s)', $matched[0]->message);
     }
@@ -206,14 +206,14 @@ final class PendingLayerDiagnosticsTest extends TestCase
     #[Test]
     public function itLeavesTheEmptyTemplateDiagnosticAlone(): void
     {
-        $violations = $this->analyze(
+        $findings = $this->analyze(
             [new LayerDefinition('reporting', new MembershipSpec(['App\\Reporting\\**']), lifecycle: LayerLifecycle::Pending)],
             ['App\\Domain\\Order'],
             [],
             ['module-{mod}'],
         );
 
-        $emptyTemplates = $this->diagnostics($violations, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplates = $this->diagnostics($findings, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(1, $emptyTemplates);
         self::assertStringContainsString('Template layer "module-{mod}"', $emptyTemplates[0]->message);
     }
@@ -253,7 +253,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
      * @param list<Dependency> $dependencies
      * @param list<string> $emptyTemplateNames
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyze(array $layers, array $logicalClasses, array $dependencies = [], array $emptyTemplateNames = []): array
     {
@@ -301,15 +301,15 @@ final class PendingLayerDiagnosticsTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function diagnostics(array $violations, string $ruleName): array
+    private function diagnostics(array $findings, string $ruleName): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $v): bool => $v->ruleName === $ruleName,
+            $findings,
+            static fn(Finding $v): bool => $v->ruleName === $ruleName,
         ));
     }
 }

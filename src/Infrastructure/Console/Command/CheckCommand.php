@@ -18,10 +18,10 @@ use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterfac
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
+use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
@@ -45,7 +45,7 @@ final class CheckCommand extends Command
 
     public function __construct(
         private readonly AnalysisPipelineInterface $analyzer,
-        private readonly ViolationFilterOrchestrator $violationFilterOrchestrator,
+        private readonly FindingFilterOrchestrator $findingFilterOrchestrator,
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly ResultPresenter $resultPresenter,
         private readonly RuleInputValidator $ruleInputValidator,
@@ -97,9 +97,9 @@ final class CheckCommand extends Command
      * Exit code for input/configuration errors (distinct from analysis results).
      *
      * Exit code semantics:
-     * - 0: clean (no violations at configured fail level)
+     * - 0: clean (no findings at configured fail level)
      * - 1: warnings found (with --fail-on=warning)
-     * - 2: errors found (violations at error severity)
+     * - 2: errors found (findings at error severity)
      * - 3: input/configuration error (bad paths, invalid config, etc.)
      */
     private const int EXIT_CONFIG_ERROR = 3;
@@ -232,24 +232,24 @@ final class CheckCommand extends Command
         );
         $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
 
-        $filterResult = $this->violationFilterOrchestrator->filterAndReport(
+        $filterResult = $this->findingFilterOrchestrator->filterAndReport(
             $result,
             $input,
             $output,
             $scopeResolution,
-            $this->violationFilterOrchestrator->projectionOptions(
+            $this->findingFilterOrchestrator->projectionOptions(
                 $findingExclusions,
                 $input,
                 $scopeResolution,
             ),
         );
-        $filteredViolations = $filterResult->violations;
+        $filteredFindings = $filterResult->findings;
 
         // `check` no longer writes baselines — `bin/qmx baseline:generate` does —
         // so ResultPresenter no longer has a "baseline was just captured, report
         // success regardless" path to opt into here.
         $exitCode = $this->resultPresenter->presentResults(
-            $filteredViolations,
+            $filteredFindings,
             $result,
             $input,
             $output,

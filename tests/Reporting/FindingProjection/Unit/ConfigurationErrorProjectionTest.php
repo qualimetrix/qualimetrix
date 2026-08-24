@@ -10,10 +10,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -104,8 +104,8 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
         $result = $this->project([$ordinary, $configurationError], new FindingProjectionOptions());
 
-        self::assertSame([$configurationError], $result->violations);
-        self::assertSame([$ordinary], $result->removedBy(ViolationFilterStage::Suppression));
+        self::assertSame([$configurationError], $result->findings);
+        self::assertSame([$ordinary], $result->removedBy(FindingFilterStage::Suppression));
     }
 
     /**
@@ -130,8 +130,8 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
         $result = $this->project([$configurationError], new FindingProjectionOptions());
 
-        self::assertSame([$configurationError], $result->violations);
-        self::assertSame([], $result->removedBy(ViolationFilterStage::Suppression));
+        self::assertSame([$configurationError], $result->findings);
+        self::assertSame([], $result->removedBy(FindingFilterStage::Suppression));
     }
 
     #[Test]
@@ -145,8 +145,8 @@ final class ConfigurationErrorProjectionTest extends TestCase
             new FindingProjectionOptions(excludePaths: ['src']),
         );
 
-        self::assertSame([$configurationError], $result->violations);
-        self::assertSame([$ordinary], $result->removedBy(ViolationFilterStage::PathExclusion));
+        self::assertSame([$configurationError], $result->findings);
+        self::assertSame([$ordinary], $result->removedBy(FindingFilterStage::PathExclusion));
     }
 
     #[Test]
@@ -160,8 +160,8 @@ final class ConfigurationErrorProjectionTest extends TestCase
             new FindingProjectionOptions(excludeNamespaces: [self::NAMESPACE]),
         );
 
-        self::assertSame([$configurationError], $result->violations);
-        self::assertSame([$ordinary], $result->removedBy(ViolationFilterStage::NamespaceExclusion));
+        self::assertSame([$configurationError], $result->findings);
+        self::assertSame([$ordinary], $result->removedBy(FindingFilterStage::NamespaceExclusion));
     }
 
     /**
@@ -181,8 +181,8 @@ final class ConfigurationErrorProjectionTest extends TestCase
             ]),
         ));
 
-        self::assertSame([$configurationError], $result->violations);
-        self::assertSame([], $result->removedBy(ViolationFilterStage::Baseline));
+        self::assertSame([$configurationError], $result->findings);
+        self::assertSame([], $result->removedBy(FindingFilterStage::Baseline));
     }
 
     /**
@@ -202,8 +202,8 @@ final class ConfigurationErrorProjectionTest extends TestCase
             new FindingProjectionOptions(gitScope: $this->createEmptyGitScope()),
         );
 
-        self::assertSame([$configurationError], $result->violations);
-        self::assertSame([$ordinary], $result->removedBy(ViolationFilterStage::GitScope));
+        self::assertSame([$configurationError], $result->findings);
+        self::assertSame([$ordinary], $result->removedBy(FindingFilterStage::GitScope));
     }
 
     /**
@@ -219,37 +219,37 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
         $result = $this->project([$ordinary, $configurationError], new FindingProjectionOptions());
 
-        self::assertSame([$ordinary], $result->measuredViolations);
+        self::assertSame([$ordinary], $result->measuredFindings);
     }
 
-    private function makeConfigurationError(): Violation
+    private function makeConfigurationError(): Finding
     {
-        return $this->makeViolation(self::CONFIG_ERROR_CHANNEL, self::CONFIG_ERROR_CHANNEL);
+        return $this->makeFinding(self::CONFIG_ERROR_CHANNEL, self::CONFIG_ERROR_CHANNEL);
     }
 
-    private function makeOrdinaryFinding(): Violation
+    private function makeOrdinaryFinding(): Finding
     {
-        return $this->makeViolation('code-smell.goto', 'code-smell.goto');
+        return $this->makeFinding('code-smell.goto', 'code-smell.goto');
     }
 
-    private function makeViolation(string $ruleName, string $violationCode): Violation
+    private function makeFinding(string $ruleName, string $code): Finding
     {
         $path = RelativePath::fromString(self::FILE);
         $symbol = SymbolPath::forClass(self::NAMESPACE, 'UserService');
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, 10),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: 'Something is wrong',
             severity: Severity::Error,
         );
     }
 
-    /** @param list<Violation> $violations */
-    private function project(array $violations, FindingProjectionOptions $options): FindingProjectionResult
+    /** @param list<Finding> $findings */
+    private function project(array $findings, FindingProjectionOptions $options): FindingProjectionResult
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
@@ -264,7 +264,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
             new ReportingGitScopeQuery(),
         );
 
-        return $projector->project($violations, $this->suppressions, $options);
+        return $projector->project($findings, $this->suppressions, $options);
     }
 
     /** @param array<string, list<array<string, mixed>>> $entries */

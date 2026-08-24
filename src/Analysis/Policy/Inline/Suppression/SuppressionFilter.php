@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Suppression;
 
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterInterface;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 
 /**
- * Filters violations based on suppression tags in code.
+ * Filters findings based on suppression tags in code.
  *
  * Suppressions can be applied at:
- * - File level (`@qmx-ignore-file`) — suppresses all matching violations in file
- * - Symbol level (`@qmx-ignore <rule>`) — suppresses matching violations bound to the exact declaration subject
- * - Line level (`@qmx-ignore-next-line <rule>`) — suppresses matching violations on next line only
+ * - File level (`@qmx-ignore-file`) — suppresses all matching findings in file
+ * - Symbol level (`@qmx-ignore <rule>`) — suppresses matching findings bound to the exact declaration subject
+ * - Line level (`@qmx-ignore-next-line <rule>`) — suppresses matching findings on next line only
  */
-final class SuppressionFilter implements ViolationFilterInterface, AnnotationSuppressionInterface
+final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppressionInterface
 {
     /**
      * @var array<string, list<Suppression>> file => suppressions
@@ -32,10 +32,10 @@ final class SuppressionFilter implements ViolationFilterInterface, AnnotationSup
     private array $symbolSuppressionsBySubject = [];
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param array<string, list<Suppression>> $suppressions
      */
-    public function apply(array $violations, array $suppressions): AnnotationSuppressionResult
+    public function apply(array $findings, array $suppressions): AnnotationSuppressionResult
     {
         $this->clearSuppressions();
         foreach ($suppressions as $file => $fileSuppressions) {
@@ -44,11 +44,11 @@ final class SuppressionFilter implements ViolationFilterInterface, AnnotationSup
 
         $retained = [];
         $suppressed = [];
-        foreach ($violations as $violation) {
-            if ($this->shouldInclude($violation)) {
-                $retained[] = $violation;
+        foreach ($findings as $finding) {
+            if ($this->shouldInclude($finding)) {
+                $retained[] = $finding;
             } else {
-                $suppressed[] = $violation;
+                $suppressed[] = $finding;
             }
         }
 
@@ -67,21 +67,21 @@ final class SuppressionFilter implements ViolationFilterInterface, AnnotationSup
     }
 
     /**
-     * Returns true if violation should be included (not suppressed).
-     * Returns false if violation is suppressed (should be filtered out).
+     * Returns true if finding should be included (not suppressed).
+     * Returns false if finding is suppressed (should be filtered out).
      */
-    public function shouldInclude(Violation $violation): bool
+    public function shouldInclude(Finding $finding): bool
     {
-        $file = $violation->location->pathString();
+        $file = $finding->location->pathString();
 
-        foreach ($this->symbolSuppressionsBySubject[$violation->subject->toCanonical()] ?? [] as $suppression) {
-            if (self::applies($file, $suppression, $violation)) {
+        foreach ($this->symbolSuppressionsBySubject[$finding->subject->toCanonical()] ?? [] as $suppression) {
+            if (self::applies($file, $suppression, $finding)) {
                 return false;
             }
         }
 
         foreach ($this->suppressions[$file] ?? [] as $suppression) {
-            if ($suppression->type !== SuppressionType::Symbol && self::applies($file, $suppression, $violation)) {
+            if ($suppression->type !== SuppressionType::Symbol && self::applies($file, $suppression, $finding)) {
                 return false;
             }
         }
@@ -100,12 +100,12 @@ final class SuppressionFilter implements ViolationFilterInterface, AnnotationSup
      *
      * @param string $file the file the directive was authored in — the key
      *                     the caller holds it under
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    public static function suppressesAny(string $file, Suppression $suppression, array $violations): bool
+    public static function suppressesAny(string $file, Suppression $suppression, array $findings): bool
     {
-        foreach ($violations as $violation) {
-            if (self::applies($file, $suppression, $violation)) {
+        foreach ($findings as $finding) {
+            if (self::applies($file, $suppression, $finding)) {
                 return true;
             }
         }
@@ -123,18 +123,18 @@ final class SuppressionFilter implements ViolationFilterInterface, AnnotationSup
      * they were written in, and the next-line form additionally to the line
      * after it.
      */
-    private static function applies(string $file, Suppression $suppression, Violation $violation): bool
+    private static function applies(string $file, Suppression $suppression, Finding $finding): bool
     {
-        if (!$suppression->matches($violation->ruleName, $violation->violationCode)) {
+        if (!$suppression->matches($finding->ruleName, $finding->code)) {
             return false;
         }
 
         if ($suppression->type === SuppressionType::Symbol) {
             return $suppression->subject !== null
-                && $suppression->subject->toCanonical() === $violation->subject->toCanonical();
+                && $suppression->subject->toCanonical() === $finding->subject->toCanonical();
         }
 
-        if ($violation->location->pathString() !== $file) {
+        if ($finding->location->pathString() !== $file) {
             return false;
         }
 
@@ -142,8 +142,8 @@ final class SuppressionFilter implements ViolationFilterInterface, AnnotationSup
             return true;
         }
 
-        return $violation->location->line !== null
-            && $violation->location->line === $suppression->line + 1;
+        return $finding->location->line !== null
+            && $finding->location->line === $suppression->line + 1;
     }
 
     /**
@@ -158,17 +158,17 @@ final class SuppressionFilter implements ViolationFilterInterface, AnnotationSup
     }
 
     /**
-     * Returns violations that were suppressed.
+     * Returns findings that were suppressed.
      *
-     * @param list<Violation> $allViolations All violations before filtering
+     * @param list<Finding> $allFindings All findings before filtering
      *
-     * @return list<Violation> Suppressed violations
+     * @return list<Finding> Suppressed findings
      */
-    public function getSuppressedViolations(array $allViolations): array
+    public function getSuppressedFindings(array $allFindings): array
     {
         return array_values(array_filter(
-            $allViolations,
-            fn(Violation $v) => !$this->shouldInclude($v),
+            $allFindings,
+            fn(Finding $v) => !$this->shouldInclude($v),
         ));
     }
 

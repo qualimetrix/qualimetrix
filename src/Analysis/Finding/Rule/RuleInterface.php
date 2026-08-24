@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Rule;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 
 interface RuleInterface extends RuleDefinitionInterface
 {
@@ -51,9 +51,9 @@ interface RuleInterface extends RuleDefinitionInterface
     public function requires(): array;
 
     /**
-     * Analyzes metrics and generates violations.
+     * Analyzes metrics and generates findings.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array;
 

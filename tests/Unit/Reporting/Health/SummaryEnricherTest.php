@@ -15,9 +15,9 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankResolver;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -53,7 +53,7 @@ final class SummaryEnricherTest extends TestCase
     public function itReturnsUnchangedReportWhenNoMetrics(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -79,18 +79,18 @@ final class SummaryEnricherTest extends TestCase
             ]),
         );
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('test.php'), 1),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'test',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [$violation, $violation],
+            findings: [$finding, $finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -101,7 +101,7 @@ final class SummaryEnricherTest extends TestCase
 
         $result = $this->enricher->enrich($report);
 
-        // complexity.cyclomatic = 30 min per violation, 2 violations = 60
+        // complexity.cyclomatic = 30 min per finding, 2 findings = 60
         self::assertSame(60, $result->techDebtMinutes);
     }
 
@@ -131,18 +131,18 @@ final class SummaryEnricherTest extends TestCase
             ],
         );
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Payment/PaymentService.php'), 42),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Payment', 'PaymentService'), RelativePath::fromString('src/Payment/PaymentService.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App\\Payment', 'PaymentService'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'test',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [$violation],
+            findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -192,7 +192,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -234,7 +234,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -260,18 +260,18 @@ final class SummaryEnricherTest extends TestCase
             ]),
         );
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('test.php'), 1),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'test',
-            violationCode: 'test',
+            code: 'test',
             message: 'test message',
             severity: Severity::Warning,
         );
 
         $report = new Report(
-            violations: [$violation],
+            findings: [$finding],
             filesAnalyzed: 42,
             filesSkipped: 3,
             duration: 5.5,
@@ -282,7 +282,7 @@ final class SummaryEnricherTest extends TestCase
 
         $result = $this->enricher->enrich($report);
 
-        self::assertCount(1, $result->violations);
+        self::assertCount(1, $result->findings);
         self::assertSame(42, $result->filesAnalyzed);
         self::assertSame(3, $result->filesSkipped);
         self::assertSame(5.5, $result->duration);
@@ -302,7 +302,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -329,7 +329,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.5,
@@ -354,7 +354,7 @@ final class SummaryEnricherTest extends TestCase
     public function itNullMetricsReturnsUnchangedReport(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -379,18 +379,18 @@ final class SummaryEnricherTest extends TestCase
             ]),
         );
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('test.php'), 1),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'test',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [$violation, $violation],
+            findings: [$finding, $finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -401,13 +401,13 @@ final class SummaryEnricherTest extends TestCase
 
         $result = $this->enricher->enrich($report);
 
-        // 2 violations * 30 min = 60 min total debt, 5000 LOC = 5 kLOC
+        // 2 findings * 30 min = 60 min total debt, 5000 LOC = 5 kLOC
         // debtPer1kLoc = 60 / 5 = 12.0
         self::assertSame(12.0, $result->debtPer1kLoc);
     }
 
     #[Test]
-    public function itDebtPer1kLocZeroWhenNoViolations(): void
+    public function itDebtPer1kLocZeroWhenNoFindings(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
@@ -417,7 +417,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -441,7 +441,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -466,7 +466,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -494,7 +494,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,

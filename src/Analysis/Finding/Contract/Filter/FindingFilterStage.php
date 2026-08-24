@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Filter;
 
 /**
- * The stages a violation passes through between analysis and reporting, and
+ * The stages a finding passes through between analysis and reporting, and
  * the only vocabulary in which their order is expressed.
  *
  * The order they must run in is a *behavioural* contract, not an
@@ -36,7 +36,7 @@ namespace Qualimetrix\Analysis\Finding\Contract\Filter;
  * — a case is a name, not a class reference — so the price is paid in edits,
  * not in coupling.
  */
-enum ViolationFilterStage: string
+enum FindingFilterStage: string
 {
     /** `@qmx-ignore` tags read from the analysed source. */
     case Suppression = 'suppression';

@@ -16,12 +16,12 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
@@ -474,12 +474,12 @@ final class TrespassingValidator implements ConfigurationValidatorInterface
     {
         $subject = MetricSubject::aggregate(SymbolPath::forProject());
 
-        return [new Violation(
+        return [new Finding(
             location: Location::none(),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: StampRule::NAME,
-            violationCode: StampRule::NAME,
+            code: StampRule::NAME,
             message: 'A finding on the rule-owned channel.',
             severity: Severity::Error,
         )];

@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryRejection;
@@ -167,7 +167,7 @@ final class BaselineEntryValuesTest extends TestCase
         $values = BaselineEntryValues::decode(['magnitudes' => [\INF]]);
         $identity = new BaselineIdentity(
             'project:',
-            new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
+            new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
         );
 
         $this->expectException(InvalidArgumentException::class);

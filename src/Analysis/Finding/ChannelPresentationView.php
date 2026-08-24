@@ -53,13 +53,13 @@ final class ChannelPresentationView implements ChannelPresentationInterface
         private readonly array $docsPageByRule,
     ) {}
 
-    public function presentationFor(string $violationCode): ?ChannelPresentation
+    public function presentationFor(string $code): ?ChannelPresentation
     {
         // A legitimate "no answer", not a wiring bug: an unknown or user-defined
         // code names no producer at all, which is ordinary input for a consumer
         // like SarifRuleCollector that falls back for it — contrast the throw
         // below, which guards a case that should be structurally impossible.
-        $producerRuleName = $this->identity->producerOf($violationCode);
+        $producerRuleName = $this->identity->producerOf($code);
 
         if ($producerRuleName === null) {
             return null;
@@ -80,7 +80,7 @@ final class ChannelPresentationView implements ChannelPresentationInterface
                 . ' ChannelDeclarationCompilerPass builds — the rule registry and the compiler'
                 . ' pass have drifted apart.',
                 $producerRuleName,
-                $violationCode,
+                $code,
             ));
 
         $description = $this->descriptionsByRule()[$producerRuleName] ?? null;

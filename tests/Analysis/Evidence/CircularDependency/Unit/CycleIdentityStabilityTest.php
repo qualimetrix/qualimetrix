@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -58,10 +58,10 @@ final class CycleIdentityStabilityTest extends TestCase
         $fingerprints = [];
 
         foreach (self::CYCLE_PERMUTATIONS as $adjacencyList) {
-            $violation = $this->violationFor($adjacencyList);
-            $symbolPaths[] = $violation->symbolPath->toCanonical();
-            $occurrences[] = $violation->occurrenceKey?->value;
-            $fingerprints[] = $violation->getFingerprint();
+            $finding = $this->findingFor($adjacencyList);
+            $symbolPaths[] = $finding->symbolPath->toCanonical();
+            $occurrences[] = $finding->occurrenceKey?->value;
+            $fingerprints[] = $finding->getFingerprint();
         }
 
         self::assertSame(
@@ -76,11 +76,11 @@ final class CycleIdentityStabilityTest extends TestCase
     #[Test]
     public function itDistinguishesFindingsWithDifferentCompleteMemberSets(): void
     {
-        $twoMembers = $this->violationFor([
+        $twoMembers = $this->findingFor([
             'App\Alpha' => ['App\Beta'],
             'App\Beta' => ['App\Alpha'],
         ]);
-        $threeMembers = $this->violationFor([
+        $threeMembers = $this->findingFor([
             'App\Alpha' => ['App\Beta'],
             'App\Beta' => ['App\Gamma'],
             'App\Gamma' => ['App\Alpha'],
@@ -98,7 +98,7 @@ final class CycleIdentityStabilityTest extends TestCase
         $messages = [];
 
         foreach (self::CYCLE_PERMUTATIONS as $adjacencyList) {
-            $messages[] = $this->violationFor($adjacencyList)->message;
+            $messages[] = $this->findingFor($adjacencyList)->message;
         }
 
         self::assertSame(
@@ -117,12 +117,12 @@ final class CycleIdentityStabilityTest extends TestCase
         // Alpha sits on two cycles of equal length: Alpha → Beta → Alpha and
         // Alpha → Gamma → Alpha. Which one the search reports must follow from
         // the class names, not from the order the edges happened to be recorded.
-        $forward = $this->violationFor([
+        $forward = $this->findingFor([
             'App\Alpha' => ['App\Beta', 'App\Gamma'],
             'App\Beta' => ['App\Alpha'],
             'App\Gamma' => ['App\Alpha'],
         ]);
-        $reversed = $this->violationFor([
+        $reversed = $this->findingFor([
             'App\Alpha' => ['App\Gamma', 'App\Beta'],
             'App\Beta' => ['App\Alpha'],
             'App\Gamma' => ['App\Alpha'],
@@ -135,7 +135,7 @@ final class CycleIdentityStabilityTest extends TestCase
     #[Test]
     public function itKeepsTheBaselineIdentityStableWhenAnUnrelatedClassIsAdded(): void
     {
-        $before = BaselineIdentity::forViolation($this->violationFor([
+        $before = BaselineIdentity::forFinding($this->findingFor([
             'App\Alpha' => ['App\Beta'],
             'App\Beta' => ['App\Gamma'],
             'App\Gamma' => ['App\Alpha'],
@@ -143,7 +143,7 @@ final class CycleIdentityStabilityTest extends TestCase
 
         // A newly discovered file that merely points into the cycle. It joins no
         // cycle itself, but it is visited first and thus reorders the traversal.
-        $after = BaselineIdentity::forViolation($this->violationFor([
+        $after = BaselineIdentity::forFinding($this->findingFor([
             'App\Newcomer' => ['App\Beta'],
             'App\Alpha' => ['App\Beta'],
             'App\Beta' => ['App\Gamma'],
@@ -236,13 +236,13 @@ final class CycleIdentityStabilityTest extends TestCase
         // Alpha ↔ Beta ↔ Gamma: all three are one SCC, but the shortest loop
         // through Alpha only covers Alpha and Beta. Documented on the website —
         // the (N classes) counter, not the path, is the authoritative size.
-        $violation = $this->violationFor([
+        $finding = $this->findingFor([
             'App\Alpha' => ['App\Beta'],
             'App\Beta' => ['App\Alpha', 'App\Gamma'],
             'App\Gamma' => ['App\Beta'],
         ]);
 
-        self::assertSame('Circular dependency (3 classes): Alpha → Beta → Alpha', $violation->message);
+        self::assertSame('Circular dependency (3 classes): Alpha → Beta → Alpha', $finding->message);
     }
 
     #[Test]
@@ -250,22 +250,22 @@ final class CycleIdentityStabilityTest extends TestCase
     {
         // A self-loop must not short-circuit the search into the degenerate
         // Alpha → Alpha → Alpha, which is not a walk through the actual cycle.
-        $violation = $this->violationFor([
+        $finding = $this->findingFor([
             'App\Alpha' => ['App\Alpha', 'App\Beta'],
             'App\Beta' => ['App\Alpha'],
         ]);
 
-        self::assertSame('Circular dependency (2 classes): Alpha → Beta → Alpha', $violation->message);
+        self::assertSame('Circular dependency (2 classes): Alpha → Beta → Alpha', $finding->message);
     }
 
     #[Test]
     public function itIsUnaffectedByRepeatedEdgesBetweenTheSameClasses(): void
     {
-        $single = $this->violationFor([
+        $single = $this->findingFor([
             'App\Alpha' => ['App\Beta'],
             'App\Beta' => ['App\Alpha'],
         ]);
-        $repeated = $this->violationFor([
+        $repeated = $this->findingFor([
             'App\Alpha' => ['App\Beta', 'App\Beta', 'App\Beta'],
             'App\Beta' => ['App\Alpha', 'App\Alpha'],
         ]);
@@ -276,24 +276,24 @@ final class CycleIdentityStabilityTest extends TestCase
     }
 
     /**
-     * Runs the full detector → rule chain and returns the single expected violation.
+     * Runs the full detector → rule chain and returns the single expected finding.
      *
      * @param array<string, list<string>> $adjacencyList
      */
-    private function violationFor(array $adjacencyList): Violation
+    private function findingFor(array $adjacencyList): Finding
     {
         $cycles = (new CircularDependencyDetector())->detect($this->buildGraph($adjacencyList));
 
         $analysis = new CircularDependencyAnalysis(new CircularDependencyDetector());
         $analysis->replace($cycles);
         $rule = new CircularDependencyRule(new CircularDependencyOptions(), $analysis);
-        $violations = $rule->analyze(new AnalysisContext(
+        $findings = $rule->analyze(new AnalysisContext(
             metrics: new InMemoryMetricRepository(),
         ));
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
 
-        return $violations[0];
+        return $findings[0];
     }
 
     /**

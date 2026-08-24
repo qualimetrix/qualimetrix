@@ -9,8 +9,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Stringable;
 
 /**
- * The address of a kind of finding: a `(ruleName, violationCode)` pair that
- * can appear on an emitted {@see Violation}.
+ * The address of a kind of finding: a `(ruleName, code)` pair that
+ * can appear on an emitted {@see Finding}.
  *
  * Channels are **not** in bijection with rule classes, which is why nothing
  * downstream may key on a rule class or on a rule name alone:
@@ -24,12 +24,12 @@ use Stringable;
  * Keying by rule class cannot see the first group at all; keying by rule name
  * alone loses the granularity of the second and third.
  *
- * The channel of an emitted finding is read via {@see Violation::channel()}.
- * There is deliberately no `fromViolation()` factory here: the pair would
+ * The channel of an emitted finding is read via {@see Finding::channel()}.
+ * There is deliberately no `fromFinding()` factory here: the pair would
  * form a dependency cycle, and the direction that survives is the one where
  * the richer type knows the primitive rather than the other way round.
  */
-final readonly class ViolationChannel implements Stringable
+final readonly class FindingChannel implements Stringable
 {
     /**
      * The separator of the string form, public because it is the canonical
@@ -41,14 +41,14 @@ final readonly class ViolationChannel implements Stringable
 
     public function __construct(
         public string $ruleName,
-        public string $violationCode,
+        public string $code,
     ) {
         if ($ruleName === '') {
-            throw new InvalidArgumentException('ViolationChannel ruleName must not be empty.');
+            throw new InvalidArgumentException('FindingChannel ruleName must not be empty.');
         }
 
-        if ($violationCode === '') {
-            throw new InvalidArgumentException('ViolationChannel violationCode must not be empty.');
+        if ($code === '') {
+            throw new InvalidArgumentException('FindingChannel code must not be empty.');
         }
     }
 
@@ -76,7 +76,7 @@ final readonly class ViolationChannel implements Stringable
      * The static declaration mechanism (see
      * `Core\Rule\ChannelDeclarationReader`) stores declarations keyed by this
      * exact form, so this is how a consumer recovers the `(ruleName,
-     * violationCode)` pair from such a key — e.g. to check that the
+     * code)` pair from such a key — e.g. to check that the
      * `ruleName` half still names a rule that exists.
      *
      * @throws InvalidArgumentException when `$key` does not contain the
@@ -100,7 +100,7 @@ final readonly class ViolationChannel implements Stringable
     public function equals(self $other): bool
     {
         return $this->ruleName === $other->ruleName
-            && $this->violationCode === $other->violationCode;
+            && $this->code === $other->code;
     }
 
     /**
@@ -108,7 +108,7 @@ final readonly class ViolationChannel implements Stringable
      */
     public function toKey(): string
     {
-        return $this->ruleName . self::SEPARATOR . $this->violationCode;
+        return $this->ruleName . self::SEPARATOR . $this->code;
     }
 
     public function __toString(): string

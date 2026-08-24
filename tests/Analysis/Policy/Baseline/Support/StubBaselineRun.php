@@ -7,8 +7,8 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Support;
 use Closure;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -39,7 +39,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 final readonly class StubBaselineRun implements BaselineRunInterface
 {
     /**
-     * @param list<Violation> $violations the measured set this run reports
+     * @param list<Finding> $findings the measured set this run reports
      * @param list<string> $scope the paths it claims to have analysed, already portable
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides per-file `@qmx-threshold`
      *                                                                   annotations the run found
@@ -52,7 +52,7 @@ final readonly class StubBaselineRun implements BaselineRunInterface
      *                                            when a test has no need to populate declaration sites
      */
     public function __construct(
-        private array $violations,
+        private array $findings,
         private array $scope,
         private AbsolutePath $projectRoot,
         private array $thresholdOverrides = [],
@@ -65,7 +65,7 @@ final readonly class StubBaselineRun implements BaselineRunInterface
         ($this->onMeasure ?? static fn(): null => null)();
 
         $result = new AnalysisResult(
-            violations: $this->violations,
+            findings: $this->findings,
             duration: 0.0,
             metrics: $this->metrics ?? new InMemoryMetricRepository(),
             coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
@@ -73,7 +73,7 @@ final readonly class StubBaselineRun implements BaselineRunInterface
         );
 
         return new BaselineRunContext(
-            new MeasuredAnalysisRun($result, $this->violations),
+            new MeasuredAnalysisRun($result, $this->findings),
             RunScope::fromRecorded($this->scope),
             $this->projectRoot,
         );

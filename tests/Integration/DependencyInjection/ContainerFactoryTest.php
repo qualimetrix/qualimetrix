@@ -107,7 +107,7 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
+use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -212,7 +212,7 @@ final class ContainerFactoryTest extends TestCase
         );
 
         $checkCommand = $container->get(CheckCommand::class);
-        $orchestrator = (new ReflectionProperty(CheckCommand::class, 'violationFilterOrchestrator'))->getValue($checkCommand);
+        $orchestrator = (new ReflectionProperty(CheckCommand::class, 'findingFilterOrchestrator'))->getValue($checkCommand);
         $projector = (new ReflectionProperty($orchestrator, 'findingProjector'))->getValue($orchestrator);
         self::assertSame(
             'Qualimetrix\\Reporting\\FindingProjection\\FindingProjector',
@@ -451,13 +451,13 @@ PHP;
         self::assertCount(7, $runtimeConstructor->getParameters());
         $checkConstructor = (new ReflectionClass(CheckCommand::class))->getConstructor();
         $baselineRunConstructor = (new ReflectionClass(BaselineRun::class))->getConstructor();
-        $measuredViolationSetConstructor = (new ReflectionClass(MeasuredViolationSet::class))->getConstructor();
+        $measuredFindingSetConstructor = (new ReflectionClass(MeasuredFindingSet::class))->getConstructor();
         self::assertNotNull($checkConstructor);
         self::assertNotNull($baselineRunConstructor);
-        self::assertNotNull($measuredViolationSetConstructor);
+        self::assertNotNull($measuredFindingSetConstructor);
         self::assertCount(12, $checkConstructor->getParameters());
         self::assertCount(8, $baselineRunConstructor->getParameters());
-        self::assertCount(3, $measuredViolationSetConstructor->getParameters());
+        self::assertCount(3, $measuredFindingSetConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
         self::assertNotNull($pipelineConstructor);
         self::assertCount(10, $pipelineConstructor->getParameters());

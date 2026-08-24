@@ -126,9 +126,9 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -149,15 +149,15 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('NOC (Number of Children) is 12', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 10', $violations[0]->message);
-        self::assertStringContainsString('Consider using interfaces instead of inheritance', $violations[0]->message);
-        self::assertSame(12, $violations[0]->metricValue);
-        self::assertSame('design.noc', $violations[0]->ruleName);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('NOC (Number of Children) is 12', $findings[0]->message);
+        self::assertStringContainsString('exceeds threshold of 10', $findings[0]->message);
+        self::assertStringContainsString('Consider using interfaces instead of inheritance', $findings[0]->message);
+        self::assertSame(12, $findings[0]->metricValue);
+        self::assertSame('design.noc', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -178,15 +178,15 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(20, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(20, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function itProducesNoViolationForFewChildren(): void
+    public function itProducesNoFindingForFewChildren(): void
     {
         $rule = new NocRule(new NocOptions());
 
@@ -203,9 +203,9 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -226,9 +226,9 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -247,13 +247,13 @@ final class NocRuleTest extends TestCase
             ],
         );
 
-        $violations = (new NocRule(new NocOptions(warning: 7, error: 15)))->analyze($context);
+        $findings = (new NocRule(new NocOptions(warning: 7, error: 15)))->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(6, $violations[0]->threshold);
-        self::assertSame('NOC (Number of Children) is 6, exceeds threshold of 6. Consider using interfaces instead of inheritance', $violations[0]->message);
-        self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(6, $findings[0]->threshold);
+        self::assertSame('NOC (Number of Children) is 6, exceeds threshold of 6. Consider using interfaces instead of inheritance', $findings[0]->message);
+        self::assertSame($subject->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
     // Options tests
@@ -317,13 +317,13 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -361,11 +361,11 @@ final class NocRuleTest extends TestCase
         ]);
         $repository->method('get')->willReturn((new MetricBag())->with('noc', 12));
 
-        $violations = (new NocRule(new NocOptions()))
+        $findings = (new NocRule(new NocOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

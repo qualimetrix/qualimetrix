@@ -73,11 +73,11 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     ];
 
     /**
-     * Non-PHP files carrying rule names or violation codes by hand — a
+     * Non-PHP files carrying rule names or finding codes by hand — a
      * fixture, a formatted-output example — have no owning capability to
      * check *ownership* against, but they still name something real: a
      * hand-spelled code that names no registered rule or channel is exactly
-     * the drift `fix(reporting): remove hand-spelled violation codes from
+     * the drift `fix(reporting): remove hand-spelled finding codes from
      * dev.html and docs` swept once by hand (severity suffixes mistaken for
      * sub-codes, a nonexistent `size.class-loc`, a stale
      * `size.method-count.class` — see `docs/internal/plans/sarif-channel-descriptions.md`,
@@ -116,20 +116,20 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         $ownerByLiteral = $ownerByRuleName;
 
         foreach ($universe->channels() as $channel) {
-            $producer = $universe->producerOf($channel->violationCode);
-            self::assertNotNull($producer, \sprintf('Channel "%s" names no producer.', $channel->violationCode));
+            $producer = $universe->producerOf($channel->code);
+            self::assertNotNull($producer, \sprintf('Channel "%s" names no producer.', $channel->code));
             self::assertArrayHasKey(
                 $producer,
                 $ownerByRuleName,
-                \sprintf('Channel "%s" is produced by "%s", which names no registered rule.', $channel->violationCode, $producer),
+                \sprintf('Channel "%s" is produced by "%s", which names no registered rule.', $channel->code, $producer),
             );
-            $ownerByLiteral[$channel->violationCode] ??= $ownerByRuleName[$producer];
+            $ownerByLiteral[$channel->code] ??= $ownerByRuleName[$producer];
         }
 
         self::assertNotEmpty($ownerByLiteral);
 
         $root = self::projectRoot();
-        $violations = [];
+        $findings = [];
 
         foreach (self::productionPhpFiles($root) as $absolutePath) {
             $relative = substr($absolutePath, \strlen($root) + 1);
@@ -151,7 +151,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
                     continue;
                 }
 
-                $violations[] = \sprintf(
+                $findings[] = \sprintf(
                     '%s holds literal "%s", which belongs to %s.',
                     $relative,
                     $literal,
@@ -160,7 +160,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             }
         }
 
-        self::assertSame([], $violations, "\n" . implode("\n", $violations));
+        self::assertSame([], $findings, "\n" . implode("\n", $findings));
     }
 
     #[Test]
@@ -172,12 +172,12 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
 
         $universe = $container->get(ChannelUniverseInterface::class);
         \assert($universe instanceof ChannelUniverseInterface);
-        $knownCodes = array_map(static fn($channel) => $channel->violationCode, $universe->channels());
+        $knownCodes = array_map(static fn($channel) => $channel->code, $universe->channels());
 
         $known = array_flip([...$knownNames, ...$knownCodes]);
 
         $root = self::projectRoot();
-        $violations = [];
+        $findings = [];
 
         foreach (self::EXISTENCE_CHECKED_FILES as $relative) {
             foreach (self::handSpelledIdentifierLiterals($root . '/' . $relative) as $literal) {
@@ -185,16 +185,16 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
                     continue;
                 }
 
-                $violations[] = \sprintf('%s holds "%s", which names no registered rule or channel.', $relative, $literal);
+                $findings[] = \sprintf('%s holds "%s", which names no registered rule or channel.', $relative, $literal);
             }
         }
 
-        self::assertSame([], $violations, "\n" . implode("\n", $violations));
+        self::assertSame([], $findings, "\n" . implode("\n", $findings));
     }
 
     /**
      * Extracts every value that a fixture or a formatted-output example
-     * spells as a rule name or a violation code, without requiring these
+     * spells as a rule name or a finding code, without requiring these
      * non-PHP files to parse as one well-formed document: `"rule"` /
      * `"ruleName"` / `"code"` / `"violationCode"` values, both halves of a
      * `"channel": "producer#code"` value, and the keys of a `"byRule": {...}`

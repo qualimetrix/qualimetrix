@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter;
 
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -33,7 +33,7 @@ final class CheckstyleFormatter implements FormatterInterface
         $xml->startElement('checkstyle');
         $xml->writeAttribute('version', self::VERSION);
 
-        $this->writeFiles($xml, $report->violations, $context);
+        $this->writeFiles($xml, $report->findings, $context);
 
         if ($report->coverage !== null && !$report->coverage->isComplete()) {
             $xml->startElement('file');
@@ -66,29 +66,29 @@ final class CheckstyleFormatter implements FormatterInterface
     }
 
     /**
-     * Groups violations by file and writes <file> elements.
+     * Groups findings by file and writes <file> elements.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private function writeFiles(XMLWriter $xml, array $violations, FormatterContext $context): void
+    private function writeFiles(XMLWriter $xml, array $findings, FormatterContext $context): void
     {
-        /** @var array<string, list<Violation>> $grouped */
+        /** @var array<string, list<Finding>> $grouped */
         $grouped = [];
 
-        foreach ($violations as $violation) {
-            $file = $violation->location->file === null
+        foreach ($findings as $finding) {
+            $file = $finding->location->file === null
                 ? '[project]'
-                : $context->relativizePath($violation->location->file);
+                : $context->relativizePath($finding->location->file);
             $grouped[$file] ??= [];
-            $grouped[$file][] = $violation;
+            $grouped[$file][] = $finding;
         }
 
-        foreach ($grouped as $file => $fileViolations) {
+        foreach ($grouped as $file => $fileFindings) {
             $xml->startElement('file');
             $xml->writeAttribute('name', $file);
 
-            foreach ($fileViolations as $violation) {
-                $this->writeError($xml, $violation);
+            foreach ($fileFindings as $finding) {
+                $this->writeError($xml, $finding);
             }
 
             $xml->endElement(); // file
@@ -96,22 +96,22 @@ final class CheckstyleFormatter implements FormatterInterface
     }
 
     /**
-     * Writes a single <error> element for a violation.
+     * Writes a single <error> element for a finding.
      *
      * Checkstyle XML has no field for the accepted level (the schema is
      * fixed to `line`/`severity`/`message`/`source`), so a measured breach
      * (ADR 0017) carries it appended to `message` — the only free-text
      * attribute Checkstyle consumers already surface.
      */
-    private function writeError(XMLWriter $xml, Violation $violation): void
+    private function writeError(XMLWriter $xml, Finding $finding): void
     {
         $xml->startElement('error');
 
-        $xml->writeAttribute('line', (string) ($violation->location->line ?? 1));
+        $xml->writeAttribute('line', (string) ($finding->location->line ?? 1));
 
-        $xml->writeAttribute('severity', $this->severityToString($violation->severity));
-        $xml->writeAttribute('message', $violation->message . $this->formatBreachSuffix($violation));
-        $xml->writeAttribute('source', 'qmx.' . $violation->violationCode);
+        $xml->writeAttribute('severity', $this->severityToString($finding->severity));
+        $xml->writeAttribute('message', $finding->message . $this->formatBreachSuffix($finding));
+        $xml->writeAttribute('source', 'qmx.' . $finding->code);
 
         $xml->endElement(); // error
     }
@@ -119,9 +119,9 @@ final class CheckstyleFormatter implements FormatterInterface
     /**
      * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
      */
-    private function formatBreachSuffix(Violation $violation): string
+    private function formatBreachSuffix(Finding $finding): string
     {
-        $breach = AcceptedLevelNarrator::describe($violation);
+        $breach = AcceptedLevelNarrator::describe($finding);
 
         return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }

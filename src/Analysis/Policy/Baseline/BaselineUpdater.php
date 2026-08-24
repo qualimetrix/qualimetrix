@@ -9,7 +9,7 @@ use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
@@ -66,7 +66,7 @@ final readonly class BaselineUpdater
     ) {}
 
     /**
-     * @param list<Violation> $measured the run's measured set (ADR 0017)
+     * @param list<Finding> $measured the run's measured set (ADR 0017)
      * @param RunScope $scope the paths this run analysed; recorded only when it covers
      *                        what the file already records — see {@see scopeToRecord()}
      */
@@ -133,7 +133,7 @@ final readonly class BaselineUpdater
      * entry can be compared at all is settled before anything about the
      * measured group is read, mirroring the ceiling stage's own ordering.
      *
-     * @param list<Violation> $group every measured finding sharing the entry's identity
+     * @param list<Finding> $group every measured finding sharing the entry's identity
      *
      * @return array{BaselineEntry, BaselineEntryUpdateOutcome}
      */
@@ -175,7 +175,7 @@ final readonly class BaselineUpdater
      * One level, no magnitudes: {@see GroupAcceptance::countWithin()} is the
      * whole comparison.
      *
-     * @param list<Violation> $group
+     * @param list<Finding> $group
      *
      * @return array{BaselineEntry, BaselineEntryUpdateOutcome}
      */
@@ -193,7 +193,7 @@ final readonly class BaselineUpdater
     }
 
     /**
-     * @param list<Violation> $group
+     * @param list<Finding> $group
      *
      * @return array{BaselineEntry, BaselineEntryUpdateOutcome}
      */
@@ -254,7 +254,7 @@ final readonly class BaselineUpdater
      * The group's magnitudes, normalised the way the stored ones were, or
      * `null` when some member reports no usable number.
      *
-     * @param list<Violation> $group
+     * @param list<Finding> $group
      *
      * @return ?list<float>
      */
@@ -262,13 +262,13 @@ final readonly class BaselineUpdater
     {
         $magnitudes = [];
 
-        foreach ($group as $violation) {
-            if ($violation->metricValue === null) {
+        foreach ($group as $finding) {
+            if ($finding->metricValue === null) {
                 return null;
             }
 
             try {
-                $magnitudes[] = BaselineEntry::normalizeMagnitude($violation->metricValue);
+                $magnitudes[] = BaselineEntry::normalizeMagnitude($finding->metricValue);
             } catch (InvalidArgumentException) {
                 // NaN or infinity: not a boundary, so nothing to compare against.
                 return null;
@@ -279,16 +279,16 @@ final readonly class BaselineUpdater
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return array<string, list<Violation>> identity key => its group
+     * @return array<string, list<Finding>> identity key => its group
      */
-    private static function groupByIdentity(array $violations): array
+    private static function groupByIdentity(array $findings): array
     {
         $groups = [];
 
-        foreach ($violations as $violation) {
-            $groups[BaselineIdentity::forViolation($violation)->key()][] = $violation;
+        foreach ($findings as $finding) {
+            $groups[BaselineIdentity::forFinding($finding)->key()][] = $finding;
         }
 
         return $groups;

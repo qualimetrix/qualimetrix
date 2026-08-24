@@ -9,8 +9,8 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthSc
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 
 /**
  * Value Object representing the analysis report.
@@ -18,14 +18,14 @@ use Qualimetrix\Analysis\Finding\Contract\Violation;
 final readonly class Report
 {
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param array<string, HealthScore> $healthScores
      * @param list<WorstOffender> $worstNamespaces
      * @param list<WorstOffender> $worstClasses
      * @param list<RankedIssue> $topIssues
      */
     public function __construct(
-        public array $violations,
+        public array $findings,
         public int $filesAnalyzed,
         public int $filesSkipped,
         public float $duration,
@@ -44,31 +44,31 @@ final readonly class Report
     ) {}
 
     /**
-     * Checks if report has no violations.
+     * Checks if report has no findings.
      */
     public function isEmpty(): bool
     {
-        return $this->violations === [];
+        return $this->findings === [];
     }
 
     /**
-     * Returns total number of violations.
+     * Returns total number of findings.
      */
-    public function getTotalViolations(): int
+    public function getTotalFindings(): int
     {
-        return \count($this->violations);
+        return \count($this->findings);
     }
 
     /**
-     * Returns violations filtered by severity.
+     * Returns findings filtered by severity.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function getViolationsBySeverity(Severity $severity): array
+    public function getFindingsBySeverity(Severity $severity): array
     {
         return array_values(array_filter(
-            $this->violations,
-            static fn(Violation $v): bool => $v->severity === $severity,
+            $this->findings,
+            static fn(Finding $v): bool => $v->severity === $severity,
         ));
     }
 }

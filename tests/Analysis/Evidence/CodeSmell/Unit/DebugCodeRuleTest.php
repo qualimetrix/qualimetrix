@@ -56,7 +56,7 @@ final class DebugCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new DebugCodeRule(new CodeSmellOptions(enabled: false));
 
@@ -69,7 +69,7 @@ final class DebugCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoViolations(): void
+    public function noSmellsProducesNoFindings(): void
     {
         $rule = new DebugCodeRule(new CodeSmellOptions());
 
@@ -90,7 +90,7 @@ final class DebugCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesViolation(): void
+    public function smellDetectedProducesFinding(): void
     {
         $rule = new DebugCodeRule(new CodeSmellOptions());
 
@@ -109,15 +109,15 @@ final class DebugCodeRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(3, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(5, $violations[0]->location->line);
-        self::assertSame(12, $violations[1]->location->line);
-        self::assertSame(30, $violations[2]->location->line);
-        self::assertSame('Debug function call detected - remove before production', $violations[0]->message);
-        self::assertSame('code-smell.debug-code', $violations[0]->ruleName);
-        self::assertSame(1.0, $violations[0]->metricValue);
+        self::assertCount(3, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(5, $findings[0]->location->line);
+        self::assertSame(12, $findings[1]->location->line);
+        self::assertSame(30, $findings[2]->location->line);
+        self::assertSame('Debug function call detected - remove before production', $findings[0]->message);
+        self::assertSame('code-smell.debug-code', $findings[0]->ruleName);
+        self::assertSame(1.0, $findings[0]->metricValue);
     }
 }

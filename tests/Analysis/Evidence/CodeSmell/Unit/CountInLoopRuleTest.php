@@ -47,7 +47,7 @@ final class CountInLoopRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new CountInLoopRule(new CodeSmellOptions(enabled: false));
 
@@ -60,7 +60,7 @@ final class CountInLoopRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoViolations(): void
+    public function noSmellsProducesNoFindings(): void
     {
         $rule = new CountInLoopRule(new CodeSmellOptions());
 
@@ -81,7 +81,7 @@ final class CountInLoopRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesViolation(): void
+    public function smellDetectedProducesFinding(): void
     {
         $rule = new CountInLoopRule(new CodeSmellOptions());
 
@@ -98,13 +98,13 @@ final class CountInLoopRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(15, $violations[0]->location->line);
-        self::assertSame('count() in loop condition detected - store in variable before loop', $violations[0]->message);
-        self::assertSame('code-smell.count-in-loop', $violations[0]->ruleName);
-        self::assertSame(1.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(15, $findings[0]->location->line);
+        self::assertSame('count() in loop condition detected - store in variable before loop', $findings[0]->message);
+        self::assertSame('code-smell.count-in-loop', $findings[0]->ruleName);
+        self::assertSame(1.0, $findings[0]->metricValue);
     }
 }

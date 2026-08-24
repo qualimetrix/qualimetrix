@@ -8,10 +8,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 
-#[CoversClass(ViolationFilterStage::class)]
-final class ViolationFilterStageTest extends TestCase
+#[CoversClass(FindingFilterStage::class)]
+final class FindingFilterStageTest extends TestCase
 {
     /**
      * The boundary of the measured set, pinned case by case: everything
@@ -21,21 +21,21 @@ final class ViolationFilterStageTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideStageMembership')]
-    public function itKnowsWhetherItDefinesTheMeasuredSet(ViolationFilterStage $stage, bool $defines): void
+    public function itKnowsWhetherItDefinesTheMeasuredSet(FindingFilterStage $stage, bool $defines): void
     {
         self::assertSame($defines, $stage->definesMeasuredSet());
     }
 
     /**
-     * @return iterable<string, array{ViolationFilterStage, bool}>
+     * @return iterable<string, array{FindingFilterStage, bool}>
      */
     public static function provideStageMembership(): iterable
     {
-        yield 'suppression' => [ViolationFilterStage::Suppression, true];
-        yield 'path exclusion' => [ViolationFilterStage::PathExclusion, true];
-        yield 'namespace exclusion' => [ViolationFilterStage::NamespaceExclusion, true];
-        yield 'baseline' => [ViolationFilterStage::Baseline, false];
-        yield 'git scope' => [ViolationFilterStage::GitScope, false];
+        yield 'suppression' => [FindingFilterStage::Suppression, true];
+        yield 'path exclusion' => [FindingFilterStage::PathExclusion, true];
+        yield 'namespace exclusion' => [FindingFilterStage::NamespaceExclusion, true];
+        yield 'baseline' => [FindingFilterStage::Baseline, false];
+        yield 'git scope' => [FindingFilterStage::GitScope, false];
     }
 
     /**
@@ -46,10 +46,10 @@ final class ViolationFilterStageTest extends TestCase
     public function itCoversEveryStageInTheMembershipTable(): void
     {
         $covered = array_map(
-            static fn(array $case): ViolationFilterStage => $case[0],
+            static fn(array $case): FindingFilterStage => $case[0],
             iterator_to_array(self::provideStageMembership()),
         );
 
-        self::assertSame(ViolationFilterStage::cases(), array_values($covered));
+        self::assertSame(FindingFilterStage::cases(), array_values($covered));
     }
 }

@@ -7,13 +7,13 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 
 /**
@@ -22,7 +22,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInte
  *
  * Under declaration-order matching (ADR 0006), a class is assigned to the
  * FIRST layer whose patterns match its FQN. One channel comes out of that:
- * `architecture.layer-violation`, per use-site, one violation per forbidden
+ * `architecture.layer-violation`, per use-site, one finding per forbidden
  * dependency edge.
  *
  * How much of the analysed code no layer claims is a fact about the run
@@ -103,8 +103,8 @@ final class LayerViolationRule extends AbstractRule
      * `architecture.layer-violation` reports no magnitude — its emission site
      * passes no `metricValue:` at all — so `occurrence` is the only shape left
      * to declare for it. It carries a dependency edge
-     * (`dependencyTarget`/`dependencyType` on the `Violation` — see
-     * {@see buildViolations()}), so per ADR 0017 its identity is per-edge; that
+     * (`dependencyTarget`/`dependencyType` on the `Finding` — see
+     * {@see buildFindings()}), so per ADR 0017 its identity is per-edge; that
      * is an identity-layer concern the channel declaration itself does not
      * encode.
      *
@@ -113,12 +113,12 @@ final class LayerViolationRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_),
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -137,24 +137,24 @@ final class LayerViolationRule extends AbstractRule
 
         $ownedTargets = OwnedLayerTargets::fromDeclarations($context->metrics->allDeclarations());
 
-        return $this->buildViolations($evidence, $ownedTargets);
+        return $this->buildFindings($evidence, $ownedTargets);
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function buildViolations(LayerEvidence $evidence, OwnedLayerTargets $ownedTargets): array
+    private function buildFindings(LayerEvidence $evidence, OwnedLayerTargets $ownedTargets): array
     {
         \assert($this->options instanceof LayerViolationOptions);
 
-        $violations = [];
+        $findings = [];
 
         foreach ($evidence->forbiddenEdges as $edge) {
             $dependency = $edge['dependency'];
             $fromLayer = $edge['fromMatch']->layerName;
             $toLayer = $edge['toMatch']->layerName;
 
-            $edgeViolations = (new LayerViolationFinding(
+            $edgeFindings = (new LayerViolationFinding(
                 dependency: $dependency,
                 fromMatch: $edge['fromMatch'],
                 toMatch: $edge['toMatch'],
@@ -162,13 +162,13 @@ final class LayerViolationRule extends AbstractRule
                 ruleName: self::NAME,
                 severity: $this->options->severity,
                 recommendation: LayerRoutingGuidance::forForbiddenEdge($dependency, $fromLayer, $toLayer, $evidence->architecture),
-            ))->toViolations();
+            ))->toFindings();
 
-            foreach ($edgeViolations as $violation) {
-                $violations[] = $violation;
+            foreach ($edgeFindings as $finding) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 }

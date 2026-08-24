@@ -129,15 +129,15 @@ final class LcomRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('LCOM (Lack of Cohesion) is 4', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 3', $violations[0]->message);
-        self::assertStringContainsString('Class could be split into 4 cohesive parts', $violations[0]->message);
-        self::assertSame(4, $violations[0]->metricValue);
-        self::assertSame('cohesion.lcom', $violations[0]->ruleName);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('LCOM (Lack of Cohesion) is 4', $findings[0]->message);
+        self::assertStringContainsString('exceeds threshold of 3', $findings[0]->message);
+        self::assertStringContainsString('Class could be split into 4 cohesive parts', $findings[0]->message);
+        self::assertSame(4, $findings[0]->metricValue);
+        self::assertSame('cohesion.lcom', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -161,15 +161,15 @@ final class LcomRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(5, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(5, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function itProducesNoViolationForCohesiveClass(): void
+    public function itProducesNoFindingForCohesiveClass(): void
     {
         $rule = new LcomRule(new LcomOptions());
 
@@ -186,9 +186,9 @@ final class LcomRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -209,9 +209,9 @@ final class LcomRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -237,10 +237,10 @@ final class LcomRuleTest extends TestCase
         )));
 
         $eligible = (new MetricBag())->with('lcom', 3)->with('methodCount', 3)->with('isReadonly', 0);
-        $violations = $rule->analyze($contextFor($eligible));
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
+        $findings = $rule->analyze($contextFor($eligible));
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame($subject->toCanonical(), $findings[0]->subject->toCanonical());
 
         self::assertSame([], $rule->analyze($contextFor($eligible, [
             'src/Candidate.php' => [new ThresholdOverride('cohesion.lcom', 4, 6, 1, $subject, ControlScope::Class_, 100)],
@@ -311,13 +311,13 @@ final class LcomRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -414,11 +414,11 @@ final class LcomRuleTest extends TestCase
             (new MetricBag())->with('lcom', 4)->with('methodCount', 5)->with('isReadonly', 0),
         );
 
-        $violations = (new LcomRule(new LcomOptions()))
+        $findings = (new LcomRule(new LcomOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

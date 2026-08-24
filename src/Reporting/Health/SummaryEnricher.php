@@ -33,7 +33,7 @@ final readonly class SummaryEnricher
         }
 
         $tree = $report->namespaceTree ?? new NamespaceTree($report->metrics->getNamespaces());
-        $health = $this->healthSummaryBuilder->build($report->metrics, $tree, $report->violations);
+        $health = $this->healthSummaryBuilder->build($report->metrics, $tree, $report->findings);
 
         return $this->enrichWithHealth($report, $tree, $health);
     }
@@ -41,16 +41,16 @@ final readonly class SummaryEnricher
     private function enrichWithHealth(Report $report, NamespaceTree $tree, HealthSummary $health): Report
     {
         $metrics = $report->metrics ?? throw new LogicException('Health enrichment requires measured metrics.');
-        $debtSummary = $this->debtCalculator->calculate($report->violations);
+        $debtSummary = $this->debtCalculator->calculate($report->findings);
         $projectMetrics = $metrics->get(SymbolPath::forProject());
         $totalLoc = $projectMetrics->get(MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum));
         $debtPer1kLoc = ($totalLoc !== null && $totalLoc > 0)
             ? round($debtSummary->totalMinutes / ((float) $totalLoc / 1000), 1)
             : null;
-        $topIssues = $this->impactCalculator->computeTopIssues($report->violations, $metrics, $tree);
+        $topIssues = $this->impactCalculator->computeTopIssues($report->findings, $metrics, $tree);
 
         return new Report(
-            violations: $report->violations,
+            findings: $report->findings,
             filesAnalyzed: $report->filesAnalyzed,
             filesSkipped: $report->filesSkipped,
             duration: $report->duration,

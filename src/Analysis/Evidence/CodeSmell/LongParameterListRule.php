@@ -9,14 +9,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -93,12 +93,12 @@ final class LongParameterListRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -110,13 +110,13 @@ final class LongParameterListRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeEnabledSymbols(AnalysisContext $context): array
     {
         \assert($this->options instanceof LongParameterListOptions);
         $options = $this->options;
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allCallables() as $symbolInfo) {
             $subject = $symbolInfo->subject ?? throw new LogicException('Long parameter list findings require an exact callable subject');
@@ -135,16 +135,16 @@ final class LongParameterListRule extends AbstractRule
 
             $parameterCountValue = (int) $parameterCount;
             $isVoConstructor = $metrics->get(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR) === 1;
-            $violation = $isVoConstructor
+            $finding = $isVoConstructor
                 ? $this->checkVoConstructor($symbolInfo, $subject, $parameterCountValue, $context, $options)
                 : $this->checkSymbol($symbolInfo, $subject, $parameterCountValue, $symbolType, $context, $options);
 
-            if ($violation !== null) {
-                $violations[] = $violation;
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     private function checkSymbol(
@@ -154,7 +154,7 @@ final class LongParameterListRule extends AbstractRule
         SymbolType $symbolType,
         AnalysisContext $context,
         LongParameterListOptions $options,
-    ): ?Violation {
+    ): ?Finding {
         /** @var LongParameterListOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
         $severity = $effectiveOptions->getSeverity($parameterCountValue);
@@ -166,12 +166,12 @@ final class LongParameterListRule extends AbstractRule
         $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
         $kind = $symbolType === SymbolType::Function_ ? 'Function' : 'Method';
 
-        return new Violation(
+        return new Finding(
             location: new Location($symbolInfo->file, $symbolInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf('%s has %d parameters, exceeds threshold of %d. Consider introducing a parameter object', $kind, $parameterCountValue, $threshold),
             severity: $severity,
             metricValue: $parameterCountValue,
@@ -186,7 +186,7 @@ final class LongParameterListRule extends AbstractRule
         int $parameterCount,
         AnalysisContext $context,
         LongParameterListOptions $options,
-    ): ?Violation {
+    ): ?Finding {
         $override = $context->getThresholdOverride($this->getName(), $subject);
         $effectiveOptions = $override === null
             ? $options
@@ -199,12 +199,12 @@ final class LongParameterListRule extends AbstractRule
 
         $threshold = $severity === Severity::Error ? $effectiveOptions->voError : $effectiveOptions->voWarning;
 
-        return new Violation(
+        return new Finding(
             location: new Location($symbolInfo->file, $symbolInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf('VO constructor has %d promoted parameters, exceeds threshold of %d. Consider splitting the value object', $parameterCount, $threshold),
             severity: $severity,
             metricValue: $parameterCount,

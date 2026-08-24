@@ -12,10 +12,10 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
@@ -67,13 +67,13 @@ final class CoverageDiagnosticsTest extends TestCase
             $this->buildDependency('App\\Controller', 'C', 'Vendor\\Bar', 'B'),
         ]);
 
-        $violations = $rule->analyze($this->buildContext($graph, $arch));
+        $findings = $rule->analyze($this->buildContext($graph, $arch));
 
         // Scope: this test is about coverage-mode behaviour. Filter to just
         // coverage diagnostics (the unreachable-layer diagnostic may also fire
         // because we register no classes, but that is exercised in the
         // LayerViolationRule test suite).
-        self::assertSame([], $this->filterCoverageDiagnostics($violations));
+        self::assertSame([], $this->filterCoverageDiagnostics($findings));
     }
 
     #[Test]
@@ -96,14 +96,14 @@ final class CoverageDiagnosticsTest extends TestCase
             $this->buildDependency('Vendor\\Foo', 'A', 'Vendor\\Bar', 'B'),
         ]);
 
-        $violations = $rule->analyze($this->buildContext($graph, $arch));
+        $findings = $rule->analyze($this->buildContext($graph, $arch));
 
-        $diagnostics = $this->filterCoverageDiagnostics($violations);
+        $diagnostics = $this->filterCoverageDiagnostics($findings);
         self::assertCount(1, $diagnostics);
 
         $diagnostic = $diagnostics[0];
         self::assertSame('architecture.coverage', $diagnostic->ruleName);
-        self::assertSame('architecture.coverage', $diagnostic->violationCode);
+        self::assertSame('architecture.coverage', $diagnostic->code);
         self::assertSame(Severity::Warning, $diagnostic->severity);
         self::assertStringContainsString('Architecture coverage:', $diagnostic->message);
         self::assertStringContainsString('2 edge(s) with unmatched source layer', $diagnostic->message);
@@ -127,9 +127,9 @@ final class CoverageDiagnosticsTest extends TestCase
             $this->buildDependency('Vendor\\Foo', 'A', 'App\\Controller', 'C'),
         ]);
 
-        $violations = $rule->analyze($this->buildContext($graph, $arch));
+        $findings = $rule->analyze($this->buildContext($graph, $arch));
 
-        $diagnostics = $this->filterCoverageDiagnostics($violations);
+        $diagnostics = $this->filterCoverageDiagnostics($findings);
         self::assertCount(1, $diagnostics);
         self::assertSame(Severity::Error, $diagnostics[0]->severity);
     }
@@ -152,9 +152,9 @@ final class CoverageDiagnosticsTest extends TestCase
             $this->buildDependency('App\\Controller', 'A', 'App\\Service', 'B'),
         ]);
 
-        $violations = $rule->analyze($this->buildContext($graph, $arch));
+        $findings = $rule->analyze($this->buildContext($graph, $arch));
 
-        self::assertSame([], $this->filterCoverageDiagnostics($violations));
+        self::assertSame([], $this->filterCoverageDiagnostics($findings));
     }
 
     #[Test]
@@ -179,9 +179,9 @@ final class CoverageDiagnosticsTest extends TestCase
             );
         }
 
-        $violations = $rule->analyze($this->buildContext($this->buildGraph($dependencies), $arch));
+        $findings = $rule->analyze($this->buildContext($this->buildGraph($dependencies), $arch));
 
-        $diagnostics = $this->filterCoverageDiagnostics($violations);
+        $diagnostics = $this->filterCoverageDiagnostics($findings);
         self::assertCount(1, $diagnostics);
         $recommendation = $diagnostics[0]->recommendation;
         self::assertNotNull($recommendation);
@@ -198,7 +198,7 @@ final class CoverageDiagnosticsTest extends TestCase
     }
 
     #[Test]
-    public function diagnosticAccompaniesRealViolationsWhenForbiddenEdgesAreMixedIn(): void
+    public function diagnosticAccompaniesRealFindingsWhenForbiddenEdgesAreMixedIn(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -218,10 +218,10 @@ final class CoverageDiagnosticsTest extends TestCase
             $this->buildDependency('App\\Controller', 'C', 'Vendor\\Foo', 'F'),
         ]);
 
-        $violations = $rule->analyze($this->buildContext($graph, $arch));
+        $findings = $rule->analyze($this->buildContext($graph, $arch));
 
-        $layerViolations = $this->filterLayerViolations($violations);
-        $diagnostics = $this->filterCoverageDiagnostics($violations);
+        $layerViolations = $this->filterLayerViolations($findings);
+        $diagnostics = $this->filterCoverageDiagnostics($findings);
 
         self::assertCount(1, $layerViolations);
         self::assertCount(1, $diagnostics);
@@ -237,13 +237,13 @@ final class CoverageDiagnosticsTest extends TestCase
             coverage: CoverageMode::Error,
         );
 
-        $violations = $rule->analyze($this->buildContext(
+        $findings = $rule->analyze($this->buildContext(
             $this->buildGraph([]),
             $arch,
             ['App\\Unowned\\LonelyClass'],
         ));
 
-        $diagnostics = $this->filterCoverageDiagnostics($violations);
+        $diagnostics = $this->filterCoverageDiagnostics($findings);
         self::assertCount(1, $diagnostics);
         self::assertSame(Severity::Error, $diagnostics[0]->severity);
         self::assertStringContainsString('0 edge(s) with unmatched source layer', $diagnostics[0]->message);
@@ -262,13 +262,13 @@ final class CoverageDiagnosticsTest extends TestCase
             coverage: CoverageMode::Error,
         );
 
-        $violations = $rule->analyze($this->buildContext(
+        $findings = $rule->analyze($this->buildContext(
             $this->buildGraph([]),
             $arch,
             ['App\\Controller\\LonelyController'],
         ));
 
-        self::assertSame([], $this->filterCoverageDiagnostics($violations));
+        self::assertSame([], $this->filterCoverageDiagnostics($findings));
     }
 
     #[Test]
@@ -284,13 +284,13 @@ final class CoverageDiagnosticsTest extends TestCase
             $this->buildDependency('App\\Unowned', 'SharedClass', 'App\\Controller', 'Controller'),
         ]);
 
-        $violations = $rule->analyze($this->buildContext(
+        $findings = $rule->analyze($this->buildContext(
             $graph,
             $arch,
             ['App\\Unowned\\SharedClass', 'App\\Controller\\Controller'],
         ));
 
-        $diagnostics = $this->filterCoverageDiagnostics($violations);
+        $diagnostics = $this->filterCoverageDiagnostics($findings);
         self::assertCount(1, $diagnostics);
         self::assertStringContainsString('1 edge(s) with unmatched source layer', $diagnostics[0]->message);
         self::assertStringContainsString('1 class(es) outside all declared layers', $diagnostics[0]->message);
@@ -307,13 +307,13 @@ final class CoverageDiagnosticsTest extends TestCase
             coverage: CoverageMode::Ignore,
         );
 
-        $violations = $rule->analyze($this->buildContext(
+        $findings = $rule->analyze($this->buildContext(
             $this->buildGraph([]),
             $arch,
             ['App\\Unowned\\LonelyClass'],
         ));
 
-        self::assertSame([], $this->filterCoverageDiagnostics($violations));
+        self::assertSame([], $this->filterCoverageDiagnostics($findings));
     }
 
     #[Test]
@@ -430,28 +430,28 @@ final class CoverageDiagnosticsTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function filterCoverageDiagnostics(array $violations): array
+    private function filterCoverageDiagnostics(array $findings): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $v): bool => $v->ruleName === LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+            $findings,
+            static fn(Finding $v): bool => $v->ruleName === LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
         ));
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function filterLayerViolations(array $violations): array
+    private function filterLayerViolations(array $findings): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $v): bool => $v->ruleName === LayerViolationRule::NAME,
+            $findings,
+            static fn(Finding $v): bool => $v->ruleName === LayerViolationRule::NAME,
         ));
     }
 }

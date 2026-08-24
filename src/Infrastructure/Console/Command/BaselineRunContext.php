@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -42,11 +42,11 @@ final readonly class BaselineRunContext
     /**
      * The measured set: the findings every baseline operation reads (ADR 0017).
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function violations(): array
+    public function findings(): array
     {
-        return $this->run->violations;
+        return $this->run->findings;
     }
 
     public function result(): AnalysisResult

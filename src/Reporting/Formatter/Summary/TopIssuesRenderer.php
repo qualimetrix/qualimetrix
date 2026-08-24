@@ -6,8 +6,8 @@ namespace Qualimetrix\Reporting\Formatter\Summary;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtSummary;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
@@ -16,7 +16,7 @@ use Qualimetrix\Reporting\Report;
 /**
  * Renders the "Top issues by impact" section in the summary output.
  *
- * Shows a ranked list of violations prioritized by impact score,
+ * Shows a ranked list of findings prioritized by impact score,
  * which combines ClassRank, severity, and remediation time.
  */
 final class TopIssuesRenderer
@@ -55,13 +55,13 @@ final class TopIssuesRenderer
      */
     private function renderIssue(int $rank, RankedIssue $issue, FormatterContext $context, AnsiColor $color, array &$lines): void
     {
-        $violation = $issue->violation;
-        $severity = match ($violation->severity) {
+        $finding = $issue->finding;
+        $severity = match ($finding->severity) {
             Severity::Error => 'ERR',
             Severity::Warning => 'WRN',
             Severity::Info => 'INF',
         };
-        $severityFormatted = match ($violation->severity) {
+        $severityFormatted = match ($finding->severity) {
             Severity::Error => $color->red($severity),
             Severity::Warning => $color->yellow($severity),
             Severity::Info => $color->cyan($severity),
@@ -70,9 +70,9 @@ final class TopIssuesRenderer
         $score = $this->formatScore($issue->impactScore);
         $debt = DebtSummary::formatMinutes($issue->debtMinutes);
 
-        $locationStr = $this->formatLocation($violation, $context);
+        $locationStr = $this->formatLocation($finding, $context);
 
-        $detail = \sprintf('%s: %s%s', $violation->violationCode, $violation->getDisplayMessage(), $this->formatSymbol($violation));
+        $detail = \sprintf('%s: %s%s', $finding->code, $finding->getDisplayMessage(), $this->formatSymbol($finding));
 
         $indent = str_repeat(' ', \strlen((string) $rank) + 8);
 
@@ -91,23 +91,23 @@ final class TopIssuesRenderer
         );
     }
 
-    private function formatLocation(Violation $violation, FormatterContext $context): string
+    private function formatLocation(Finding $finding, FormatterContext $context): string
     {
-        if ($violation->location->file === null) {
+        if ($finding->location->file === null) {
             return '[project]';
         }
 
-        $file = $context->relativizePath($violation->location->file);
-        $line = $violation->location->line;
+        $file = $context->relativizePath($finding->location->file);
+        $line = $finding->location->line;
 
-        return $line !== null && $violation->location->precise
+        return $line !== null && $finding->location->precise
             ? \sprintf('%s:%d', $file, $line)
             : $file;
     }
 
-    private function formatSymbol(Violation $violation): string
+    private function formatSymbol(Finding $finding): string
     {
-        $symbolPath = $violation->symbolPath;
+        $symbolPath = $finding->symbolPath;
         $type = $symbolPath->getType();
 
         if ($type === SymbolType::Method || $type === SymbolType::Function_) {
@@ -141,7 +141,7 @@ final class TopIssuesRenderer
         }
 
         return array_values(array_filter($issues, static function (RankedIssue $issue) use ($context): bool {
-            $sp = $issue->violation->symbolPath;
+            $sp = $issue->finding->symbolPath;
             $ns = $sp->namespace ?? '';
             $type = $sp->type;
 

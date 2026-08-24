@@ -4,26 +4,26 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Support;
 
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Reporting\GroupBy;
 
 /**
- * Sorts violations based on GroupBy mode.
+ * Sorts findings based on GroupBy mode.
  *
  * Sorting is deterministic and matches the grouping to ensure
- * violations within the same group appear together.
+ * findings within the same group appear together.
  */
-final class ViolationSorter
+final class FindingSorter
 {
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public static function sort(array $violations, GroupBy $groupBy): array
+    public static function sort(array $findings, GroupBy $groupBy): array
     {
-        usort($violations, match ($groupBy) {
+        usort($findings, match ($groupBy) {
             GroupBy::None => self::bySeverityFileLine(...),
             GroupBy::File => self::byFileSeverityLine(...),
             GroupBy::Rule => self::byRuleSeverityFileLine(...),
@@ -32,51 +32,51 @@ final class ViolationSorter
             GroupBy::NamespaceName => self::byNamespaceSeverityLine(...),
         });
 
-        return $violations;
+        return $findings;
     }
 
     /**
-     * Groups sorted violations by the grouping key.
+     * Groups sorted findings by the grouping key.
      *
-     * @param list<Violation> $violations Already sorted violations
+     * @param list<Finding> $findings Already sorted findings
      *
-     * @return array<string, list<Violation>> Group key => violations
+     * @return array<string, list<Finding>> Group key => findings
      */
-    public static function group(array $violations, GroupBy $groupBy): array
+    public static function group(array $findings, GroupBy $groupBy): array
     {
         $groups = [];
 
-        foreach ($violations as $violation) {
+        foreach ($findings as $finding) {
             $key = match ($groupBy) {
                 GroupBy::None => '',
-                GroupBy::File => $violation->location->pathString(),
-                GroupBy::Rule => $violation->ruleName,
-                GroupBy::Severity => $violation->severity->value,
-                GroupBy::ClassName => self::extractClassName($violation),
-                GroupBy::NamespaceName => self::extractNamespaceName($violation),
+                GroupBy::File => $finding->location->pathString(),
+                GroupBy::Rule => $finding->ruleName,
+                GroupBy::Severity => $finding->severity->value,
+                GroupBy::ClassName => self::extractClassName($finding),
+                GroupBy::NamespaceName => self::extractNamespaceName($finding),
             };
 
-            $groups[$key][] = $violation;
+            $groups[$key][] = $finding;
         }
 
         return $groups;
     }
 
-    private static function bySeverityFileLine(Violation $a, Violation $b): int
+    private static function bySeverityFileLine(Finding $a, Finding $b): int
     {
         return ($cmp1 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp1
             : (($cmp2 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp2
             : (($a->location->line ?? 0) <=> ($b->location->line ?? 0)));
     }
 
-    private static function byFileSeverityLine(Violation $a, Violation $b): int
+    private static function byFileSeverityLine(Finding $a, Finding $b): int
     {
         return ($cmp1 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp1
             : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
             : (($a->location->line ?? 0) <=> ($b->location->line ?? 0)));
     }
 
-    private static function byRuleSeverityFileLine(Violation $a, Violation $b): int
+    private static function byRuleSeverityFileLine(Finding $a, Finding $b): int
     {
         return ($cmp1 = $a->ruleName <=> $b->ruleName) !== 0 ? $cmp1
             : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
@@ -84,7 +84,7 @@ final class ViolationSorter
             : (($a->location->line ?? 0) <=> ($b->location->line ?? 0))));
     }
 
-    private static function byClassSeverityLine(Violation $a, Violation $b): int
+    private static function byClassSeverityLine(Finding $a, Finding $b): int
     {
         return ($cmp1 = self::extractClassName($a) <=> self::extractClassName($b)) !== 0 ? $cmp1
             : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
@@ -92,7 +92,7 @@ final class ViolationSorter
             : (($a->location->line ?? 0) <=> ($b->location->line ?? 0))));
     }
 
-    private static function byNamespaceSeverityLine(Violation $a, Violation $b): int
+    private static function byNamespaceSeverityLine(Finding $a, Finding $b): int
     {
         return ($cmp1 = self::extractNamespaceName($a) <=> self::extractNamespaceName($b)) !== 0 ? $cmp1
             : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
@@ -103,9 +103,9 @@ final class ViolationSorter
     /**
      * Extracts the FQCN for grouping. Falls back to file path if no class context.
      */
-    private static function extractClassName(Violation $violation): string
+    private static function extractClassName(Finding $finding): string
     {
-        $sp = $violation->symbolPath;
+        $sp = $finding->symbolPath;
         $ns = $sp->namespace ?? '';
         $type = $sp->type;
 
@@ -113,16 +113,16 @@ final class ViolationSorter
             return $ns !== '' ? $ns . '\\' . $type : $type;
         }
 
-        // File-level violation without class context — group under file path
-        return $violation->location->pathString();
+        // File-level finding without class context — group under file path
+        return $finding->location->pathString();
     }
 
     /**
      * Extracts the namespace for grouping. Falls back to '<global>' if no namespace.
      */
-    private static function extractNamespaceName(Violation $violation): string
+    private static function extractNamespaceName(Finding $finding): string
     {
-        $ns = $violation->symbolPath->namespace ?? '';
+        $ns = $finding->symbolPath->namespace ?? '';
 
         return $ns !== '' ? $ns : '<global>';
     }

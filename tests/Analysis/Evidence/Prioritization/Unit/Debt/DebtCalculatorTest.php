@@ -10,9 +10,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -35,7 +35,7 @@ final class DebtCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function itCalculatesZeroDebtForEmptyViolations(): void
+    public function itCalculatesZeroDebtForEmptyFindings(): void
     {
         $summary = $this->calculator->calculate([]);
 
@@ -45,13 +45,13 @@ final class DebtCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function itCalculatesDebtForSingleViolation(): void
+    public function itCalculatesDebtForSingleFinding(): void
     {
-        $violations = [
-            $this->createViolation('src/Foo.php', 'complexity.cyclomatic'),
+        $findings = [
+            $this->createFinding('src/Foo.php', 'complexity.cyclomatic'),
         ];
 
-        $summary = $this->calculator->calculate($violations);
+        $summary = $this->calculator->calculate($findings);
 
         self::assertSame(30, $summary->totalMinutes);
         self::assertSame(['src/Foo.php' => 30], $summary->perFile);
@@ -59,15 +59,15 @@ final class DebtCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function itAccumulatesDebtForMultipleViolationsSameRule(): void
+    public function itAccumulatesDebtForMultipleFindingsSameRule(): void
     {
-        $violations = [
-            $this->createViolation('src/Foo.php', 'complexity.cyclomatic'),
-            $this->createViolation('src/Bar.php', 'complexity.cyclomatic'),
-            $this->createViolation('src/Foo.php', 'complexity.cyclomatic'),
+        $findings = [
+            $this->createFinding('src/Foo.php', 'complexity.cyclomatic'),
+            $this->createFinding('src/Bar.php', 'complexity.cyclomatic'),
+            $this->createFinding('src/Foo.php', 'complexity.cyclomatic'),
         ];
 
-        $summary = $this->calculator->calculate($violations);
+        $summary = $this->calculator->calculate($findings);
 
         self::assertSame(90, $summary->totalMinutes);
         self::assertSame(['src/Foo.php' => 60, 'src/Bar.php' => 30], $summary->perFile);
@@ -77,13 +77,13 @@ final class DebtCalculatorTest extends TestCase
     #[Test]
     public function itCalculatesDebtForMixedRules(): void
     {
-        $violations = [
-            $this->createViolation('src/Foo.php', 'complexity.cyclomatic'),   // 30
-            $this->createViolation('src/Foo.php', 'code-smell.debug-code'),   // 5
-            $this->createViolation('src/Bar.php', 'maintainability.index'),   // 60
+        $findings = [
+            $this->createFinding('src/Foo.php', 'complexity.cyclomatic'),   // 30
+            $this->createFinding('src/Foo.php', 'code-smell.debug-code'),   // 5
+            $this->createFinding('src/Bar.php', 'maintainability.index'),   // 60
         ];
 
-        $summary = $this->calculator->calculate($violations);
+        $summary = $this->calculator->calculate($findings);
 
         self::assertSame(95, $summary->totalMinutes);
         self::assertSame(['src/Foo.php' => 35, 'src/Bar.php' => 60], $summary->perFile);
@@ -97,36 +97,36 @@ final class DebtCalculatorTest extends TestCase
     /**
      * No `DEFAULT_MINUTES` fallback remains: every registered rule declares
      * its own minutes, so a name absent from the injected map is not a
-     * legitimately unknown rule to fall back for — it is a bug (a violation
+     * legitimately unknown rule to fall back for — it is a bug (a finding
      * carrying a rule name no rule declared).
      */
     #[Test]
     public function itThrowsForARuleNameNoRuleDeclares(): void
     {
-        $violations = [
-            $this->createViolation('src/Foo.php', 'custom.unknown-rule'),
+        $findings = [
+            $this->createFinding('src/Foo.php', 'custom.unknown-rule'),
         ];
 
         self::expectException(LogicException::class);
         self::expectExceptionMessage('No remediation minutes declared for rule "custom.unknown-rule"');
 
-        $this->calculator->calculate($violations);
+        $this->calculator->calculate($findings);
     }
 
     #[Test]
-    public function itExcludesViolationWithNoFileFromPerFile(): void
+    public function itExcludesFindingWithNoFileFromPerFile(): void
     {
-        $violation = new Violation(
+        $finding = new Finding(
             location: Location::none(),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Foo'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'architecture.circular-dependency',
-            violationCode: 'architecture.circular-dependency',
+            code: 'architecture.circular-dependency',
             message: 'Circular dependency detected',
             severity: Severity::Error,
         );
 
-        $summary = $this->calculator->calculate([$violation]);
+        $summary = $this->calculator->calculate([$finding]);
 
         self::assertSame(120, $summary->totalMinutes);
         self::assertSame([], $summary->perFile);
@@ -134,22 +134,22 @@ final class DebtCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function itScalesDebtForViolationWithMetricAndThreshold(): void
+    public function itScalesDebtForFindingWithMetricAndThreshold(): void
     {
         // CCN=50, threshold=20: ratio=2.5, ln(2.5)=0.916, max(1, 0.916)=1 → 30*1=30
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'TestClass'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App', 'TestClass'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Test violation',
             severity: Severity::Warning,
             metricValue: 50,
             threshold: 20,
         );
 
-        $summary = $this->calculator->calculate([$violation]);
+        $summary = $this->calculator->calculate([$finding]);
 
         self::assertSame(30, $summary->totalMinutes);
         self::assertSame(['src/Foo.php' => 30], $summary->perFile);
@@ -159,36 +159,36 @@ final class DebtCalculatorTest extends TestCase
     #[Test]
     public function itCombinesScaledAndFlatDebt(): void
     {
-        $violations = [
+        $findings = [
             // With metric data: ratio=2.5, max(1, ln(2.5))=1 → 30*1=30
-            new Violation(
+            new Finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 1),
                 subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'TestClass'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
                 symbolPath: SymbolPath::forClass('App', 'TestClass'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Test',
                 severity: Severity::Warning,
                 metricValue: 50,
                 threshold: 20,
             ),
             // Without metric data: flat 5
-            $this->createViolation('src/Bar.php', 'code-smell.debug-code'),
+            $this->createFinding('src/Bar.php', 'code-smell.debug-code'),
         ];
 
-        $summary = $this->calculator->calculate($violations);
+        $summary = $this->calculator->calculate($findings);
 
         self::assertSame(35, $summary->totalMinutes); // 30 (scaled) + 5 (flat)
     }
 
-    private function createViolation(string $file, string $ruleName): Violation
+    private function createFinding(string $file, string $ruleName): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString($file), 1),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'TestClass'), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App', 'TestClass'),
             ruleName: $ruleName,
-            violationCode: $ruleName,
+            code: $ruleName,
             message: 'Test violation',
             severity: Severity::Warning,
         );

@@ -47,7 +47,7 @@ final class EmptyCatchRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new EmptyCatchRule(new CodeSmellOptions(enabled: false));
 
@@ -60,7 +60,7 @@ final class EmptyCatchRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoViolations(): void
+    public function noSmellsProducesNoFindings(): void
     {
         $rule = new EmptyCatchRule(new CodeSmellOptions());
 
@@ -81,7 +81,7 @@ final class EmptyCatchRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesViolation(): void
+    public function smellDetectedProducesFinding(): void
     {
         $rule = new EmptyCatchRule(new CodeSmellOptions());
 
@@ -98,13 +98,13 @@ final class EmptyCatchRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(20, $violations[0]->location->line);
-        self::assertSame('Empty catch block detected - exceptions should not be silently ignored', $violations[0]->message);
-        self::assertSame('code-smell.empty-catch', $violations[0]->ruleName);
-        self::assertSame(1.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(20, $findings[0]->location->line);
+        self::assertSame('Empty catch block detected - exceptions should not be silently ignored', $findings[0]->message);
+        self::assertSame('code-smell.empty-catch', $findings[0]->ruleName);
+        self::assertSame(1.0, $findings[0]->metricValue);
     }
 }

@@ -10,6 +10,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -17,8 +19,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -81,7 +81,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     /**
      * Analyzes at a specific level.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyzeLevel(SymbolLevel $level, AnalysisContext $context): array
     {
@@ -97,17 +97,17 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
-        $violations = [];
+        $findings = [];
 
         foreach ($this->getSupportedLevels() as $level) {
-            $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
+            $findings = [...$findings, ...$this->analyzeLevel($level, $context)];
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -130,32 +130,32 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public static function channelDeclarations(): array
     {
         return [
-            ViolationChannel::leveled(self::NAME, SymbolLevel::Class_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
-            ViolationChannel::leveled(self::NAME, SymbolLevel::Namespace_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
+            FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            FindingChannel::leveled(self::NAME, SymbolLevel::Namespace_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeClassLevel(AnalysisContext $context): array
     {
         if (!$this->options instanceof CboOptions) {
             return [];
         }
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $violation = $this->classViolation($classInfo, $context, $this->options->class);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->classFinding($classInfo, $context, $this->options->class);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function classViolation(SymbolInfo $info, AnalysisContext $context, ClassCboOptions $options): ?Violation
+    private function classFinding(SymbolInfo $info, AnalysisContext $context, ClassCboOptions $options): ?Finding
     {
         $subject = $info->subject ?? throw new LogicException('CBO class findings require an exact class declaration subject');
         if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
@@ -184,26 +184,26 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeNamespaceLevel(AnalysisContext $context): array
     {
         if (!$this->options instanceof CboOptions) {
             return [];
         }
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
-            $violation = $this->namespaceViolation($nsInfo, $context, $this->options->namespace);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->namespaceFinding($nsInfo, $context, $this->options->namespace);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function namespaceViolation(SymbolInfo $info, AnalysisContext $context, NamespaceCboOptions $options): ?Violation
+    private function namespaceFinding(SymbolInfo $info, AnalysisContext $context, NamespaceCboOptions $options): ?Finding
     {
         $subject = $info->subject ?? MetricSubject::aggregate($info->symbolPath);
         $metrics = $context->metrics->get($info->symbolPath);
@@ -237,7 +237,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         SymbolLevel $level,
         AnalysisContext $context,
         array $presentation,
-    ): ?Violation {
+    ): ?Finding {
         /** @var ClassCboOptions|NamespaceCboOptions $options */
         $options = $this->getEffectiveOptions($context, $options, $subject);
         $metrics = $context->metrics->get($subject->toSymbolPath());
@@ -250,25 +250,24 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         }
 
         $threshold = $severity === Severity::Error ? $options->error : $options->warning;
-        $violationCode = ViolationChannel::leveled(self::NAME, $level)->violationCode;
+        $code = FindingChannel::leveled(self::NAME, $level)->code;
 
-        return new Violation(
+        return new Finding(
             location: new Location($symbolInfo->file, $symbolInfo->line),
             subject: $subject,
             symbolPath: $symbolInfo->symbolPath,
             ruleName: $this->getName(),
-            violationCode: $violationCode,
+            code: $code,
             message: $this->buildMessage($cbo, $ca, $ce, $threshold, $presentation['applicationScope'], $presentation['frameworkCe']),
             severity: $severity,
             metricValue: (float) $cbo,
-            level: $level,
             recommendation: $this->buildRecommendation($cbo, $ca, $ce, $threshold, $symbolInfo->symbolPath, $context, $presentation['applicationScope']),
             threshold: $threshold,
         );
     }
 
     /**
-     * Determines coupling direction and builds a direction-aware violation message.
+     * Determines coupling direction and builds a direction-aware finding message.
      *
      * When $isAppScope is true, labels the metric as "CBO_APP" and appends
      * framework exclusion count so users understand the decomposition.

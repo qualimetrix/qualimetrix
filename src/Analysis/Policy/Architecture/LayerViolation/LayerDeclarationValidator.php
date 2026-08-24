@@ -8,9 +8,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 
 /**
@@ -91,7 +91,7 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
 
         $declarations = [];
         foreach ($keys as $name) {
-            $declarations[(new ViolationChannel($name, $name))->toKey()] = ChannelDeclaration::occurrence(SymbolLevel::Project);
+            $declarations[(new FindingChannel($name, $name))->toKey()] = ChannelDeclaration::occurrence(SymbolLevel::Project);
         }
 
         return $declarations;
@@ -102,7 +102,7 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
      * split, and it is load-bearing: reports that do not sort — SARIF among
      * them — publish findings in production order.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function validate(AnalysisContext $context): array
     {

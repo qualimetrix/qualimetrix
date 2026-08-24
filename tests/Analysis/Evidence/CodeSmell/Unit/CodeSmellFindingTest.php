@@ -46,7 +46,7 @@ final class CodeSmellFindingTest extends TestCase
             $class->getMethods(ReflectionMethod::IS_PUBLIC),
         );
         sort($publicMethods);
-        self::assertSame(['fromEntry', 'toViolation'], $publicMethods);
+        self::assertSame(['fromEntry', 'toFinding'], $publicMethods);
         self::assertSame([], $class->getProperties(ReflectionProperty::IS_PUBLIC));
     }
 
@@ -67,7 +67,7 @@ final class CodeSmellFindingTest extends TestCase
         $file = RelativePath::fromString('src/Example.php');
         $fileSymbol = SymbolPath::forFile($file);
 
-        $violation = CodeSmellFinding::fromEntry($entry, $file)->toViolation(
+        $finding = CodeSmellFinding::fromEntry($entry, $file)->toFinding(
             $fileSymbol,
             'code-smell.example',
             'example',
@@ -76,17 +76,17 @@ final class CodeSmellFindingTest extends TestCase
             'Fix the example.',
         );
 
-        self::assertSame($expectedSubject, $violation->subject->toCanonical());
-        self::assertSame($fileSymbol, $violation->symbolPath);
-        self::assertSame('src/Example.php', $violation->location->pathString());
-        self::assertSame($expectedLine, $violation->location->line);
-        self::assertTrue($violation->location->precise);
-        self::assertSame('code-smell.example', $violation->ruleName);
-        self::assertSame('code-smell.example', $violation->violationCode);
-        self::assertSame('Example smell', $violation->message);
-        self::assertSame(Severity::Warning, $violation->severity);
-        self::assertSame(1.0, $violation->metricValue);
-        self::assertSame('Fix the example.', $violation->recommendation);
+        self::assertSame($expectedSubject, $finding->subject->toCanonical());
+        self::assertSame($fileSymbol, $finding->symbolPath);
+        self::assertSame('src/Example.php', $finding->location->pathString());
+        self::assertSame($expectedLine, $finding->location->line);
+        self::assertTrue($finding->location->precise);
+        self::assertSame('code-smell.example', $finding->ruleName);
+        self::assertSame('code-smell.example', $finding->code);
+        self::assertSame('Example smell', $finding->message);
+        self::assertSame(Severity::Warning, $finding->severity);
+        self::assertSame(1.0, $finding->metricValue);
+        self::assertSame('Fix the example.', $finding->recommendation);
         self::assertSame(
             OccurrenceKey::semantic('example', [
                 'type' => 'example',
@@ -95,7 +95,7 @@ final class CodeSmellFindingTest extends TestCase
                 'promoted' => $expectedPromoted,
                 'hasPromoted' => $expectedHasPromoted,
             ])->value,
-            $violation->occurrenceKey?->value,
+            $finding->occurrenceKey?->value,
         );
     }
 
@@ -261,12 +261,12 @@ final class CodeSmellFindingTest extends TestCase
     public function itPreservesScalarCastsAndOptionalKeyPresence(): void
     {
         $file = RelativePath::fromString('src/Example.php');
-        $violation = CodeSmellFinding::fromEntry([
+        $finding = CodeSmellFinding::fromEntry([
             'subjectKind' => 'file',
             'line' => '8.9',
             'extra' => 12,
             'promoted' => '0',
-        ], $file)->toViolation(
+        ], $file)->toFinding(
             SymbolPath::forFile($file),
             'rule',
             'smell',
@@ -275,8 +275,8 @@ final class CodeSmellFindingTest extends TestCase
             null,
         );
 
-        self::assertSame('src/Example.php', $violation->location->pathString());
-        self::assertSame(8, $violation->location->line);
+        self::assertSame('src/Example.php', $finding->location->pathString());
+        self::assertSame(8, $finding->location->line);
         self::assertSame(
             OccurrenceKey::semantic('smell', [
                 'type' => 'smell',
@@ -285,7 +285,7 @@ final class CodeSmellFindingTest extends TestCase
                 'promoted' => false,
                 'hasPromoted' => true,
             ])->value,
-            $violation->occurrenceKey?->value,
+            $finding->occurrenceKey?->value,
         );
     }
 
@@ -295,15 +295,15 @@ final class CodeSmellFindingTest extends TestCase
         $file = RelativePath::fromString('src/Example.php');
         $fileSymbol = SymbolPath::forFile($file);
         $withoutOptionalFields = CodeSmellFinding::fromEntry(['subjectKind' => 'file', 'line' => 8], $file)
-            ->toViolation($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
+            ->toFinding($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
         $withEmptyExtra = CodeSmellFinding::fromEntry(['subjectKind' => 'file', 'line' => 8, 'extra' => ''], $file)
-            ->toViolation($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
+            ->toFinding($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
         $withFalsePromoted = CodeSmellFinding::fromEntry(['subjectKind' => 'file', 'line' => 8, 'promoted' => false], $file)
-            ->toViolation($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
+            ->toFinding($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
         $ordered = CodeSmellFinding::fromEntry(['subjectKind' => 'file', 'line' => 8, 'extra' => 'flag', 'promoted' => true], $file)
-            ->toViolation($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
+            ->toFinding($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
         $reordered = CodeSmellFinding::fromEntry(['promoted' => true, 'extra' => 'flag', 'line' => 8, 'subjectKind' => 'file'], $file)
-            ->toViolation($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
+            ->toFinding($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
 
         self::assertNotSame($withoutOptionalFields->occurrenceKey?->value, $withEmptyExtra->occurrenceKey?->value);
         self::assertNotSame($withoutOptionalFields->occurrenceKey?->value, $withFalsePromoted->occurrenceKey?->value);

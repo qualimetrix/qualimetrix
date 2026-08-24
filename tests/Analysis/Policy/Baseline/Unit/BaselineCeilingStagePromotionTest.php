@@ -8,15 +8,15 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Filter\GroupCeilingVerdict;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Tests\Analysis\Finding\Support\ViolationFactory;
+use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\CeilingStageFixtures;
 
 /**
@@ -42,8 +42,8 @@ final class BaselineCeilingStagePromotionTest extends TestCase
     {
         $stage = self::stageOver(self::baselineOf([]));
 
-        self::assertSame(ViolationFilterStage::Baseline, $stage->stage());
-        self::assertSame(ViolationFilterStage::Baseline, $stage->apply([])->stage);
+        self::assertSame(FindingFilterStage::Baseline, $stage->stage());
+        self::assertSame(FindingFilterStage::Baseline, $stage->apply([])->stage);
     }
 
     #[Test]
@@ -56,15 +56,15 @@ final class BaselineCeilingStagePromotionTest extends TestCase
         $reported = $stage->apply([
             self::duplicationFinding(60, 1),
             self::duplicationFinding(100, 2),
-        ])->violations;
+        ])->findings;
 
         self::assertSame([Severity::Error, Severity::Error], self::severitiesOf($reported));
 
-        foreach ($reported as $violation) {
-            self::assertNotNull($violation->acceptedLevel);
-            self::assertSame([40.0, 100.0], $violation->acceptedLevel->magnitudes);
-            self::assertSame(2, $violation->acceptedLevel->count);
-            self::assertSame('40, 100', $violation->acceptedLevel->describe());
+        foreach ($reported as $finding) {
+            self::assertNotNull($finding->acceptedLevel);
+            self::assertSame([40.0, 100.0], $finding->acceptedLevel->magnitudes);
+            self::assertSame(2, $finding->acceptedLevel->count);
+            self::assertSame('40, 100', $finding->acceptedLevel->describe());
         }
     }
 
@@ -76,10 +76,10 @@ final class BaselineCeilingStagePromotionTest extends TestCase
     #[Test]
     public function itReportsFourErrorsWhenAGroupOfFourExceedsACountOfThree(): void
     {
-        $goto = ViolationFactory::occurrence(self::someFile());
+        $goto = FindingFactory::occurrence(self::someFile());
         $stage = self::stageOver(self::baselineOf([self::occurrenceEntry($goto, 3)]));
 
-        $reported = $stage->apply([$goto, $goto, $goto, $goto])->violations;
+        $reported = $stage->apply([$goto, $goto, $goto, $goto])->findings;
 
         self::assertCount(4, $reported);
         self::assertSame(
@@ -94,20 +94,19 @@ final class BaselineCeilingStagePromotionTest extends TestCase
     #[Test]
     public function itChangesNothingButTheSeverityAndTheAcceptedLevel(): void
     {
-        $original = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 16);
-        $recorded = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $original = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 16);
+        $recorded = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [15])]));
-        $promoted = $stage->apply([$original])->violations[0];
+        $promoted = $stage->apply([$original])->findings[0];
 
         self::assertSame($original->location, $promoted->location);
         self::assertSame($original->symbolPath, $promoted->symbolPath);
         self::assertSame($original->ruleName, $promoted->ruleName);
-        self::assertSame($original->violationCode, $promoted->violationCode);
+        self::assertSame($original->code, $promoted->code);
         self::assertSame($original->message, $promoted->message);
         self::assertSame($original->metricValue, $promoted->metricValue);
         self::assertSame($original->threshold, $promoted->threshold);
-        self::assertSame($original->level, $promoted->level);
         self::assertSame($original->relatedLocations, $promoted->relatedLocations);
         self::assertSame($original->recommendation, $promoted->recommendation);
         self::assertSame($original->dependencyTarget, $promoted->dependencyTarget);
@@ -123,14 +122,14 @@ final class BaselineCeilingStagePromotionTest extends TestCase
     #[Test]
     public function itPreservesTheInputOrderAcrossMixedVerdicts(): void
     {
-        $accepted = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'accepted'), 15);
-        $breached = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'breached'), 20);
-        $unbounded = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'fresh'), 30);
+        $accepted = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'accepted'), 15);
+        $breached = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'breached'), 20);
+        $unbounded = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'fresh'), 30);
 
         $stage = self::stageOver(self::baselineOf([
             self::magnitudeEntry($accepted, [15]),
             self::magnitudeEntry(
-                ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'breached'), 19),
+                FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'breached'), 19),
                 [19],
             ),
         ]));
@@ -140,11 +139,11 @@ final class BaselineCeilingStagePromotionTest extends TestCase
         self::assertSame(
             ['callable:App\Foo::fresh', 'callable:App\Foo::breached'],
             array_map(
-                static fn(Violation $violation): string => $violation->symbolPath->toCanonical(),
-                $result->violations,
+                static fn(Finding $finding): string => $finding->symbolPath->toCanonical(),
+                $result->findings,
             ),
         );
-        self::assertSame([Severity::Warning, Severity::Error], self::severitiesOf($result->violations));
+        self::assertSame([Severity::Warning, Severity::Error], self::severitiesOf($result->findings));
         self::assertSame([$accepted], $result->removed);
         self::assertSame(1, $result->removedCount());
     }
@@ -165,16 +164,16 @@ final class BaselineCeilingStagePromotionTest extends TestCase
         $belowThePrecision = 15.0000004;
         self::assertSame(15.0, BaselineEntry::normalizeMagnitude($belowThePrecision));
 
-        $finding = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), $belowThePrecision);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), $belowThePrecision);
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($finding, [$belowThePrecision])]));
 
-        self::assertSame([], $stage->apply([$finding])->violations);
+        self::assertSame([], $stage->apply([$finding])->findings);
     }
 
     #[Test]
     public function itLeavesAnEntryOffTheStaleListWhenItsGroupWasMeasured(): void
     {
-        $finding = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($finding, [15])]));
 
         self::assertSame([], $stage->judgeAll([$finding])->staleEntries);
@@ -199,7 +198,7 @@ final class BaselineCeilingStagePromotionTest extends TestCase
     #[Test]
     public function itListsAnEntryWhoseIdentityDidNotAppearAtAll(): void
     {
-        $finding = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $entry = self::magnitudeEntry($finding, [15]);
 
         $stage = self::stageOver(self::baselineOf([$entry]));
@@ -207,7 +206,7 @@ final class BaselineCeilingStagePromotionTest extends TestCase
         self::assertSame([$entry], $stage->judgeAll([])->staleEntries);
     }
 
-    private static function duplicationFinding(int|float $magnitude, int $line = 1): Violation
+    private static function duplicationFinding(int|float $magnitude, int $line = 1): Finding
     {
         return self::findingOn(self::DUPLICATION, self::DUPLICATION, self::someFile(), $magnitude, $line);
     }

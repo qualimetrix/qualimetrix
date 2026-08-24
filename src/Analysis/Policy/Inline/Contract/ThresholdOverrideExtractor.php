@@ -23,7 +23,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  *
  * Invalid annotations produce diagnostics instead of being silently ignored:
  * - Unparseable value syntax
- * - Rule-specific override violations enforced via {@see OverrideValidatorInterface}
+ * - Rule-specific override findings enforced via {@see OverrideValidatorInterface}
  *   (e.g. warning > error for standard rules, warning < error for inverted rules,
  *   explicit error= for warning-only rules)
  * - Duplicate rule annotations on the same symbol

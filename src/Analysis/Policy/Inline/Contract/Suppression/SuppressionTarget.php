@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Suppression;
 
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Stringable;
 
 /**
@@ -13,7 +13,7 @@ use Stringable;
  *
  * Two states, and the second one is the point of this type:
  *
- * - **a channel selector** — an exact `violationCode`, `X.*` for its strict
+ * - **a channel selector** — an exact `code`, `X.*` for its strict
  *   descendants, or the explicit `ruleName#violationCode` pair. All three are
  *   {@see ChannelSelector}, which is the whole of the grammar and is shared
  *   with configuration's channel-keyed surfaces;
@@ -71,7 +71,7 @@ final readonly class SuppressionTarget implements Stringable
      * the pair, because the answer is a channel lookup rather than a name
      * expansion.
      */
-    public function exactChannel(): ?ViolationChannel
+    public function exactChannel(): ?FindingChannel
     {
         return $this->selector?->exactChannel();
     }
@@ -82,13 +82,13 @@ final readonly class SuppressionTarget implements Stringable
         return ChannelSelector::looksLikePair($this->raw);
     }
 
-    public function matches(string $ruleName, string $violationCode): bool
+    public function matches(string $ruleName, string $code): bool
     {
         if ($this->everyChannel) {
             return true;
         }
 
-        return $this->selector?->matchesNames($ruleName, $violationCode) === true;
+        return $this->selector?->matchesNames($ruleName, $code) === true;
     }
 
     /** The authored text, so a directive round-trips into diagnostics unchanged. */

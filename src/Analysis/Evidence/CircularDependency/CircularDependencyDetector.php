@@ -18,7 +18,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Tarjan's algorithm yields a unique SCC *partition*, but the order of members
  * within an SCC — and the order of the SCCs themselves — depends on the graph
  * traversal order, which in turn depends on file discovery order. Since the
- * first class of a cycle becomes the violation's symbol path (and therefore its
+ * first class of a cycle becomes the finding's symbol path (and therefore its
  * baseline hash), that ordering is normalised here:
  *
  * - members of each SCC are sorted by their canonical symbol key, so the first

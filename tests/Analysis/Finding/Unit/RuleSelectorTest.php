@@ -7,9 +7,9 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 
 #[CoversClass(RuleSelector::class)]
 final class RuleSelectorTest extends TestCase
@@ -23,12 +23,12 @@ final class RuleSelectorTest extends TestCase
             {
                 return match ($producerRuleName) {
                     'computed.health' => [
-                        new ViolationChannel('computed.health', 'health.complexity'),
-                        new ViolationChannel('computed.health', 'health.cohesion'),
+                        new FindingChannel('computed.health', 'health.complexity'),
+                        new FindingChannel('computed.health', 'health.cohesion'),
                     ],
                     'architecture.layer-violation' => [
-                        new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation'),
-                        new ViolationChannel('architecture.coverage', 'architecture.coverage'),
+                        new FindingChannel('architecture.layer-violation', 'architecture.layer-violation'),
+                        new FindingChannel('architecture.coverage', 'architecture.coverage'),
                     ],
                     default => [],
                 };
@@ -44,25 +44,25 @@ final class RuleSelectorTest extends TestCase
         self::assertTrue($this->selector->isProducerEnabled('computed.health', ['computed.health'], []));
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
-            new ViolationChannel('computed.health', 'health.complexity'),
+            new FindingChannel('computed.health', 'health.complexity'),
             ['computed.health'],
             [],
         ));
     }
 
     #[Test]
-    public function itSelectsTheProducerAndOnlyTheAddressedViolationCode(): void
+    public function itSelectsTheProducerAndOnlyTheAddressedCode(): void
     {
         self::assertTrue($this->selector->isProducerEnabled('computed.health', ['health.complexity'], []));
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
-            new ViolationChannel('computed.health', 'health.complexity'),
+            new FindingChannel('computed.health', 'health.complexity'),
             ['health.complexity'],
             [],
         ));
         self::assertFalse($this->selector->isChannelEnabled(
             'computed.health',
-            new ViolationChannel('computed.health', 'health.cohesion'),
+            new FindingChannel('computed.health', 'health.cohesion'),
             ['health.complexity'],
             [],
         ));
@@ -78,7 +78,7 @@ final class RuleSelectorTest extends TestCase
         ));
         self::assertTrue($this->selector->isChannelEnabled(
             'architecture.layer-violation',
-            new ViolationChannel('architecture.coverage', 'architecture.coverage'),
+            new FindingChannel('architecture.coverage', 'architecture.coverage'),
             ['architecture.coverage'],
             [],
         ));
@@ -92,13 +92,13 @@ final class RuleSelectorTest extends TestCase
         self::assertTrue($this->selector->isProducerEnabled('computed.health', [$fullSelector], []));
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
-            new ViolationChannel('computed.health', 'health.complexity'),
+            new FindingChannel('computed.health', 'health.complexity'),
             [$fullSelector],
             [],
         ));
         self::assertFalse($this->selector->isChannelEnabled(
             'computed.health',
-            new ViolationChannel('computed.health', 'health.cohesion'),
+            new FindingChannel('computed.health', 'health.cohesion'),
             [$fullSelector],
             [],
         ));
@@ -124,13 +124,13 @@ final class RuleSelectorTest extends TestCase
         ));
         self::assertFalse($this->selector->isChannelEnabled(
             'computed.health',
-            new ViolationChannel('computed.health', 'health.complexity'),
+            new FindingChannel('computed.health', 'health.complexity'),
             [],
             ['health.complexity'],
         ));
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
-            new ViolationChannel('computed.health', 'health.cohesion'),
+            new FindingChannel('computed.health', 'health.cohesion'),
             [],
             ['health.complexity'],
         ));
@@ -179,7 +179,7 @@ final class RuleSelectorTest extends TestCase
 
             public function channelsProducedBy(string $producerRuleName): array
             {
-                return array_map(ViolationChannel::fromKey(...), $this->channelKeys);
+                return array_map(FindingChannel::fromKey(...), $this->channelKeys);
             }
         };
     }

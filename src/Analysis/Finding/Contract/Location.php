@@ -29,7 +29,7 @@ final readonly class Location implements DependencyLocationInterface
     }
 
     /**
-     * Creates a location for architectural violations not tied to a specific file.
+     * Creates a location for architectural findings not tied to a specific file.
      */
     public static function none(): self
     {
@@ -37,7 +37,7 @@ final readonly class Location implements DependencyLocationInterface
     }
 
     /**
-     * Returns true if this location has no associated file (architectural violation).
+     * Returns true if this location has no associated file (architectural finding).
      */
     public function isNone(): bool
     {

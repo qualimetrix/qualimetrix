@@ -209,7 +209,7 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/SeverityTest.php',
     'tests/Analysis/Finding/Unit/ThresholdParserTest.php',
     'tests/Analysis/Finding/Unit/ThresholdValidatorAssignmentTest.php',
-    'tests/Analysis/Finding/Unit/ViolationChannelTest.php',
+    'tests/Analysis/Finding/Unit/FindingChannelTest.php',
     'tests/Analysis/Finding/Unit/ViolationFilterStageTest.php',
     'tests/Analysis/Finding/Unit/ViolationTest.php',
 ];

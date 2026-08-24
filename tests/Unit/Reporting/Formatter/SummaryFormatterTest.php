@@ -17,19 +17,19 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCa
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
+use Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter;
 use Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer;
-use Qualimetrix\Reporting\Formatter\Summary\ViolationSummaryRenderer;
-use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
+use Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
@@ -50,14 +50,14 @@ final class SummaryFormatterTest extends TestCase
         $hintProvider = new HealthMetricCatalog();
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
-        $violationFilter = new ViolationFilter();
-        $offenderListRenderer = new OffenderListRenderer($violationFilter, new WorstClassDrillDown($definitionCatalog));
+        $findingFilter = new FindingFilter();
+        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog));
         $this->formatter = new SummaryFormatter(
-            new DetailedViolationRenderer($debtCalculator),
+            new DetailedFindingRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
             $offenderListRenderer,
             new TopIssuesRenderer(),
-            new ViolationSummaryRenderer($violationFilter, $registry),
+            new FindingSummaryRenderer($findingFilter, $registry),
             new HintRenderer($offenderListRenderer),
         );
         $this->plainContext = new FormatterContext(useColor: false, terminalWidth: 120);
@@ -76,9 +76,9 @@ final class SummaryFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsZeroViolations(): void
+    public function itFormatsZeroFindings(): void
     {
-        $report = $this->createReport(violations: [], filesAnalyzed: 42, duration: 1.5);
+        $report = $this->createReport(findings: [], filesAnalyzed: 42, duration: 1.5);
 
         $output = $this->formatter->format($report, $this->plainContext);
 
@@ -94,7 +94,7 @@ final class SummaryFormatterTest extends TestCase
     public function itFormatsSingleFileWithoutNamespacesOrClasses(): void
     {
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             duration: 0.1,
             worstNamespaces: [
@@ -138,7 +138,7 @@ final class SummaryFormatterTest extends TestCase
     public function itFormatsWithHealthScores(): void
     {
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 100,
             duration: 5.0,
             healthScores: [
@@ -168,12 +168,12 @@ final class SummaryFormatterTest extends TestCase
     public function itFormatsWithWorstOffenders(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                     symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                     ruleName: 'complexity.cyclomatic',
-                    violationCode: 'complexity.cyclomatic.callable',
+                    code: 'complexity.cyclomatic.callable',
                     message: 'Too complex',
                     severity: Severity::Error,
                 ),
@@ -221,23 +221,23 @@ final class SummaryFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsViolationSummary(): void
+    public function itFormatsFindingSummary(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'Msg1',
                     severity: Severity::Error,
                 ),
-                self::violation(
+                self::finding(
                     location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'B'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'Msg2',
                     severity: Severity::Warning,
                 ),
@@ -259,7 +259,7 @@ final class SummaryFormatterTest extends TestCase
     public function itFormatsScopedReporting(): void
     {
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 5,
             duration: 0.5,
             healthScores: [
@@ -282,7 +282,7 @@ final class SummaryFormatterTest extends TestCase
     public function itFormatsMissingMetrics(): void
     {
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             duration: 0.3,
             healthScores: [],
@@ -299,12 +299,12 @@ final class SummaryFormatterTest extends TestCase
         $colorContext = new FormatterContext(useColor: true, terminalWidth: 120);
 
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
@@ -324,12 +324,12 @@ final class SummaryFormatterTest extends TestCase
     public function itFormatsWithoutAnsiCodesWhenColorDisabled(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
@@ -351,7 +351,7 @@ final class SummaryFormatterTest extends TestCase
 
         try {
             $report = $this->createReport(
-                violations: [],
+                findings: [],
                 filesAnalyzed: 10,
                 duration: 0.5,
                 healthScores: [
@@ -376,15 +376,15 @@ final class SummaryFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itShowsHintsForViolations(): void
+    public function itShowsHintsForFindings(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
@@ -402,7 +402,7 @@ final class SummaryFormatterTest extends TestCase
     public function itShowsDrillDownHintForWorstOffender(): void
     {
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
@@ -457,7 +457,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
@@ -474,23 +474,23 @@ final class SummaryFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itAppliesNamespaceFilterToViolations(): void
+    public function itAppliesNamespaceFilterToFindings(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'In scope',
                     severity: Severity::Error,
                 ),
-                self::violation(
+                self::finding(
                     location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Controller', 'HomeController'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'Out of scope',
                     severity: Severity::Warning,
                 ),
@@ -502,30 +502,30 @@ final class SummaryFormatterTest extends TestCase
         $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
-        // Only 1 violation in scope
+        // Only 1 finding in scope
         self::assertStringContainsString('1 violation', $output);
         self::assertStringContainsString('1 error', $output);
         self::assertStringNotContainsString('warning', $output);
     }
 
     #[Test]
-    public function itAppliesClassFilterToViolations(): void
+    public function itAppliesClassFilterToFindings(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'Match',
                     severity: Severity::Error,
                 ),
-                self::violation(
+                self::finding(
                     location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'No match',
                     severity: Severity::Warning,
                 ),
@@ -543,15 +543,15 @@ final class SummaryFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itShowsNoViolationsInScopeMessage(): void
+    public function itShowsNoFindingsInScopeMessage(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Other', 'Foo'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
@@ -594,7 +594,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
@@ -630,7 +630,7 @@ final class SummaryFormatterTest extends TestCase
         }
 
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
@@ -671,7 +671,7 @@ final class SummaryFormatterTest extends TestCase
         }
 
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
@@ -689,12 +689,12 @@ final class SummaryFormatterTest extends TestCase
     public function itDoesNotShowZeroTechDebt(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'Msg',
                     severity: Severity::Warning,
                 ),
@@ -713,7 +713,7 @@ final class SummaryFormatterTest extends TestCase
     public function itAlwaysShowsHtmlHint(): void
     {
         // Even without health scores
-        $report = $this->createReport(violations: [], filesAnalyzed: 10, duration: 0.5);
+        $report = $this->createReport(findings: [], filesAnalyzed: 10, duration: 0.5);
 
         $output = $this->formatter->format($report, $this->plainContext);
 
@@ -723,7 +723,7 @@ final class SummaryFormatterTest extends TestCase
     #[Test]
     public function itShowsScopedReportingHint(): void
     {
-        $report = $this->createReport(violations: [], filesAnalyzed: 5, duration: 0.5);
+        $report = $this->createReport(findings: [], filesAnalyzed: 5, duration: 0.5);
 
         $context = new FormatterContext(useColor: false, scopedReporting: true, terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
@@ -734,7 +734,7 @@ final class SummaryFormatterTest extends TestCase
     #[Test]
     public function itAnnotatesHeaderWithNamespaceFilter(): void
     {
-        $report = $this->createReport(violations: [], filesAnalyzed: 10, duration: 0.5);
+        $report = $this->createReport(findings: [], filesAnalyzed: 10, duration: 0.5);
 
         $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
@@ -745,7 +745,7 @@ final class SummaryFormatterTest extends TestCase
     #[Test]
     public function itAnnotatesHeaderWithClassFilter(): void
     {
-        $report = $this->createReport(violations: [], filesAnalyzed: 10, duration: 0.5);
+        $report = $this->createReport(findings: [], filesAnalyzed: 10, duration: 0.5);
 
         $context = new FormatterContext(useColor: false, class: 'App\Service\UserService', terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
@@ -757,7 +757,7 @@ final class SummaryFormatterTest extends TestCase
     public function itRendersNanScoreAsDash(): void
     {
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
@@ -778,7 +778,7 @@ final class SummaryFormatterTest extends TestCase
 
         // Score exactly at warning threshold (50.0) should be yellow (not green)
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
@@ -799,7 +799,7 @@ final class SummaryFormatterTest extends TestCase
         $colorContext = new FormatterContext(useColor: true, terminalWidth: 120);
 
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
@@ -819,7 +819,7 @@ final class SummaryFormatterTest extends TestCase
         $colorContext = new FormatterContext(useColor: true, terminalWidth: 120);
 
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
@@ -837,20 +837,20 @@ final class SummaryFormatterTest extends TestCase
     public function itShowsTechDebtInScopedMode(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'Foo'),
                     ruleName: 'complexity.cyclomatic',
-                    violationCode: 'complexity.cyclomatic.callable',
+                    code: 'complexity.cyclomatic.callable',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
-                self::violation(
+                self::finding(
                     location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'Bar'),
                     ruleName: 'coupling.cbo',
-                    violationCode: 'coupling.cbo.class',
+                    code: 'coupling.cbo.class',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
@@ -863,7 +863,7 @@ final class SummaryFormatterTest extends TestCase
         $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
-        // Scoped tech debt computed from filtered violations (30min + 45min = 1h 15min)
+        // Scoped tech debt computed from filtered findings (30min + 45min = 1h 15min)
         self::assertStringContainsString('Tech debt: 1h 15min', $output);
     }
 
@@ -871,20 +871,20 @@ final class SummaryFormatterTest extends TestCase
     public function itShowsTechDebtInClassScopedMode(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                     ruleName: 'design.god-class',
-                    violationCode: 'design.god-class',
+                    code: 'design.god-class',
                     message: 'God class',
                     severity: Severity::Error,
                 ),
-                self::violation(
+                self::finding(
                     location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
                     ruleName: 'coupling.cbo',
-                    violationCode: 'coupling.cbo.class',
+                    code: 'coupling.cbo.class',
                     message: 'Out of scope',
                     severity: Severity::Error,
                 ),
@@ -896,21 +896,21 @@ final class SummaryFormatterTest extends TestCase
         $context = new FormatterContext(useColor: false, class: 'App\Service\UserService', terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
-        // Only god-class violation matches (120min = 2h)
+        // Only god-class finding matches (120min = 2h)
         self::assertStringContainsString('Tech debt: 2h', $output);
         self::assertStringContainsString('1 violation', $output);
     }
 
     #[Test]
-    public function itHidesTechDebtInScopedModeWithNoViolations(): void
+    public function itHidesTechDebtInScopedModeWithNoFindings(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Other', 'Foo'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
@@ -923,20 +923,20 @@ final class SummaryFormatterTest extends TestCase
         $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
-        // No violations in scope, so no tech debt line
+        // No findings in scope, so no tech debt line
         self::assertStringNotContainsString('Tech debt', $output);
     }
 
     #[Test]
-    public function itAppendsViolationSectionInDetailMode(): void
+    public function itAppendsFindingSectionInDetailMode(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                     symbolPath: SymbolPath::forClass('App', 'Foo'),
                     ruleName: 'complexity.cyclomatic',
-                    violationCode: 'complexity.cyclomatic.callable',
+                    code: 'complexity.cyclomatic.callable',
                     message: 'Cyclomatic complexity is 15',
                     severity: Severity::Error,
                     recommendation: 'Cyclomatic complexity: 15 (threshold: 10) — too many code paths',
@@ -952,7 +952,7 @@ final class SummaryFormatterTest extends TestCase
         // Should contain summary section
         self::assertStringContainsString('1 violation', $output);
 
-        // Should contain detailed violations section
+        // Should contain detailed findings section
         self::assertStringContainsString('Violations', $output);
         self::assertStringContainsString('src/Foo.php (1 violation)', $output);
         self::assertStringContainsString('too many code paths', $output);
@@ -964,7 +964,7 @@ final class SummaryFormatterTest extends TestCase
     public function itDoesNotShowDetailForEmptyReport(): void
     {
         $report = $this->createReport(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             duration: 0.5,
         );
@@ -972,23 +972,23 @@ final class SummaryFormatterTest extends TestCase
         $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 0);
         $output = $this->formatter->format($report, $context);
 
-        // Should NOT contain "Violations" section
+        // Should NOT contain "Findings" section
         self::assertStringNotContainsString('Violations', $output);
         self::assertStringContainsString('No violations found.', $output);
     }
 
     #[Test]
-    public function itShowsScopedViolationsOnlyInDetailWithNamespaceFilter(): void
+    public function itShowsScopedFindingsOnlyInDetailWithNamespaceFilter(): void
     {
-        // Violations are pre-filtered by ResultPresenter before reaching the formatter.
-        // Only in-scope violations are included in the report.
+        // Findings are pre-filtered by ResultPresenter before reaching the formatter.
+        // Only in-scope findings are included in the report.
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'In scope',
                     severity: Severity::Error,
                 ),
@@ -1008,12 +1008,12 @@ final class SummaryFormatterTest extends TestCase
     public function itDoesNotShowDetailHintWhenDetailActive(): void
     {
         $report = $this->createReport(
-            violations: [
-                self::violation(
+            findings: [
+                self::finding(
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
-                    violationCode: 'test',
+                    code: 'test',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
@@ -1059,7 +1059,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
@@ -1117,7 +1117,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
@@ -1147,7 +1147,7 @@ final class SummaryFormatterTest extends TestCase
         $metrics->method('all')->willReturn([]);
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
@@ -1170,13 +1170,13 @@ final class SummaryFormatterTest extends TestCase
     #[Test]
     public function itShowsRemainingCountOnDetailTruncation(): void
     {
-        $violations = [];
+        $findings = [];
         for ($i = 0; $i < 8; $i++) {
-            $violations[] = self::violation(
+            $findings[] = self::finding(
                 location: new Location(RelativePath::fromString('src/File' . $i . '.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'Class' . $i),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Too complex #' . $i,
                 severity: Severity::Error,
                 recommendation: 'Cyclomatic complexity too high #' . $i,
@@ -1184,7 +1184,7 @@ final class SummaryFormatterTest extends TestCase
         }
 
         $report = $this->createReport(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 8,
             duration: 0.5,
         );
@@ -1199,31 +1199,31 @@ final class SummaryFormatterTest extends TestCase
     #[Test]
     public function itIncludesAllRulesInDebtBreakdownWhenDetailLimitTruncates(): void
     {
-        $violations = [];
+        $findings = [];
 
-        // 3 violations of rule A
+        // 3 findings of rule A
         for ($i = 0; $i < 3; $i++) {
-            $violations[] = self::violation(
+            $findings[] = self::finding(
                 location: new Location(RelativePath::fromString('src/Foo' . $i . '.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo' . $i),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             );
         }
 
-        // 1 violation of rule B (will be beyond detailLimit=2)
-        $violations[] = self::violation(
+        // 1 finding of rule B (will be beyond detailLimit=2)
+        $findings[] = self::finding(
             location: new Location(RelativePath::fromString('src/Bar.php'), 5),
             symbolPath: SymbolPath::forClass('App', 'Bar'),
             ruleName: 'cohesion.lcom',
-            violationCode: 'cohesion.lcom',
+            code: 'cohesion.lcom',
             message: 'LCOM high',
             severity: Severity::Warning,
         );
 
-        $report = $this->createReport(violations: $violations, filesAnalyzed: 4, duration: 0.01);
+        $report = $this->createReport(findings: $findings, filesAnalyzed: 4, duration: 0.01);
         $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 2);
         $output = $this->formatter->format($report, $context);
 
@@ -1231,19 +1231,19 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
         self::assertStringContainsString('cohesion.lcom', $output);
-        // Violation counts in breakdown must reflect all violations
+        // Finding counts in breakdown must reflect all findings
         self::assertStringContainsString('3 violations', $output);
         self::assertStringContainsString('1 violation)', $output);
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param array<string, HealthScore> $healthScores
      * @param list<WorstOffender> $worstNamespaces
      * @param list<WorstOffender> $worstClasses
      */
     private function createReport(
-        array $violations = [],
+        array $findings = [],
         int $filesAnalyzed = 0,
         float $duration = 0.0,
         array $healthScores = [],
@@ -1254,7 +1254,7 @@ final class SummaryFormatterTest extends TestCase
         $errorCount = 0;
         $warningCount = 0;
 
-        foreach ($violations as $v) {
+        foreach ($findings as $v) {
             if ($v->severity === Severity::Error) {
                 $errorCount++;
             } else {
@@ -1263,7 +1263,7 @@ final class SummaryFormatterTest extends TestCase
         }
 
         return new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: $filesAnalyzed,
             filesSkipped: 0,
             duration: $duration,
@@ -1277,13 +1277,13 @@ final class SummaryFormatterTest extends TestCase
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
-        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+        return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
 }

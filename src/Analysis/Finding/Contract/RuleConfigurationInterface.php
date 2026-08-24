@@ -41,9 +41,9 @@ interface RuleConfigurationInterface
      */
     public function isRuleDisabledByOptions(string $ruleName): bool;
 
-    public function captureExcludedViolations(): void;
+    public function captureExcludedFindings(): void;
 
-    public function capturesExcludedViolations(): bool;
+    public function capturesExcludedFindings(): bool;
 
     /** @param list<string> $patterns */
     public function configureNamespaceExclusions(string $ruleName, array $patterns): void;
@@ -56,7 +56,7 @@ interface RuleConfigurationInterface
 
     public function isNamespaceExcluded(string $ruleName, string $namespace): bool;
 
-    public function isNamespaceChannelExcluded(string $ruleName, ViolationChannel $channel, string $namespace): bool;
+    public function isNamespaceChannelExcluded(string $ruleName, FindingChannel $channel, string $namespace): bool;
 
     public function isPathExcluded(string $ruleName, RelativePath $path): bool;
 

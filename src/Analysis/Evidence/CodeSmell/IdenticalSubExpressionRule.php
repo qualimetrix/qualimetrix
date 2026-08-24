@@ -8,14 +8,14 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -38,7 +38,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
 
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
     /**
-     * Finding types with corresponding violation messages.
+     * Finding types with corresponding finding messages.
      * Keys must match the types used by IdenticalSubExpressionCollector.
      *
      * @var array<string, string>
@@ -89,7 +89,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -97,7 +97,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
@@ -107,12 +107,12 @@ final class IdenticalSubExpressionRule extends AbstractRule
                     $line = (int) $entry['line'];
                     $subject = MetricSubjectCodec::decodeEntry($entry, $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path'));
 
-                    $violations[] = new Violation(
+                    $findings[] = new Finding(
                         location: new Location($fileInfo->file, $line, precise: true),
                         subject: $subject,
                         symbolPath: $fileInfo->symbolPath,
                         ruleName: $this->getName(),
-                        violationCode: self::NAME,
+                        code: self::NAME,
                         message: $message,
                         severity: Severity::Warning,
                         metricValue: 1.0,
@@ -126,7 +126,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -140,7 +140,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Callable),
         ];
     }
 }

@@ -6,10 +6,10 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
@@ -37,18 +37,18 @@ final readonly class LayerViolationFinding
     ) {}
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function toViolations(): array
+    public function toFindings(): array
     {
         $subjects = $this->ownedTargets === []
             ? [MetricSubject::declaration($this->dependency->source)]
             : $this->ownedTargets;
 
-        return array_map($this->toViolation(...), $subjects);
+        return array_map($this->toFinding(...), $subjects);
     }
 
-    private function toViolation(MetricSubject $subject): Violation
+    private function toFinding(MetricSubject $subject): Finding
     {
         $location = $this->dependency->location;
         if (!$location instanceof Location) {
@@ -70,12 +70,12 @@ final readonly class LayerViolationFinding
             $evidence['projectedTarget'] = $subject->toCanonical();
         }
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $this->dependency->sourceLogical(),
             ruleName: $this->ruleName,
-            violationCode: $this->ruleName,
+            code: $this->ruleName,
             message: \sprintf(
                 'Layer "%s" must not depend on layer "%s" (%s → %s, %s)%s',
                 $this->fromMatch->layerName,

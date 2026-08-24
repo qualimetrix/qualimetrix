@@ -178,15 +178,14 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Instability is 0.85 (Ca=2, Ce=12), exceeds threshold of 0.80. Reduce outgoing dependencies', $violations[0]->message);
-        self::assertSame(0.85, $violations[0]->metricValue);
-        self::assertSame('coupling.instability', $violations[0]->ruleName);
-        self::assertSame('coupling.instability.class', $violations[0]->violationCode);
-        self::assertSame(SymbolLevel::Class_, $violations[0]->level);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('Instability is 0.85 (Ca=2, Ce=12), exceeds threshold of 0.80. Reduce outgoing dependencies', $findings[0]->message);
+        self::assertSame(0.85, $findings[0]->metricValue);
+        self::assertSame('coupling.instability', $findings[0]->ruleName);
+        self::assertSame('coupling.instability.class', $findings[0]->code);
     }
 
     #[Test]
@@ -210,11 +209,11 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(0.97, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(0.97, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -238,9 +237,9 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -268,10 +267,10 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -288,14 +287,14 @@ final class InstabilityRuleTest extends TestCase
             (new MetricBag())->with('instability', 1.0),
         );
 
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         self::assertSame(
             'Instability is 1.00 (Ca=0, Ce=0), exceeds threshold of 0.95. Reduce outgoing dependencies',
-            $violations[0]->message,
+            $findings[0]->message,
         );
-        self::assertSame($classInfo->subject?->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertSame($classInfo->subject?->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
     #[Test]
@@ -323,9 +322,9 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -353,10 +352,10 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
     }
 
     // Namespace-level tests
@@ -400,13 +399,12 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Instability is 0.88 (Ca=3, Ce=22), exceeds threshold of 0.80. Reduce outgoing dependencies', $violations[0]->message);
-        self::assertSame('coupling.instability.namespace', $violations[0]->violationCode);
-        self::assertSame(SymbolLevel::Namespace_, $violations[0]->level);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('Instability is 0.88 (Ca=3, Ce=22), exceeds threshold of 0.80. Reduce outgoing dependencies', $findings[0]->message);
+        self::assertSame('coupling.instability.namespace', $findings[0]->code);
     }
 
     #[Test]
@@ -431,11 +429,11 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(0.98, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(0.98, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -460,9 +458,9 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -491,10 +489,10 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -523,9 +521,9 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     // Namespace minClassCount tests
@@ -552,9 +550,9 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -579,10 +577,10 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     // Legacy analyze() tests
@@ -624,11 +622,9 @@ final class InstabilityRuleTest extends TestCase
             });
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(SymbolLevel::Class_, $violations[0]->level);
-        self::assertSame(SymbolLevel::Namespace_, $violations[1]->level);
+        self::assertCount(2, $findings);
     }
 
     // Options tests
@@ -794,13 +790,13 @@ final class InstabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -925,11 +921,11 @@ final class InstabilityRuleTest extends TestCase
             (new MetricBag())->with('instability', 0.85)->with('ca', 2)->with('ce', 12),
         );
 
-        $violations = (new InstabilityRule(new InstabilityOptions()))
+        $findings = (new InstabilityRule(new InstabilityOptions()))
             ->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

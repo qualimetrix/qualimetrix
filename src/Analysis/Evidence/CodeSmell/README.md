@@ -47,7 +47,7 @@ The following are detected:
 
 ## Usage
 
-The collector and its co-located rules are registered automatically. Rules use the collected metrics to generate violations.
+The collector and its co-located rules are registered automatically. Rules use the collected metrics to generate findings.
 
 ---
 

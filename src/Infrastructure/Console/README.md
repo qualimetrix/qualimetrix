@@ -16,8 +16,8 @@ CLI application based on Symfony Console with support for:
 Console/
 ├── Application.php
 ├── CliOptionsParser.php
-├── MeasuredViolationSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by config + source annotations; a CLI flag may narrow it, never widen it
-├── ViolationFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
+├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by config + source annotations; a CLI flag may narrow it, never widen it
+├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
 ├── RuntimeConfigurator.php
 ├── RuntimeLoggerConfigurator.php    # Creates, publishes, and returns the logger for one run
 ├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, cache, and feature state
@@ -54,7 +54,7 @@ Console/
 
 `CheckCommand` has ten constructor dependencies and thirteen properties. Its
 direct collaborators are `RuleRegistryInterface`, `AnalysisPipelineInterface`,
-`CacheFactory`, `ViolationFilterOrchestrator`,
+`CacheFactory`, `FindingFilterOrchestrator`,
 `ConfigurationPipelineInterface`, `RuntimeConfigurator`, `ResultPresenter`,
 `RuleInputValidator`, `DiagnosticOutput`, and `CheckScopeResolver`. The command
 has no logger, `GitScopeResolver`, or `ScopeWarningChecker` property.
@@ -101,7 +101,7 @@ their constructor-dependency thresholds without introducing a public port.
 
 | Code | Description                                             |
 | ---- | ------------------------------------------------------- |
-| 0    | No violations                                           |
+| 0    | No findings                                             |
 | 1    | Warnings present (but no errors)                        |
 | 2    | Errors present                                          |
 | 3    | Configuration or input error                            |
@@ -109,12 +109,12 @@ their constructor-dependency thresholds without introducing a public port.
 
 Unknown `--only-rule` / `--disable-rule` selectors and unknown rule-option
 owners are input errors (exit 3). On incomplete analysis, the selected report is
-still rendered for diagnosis and exit 4 takes precedence over violation policy.
+still rendered for diagnosis and exit 4 takes precedence over finding policy.
 Non-payload diagnostics from `check` are written to stderr.
 
 ### BaselineCleanupCommand
 
-Cleanup baseline from stale entries (violations that have already been fixed).
+Cleanup baseline from stale entries (findings that have already been fixed).
 
 **Name:** `baseline:cleanup`
 
@@ -169,10 +169,10 @@ does not create a missing destination, and preserves an existing destination.
 
 ### Git Integration
 
-| Option            | Default | Description                           |
-| ----------------- | ------- | ------------------------------------- |
-| `--report`        | —       | Violation scope for report            |
-| `--report-strict` | false   | Show only violations in changed files |
+| Option            | Default | Description                         |
+| ----------------- | ------- | ----------------------------------- |
+| `--report`        | —       | Finding scope for report            |
+| `--report-strict` | false   | Show only findings in changed files |
 
 ### Logging and Progress
 
@@ -187,13 +187,13 @@ does not create a missing destination, and preserves an existing destination.
 | Option                         | Description                                                                                                                                                                                                                                                                                                                                  |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--baseline`                   | Use baseline file                                                                                                                                                                                                                                                                                                                            |
-| `--show-resolved`              | Show count of resolved violations                                                                                                                                                                                                                                                                                                            |
-| `--show-suppressed`            | Show suppressed violations — `@qmx-ignore` tags and per-rule `exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths` exclusions, each listed in its own block                                                                                                                                                                  |
+| `--show-resolved`              | Show count of resolved findings                                                                                                                                                                                                                                                                                                              |
+| `--show-suppressed`            | Show suppressed findings — `@qmx-ignore` tags and per-rule `exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths` exclusions, each listed in its own block                                                                                                                                                                    |
 | `--no-suppression-annotations` | Report findings `@qmx-ignore` suppresses. It does **not** change what a baseline measures: the annotated findings never reach the baseline stage and are never captured, so they are shown at their own severity and compared against no entry. A flag may narrow the measured set (`--exclude-path`, `--exclude-namespace`), never widen it |
 
 ### `check`'s baseline reporting
 
-`ViolationFilterOrchestrator` prints up to three unconditional, non-failing
+`FindingFilterOrchestrator` prints up to three unconditional, non-failing
 reports about the loaded baseline — each with its own header and its own
 explaining line, so they never run together. None of the three prints
 anything on a run without `--baseline`.
@@ -202,7 +202,7 @@ anything on a run without `--baseline`.
   channel, optional semantic occurrence, and optional edge)
   did not appear in the measured set. `--show-resolved` reads the same
   list and reports the same predicate in a different unit — entries, not
-  violations. Because the predicate is keyed on the *full* identity rather
+  findings. Because the predicate is keyed on the *full* identity rather
   than the symbol, a group that shrank without vanishing (say five members
   down to two) is neither stale nor "resolved": its identity still fired, so
   it is invisible to `--show-resolved` by design (ADR 0017 residual-limitation
@@ -225,13 +225,13 @@ anything on a run without `--baseline`.
 
 ### Rules
 
-| Option                 | Description                                                             |
-| ---------------------- | ----------------------------------------------------------------------- |
-| `--cyclomatic-warning` | Cyclomatic complexity warning threshold                                 |
-| `--cyclomatic-error`   | Cyclomatic complexity error threshold                                   |
-| `--disable-rule`       | Disable a rule or channel by exact name, or a group as `X.*`            |
-| `--only-rule`          | Run only the specified producer, group, violation code, or full channel |
-| `--rule-opt`           | Rule option `RULE:OPTION=VALUE`                                         |
+| Option                 | Description                                                           |
+| ---------------------- | --------------------------------------------------------------------- |
+| `--cyclomatic-warning` | Cyclomatic complexity warning threshold                               |
+| `--cyclomatic-error`   | Cyclomatic complexity error threshold                                 |
+| `--disable-rule`       | Disable a rule or channel by exact name, or a group as `X.*`          |
+| `--only-rule`          | Run only the specified producer, group, finding code, or full channel |
+| `--rule-opt`           | Rule option `RULE:OPTION=VALUE`                                       |
 
 Full list of options available via `bin/qmx check --help`.
 

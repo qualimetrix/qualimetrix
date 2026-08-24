@@ -174,7 +174,7 @@ final class HealthContributorTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -239,7 +239,7 @@ final class HealthContributorTest extends TestCase
     {
         $metrics = $report->metrics ?? throw new LogicException('Metrics are required.');
 
-        return $this->builder->build($metrics, new NamespaceTree($metrics->getNamespaces()), $report->violations);
+        return $this->builder->build($metrics, new NamespaceTree($metrics->getNamespaces()), $report->findings);
     }
 
     /**
@@ -305,7 +305,7 @@ final class HealthContributorTest extends TestCase
         );
 
         return new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,

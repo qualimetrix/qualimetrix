@@ -55,8 +55,9 @@ use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\DiagnosticOutput;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
+use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
-use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
+use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
@@ -64,7 +65,6 @@ use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
-use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
@@ -78,7 +78,7 @@ use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
@@ -120,7 +120,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
     private function registerFormatters(ContainerBuilder $container): void
     {
-        $detailedViolationRenderer = 'Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer';
+        $detailedFindingRenderer = 'Qualimetrix\\Reporting\\Formatter\\Support\\DetailedFindingRenderer';
         $formatterRegistry = 'Qualimetrix\\Reporting\\Formatter\\FormatterRegistry';
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
 
@@ -154,11 +154,11 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             $this->srcDir . '/Reporting/Health/{HealthScore.php,WorstOffender.php,DecompositionItem.php}',
         );
 
-        // ViolationFilter (shared filtering logic for formatters)
-        $container->register(ViolationFilter::class);
+        // FindingFilter (shared filtering logic for formatters)
+        $container->register(FindingFilter::class);
 
-        // DetailedViolationRenderer (in Formatter/Support/, excluded from formatter glob)
-        $container->register($detailedViolationRenderer)
+        // DetailedFindingRenderer (in Formatter/Support/, excluded from formatter glob)
+        $container->register($detailedFindingRenderer)
             ->setAutowired(true);
 
         // FormatterRegistry will be populated by compiler pass
@@ -230,10 +230,10 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(GitScopeQueryInterface::class),
             ]);
 
-        // MeasuredViolationSet — the single definition of the set a baseline
+        // MeasuredFindingSet — the single definition of the set a baseline
         // measures. The pipeline runs its stages; baseline commands ask it
         // for the set directly.
-        $container->register(MeasuredViolationSet::class)
+        $container->register(MeasuredFindingSet::class)
             ->setArguments([
                 new Reference(AnalysisPipelineInterface::class),
                 new Reference($findingProjector),
@@ -297,8 +297,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(ExitCodeResolver::class)
             ->setArguments([new Reference(ChannelDeclarationRegistryInterface::class)]);
 
-        // ViolationFilter for --namespace/--class drill-down
-        $container->register(ViolationFilter::class);
+        // FindingFilter for --namespace/--class drill-down
+        $container->register(FindingFilter::class);
 
         // ResultPresenter for formatting/output of analysis results
         $container->register(ResultPresenter::class)
@@ -308,12 +308,12 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(SummaryEnricher::class),
                 new Reference(ProfilePresenter::class),
                 new Reference(ExitCodeResolver::class),
-                new Reference(ViolationFilter::class),
+                new Reference(FindingFilter::class),
                 new Reference(FormatterContextFactory::class),
             ]);
 
-        // ViolationFilterOrchestrator
-        $container->register(ViolationFilterOrchestrator::class)
+        // FindingFilterOrchestrator
+        $container->register(FindingFilterOrchestrator::class)
             ->setArguments([
                 new Reference($findingProjector),
                 new Reference(RuleExecutionInterface::class),
@@ -344,7 +344,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(CheckCommand::class)
             ->setArguments([
                 new Reference(AnalysisPipelineInterface::class),
-                new Reference(ViolationFilterOrchestrator::class),
+                new Reference(FindingFilterOrchestrator::class),
                 new Reference(RuntimeConfigurator::class),
                 new Reference(ResultPresenter::class),
                 new Reference(RuleInputValidator::class),
@@ -425,7 +425,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(BaselineRun::class)
             ->setArguments([
                 new Reference(RuntimeConfigurator::class),
-                new Reference(MeasuredViolationSet::class),
+                new Reference(MeasuredFindingSet::class),
                 new Reference(RuleInputValidator::class),
                 new Reference(ConfigurationInputAdapter::class),
                 new Reference(RunConfigurationResolverInterface::class),

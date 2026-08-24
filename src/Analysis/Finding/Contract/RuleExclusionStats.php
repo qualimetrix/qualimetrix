@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 /**
- * Counts and captures violations suppressed by per-rule `exclude_namespaces`,
+ * Counts and captures findings suppressed by per-rule `exclude_namespaces`,
  * `exclude_namespace_channels`, or `exclude_paths` (configured under
  * `rules: {<rule-name>: {...}}` in `qmx.yaml`).
  *
@@ -22,18 +22,18 @@ namespace Qualimetrix\Analysis\Finding\Contract;
 final readonly class RuleExclusionStats
 {
     /**
-     * @param array<string, int> $namespaceExclusionsByRule Rule name => violations suppressed by
+     * @param array<string, int> $namespaceExclusionsByRule Rule name => findings suppressed by
      *                                                      `exclude_namespaces` or `exclude_namespace_channels`
-     * @param array<string, int> $pathExclusionsByRule Rule name => suppressed violation count
-     * @param list<Violation> $excludedViolations All violations dropped by any per-rule exclusion, in encounter order.
-     *                                            Populated only when the current {@see RuleConfigurationInterface} enables capture from
-     *                                            `RuntimeConfigurator`'s `--show-suppressed` policy — the counts above are always collected, but retaining
-     *                                            every dropped `Violation` object is opt-in to avoid the memory cost when nothing will display them.
+     * @param array<string, int> $pathExclusionsByRule Rule name => suppressed finding count
+     * @param list<Finding> $excludedFindings All findings dropped by any per-rule exclusion, in encounter order.
+     *                                        Populated only when the current {@see RuleConfigurationInterface} enables capture from
+     *                                        `RuntimeConfigurator`'s `--show-suppressed` policy — the counts above are always collected, but retaining
+     *                                        every dropped `Finding` object is opt-in to avoid the memory cost when nothing will display them.
      */
     public function __construct(
         public array $namespaceExclusionsByRule = [],
         public array $pathExclusionsByRule = [],
-        public array $excludedViolations = [],
+        public array $excludedFindings = [],
     ) {}
 
     public function totalNamespaceExclusions(): int

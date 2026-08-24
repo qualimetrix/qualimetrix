@@ -155,12 +155,12 @@ final class CboRuleTest extends TestCase
             ->with($symbolPath)
             ->willReturn((new MetricBag())->with('cbo', 18)->with('ca', 8)->with('ce', 10));
 
-        $violations = (new CboRule(new CboOptions()))
+        $findings = (new CboRule(new CboOptions()))
             ->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame($classInfo->subject?->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame($classInfo->subject?->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
     #[Test]
@@ -199,7 +199,7 @@ final class CboRuleTest extends TestCase
     }
 
     #[Test]
-    public function itEmitsNoViolationWhenCboBelowThreshold(): void
+    public function itEmitsNoFindingWhenCboBelowThreshold(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -219,9 +219,9 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -245,15 +245,14 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Coupling too high: 8 inbound + 10 outbound (CBO: 18, threshold: 14)', $violations[0]->message);
-        self::assertSame(18.0, $violations[0]->metricValue);
-        self::assertSame('coupling.cbo', $violations[0]->ruleName);
-        self::assertSame('coupling.cbo.class', $violations[0]->violationCode);
-        self::assertSame(SymbolLevel::Class_, $violations[0]->level);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('Coupling too high: 8 inbound + 10 outbound (CBO: 18, threshold: 14)', $findings[0]->message);
+        self::assertSame(18.0, $findings[0]->metricValue);
+        self::assertSame('coupling.cbo', $findings[0]->ruleName);
+        self::assertSame('coupling.cbo.class', $findings[0]->code);
     }
 
     #[Test]
@@ -277,12 +276,12 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertStringContainsString('threshold: 20', $violations[0]->message);
-        self::assertSame(25.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertStringContainsString('threshold: 20', $findings[0]->message);
+        self::assertSame(25.0, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -313,11 +312,11 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('threshold: 10', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('threshold: 10', $findings[0]->message);
     }
 
     // Direction-aware message tests
@@ -343,12 +342,12 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('Afferent coupling too high: 44 classes depend on this', $violations[0]->message);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('coupling magnet', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('Afferent coupling too high: 44 classes depend on this', $findings[0]->message);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('coupling magnet', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -372,12 +371,12 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('Efferent coupling too high: depends on 22 classes', $violations[0]->message);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('extract dependencies', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('Efferent coupling too high: depends on 22 classes', $findings[0]->message);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('extract dependencies', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -401,12 +400,12 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('Coupling too high: 10 inbound + 10 outbound', $violations[0]->message);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('reduce both inbound and outbound', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('Coupling too high: 10 inbound + 10 outbound', $findings[0]->message);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('reduce both inbound and outbound', $findings[0]->recommendation);
     }
 
     // Namespace-level tests
@@ -450,13 +449,12 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Coupling too high: 6 inbound + 10 outbound (CBO: 16, threshold: 14)', $violations[0]->message);
-        self::assertSame('coupling.cbo.namespace', $violations[0]->violationCode);
-        self::assertSame(SymbolLevel::Namespace_, $violations[0]->level);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('Coupling too high: 6 inbound + 10 outbound (CBO: 16, threshold: 14)', $findings[0]->message);
+        self::assertSame('coupling.cbo.namespace', $findings[0]->code);
     }
 
     #[Test]
@@ -481,11 +479,11 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(25.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(25.0, $findings[0]->metricValue);
     }
 
     // Namespace minClassCount tests
@@ -512,9 +510,9 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     // Legacy analyze() tests
@@ -556,11 +554,9 @@ final class CboRuleTest extends TestCase
             });
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(SymbolLevel::Class_, $violations[0]->level);
-        self::assertSame(SymbolLevel::Namespace_, $violations[1]->level);
+        self::assertCount(2, $findings);
     }
 
     // Options tests
@@ -737,14 +733,14 @@ final class CboRuleTest extends TestCase
             ->willReturn($deps);
 
         $context = new AnalysisContext($repository, dependencyGraph: $graph);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertNotNull($violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertNotNull($findings[0]->recommendation);
         // UserRepository has 3 occurrences, Logger has 2, rest have 1
-        self::assertStringContainsString('Top dependencies: UserRepository, Logger', $violations[0]->recommendation);
+        self::assertStringContainsString('Top dependencies: UserRepository, Logger', $findings[0]->recommendation);
         // Should also contain the base recommendation
-        self::assertStringContainsString('extract dependencies to reduce outbound coupling', $violations[0]->recommendation);
+        self::assertStringContainsString('extract dependencies to reduce outbound coupling', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -785,10 +781,10 @@ final class CboRuleTest extends TestCase
             ->willReturn($deps);
 
         $context = new AnalysisContext($repository, dependencyGraph: $graph);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        $recommendation = $violations[0]->recommendation;
+        self::assertCount(1, $findings);
+        $recommendation = $findings[0]->recommendation;
         self::assertNotNull($recommendation);
 
         // Count the number of class names listed after "Top dependencies: "
@@ -825,11 +821,11 @@ final class CboRuleTest extends TestCase
 
         // No dependency graph
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringNotContainsString('Top dependencies:', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringNotContainsString('Top dependencies:', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -857,12 +853,12 @@ final class CboRuleTest extends TestCase
             ->willReturn([]);
 
         $context = new AnalysisContext($repository, dependencyGraph: $graph);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringNotContainsString('Top dependencies:', $violations[0]->recommendation);
-        self::assertStringContainsString('coupling magnet', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringNotContainsString('Top dependencies:', $findings[0]->recommendation);
+        self::assertStringContainsString('coupling magnet', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -888,11 +884,11 @@ final class CboRuleTest extends TestCase
         $graph = self::createStub(DependencyGraphInterface::class);
 
         $context = new AnalysisContext($repository, dependencyGraph: $graph);
-        $violations = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Namespace_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringNotContainsString('Top dependencies:', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringNotContainsString('Top dependencies:', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -926,11 +922,11 @@ final class CboRuleTest extends TestCase
             ->willReturn($deps);
 
         $context = new AnalysisContext($repository, dependencyGraph: $graph);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('Top dependencies: stdClass', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('Top dependencies: stdClass', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -965,13 +961,13 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -1018,13 +1014,13 @@ final class CboRuleTest extends TestCase
         $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
 
         self::assertSame([], $logger->records);
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(7.0, $violations[0]->metricValue);
-        self::assertStringContainsString('CBO_APP: 7', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(7.0, $findings[0]->metricValue);
+        self::assertStringContainsString('CBO_APP: 7', $findings[0]->message);
     }
 
     #[Test]
@@ -1044,7 +1040,7 @@ final class CboRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 15 (above error), CBO_APP = 3 (below warning)
-        // With scope=application, should use CBO_APP → no violation
+        // With scope=application, should use CBO_APP → no finding
         $metricBag = (new MetricBag())
             ->with('cbo', 15)
             ->with('cbo_app', 3)
@@ -1058,9 +1054,9 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -1094,16 +1090,16 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(7.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(7.0, $findings[0]->metricValue);
         // Message should reference CBO_APP metric name
-        self::assertStringContainsString('CBO_APP', $violations[0]->message);
+        self::assertStringContainsString('CBO_APP', $findings[0]->message);
         // Message should use CBO_APP label and show framework exclusion count
-        self::assertStringContainsString('CBO_APP: 7', $violations[0]->message);
-        self::assertStringContainsString('framework: 23 classes excluded', $violations[0]->message);
+        self::assertStringContainsString('CBO_APP: 7', $findings[0]->message);
+        self::assertStringContainsString('framework: 23 classes excluded', $findings[0]->message);
     }
 
     #[Test]
@@ -1137,11 +1133,11 @@ final class CboRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(15.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(15.0, $findings[0]->metricValue);
     }
 
     // Scope options parsing tests
@@ -1210,11 +1206,11 @@ final class CboRuleTest extends TestCase
             (new MetricBag())->with('cbo', 18)->with('ca', 8)->with('ce', 10),
         );
 
-        $violations = (new CboRule(new CboOptions()))
+        $findings = (new CboRule(new CboOptions()))
             ->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

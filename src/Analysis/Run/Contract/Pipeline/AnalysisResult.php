@@ -6,9 +6,9 @@ namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 
 final readonly class AnalysisResult
@@ -23,7 +23,7 @@ final readonly class AnalysisResult
     public int $filesSkipped;
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param array<string, list<Suppression>> $suppressions Per-file suppression tags
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides Per-file `@qmx-threshold`
      *                                                                   overrides — the same map
@@ -36,7 +36,7 @@ final readonly class AnalysisResult
      *                                                                   in *this* run
      */
     public function __construct(
-        public array $violations,
+        public array $findings,
         public float $duration,
         public MetricRepositoryInterface $metrics,
         AnalysisCoverage $coverage,
@@ -51,8 +51,8 @@ final readonly class AnalysisResult
 
     public function hasErrors(): bool
     {
-        foreach ($this->violations as $violation) {
-            if ($violation->severity === Severity::Error) {
+        foreach ($this->findings as $finding) {
+            if ($finding->severity === Severity::Error) {
                 return true;
             }
         }
@@ -62,8 +62,8 @@ final readonly class AnalysisResult
 
     public function hasWarnings(): bool
     {
-        foreach ($this->violations as $violation) {
-            if ($violation->severity === Severity::Warning) {
+        foreach ($this->findings as $finding) {
+            if ($finding->severity === Severity::Warning) {
                 return true;
             }
         }
@@ -73,8 +73,8 @@ final readonly class AnalysisResult
 
     public function hasInfo(): bool
     {
-        foreach ($this->violations as $violation) {
-            if ($violation->severity === Severity::Info) {
+        foreach ($this->findings as $finding) {
+            if ($finding->severity === Severity::Info) {
                 return true;
             }
         }
@@ -100,7 +100,7 @@ final readonly class AnalysisResult
         }
 
         return new self(
-            violations: [...$this->violations, ...$other->violations],
+            findings: [...$this->findings, ...$other->findings],
             duration: max($this->duration, $other->duration),
             metrics: $mergedMetrics,
             coverage: $this->coverage->merge($other->coverage),
@@ -111,15 +111,15 @@ final readonly class AnalysisResult
     }
 
     /**
-     * Returns violations sorted by file and line.
+     * Returns findings sorted by file and line.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function getSortedViolations(): array
+    public function getSortedFindings(): array
     {
-        $sorted = $this->violations;
+        $sorted = $this->findings;
 
-        usort($sorted, static function (Violation $a, Violation $b): int {
+        usort($sorted, static function (Finding $a, Finding $b): int {
             $fileCompare = strcmp($a->location->pathString(), $b->location->pathString());
             if ($fileCompare !== 0) {
                 return $fileCompare;
@@ -140,8 +140,8 @@ final readonly class AnalysisResult
         $warnings = 0;
         $info = 0;
 
-        foreach ($this->violations as $violation) {
-            match ($violation->severity) {
+        foreach ($this->findings as $finding) {
+            match ($finding->severity) {
                 Severity::Error => $errors++,
                 Severity::Warning => $warnings++,
                 Severity::Info => $info++,

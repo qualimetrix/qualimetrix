@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 /**
- * What a producer's {@see Violation::$metricValue} means for baseline purposes,
+ * What a producer's {@see Finding::$metricValue} means for baseline purposes,
  * across every channel it declares.
  *
  * The baseline never reads a rule's options or its severity ladder — only

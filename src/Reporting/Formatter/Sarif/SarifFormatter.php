@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Sarif;
 
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
@@ -28,9 +28,9 @@ final class SarifFormatter implements FormatterInterface
 
     public function format(Report $report, FormatterContext $context): string
     {
-        $rules = $this->ruleCollector->collectRules($report->violations);
+        $rules = $this->ruleCollector->collectRules($report->findings);
 
-        // Build ruleIndex map: violationCode -> index in rules array
+        // Build ruleIndex map: code -> index in rules array
         $ruleIndexMap = [];
         foreach ($rules as $index => $rule) {
             $ruleIndexMap[$rule['id']] = $index;
@@ -45,7 +45,7 @@ final class SarifFormatter implements FormatterInterface
                     'rules' => $rules,
                 ],
             ],
-            'results' => $this->formatResults($report->violations, $context, $ruleIndexMap),
+            'results' => $this->formatResults($report->findings, $context, $ruleIndexMap),
         ];
 
         if ($report->coverage !== null) {
@@ -91,26 +91,26 @@ final class SarifFormatter implements FormatterInterface
     }
 
     /**
-     * Formats violations as SARIF results.
+     * Formats findings as SARIF results.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param array<string, int> $ruleIndexMap
      *
      * @return list<array<string, mixed>>
      */
-    private function formatResults(array $violations, FormatterContext $context, array $ruleIndexMap): array
+    private function formatResults(array $findings, FormatterContext $context, array $ruleIndexMap): array
     {
         return array_map(
-            function (Violation $v) use ($context, $ruleIndexMap): array {
-                // 'level' derives from Violation::severity, which a measured
+            function (Finding $v) use ($context, $ruleIndexMap): array {
+                // 'level' derives from Finding::severity, which a measured
                 // breach already promoted to Error via reportedAsBreach()
                 // (ADR 0017) — no extra mapping needed here for promotion to
                 // propagate. The accepted level itself has no dedicated SARIF
                 // field, so it rides along in the free-text message, same as
                 // checkstyle/gitlab/github (ADR 0017).
                 $result = [
-                    'ruleId' => $v->violationCode,
-                    'ruleIndex' => $ruleIndexMap[$v->violationCode] ?? 0,
+                    'ruleId' => $v->code,
+                    'ruleIndex' => $ruleIndexMap[$v->code] ?? 0,
                     'level' => $this->ruleCollector->mapLevel($v->severity),
                     'message' => ['text' => $v->message . $this->formatBreachSuffix($v)],
                     'partialFingerprints' => [
@@ -119,7 +119,7 @@ final class SarifFormatter implements FormatterInterface
                 ];
 
                 if ($v->location->file === null) {
-                    // Omit locations for project-level violations (valid per SARIF 2.1.0)
+                    // Omit locations for project-level findings (valid per SARIF 2.1.0)
                 } else {
                     $result['locations'] = [
                         [
@@ -160,16 +160,16 @@ final class SarifFormatter implements FormatterInterface
 
                 return $result;
             },
-            $violations,
+            $findings,
         );
     }
 
     /**
      * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
      */
-    private function formatBreachSuffix(Violation $violation): string
+    private function formatBreachSuffix(Finding $finding): string
     {
-        $breach = AcceptedLevelNarrator::describe($violation);
+        $breach = AcceptedLevelNarrator::describe($finding);
 
         return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }

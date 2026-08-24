@@ -82,7 +82,7 @@ final class RuntimeConfigurator
             $channels,
         );
         if ($capture) {
-            $this->analysisRuntimeConfigurator->captureExcludedViolations();
+            $this->analysisRuntimeConfigurator->captureExcludedFindings();
         }
 
         // These are fallible process/output effects. Failure aborts before

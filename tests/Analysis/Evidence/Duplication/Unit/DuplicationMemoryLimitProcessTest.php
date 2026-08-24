@@ -68,7 +68,7 @@ YAML);
 
         self::assertSame(0, $exitCode, $stderr . "\n" . $stdout);
 
-        /** @var array{coverage?: array{complete?: bool}, violations?: list<array{rule?: string}>} $report */
+        /** @var array{coverage?: array{complete?: bool}, findings?: list<array{rule?: string}>} $report */
         $report = json_decode($stdout, true, flags: \JSON_THROW_ON_ERROR);
         self::assertTrue($report['coverage']['complete'] ?? false, $stdout);
         self::assertContains(

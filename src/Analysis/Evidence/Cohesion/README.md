@@ -12,7 +12,7 @@ visitors.
 `Contract/Configuration/` exposes the exact
 `LcomCollectionConfiguration` value; `Runtime/` owns its scoped store and
 resolver. Measurement remains the owner of cross-capability metric and
-aggregation contracts, while Finding owns rule options and violations.
+aggregation contracts, while Finding owns rule options and findings.
 
 ## Structure
 

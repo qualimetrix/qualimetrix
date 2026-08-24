@@ -11,7 +11,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  *
  * Produced by ThresholdOverrideExtractor when an annotation has:
  * - Invalid syntax (unparseable values, duplicate annotations)
- * - Rule-specific override violations enforced via the per-rule
+ * - Rule-specific override findings enforced via the per-rule
  *   `OverrideValidatorInterface` (e.g. warning > error for standard rules,
  *   warning < error for inverted rules, explicit error= for warning-only rules)
  *

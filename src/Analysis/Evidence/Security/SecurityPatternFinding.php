@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Security;
 
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
@@ -43,26 +43,26 @@ final readonly class SecurityPatternFinding
         );
     }
 
-    public function toViolation(
+    public function toFinding(
         SymbolPath $fileSymbol,
         string $ruleName,
         string $patternType,
         Severity $severity,
         string $messageTemplate,
         ?string $recommendation,
-    ): Violation {
+    ): Finding {
         $suffix = $this->superglobal === '' ? '' : \sprintf(' ($%s)', $this->superglobal);
         $occurrenceKey = OccurrenceKey::semantic($patternType, [
             'type' => $patternType,
             'superglobal' => $this->superglobal,
         ]);
 
-        return new Violation(
+        return new Finding(
             location: $this->location,
             subject: $this->subject,
             symbolPath: $fileSymbol,
             ruleName: $ruleName,
-            violationCode: $ruleName,
+            code: $ruleName,
             message: $messageTemplate . $suffix,
             severity: $severity,
             metricValue: 1.0,

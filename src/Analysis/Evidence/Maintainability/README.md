@@ -9,7 +9,7 @@ capability.
 
 The leaf has no `Contract/` surface. It consumes Measurement's collector,
 metric, aggregation, and visitor contracts; Finding's rule, option, channel,
-and violation contracts; and neutral Core identifiers. Infrastructure owns the
+and finding contracts; and neutral Core identifiers. Infrastructure owns the
 bounded DI registration for this internal leaf.
 
 ## Structure

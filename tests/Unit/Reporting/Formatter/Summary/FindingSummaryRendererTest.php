@@ -8,39 +8,39 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
-use Qualimetrix\Reporting\Formatter\Summary\ViolationSummaryRenderer;
+use Qualimetrix\Reporting\Filter\FindingFilter;
+use Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
-#[CoversClass(ViolationSummaryRenderer::class)]
-final class ViolationSummaryRendererTest extends TestCase
+#[CoversClass(FindingSummaryRenderer::class)]
+final class FindingSummaryRendererTest extends TestCase
 {
-    private ViolationSummaryRenderer $renderer;
+    private FindingSummaryRenderer $renderer;
     private AnsiColor $color;
 
     protected function setUp(): void
     {
-        $this->renderer = new ViolationSummaryRenderer(
-            new ViolationFilter(),
+        $this->renderer = new FindingSummaryRenderer(
+            new FindingFilter(),
             new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()),
         );
         $this->color = new AnsiColor(false);
     }
 
     #[Test]
-    public function itShowsNoViolationsFoundForEmptyReport(): void
+    public function itShowsNoFindingsFoundForEmptyReport(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 0,
             filesSkipped: 0,
             duration: 1.0,
@@ -56,14 +56,14 @@ final class ViolationSummaryRendererTest extends TestCase
     }
 
     #[Test]
-    public function itShowsNoViolationsInNamespaceScope(): void
+    public function itShowsNoFindingsInNamespaceScope(): void
     {
-        // Report has violations in a different namespace so isEmpty() is false,
-        // but the filtered violations for this namespace are empty.
-        $otherViolation = $this->createViolation(Severity::Error, 'Other\\Namespace', 'OtherService');
+        // Report has findings in a different namespace so isEmpty() is false,
+        // but the filtered findings for this namespace are empty.
+        $otherFinding = $this->createFinding(Severity::Error, 'Other\\Namespace', 'OtherService');
 
         $report = new Report(
-            violations: [$otherViolation],
+            findings: [$otherFinding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -81,12 +81,12 @@ final class ViolationSummaryRendererTest extends TestCase
     }
 
     #[Test]
-    public function itShowsNoViolationsInClassScope(): void
+    public function itShowsNoFindingsInClassScope(): void
     {
-        $otherViolation = $this->createViolation(Severity::Error, 'App\\Service', 'OtherService');
+        $otherFinding = $this->createFinding(Severity::Error, 'App\\Service', 'OtherService');
 
         $report = new Report(
-            violations: [$otherViolation],
+            findings: [$otherFinding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -104,12 +104,12 @@ final class ViolationSummaryRendererTest extends TestCase
     }
 
     #[Test]
-    public function itShowsNoViolationsFoundForNonEmptyReportWithNoScope(): void
+    public function itShowsNoFindingsFoundForNonEmptyReportWithNoScope(): void
     {
-        // Non-empty report (filesAnalyzed > 0) with no violations and no scope filter
-        // isEmpty() returns true => shows "No violations found."
+        // Non-empty report (filesAnalyzed > 0) with no findings and no scope filter
+        // isEmpty() returns true => shows "No findings found."
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -120,17 +120,17 @@ final class ViolationSummaryRendererTest extends TestCase
         $lines = [];
         $this->renderer->render($report, new FormatterContext(), $this->color, $lines);
 
-        // isEmpty() is true, so "No violations found." is shown
+        // isEmpty() is true, so "No findings found." is shown
         self::assertSame(['No violations found.', ''], $lines);
     }
 
     #[Test]
     public function itFormatsSingleError(): void
     {
-        $violation = $this->createViolation(Severity::Error);
+        $finding = $this->createFinding(Severity::Error);
 
         $report = new Report(
-            violations: [$violation],
+            findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -151,10 +151,10 @@ final class ViolationSummaryRendererTest extends TestCase
     #[Test]
     public function itFormatsSingleWarning(): void
     {
-        $violation = $this->createViolation(Severity::Warning);
+        $finding = $this->createFinding(Severity::Warning);
 
         $report = new Report(
-            violations: [$violation],
+            findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -174,10 +174,10 @@ final class ViolationSummaryRendererTest extends TestCase
     #[Test]
     public function itFormatsSingleInfo(): void
     {
-        $violation = $this->createViolation(Severity::Info);
+        $finding = $this->createFinding(Severity::Info);
 
         $report = new Report(
-            violations: [$violation],
+            findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -197,16 +197,16 @@ final class ViolationSummaryRendererTest extends TestCase
     #[Test]
     public function itFormatsMixedErrorsAndWarnings(): void
     {
-        $violations = [
-            $this->createViolation(Severity::Error),
-            $this->createViolation(Severity::Error),
-            $this->createViolation(Severity::Warning),
-            $this->createViolation(Severity::Warning),
-            $this->createViolation(Severity::Warning),
+        $findings = [
+            $this->createFinding(Severity::Error),
+            $this->createFinding(Severity::Error),
+            $this->createFinding(Severity::Warning),
+            $this->createFinding(Severity::Warning),
+            $this->createFinding(Severity::Warning),
         ];
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -226,10 +226,10 @@ final class ViolationSummaryRendererTest extends TestCase
     #[Test]
     public function itDisplaysTechDebt(): void
     {
-        $violations = [$this->createViolation(Severity::Error)];
+        $findings = [$this->createFinding(Severity::Error)];
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -248,10 +248,10 @@ final class ViolationSummaryRendererTest extends TestCase
     #[Test]
     public function itDisplaysTechDebtWithDensity(): void
     {
-        $violations = [$this->createViolation(Severity::Error)];
+        $findings = [$this->createFinding(Severity::Error)];
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -272,10 +272,10 @@ final class ViolationSummaryRendererTest extends TestCase
     #[Test]
     public function itDoesNotDisplayZeroTechDebt(): void
     {
-        $violations = [$this->createViolation(Severity::Warning)];
+        $findings = [$this->createFinding(Severity::Warning)];
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -294,11 +294,11 @@ final class ViolationSummaryRendererTest extends TestCase
     #[Test]
     public function itCalculatesScopedDebt(): void
     {
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'Service'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'CCN is 30',
             severity: Severity::Error,
             metricValue: 30,
@@ -306,7 +306,7 @@ final class ViolationSummaryRendererTest extends TestCase
         );
 
         $report = new Report(
-            violations: [$violation],
+            findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -322,7 +322,7 @@ final class ViolationSummaryRendererTest extends TestCase
         $this->renderer->render($report, $context, $this->color, $lines);
 
         $output = implode("\n", $lines);
-        // Scoped debt is calculated from the violation, not from report total
+        // Scoped debt is calculated from the finding, not from report total
         self::assertStringContainsString('Tech debt:', $output);
     }
 
@@ -330,10 +330,10 @@ final class ViolationSummaryRendererTest extends TestCase
     public function itColorsSummaryBoldForErrors(): void
     {
         $ansiColor = new AnsiColor(true);
-        $violations = [$this->createViolation(Severity::Error)];
+        $findings = [$this->createFinding(Severity::Error)];
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -353,10 +353,10 @@ final class ViolationSummaryRendererTest extends TestCase
     public function itColorsSummaryBoldForWarningsOnly(): void
     {
         $ansiColor = new AnsiColor(true);
-        $violations = [$this->createViolation(Severity::Warning)];
+        $findings = [$this->createFinding(Severity::Warning)];
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -376,10 +376,10 @@ final class ViolationSummaryRendererTest extends TestCase
     public function itColorsSummaryBoldForInfoOnly(): void
     {
         $ansiColor = new AnsiColor(true);
-        $violations = [$this->createViolation(Severity::Info)];
+        $findings = [$this->createFinding(Severity::Info)];
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -395,29 +395,29 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringContainsString("\e[1;36m", $output);
     }
 
-    private function createViolation(
+    private function createFinding(
         Severity $severity,
         string $namespace = 'App\\Service',
         string $class = 'Service',
-    ): Violation {
-        return self::violation(
+    ): Finding {
+        return self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Test violation',
             severity: $severity,
         );
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
-        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+        return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
 }

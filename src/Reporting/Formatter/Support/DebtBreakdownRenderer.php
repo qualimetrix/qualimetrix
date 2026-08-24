@@ -6,7 +6,7 @@ namespace Qualimetrix\Reporting\Formatter\Support;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtSummary;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 
 /** Renders technical-debt totals grouped by rule. */
 final readonly class DebtBreakdownRenderer
@@ -14,21 +14,21 @@ final readonly class DebtBreakdownRenderer
     public function __construct(private DebtCalculator $debtCalculator) {}
 
     /**
-     * @param list<Violation> $violations
-     * @param list<Violation>|null $allViolations
+     * @param list<Finding> $findings
+     * @param list<Finding>|null $allFindings
      */
-    public function render(array $violations, ?array $allViolations = null): string
+    public function render(array $findings, ?array $allFindings = null): string
     {
-        $debtViolations = $allViolations ?? $violations;
-        $debt = $this->debtCalculator->calculate($debtViolations);
+        $debtFindings = $allFindings ?? $findings;
+        $debt = $this->debtCalculator->calculate($debtFindings);
         if ($debt->perRule === []) {
             return '';
         }
 
         $lines = ['Technical debt by rule:'];
         $violationCounts = [];
-        foreach ($debtViolations as $violation) {
-            $violationCounts[$violation->ruleName] = ($violationCounts[$violation->ruleName] ?? 0) + 1;
+        foreach ($debtFindings as $finding) {
+            $violationCounts[$finding->ruleName] = ($violationCounts[$finding->ruleName] ?? 0) + 1;
         }
 
         $perRule = $debt->perRule;

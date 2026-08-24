@@ -110,7 +110,7 @@ $this->profiler->stop('global');
 
 // Phase 5: Rule execution
 $this->profiler->start('rules', 'pipeline');
-$violations = $this->ruleExecutor->execute($context);
+$findings = $this->ruleExecutor->execute($context);
 $this->profiler->stop('rules');
 ```
 

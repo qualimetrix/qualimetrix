@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Exclusion;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
  * Stores per-rule namespace exclusions and provides namespace matching.
  *
  * Extracted from config during RuleOptionsFactory::create() and consumed
- * by RuleExecution to filter violations at framework level.
+ * by RuleExecution to filter findings at framework level.
  */
 final class RuleNamespaceExclusionProvider
 {
@@ -62,7 +62,7 @@ final class RuleNamespaceExclusionProvider
     /**
      * Stores namespace-aggregate exclusions scoped to one channel selector.
      *
-     * The selector is a {@see ChannelSelector}: an exact violation code, `X.*`
+     * The selector is a {@see ChannelSelector}: an exact finding code, `X.*`
      * for its strict descendants, or the `ruleName#violationCode` pair. A bare
      * prefix such as `health` no longer stands for a group — write `health.*`.
      *
@@ -189,7 +189,7 @@ final class RuleNamespaceExclusionProvider
      * is the rule the option is configured under, and the layer policy emits
      * four channels under rule names no class declares as its own.
      */
-    public function isChannelExcluded(string $ruleName, ViolationChannel $channel, string $namespace): bool
+    public function isChannelExcluded(string $ruleName, FindingChannel $channel, string $namespace): bool
     {
         foreach ($this->channelMatchers[$ruleName] ?? [] as $selector => $matcher) {
             if (ChannelSelector::tryParse($selector)?->matches($channel) === true && $matcher->matches($namespace)) {

@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Filter;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 use Qualimetrix\Reporting\FormatterContext;
 
 /**
- * Filters violations and worst offenders by namespace/class context.
+ * Filters findings and worst offenders by namespace/class context.
  *
  * Shared between SummaryFormatter and JsonFormatter to avoid duplication.
  *
@@ -20,22 +20,22 @@ use Qualimetrix\Reporting\FormatterContext;
  * be, which a glob selector such as `*` would otherwise capture — selecting a
  * namespace subtree must never surface a finding about the whole project.
  */
-final class ViolationFilter
+final class FindingFilter
 {
     /**
-     * Filters violations by namespace/class context.
+     * Filters findings by namespace/class context.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function filterViolations(array $violations, FormatterContext $context): array
+    public function filterFindings(array $findings, FormatterContext $context): array
     {
         if ($context->namespace === null && $context->class === null) {
-            return $violations;
+            return $findings;
         }
 
-        return array_values(array_filter($violations, function (Violation $v) use ($context): bool {
+        return array_values(array_filter($findings, function (Finding $v) use ($context): bool {
             $ns = $v->symbolPath->namespace ?? '';
             $class = $v->symbolPath->type;
 

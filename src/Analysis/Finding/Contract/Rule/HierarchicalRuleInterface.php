@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 
 /**
@@ -26,7 +26,7 @@ interface HierarchicalRuleInterface extends RuleInterface
     /**
      * Analyzes code at a specific level.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyzeLevel(SymbolLevel $level, AnalysisContext $context): array;
 }

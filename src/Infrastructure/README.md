@@ -121,8 +121,8 @@ Infrastructure/
     ├── Application.php
     ├── CliOptionsParser.php
     ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
-    ├── MeasuredViolationSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
-    ├── ViolationFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector and reports its stage results
+    ├── MeasuredFindingSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
+    ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector and reports its stage results
     ├── RuntimeConfigurator.php        # Runtime DI configuration; applies the ConfigurationDocument to Coupling every run
     ├── RuntimeLoggerConfigurator.php  # Creates and publishes the logger for one console run
     ├── DiagnosticOutput.php          # Routes human diagnostics to stderr without polluting report payloads
@@ -143,7 +143,7 @@ Infrastructure/
         ├── BaselineCommandDefinition.php    # Shared input definition: paths + the configuration options that decide what is measured (--config, --preset, --rule-opt, --only-rule, --disable-rule), deliberately without check's exclusion/suppression flags (ADR 0017)
         ├── BaselineRunInterface.php         # The one way a baseline command obtains the set it measures
         ├── BaselineRun.php                  # Implements BaselineRunInterface: resolves configuration, configures the runtime and runs the analysis exactly as `check` does
-        ├── BaselineRunContext.php           # VO: one run's measured violations, its RunScope and project root
+        ├── BaselineRunContext.php           # VO: one run's measured findings, its RunScope and project root
         ├── BaselineCaptureReporter.php      # Reports non-baselineable findings omitted by baseline:generate
         ├── BaselineConfiguredThresholds.php # Resolves each channel's qmx.yaml-configured warning boundary, for baseline:explain
         ├── BaselineGenerateCommand.php # `baseline:generate` — captures the current findings as a new baseline file

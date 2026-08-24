@@ -6,20 +6,20 @@ namespace Qualimetrix\Reporting\Formatter\Summary;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtSummary;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
 
 /**
- * Renders the violation count summary with severity breakdown and tech debt.
+ * Renders the finding count summary with severity breakdown and tech debt.
  */
-final class ViolationSummaryRenderer
+final class FindingSummaryRenderer
 {
     public function __construct(
-        private readonly ViolationFilter $violationFilter,
+        private readonly FindingFilter $findingFilter,
         private readonly RemediationTimeRegistry $remediationTimeRegistry,
     ) {}
 
@@ -28,19 +28,19 @@ final class ViolationSummaryRenderer
      */
     public function render(Report $report, FormatterContext $context, AnsiColor $color, array &$lines): void
     {
-        $violations = $this->violationFilter->filterViolations($report->violations, $context);
+        $findings = $this->findingFilter->filterFindings($report->findings, $context);
 
-        if ($violations === []) {
+        if ($findings === []) {
             $this->renderEmptyState($report, $context, $color, $lines);
 
             return;
         }
 
-        $counts = $this->countSeverities($violations);
+        $counts = $this->countSeverities($findings);
 
-        $parts = [$this->buildCountsPart(\count($violations), $counts)];
+        $parts = [$this->buildCountsPart(\count($findings), $counts)];
 
-        $debtPart = $this->buildDebtPart($report, $context, $violations);
+        $debtPart = $this->buildDebtPart($report, $context, $findings);
         if ($debtPart !== null) {
             $parts[] = $debtPart;
         }
@@ -65,11 +65,11 @@ final class ViolationSummaryRenderer
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return array<string, int>
      */
-    private function countSeverities(array $violations): array
+    private function countSeverities(array $findings): array
     {
         $counts = [
             Severity::Error->value => 0,
@@ -77,7 +77,7 @@ final class ViolationSummaryRenderer
             Severity::Info->value => 0,
         ];
 
-        foreach ($violations as $v) {
+        foreach ($findings as $v) {
             ++$counts[$v->severity->value];
         }
 
@@ -114,15 +114,15 @@ final class ViolationSummaryRenderer
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private function buildDebtPart(Report $report, FormatterContext $context, array $violations): ?string
+    private function buildDebtPart(Report $report, FormatterContext $context, array $findings): ?string
     {
         if ($context->namespace === null && $context->class === null) {
             return $this->buildGlobalDebtPart($report);
         }
 
-        return $this->buildScopedDebtPart($violations);
+        return $this->buildScopedDebtPart($findings);
     }
 
     private function buildGlobalDebtPart(Report $report): ?string
@@ -140,11 +140,11 @@ final class ViolationSummaryRenderer
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private function buildScopedDebtPart(array $violations): ?string
+    private function buildScopedDebtPart(array $findings): ?string
     {
-        $scopedDebtMinutes = $this->calculateScopedDebt($violations);
+        $scopedDebtMinutes = $this->calculateScopedDebt($findings);
         if ($scopedDebtMinutes <= 0) {
             return null;
         }
@@ -171,14 +171,14 @@ final class ViolationSummaryRenderer
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private function calculateScopedDebt(array $violations): int
+    private function calculateScopedDebt(array $findings): int
     {
         $totalMinutes = 0;
 
-        foreach ($violations as $violation) {
-            $totalMinutes += $this->remediationTimeRegistry->getMinutesForViolation($violation);
+        foreach ($findings as $finding) {
+            $totalMinutes += $this->remediationTimeRegistry->getMinutesForFinding($finding);
         }
 
         return $totalMinutes;

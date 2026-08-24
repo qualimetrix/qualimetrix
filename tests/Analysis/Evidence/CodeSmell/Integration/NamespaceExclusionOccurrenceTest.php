@@ -15,7 +15,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * End-to-end guard for D2: the global `--exclude-namespace` option must
  * suppress occurrence-style findings (e.g. `code-smell.eval`) whose *file*
  * symbol path carries no namespace, by resolving the declaring namespace from
- * the violation's subject.
+ * the finding's subject.
  */
 final class NamespaceExclusionOccurrenceTest extends TestCase
 {

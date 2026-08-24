@@ -8,6 +8,8 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependency
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
@@ -15,8 +17,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -70,7 +70,7 @@ final class CircularDependencyRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -80,7 +80,7 @@ final class CircularDependencyRule extends AbstractRule
 
         \assert($this->options instanceof CircularDependencyOptions);
 
-        $violations = [];
+        $findings = [];
         $projectSubject = MetricSubject::aggregate(SymbolPath::forProject());
 
         foreach ($this->analysis->all() as $cycle) {
@@ -110,12 +110,12 @@ final class CircularDependencyRule extends AbstractRule
 
             $recommendation = $this->buildRecommendation($cycle, $category);
 
-            $violations[] = new Violation(
+            $findings[] = new Finding(
                 location: Location::none(),
                 subject: $projectSubject,
                 symbolPath: SymbolPath::forProject(),
                 ruleName: $this->getName(),
-                violationCode: self::NAME,
+                code: self::NAME,
                 message: $message,
                 severity: $severity,
                 metricValue: $size,
@@ -126,7 +126,7 @@ final class CircularDependencyRule extends AbstractRule
             );
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -184,7 +184,7 @@ final class CircularDependencyRule extends AbstractRule
      * (ADR 0017): {@see CircularDependencyOptions::getSeverity()}
      * is not monotone in `$size` — a direct two-class cycle is `Error` while a
      * twelve-class cycle is only `Warning`, and any cycle whose size exceeds
-     * `maxCycleSize` is dropped before a `Violation` is ever built (`$size >
+     * `maxCycleSize` is dropped before a `Finding` is ever built (`$size >
      * $this->maxCycleSize` — line 56). Declaring `higher` says a cycle that
      * gains a member is worse debt, independent of that severity ladder; it
      * does not change the rule's own cutoff, which stays exactly as
@@ -195,7 +195,7 @@ final class CircularDependencyRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
         ];
     }
 }

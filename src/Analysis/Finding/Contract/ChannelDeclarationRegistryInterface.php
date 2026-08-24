@@ -37,7 +37,7 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  * exist, which is a different lifecycle with a different right answer.
  *
  * The interface lives beside {@see ChannelDeclaration}, {@see ChannelShape} and
- * {@see ViolationChannel} — the types it traffics in — rather than beside its
+ * {@see FindingChannel} — the types it traffics in — rather than beside its
  * implementation in `Infrastructure\Rule`. Any consumer that may not depend on
  * `Infrastructure` still needs this lookup; mirrors
  * {@see \Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface}
@@ -51,7 +51,7 @@ interface ChannelDeclarationRegistryInterface
      * not baselineable (no rule declared it, and it is not a resolvable
      * `computed.*` / `health.*` definition).
      */
-    public function declarationFor(ViolationChannel $channel): ?ChannelDeclaration;
+    public function declarationFor(FindingChannel $channel): ?ChannelDeclaration;
 
     /**
      * The statically declared set only — excludes the run-time
@@ -63,7 +63,7 @@ interface ChannelDeclarationRegistryInterface
      * this map, never against {@see declarationFor()}'s run-time-widened
      * answer.
      *
-     * @return array<string, ChannelDeclaration> keyed by {@see ViolationChannel::toKey()}
+     * @return array<string, ChannelDeclaration> keyed by {@see FindingChannel::toKey()}
      */
     public function staticDeclarations(): array;
 }

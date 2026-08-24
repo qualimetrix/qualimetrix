@@ -7,10 +7,10 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
@@ -31,11 +31,11 @@ use RuntimeException;
  * Integration test for baseline workflow.
  *
  * Tests the complete baseline lifecycle:
- * 1. Generate baseline from violations
+ * 1. Generate baseline from findings
  * 2. Write baseline to file
  * 3. Load baseline from file
- * 4. Filter violations using baseline
- * 5. Detect resolved violations
+ * 4. Filter findings using baseline
+ * 5. Detect resolved findings
  */
 final class BaselineWorkflowTest extends TestCase
 {
@@ -67,23 +67,23 @@ final class BaselineWorkflowTest extends TestCase
     public function itExecutesCompleteBaselineWorkflow(): void
     {
         $occurrenceKey = OccurrenceKey::semantic('goto', ['construct' => 'label']);
-        // Create test violations, one on a declared magnitude channel and
+        // Create test findings, one on a declared magnitude channel and
         // one on a declared occurrence channel.
-        $violations = [
-            new Violation(
+        $findings = [
+            new Finding(
                 subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculateDiscount"), 45),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
                 metricValue: 15,
             ),
-            new Violation(
+            new Finding(
                 subject: self::declarationSubject(SymbolPath::forClass("App\\Service", "UserService"), 1),
                 ruleName: 'code-smell.goto',
-                violationCode: 'code-smell.goto',
+                code: 'code-smell.goto',
                 message: 'goto statement found',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
@@ -95,16 +95,16 @@ final class BaselineWorkflowTest extends TestCase
         // Step 1: Generate baseline
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $generator = new BaselineGenerator($declarations, new FixedClock());
-        $baseline = $generator->generate($violations, ['src'])->baseline;
+        $baseline = $generator->generate($findings, ['src'])->baseline;
 
         self::assertSame(2, $baseline->count());
         $expectedIdentityKeys = array_map(
-            static fn(Violation $violation): string => BaselineIdentity::forViolation($violation)->key(),
-            $violations,
+            static fn(Finding $finding): string => BaselineIdentity::forFinding($finding)->key(),
+            $findings,
         );
         $expectedSelectors = array_map(
-            static fn(Violation $violation): string => BaselineIdentity::forViolation($violation)->selector()->value,
-            $violations,
+            static fn(Finding $finding): string => BaselineIdentity::forFinding($finding)->selector()->value,
+            $findings,
         );
         self::assertSame(
             $expectedIdentityKeys,
@@ -123,7 +123,7 @@ final class BaselineWorkflowTest extends TestCase
         $written = json_decode((string) file_get_contents($this->baselinePath), true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame(
             $occurrenceKey->value,
-            $written['entries'][$violations[1]->subject->toCanonical()][0]['occurrence'],
+            $written['entries'][$findings[1]->subject->toCanonical()][0]['occurrence'],
         );
 
         // Step 3: Load baseline from file
@@ -145,13 +145,13 @@ final class BaselineWorkflowTest extends TestCase
         $stage = new BaselineCeilingStage($loadedBaseline, $declarations);
 
         // Both groups are within what was captured, so neither is reported
-        self::assertSame([], $stage->apply($violations)->violations);
+        self::assertSame([], $stage->apply($findings)->findings);
 
-        // Step 5: Test new violation (not in baseline)
-        $newViolation = new Violation(
+        // Step 5: Test new finding (not in baseline)
+        $newFinding = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "processOrder"), 100),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Complexity 25 exceeds threshold 10',
             severity: Severity::Error,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
@@ -160,7 +160,7 @@ final class BaselineWorkflowTest extends TestCase
         );
 
         // A finding no entry bounds is reported untouched
-        self::assertSame([$newViolation], $stage->apply([$newViolation])->violations);
+        self::assertSame([$newFinding], $stage->apply([$newFinding])->findings);
     }
 
     #[Test]
@@ -191,10 +191,10 @@ final class BaselineWorkflowTest extends TestCase
         $source = SymbolPath::forClass('App\Service', 'UserService');
         $target = SymbolPath::forClass('App\Repository', 'UserRepository');
         $subject = self::declarationSubject($source, 11);
-        $edgeViolation = static fn(?DependencyType $type): Violation => new Violation(
+        $edgeFinding = static fn(?DependencyType $type): Finding => new Finding(
             subject: $subject,
             ruleName: 'architecture.layer-violation',
-            violationCode: 'architecture.layer-violation',
+            code: 'architecture.layer-violation',
             message: 'Forbidden dependency',
             severity: Severity::Error,
             symbolPath: $source,
@@ -202,8 +202,8 @@ final class BaselineWorkflowTest extends TestCase
             dependencyTarget: $target,
             dependencyType: $type,
         );
-        $typed = $edgeViolation(DependencyType::New_);
-        $untyped = $edgeViolation(null);
+        $typed = $edgeFinding(DependencyType::New_);
+        $untyped = $edgeFinding(null);
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $baseline = (new BaselineGenerator($declarations, new FixedClock()))
             ->generate([$typed, $untyped], ['src'])
@@ -233,8 +233,8 @@ final class BaselineWorkflowTest extends TestCase
 
         $loaded = (new BaselineLoader(new BaselineEntryParser($declarations)))->load($this->baselinePath);
         $expectedIdentities = [
-            BaselineIdentity::forViolation($untyped),
-            BaselineIdentity::forViolation($typed),
+            BaselineIdentity::forFinding($untyped),
+            BaselineIdentity::forFinding($typed),
         ];
         self::assertSame(
             array_map(static fn(BaselineIdentity $identity): string => $identity->key(), $expectedIdentities),
@@ -247,27 +247,27 @@ final class BaselineWorkflowTest extends TestCase
     }
 
     #[Test]
-    public function itDetectsResolvedViolations(): void
+    public function itDetectsResolvedFindings(): void
     {
-        // Create initial violations and baseline
+        // Create initial findings and baseline
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $generator = new BaselineGenerator($declarations, new FixedClock());
 
-        $initialViolations = [
-            new Violation(
+        $initialFindings = [
+            new Finding(
                 subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "method1"), 10),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
                 location: new Location(RelativePath::fromString(basename(__FILE__)), 10),
                 metricValue: 15,
             ),
-            new Violation(
+            new Finding(
                 subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "method2"), 20),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complexity 20 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method2'),
@@ -276,7 +276,7 @@ final class BaselineWorkflowTest extends TestCase
             ),
         ];
 
-        $baseline = $generator->generate($initialViolations, ['src'])->baseline;
+        $baseline = $generator->generate($initialFindings, ['src'])->baseline;
         $writer = new BaselineWriter();
         $writer->write($baseline, $this->baselinePath, AbsolutePath::fromString($this->tempDir));
 
@@ -285,12 +285,12 @@ final class BaselineWorkflowTest extends TestCase
         $loadedBaseline = $loader->load($this->baselinePath);
         $stage = new BaselineCeilingStage($loadedBaseline, $declarations);
 
-        // Current violations: only method1 (method2 was fixed)
-        $currentViolations = [
-            new Violation(
+        // Current findings: only method1 (method2 was fixed)
+        $currentFindings = [
+            new Finding(
                 subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "method1"), 10),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
@@ -301,7 +301,7 @@ final class BaselineWorkflowTest extends TestCase
 
         // Get resolved entries — measured over the very list the ceiling
         // judges, which is judgeAll()'s input
-        $resolved = $stage->judgeAll($currentViolations)->staleEntries;
+        $resolved = $stage->judgeAll($currentFindings)->staleEntries;
 
         // Should detect that method2 was resolved
         self::assertCount(1, $resolved);
@@ -316,21 +316,21 @@ final class BaselineWorkflowTest extends TestCase
     {
         $projectRoot = $this->tempDir;
 
-        // Create violations — file-level uses relative path (as the actual pipeline does)
-        $violations = [
-            new Violation(
+        // Create findings — file-level uses relative path (as the actual pipeline does)
+        $findings = [
+            new Finding(
                 subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString("src/Service.php"))),
                 ruleName: 'code-smell.goto',
-                violationCode: 'code-smell.goto',
+                code: 'code-smell.goto',
                 message: 'goto statement found',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service.php')),
                 location: new Location(RelativePath::fromString('src/Service.php'), 1),
             ),
-            new Violation(
+            new Finding(
                 subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod("App\\Service", "Service", "handle"), RelativePath::fromString("src/Service.php"), DeclarationOrdinal::fromRank(0))),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complexity 15',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'Service', 'handle'),
@@ -342,7 +342,7 @@ final class BaselineWorkflowTest extends TestCase
         // Generate and write baseline
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $generator = new BaselineGenerator($declarations, new FixedClock());
-        $baseline = $generator->generate($violations, ['src'])->baseline;
+        $baseline = $generator->generate($findings, ['src'])->baseline;
         $writer = new BaselineWriter();
         $writer->write($baseline, $this->baselinePath, AbsolutePath::fromString($projectRoot));
 
@@ -356,11 +356,11 @@ final class BaselineWorkflowTest extends TestCase
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
         $loadedBaseline = $loader->load($this->baselinePath);
 
-        // The ceiling should accept the original violations
+        // The ceiling should accept the original findings
         $stage = new BaselineCeilingStage($loadedBaseline, $declarations);
         self::assertSame(
             [],
-            $stage->apply($violations)->violations,
+            $stage->apply($findings)->findings,
             'Both the file-level and the callable-level finding should be accepted by their entries',
         );
     }
@@ -368,11 +368,11 @@ final class BaselineWorkflowTest extends TestCase
     #[Test]
     public function itKeepsIdentityStableAcrossLineChanges(): void
     {
-        // Same violation at different lines
-        $violation1 = new Violation(
+        // Same finding at different lines
+        $finding1 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculate"), 40),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -380,10 +380,10 @@ final class BaselineWorkflowTest extends TestCase
             metricValue: 15,
         );
 
-        $violation2 = new Violation(
+        $finding2 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculate"), 40),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -394,19 +394,19 @@ final class BaselineWorkflowTest extends TestCase
         // Identity keys should be identical (line drift stability) — the
         // location does not participate in the identity at all.
         self::assertSame(
-            BaselineIdentity::forViolation($violation1)->key(),
-            BaselineIdentity::forViolation($violation2)->key(),
+            BaselineIdentity::forFinding($finding1)->key(),
+            BaselineIdentity::forFinding($finding2)->key(),
         );
     }
 
     #[Test]
     public function itKeepsIdentityStableAcrossMagnitudeChanges(): void
     {
-        // Same violation with different numeric values
-        $violation1 = new Violation(
+        // Same finding with different numeric values
+        $finding1 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculate"), 40),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -414,10 +414,10 @@ final class BaselineWorkflowTest extends TestCase
             metricValue: 15,
         );
 
-        $violation2 = new Violation(
+        $finding2 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculate"), 40),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Complexity 25 exceeds threshold 20', // Different values
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -428,18 +428,18 @@ final class BaselineWorkflowTest extends TestCase
         // Identity keys should be identical — magnitude drift changes the
         // entry's recorded value, not which entry it belongs to.
         self::assertSame(
-            BaselineIdentity::forViolation($violation1)->key(),
-            BaselineIdentity::forViolation($violation2)->key(),
+            BaselineIdentity::forFinding($finding1)->key(),
+            BaselineIdentity::forFinding($finding2)->key(),
         );
     }
 
     #[Test]
     public function itChangesIdentityOnMethodRename(): void
     {
-        $violation1 = new Violation(
+        $finding1 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "calculate"), 45),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -447,10 +447,10 @@ final class BaselineWorkflowTest extends TestCase
             metricValue: 15,
         );
 
-        $violation2 = new Violation(
+        $finding2 = new Finding(
             subject: self::declarationSubject(SymbolPath::forMethod("App\\Service", "UserService", "compute"), 45),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'compute'), // Different method
@@ -460,8 +460,8 @@ final class BaselineWorkflowTest extends TestCase
 
         // Identity keys should be different (method name changed)
         self::assertNotSame(
-            BaselineIdentity::forViolation($violation1)->key(),
-            BaselineIdentity::forViolation($violation2)->key(),
+            BaselineIdentity::forFinding($finding1)->key(),
+            BaselineIdentity::forFinding($finding2)->key(),
         );
     }
 

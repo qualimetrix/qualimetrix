@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
+use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionProperty;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -19,12 +19,12 @@ use Symfony\Component\Console\Tester\CommandTester;
 /**
  * Regression guard for the assumption behind `--show-suppressed` reporting
  * per-rule `exclude_namespaces`, `exclude_namespace_channels`, and `exclude_paths` suppressions
- * ({@see RuleExclusionStats}): {@see ViolationFilterOrchestrator} reads
+ * ({@see RuleExclusionStats}): {@see FindingFilterOrchestrator} reads
  * {@see RuleExecutionInterface::exclusionStats()} and implicitly relies
  * on the container handing it the *same shared instance* that
  * `AnalysisPipeline` just ran `execute()` on.
  *
- * The unit test ({@see \Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorTest})
+ * The unit test ({@see \Qualimetrix\Tests\Infrastructure\Console\Unit\FindingFilterOrchestratorTest})
  * substitutes a stub `RuleExecutionInterface`, so it cannot see a wiring
  * regression (e.g. the service becoming non-shared or wrapped in a
  * decorator) — that would silently turn the feature into a no-op with every
@@ -32,7 +32,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * end-to-end via `CommandTester`, mirroring
  * {@see \Qualimetrix\Tests\Integration\Infrastructure\Console\RulesCommandWiringTest}.
  */
-#[CoversClass(ViolationFilterOrchestrator::class)]
+#[CoversClass(FindingFilterOrchestrator::class)]
 final class RuleExclusionStatsWiringTest extends TestCase
 {
     private string $tempDir;
@@ -52,7 +52,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
     public function itSharesTheSameRuleExecutionInstanceBetweenThePipelineAndTheOrchestrator(): void
     {
         // Cheap, precise complement to the end-to-end test below: proves the
-        // exact assumption ViolationFilterOrchestrator relies on, without
+        // exact assumption FindingFilterOrchestrator relies on, without
         // needing a real analysis run to observe it. RuleExecutionInterface
         // itself is private/inlined in the compiled container (not reachable
         // via $container->get()), so both instances are recovered via
@@ -63,8 +63,8 @@ final class RuleExclusionStatsWiringTest extends TestCase
         $command = $container->get(CheckCommand::class);
         \assert($command instanceof CheckCommand);
 
-        $orchestrator = $this->readPrivateProperty($command, 'violationFilterOrchestrator');
-        self::assertInstanceOf(ViolationFilterOrchestrator::class, $orchestrator);
+        $orchestrator = $this->readPrivateProperty($command, 'findingFilterOrchestrator');
+        self::assertInstanceOf(FindingFilterOrchestrator::class, $orchestrator);
 
         $ruleExecutorFromPipeline = $this->readPrivateProperty($pipeline, 'ruleExecutor');
         $ruleExecutorFromOrchestrator = $this->readPrivateProperty($orchestrator, 'ruleExecutor');
@@ -72,7 +72,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
         self::assertSame(
             $ruleExecutorFromPipeline,
             $ruleExecutorFromOrchestrator,
-            'RuleExecutionInterface must be a shared service — ViolationFilterOrchestrator '
+            'RuleExecutionInterface must be a shared service — FindingFilterOrchestrator '
                 . 'reads stats produced by whichever instance the pipeline executed rules on.',
         );
     }
@@ -86,7 +86,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
     public function itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer(): void
     {
         // 5 parameters exceeds the default LongParameterListOptions warning
-        // threshold (4) but stays under error (6) — a Warning-level violation.
+        // threshold (4) but stays under error (6) — a Warning-level finding.
         file_put_contents(
             $this->tempDir . '/LongParams.php',
             <<<'PHP'
@@ -122,7 +122,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
             '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
         ], $exitCode, $diagnostics);
 
-        // The only violation this fixture could produce is excluded — the
+        // The only finding this fixture could produce is excluded — the
         // report itself must be clean.
         self::assertSame(0, $exitCode, $display);
         self::assertStringContainsString('0 error(s), 0 warning(s)', $display);

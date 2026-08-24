@@ -7,10 +7,10 @@ namespace Qualimetrix\Tests\Unit\Analysis\RuleExecution;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -26,7 +26,7 @@ final class RuleExclusionStatsTest extends TestCase
         self::assertTrue($stats->isEmpty());
         self::assertSame(0, $stats->totalNamespaceExclusions());
         self::assertSame(0, $stats->totalPathExclusions());
-        self::assertSame([], $stats->excludedViolations);
+        self::assertSame([], $stats->excludedFindings);
     }
 
     #[Test]
@@ -50,20 +50,20 @@ final class RuleExclusionStatsTest extends TestCase
     }
 
     #[Test]
-    public function itCarriesExcludedViolations(): void
+    public function itCarriesExcludedFindings(): void
     {
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 10),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Foo.php')),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))),
             ruleName: 'rule1',
-            violationCode: 'rule1',
+            code: 'rule1',
             message: 'test',
             severity: Severity::Warning,
         );
 
-        $stats = new RuleExclusionStats(excludedViolations: [$violation]);
+        $stats = new RuleExclusionStats(excludedFindings: [$finding]);
 
-        self::assertSame([$violation], $stats->excludedViolations);
+        self::assertSame([$finding], $stats->excludedFindings);
     }
 }

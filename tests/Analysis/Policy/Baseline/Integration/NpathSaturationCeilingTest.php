@@ -47,8 +47,8 @@ final class NpathSaturationCeilingTest extends TestCase
     #[Test]
     public function itAcceptsTheSameSaturatedValueFromTwoIncreasinglyWorseSources(): void
     {
-        $recorded = self::emittedViolation(30);
-        $current = self::emittedViolation(31);
+        $recorded = self::emittedFinding(30);
+        $current = self::emittedFinding(31);
 
         self::assertSame(1_000_000_000, $recorded->metricValue);
         self::assertSame(1_000_000_000, $current->metricValue);
@@ -59,7 +59,7 @@ final class NpathSaturationCeilingTest extends TestCase
         $baseline = new Baseline(
             generated: new DateTimeImmutable('2026-08-07T12:00:00+00:00'),
             scope: ['src'],
-            entries: [new BaselineEntry(BaselineIdentity::forViolation($recorded), [1_000_000_000], 1)],
+            entries: [new BaselineEntry(BaselineIdentity::forFinding($recorded), [1_000_000_000], 1)],
         );
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
@@ -68,10 +68,10 @@ final class NpathSaturationCeilingTest extends TestCase
         );
         $stage = new BaselineCeilingStage($baseline, $declarations);
 
-        self::assertSame([], $stage->apply([$current])->violations);
+        self::assertSame([], $stage->apply([$current])->findings);
     }
 
-    private static function emittedViolation(int $branchCount): \Qualimetrix\Analysis\Finding\Contract\Violation
+    private static function emittedFinding(int $branchCount): \Qualimetrix\Analysis\Finding\Contract\Finding
     {
         $collector = new NpathComplexityCollector();
         $parser = (new ParserFactory())->createForHostVersion();
@@ -98,12 +98,12 @@ final class NpathSaturationCeilingTest extends TestCase
         ]);
         $repository->method('getSubject')->willReturn($metrics);
 
-        $violations = (new NpathComplexityRule(new NpathComplexityOptions()))
+        $findings = (new NpathComplexityRule(new NpathComplexityOptions()))
             ->analyzeLevel(SymbolLevel::Callable, new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
 
-        return $violations[0];
+        return $findings[0];
     }
 
     private static function source(int $branchCount): string

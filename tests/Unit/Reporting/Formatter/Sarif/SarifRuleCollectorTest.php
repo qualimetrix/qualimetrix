@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -18,7 +18,7 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 
 /**
  * The old version of this test asserted the collector's `match` table
- * against violation codes the product never emits (`violationCode:
+ * against finding codes the product never emits (`code:
  * 'complexity.cyclomatic'` — the product emits `complexity.cyclomatic.callable`
  * / `.class`), so it validated the table against itself. This version drives
  * the collector against `complexity.cyclomatic.callable`, a code the real
@@ -42,7 +42,7 @@ final class SarifRuleCollectorTest extends TestCase
     // --- collectRules ---
 
     #[Test]
-    public function itCollectsRulesFromEmptyViolations(): void
+    public function itCollectsRulesFromEmptyFindings(): void
     {
         self::assertSame([], $this->collector->collectRules([]));
     }
@@ -50,16 +50,16 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itCollectsRulesWithCorrectStructure(): void
     {
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
-        $rules = $this->collector->collectRules([$violation]);
+        $rules = $this->collector->collectRules([$finding]);
 
         self::assertCount(1, $rules);
         $rule = $rules[0];
@@ -74,22 +74,22 @@ final class SarifRuleCollectorTest extends TestCase
     }
 
     #[Test]
-    public function itDeduplicatesRulesByViolationCode(): void
+    public function itDeduplicatesRulesByCode(): void
     {
-        $v1 = self::violation(
+        $v1 = self::finding(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
-        $v2 = self::violation(
+        $v2 = self::finding(
             location: new Location(RelativePath::fromString('b.php'), 5),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Also too complex',
             severity: Severity::Warning,
         );
@@ -102,20 +102,20 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itCollectsMultipleDistinctRuleCodes(): void
     {
-        $v1 = self::violation(
+        $v1 = self::finding(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Complex',
             severity: Severity::Warning,
         );
 
-        $v2 = self::violation(
+        $v2 = self::finding(
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'size.class-count',
-            violationCode: 'size.class-count',
+            code: 'size.class-count',
             message: 'Too many classes',
             severity: Severity::Error,
         );
@@ -131,20 +131,20 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itPromotesRulesToErrorSeverity(): void
     {
-        $warning = self::violation(
+        $warning = self::finding(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Complex',
             severity: Severity::Warning,
         );
 
-        $error = self::violation(
+        $error = self::finding(
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Very complex',
             severity: Severity::Error,
         );
@@ -158,20 +158,20 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itGivesSubCodesOfOneRuleDistinctIdsAndTheSameDescription(): void
     {
-        $namespaceLevel = self::violation(
+        $namespaceLevel = self::finding(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forNamespace('App'),
             ruleName: 'coupling.cbo',
-            violationCode: 'coupling.cbo.namespace',
+            code: 'coupling.cbo.namespace',
             message: 'Too coupled',
             severity: Severity::Warning,
         );
 
-        $classLevel = self::violation(
+        $classLevel = self::finding(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'coupling.cbo',
-            violationCode: 'coupling.cbo.class',
+            code: 'coupling.cbo.class',
             message: 'Too coupled',
             severity: Severity::Warning,
         );
@@ -300,21 +300,20 @@ final class SarifRuleCollectorTest extends TestCase
     }
 
     /**
-     * Builds a violation fixture with an explicit declaration or aggregate
+     * Builds a finding fixture with an explicit declaration or aggregate
      * subject, preserving the production contract without hiding it behind a
      * legacy fallback.
      *
      * @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations
      */
-    private static function violation(
+    private static function finding(
         \Qualimetrix\Analysis\Finding\Contract\Location $location,
         \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
         string $ruleName,
-        string $violationCode,
+        string $code,
         string $message,
         \Qualimetrix\Analysis\Finding\Contract\Severity $severity,
         int|float|null $metricValue = null,
-        ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level = null,
         array $relatedLocations = [],
         ?string $recommendation = null,
         int|float|null $threshold = null,
@@ -323,7 +322,7 @@ final class SarifRuleCollectorTest extends TestCase
         ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
-    ): Violation {
+    ): Finding {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File,
             \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
@@ -331,16 +330,15 @@ final class SarifRuleCollectorTest extends TestCase
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: $message,
             severity: $severity,
             metricValue: $metricValue,
-            level: $level,
             relatedLocations: $relatedLocations,
             recommendation: $recommendation,
             threshold: $threshold,

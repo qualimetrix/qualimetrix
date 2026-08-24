@@ -9,14 +9,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -74,7 +74,7 @@ final class GodClassRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -82,19 +82,19 @@ final class GodClassRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $violation = $this->evaluateClass($context, $classInfo);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->evaluateClass($context, $classInfo);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Violation
+    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Finding
     {
         $subject = $classInfo->subject;
         if ($subject === null || $subject->toSymbolPath()->getType() !== SymbolType::Class_) {
@@ -133,12 +133,12 @@ final class GodClassRule extends AbstractRule
             return null;
         }
 
-        return new Violation(
+        return new Finding(
             location: new Location($classInfo->file, $classInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf(
                 'God Class detected (%d/%d criteria): %s',
                 $matchedCount,
@@ -171,7 +171,7 @@ final class GodClassRule extends AbstractRule
 
     /**
      * Error when every evaluable criterion matched, Warning when at least
-     * minCriteria matched, null (no violation) otherwise.
+     * minCriteria matched, null (no finding) otherwise.
      */
     private function determineSeverity(int $matchedCount, int $evaluableCount, GodClassOptions $options): ?Severity
     {
@@ -209,7 +209,7 @@ final class GodClassRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
         ];
     }
 

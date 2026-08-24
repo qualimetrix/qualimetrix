@@ -10,8 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -87,39 +87,39 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
     /**
      * Structural invariant, independent of {@see ChannelEmissionStaticGuardTest}:
-     * the `violationCode` half of a declared key must either be the
+     * the `code` half of a declared key must either be the
      * `ruleName` half verbatim, or that same string with a `.suffix`
-     * appended. This is what {@see ViolationChannel::fromKey()}'s own
+     * appended. This is what {@see FindingChannel::fromKey()}'s own
      * "full key, not a bare code" design implies but does not itself
      * enforce, and it is exactly the shape a hand-typed declaration line
      * can violate silently — a `ruleName` half misspelled relative to its
-     * own `violationCode` half would otherwise pass the drift guard above
+     * own `code` half would otherwise pass the drift guard above
      * (which only compares declarations against the fixture, not against
      * this shape) as long as the fixture line matches the wrong
      * declaration.
      */
     #[Test]
-    public function everyDeclaredViolationCodeEqualsOrIsPrefixedByItsRuleName(): void
+    public function everyDeclaredCodeEqualsOrIsPrefixedByItsRuleName(): void
     {
-        $violations = [];
+        $findings = [];
 
         foreach (self::realStaticDeclarations() as $key => $declaration) {
-            $channel = ViolationChannel::fromKey($key);
+            $channel = FindingChannel::fromKey($key);
 
-            $matches = $channel->violationCode === $channel->ruleName
-                || str_starts_with($channel->violationCode, $channel->ruleName . '.');
+            $matches = $channel->code === $channel->ruleName
+                || str_starts_with($channel->code, $channel->ruleName . '.');
 
             if (!$matches) {
-                $violations[] = $key;
+                $findings[] = $key;
             }
         }
 
         self::assertSame(
             [],
-            $violations,
+            $findings,
             \sprintf(
                 'Declared key(s) whose violationCode is neither equal to nor prefixed by "<ruleName>.": %s',
-                implode(', ', $violations),
+                implode(', ', $findings),
             ),
         );
     }
@@ -138,23 +138,23 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
     public function everyDeclaredRuleNameHalfNamesARealRuleOrALayerViolationDiagnostic(): void
     {
         $knownRuleNames = self::allRuleNames();
-        $violations = [];
+        $findings = [];
 
         foreach (self::realStaticDeclarations() as $key => $declaration) {
-            $channel = ViolationChannel::fromKey($key);
+            $channel = FindingChannel::fromKey($key);
 
             if (!\in_array($channel->ruleName, $knownRuleNames, true)) {
-                $violations[] = $key;
+                $findings[] = $key;
             }
         }
 
         self::assertSame(
             [],
-            $violations,
+            $findings,
             \sprintf(
                 'Declared key(s) whose ruleName half names neither a real rule\'s NAME nor a'
                 . ' LayerViolationRule diagnostic constant: %s',
-                implode(', ', $violations),
+                implode(', ', $findings),
             ),
         );
     }

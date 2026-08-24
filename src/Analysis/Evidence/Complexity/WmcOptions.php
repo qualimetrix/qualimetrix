@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  *
  * WMC (Weighted Methods per Class) - sum of cyclomatic complexities of all methods.
  * Thresholds based on Chidamber & Kemerer research and industry practice:
- * - WMC < 50: well-maintained class (no violation)
+ * - WMC < 50: well-maintained class (no finding)
  * - WMC 50-79: moderate complexity, needs attention (warning)
  * - WMC >= 80: complex class, requires refactoring (error)
  *

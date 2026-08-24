@@ -7,10 +7,10 @@ namespace Qualimetrix\Analysis\Policy\Baseline\Filter;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStageInterface;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStageResult;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
@@ -68,21 +68,21 @@ use Qualimetrix\Core\Observation\WorseDirection;
  * stored copy can differ below the sixth decimal and read as a breach with
  * no code change.
  */
-final readonly class BaselineCeilingStage implements ViolationFilterStageInterface
+final readonly class BaselineCeilingStage implements FindingFilterStageInterface
 {
     public function __construct(
         private Baseline $baseline,
         private ChannelDeclarationRegistryInterface $declarations,
     ) {}
 
-    public function stage(): ViolationFilterStage
+    public function stage(): FindingFilterStage
     {
-        return ViolationFilterStage::Baseline;
+        return FindingFilterStage::Baseline;
     }
 
-    public function apply(array $violations): ViolationFilterStageResult
+    public function apply(array $findings): FindingFilterStageResult
     {
-        return $this->judgeAll($violations)->result;
+        return $this->judgeAll($findings)->result;
     }
 
     /**
@@ -93,17 +93,17 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
      * together — rather than a second call reading `apply()`'s own input a
      * second time — is what makes the two unable to disagree.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    public function judgeAll(array $violations): CeilingOutcome
+    public function judgeAll(array $findings): CeilingOutcome
     {
         /** @var array<int, GroupCeilingVerdict> $verdictByIndex */
         $verdictByIndex = [];
         $measuredIdentityKeys = [];
 
-        foreach (self::groupByIdentity($violations) as $group) {
+        foreach (self::groupByIdentity($findings) as $group) {
             $measuredIdentityKeys[$group['identity']->key()] = true;
-            $verdict = $this->judge($group['identity'], $group['violations']);
+            $verdict = $this->judge($group['identity'], $group['findings']);
 
             foreach ($group['indexes'] as $index) {
                 $verdictByIndex[$index] = $verdict;
@@ -113,22 +113,22 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
         $kept = [];
         $removed = [];
 
-        foreach ($violations as $index => $violation) {
+        foreach ($findings as $index => $finding) {
             $verdict = $verdictByIndex[$index];
 
             if ($verdict->suppresses()) {
-                $removed[] = $violation;
+                $removed[] = $finding;
 
                 continue;
             }
 
             $kept[] = $verdict->breachedLevel !== null
-                ? $violation->reportedAsBreach($verdict->breachedLevel)
-                : $violation;
+                ? $finding->reportedAsBreach($verdict->breachedLevel)
+                : $finding;
         }
 
         return new CeilingOutcome(
-            result: new ViolationFilterStageResult(ViolationFilterStage::Baseline, $kept, $removed),
+            result: new FindingFilterStageResult(FindingFilterStage::Baseline, $kept, $removed),
             staleEntries: $this->baseline->staleEntries(array_keys($measuredIdentityKeys)),
             inertEntries: [...$this->baseline->inertEntries, ...$this->configurationErrorEntries()],
         );
@@ -206,7 +206,7 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
      * {@see Baseline} assembled in memory — as the lifecycle commands do —
      * never passes through the loader at all.
      *
-     * @param list<Violation> $group
+     * @param list<Finding> $group
      */
     private function judge(BaselineIdentity $identity, array $group): GroupCeilingVerdict
     {
@@ -248,7 +248,7 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
      * One level, no magnitudes: the group must hold no more members than the
      * entry recorded — {@see GroupAcceptance::countWithin()}.
      *
-     * @param list<Violation> $group
+     * @param list<Finding> $group
      */
     private static function judgeOccurrence(BaselineEntry $entry, array $group): GroupCeilingVerdict
     {
@@ -283,7 +283,7 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
      * says "accept this identity regardless of magnitude and count" (ADR 0017)
      * has no use for the group's numbers.
      *
-     * @param list<Violation> $group
+     * @param list<Finding> $group
      */
     private static function judgeMagnitude(
         BaselineEntry $entry,
@@ -315,7 +315,7 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
      * The group's magnitudes, normalised the way the stored ones were, or
      * `null` when some member reports no usable number.
      *
-     * @param list<Violation> $group
+     * @param list<Finding> $group
      *
      * @return ?list<float>
      */
@@ -323,13 +323,13 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
     {
         $magnitudes = [];
 
-        foreach ($group as $violation) {
-            if ($violation->metricValue === null) {
+        foreach ($group as $finding) {
+            if ($finding->metricValue === null) {
                 return null;
             }
 
             try {
-                $magnitudes[] = BaselineEntry::normalizeMagnitude($violation->metricValue);
+                $magnitudes[] = BaselineEntry::normalizeMagnitude($finding->metricValue);
             } catch (InvalidArgumentException) {
                 // NaN or infinity: not a boundary, and not a breach either.
                 return null;
@@ -349,20 +349,20 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
      * sat, so the output preserves the input order rather than the grouping
      * order.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return array<string, array{identity: BaselineIdentity, violations: list<Violation>, indexes: list<int>}>
+     * @return array<string, array{identity: BaselineIdentity, findings: list<Finding>, indexes: list<int>}>
      */
-    private static function groupByIdentity(array $violations): array
+    private static function groupByIdentity(array $findings): array
     {
         $groups = [];
 
-        foreach ($violations as $index => $violation) {
-            $identity = BaselineIdentity::forViolation($violation);
+        foreach ($findings as $index => $finding) {
+            $identity = BaselineIdentity::forFinding($finding);
             $key = $identity->key();
 
-            $groups[$key] ??= ['identity' => $identity, 'violations' => [], 'indexes' => []];
-            $groups[$key]['violations'][] = $violation;
+            $groups[$key] ??= ['identity' => $identity, 'findings' => [], 'indexes' => []];
+            $groups[$key]['findings'][] = $finding;
             $groups[$key]['indexes'][] = $index;
         }
 

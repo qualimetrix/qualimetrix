@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 
@@ -26,7 +26,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
  *
  * Kept out of the rule because it decides *what is wrong*, while the rule
  * decides *what to report and on which channel*. The rule keeps every
- * `new Violation(...)` so the emission guard can still read the channel of
+ * `new Finding(...)` so the emission guard can still read the channel of
  * each one off a `self::` constant.
  */
 final readonly class DirectiveAddressability
@@ -94,7 +94,7 @@ final readonly class DirectiveAddressability
      * The explicit pair resolves against the channel universe directly: both
      * halves are exact, so there is nothing to expand.
      */
-    private function problemWithChannelPair(?ViolationChannel $pair, string $raw): ?string
+    private function problemWithChannelPair(?FindingChannel $pair, string $raw): ?string
     {
         if ($pair === null) {
             return \sprintf(
@@ -113,7 +113,7 @@ final readonly class DirectiveAddressability
         return \sprintf(
             'Suppression "%s" addresses no channel. %s',
             $raw,
-            $this->hints->forChannelPair($pair->ruleName, $pair->violationCode),
+            $this->hints->forChannelPair($pair->ruleName, $pair->code),
         );
     }
 
@@ -147,7 +147,7 @@ final readonly class DirectiveAddressability
     /**
      * The extractor already decided this one; only the wording is left.
      *
-     * The validator's stable code used to be spliced into the violation code,
+     * The validator's stable code used to be spliced into the finding code,
      * which turned every new validator outcome into a channel nobody declared.
      * It is data about the finding, so it is reported as data.
      */

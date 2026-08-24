@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 /**
- * Violation severity levels, ordered from least to most severe.
+ * Finding severity levels, ordered from least to most severe.
  *
  * Priority (lowest to highest): Info (0) < Warning (1) < Error (2).
  *

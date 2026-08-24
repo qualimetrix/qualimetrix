@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use RuntimeException;
 
 #[CoversClass(ChannelDeclarationReader::class)]
@@ -27,7 +27,7 @@ final class ChannelDeclarationReaderTest extends TestCase
         // static channelDeclarations() succeeding at all — let alone without
         // an exception — is the proof that no instance was ever built.
         $declarations = ChannelDeclarationReader::read(FixtureRuleThatThrowsIfConstructed::class);
-        $key = (new ViolationChannel('fixture.rule', 'fixture.occurrence-channel'))->toKey();
+        $key = (new FindingChannel('fixture.rule', 'fixture.occurrence-channel'))->toKey();
 
         self::assertSame([$key], array_keys($declarations));
         self::assertEquals(ChannelDeclaration::occurrence(SymbolLevel::Class_), $declarations[$key]);
@@ -46,7 +46,7 @@ final class ChannelDeclarationReaderTest extends TestCase
     public function itReadsARealRulesDeclarationsCorrectly(): void
     {
         $declarations = ChannelDeclarationReader::read(GotoRule::class);
-        $key = (new ViolationChannel(GotoRule::NAME, GotoRule::NAME))->toKey();
+        $key = (new FindingChannel(GotoRule::NAME, GotoRule::NAME))->toKey();
 
         self::assertSame([$key], array_keys($declarations));
         self::assertEquals(ChannelDeclaration::occurrence(SymbolLevel::Callable), $declarations[$key]);
@@ -107,12 +107,12 @@ final class ChannelDeclarationReaderTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsAnEntryKeyedByAKeyWithAnEmptyViolationCodeHalf(): void
+    public function itRejectsAnEntryKeyedByAKeyWithAnEmptyCodeHalf(): void
     {
         self::expectException(LogicException::class);
-        self::expectExceptionMessage('violationCode must not be empty');
+        self::expectExceptionMessage('code must not be empty');
 
-        ChannelDeclarationReader::read(FixtureRuleWithEmptyViolationCodeHalf::class);
+        ChannelDeclarationReader::read(FixtureRuleWithEmptyCodeHalf::class);
     }
 
     #[Test]
@@ -157,7 +157,7 @@ final class ChannelDeclarationReaderTest extends TestCase
      * Reading the declaration directly off the abstract base — reflection
      * has no notion of "this class is never meant to be read directly" —
      * makes `static::NAME` resolve to `''`, and `channelDeclarations()`
-     * builds `new ViolationChannel('', '')`, which throws
+     * builds `new FindingChannel('', '')`, which throws
      * InvalidArgumentException from inside the invoked method. This must
      * surface as the documented LogicException, not the VO's own exception
      * type.
@@ -196,7 +196,7 @@ final class FixtureRuleThatThrowsIfConstructed
      */
     public static function channelDeclarations(): array
     {
-        return [(new ViolationChannel('fixture.rule', 'fixture.occurrence-channel'))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
+        return [(new FindingChannel('fixture.rule', 'fixture.occurrence-channel'))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
     }
 }
 
@@ -291,7 +291,7 @@ final class FixtureRuleWithEmptyRuleNameHalf
 /**
  * @internal
  */
-final class FixtureRuleWithEmptyViolationCodeHalf
+final class FixtureRuleWithEmptyCodeHalf
 {
     /**
      * @return array<string, ChannelDeclaration>

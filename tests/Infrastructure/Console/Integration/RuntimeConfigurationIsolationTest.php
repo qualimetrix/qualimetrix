@@ -314,7 +314,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         self::assertTrue($this->cacheStore($runtimeConfigurator)->current()->enabled);
         self::assertNull($this->parallelStore($runtimeConfigurator)->current()->workers);
         self::assertSame([], $this->ruleConfiguration($runtimeConfigurator)->all());
-        self::assertFalse($this->ruleConfiguration($runtimeConfigurator)->capturesExcludedViolations());
+        self::assertFalse($this->ruleConfiguration($runtimeConfigurator)->capturesExcludedFindings());
         self::assertSame([], $this->lcomConfigurationStore($runtimeConfigurator)->current()->excludedMethods);
         self::assertFalse($this->profileReport($runtimeConfigurator)->isEnabled());
     }

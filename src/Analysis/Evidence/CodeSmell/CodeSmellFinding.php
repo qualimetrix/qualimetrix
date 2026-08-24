@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
@@ -46,14 +46,14 @@ final readonly class CodeSmellFinding
         );
     }
 
-    public function toViolation(
+    public function toFinding(
         SymbolPath $fileSymbol,
         string $ruleName,
         string $smellType,
         Severity $severity,
         string $message,
         ?string $recommendation,
-    ): Violation {
+    ): Finding {
         $occurrenceKey = OccurrenceKey::semantic($smellType, [
             'type' => $smellType,
             'extra' => $this->extra,
@@ -62,12 +62,12 @@ final readonly class CodeSmellFinding
             'hasPromoted' => $this->hasPromoted,
         ]);
 
-        return new Violation(
+        return new Finding(
             location: $this->location,
             subject: $this->subject,
             symbolPath: $fileSymbol,
             ruleName: $ruleName,
-            violationCode: $ruleName,
+            code: $ruleName,
             message: $message,
             severity: $severity,
             metricValue: 1.0,

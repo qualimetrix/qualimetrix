@@ -11,11 +11,11 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -78,9 +78,9 @@ final class ChannelUniverseCoverageTest extends TestCase
         $orphans = [];
 
         foreach (array_keys($universe->staticDeclarations()) as $key) {
-            $channel = ViolationChannel::fromKey($key);
+            $channel = FindingChannel::fromKey($key);
 
-            if ($universe->producerOf($channel->violationCode) === null) {
+            if ($universe->producerOf($channel->code) === null) {
                 $orphans[] = $key;
             }
         }
@@ -104,8 +104,8 @@ final class ChannelUniverseCoverageTest extends TestCase
 
         $witnessA = [];
         foreach (array_keys($universe->staticDeclarations()) as $key) {
-            $violationCode = ViolationChannel::fromKey($key)->violationCode;
-            $witnessA[$violationCode] = $universe->producerOf($violationCode);
+            $code = FindingChannel::fromKey($key)->code;
+            $witnessA[$code] = $universe->producerOf($code);
         }
         ksort($witnessA);
 
@@ -127,12 +127,12 @@ final class ChannelUniverseCoverageTest extends TestCase
         $universe = self::universe();
 
         $fromUniverse = array_map(
-            static fn(string $key): string => ViolationChannel::fromKey($key)->violationCode,
+            static fn(string $key): string => FindingChannel::fromKey($key)->code,
             array_keys($universe->staticDeclarations()),
         );
         sort($fromUniverse);
 
-        $fromFixture = self::violationCodesFromFixture();
+        $fromFixture = self::codesFromFixture();
         sort($fromFixture);
 
         self::assertSame($fromFixture, $fromUniverse);
@@ -174,8 +174,8 @@ final class ChannelUniverseCoverageTest extends TestCase
         // Declaration in an abstract ancestor, resolved by late static binding.
         $inherited = self::channelsDeclaredByAnAncestor();
         self::assertCount(self::CHANNELS_DECLARED_BY_AN_ANCESTOR, $inherited);
-        foreach ($inherited as $violationCode => $expectedProducer) {
-            self::assertSame($expectedProducer, $universe->producerOf($violationCode), $violationCode);
+        foreach ($inherited as $code => $expectedProducer) {
+            self::assertSame($expectedProducer, $universe->producerOf($code), $code);
         }
     }
 
@@ -252,7 +252,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * Witness B for the producer map: read off the rule registry, class by
      * class, without going through the compiler pass or the universe.
      *
-     * @return array<string, string> violation code => producing rule name
+     * @return array<string, string> finding code => producing rule name
      */
     private static function producersReadFromRuleClasses(): array
     {
@@ -262,7 +262,7 @@ final class ChannelUniverseCoverageTest extends TestCase
             $ruleName = RuleNameReader::read($ruleClass);
 
             foreach (array_keys(ChannelDeclarationReader::read($ruleClass)) as $key) {
-                $producers[ViolationChannel::fromKey($key)->violationCode] = $ruleName;
+                $producers[FindingChannel::fromKey($key)->code] = $ruleName;
             }
         }
 
@@ -271,7 +271,7 @@ final class ChannelUniverseCoverageTest extends TestCase
         // registries or it enumerates a different universe than the pass did.
         foreach (self::validatorClasses() as $validatorClass) {
             foreach (array_keys($validatorClass::channelDeclarations()) as $key) {
-                $producers[ViolationChannel::fromKey($key)->violationCode] = $validatorClass::producerRuleName();
+                $producers[FindingChannel::fromKey($key)->code] = $validatorClass::producerRuleName();
             }
         }
 
@@ -279,7 +279,7 @@ final class ChannelUniverseCoverageTest extends TestCase
     }
 
     /**
-     * @return array<string, string> violation code => producing rule name, for
+     * @return array<string, string> finding code => producing rule name, for
      *                               channels whose declaration lives in an abstract ancestor
      */
     private static function channelsDeclaredByAnAncestor(): array
@@ -298,7 +298,7 @@ final class ChannelUniverseCoverageTest extends TestCase
             }
 
             foreach (array_keys(ChannelDeclarationReader::read($ruleClass)) as $key) {
-                $inherited[ViolationChannel::fromKey($key)->violationCode] = RuleNameReader::read($ruleClass);
+                $inherited[FindingChannel::fromKey($key)->code] = RuleNameReader::read($ruleClass);
             }
         }
 
@@ -333,7 +333,7 @@ final class ChannelUniverseCoverageTest extends TestCase
     }
 
     /** @return list<string> */
-    private static function violationCodesFromFixture(): array
+    private static function codesFromFixture(): array
     {
         $path = \dirname(__DIR__) . '/Fixtures/Channels/declared.txt';
         $contents = file_get_contents($path);
@@ -352,7 +352,7 @@ final class ChannelUniverseCoverageTest extends TestCase
 
             $key = strtok($line, ' ');
             \assert(\is_string($key));
-            $codes[] = ViolationChannel::fromKey($key)->violationCode;
+            $codes[] = FindingChannel::fromKey($key)->code;
         }
 
         return $codes;

@@ -65,7 +65,7 @@ final class ChannelOrderFixtureDriftTest extends TestCase
         $codes = [];
 
         foreach ($universe->channels() as $channel) {
-            $codes[] = $channel->violationCode;
+            $codes[] = $channel->code;
         }
 
         return $codes;

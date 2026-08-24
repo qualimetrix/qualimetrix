@@ -228,7 +228,7 @@ $classCount = $nsMetrics->get('classCount.sum'); // int
 **Advantages of a unified API:**
 - Single `MetricBag` type for all levels — simpler to work with
 - Naming convention `{metric}.{strategy}` — clear which aggregation was applied
-- SymbolPath is already used for violations — reuse
+- SymbolPath is already used for findings — reuse
 
 ### AggregationStrategy (Enum)
 
@@ -299,9 +299,9 @@ not callables in `App\Payment\Gateway` or other sub-namespaces.
 core metric system. It is a presentation concern, computed on the client side (e.g., JS in the HTML report)
 for drill-down navigation and "worst sub-namespaces" views.
 
-**Rationale:** Rules and violations target specific symbols. A violation on `App\Payment` means that
+**Rationale:** Rules and findings target specific symbols. A finding on `App\Payment` means that
 namespace itself has a problem. Hierarchical roll-up would mask issues (averaging hides bad sub-namespaces)
-and produce non-actionable violations (e.g., "namespace too large" when it is properly decomposed).
+and produce non-actionable findings (e.g., "namespace too large" when it is properly decomposed).
 
 ---
 
@@ -391,7 +391,7 @@ whose one-part branch is its own because selection deliberately matches a produc
 name too. `@qmx-threshold` is absent on purpose: it addresses a rule, not a channel.
 
 **Forms:**
-- a one-part `NameSelector`, read against the channel's violation code
+- a one-part `NameSelector`, read against the channel's finding code
 - `ruleName#violationCode` — both halves exact, no `*` in either. It is what
   distinguishes `a#x` from `b#x`, and the only way to address a channel whose
   `ruleName` half is not the rule that produces it
@@ -400,21 +400,21 @@ name too. `@qmx-threshold` is absent on purpose: it addresses a rule, not a chan
 - `tryParse(string $raw): ?self` — either form, or `null`
 - `looksLikePair(string $raw): bool` — whether the text used the separator at all,
   so a parse failure can be explained rather than merely reported
-- `matches(ViolationChannel $channel): bool`
-- `matchesNames(string $ruleName, string $violationCode): bool` — the same question for
+- `matches(FindingChannel $channel): bool`
+- `matchesNames(string $ruleName, string $code): bool` — the same question for
   callers holding the halves as strings, so the inline suppression filter does not build a
   channel per finding
-- `exactChannel(): ?ViolationChannel` — the pair form's channel
-- `target(): NameSelector|ViolationChannel` — the two forms as one total answer
+- `exactChannel(): ?FindingChannel` — the pair form's channel
+- `target(): NameSelector|FindingChannel` — the two forms as one total answer
 
 ### RuleSelector
 
 The single selection policy used by rule execution, expensive prerequisite phases, and CLI
 selector validation. It distinguishes a registered **producer rule** from the full
-`ViolationChannel` values that producer emits; their names need not share a prefix.
+`FindingChannel` values that producer emits; their names need not share a prefix.
 
 A one-part selector (`X` or `X.*`) can address the producer name, a channel's
-`ruleName`, or its `violationCode`. The explicit `ruleName#violationCode` form
+`ruleName`, or its `code`. The explicit `ruleName#violationCode` form
 addresses both channel components, and both halves are exact. `--only-rule=computed.health` therefore selects every channel produced by
 that rule, while `--only-rule=health.complexity` selects only that computed channel and
 still starts its `computed.health` producer.
@@ -440,7 +440,7 @@ carries no methods. `qmx rules --group` is its sole consumer, reading
 | `Cohesion`        | LCOM                                                   |
 | `Maintainability` | Maintainability Index                                  |
 | `Coupling`        | Instability, CBO, Distance                             |
-| `Architecture`    | Layer Policy Violations, Circular Dependencies         |
+| `Architecture`    | Layer Policy Findings, Circular Dependencies           |
 | `CodeSmell`       | Boolean Arguments, Debug Code, etc.                    |
 | `Security`        | Hardcoded Credentials, Sensitive Parameter             |
 | `Duplication`     | Code Duplication                                       |
@@ -498,25 +498,24 @@ required. Entry data can never replace the caller-supplied container path.
 
 ## Finding Values and Filtering
 
-Finding owns `Violation`, `Severity`, `Location`, `OccurrenceKey`,
-`ViolationChannel`, channel declarations, filtering contracts, and rule-exclusion
+Finding owns `Finding`, `Severity`, `Location`, `OccurrenceKey`,
+`FindingChannel`, channel declarations, filtering contracts, and rule-exclusion
 capture. Their current definitions and lifecycle are documented in
 [`Analysis/Finding`](../Analysis/Finding/README.md).
 
-### Violation
+### Finding
 
-A rule violation.
+A rule finding.
 
 **Fields:**
 - `location: Location`
 - `symbolPath: SymbolPath`
 - `ruleName: string`
-- `violationCode: string` — stable machine identifier for baseline hashing
+- `code: string` — stable machine identifier for baseline hashing
 - `message: string`
 - `severity: Severity`
 - `metricValue: int|float|null` — metric value (for reports)
-- `level: ?SymbolLevel` — level the hierarchical rule was analysing (null for non-hierarchical rules); the finding's own level is carried by its `subject`
-- `relatedLocations: list<Location>` — additional locations related to this violation (e.g., other occurrences of duplicated code)
+- `relatedLocations: list<Location>` — additional locations related to this finding (e.g., other occurrences of duplicated code)
 - `recommendation: ?string` — human-readable message for summary/detail formatters (e.g., "Cyclomatic complexity: 15 (threshold: 10) — too many code paths")
 - `threshold: int|float|null` — threshold that was exceeded (for programmatic comparison)
 - `dependencyTarget: ?SymbolPath` — target symbol of the offending dependency edge (for dependency-based rules such as `architecture.layer-violation`); target presence defines whether an edge exists
@@ -525,7 +524,7 @@ A rule violation.
 
 **Methods:**
 - `getFingerprint(): string` — formatter identity built from channel, exact subject, optional occurrence, and optional edge. No-edge and fully typed edge bytes retain their established forms; a target-only edge uses the collision-safe `untyped-edge:<byte-length>:<canonical-target>` component. Baseline identity is owned separately by `BaselineIdentity`.
-- `channel(): ViolationChannel` — the `(ruleName, violationCode)` pair this violation was emitted on
+- `channel(): FindingChannel` — the `(ruleName, code)` pair this finding was emitted on
 
 ### OccurrenceKey
 
@@ -542,9 +541,9 @@ The type depends only on PHP scalar/JSON/hash primitives and
 kind/evidence separation, digest shape, and an empty-kind rejection. Baseline identity and
 serialization are integration consumers, not owners of this contract.
 
-### ViolationChannel
+### FindingChannel
 
-The address of a *kind* of finding: a `(ruleName, violationCode)` pair that can appear on an emitted `Violation`.
+The address of a *kind* of finding: a `(ruleName, code)` pair that can appear on an emitted `Finding`.
 
 Channels are **not** in bijection with rule classes, which is why nothing downstream may key on a rule class or on a rule name alone:
 
@@ -552,17 +551,17 @@ Channels are **not** in bijection with rule classes, which is why nothing downst
 - one rule class can emit one channel per configured definition (`ComputedMetricRule`, one per `health.*` / `computed.*` metric), each with its own thresholds and inversion;
 - one rule class can emit one channel whose boundaries depend on the symbol (`LongParameterListRule`).
 
-**Fields:** `ruleName: string`, `violationCode: string` (both non-empty).
+**Fields:** `ruleName: string`, `code: string` (both non-empty).
 
 **Methods:**
 - `equals(self $other): bool`
 - `toKey(): string` — stable string form, suitable as an array key
 
-Read the channel of an emitted finding via `Violation::channel()`. There is deliberately no `ViolationChannel::fromViolation()` factory — the pair would form a dependency cycle (caught by `architecture.circular-dependency` during dogfooding), and the direction that survives is the one where the richer type knows the primitive.
+Read the channel of an emitted finding via `Finding::channel()`. There is deliberately no `FindingChannel::fromFinding()` factory — the pair would form a dependency cycle (caught by `architecture.circular-dependency` during dogfooding), and the direction that survives is the one where the richer type knows the primitive.
 
 ### ChannelShape (Enum)
 
-What a channel's `Violation::$metricValue` means for baseline purposes — never a rule's options or its severity ladder.
+What a channel's `Finding::$metricValue` means for baseline purposes — never a rule's options or its severity ladder.
 
 | Value        | Description                                                                                                   |
 | ------------ | ------------------------------------------------------------------------------------------------------------- |
@@ -583,29 +582,29 @@ The two facts a channel declares for baseline purposes: its shape, and — for a
 
 A channel that declares no `ChannelDeclaration` at all is not an error — it is simply not baselineable. Finding owns declaration discovery and the channel registry, including the run-time `computed.*` / `health.*` family.
 
-### ViolationFilterInterface
+### FindingFilterInterface
 
 Foundation for baseline and suppression.
 
 **Methods:**
-- `shouldInclude(Violation $violation): bool` — whether to include violation in the report
+- `shouldInclude(Finding $finding): bool` — whether to include finding in the report
 
 ### PathExclusionFilter
 
-Suppresses violations whose file path matches configured exclusion patterns (the global `exclude_paths` / `--exclude-path` mechanism). Violations without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. Violations on a channel its owner declared **project-scoped** (e.g. `architecture.*`) are always exempt for the same reason as `NamespaceExclusionFilter` below — the exemption is declared per channel via `ChannelFileScope`, not derived from the rule name's spelling.
+Suppresses findings whose file path matches configured exclusion patterns (the global `exclude_paths` / `--exclude-path` mechanism). Findings without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. Findings on a channel its owner declared **project-scoped** (e.g. `architecture.*`) are always exempt for the same reason as `NamespaceExclusionFilter` below — the exemption is declared per channel via `ChannelFileScope`, not derived from the rule name's spelling.
 
 **Constructor:** `__construct(PathMatcher $pathMatcher)`
 
 ### NamespaceExclusionFilter
 
-Suppresses violations whose symbol namespace matches configured exclusion patterns (the global `exclude_namespaces` / `--exclude-namespace` mechanism). `architecture.*` rule violations (e.g., `architecture.layer-violation`, `architecture.circular-dependency`) are always exempt — a layer-policy violation is not a metric, so a namespace exclusion aimed at quieting noisy metrics must not double as a silent way to disable architecture enforcement. The exemption is **declared per channel**, not derived from the `architecture.` spelling: each capability publishes its project-scoped channel keys (`LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS`, `CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS`) and the filter consults `ChannelFileScope`. A channel nobody declared is file-scoped, which is the right default for the open `computed.*` vocabulary. Occurrence-style violations (code-smell, security) carry a file symbol path whose namespace is `null`; the filter falls back to the declaring namespace on `Violation::$subject` so those findings are still suppressible per namespace.
+Suppresses findings whose symbol namespace matches configured exclusion patterns (the global `exclude_namespaces` / `--exclude-namespace` mechanism). `architecture.*` rule findings (e.g., `architecture.layer-violation`, `architecture.circular-dependency`) are always exempt — a layer-policy finding is not a metric, so a namespace exclusion aimed at quieting noisy metrics must not double as a silent way to disable architecture enforcement. The exemption is **declared per channel**, not derived from the `architecture.` spelling: each capability publishes its project-scoped channel keys (`LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS`, `CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS`) and the filter consults `ChannelFileScope`. A channel nobody declared is file-scoped, which is the right default for the open `computed.*` vocabulary. Occurrence-style findings (code-smell, security) carry a file symbol path whose namespace is `null`; the filter falls back to the declaring namespace on `Finding::$subject` so those findings are still suppressible per namespace.
 
 **Constructor:** `__construct(NamespaceMatcher $namespaceMatcher)`
 
 ### RuleExclusionCaptureHolder
 
 Finding-owned static holder controlling whether `Analysis\Finding\RuleExecution`
-retains individual `Violation` objects suppressed by per-rule
+retains individual `Finding` objects suppressed by per-rule
 `exclude_namespaces` / `exclude_paths`, rather than only their counts. It
 defaults to `false`; `Infrastructure\Console\AnalysisRuntimeConfigurator`
 sets it from `--show-suppressed` before the analysis pipeline runs. This keeps
@@ -709,14 +708,14 @@ that controls with different declaration scopes remain distinct.
 Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore complexity.wmc Reason`). The authored text names a channel exactly, or `X.*` for its strict descendants; a bare prefix such as `complexity` is rejected.
 
 **Fields:**
-- `rule: string` — the authored text: a fully qualified `violationCode`, `X.*`, or `*` for "no rule filter"
+- `rule: string` — the authored text: a fully qualified `code`, `X.*`, or `*` for "no rule filter"
 - `reason: ?string` — optional reason for suppression
 - `line: int` — line number of the suppression tag
 - `type: SuppressionType` — scope of suppression
 - `endLine: ?int` — end line for scoped suppressions
 
 **Methods:**
-- `matches(string $violationCode): bool` — checks if suppression applies to a violation code
+- `matches(string $code): bool` — checks if suppression applies to a finding code
 - `target(): SuppressionTarget` — what the directive filters on: a `ChannelSelector`, or the
   explicit "no rule filter" state that `@qmx-ignore *` and a bare `@qmx-ignore-file` carry
 
@@ -728,7 +727,7 @@ Defines the scope of a suppression tag.
 | ---------- | ------------------------------------------------ |
 | `Symbol`   | Suppress at symbol level (class/method docblock) |
 | `NextLine` | Suppress the next line only                      |
-| `File`     | Suppress all matching violations in entire file  |
+| `File`     | Suppress all matching findings in entire file    |
 
 ### ThresholdOverride
 
@@ -835,7 +834,7 @@ Determines whether a namespace belongs to the project (not an external dependenc
 2. [x] RuleCategory enum
 3. [x] Location VO
 4. [x] SymbolPath VO
-5. [x] Violation VO
+5. [x] Finding VO
 6. [x] MetricBag VO
 7. [x] AggregationStrategy enum
 8. [x] SymbolLevel enum
@@ -845,7 +844,7 @@ Determines whether a namespace belongs to the project (not an external dependenc
 13. [x] RuleInterface
 14. [x] FileParserInterface
 15. [x] NamespaceDetectorInterface
-16. [x] ViolationFilterInterface
+16. [x] FindingFilterInterface
 17. [x] ParseException
 18. [x] Unit tests
 
@@ -854,7 +853,7 @@ Determines whether a namespace belongs to the project (not an external dependenc
 - All contracts and VOs are created
 - Unit tests for SymbolPath::toCanonical()
 - Unit tests for MetricBag::merge()
-- Unit tests for Violation::getFingerprint()
+- Unit tests for Finding::getFingerprint()
 - Unit tests for MetricDefinition::aggregatedName()
 - PHPStan level 8 with no errors
 
@@ -869,7 +868,7 @@ documentation.
 ## Edge Cases
 
 - Location with null line — display only file
-- `Location::none()` — architectural violations without a file; formatters must check `isNone()`
+- `Location::none()` — architectural findings without a file; formatters must check `isNone()`
 - Global namespace — empty string
 - SymbolPath with null namespace — starts with `::` for global functions
 - MetricBag::get() for non-existent metric — null

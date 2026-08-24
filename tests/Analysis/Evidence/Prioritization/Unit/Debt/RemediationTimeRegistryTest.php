@@ -14,9 +14,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -61,7 +61,7 @@ final class RemediationTimeRegistryTest extends TestCase
      * and every registered rule declares its own minutes on its own class
      * (see {@see RuleRemediationMinutesCoverageTest}). A name absent from the
      * injected map is not a legitimately unknown rule to silently default
-     * for — it means a violation carries a rule name no rule declared.
+     * for — it means a finding carries a rule name no rule declared.
      */
     #[Test]
     public function itThrowsForARuleNameNotInTheInjectedMap(): void
@@ -83,28 +83,28 @@ final class RemediationTimeRegistryTest extends TestCase
     }
 
     #[Test]
-    public function itUsesBaseMinutesForViolationWithoutMetricValue(): void
+    public function itUsesBaseMinutesForFindingWithoutMetricValue(): void
     {
-        $violation = $this->createViolation('complexity.cyclomatic');
+        $finding = $this->createFinding('complexity.cyclomatic');
 
-        self::assertSame(30, $this->registry->getMinutesForViolation($violation));
+        self::assertSame(30, $this->registry->getMinutesForFinding($finding));
     }
 
     #[Test]
-    public function itUsesBaseMinutesForViolationWithoutThreshold(): void
+    public function itUsesBaseMinutesForFindingWithoutThreshold(): void
     {
-        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 25);
+        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 25);
 
-        self::assertSame(30, $this->registry->getMinutesForViolation($violation));
+        self::assertSame(30, $this->registry->getMinutesForFinding($finding));
     }
 
     #[Test]
     public function itGivesBaseDebtForMinorCcnOvershoot(): void
     {
         // CCN=21, threshold=20: ln(1.05)=0.049 < 1 → base * max(1, 0.049) = 30 * 1 = 30
-        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 21, threshold: 20);
+        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 21, threshold: 20);
 
-        $minutes = $this->registry->getMinutesForViolation($violation);
+        $minutes = $this->registry->getMinutesForFinding($finding);
 
         self::assertSame(30, $minutes);
     }
@@ -113,9 +113,9 @@ final class RemediationTimeRegistryTest extends TestCase
     public function itGivesBaseDebtForModerateCcnOvershoot(): void
     {
         // CCN=50, threshold=20: ln(2.5)=0.916 < 1 → base * max(1, 0.916) = 30 * 1 = 30
-        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 50, threshold: 20);
+        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 50, threshold: 20);
 
-        $minutes = $this->registry->getMinutesForViolation($violation);
+        $minutes = $this->registry->getMinutesForFinding($finding);
 
         self::assertSame(30, $minutes);
     }
@@ -124,9 +124,9 @@ final class RemediationTimeRegistryTest extends TestCase
     public function itScalesDebtAboveBaseForLargeOvershoot(): void
     {
         // CCN=60, threshold=20: ln(3.0)=1.099 > 1 → 30 * 1.099 ≈ 33
-        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 60, threshold: 20);
+        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 60, threshold: 20);
 
-        $minutes = $this->registry->getMinutesForViolation($violation);
+        $minutes = $this->registry->getMinutesForFinding($finding);
 
         self::assertSame(33, $minutes);
     }
@@ -135,9 +135,9 @@ final class RemediationTimeRegistryTest extends TestCase
     public function itGivesLargeDebtForExtremeOvershoot(): void
     {
         // NPath=1000000, threshold=200: ln(5000)=8.517 → 30 * 8.517 ≈ 256
-        $violation = $this->createViolation('complexity.npath', metricValue: 1000000, threshold: 200);
+        $finding = $this->createFinding('complexity.npath', metricValue: 1000000, threshold: 200);
 
-        $minutes = $this->registry->getMinutesForViolation($violation);
+        $minutes = $this->registry->getMinutesForFinding($finding);
 
         self::assertSame(256, $minutes);
     }
@@ -156,9 +156,9 @@ final class RemediationTimeRegistryTest extends TestCase
         );
 
         // MI=30, threshold=50 (inverted): ratio=50/30=1.667, ln(1.667)=0.511, max(1, 0.511)=1 → 60*1=60
-        $violation = $this->createViolation('maintainability.index', metricValue: 30, threshold: 50);
+        $finding = $this->createFinding('maintainability.index', metricValue: 30, threshold: 50);
 
-        $minutes = $registry->getMinutesForViolation($violation);
+        $minutes = $registry->getMinutesForFinding($finding);
 
         self::assertSame(60, $minutes);
     }
@@ -174,9 +174,9 @@ final class RemediationTimeRegistryTest extends TestCase
         );
 
         // Type coverage=40, threshold=80 (inverted): ratio=80/40=2, ln(2)=0.693, max(1, 0.693)=1 → 15*1=15
-        $violation = $this->createViolation('design.param-type-coverage', metricValue: 40, threshold: 80);
+        $finding = $this->createFinding('design.param-type-coverage', metricValue: 40, threshold: 80);
 
-        $minutes = $registry->getMinutesForViolation($violation);
+        $minutes = $registry->getMinutesForFinding($finding);
 
         self::assertSame(15, $minutes);
     }
@@ -198,9 +198,9 @@ final class RemediationTimeRegistryTest extends TestCase
         );
 
         // health score=30 (below threshold=50): ratio=50/30=1.667, ln=0.511, max(1, 0.511)=1 → 15*1=15
-        $violation = $this->createViolation(ComputedMetricChannelFamily::PRODUCER_RULE_NAME, metricValue: 30, threshold: 50);
+        $finding = $this->createFinding(ComputedMetricChannelFamily::PRODUCER_RULE_NAME, metricValue: 30, threshold: 50);
 
-        $minutes = $registry->getMinutesForViolation($violation);
+        $minutes = $registry->getMinutesForFinding($finding);
 
         self::assertSame(15, $minutes);
     }
@@ -217,9 +217,9 @@ final class RemediationTimeRegistryTest extends TestCase
         );
 
         // Normal computed metric value > threshold: ratio=100/50=2, ln(2)=0.693, max(1, 0.693)=1 → 15*1=15
-        $violation = $this->createViolation(ComputedMetricChannelFamily::PRODUCER_RULE_NAME, metricValue: 100, threshold: 50);
+        $finding = $this->createFinding(ComputedMetricChannelFamily::PRODUCER_RULE_NAME, metricValue: 100, threshold: 50);
 
-        $minutes = $registry->getMinutesForViolation($violation);
+        $minutes = $registry->getMinutesForFinding($finding);
 
         self::assertSame(15, $minutes);
     }
@@ -227,35 +227,35 @@ final class RemediationTimeRegistryTest extends TestCase
     #[Test]
     public function itUsesBaseMinutesForZeroThreshold(): void
     {
-        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 25, threshold: 0);
+        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 25, threshold: 0);
 
-        self::assertSame(30, $this->registry->getMinutesForViolation($violation));
+        self::assertSame(30, $this->registry->getMinutesForFinding($finding));
     }
 
     #[Test]
     public function itUsesBaseMinutesForZeroMetricValue(): void
     {
-        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 0, threshold: 20);
+        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 0, threshold: 20);
 
-        self::assertSame(30, $this->registry->getMinutesForViolation($violation));
+        self::assertSame(30, $this->registry->getMinutesForFinding($finding));
     }
 
     #[Test]
     public function itUsesBaseMinutesWhenMetricEqualsThreshold(): void
     {
         // Ratio = 1, ln(1) = 0 → base fallback
-        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 20, threshold: 20);
+        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 20, threshold: 20);
 
-        self::assertSame(30, $this->registry->getMinutesForViolation($violation));
+        self::assertSame(30, $this->registry->getMinutesForFinding($finding));
     }
 
     #[Test]
     public function itGivesBaseMinutesForMinorOvershootOnSmallRule(): void
     {
         // Small overshoot: ratio=6/5=1.2, ln(1.2)=0.182, max(1, 0.182)=1 → 5*1=5
-        $violation = $this->createViolation('code-smell.debug-code', metricValue: 6, threshold: 5);
+        $finding = $this->createFinding('code-smell.debug-code', metricValue: 6, threshold: 5);
 
-        $minutes = $this->registry->getMinutesForViolation($violation);
+        $minutes = $this->registry->getMinutesForFinding($finding);
 
         self::assertSame(5, $minutes);
     }
@@ -268,7 +268,7 @@ final class RemediationTimeRegistryTest extends TestCase
      * the policy itself, independent of any specific rule.
      */
     #[Test]
-    public function itDoesNotScaleAViolationOnAChannelWhoseDeclarationCarriesNoDirection(): void
+    public function itDoesNotScaleAFindingOnAChannelWhoseDeclarationCarriesNoDirection(): void
     {
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry([
@@ -279,9 +279,9 @@ final class RemediationTimeRegistryTest extends TestCase
 
         // Base for code-smell.goto is 15. A huge overshoot would scale to
         // far more than 15 if direction were assumed rather than read.
-        $violation = $this->createViolation('code-smell.goto', metricValue: 1000, threshold: 1);
+        $finding = $this->createFinding('code-smell.goto', metricValue: 1000, threshold: 1);
 
-        self::assertSame(15, $registry->getMinutesForViolation($violation));
+        self::assertSame(15, $registry->getMinutesForFinding($finding));
     }
 
     /**
@@ -292,16 +292,16 @@ final class RemediationTimeRegistryTest extends TestCase
      * declaration: not scaled.
      */
     #[Test]
-    public function itDoesNotScaleAViolationOnAChannelWithNoDeclarationAtAll(): void
+    public function itDoesNotScaleAFindingOnAChannelWithNoDeclarationAtAll(): void
     {
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry(),
             StubRemediationMinutes::withRealValues(),
         );
 
-        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 1000, threshold: 1);
+        $finding = $this->createFinding('complexity.cyclomatic', metricValue: 1000, threshold: 1);
 
-        self::assertSame(30, $registry->getMinutesForViolation($violation));
+        self::assertSame(30, $registry->getMinutesForFinding($finding));
     }
 
     /**
@@ -322,22 +322,22 @@ final class RemediationTimeRegistryTest extends TestCase
             StubRemediationMinutes::withRealValues(),
         );
 
-        $violation = $this->createViolation('coupling.class-rank', metricValue: 0.9, threshold: 0.01);
+        $finding = $this->createFinding('coupling.class-rank', metricValue: 0.9, threshold: 0.01);
 
-        self::assertSame(30, $registry->getMinutesForViolation($violation));
+        self::assertSame(30, $registry->getMinutesForFinding($finding));
     }
 
-    private function createViolation(
+    private function createFinding(
         string $ruleName,
         int|float|null $metricValue = null,
         int|float|null $threshold = null,
-    ): Violation {
-        return new Violation(
+    ): Finding {
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Test.php'), 1),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'TestClass'), RelativePath::fromString('src/Test.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App', 'TestClass'),
             ruleName: $ruleName,
-            violationCode: $ruleName,
+            code: $ruleName,
             message: 'Test violation',
             severity: Severity::Warning,
             metricValue: $metricValue,

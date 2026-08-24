@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Stringable;
 
 /**
@@ -14,7 +14,7 @@ use Stringable;
  * It is {@see NameSelector} plus the one thing a name alone cannot say. Two
  * forms:
  *
- * - **one part** — a {@see NameSelector} read against the channel's violation
+ * - **one part** — a {@see NameSelector} read against the channel's finding
  *   code: `health.cohesion` for that channel exactly, `health.*` for its
  *   strict descendants;
  * - **two parts** — `ruleName#violationCode`, both halves exact. It is the
@@ -37,7 +37,7 @@ final readonly class ChannelSelector implements Stringable
     private function __construct(
         private string $raw,
         private ?NameSelector $selector,
-        private ?ViolationChannel $channel,
+        private ?FindingChannel $channel,
     ) {}
 
     /**
@@ -45,7 +45,7 @@ final readonly class ChannelSelector implements Stringable
      */
     public static function tryParse(string $raw): ?self
     {
-        if (!str_contains($raw, ViolationChannel::SEPARATOR)) {
+        if (!str_contains($raw, FindingChannel::SEPARATOR)) {
             $selector = NameSelector::tryParse($raw);
 
             return $selector === null ? null : new self($raw, $selector, null);
@@ -59,31 +59,31 @@ final readonly class ChannelSelector implements Stringable
     /** Whether the authored text used the two-part separator at all. */
     public static function looksLikePair(string $raw): bool
     {
-        return str_contains($raw, ViolationChannel::SEPARATOR);
+        return str_contains($raw, FindingChannel::SEPARATOR);
     }
 
-    public function matches(ViolationChannel $channel): bool
+    public function matches(FindingChannel $channel): bool
     {
-        return $this->matchesNames($channel->ruleName, $channel->violationCode);
+        return $this->matchesNames($channel->ruleName, $channel->code);
     }
 
     /**
      * The same question asked of the two halves separately, for callers that
      * hold them as strings.
      *
-     * They are not asked to build a {@see ViolationChannel} first: the inline
+     * They are not asked to build a {@see FindingChannel} first: the inline
      * suppression filter asks this once per directive per finding, and the
      * constructor would both allocate on that path and refuse a half no
      * producer can emit anyway — turning "does not match" into an exception.
      */
-    public function matchesNames(string $ruleName, string $violationCode): bool
+    public function matchesNames(string $ruleName, string $code): bool
     {
         if ($this->channel !== null) {
             return $this->channel->ruleName === $ruleName
-                && $this->channel->violationCode === $violationCode;
+                && $this->channel->code === $code;
         }
 
-        return $this->selector?->matches($violationCode) === true;
+        return $this->selector?->matches($code) === true;
     }
 
     /**
@@ -91,7 +91,7 @@ final readonly class ChannelSelector implements Stringable
      * form — whose expansion is a question for the channel universe rather
      * than for the text.
      */
-    public function exactChannel(): ?ViolationChannel
+    public function exactChannel(): ?FindingChannel
     {
         return $this->channel;
     }
@@ -105,7 +105,7 @@ final readonly class ChannelSelector implements Stringable
      * prove to a reader, or to a static analyser, that the second `null` check
      * is unreachable.
      */
-    public function target(): NameSelector|ViolationChannel
+    public function target(): NameSelector|FindingChannel
     {
         return $this->channel ?? $this->selector
             ?? throw new LogicException('A ChannelSelector is always one of its two forms.');
@@ -121,9 +121,9 @@ final readonly class ChannelSelector implements Stringable
      * Both halves must be exact names, so the pair is validated through the
      * same grammar the one-part form uses and then refused the group suffix.
      */
-    private static function parsePair(string $raw): ?ViolationChannel
+    private static function parsePair(string $raw): ?FindingChannel
     {
-        $parts = explode(ViolationChannel::SEPARATOR, $raw);
+        $parts = explode(FindingChannel::SEPARATOR, $raw);
         if (\count($parts) !== 2) {
             return null;
         }
@@ -135,6 +135,6 @@ final readonly class ChannelSelector implements Stringable
             }
         }
 
-        return new ViolationChannel($parts[0], $parts[1]);
+        return new FindingChannel($parts[0], $parts[1]);
     }
 }

@@ -6,7 +6,7 @@ namespace Qualimetrix\Reporting\Formatter\Summary;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
@@ -23,7 +23,7 @@ final class OffenderListRenderer
     private const float OFFENDER_ERR_THRESHOLD = 30.0;
 
     public function __construct(
-        private readonly ViolationFilter $filter,
+        private readonly FindingFilter $filter,
         private readonly WorstClassDrillDown $namespaceDrillDown,
     ) {}
 
@@ -89,7 +89,7 @@ final class OffenderListRenderer
     public function resolveWorstClasses(Report $report, FormatterContext $context): array
     {
         if ($context->namespace !== null && $report->metrics !== null) {
-            return $this->namespaceDrillDown->buildWorstClasses($report->metrics, $context->namespace, $report->violations);
+            return $this->namespaceDrillDown->buildWorstClasses($report->metrics, $context->namespace, $report->findings);
         }
 
         return $this->filter->filterWorstOffenders($report->worstClasses, $context);

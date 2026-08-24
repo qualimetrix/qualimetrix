@@ -10,13 +10,13 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\ChannelPresentationView;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -56,7 +56,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * Each rule's `channelDeclarations()` already returns full channel keys
  * (`ruleName#violationCode`, per {@see ChannelDeclarationReader}), so this pass
  * does no pairing of its own. It enforces two integrity properties instead:
- * no key declared twice, and no violation code declared by two different
+ * no key declared twice, and no finding code declared by two different
  * producers. The second is what makes the reverse lookup
  * ({@see \Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface::producerOf()})
  * a function at all — without it, a "did you mean" answer would depend on
@@ -136,8 +136,8 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         $declarations = [];
         /** @var array<string, list<string>> $channelKeysByProducer */
         $channelKeysByProducer = [];
-        /** @var array<string, string> $producerByViolationCode */
-        $producerByViolationCode = [];
+        /** @var array<string, string> $producerByCode */
+        $producerByCode = [];
 
         foreach ($container->getDefinitions() as $id => $definition) {
             if (isset($ruleClasses[$id])) {
@@ -145,7 +145,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                     $ruleClasses[$id],
                     $declarations,
                     $channelKeysByProducer,
-                    $producerByViolationCode,
+                    $producerByCode,
                     $minutesByRule,
                     $shapeByRule,
                 );
@@ -158,7 +158,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                     $validatorClasses[$id],
                     $declarations,
                     $channelKeysByProducer,
-                    $producerByViolationCode,
+                    $producerByCode,
                     $minutesByRule,
                     $shapeByRule,
                 );
@@ -231,7 +231,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
      * @param class-string $class
      * @param array<string, ChannelDeclaration> $declarations
      * @param array<string, list<string>> $channelKeysByProducer
-     * @param array<string, string> $producerByViolationCode
+     * @param array<string, string> $producerByCode
      * @param array<string, int> $minutesByRule
      * @param array<string, ChannelShape> $shapeByRule
      */
@@ -239,7 +239,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         string $class,
         array &$declarations,
         array &$channelKeysByProducer,
-        array &$producerByViolationCode,
+        array &$producerByCode,
         array &$minutesByRule,
         array $shapeByRule,
     ): void {
@@ -256,29 +256,29 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 
             $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shapeByRule[$producerRuleName], $declaration);
 
-            $channel = ViolationChannel::fromKey($key);
-            $violationCode = $channel->violationCode;
+            $channel = FindingChannel::fromKey($key);
+            $code = $channel->code;
 
             // A channel's own ruleName half does not always equal its producer's
             // NAME: the architecture and annotation diagnostics are emitted under
             // their own identity (e.g. "architecture.coverage") by a producer whose
             // own name is different ("architecture.layer-violation"). Every such
-            // identity a Violation can carry must resolve to a remediation
+            // identity a Finding can carry must resolve to a remediation
             // estimate, so it inherits the declaring rule's minutes here rather
             // than needing its own constant on a class that does not exist.
             $minutesByRule[$channel->ruleName] ??= $minutesByRule[$producerRuleName];
 
-            if (isset($producerByViolationCode[$violationCode])) {
+            if (isset($producerByCode[$code])) {
                 throw new LogicException(\sprintf(
                     'Violation code "%s" is declared by two producers ("%s" and "%s"). A code names exactly one'
                     . ' channel, so that a diagnostic can answer which rule produces it.',
-                    $violationCode,
-                    $producerByViolationCode[$violationCode],
+                    $code,
+                    $producerByCode[$code],
                     $producerRuleName,
                 ));
             }
 
-            $producerByViolationCode[$violationCode] = $producerRuleName;
+            $producerByCode[$code] = $producerRuleName;
             $declarations[$key] = $declaration;
             $channelKeysByProducer[$producerRuleName][] = $key;
         }
@@ -311,7 +311,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
      * @param class-string $class
      * @param array<string, ChannelDeclaration> $declarations
      * @param array<string, list<string>> $channelKeysByProducer
-     * @param array<string, string> $producerByViolationCode
+     * @param array<string, string> $producerByCode
      * @param array<string, int> $minutesByRule
      * @param array<string, ChannelShape> $shapeByRule
      */
@@ -319,7 +319,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         string $class,
         array &$declarations,
         array &$channelKeysByProducer,
-        array &$producerByViolationCode,
+        array &$producerByCode,
         array &$minutesByRule,
         array $shapeByRule,
     ): void {
@@ -361,12 +361,12 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         }
 
         foreach ($validatorDeclarations as $key => $declaration) {
-            $this->assertUnclaimed($key, $class, $declarations, $producerByViolationCode, $producerRuleName);
+            $this->assertUnclaimed($key, $class, $declarations, $producerByCode, $producerRuleName);
             $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shape, $declaration);
 
-            $channel = ViolationChannel::fromKey($key);
+            $channel = FindingChannel::fromKey($key);
             $minutesByRule[$channel->ruleName] ??= $minutesByRule[$producerRuleName];
-            $producerByViolationCode[$channel->violationCode] = $producerRuleName;
+            $producerByCode[$channel->code] = $producerRuleName;
             $declarations[$key] = $declaration->asConfigurationError();
             $channelKeysByProducer[$producerRuleName][] = $key;
         }
@@ -406,13 +406,13 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 
     /**
      * @param array<string, ChannelDeclaration> $declarations
-     * @param array<string, string> $producerByViolationCode
+     * @param array<string, string> $producerByCode
      */
     private function assertUnclaimed(
         string $key,
         string $class,
         array $declarations,
-        array $producerByViolationCode,
+        array $producerByCode,
         string $producerRuleName,
     ): void {
         if (isset($declarations[$key])) {
@@ -423,14 +423,14 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
             ));
         }
 
-        $violationCode = ViolationChannel::fromKey($key)->violationCode;
+        $code = FindingChannel::fromKey($key)->code;
 
-        if (isset($producerByViolationCode[$violationCode])) {
+        if (isset($producerByCode[$code])) {
             throw new LogicException(\sprintf(
                 'Violation code "%s" is declared by two producers ("%s" and "%s"). A code names exactly one'
                 . ' channel, so that a diagnostic can answer which rule produces it.',
-                $violationCode,
-                $producerByViolationCode[$violationCode],
+                $code,
+                $producerByCode[$code],
                 $producerRuleName,
             ));
         }

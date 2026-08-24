@@ -7,8 +7,8 @@ namespace Qualimetrix\Infrastructure\Rule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 
@@ -41,11 +41,11 @@ use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface
  */
 final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleChannelSnapshotFactoryInterface
 {
-    /** @var array<string, string> violation code => producing rule name */
-    private array $staticProducerByViolationCode;
+    /** @var array<string, string> finding code => producing rule name */
+    private array $staticProducerByCode;
 
     /**
-     * @param array<string, ChannelDeclaration> $staticDeclarations keyed by {@see ViolationChannel::toKey()}
+     * @param array<string, ChannelDeclaration> $staticDeclarations keyed by {@see FindingChannel::toKey()}
      * @param array<string, list<string>> $staticChannelKeysByProducer producing rule name => channel keys
      * @param array<string, bool> $thresholdOverrideSupportByRule every registered rule name => its
      *                                                            declared answer, so that the key set doubles
@@ -66,17 +66,17 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
 
         foreach ($staticChannelKeysByProducer as $producerRuleName => $channelKeys) {
             foreach ($channelKeys as $channelKey) {
-                $producerByCode[ViolationChannel::fromKey($channelKey)->violationCode] = $producerRuleName;
+                $producerByCode[FindingChannel::fromKey($channelKey)->code] = $producerRuleName;
             }
         }
 
-        $this->staticProducerByViolationCode = $producerByCode;
+        $this->staticProducerByCode = $producerByCode;
     }
 
-    public function declarationFor(ViolationChannel $channel): ?ChannelDeclaration
+    public function declarationFor(FindingChannel $channel): ?ChannelDeclaration
     {
         if ($channel->ruleName === $this->computedMetricRuleName) {
-            $definition = $this->definitionCatalog->find($channel->violationCode);
+            $definition = $this->definitionCatalog->find($channel->code);
 
             if ($definition === null) {
                 return null;
@@ -111,7 +111,7 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
     public function channelsProducedBy(string $producerRuleName): array
     {
         $channels = array_map(
-            ViolationChannel::fromKey(...),
+            FindingChannel::fromKey(...),
             $this->staticChannelKeysByProducer[$producerRuleName] ?? [],
         );
 
@@ -120,7 +120,7 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
         }
 
         foreach ($this->definitionCatalog->all() as $definition) {
-            $channels[] = new ViolationChannel($producerRuleName, $definition->name);
+            $channels[] = new FindingChannel($producerRuleName, $definition->name);
         }
 
         return $channels;
@@ -142,29 +142,29 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
 
         foreach ($this->staticChannelKeysByProducer as $channelKeys) {
             foreach ($channelKeys as $channelKey) {
-                $channels[] = ViolationChannel::fromKey($channelKey);
+                $channels[] = FindingChannel::fromKey($channelKey);
             }
         }
 
         foreach ($this->definitionCatalog->all() as $definition) {
-            $channels[] = new ViolationChannel($this->computedMetricRuleName, $definition->name);
+            $channels[] = new FindingChannel($this->computedMetricRuleName, $definition->name);
         }
 
         return $channels;
     }
 
-    public function hasChannel(string $violationCode): bool
+    public function hasChannel(string $code): bool
     {
-        return $this->producerOf($violationCode) !== null;
+        return $this->producerOf($code) !== null;
     }
 
-    public function producerOf(string $violationCode): ?string
+    public function producerOf(string $code): ?string
     {
-        if (isset($this->staticProducerByViolationCode[$violationCode])) {
-            return $this->staticProducerByViolationCode[$violationCode];
+        if (isset($this->staticProducerByCode[$code])) {
+            return $this->staticProducerByCode[$code];
         }
 
-        return $this->definitionCatalog->find($violationCode) === null
+        return $this->definitionCatalog->find($code) === null
             ? null
             : $this->computedMetricRuleName;
     }
@@ -178,7 +178,7 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
     {
         return array_values(array_filter(
             $this->channels(),
-            static fn(ViolationChannel $channel): bool => $selector->matches($channel->violationCode),
+            static fn(FindingChannel $channel): bool => $selector->matches($channel->code),
         ));
     }
 

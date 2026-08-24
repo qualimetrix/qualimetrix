@@ -8,24 +8,24 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 
 #[CoversClass(ChannelSelector::class)]
 final class ChannelSelectorTest extends TestCase
 {
     #[Test]
-    public function itReadsAOnePartSelectorAgainstTheViolationCodeAlone(): void
+    public function itReadsAOnePartSelectorAgainstTheCodeAlone(): void
     {
         $selector = ChannelSelector::tryParse('health.cohesion');
 
         self::assertNotNull($selector);
         self::assertInstanceOf(NameSelector::class, $selector->target());
         self::assertNull($selector->exactChannel());
-        self::assertTrue($selector->matches(new ViolationChannel('computed.health', 'health.cohesion')));
-        self::assertTrue($selector->matches(new ViolationChannel('anything.else', 'health.cohesion')));
-        self::assertFalse($selector->matches(new ViolationChannel('computed.health', 'health.coupling')));
+        self::assertTrue($selector->matches(new FindingChannel('computed.health', 'health.cohesion')));
+        self::assertTrue($selector->matches(new FindingChannel('anything.else', 'health.cohesion')));
+        self::assertFalse($selector->matches(new FindingChannel('computed.health', 'health.coupling')));
     }
 
     #[Test]
@@ -34,8 +34,8 @@ final class ChannelSelectorTest extends TestCase
         $selector = ChannelSelector::tryParse('health.*');
 
         self::assertNotNull($selector);
-        self::assertTrue($selector->matches(new ViolationChannel('computed.health', 'health.cohesion')));
-        self::assertFalse($selector->matches(new ViolationChannel('computed.health', 'health')));
+        self::assertTrue($selector->matches(new FindingChannel('computed.health', 'health.cohesion')));
+        self::assertFalse($selector->matches(new FindingChannel('computed.health', 'health')));
     }
 
     #[Test]
@@ -45,10 +45,10 @@ final class ChannelSelectorTest extends TestCase
 
         self::assertNotNull($selector);
         self::assertEquals(
-            new ViolationChannel('computed.health', 'health.cohesion'),
+            new FindingChannel('computed.health', 'health.cohesion'),
             $selector->exactChannel(),
         );
-        self::assertTrue($selector->matches(new ViolationChannel('computed.health', 'health.cohesion')));
+        self::assertTrue($selector->matches(new FindingChannel('computed.health', 'health.cohesion')));
     }
 
     /**
@@ -61,7 +61,7 @@ final class ChannelSelectorTest extends TestCase
         $selector = ChannelSelector::tryParse('computed.health#health.cohesion');
 
         self::assertNotNull($selector);
-        self::assertFalse($selector->matches(new ViolationChannel('coupling.cbo', 'health.cohesion')));
+        self::assertFalse($selector->matches(new FindingChannel('coupling.cbo', 'health.cohesion')));
     }
 
     #[Test]

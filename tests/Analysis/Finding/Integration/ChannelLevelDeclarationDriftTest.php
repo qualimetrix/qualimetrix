@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\Compute
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RuntimeException;
@@ -93,7 +93,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
 
             self::assertSame(
                 ComputedMetricRule::NAME,
-                ViolationChannel::fromKey($channel)->ruleName,
+                FindingChannel::fromKey($channel)->ruleName,
                 \sprintf(
                     'Channel "%s" is observed but absent from %s. Only a user-defined computed metric may be'
                     . ' outside that enumeration; a new static channel must be measured into it.',
@@ -110,7 +110,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         $oracle = array_keys(self::readOracle());
         $staticOracle = array_values(array_filter(
             $oracle,
-            static fn(string $channel): bool => ViolationChannel::fromKey($channel)->ruleName !== ComputedMetricRule::NAME,
+            static fn(string $channel): bool => FindingChannel::fromKey($channel)->ruleName !== ComputedMetricRule::NAME,
         ));
         $declared = self::readDeclaredChannels();
 
@@ -262,9 +262,9 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         foreach (self::cases() as $directory => $case) {
             $channelsInCase = [];
 
-            foreach (self::runCase($directory, $case) as $violation) {
-                $channel = $violation['channel'];
-                $level = self::levelOf($violation['subject']);
+            foreach (self::runCase($directory, $case) as $finding) {
+                $channel = $finding['channel'];
+                $level = self::levelOf($finding['subject']);
                 $observed[$channel][] = $level;
                 $channelsInCase[$channel] = true;
             }
@@ -316,7 +316,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         $declarations = [];
 
         foreach ($channels as $channel) {
-            $declaration = $registry->declarationFor(ViolationChannel::fromKey($channel));
+            $declaration = $registry->declarationFor(FindingChannel::fromKey($channel));
 
             if ($declaration === null) {
                 continue;
@@ -413,7 +413,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
      *
      * `qmx check` prints a valid JSON report even when a file failed to
      * parse, and reports the shortfall in its own `coverage` section rather
-     * than by withholding the document. Reading `violations` and stopping
+     * than by withholding the document. Reading `findings` and stopping
      * there would let a broken fixture quietly narrow what this guard sees,
      * which is the failure mode the whole test exists to rule out. The exit
      * code is checked too, but it cannot carry this alone: two of the ten

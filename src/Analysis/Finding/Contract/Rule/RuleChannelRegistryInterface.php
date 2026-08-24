@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 
 /**
  * Maps a registered producer rule to the channels it can emit.
@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 interface RuleChannelRegistryInterface
 {
     /**
-     * @return list<ViolationChannel>
+     * @return list<FindingChannel>
      */
     public function channelsProducedBy(string $producerRuleName): array;
 }

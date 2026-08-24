@@ -9,14 +9,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -78,7 +78,7 @@ final class DataClassRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -86,7 +86,7 @@ final class DataClassRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeEligibleClasses(AnalysisContext $context): array
     {
@@ -94,22 +94,22 @@ final class DataClassRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
             if ($classInfo->subject?->toSymbolPath()->getType() !== SymbolType::Class_) {
                 continue;
             }
-            $violation = $this->evaluateClass($context, $classInfo);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->evaluateClass($context, $classInfo);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Violation
+    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('Data class findings require an exact class declaration subject');
         $metrics = $context->metrics->get($subject->toSymbolPath());
@@ -139,12 +139,12 @@ final class DataClassRule extends AbstractRule
             return null;
         }
 
-        return new Violation(
+        return new Finding(
             location: new Location($classInfo->file, $classInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf(
                 'Data Class detected: only %d%% of the public interface is behavior (WOC, threshold %d%%) and complexity is low (WMC=%d, threshold %d). Consider encapsulating behavior or using a DTO pattern',
                 $wocValue,
@@ -169,7 +169,7 @@ final class DataClassRule extends AbstractRule
     /**
      * `design.data-class` reports WOC (`$wocValue`) as `metricValue` — see
      * the emission above — the only one of the rule's two gating axes that
-     * reaches the `Violation`: emission requires the disjunction
+     * reaches the `Finding`: emission requires the disjunction
      * `$wocValue > $effectiveOptions->wocThreshold ||
      * $wmcValue > $effectiveOptions->wmcThreshold` to be **false**
      * ({@see evaluateClass()}), i.e. `woc <= wocThreshold` (inclusive).
@@ -185,7 +185,7 @@ final class DataClassRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
         ];
     }
 

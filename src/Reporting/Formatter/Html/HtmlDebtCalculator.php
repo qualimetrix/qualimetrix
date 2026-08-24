@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Html;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 
 /**
  * Computes and aggregates technical debt for HTML tree nodes.
  *
- * Assigns debt from partitioned violations to leaf nodes, then aggregates
- * debt and violation counts bottom-up through the tree hierarchy.
+ * Assigns debt from partitioned findings to leaf nodes, then aggregates
+ * debt and finding counts bottom-up through the tree hierarchy.
  *
  * @internal
  */
@@ -22,21 +22,21 @@ final readonly class HtmlDebtCalculator
     ) {}
 
     /**
-     * Computes debt per node from partitioned violations.
+     * Computes debt per node from partitioned findings.
      *
-     * @param array<string, list<Violation>> $violationsByNode
+     * @param array<string, list<Finding>> $findingsByNode
      * @param array<string, HtmlTreeNode> $nodesByPath
      */
     public function computeDebt(
-        array $violationsByNode,
+        array $findingsByNode,
         array $nodesByPath,
     ): void {
-        foreach ($violationsByNode as $nodePath => $violations) {
+        foreach ($findingsByNode as $nodePath => $findings) {
             if (!isset($nodesByPath[$nodePath])) {
                 continue;
             }
 
-            $debt = $this->debtCalculator->calculate($violations);
+            $debt = $this->debtCalculator->calculate($findings);
             $nodesByPath[$nodePath]->debtMinutes = $debt->totalMinutes;
         }
     }
@@ -46,7 +46,7 @@ final readonly class HtmlDebtCalculator
      */
     public function aggregateBottomUp(HtmlTreeNode $node): int
     {
-        $total = \count($node->violations);
+        $total = \count($node->findings);
 
         foreach ($node->children as $child) {
             $total += $this->aggregateBottomUp($child);
@@ -60,7 +60,7 @@ final readonly class HtmlDebtCalculator
             foreach ($node->children as $child) {
                 $debtSum += $child->debtMinutes;
             }
-            // Node's own debt is already set from its own violations.
+            // Node's own debt is already set from its own findings.
             // Add children's debt.
             $node->debtMinutes += $debtSum;
         }

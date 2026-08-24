@@ -27,19 +27,19 @@ final readonly class ComputedMetricChannelPresentation implements ChannelPresent
         private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
     ) {}
 
-    public function presentationFor(string $violationCode): ?ChannelPresentation
+    public function presentationFor(string $code): ?ChannelPresentation
     {
-        $presentation = $this->inner->presentationFor($violationCode);
+        $presentation = $this->inner->presentationFor($code);
 
         if ($presentation === null) {
             return null;
         }
 
         // A configured computed metric channel is keyed by its definition's own
-        // name (ViolationChannel::$violationCode), so this lookup finds it
+        // name (FindingChannel::$code), so this lookup finds it
         // directly — no comparison against a producer rule name, and so no
         // re-derivation of which name marks the family.
-        $definition = $this->definitionCatalog->find($violationCode);
+        $definition = $this->definitionCatalog->find($code);
 
         if ($definition === null) {
             return $presentation;

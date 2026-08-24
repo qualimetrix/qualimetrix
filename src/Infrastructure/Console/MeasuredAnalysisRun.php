@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 
 /**
  * The run that produced a measured set, alongside the set itself
- * ({@see MeasuredViolationSet::runForPaths()}).
+ * ({@see MeasuredFindingSet::runForPaths()}).
  *
- * `check` only ever needed the violations — {@see MeasuredViolationSet::forPaths()}
+ * `check` only ever needed the findings — {@see MeasuredFindingSet::forPaths()}
  * still returns exactly that. `baseline:explain` needs more from the same
  * run: the `@qmx-threshold` overrides `AnalysisResult` now carries (per the
  * ADR 0017) are a second source of boundary information, and
@@ -24,11 +24,11 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 final readonly class MeasuredAnalysisRun
 {
     /**
-     * @param list<Violation> $violations the measured set ADR 0017 defines — the same list
-     *                                    {@see MeasuredViolationSet::forPaths()} returns
+     * @param list<Finding> $findings the measured set ADR 0017 defines — the same list
+     *                                {@see MeasuredFindingSet::forPaths()} returns
      */
     public function __construct(
         public AnalysisResult $result,
-        public array $violations,
+        public array $findings,
     ) {}
 }

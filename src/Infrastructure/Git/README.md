@@ -2,7 +2,7 @@
 
 ## Overview
 
-Git integration enables filtering violations to show only those related to changed files via the `--report` option.
+Git integration enables filtering findings to show only those related to changed files via the `--report` option.
 
 ## Components
 
@@ -59,29 +59,29 @@ The Infrastructure adapter for Reporting's
 
 ## Use Cases
 
-| Scenario      | --report        | Description                                          |
-| ------------- | --------------- | ---------------------------------------------------- |
-| Full analysis | (not specified) | Analyze everything, show all violations              |
-| Pre-commit    | git:staged      | Full analysis, show violations in staged files only  |
-| PR review     | git:main..HEAD  | Full analysis, show violations in changed files only |
+| Scenario      | --report        | Description                                        |
+| ------------- | --------------- | -------------------------------------------------- |
+| Full analysis | (not specified) | Analyze everything, show all findings              |
+| Pre-commit    | git:staged      | Full analysis, show findings in staged files only  |
+| PR review     | git:main..HEAD  | Full analysis, show findings in changed files only |
 
 ## CLI Options
 
-| Option             | Description                                   |
-| ------------------ | --------------------------------------------- |
-| `--report=<scope>` | Which violations to show in the report        |
-| `--report-strict`  | Show only violations exactly in changed files |
+| Option             | Description                                 |
+| ------------------ | ------------------------------------------- |
+| `--report=<scope>` | Which findings to show in the report        |
+| `--report-strict`  | Show only findings exactly in changed files |
 
 ## Examples
 
 ```bash
-# Pre-commit: show violations in staged files only
+# Pre-commit: show findings in staged files only
 bin/qmx check src/ --report=git:staged
 
-# PR review: show violations in changed files only
+# PR review: show findings in changed files only
 bin/qmx check src/ --report=git:main..HEAD
 
-# Strict mode: only violations in changed files (exclude parent namespaces)
+# Strict mode: only findings in changed files (exclude parent namespaces)
 bin/qmx check src/ --report=git:main..HEAD --report-strict
 
 # Combined with baseline

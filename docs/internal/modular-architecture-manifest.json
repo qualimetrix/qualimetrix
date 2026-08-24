@@ -1621,7 +1621,7 @@
       "consumers": [
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\ViolationFilter",
+          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter",
           "closes_in": null
         },
         {
@@ -2230,7 +2230,7 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Violation",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Finding",
           "closes_in": null
         },
         {
@@ -5052,12 +5052,7 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Violation",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ViolationChannel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\FindingChannel",
           "closes_in": null
         },
         {
@@ -5379,7 +5374,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\DetailedFindingRenderer",
           "closes_in": null
         },
         {
@@ -5408,7 +5403,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Summary\\FindingSummaryRenderer",
           "closes_in": null
         },
         {
@@ -5432,12 +5427,12 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonViolationSection",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFindingSection",
           "closes_in": null
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Summary\\FindingSummaryRenderer",
           "closes_in": null
         }
       ]
@@ -6656,8 +6651,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\ViolationFilterInterface": {
-      "path": "src/Analysis/Finding/Contract/Filter/ViolationFilterInterface.php",
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\FindingFilterInterface": {
+      "path": "src/Analysis/Finding/Contract/Filter/FindingFilterInterface.php",
       "kind": "interface",
       "owner": "Analysis.Finding",
       "visibility": "contract",
@@ -6675,8 +6670,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\ViolationFilterStage": {
-      "path": "src/Analysis/Finding/Contract/Filter/ViolationFilterStage.php",
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\FindingFilterStage": {
+      "path": "src/Analysis/Finding/Contract/Filter/FindingFilterStage.php",
       "kind": "enum",
       "owner": "Analysis.Finding",
       "visibility": "contract",
@@ -6689,7 +6684,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
         },
         {
@@ -6704,8 +6699,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\ViolationFilterStageInterface": {
-      "path": "src/Analysis/Finding/Contract/Filter/ViolationFilterStageInterface.php",
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\FindingFilterStageInterface": {
+      "path": "src/Analysis/Finding/Contract/Filter/FindingFilterStageInterface.php",
       "kind": "interface",
       "owner": "Analysis.Finding",
       "visibility": "contract",
@@ -6718,8 +6713,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\ViolationFilterStageResult": {
-      "path": "src/Analysis/Finding/Contract/Filter/ViolationFilterStageResult.php",
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\FindingFilterStageResult": {
+      "path": "src/Analysis/Finding/Contract/Filter/FindingFilterStageResult.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "contract",
@@ -7056,7 +7051,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
         },
         {
@@ -9793,17 +9788,17 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Summary\\FindingSummaryRenderer",
           "closes_in": null
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\ViolationDetailRenderer",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\FindingDetailRenderer",
           "closes_in": null
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\ViolationSorter",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\FindingSorter",
           "closes_in": null
         },
         {
@@ -9877,8 +9872,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Violation": {
-      "path": "src/Analysis/Finding/Contract/Violation.php",
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Finding": {
+      "path": "src/Analysis/Finding/Contract/Finding.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "contract",
@@ -10091,7 +10086,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\ViolationFilter",
+          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter",
           "closes_in": null
         },
         {
@@ -10116,7 +10111,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonViolationSection",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFindingSection",
           "closes_in": null
         },
         {
@@ -10136,12 +10131,12 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\ViolationDetailRenderer",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\FindingDetailRenderer",
           "closes_in": null
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\ViolationSorter",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\FindingSorter",
           "closes_in": null
         },
         {
@@ -10166,8 +10161,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\ViolationChannel": {
-      "path": "src/Analysis/Finding/Contract/ViolationChannel.php",
+    "Qualimetrix\\Analysis\\Finding\\Contract\\FindingChannel": {
+      "path": "src/Analysis/Finding/Contract/FindingChannel.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "contract",
@@ -11733,7 +11728,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
         }
       ]
@@ -12269,7 +12264,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredViolationSet",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
           "closes_in": null
         },
         {
@@ -12327,7 +12322,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredViolationSet",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
           "closes_in": null
         },
         {
@@ -12366,7 +12361,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredViolationSet",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
           "closes_in": null
         },
         {
@@ -12490,7 +12485,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredViolationSet",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
           "closes_in": null
         },
         {
@@ -12534,7 +12529,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
         }
       ]
@@ -14234,7 +14229,7 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Violation",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Finding",
           "closes_in": null
         },
         {
@@ -14730,7 +14725,7 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Violation",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Finding",
           "closes_in": null
         },
         {
@@ -14815,7 +14810,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlViolationPartitioner",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner",
           "closes_in": null
         },
         {
@@ -15104,7 +15099,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\ViolationFilter",
+          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter",
           "closes_in": null
         },
         {
@@ -15114,7 +15109,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlViolationPartitioner",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner",
           "closes_in": null
         },
         {
@@ -15236,7 +15231,7 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\ViolationFilter",
+          "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter",
           "closes_in": null
         }
       ]
@@ -16081,8 +16076,8 @@
       "closure_package": "P8",
       "consumers": []
     },
-    "Qualimetrix\\Infrastructure\\Console\\MeasuredViolationSet": {
-      "path": "src/Infrastructure/Console/MeasuredViolationSet.php",
+    "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet": {
+      "path": "src/Infrastructure/Console/MeasuredFindingSet.php",
       "kind": "class",
       "owner": "Infrastructure.Console",
       "visibility": "internal",
@@ -16299,8 +16294,8 @@
       "closure_package": "P8",
       "consumers": []
     },
-    "Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator": {
-      "path": "src/Infrastructure/Console/ViolationFilterOrchestrator.php",
+    "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator": {
+      "path": "src/Infrastructure/Console/FindingFilterOrchestrator.php",
       "kind": "class",
       "owner": "Infrastructure.Console",
       "visibility": "internal",
@@ -16731,7 +16726,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
         }
       ]
@@ -17591,8 +17586,8 @@
         }
       ]
     },
-    "Qualimetrix\\Reporting\\Filter\\ViolationFilter": {
-      "path": "src/Reporting/Filter/ViolationFilter.php",
+    "Qualimetrix\\Reporting\\Filter\\FindingFilter": {
+      "path": "src/Reporting/Filter/FindingFilter.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "contract",
@@ -17638,7 +17633,7 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
         }
       ]
@@ -17695,7 +17690,7 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
         },
         {
@@ -17741,12 +17736,12 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredViolationSet",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
           "closes_in": null
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
         }
       ]
@@ -17760,7 +17755,7 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
         }
       ]
@@ -17774,12 +17769,12 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredViolationSet",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
           "closes_in": null
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
         }
       ]
@@ -17916,8 +17911,8 @@
       "closure_package": "P6",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlViolationPartitioner": {
-      "path": "src/Reporting/Formatter/Html/HtmlViolationPartitioner.php",
+    "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner": {
+      "path": "src/Reporting/Formatter/Html/HtmlFindingPartitioner.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
@@ -17956,8 +17951,8 @@
       "closure_package": "P6",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Json\\JsonViolationSection": {
-      "path": "src/Reporting/Formatter/Json/JsonViolationSection.php",
+    "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFindingSection": {
+      "path": "src/Reporting/Formatter/Json/JsonFindingSection.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
@@ -18028,8 +18023,8 @@
       "closure_package": "P6",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer": {
-      "path": "src/Reporting/Formatter/Summary/ViolationSummaryRenderer.php",
+    "Qualimetrix\\Reporting\\Formatter\\Summary\\FindingSummaryRenderer": {
+      "path": "src/Reporting/Formatter/Summary/FindingSummaryRenderer.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
@@ -18068,24 +18063,24 @@
       "closure_package": "P6",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer": {
-      "path": "src/Reporting/Formatter/Support/DetailedViolationRenderer.php",
+    "Qualimetrix\\Reporting\\Formatter\\Support\\DetailedFindingRenderer": {
+      "path": "src/Reporting/Formatter/Support/DetailedFindingRenderer.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
       "closure_package": "P6",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Support\\ViolationDetailRenderer": {
-      "path": "src/Reporting/Formatter/Support/ViolationDetailRenderer.php",
+    "Qualimetrix\\Reporting\\Formatter\\Support\\FindingDetailRenderer": {
+      "path": "src/Reporting/Formatter/Support/FindingDetailRenderer.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",
       "closure_package": "P6",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Support\\ViolationSorter": {
-      "path": "src/Reporting/Formatter/Support/ViolationSorter.php",
+    "Qualimetrix\\Reporting\\Formatter\\Support\\FindingSorter": {
+      "path": "src/Reporting/Formatter/Support/FindingSorter.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",

@@ -7,17 +7,17 @@ namespace Qualimetrix\Analysis\Evidence\Prioritization\Impact;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 
 /**
- * Scores and ranks violations by estimated refactoring impact.
+ * Scores and ranks findings by estimated refactoring impact.
  *
  * Impact is computed as: classRank * severityWeight * debtMinutes.
- * This prioritizes violations in highly-connected classes that are severe and costly to fix.
+ * This prioritizes findings in highly-connected classes that are severe and costly to fix.
  *
- * When classRank is unavailable for a violation, the project's median classRank is used
- * as fallback. This avoids inflating unranked violations (fallback 1.0 would dominate
+ * When classRank is unavailable for a finding, the project's median classRank is used
+ * as fallback. This avoids inflating unranked findings (fallback 1.0 would dominate
  * real hotspots since typical classRank values are 0.001–0.05).
  */
 final readonly class ImpactCalculator
@@ -28,18 +28,18 @@ final readonly class ImpactCalculator
     ) {}
 
     /**
-     * Computes and returns violations ranked by impact score (descending).
+     * Computes and returns findings ranked by impact score (descending).
      *
      * Builds a classRank index once for O(1) namespace/file lookups,
-     * then scores all violations and returns them sorted.
+     * then scores all findings and returns them sorted.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return list<RankedIssue>
      */
-    public function computeTopIssues(array $violations, MetricRepositoryInterface $metrics, ?NamespaceTree $tree = null): array
+    public function computeTopIssues(array $findings, MetricRepositoryInterface $metrics, ?NamespaceTree $tree = null): array
     {
-        if ($violations === []) {
+        if ($findings === []) {
             return [];
         }
 
@@ -47,10 +47,10 @@ final readonly class ImpactCalculator
         $medianFallback = $index->getMedianRank();
         $ranked = [];
 
-        foreach ($violations as $violation) {
-            $classRank = $this->classRankResolver->resolve($violation, $metrics, $index);
-            $debtMinutes = $this->remediationTimeRegistry->getMinutesForViolation($violation);
-            $severityWeight = match ($violation->severity) {
+        foreach ($findings as $finding) {
+            $classRank = $this->classRankResolver->resolve($finding, $metrics, $index);
+            $debtMinutes = $this->remediationTimeRegistry->getMinutesForFinding($finding);
+            $severityWeight = match ($finding->severity) {
                 Severity::Error => 3,
                 Severity::Warning => 1,
                 // Info is purely advisory — keep impact contribution minimal so
@@ -63,7 +63,7 @@ final readonly class ImpactCalculator
             $impact = $effectiveRank * $severityWeight * $debtMinutes;
 
             $ranked[] = new RankedIssue(
-                violation: $violation,
+                finding: $finding,
                 impactScore: $impact,
                 classRank: $classRank,
                 debtMinutes: $debtMinutes,
@@ -79,13 +79,13 @@ final readonly class ImpactCalculator
             }
 
             // Secondary: file ascending
-            $cmp = $a->violation->location->pathString() <=> $b->violation->location->pathString();
+            $cmp = $a->finding->location->pathString() <=> $b->finding->location->pathString();
             if ($cmp !== 0) {
                 return $cmp;
             }
 
             // Tertiary: line ascending
-            return ($a->violation->location->line ?? 0) <=> ($b->violation->location->line ?? 0);
+            return ($a->finding->location->line ?? 0) <=> ($b->finding->location->line ?? 0);
         });
 
         return $ranked;

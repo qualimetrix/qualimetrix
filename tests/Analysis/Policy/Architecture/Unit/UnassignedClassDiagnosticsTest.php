@@ -13,10 +13,10 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
@@ -60,13 +60,13 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         $rule = new LayerVerdicts(new LayerViolationOptions(), $this->processor);
         $architecture = $this->buildArchitecture(CoverageMode::Error);
 
-        $violations = $rule->analyze($this->buildContext(
+        $findings = $rule->analyze($this->buildContext(
             $architecture,
             $this->buildGraph([]),
             ['App\\Unowned\\Lonely'],
         ));
 
-        self::assertSame([], $this->unassignedDiagnostics($violations));
+        self::assertSame([], $this->unassignedDiagnostics($findings));
     }
 
     /**
@@ -85,17 +85,17 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         );
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
 
-        $violations = $rule->analyze($this->buildContext(
+        $findings = $rule->analyze($this->buildContext(
             $architecture,
             $this->buildGraph([]),
             ['App\\Controller\\UserController', 'App\\Unowned\\Lonely'],
         ));
 
-        $diagnostics = $this->unassignedDiagnostics($violations);
+        $diagnostics = $this->unassignedDiagnostics($findings);
         self::assertCount(1, $diagnostics);
         self::assertSame(1, $diagnostics[0]->metricValue);
         self::assertStringContainsString('App\\Unowned\\Lonely', (string) $diagnostics[0]->recommendation);
-        self::assertSame([], $this->coverageDiagnostics($violations));
+        self::assertSame([], $this->coverageDiagnostics($findings));
     }
 
     /**
@@ -118,13 +118,13 @@ final class UnassignedClassDiagnosticsTest extends TestCase
             $this->buildDependency('App\\Unowned', 'Lonely', 'PHPUnit\\Framework', 'TestCase'),
         ]);
 
-        $violations = $rule->analyze($this->buildContext(
+        $findings = $rule->analyze($this->buildContext(
             $architecture,
             $graph,
             ['App\\Controller\\UserController', 'App\\Unowned\\Lonely'],
         ));
 
-        $diagnostics = $this->unassignedDiagnostics($violations);
+        $diagnostics = $this->unassignedDiagnostics($findings);
         self::assertCount(1, $diagnostics);
         self::assertSame(1, $diagnostics[0]->metricValue);
 
@@ -143,13 +143,13 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         );
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
 
-        $violations = $rule->analyze($this->buildContext(
+        $findings = $rule->analyze($this->buildContext(
             $architecture,
             $this->buildGraph([$this->buildDependency('App\\Controller', 'UserController', 'Vendor\\Pkg', 'Thing')]),
             ['App\\Controller\\UserController'],
         ));
 
-        self::assertSame([], $this->unassignedDiagnostics($violations));
+        self::assertSame([], $this->unassignedDiagnostics($findings));
     }
 
     #[Test]
@@ -162,9 +162,9 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         );
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
 
-        $violations = $rule->analyze($this->buildContext($architecture, $this->buildGraph([]), []));
+        $findings = $rule->analyze($this->buildContext($architecture, $this->buildGraph([]), []));
 
-        self::assertSame([], $this->unassignedDiagnostics($violations));
+        self::assertSame([], $this->unassignedDiagnostics($findings));
     }
 
     #[Test]
@@ -177,7 +177,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         );
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
 
-        $violations = $rule->analyze($this->buildContext(
+        $findings = $rule->analyze($this->buildContext(
             $architecture,
             $this->buildGraph([]),
             [
@@ -188,7 +188,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
             ],
         ));
 
-        $diagnostics = $this->unassignedDiagnostics($violations);
+        $diagnostics = $this->unassignedDiagnostics($findings);
         self::assertCount(1, $diagnostics);
         self::assertSame(3, $diagnostics[0]->metricValue);
         self::assertSame(Severity::Warning, $diagnostics[0]->severity);
@@ -205,13 +205,13 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         );
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
 
-        $violations = $rule->analyze($this->buildContext(
+        $findings = $rule->analyze($this->buildContext(
             $architecture,
             $this->buildGraph([]),
             ['App\\Unowned\\Lonely'],
         ));
 
-        $diagnostics = $this->unassignedDiagnostics($violations);
+        $diagnostics = $this->unassignedDiagnostics($findings);
         self::assertCount(1, $diagnostics);
         self::assertSame(Severity::Error, $diagnostics[0]->severity);
     }
@@ -236,13 +236,13 @@ final class UnassignedClassDiagnosticsTest extends TestCase
                 new UnassignedClassOptions($mode),
             );
 
-            $violations = $verdicts->analyze($this->buildContext($architecture, $this->buildGraph([]), $classes));
+            $findings = $verdicts->analyze($this->buildContext($architecture, $this->buildGraph([]), $classes));
 
             return [
-                'unassigned' => \count($this->unassignedDiagnostics($violations)),
+                'unassigned' => \count($this->unassignedDiagnostics($findings)),
                 'family' => \count(array_filter(
-                    $violations,
-                    static fn(Violation $v): bool => $v->ruleName !== UnassignedClassRule::NAME,
+                    $findings,
+                    static fn(Finding $v): bool => $v->ruleName !== UnassignedClassRule::NAME,
                 )),
             ];
         };
@@ -335,28 +335,28 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function unassignedDiagnostics(array $violations): array
+    private function unassignedDiagnostics(array $findings): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $v): bool => $v->ruleName === UnassignedClassRule::NAME,
+            $findings,
+            static fn(Finding $v): bool => $v->ruleName === UnassignedClassRule::NAME,
         ));
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function coverageDiagnostics(array $violations): array
+    private function coverageDiagnostics(array $findings): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $v): bool => $v->ruleName === LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+            $findings,
+            static fn(Finding $v): bool => $v->ruleName === LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
         ));
     }
 }

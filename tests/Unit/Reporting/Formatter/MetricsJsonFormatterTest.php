@@ -44,7 +44,7 @@ final class MetricsJsonFormatterTest extends TestCase
     public function itFormatsWithNullMetrics(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.5,
@@ -97,7 +97,7 @@ final class MetricsJsonFormatterTest extends TestCase
             });
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.5,
@@ -149,7 +149,7 @@ final class MetricsJsonFormatterTest extends TestCase
             ->willReturn(MetricBag::fromArray([]));
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
@@ -189,7 +189,7 @@ final class MetricsJsonFormatterTest extends TestCase
             ]));
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
@@ -238,7 +238,7 @@ final class MetricsJsonFormatterTest extends TestCase
             ]));
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
@@ -268,7 +268,7 @@ final class MetricsJsonFormatterTest extends TestCase
     public function itProducesValidJson(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 0,
             filesSkipped: 0,
             duration: 0.0,

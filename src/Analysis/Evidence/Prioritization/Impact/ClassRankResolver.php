@@ -7,16 +7,16 @@ namespace Qualimetrix\Analysis\Evidence\Prioritization\Impact;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
- * Resolves a classRank value for a given violation, regardless of its SymbolPath type.
+ * Resolves a classRank value for a given finding, regardless of its SymbolPath type.
  *
- * For method/class-level violations, the classRank is looked up directly.
- * For namespace/file-level violations, a pre-built index is used for O(1) lookup.
+ * For method/class-level findings, the classRank is looked up directly.
+ * For namespace/file-level findings, a pre-built index is used for O(1) lookup.
  */
 final readonly class ClassRankResolver
 {
@@ -122,15 +122,15 @@ final readonly class ClassRankResolver
     }
 
     /**
-     * Resolves the classRank metric for the class associated with a violation.
+     * Resolves the classRank metric for the class associated with a finding.
      *
      * Uses a pre-built index for O(1) namespace/file lookups.
      *
      * @return float|null The classRank value, or null if not available
      */
-    public function resolve(Violation $violation, MetricRepositoryInterface $metrics, ClassRankIndex $index): ?float
+    public function resolve(Finding $finding, MetricRepositoryInterface $metrics, ClassRankIndex $index): ?float
     {
-        $sp = $violation->symbolPath;
+        $sp = $finding->symbolPath;
 
         return match ($sp->getType()) {
             SymbolType::Method, SymbolType::Class_ => $sp->type !== null

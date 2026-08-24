@@ -15,6 +15,6 @@ enum SuppressionType: string
     /** Suppress the next line only. */
     case NextLine = 'next-line';
 
-    /** Suppress all matching violations in the entire file. */
+    /** Suppress all matching findings in the entire file. */
     case File = 'file';
 }

@@ -110,7 +110,7 @@ final class WmcRuleTest extends TestCase
     }
 
     #[Test]
-    public function itProducesNoViolationBelowThreshold(): void
+    public function itProducesNoFindingBelowThreshold(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -127,9 +127,9 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -150,19 +150,19 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('WMC (Weighted Methods per Class) is 60', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 50', $violations[0]->message);
-        self::assertStringContainsString('Simplify methods or split the class', $violations[0]->message);
-        self::assertSame(60, $violations[0]->metricValue);
-        self::assertSame('complexity.wmc', $violations[0]->ruleName);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('WMC (Weighted Methods per Class) is 60', $findings[0]->message);
+        self::assertStringContainsString('exceeds threshold of 50', $findings[0]->message);
+        self::assertStringContainsString('Simplify methods or split the class', $findings[0]->message);
+        self::assertSame(60, $findings[0]->metricValue);
+        self::assertSame('complexity.wmc', $findings[0]->ruleName);
         // avg = 60/15 = 4.0, middle range
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('across 15 methods (avg 4.0)', $violations[0]->recommendation);
-        self::assertStringContainsString('weighted method complexity is high', $violations[0]->recommendation);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('across 15 methods (avg 4.0)', $findings[0]->recommendation);
+        self::assertStringContainsString('weighted method complexity is high', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -183,18 +183,18 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertStringContainsString('WMC (Weighted Methods per Class) is 85', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 80', $violations[0]->message);
-        self::assertStringContainsString('Simplify methods or split the class', $violations[0]->message);
-        self::assertSame(85, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertStringContainsString('WMC (Weighted Methods per Class) is 85', $findings[0]->message);
+        self::assertStringContainsString('exceeds threshold of 80', $findings[0]->message);
+        self::assertStringContainsString('Simplify methods or split the class', $findings[0]->message);
+        self::assertSame(85, $findings[0]->metricValue);
         // avg = 85/10 = 8.5, high complexity
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('across 10 methods (avg 8.5)', $violations[0]->recommendation);
-        self::assertStringContainsString('some methods are very complex', $violations[0]->recommendation);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('across 10 methods (avg 8.5)', $findings[0]->recommendation);
+        self::assertStringContainsString('some methods are very complex', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -215,13 +215,13 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         // avg = 93/31 = 3.0 -> exactly 3.0, middle range (not < 3.0)
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('across 31 methods (avg 3.0)', $violations[0]->recommendation);
-        self::assertStringContainsString('weighted method complexity is high', $violations[0]->recommendation);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('across 31 methods (avg 3.0)', $findings[0]->recommendation);
+        self::assertStringContainsString('weighted method complexity is high', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -242,13 +242,13 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         // avg = 60/30 = 2.0 -> < 3.0 -> "many methods"
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('across 30 methods (avg 2.0)', $violations[0]->recommendation);
-        self::assertStringContainsString('many methods, consider splitting', $violations[0]->recommendation);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('across 30 methods (avg 2.0)', $findings[0]->recommendation);
+        self::assertStringContainsString('many methods, consider splitting', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -269,14 +269,14 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('WMC: 60 (threshold: 50)', $violations[0]->recommendation);
-        self::assertStringContainsString('weighted method complexity is high', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('WMC: 60 (threshold: 50)', $findings[0]->recommendation);
+        self::assertStringContainsString('weighted method complexity is high', $findings[0]->recommendation);
         // Should NOT contain "across N methods" when methodCount is missing
-        self::assertStringNotContainsString('across', $violations[0]->recommendation);
+        self::assertStringNotContainsString('across', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -297,13 +297,13 @@ final class WmcRuleTest extends TestCase
             ],
         );
 
-        $violations = (new WmcRule(new WmcOptions()))->analyze($context);
+        $findings = (new WmcRule(new WmcOptions()))->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(55, $violations[0]->threshold);
-        self::assertSame('WMC: 60 (threshold: 55) — weighted method complexity is high', $violations[0]->recommendation);
-        self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(55, $findings[0]->threshold);
+        self::assertSame('WMC: 60 (threshold: 55) — weighted method complexity is high', $findings[0]->recommendation);
+        self::assertSame($subject->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
     #[Test]
@@ -324,14 +324,14 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
     }
 
     #[Test]
-    public function itProducesNoViolationForClassWithoutMethods(): void
+    public function itProducesNoFindingForClassWithoutMethods(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -348,9 +348,9 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -364,7 +364,7 @@ final class WmcRuleTest extends TestCase
         $classInfo1 = self::subjectInfo($symbolPath1, RelativePath::fromString('src/SimpleClass.php'), 10);
         $classInfo2 = self::subjectInfo($symbolPath2, RelativePath::fromString('src/ComplexClass.php'), 20);
 
-        $metricBag1 = (new MetricBag())->with('wmc', 20); // No violation
+        $metricBag1 = (new MetricBag())->with('wmc', 20); // No finding
         $metricBag2 = (new MetricBag())->with('wmc', 90); // Error
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -382,11 +382,11 @@ final class WmcRuleTest extends TestCase
             });
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame($symbolPath2, $violations[0]->symbolPath);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame($symbolPath2, $findings[0]->symbolPath);
     }
 
     #[Test]
@@ -407,9 +407,9 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     // Options tests
@@ -473,13 +473,13 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -559,10 +559,10 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Should skip data class
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -585,11 +585,11 @@ final class WmcRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Should NOT skip when excludeDataClasses is false
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
     #[Test]
     public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
@@ -604,11 +604,11 @@ final class WmcRuleTest extends TestCase
             (new MetricBag())->with('wmc', 60)->with('methodCount', 15),
         );
 
-        $violations = (new WmcRule(new WmcOptions()))
+        $findings = (new WmcRule(new WmcOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

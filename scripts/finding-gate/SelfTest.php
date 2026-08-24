@@ -613,7 +613,7 @@ final class SelfTest
      */
     private function htmlPayloadVocabulary(): void
     {
-        $partitioner = $this->candidateRoot . '/src/Reporting/Formatter/Html/HtmlViolationPartitioner.php';
+        $partitioner = $this->candidateRoot . '/src/Reporting/Formatter/Html/HtmlFindingPartitioner.php';
         $source = Fs::read($partitioner);
 
         foreach (['rule' => 'ruleName', 'code' => 'violationCode', 'symbol' => 'symbolPath'] as $field => $alias) {
@@ -826,7 +826,7 @@ final class SelfTest
         $this->same(
             ['channel:subject:untyped-edge:6:Target'],
             Fingerprints::expected([['channel' => 'channel', 'subject' => 'subject', 'edge' => ['target' => 'Target']]]),
-            'an untyped edge carries its target length, exactly as Violation::getFingerprint() composes it',
+            'an untyped edge carries its target length, exactly as Finding::getFingerprint() composes it',
         );
         $this->same(
             [md5('channel:subject')],

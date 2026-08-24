@@ -101,7 +101,7 @@ final class FormatterContextFactoryTest extends TestCase
 
         $context = $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
 
-        // No violations option set
+        // No findings option set
         self::assertSame('', $context->getOption('violations'));
         // Detail limit is null (off)
         self::assertNull($context->detailLimit);

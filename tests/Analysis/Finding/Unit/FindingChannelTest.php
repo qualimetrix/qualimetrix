@@ -8,18 +8,18 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
-#[CoversClass(ViolationChannel::class)]
-final class ViolationChannelTest extends TestCase
+#[CoversClass(FindingChannel::class)]
+final class FindingChannelTest extends TestCase
 {
     #[Test]
     public function itRejectsAnEmptyRuleName(): void
@@ -27,43 +27,43 @@ final class ViolationChannelTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('ruleName must not be empty');
 
-        new ViolationChannel('', 'code');
+        new FindingChannel('', 'code');
     }
 
     #[Test]
-    public function itRejectsAnEmptyViolationCode(): void
+    public function itRejectsAnEmptyCode(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('violationCode must not be empty');
+        $this->expectExceptionMessage('code must not be empty');
 
-        new ViolationChannel('rule', '');
+        new FindingChannel('rule', '');
     }
 
     /**
      * A rule class may emit findings under a rule name it does not declare as
-     * its own, so the channel is read off the emitted violation rather than
+     * its own, so the channel is read off the emitted finding rather than
      * inferred from the class that produced it.
      */
     #[Test]
-    public function itReadsTheChannelOffAnEmittedViolation(): void
+    public function itReadsTheChannelOffAnEmittedFinding(): void
     {
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/App.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'App'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'App'), RelativePath::fromString('src/App.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'architecture.unreachable-layer',
-            violationCode: 'architecture.unreachable-layer',
+            code: 'architecture.unreachable-layer',
             message: 'Layer never matched',
             severity: Severity::Error,
         );
 
-        $channel = $violation->channel();
+        $channel = $finding->channel();
 
         self::assertSame('architecture.unreachable-layer', $channel->ruleName);
-        self::assertSame('architecture.unreachable-layer', $channel->violationCode);
+        self::assertSame('architecture.unreachable-layer', $channel->code);
         self::assertTrue(
             $channel->equals(
-                new ViolationChannel('architecture.unreachable-layer', 'architecture.unreachable-layer'),
+                new FindingChannel('architecture.unreachable-layer', 'architecture.unreachable-layer'),
             ),
         );
     }
@@ -75,8 +75,8 @@ final class ViolationChannelTest extends TestCase
     #[Test]
     public function itDistinguishesTwoCodesUnderOneRuleName(): void
     {
-        $method = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
-        $class = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.class');
+        $method = new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $class = new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.class');
 
         self::assertFalse($method->equals($class));
         self::assertNotSame($method->toKey(), $class->toKey());
@@ -85,8 +85,8 @@ final class ViolationChannelTest extends TestCase
     #[Test]
     public function itIsEqualToAnIdenticallyAddressedChannel(): void
     {
-        $a = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
-        $b = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $a = new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $b = new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
 
         self::assertTrue($a->equals($b));
         self::assertSame($a->toKey(), $b->toKey());
@@ -95,7 +95,7 @@ final class ViolationChannelTest extends TestCase
     #[Test]
     public function itRendersAsItsKey(): void
     {
-        $channel = new ViolationChannel('rules.a', 'rules.a.callable');
+        $channel = new FindingChannel('rules.a', 'rules.a.callable');
 
         self::assertSame('rules.a#rules.a.callable', $channel->toKey());
         self::assertSame($channel->toKey(), (string) $channel);
@@ -104,20 +104,20 @@ final class ViolationChannelTest extends TestCase
     #[Test]
     public function itParsesAKeyBackIntoTheSameChannel(): void
     {
-        $original = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $original = new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
 
-        $parsed = ViolationChannel::fromKey($original->toKey());
+        $parsed = FindingChannel::fromKey($original->toKey());
 
         self::assertTrue($original->equals($parsed));
     }
 
     #[Test]
-    public function itParsesAKeyWhoseRuleNameDiffersFromItsViolationCode(): void
+    public function itParsesAKeyWhoseRuleNameDiffersFromItsCode(): void
     {
-        $channel = ViolationChannel::fromKey('architecture.layer-violation#architecture.coverage');
+        $channel = FindingChannel::fromKey('architecture.layer-violation#architecture.coverage');
 
         self::assertSame('architecture.layer-violation', $channel->ruleName);
-        self::assertSame('architecture.coverage', $channel->violationCode);
+        self::assertSame('architecture.coverage', $channel->code);
     }
 
     #[Test]
@@ -126,7 +126,7 @@ final class ViolationChannelTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('not a valid channel key');
 
-        ViolationChannel::fromKey('no-separator-here');
+        FindingChannel::fromKey('no-separator-here');
     }
 
     #[Test]
@@ -135,15 +135,15 @@ final class ViolationChannelTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('ruleName must not be empty');
 
-        ViolationChannel::fromKey('#violation-code');
+        FindingChannel::fromKey('#violation-code');
     }
 
     #[Test]
-    public function itRejectsAKeyWithAnEmptyViolationCodeHalf(): void
+    public function itRejectsAKeyWithAnEmptyCodeHalf(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('violationCode must not be empty');
+        $this->expectExceptionMessage('code must not be empty');
 
-        ViolationChannel::fromKey('rule-name#');
+        FindingChannel::fromKey('rule-name#');
     }
 }

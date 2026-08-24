@@ -139,11 +139,11 @@ final class ThresholdOverrideIntegrationTest extends TestCase
 
         // Without override — should have warning
         $contextNoOverride = new AnalysisContext(metrics: $repository);
-        $violationsNoOverride = $rule->analyze($contextNoOverride);
-        self::assertCount(1, $violationsNoOverride);
-        self::assertSame(Severity::Warning, $violationsNoOverride[0]->severity);
+        $findingsNoOverride = $rule->analyze($contextNoOverride);
+        self::assertCount(1, $findingsNoOverride);
+        self::assertSame(Severity::Warning, $findingsNoOverride[0]->severity);
 
-        // With override raising warning to 30 — no violation
+        // With override raising warning to 30 — no finding
         $contextWithOverride = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -152,8 +152,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
                 ],
             ],
         );
-        $violationsWithOverride = $rule->analyze($contextWithOverride);
-        self::assertCount(0, $violationsWithOverride);
+        $findingsWithOverride = $rule->analyze($contextWithOverride);
+        self::assertCount(0, $findingsWithOverride);
     }
 
     #[Test]
@@ -183,9 +183,9 @@ final class ThresholdOverrideIntegrationTest extends TestCase
 
         // Without override — CCN 15 exceeds warning=10
         $contextNoOverride = new AnalysisContext(metrics: $repository);
-        $violationsNoOverride = $rule->analyze($contextNoOverride);
-        self::assertCount(1, $violationsNoOverride);
-        self::assertSame(Severity::Warning, $violationsNoOverride[0]->severity);
+        $findingsNoOverride = $rule->analyze($contextNoOverride);
+        self::assertCount(1, $findingsNoOverride);
+        self::assertSame(Severity::Warning, $findingsNoOverride[0]->severity);
 
         // With class-level override (line 10-50) raising warning to 20
         $contextWithOverride = new AnalysisContext(
@@ -196,8 +196,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
                 ],
             ],
         );
-        $violationsWithOverride = $rule->analyze($contextWithOverride);
-        self::assertCount(0, $violationsWithOverride);
+        $findingsWithOverride = $rule->analyze($contextWithOverride);
+        self::assertCount(0, $findingsWithOverride);
     }
 
     #[Test]
@@ -250,12 +250,12 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             ],
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        // complexMethod (line 20) is within override scope — no violation (15 < 20)
-        // otherMethod (line 60) is outside override scope — has violation (15 >= 10)
-        self::assertCount(1, $violations);
-        self::assertSame('otherMethod', $violations[0]->symbolPath->member);
+        // complexMethod (line 20) is within override scope — no finding (15 < 20)
+        // otherMethod (line 60) is outside override scope — has finding (15 >= 10)
+        self::assertCount(1, $findings);
+        self::assertSame('otherMethod', $findings[0]->symbolPath->member);
     }
 
     /**
@@ -571,7 +571,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function itIncludesOverriddenThresholdInViolationMessage(): void
+    public function itIncludesOverriddenThresholdInFindingMessage(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
         $subject = self::declarationSubject($symbolPath, 'src/Service/BigService.php', 100);
@@ -596,9 +596,9 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             ],
         );
 
-        // Value 35 < overridden warning 40 — no violation
-        $violations = $rule->analyze($context);
-        self::assertCount(0, $violations);
+        // Value 35 < overridden warning 40 — no finding
+        $findings = $rule->analyze($context);
+        self::assertCount(0, $findings);
 
         // Now override only raises warning to 30 (value 35 >= 30 = warning)
         $contextLower = new AnalysisContext(
@@ -610,12 +610,12 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             ],
         );
 
-        $violations = $rule->analyze($contextLower);
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        // Violation message and threshold must reflect the overridden value (30), not the default (20)
-        self::assertSame(30, $violations[0]->threshold);
-        self::assertStringContainsString('threshold of 30', $violations[0]->message);
+        $findings = $rule->analyze($contextLower);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        // Finding message and threshold must reflect the overridden value (30), not the default (20)
+        self::assertSame(30, $findings[0]->threshold);
+        self::assertStringContainsString('threshold of 30', $findings[0]->message);
     }
 
     #[Test]
@@ -640,7 +640,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             callable: new MethodComplexityOptions(warning: 20, error: 30),
         ));
 
-        // Class-level override (line 10-100): warning=30 (would suppress violation)
+        // Class-level override (line 10-100): warning=30 (would suppress finding)
         // Method-level override (line 15-40): warning=22 (should still trigger)
         $context = new AnalysisContext(
             metrics: $repository,
@@ -652,11 +652,11 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             ],
         );
 
-        // Method-level override (narrower span) should win: warning=22, value=25 >= 22 -> violation
-        $violations = $rule->analyze($context);
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(22, $violations[0]->threshold);
+        // Method-level override (narrower span) should win: warning=22, value=25 >= 22 -> finding
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(22, $findings[0]->threshold);
     }
 
     #[Test]
@@ -680,12 +680,12 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             ],
         );
 
-        $violations = (new CboRule(new CboOptions()))->analyzeLevel(SymbolLevel::Class_, $context);
+        $findings = (new CboRule(new CboOptions()))->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(15, $violations[0]->threshold);
-        self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(15, $findings[0]->threshold);
+        self::assertSame($subject->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
     /**

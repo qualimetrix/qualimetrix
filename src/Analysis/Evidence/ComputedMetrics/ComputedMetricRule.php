@@ -9,11 +9,11 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -69,7 +69,7 @@ final class ComputedMetricRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -77,7 +77,7 @@ final class ComputedMetricRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
         $profiler = $this->profiler;
 
         foreach ($this->definitionCatalog->all() as $definition) {
@@ -90,23 +90,23 @@ final class ComputedMetricRule extends AbstractRule
             $profiler->start($spanName, 'rule.' . self::NAME);
 
             foreach ($definition->levels as $level) {
-                $this->checkLevel($context, $definition, $level, $violations);
+                $this->checkLevel($context, $definition, $level, $findings);
             }
 
             $profiler->stop($spanName);
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
     private function checkLevel(
         AnalysisContext $context,
         ComputedMetricDefinition $definition,
         SymbolType $level,
-        array &$violations,
+        array &$findings,
     ): void {
         $symbols = $this->getSymbolsForLevel($context, $level);
 
@@ -118,9 +118,9 @@ final class ComputedMetricRule extends AbstractRule
                 continue;
             }
 
-            $violation = $this->findingBuilder->build($definition, (float) $value, $subject, $symbolPath, $location, $this->getName());
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->findingBuilder->build($definition, (float) $value, $subject, $symbolPath, $location, $this->getName());
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
     }

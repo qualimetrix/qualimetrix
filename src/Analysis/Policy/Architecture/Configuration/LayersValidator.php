@@ -150,7 +150,7 @@ final class LayersValidator
     /**
      * Constructs a {@see TemplateLayerDefinition} from a parsed entry whose
      * name contains capture variables. Catches the construction-time
-     * invariant violations (empty name, variable in name not bound by any
+     * invariant findings (empty name, variable in name not bound by any
      * capture-producing pattern, invalid capture grammar, undeclared
      * exclude variables) and rewraps them as {@see ArchitectureConfigurationException} so
      * the user sees a config-layer error.

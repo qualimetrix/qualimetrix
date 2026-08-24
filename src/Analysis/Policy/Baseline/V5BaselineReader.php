@@ -172,13 +172,13 @@ final readonly class V5BaselineReader
         $data = self::decode($content);
         self::assertV5($data);
 
-        return self::parseViolations($data, hash('sha256', $content));
+        return self::parseFindings($data, hash('sha256', $content));
     }
 
     /**
      * @param array<mixed, mixed> $data already asserted to carry `"version": 5`
      */
-    private static function parseViolations(array $data, string $sourceContentHash): V5Baseline
+    private static function parseFindings(array $data, string $sourceContentHash): V5Baseline
     {
         $rawEntries = $data['violations'] ?? null;
         if (!\is_array($rawEntries)) {

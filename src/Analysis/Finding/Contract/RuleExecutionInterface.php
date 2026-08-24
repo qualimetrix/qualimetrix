@@ -16,9 +16,9 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 interface RuleExecutionInterface
 {
     /**
-     * Executes all active rules and returns violations.
+     * Executes all active rules and returns findings.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function execute(AnalysisContext $context): array;
 

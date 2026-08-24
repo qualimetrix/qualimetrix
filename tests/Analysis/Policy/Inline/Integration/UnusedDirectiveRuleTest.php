@@ -13,11 +13,11 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -65,7 +65,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
-            $findings[0]->violationCode,
+            $findings[0]->code,
         );
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertStringContainsString('names a rule, not a channel', $findings[0]->message);
@@ -80,7 +80,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
-            $findings[0]->violationCode,
+            $findings[0]->code,
         );
         self::assertStringContainsString('coupling.instability', $findings[0]->message);
     }
@@ -129,7 +129,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
-            $findings[0]->violationCode,
+            $findings[0]->code,
         );
         self::assertStringContainsString(
             'complexity.cyclomatic#coupling.instability.class',
@@ -187,7 +187,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNSUPPORTED_THRESHOLD_NAME,
-            $findings[0]->violationCode,
+            $findings[0]->code,
         );
         self::assertSame(Severity::Error, $findings[0]->severity);
     }
@@ -200,7 +200,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
-            $findings[0]->violationCode,
+            $findings[0]->code,
         );
         self::assertStringContainsString('is a channel of rule "coupling.cbo"', $findings[0]->message);
     }
@@ -226,7 +226,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
-            $findings[0]->violationCode,
+            $findings[0]->code,
         );
     }
 
@@ -250,7 +250,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
-            $findings[0]->violationCode,
+            $findings[0]->code,
         );
     }
 
@@ -266,7 +266,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
-            $findings[0]->violationCode,
+            $findings[0]->code,
         );
     }
 
@@ -330,7 +330,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
-            $findings[0]->violationCode,
+            $findings[0]->code,
         );
     }
 
@@ -378,7 +378,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
-            $findings[0]->violationCode,
+            $findings[0]->code,
         );
         self::assertSame(4, $findings[0]->location->line);
         self::assertSame(
@@ -434,7 +434,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         $policy->prepare([], [self::FILE => $overrides], [self::FILE => $diagnostics]);
 
         $codes = array_map(
-            static fn(Violation $violation): string => $violation->violationCode,
+            static fn(Finding $finding): string => $finding->code,
             self::analyzeFamily(new InlineDirectiveOptions(), $policy, $identity),
         );
         sort($codes);
@@ -483,7 +483,7 @@ final class UnusedDirectiveRuleTest extends TestCase
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private static function runWithSuppression(string $authored, ?ChannelIdentityInterface $identity = null): array
     {
@@ -499,7 +499,7 @@ final class UnusedDirectiveRuleTest extends TestCase
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private static function runWithThreshold(string $authored): array
     {
@@ -566,7 +566,7 @@ final class UnusedDirectiveRuleTest extends TestCase
      * executor runs them: the rule arms the usage report, the validator emits
      * the three directive errors.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private static function analyzeFamily(
         InlineDirectiveOptions $options,

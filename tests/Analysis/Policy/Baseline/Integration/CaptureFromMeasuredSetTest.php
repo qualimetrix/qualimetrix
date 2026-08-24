@@ -7,9 +7,9 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
@@ -75,11 +75,11 @@ final class CaptureFromMeasuredSetTest extends TestCase
             ],
         ];
 
-        $baseline = $this->capture($this->project($pipeline, [$ignored, $reported], new FindingProjectionOptions())->measuredViolations);
+        $baseline = $this->capture($this->project($pipeline, [$ignored, $reported], new FindingProjectionOptions())->measuredFindings);
 
         self::assertSame(1, $baseline->count());
-        self::assertTrue($baseline->hasIdentity(BaselineIdentity::forViolation($reported)));
-        self::assertFalse($baseline->hasIdentity(BaselineIdentity::forViolation($ignored)));
+        self::assertTrue($baseline->hasIdentity(BaselineIdentity::forFinding($reported)));
+        self::assertFalse($baseline->hasIdentity(BaselineIdentity::forFinding($ignored)));
     }
 
     #[Test]
@@ -90,10 +90,10 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludePaths: ['generated']));
 
-        $baseline = $this->capture($this->project($pipeline, [$excluded, $reported], new FindingProjectionOptions())->measuredViolations);
+        $baseline = $this->capture($this->project($pipeline, [$excluded, $reported], new FindingProjectionOptions())->measuredFindings);
 
         self::assertSame(1, $baseline->count());
-        self::assertFalse($baseline->hasIdentity(BaselineIdentity::forViolation($excluded)));
+        self::assertFalse($baseline->hasIdentity(BaselineIdentity::forFinding($excluded)));
     }
 
     /**
@@ -108,10 +108,10 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludeNamespaces: ['App\\Generated']));
 
-        $baseline = $this->capture($this->project($pipeline, [$excluded, $reported], new FindingProjectionOptions())->measuredViolations);
+        $baseline = $this->capture($this->project($pipeline, [$excluded, $reported], new FindingProjectionOptions())->measuredFindings);
 
         self::assertSame(1, $baseline->count());
-        self::assertFalse($baseline->hasIdentity(BaselineIdentity::forViolation($excluded)));
+        self::assertFalse($baseline->hasIdentity(BaselineIdentity::forFinding($excluded)));
     }
 
     /**
@@ -132,10 +132,10 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludeNamespaces: ['App\\Generated']));
 
-        $baseline = $this->capture($this->project($pipeline, [$architecture], new FindingProjectionOptions())->measuredViolations);
+        $baseline = $this->capture($this->project($pipeline, [$architecture], new FindingProjectionOptions())->measuredFindings);
 
         self::assertSame(1, $baseline->count());
-        self::assertTrue($baseline->hasIdentity(BaselineIdentity::forViolation($architecture)));
+        self::assertTrue($baseline->hasIdentity(BaselineIdentity::forFinding($architecture)));
     }
 
     /**
@@ -167,7 +167,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
         // generate
         $this->suppressions = $suppressions;
-        $measured = $this->project($pipeline, [$kept, $ignoredMember], new FindingProjectionOptions())->measuredViolations;
+        $measured = $this->project($pipeline, [$kept, $ignoredMember], new FindingProjectionOptions())->measuredFindings;
         $captured = $this->capture($measured);
 
         self::assertSame([$kept], $measured);
@@ -183,12 +183,12 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $this->suppressions = $suppressions;
         $result = $this->project($pipeline, [$kept, $ignoredMember], new FindingProjectionOptions($baselinePath));
 
-        self::assertSame([], $result->violations);
+        self::assertSame([], $result->findings);
         self::assertSame(0, $result->staleEntryCount());
     }
 
     /**
-     * @param list<Violation> $measured
+     * @param list<Finding> $measured
      */
     private function capture(array $measured): Baseline
     {
@@ -243,10 +243,10 @@ final class CaptureFromMeasuredSetTest extends TestCase
         );
     }
 
-    /** @param list<Violation> $violations */
-    private function project(FindingProjector $projector, array $violations, FindingProjectionOptions $options): \Qualimetrix\Reporting\FindingProjection\FindingProjectionResult
+    /** @param list<Finding> $findings */
+    private function project(FindingProjector $projector, array $findings, FindingProjectionOptions $options): \Qualimetrix\Reporting\FindingProjection\FindingProjectionResult
     {
-        return $projector->project($violations, $this->suppressions, new FindingProjectionOptions(
+        return $projector->project($findings, $this->suppressions, new FindingProjectionOptions(
             baselinePath: $options->baselinePath,
             excludePaths: [...$this->configuredOptions->excludePaths, ...$options->excludePaths],
             excludeNamespaces: [...$this->configuredOptions->excludeNamespaces, ...$options->excludeNamespaces],
@@ -260,28 +260,28 @@ final class CaptureFromMeasuredSetTest extends TestCase
         string $namespace,
         string $class,
         string $ruleName = 'complexity.cyclomatic',
-        string $violationCode = 'complexity.cyclomatic.callable',
-    ): Violation {
-        return new Violation(
+        string $code = 'complexity.cyclomatic.callable',
+    ): Finding {
+        return new Finding(
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))),
             location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: 'finding',
             severity: Severity::Warning,
             metricValue: 25,
         );
     }
 
-    private static function occurrenceFinding(SymbolPath $symbolPath, int $line): Violation
+    private static function occurrenceFinding(SymbolPath $symbolPath, int $line): Finding
     {
-        return new Violation(
+        return new Finding(
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Legacy/Service.php'))),
             location: new Location(RelativePath::fromString('src/Legacy/Service.php'), $line, precise: true),
             symbolPath: $symbolPath,
             ruleName: 'code-smell.goto',
-            violationCode: 'code-smell.goto',
+            code: 'code-smell.goto',
             message: 'goto statement detected',
             severity: Severity::Warning,
             metricValue: 1.0,

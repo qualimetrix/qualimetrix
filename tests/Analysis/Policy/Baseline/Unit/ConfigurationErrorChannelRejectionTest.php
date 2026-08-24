@@ -10,9 +10,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason;
@@ -113,7 +113,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     {
         $updater = new BaselineUpdater(self::registry(), new FixedClock());
         $finding = self::finding();
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($finding), null, 5);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), null, 5);
 
         $result = $updater->update(self::baselineOf($entry), [$finding], RunScope::fromRecorded(['src']));
 
@@ -126,7 +126,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     public function itListsSuchAnEntryForCleanupOnItsOwnReasonEvenWhileTheFindingIsStillMeasured(): void
     {
         $finding = self::finding();
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($finding), null, 1);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), null, 1);
 
         $candidates = (new BaselineCleaner(new FixedClock()))->candidates(
             self::baselineOf($entry),
@@ -148,12 +148,12 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     public function itNeverAcceptsAConfigurationErrorGroupAtTheCeilingAndReportsTheEntryAsInert(): void
     {
         $finding = self::finding();
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($finding), null, 10, BaselineEntryMode::Suppress);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), null, 10, BaselineEntryMode::Suppress);
         $stage = new BaselineCeilingStage(self::baselineOf($entry), self::registry());
 
         $outcome = $stage->judgeAll([$finding]);
 
-        self::assertSame([$finding], $outcome->result->violations);
+        self::assertSame([$finding], $outcome->result->findings);
         self::assertSame([], $outcome->result->removed);
         self::assertCount(1, $outcome->inertEntries);
         self::assertSame(InertEntryReason::ConfigurationErrorChannel, $outcome->inertEntries[0]->reason);
@@ -168,12 +168,12 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     public function itStillAcceptsTheSiblingLayerViolationChannelAsDebt(): void
     {
         $finding = self::finding('architecture.layer-violation', 'architecture.layer-violation');
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($finding), null, 1);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), null, 1);
         $stage = new BaselineCeilingStage(self::baselineOf($entry), self::registry());
 
         $outcome = $stage->judgeAll([$finding]);
 
-        self::assertSame([], $outcome->result->violations);
+        self::assertSame([], $outcome->result->findings);
         self::assertSame([$finding], $outcome->result->removed);
         self::assertSame([], $outcome->inertEntries);
     }
@@ -191,14 +191,14 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
 
     private static function finding(
         string $ruleName = self::RULE_NAME,
-        string $violationCode = self::RULE_NAME,
-    ): Violation {
-        return new Violation(
+        string $code = self::RULE_NAME,
+    ): Finding {
+        return new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: 'the declared layers do not cover the analysed code',
             severity: Severity::Error,
         );

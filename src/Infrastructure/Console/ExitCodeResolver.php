@@ -6,19 +6,19 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Reporting\ReportCoverage;
 
 /**
- * Determines process exit code based on violation severities and failOn configuration.
+ * Determines process exit code based on finding severities and failOn configuration.
  *
  * Severity priority (low → high): Info (0) → Warning (1) → Error (2).
  *
  * Default (null): only errors cause non-zero exit code (same as `fail_on: error`).
  * - `fail_on: warning` — Warning and Error fail; Info-only is exit 0.
  * - `fail_on: error` (default) — only Error fails; Info and Warning are exit 0.
- * - `fail_on: none` (or `false`) — never fail on violations.
+ * - `fail_on: none` (or `false`) — never fail on findings.
  *
  * {@see Severity::Info} is not a possible threshold ({@see ExitPolicy}
  * rejects it) and no threshold reaches down to it, so Info findings never
@@ -40,31 +40,31 @@ final class ExitCodeResolver
     ) {}
 
     /**
-     * Determines exit code based on violation severity and failOn configuration.
+     * Determines exit code based on finding severity and failOn configuration.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    public function resolve(array $violations, ?ReportCoverage $coverage = null, ?ExitPolicy $policy = null): int
+    public function resolve(array $findings, ?ReportCoverage $coverage = null, ?ExitPolicy $policy = null): int
     {
         if ($coverage !== null && !$coverage->isComplete()) {
             return 4;
         }
 
-        if ($this->hasConfigurationError($violations)) {
+        if ($this->hasConfigurationError($findings)) {
             return Severity::Error->getExitCode();
         }
 
-        return self::failOnExitCode($violations, $policy?->failOn);
+        return self::failOnExitCode($findings, $policy?->failOn);
     }
 
     /**
      * The ordinary path: the highest severity present that meets the
      * threshold decides, and nothing meeting it means success.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param Severity|false|null $failOn `false` for `--fail-on=none`, `null` for the default (`error`)
      */
-    private static function failOnExitCode(array $violations, Severity|false|null $failOn): int
+    private static function failOnExitCode(array $findings, Severity|false|null $failOn): int
     {
         if ($failOn === false) {
             return 0;
@@ -72,28 +72,28 @@ final class ExitCodeResolver
 
         // The lowest threshold is `warning`, so whatever meets it has a
         // non-zero exit code of its own and can be returned directly.
-        return self::highestAtOrAbove($violations, $failOn ?? Severity::Error)?->getExitCode() ?? 0;
+        return self::highestAtOrAbove($findings, $failOn ?? Severity::Error)?->getExitCode() ?? 0;
     }
 
     /**
      * The highest severity present that is at least `$threshold`, or `null`
      * when nothing reaches it.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private static function highestAtOrAbove(array $violations, Severity $threshold): ?Severity
+    private static function highestAtOrAbove(array $findings, Severity $threshold): ?Severity
     {
         $highest = null;
 
-        foreach ($violations as $violation) {
-            $rank = self::severityRank($violation->severity);
+        foreach ($findings as $finding) {
+            $rank = self::severityRank($finding->severity);
 
             if ($rank < self::severityRank($threshold)) {
                 continue;
             }
 
             if ($highest === null || $rank > self::severityRank($highest)) {
-                $highest = $violation->severity;
+                $highest = $finding->severity;
             }
         }
 
@@ -111,25 +111,25 @@ final class ExitCodeResolver
      * channel is emitted with `Warning` or `Error` today, and this is what
      * keeps that true.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private function hasConfigurationError(array $violations): bool
+    private function hasConfigurationError(array $findings): bool
     {
         $found = false;
 
-        foreach ($violations as $violation) {
-            $declaration = $this->declarations->declarationFor($violation->channel());
+        foreach ($findings as $finding) {
+            $declaration = $this->declarations->declarationFor($finding->channel());
 
             if ($declaration === null || !$declaration->isConfigurationError()) {
                 continue;
             }
 
-            if ($violation->severity === Severity::Info) {
+            if ($finding->severity === Severity::Info) {
                 throw new LogicException(\sprintf(
                     'Channel "%s" declares a configuration error but emitted a finding at severity "info".'
                     . ' A configuration error fails the run unconditionally, so reporting it below "warning"'
                     . ' would print a weight the finding does not have.',
-                    $violation->channel()->toKey(),
+                    $finding->channel()->toKey(),
                 ));
             }
 

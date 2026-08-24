@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 
 /**
  * Turns one decoded entry of a baseline file into either an applicable
@@ -92,7 +92,7 @@ final readonly class BaselineEntryParser
         try {
             return new BaselineIdentity(
                 $subjectKey,
-                ViolationChannel::fromKey($channel),
+                FindingChannel::fromKey($channel),
                 self::readOptionalNonEmptyString(
                     $raw,
                     'occurrence',

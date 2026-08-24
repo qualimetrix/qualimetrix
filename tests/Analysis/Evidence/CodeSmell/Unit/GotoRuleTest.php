@@ -47,7 +47,7 @@ final class GotoRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new GotoRule(new CodeSmellOptions(enabled: false));
 
@@ -60,7 +60,7 @@ final class GotoRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoViolations(): void
+    public function noSmellsProducesNoFindings(): void
     {
         $rule = new GotoRule(new CodeSmellOptions());
 
@@ -81,7 +81,7 @@ final class GotoRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesViolation(): void
+    public function smellDetectedProducesFinding(): void
     {
         $rule = new GotoRule(new CodeSmellOptions());
 
@@ -98,13 +98,13 @@ final class GotoRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(50, $violations[0]->location->line);
-        self::assertSame('goto statement detected - avoid using goto', $violations[0]->message);
-        self::assertSame('code-smell.goto', $violations[0]->ruleName);
-        self::assertSame(1.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(50, $findings[0]->location->line);
+        self::assertSame('goto statement detected - avoid using goto', $findings[0]->message);
+        self::assertSame('code-smell.goto', $findings[0]->ruleName);
+        self::assertSame(1.0, $findings[0]->metricValue);
     }
 }

@@ -120,7 +120,7 @@ final class BaselineGenerateCommand extends BaselineCommand
             : null;
 
         $context = $this->baselineRun->measure($input, $output);
-        $capture = $this->generator->generate($context->violations(), $context->scope->paths());
+        $capture = $this->generator->generate($context->findings(), $context->scope->paths());
         $baseline = $mode === BaselineEntryMode::Suppress
             ? self::withMode($capture->baseline, BaselineEntryMode::Suppress)
             : $capture->baseline;

@@ -755,7 +755,7 @@ final class Gate
      * claimed the check covered that payload. It covered its syntax, not its
      * vocabulary.
      *
-     * Measured against `HtmlViolationPartitioner::partition()`, which is the one
+     * Measured against `HtmlFindingPartitioner::partition()`, which is the one
      * place the payload's keys are written, and pinned there by
      * {@see SelfTest::htmlPayloadVocabulary()} so a rename on that side is loud
      * rather than a silently unread field.

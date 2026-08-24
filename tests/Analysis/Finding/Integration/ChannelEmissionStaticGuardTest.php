@@ -31,8 +31,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionClass;
@@ -44,7 +44,7 @@ use RuntimeException;
  * {@see \Qualimetrix\Tests\Integration\Infrastructure\Rule\ChannelDeclarationFixtureDriftTest}
  * cannot: both compare the **declared** set against itself (the fixture) or
  * against a 12-case hand-written corpus — neither reads what a rule actually
- * *emits*. A rule whose `violationCode:` argument drifts from its
+ * *emits*. A rule whose `code:` argument drifts from its
  * `channelDeclarations()` entry (e.g. `self::NAME . '.method'` in one place,
  * `self::NAME . '.methods'` in the other, both hand-typed) passes both of
  * those guards, because the fixture was transcribed from the declaration,
@@ -52,13 +52,13 @@ use RuntimeException;
  *
  * This guard parses every rule class's own source with `nikic/php-parser`
  * (already a project dependency; this project is itself a static analyser),
- * finds every `new Violation(...)` construction, and resolves its
- * `ruleName:`/`violationCode:` argument expressions where they are built
+ * finds every `new Finding(...)` construction, and resolves its
+ * `ruleName:`/`code:` argument expressions where they are built
  * from constants:
  *
  * - a string literal;
  * - `self::CONST` (bound to the class whose source declares the
- *   `new Violation(...)` — the abstract base, for the ~12 rules whose
+ *   `new Finding(...)` — the abstract base, for the ~12 rules whose
  *   emission is inherited) and `static::CONST` (bound to the concrete rule
  *   class under test, matching PHP's own late-static-binding rule — verified
  *   empirically: `ReflectionMethod::invoke(null)` on a static method
@@ -76,7 +76,7 @@ use RuntimeException;
  *   is never evaluated — both outcomes are real emissions on different
  *   inputs, e.g. `coupling.cbo`'s class/namespace split);
  * - a `match` expression, resolved to the union of every non-throwing arm;
- * - `ViolationChannel::leveled($name, $level)->violationCode`, the one place
+ * - `FindingChannel::leveled($name, $level)->code`, the one place
  *   a level is spelled into a channel code, resolved by resolving both
  *   halves — the level from an enum case, or, when it arrives as a
  *   parameter, from every value passed at every call of that method in the
@@ -139,15 +139,15 @@ final class ChannelEmissionStaticGuardTest extends TestCase
         foreach (self::ruleClasses() as $ruleClass) {
             foreach (self::findEmissionSites($ruleClass) as $site) {
                 $ruleNames = self::resolveArgOrRecordFailure($site, 'ruleName', $ruleClass, $skipList, $usedSkipEntries, $failures);
-                $violationCodes = self::resolveArgOrRecordFailure($site, 'violationCode', $ruleClass, $skipList, $usedSkipEntries, $failures);
+                $codes = self::resolveArgOrRecordFailure($site, 'code', $ruleClass, $skipList, $usedSkipEntries, $failures);
 
-                if ($ruleNames === null || $violationCodes === null) {
+                if ($ruleNames === null || $codes === null) {
                     continue;
                 }
 
                 foreach ($ruleNames as $ruleName) {
-                    foreach ($violationCodes as $violationCode) {
-                        $channel = new ViolationChannel($ruleName, $violationCode);
+                    foreach ($codes as $code) {
+                        $channel = new FindingChannel($ruleName, $code);
                         $key = $channel->toKey();
 
                         if ($registry->declarationFor($channel) === null && !\in_array($key, $excludedKeys, true)) {
@@ -200,7 +200,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
 
         if ($expr === null) {
             $failures[] = \sprintf(
-                '%s::%s() constructs a Violation with no "%s" argument.',
+                '%s::%s() constructs a Finding with no "%s" argument.',
                 $site['declaringClass'],
                 $site['method'],
                 $argName,
@@ -257,7 +257,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
 
     /**
      * Walks from the concrete rule class upward through its ancestors until
-     * one of them textually contains a `new Violation(...)` construction —
+     * one of them textually contains a `new Finding(...)` construction —
      * the emission may be inherited (AbstractCodeSmellRule,
      * AbstractSecurityPatternRule) rather than declared on the concrete
      * class itself.
@@ -271,7 +271,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
         $current = $ruleClass;
 
         while ($current !== false && $current !== AbstractRule::class) {
-            $sites = self::findViolationSitesDeclaredOn($current);
+            $sites = self::findFindingSitesDeclaredOn($current);
 
             if ($sites !== []) {
                 return $sites;
@@ -288,7 +288,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
      *
      * @return list<array{declaringClass: class-string, method: string, args: array<string, Expr>, methodNode: ClassMethod}>
      */
-    private static function findViolationSitesDeclaredOn(string $class): array
+    private static function findFindingSitesDeclaredOn(string $class): array
     {
         $classNode = self::findClassNode($class);
 
@@ -304,7 +304,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             $newNodes = $finder->findInstanceOf($method, New_::class);
 
             foreach ($newNodes as $new) {
-                if (!self::isViolationConstruction($new)) {
+                if (!self::isFindingConstruction($new)) {
                     continue;
                 }
 
@@ -327,9 +327,9 @@ final class ChannelEmissionStaticGuardTest extends TestCase
         return $sites;
     }
 
-    private static function isViolationConstruction(New_ $new): bool
+    private static function isFindingConstruction(New_ $new): bool
     {
-        return $new->class instanceof Name && $new->class->getLast() === 'Violation';
+        return $new->class instanceof Name && $new->class->getLast() === 'Finding';
     }
 
     /**
@@ -590,8 +590,8 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     }
 
     /**
-     * Resolves `ViolationChannel::leveled($name, $level)->ruleName` and
-     * `->violationCode` — the single assembly point of a level-bearing
+     * Resolves `FindingChannel::leveled($name, $level)->ruleName` and
+     * `->code` — the single assembly point of a level-bearing
      * channel, and therefore the only shape through which a level reaches an
      * emitted code at all.
      *
@@ -612,7 +612,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             return null;
         }
 
-        if (!$call->class instanceof Name || $call->class->getLast() !== 'ViolationChannel') {
+        if (!$call->class instanceof Name || $call->class->getLast() !== 'FindingChannel') {
             return null;
         }
 
@@ -636,7 +636,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             return $ruleNames;
         }
 
-        if ($expr->name->toString() !== 'violationCode') {
+        if ($expr->name->toString() !== 'code') {
             return null;
         }
 

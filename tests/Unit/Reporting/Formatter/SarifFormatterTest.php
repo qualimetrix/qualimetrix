@@ -10,9 +10,9 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -72,18 +72,18 @@ final class SarifFormatterTest extends TestCase
     public function itFingerprintsDuplicateLogicalDeclarationsByTheirCanonicalSubjects(): void
     {
         $logical = SymbolPath::forMethod('App\\Service', 'DuplicateService', 'run');
-        $make = static fn(int $ordinal): Violation => self::violation(
+        $make = static fn(int $ordinal): Finding => self::finding(
             location: new Location(RelativePath::fromString('src/Service/DuplicateService.php'), 42),
             subject: MetricSubject::declaration(DeclarationPath::of($logical, RelativePath::fromString('src/Service/DuplicateService.php'), DeclarationOrdinal::fromRank($ordinal))),
             symbolPath: $logical,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Same message must not participate in the fingerprint',
             severity: Severity::Warning,
         );
 
         $data = json_decode($this->formatter->format(
-            ReportBuilder::create()->addViolations([$make(101), $make(202)])->build(),
+            ReportBuilder::create()->addFindings([$make(101), $make(202)])->build(),
             new FormatterContext(),
         ), true, 512, \JSON_THROW_ON_ERROR);
 
@@ -93,16 +93,16 @@ final class SarifFormatterTest extends TestCase
             $results[1]['partialFingerprints']['primaryLocationLineHash'],
         );
 
-        $unrelated = self::violation(
+        $unrelated = self::finding(
             location: new Location(RelativePath::fromString('src/Service/UnrelatedService.php'), 5),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UnrelatedService', 'run'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'An unrelated finding',
             severity: Severity::Warning,
         );
         $withUnrelated = json_decode($this->formatter->format(
-            ReportBuilder::create()->addViolations([$make(101), $unrelated])->build(),
+            ReportBuilder::create()->addFindings([$make(101), $unrelated])->build(),
             new FormatterContext(),
         ), true, 512, \JSON_THROW_ON_ERROR);
 
@@ -117,14 +117,14 @@ final class SarifFormatterTest extends TestCase
     {
         $alpha = SymbolPath::forClass('App', 'Alpha');
         $beta = SymbolPath::forClass('App', 'Beta');
-        $violations = [
-            self::edgeViolation('no-edge'),
-            self::edgeViolation('untyped-alpha', $alpha),
-            self::edgeViolation('untyped-beta', $beta),
-            self::edgeViolation('typed-alpha', $alpha, DependencyType::New_),
+        $findings = [
+            self::edgeFinding('no-edge'),
+            self::edgeFinding('untyped-alpha', $alpha),
+            self::edgeFinding('untyped-beta', $beta),
+            self::edgeFinding('typed-alpha', $alpha, DependencyType::New_),
         ];
         $data = json_decode($this->formatter->format(
-            ReportBuilder::create()->addViolations($violations)->build(),
+            ReportBuilder::create()->addFindings($findings)->build(),
             new FormatterContext(),
         ), true, 512, \JSON_THROW_ON_ERROR);
         $fingerprints = [];
@@ -172,23 +172,23 @@ final class SarifFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsReportWithViolations(): void
+    public function itFormatsReportWithFindings(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity of 12 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -203,7 +203,7 @@ final class SarifFormatterTest extends TestCase
 
         $run = $data['runs'][0];
 
-        // Should have 1 unique rule (both violations use same rule)
+        // Should have 1 unique rule (both findings use same rule)
         self::assertCount(1, $run['tool']['driver']['rules']);
         $rule = $run['tool']['driver']['rules'][0];
         self::assertSame('complexity.cyclomatic', $rule['id']);
@@ -215,7 +215,7 @@ final class SarifFormatterTest extends TestCase
         // Should have 2 results
         self::assertCount(2, $run['results']);
 
-        // First violation
+        // First finding
         $result1 = $run['results'][0];
         self::assertSame('complexity.cyclomatic', $result1['ruleId']);
         self::assertSame('error', $result1['level']);
@@ -225,7 +225,7 @@ final class SarifFormatterTest extends TestCase
         self::assertSame(42, $result1['locations'][0]['physicalLocation']['region']['startLine']);
         self::assertSame(1, $result1['locations'][0]['physicalLocation']['region']['startColumn']);
 
-        // Second violation
+        // Second finding
         $result2 = $run['results'][1];
         self::assertSame('complexity.cyclomatic', $result2['ruleId']);
         self::assertSame('warning', $result2['level']);
@@ -237,27 +237,27 @@ final class SarifFormatterTest extends TestCase
     public function itFormatsMultipleRules(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Complexity too high',
                 severity: Severity::Error,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'class-size',
-                violationCode: 'class-size',
+                code: 'class-size',
                 message: 'Class too large',
                 severity: Severity::Warning,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/C.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'maintainability-index',
-                violationCode: 'maintainability-index',
+                code: 'maintainability-index',
                 message: 'Low maintainability',
                 severity: Severity::Warning,
             ))
@@ -290,14 +290,14 @@ final class SarifFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsNamespaceLevelViolation(): void
+    public function itFormatsNamespaceLevelFinding(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php')),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
-                violationCode: 'namespace-size',
+                code: 'namespace-size',
                 message: 'Namespace contains 16 classes (threshold: 10)',
                 severity: Severity::Error,
                 metricValue: 16,
@@ -311,7 +311,7 @@ final class SarifFormatterTest extends TestCase
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
-        // Namespace violations without line should default to line 1
+        // Namespace findings without line should default to line 1
         self::assertSame(1, $result['locations'][0]['physicalLocation']['region']['startLine']);
     }
 
@@ -319,19 +319,19 @@ final class SarifFormatterTest extends TestCase
     public function itMapsSeverityCorrectly(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'Error violation',
                 severity: Severity::Error,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'Warning violation',
                 severity: Severity::Warning,
             ))
@@ -354,11 +354,11 @@ final class SarifFormatterTest extends TestCase
     public function itMapsInfoSeverityToNote(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'architecture.coverage',
-                violationCode: 'architecture.coverage',
+                code: 'architecture.coverage',
                 message: 'Class is not assigned to a layer',
                 severity: Severity::Info,
             ))
@@ -381,19 +381,19 @@ final class SarifFormatterTest extends TestCase
     public function itProducesCorrectRuleDescriptions(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'cohesion.lcom',
-                violationCode: 'cohesion.lcom',
+                code: 'cohesion.lcom',
                 message: 'LCOM too high',
                 severity: Severity::Warning,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'design.inheritance',
-                violationCode: 'design.inheritance',
+                code: 'design.inheritance',
                 message: 'Inheritance too deep',
                 severity: Severity::Warning,
             ))
@@ -426,14 +426,14 @@ final class SarifFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itUsesViolationCodeForRuleId(): void
+    public function itUsesCodeForRuleId(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity',
-                violationCode: 'complexity.method',
+                code: 'complexity.method',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -447,11 +447,11 @@ final class SarifFormatterTest extends TestCase
 
         $run = $data['runs'][0];
 
-        // Result ruleId should use violationCode
+        // Result ruleId should use code
         $result = $run['results'][0];
         self::assertSame('complexity.method', $result['ruleId']);
 
-        // Rule in rules array should use violationCode as id
+        // Rule in rules array should use code as id
         $rule = $run['tool']['driver']['rules'][0];
         self::assertSame('complexity.method', $rule['id']);
     }
@@ -471,11 +471,11 @@ final class SarifFormatterTest extends TestCase
     public function itLeavesAlreadyRelativePathUnchanged(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -494,14 +494,14 @@ final class SarifFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itOmitsLocationsForProjectLevelViolation(): void
+    public function itOmitsLocationsForProjectLevelFinding(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace('App'),
                 ruleName: 'architecture',
-                violationCode: 'architecture.circular',
+                code: 'architecture.circular',
                 message: 'Circular dependency detected',
                 severity: Severity::Error,
             ))
@@ -514,7 +514,7 @@ final class SarifFormatterTest extends TestCase
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
-        // Project-level violations should not have locations key at all
+        // Project-level findings should not have locations key at all
         self::assertArrayNotHasKey('locations', $result);
     }
 
@@ -522,11 +522,11 @@ final class SarifFormatterTest extends TestCase
     public function itProducesThreeSlashesForUnixPathFileUri(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('home/user/project/src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -551,11 +551,11 @@ final class SarifFormatterTest extends TestCase
     public function itPercentEncodesPathWithSpaces(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'Test',
                 severity: Severity::Error,
             ))
@@ -580,27 +580,27 @@ final class SarifFormatterTest extends TestCase
     public function itMapsRuleHelpUriToDocsCategoryPage(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.class',
+                code: 'complexity.cyclomatic.class',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'code-smell.boolean-argument',
-                violationCode: 'code-smell.boolean-argument',
+                code: 'code-smell.boolean-argument',
                 message: 'Boolean argument',
                 severity: Severity::Warning,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/C.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'unknown-rule',
-                violationCode: 'unknown-rule',
+                code: 'unknown-rule',
                 message: 'Unknown',
                 severity: Severity::Warning,
             ))
@@ -627,16 +627,16 @@ final class SarifFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itUsesViolationCodeForRuleDescription(): void
+    public function itUsesCodeForRuleDescription(): void
     {
-        // When ruleName differs from violationCode, the description should
-        // be looked up by violationCode (which matches the match arms).
+        // When ruleName differs from code, the description should
+        // be looked up by code (which matches the match arms).
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'cyclomatic-complexity',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -657,11 +657,11 @@ final class SarifFormatterTest extends TestCase
     public function itIncludesRelatedLocationsInResult(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
                 symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php')),
                 ruleName: 'duplication.code-duplication',
-                violationCode: 'duplication.code-duplication',
+                code: 'duplication.code-duplication',
                 message: 'Duplicated code block (20 lines, 3 occurrences)',
                 severity: Severity::Warning,
                 metricValue: 20,
@@ -704,11 +704,11 @@ final class SarifFormatterTest extends TestCase
     public function itOmitsRelatedLocationsFieldWhenEmpty(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -730,11 +730,11 @@ final class SarifFormatterTest extends TestCase
     public function itIncludesTheAcceptedLevelInTheMessageOnABreach(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation((self::violation(
+            ->addFinding((self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity of 31 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -757,15 +757,15 @@ final class SarifFormatterTest extends TestCase
     #[Test]
     public function itPropagatesAMeasuredBreachsPromotedSeverityToResultAndRuleLevel(): void
     {
-        // ADR 0017: promotion to Error happens once, on Violation::severity via
+        // ADR 0017: promotion to Error happens once, on Finding::severity via
         // reportedAsBreach(). SARIF must derive both the per-result 'level'
         // and the rule's run-level default from that same field — no
         // separate mapping that could fall out of sync with the promotion.
-        $breach = (self::violation(
+        $breach = (self::finding(
             location: new Location(RelativePath::fromString('src/A.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'A'),
             ruleName: 'duplication.code-duplication',
-            violationCode: 'duplication.code-duplication',
+            code: 'duplication.code-duplication',
             message: 'Duplicated code block accepted at 20 lines',
             severity: Severity::Warning,
             metricValue: 35,
@@ -774,7 +774,7 @@ final class SarifFormatterTest extends TestCase
         self::assertSame(Severity::Error, $breach->severity, 'sanity: reportedAsBreach() promotes severity');
 
         $report = ReportBuilder::create()
-            ->addViolation($breach)
+            ->addFinding($breach)
             ->filesAnalyzed(1)
             ->filesSkipped(0)
             ->duration(0.1)
@@ -794,27 +794,27 @@ final class SarifFormatterTest extends TestCase
     public function itUsesMaxSeverityForDefaultConfigurationLevel(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'cyclomatic-complexity',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Warning level',
                 severity: Severity::Warning,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'cyclomatic-complexity',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Error level',
                 severity: Severity::Error,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/C.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'class-size',
-                violationCode: 'size.class',
+                code: 'size.class',
                 message: 'Warning only',
                 severity: Severity::Warning,
             ))
@@ -832,29 +832,28 @@ final class SarifFormatterTest extends TestCase
             $rulesByCode[$rule['id']] = $rule;
         }
 
-        // complexity.cyclomatic has both Warning and Error violations -> max is Error
+        // complexity.cyclomatic has both Warning and Error findings -> max is Error
         self::assertSame('error', $rulesByCode['complexity.cyclomatic']['defaultConfiguration']['level']);
 
-        // size.class has only Warning violations -> Warning
+        // size.class has only Warning findings -> Warning
         self::assertSame('warning', $rulesByCode['size.class']['defaultConfiguration']['level']);
     }
 
     /**
-     * Builds a violation fixture with an explicit declaration or aggregate
+     * Builds a finding fixture with an explicit declaration or aggregate
      * subject, preserving the production contract without hiding it behind a
      * legacy fallback.
      *
      * @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations
      */
-    private static function violation(
+    private static function finding(
         \Qualimetrix\Analysis\Finding\Contract\Location $location,
         \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
         string $ruleName,
-        string $violationCode,
+        string $code,
         string $message,
         \Qualimetrix\Analysis\Finding\Contract\Severity $severity,
         int|float|null $metricValue = null,
-        ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level = null,
         array $relatedLocations = [],
         ?string $recommendation = null,
         int|float|null $threshold = null,
@@ -863,7 +862,7 @@ final class SarifFormatterTest extends TestCase
         ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
-    ): Violation {
+    ): Finding {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File,
             \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
@@ -871,16 +870,15 @@ final class SarifFormatterTest extends TestCase
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: $message,
             severity: $severity,
             metricValue: $metricValue,
-            level: $level,
             relatedLocations: $relatedLocations,
             recommendation: $recommendation,
             threshold: $threshold,
@@ -891,16 +889,16 @@ final class SarifFormatterTest extends TestCase
         );
     }
 
-    private static function edgeViolation(
+    private static function edgeFinding(
         string $message,
         ?SymbolPath $target = null,
         ?DependencyType $type = null,
-    ): Violation {
-        return self::violation(
+    ): Finding {
+        return self::finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Foo.php')),
             ruleName: 'r',
-            violationCode: 'r.edge',
+            code: 'r.edge',
             message: $message,
             severity: Severity::Warning,
             dependencyTarget: $target,

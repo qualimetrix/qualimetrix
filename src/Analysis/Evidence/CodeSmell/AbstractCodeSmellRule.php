@@ -8,12 +8,12 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -115,7 +115,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(static::NAME, static::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            (new FindingChannel(static::NAME, static::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Callable),
         ];
     }
 
@@ -130,7 +130,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -138,7 +138,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
         $type = static::SMELL_TYPE;
 
         foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
@@ -151,7 +151,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
                 }
 
                 $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
-                $violations[] = CodeSmellFinding::fromEntry($entry, $file)->toViolation(
+                $findings[] = CodeSmellFinding::fromEntry($entry, $file)->toFinding(
                     $fileInfo->symbolPath,
                     static::NAME,
                     static::SMELL_TYPE,
@@ -162,11 +162,11 @@ abstract class AbstractCodeSmellRule extends AbstractRule
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
-     * Filters entries before violation creation.
+     * Filters entries before finding creation.
      *
      * Default behaviour: when the options class implements
      * {@see EntryFilteringOptionsInterface}, the entry's `extra` value is
@@ -188,7 +188,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     }
 
     /**
-     * Builds the violation message for a single entry.
+     * Builds the finding message for a single entry.
      *
      * Default behaviour: when MESSAGE_TEMPLATE_WITH_EXTRA is set and the
      * entry carries a non-empty `extra` value, sprintf-format it (with a

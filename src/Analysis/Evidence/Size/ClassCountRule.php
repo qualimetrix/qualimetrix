@@ -9,14 +9,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -80,12 +80,12 @@ final class ClassCountRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -93,7 +93,7 @@ final class ClassCountRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->all(SymbolType::Namespace_) as $namespaceInfo) {
             $subject = $namespaceInfo->subject
@@ -120,12 +120,12 @@ final class ClassCountRule extends AbstractRule
             if ($severity !== null) {
                 $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
 
-                $violations[] = new Violation(
+                $findings[] = new Finding(
                     location: new Location($namespaceInfo->file),
                     subject: $subject,
                     symbolPath: $namespaceInfo->symbolPath,
                     ruleName: $this->getName(),
-                    violationCode: self::NAME,
+                    code: self::NAME,
                     message: \sprintf('Class count is %d, exceeds threshold of %d. Consider splitting into sub-namespaces', $classCount, $threshold),
                     severity: $severity,
                     metricValue: $classCount,
@@ -135,7 +135,7 @@ final class ClassCountRule extends AbstractRule
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**

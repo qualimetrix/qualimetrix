@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
 
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 
@@ -74,9 +74,9 @@ interface InlineDirectivePolicyInterface
      * rule is the single switch, so `--disable-rule` and `enabled: false`
      * both silence this without a second one.
      *
-     * @param list<Violation> $violations everything the rules produced this run
+     * @param list<Finding> $findings everything the rules produced this run
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function auditDirectiveUsage(array $violations): array;
+    public function auditDirectiveUsage(array $findings): array;
 }

@@ -72,7 +72,7 @@ AST node -> stateful visitor -> MetricBag entry -> stateless rule -> Finding
 ```
 
 Visitors keep resettable per-file state. Collectors emit Measurement-owned
-`MetricBag` entries, while rules consume Finding-owned rule and violation
+`MetricBag` entries, while rules consume Finding-owned rule and finding
 contracts. Security publishes no additional contract.
 
 ## Tests

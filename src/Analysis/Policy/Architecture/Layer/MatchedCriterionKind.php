@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 /**
  * Classifies the membership criterion that produced a layer match.
  *
- * Used as a tag on {@see MatchedCriterion} so the violation message and the
+ * Used as a tag on {@see MatchedCriterion} so the finding message and the
  * {@code architecture.potential-shadow} diagnostic can report WHICH criterion
  * caught the class under OR semantics ({@code match: any}) — e.g. "matched by
  * suffix 'Repository'" vs. "matched by pattern 'App\\Repository'".

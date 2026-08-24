@@ -8,11 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -25,7 +25,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
+use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -43,7 +43,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Covers the three reporting facts P4-D2 adds on top of the existing stale
- * / `--show-resolved` reporting in {@see ViolationFilterOrchestratorTest}:
+ * / `--show-resolved` reporting in {@see FindingFilterOrchestratorTest}:
  *
  * - ADR 0017 — a group that shrank without vanishing is not "resolved".
  * - An entry the loaded baseline could not apply is reported as inert,
@@ -53,8 +53,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * A run with no `--baseline` is confirmed to print none of the three.
  */
-#[CoversClass(ViolationFilterOrchestrator::class)]
-final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
+#[CoversClass(FindingFilterOrchestrator::class)]
+final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
 {
     /** @var list<string> */
     private array $tempFiles = [];
@@ -80,8 +80,8 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
     public function itDoesNotCountAShrunkButPresentGroupAsResolved(): void
     {
         $survivors = [
-            self::gotoViolation('src/Legacy/bootstrap.php'),
-            self::gotoViolation('src/Legacy/bootstrap.php'),
+            self::gotoFinding('src/Legacy/bootstrap.php'),
+            self::gotoFinding('src/Legacy/bootstrap.php'),
         ];
 
         $baselinePath = $this->writeBaseline([
@@ -101,7 +101,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
 
         $display = $output->fetch();
 
-        self::assertSame([], $result->violations, 'A group within its stored count must still be fully accepted.');
+        self::assertSame([], $result->findings, 'A group within its stored count must still be fully accepted.');
         self::assertStringNotContainsString('did not appear in this run', $display);
         self::assertStringNotContainsString('resolved', $display);
     }
@@ -141,7 +141,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         self::assertStringContainsString('retired.channel#retired.channel', $display);
         self::assertStringContainsString('channel is not declared by any rule', $display);
         self::assertMatchesRegularExpression('/\[[0-9a-f]{12}\]/', $display, 'The selector must be printed so a user can copy it.');
-        self::assertSame([], $result->violations, 'An inapplicable entry must not suppress anything, but it also has no finding to report here.');
+        self::assertSame([], $result->findings, 'An inapplicable entry must not suppress anything, but it also has no finding to report here.');
     }
 
     /**
@@ -168,7 +168,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         self::assertStringContainsString('does not cover the baseline', $display);
         self::assertStringContainsString('tests', $display);
         self::assertStringNotContainsString('Error:', $display);
-        self::assertSame([], $result->violations);
+        self::assertSame([], $result->findings);
     }
 
     /**
@@ -234,7 +234,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $output = new BufferedOutput();
         $this->filterAndReport(
             $this->createOrchestrator(),
-            $this->createAnalysisResult([self::gotoViolation('src/Legacy/bootstrap.php')]),
+            $this->createAnalysisResult([self::gotoFinding('src/Legacy/bootstrap.php')]),
             $this->createInput(),
             self::diagnosticConsole($output),
             $this->createScopeResolution(['src']),
@@ -247,17 +247,17 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         self::assertStringNotContainsString('does not cover', $display);
     }
 
-    private static function gotoViolation(string $file): Violation
+    private static function gotoFinding(string $file): Finding
     {
         $path = RelativePath::fromString($file);
         $symbol = SymbolPath::forFile($path);
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, 12),
             subject: MetricSubject::aggregate($symbol),
             symbolPath: $symbol,
             ruleName: 'code-smell.goto',
-            violationCode: 'code-smell.goto',
+            code: 'code-smell.goto',
             message: 'Avoid goto',
             severity: Severity::Warning,
         );
@@ -283,7 +283,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
     }
 
     private function filterAndReport(
-        ViolationFilterOrchestrator $orchestrator,
+        FindingFilterOrchestrator $orchestrator,
         AnalysisResult $result,
         ArrayInput $input,
         OutputInterface $output,
@@ -302,7 +302,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         );
     }
 
-    private function createOrchestrator(): ViolationFilterOrchestrator
+    private function createOrchestrator(): FindingFilterOrchestrator
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
 
@@ -321,7 +321,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $ruleExecutor = self::createStub(RuleExecutionInterface::class);
         $ruleExecutor->method('exclusionStats')->willReturn(new RuleExclusionStats());
 
-        return new ViolationFilterOrchestrator($pipeline, $ruleExecutor);
+        return new FindingFilterOrchestrator($pipeline, $ruleExecutor);
     }
 
     private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput
@@ -351,14 +351,14 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private function createAnalysisResult(array $violations = []): AnalysisResult
+    private function createAnalysisResult(array $findings = []): AnalysisResult
     {
         $repository = self::createStub(MetricRepositoryInterface::class);
 
         return new AnalysisResult(
-            violations: $violations,
+            findings: $findings,
             duration: 0.1,
             metrics: $repository,
             coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),

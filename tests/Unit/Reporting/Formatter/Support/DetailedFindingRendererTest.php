@@ -10,38 +10,38 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Support\DebtBreakdownRenderer;
-use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
-use Qualimetrix\Reporting\Formatter\Support\ViolationDetailRenderer;
+use Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer;
+use Qualimetrix\Reporting\Formatter\Support\FindingDetailRenderer;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
-#[CoversClass(DetailedViolationRenderer::class)]
-#[CoversClass(ViolationDetailRenderer::class)]
+#[CoversClass(DetailedFindingRenderer::class)]
+#[CoversClass(FindingDetailRenderer::class)]
 #[CoversClass(DebtBreakdownRenderer::class)]
-final class DetailedViolationRendererTest extends TestCase
+final class DetailedFindingRendererTest extends TestCase
 {
-    private DetailedViolationRenderer $renderer;
-    private ViolationDetailRenderer $detailRenderer;
+    private DetailedFindingRenderer $renderer;
+    private FindingDetailRenderer $detailRenderer;
     private DebtBreakdownRenderer $debtRenderer;
 
     protected function setUp(): void
     {
         $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
-        $this->renderer = new DetailedViolationRenderer($debtCalculator);
-        $this->detailRenderer = new ViolationDetailRenderer();
+        $this->renderer = new DetailedFindingRenderer($debtCalculator);
+        $this->detailRenderer = new FindingDetailRenderer();
         $this->debtRenderer = new DebtBreakdownRenderer($debtCalculator);
     }
 
     #[Test]
-    public function itShowsNoViolationsFoundForEmptyViolations(): void
+    public function itShowsNoFindingsFoundForEmptyFindings(): void
     {
         $context = new FormatterContext(useColor: false);
         $output = $this->renderer->render([], $context);
@@ -50,7 +50,7 @@ final class DetailedViolationRendererTest extends TestCase
     }
 
     #[Test]
-    public function itShowsScopedMessageForEmptyViolationsWithNamespaceFilter(): void
+    public function itShowsScopedMessageForEmptyFindingsWithNamespaceFilter(): void
     {
         $context = new FormatterContext(useColor: false, namespace: 'App\\Service');
         $output = $this->renderer->render([], $context);
@@ -59,7 +59,7 @@ final class DetailedViolationRendererTest extends TestCase
     }
 
     #[Test]
-    public function itShowsScopedMessageForEmptyViolationsWithClassFilter(): void
+    public function itShowsScopedMessageForEmptyFindingsWithClassFilter(): void
     {
         $context = new FormatterContext(useColor: false, class: 'App\\Service\\UserService');
         $output = $this->renderer->render([], $context);
@@ -70,27 +70,27 @@ final class DetailedViolationRendererTest extends TestCase
     #[Test]
     public function itGroupsByFileByDefaultInDetailMode(): void
     {
-        $violations = [
-            self::violation(
+        $findings = [
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
-                violationCode: 'test.rule',
+                code: 'test.rule',
                 message: 'Test msg',
                 severity: Severity::Error,
             ),
-            self::violation(
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Bar.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
                 ruleName: 'test',
-                violationCode: 'test.rule',
+                code: 'test.rule',
                 message: 'Bar msg',
                 severity: Severity::Warning,
             ),
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->renderer->render($findings, $context);
 
         // Should group by file (default in detail mode)
         self::assertStringContainsString('src/Foo.php (1 violation)', $output);
@@ -101,50 +101,50 @@ final class DetailedViolationRendererTest extends TestCase
     #[Test]
     public function itRendersFlatWhenGroupByNoneIsExplicit(): void
     {
-        $violations = [
-            self::violation(
+        $findings = [
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
-                violationCode: 'test.rule',
+                code: 'test.rule',
                 message: 'Test msg',
                 severity: Severity::Error,
             ),
         ];
 
         $context = new FormatterContext(useColor: false, groupBy: GroupBy::None, isGroupByExplicit: true);
-        $output = $this->detailRenderer->render($violations, $context);
+        $output = $this->detailRenderer->render($findings, $context);
 
-        // Should NOT have file group headers (but debt breakdown may mention "violation")
+        // Should NOT have file group headers (but debt breakdown may mention "finding")
         self::assertStringNotContainsString('src/Foo.php (1 violation)', $output);
-        // But should have the violation with full path in the violation line (without line number for non-precise)
+        // But should have the finding with full path in the finding line (without line number for non-precise)
         self::assertStringContainsString('src/Foo.php', $output);
     }
 
     #[Test]
     public function itGroupsByRuleWhenGroupByRuleIsExplicit(): void
     {
-        $violations = [
-            self::violation(
+        $findings = [
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
-            self::violation(
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Bar.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
                 ruleName: 'size.method-count',
-                violationCode: 'size.method-count',
+                code: 'size.method-count',
                 message: 'Too many',
                 severity: Severity::Warning,
             ),
         ];
 
         $context = new FormatterContext(useColor: false, groupBy: GroupBy::Rule, isGroupByExplicit: true);
-        $output = $this->detailRenderer->render($violations, $context);
+        $output = $this->detailRenderer->render($findings, $context);
 
         self::assertStringContainsString('complexity.cyclomatic (1)', $output);
         self::assertStringContainsString('size.method-count (1)', $output);
@@ -153,12 +153,12 @@ final class DetailedViolationRendererTest extends TestCase
     #[Test]
     public function itUsesHumanMessageWhenAvailable(): void
     {
-        $violations = [
-            self::violation(
+        $findings = [
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 15,
@@ -167,7 +167,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($violations, $context);
+        $output = $this->detailRenderer->render($findings, $context);
 
         self::assertStringContainsString('too many code paths', $output);
         self::assertStringNotContainsString('exceeds threshold', $output);
@@ -176,12 +176,12 @@ final class DetailedViolationRendererTest extends TestCase
     #[Test]
     public function itFallsBackToMessageWhenHumanMessageNull(): void
     {
-        $violations = [
-            self::violation(
+        $findings = [
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 15,
@@ -189,76 +189,76 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($violations, $context);
+        $output = $this->detailRenderer->render($findings, $context);
 
         self::assertStringContainsString('exceeds threshold', $output);
     }
 
     #[Test]
-    public function itShowsSeverityTagOnViolation(): void
+    public function itShowsSeverityTagOnFinding(): void
     {
-        $violations = [
-            self::violation(
+        $findings = [
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
-                violationCode: 'test.rule',
+                code: 'test.rule',
                 message: 'Error msg',
                 severity: Severity::Error,
             ),
-            self::violation(
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
-                violationCode: 'test.rule',
+                code: 'test.rule',
                 message: 'Warn msg',
                 severity: Severity::Warning,
             ),
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($violations, $context);
+        $output = $this->detailRenderer->render($findings, $context);
 
         self::assertStringContainsString('ERROR', $output);
         self::assertStringContainsString('WARN', $output);
     }
 
     #[Test]
-    public function itShowsRuleCodeOnViolation(): void
+    public function itShowsRuleCodeOnFinding(): void
     {
-        $violations = [
-            self::violation(
+        $findings = [
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Test',
                 severity: Severity::Error,
             ),
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($violations, $context);
+        $output = $this->detailRenderer->render($findings, $context);
 
         self::assertStringContainsString('[complexity.cyclomatic.callable]', $output);
     }
 
     #[Test]
-    public function itShowsSymbolNameOnViolation(): void
+    public function itShowsSymbolNameOnFinding(): void
     {
-        $violations = [
-            self::violation(
+        $findings = [
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'test',
-                violationCode: 'test.rule',
+                code: 'test.rule',
                 message: 'Test',
                 severity: Severity::Error,
             ),
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($violations, $context);
+        $output = $this->detailRenderer->render($findings, $context);
 
         self::assertStringContainsString('bar', $output);
     }
@@ -266,34 +266,34 @@ final class DetailedViolationRendererTest extends TestCase
     #[Test]
     public function itShowsDebtBreakdownByRule(): void
     {
-        $violations = [
-            self::violation(
+        $findings = [
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'a'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
-            self::violation(
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 20),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'b'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
-            self::violation(
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Bar.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
                 ruleName: 'cohesion.lcom',
-                violationCode: 'cohesion.lcom',
+                code: 'cohesion.lcom',
                 message: 'LCOM high',
                 severity: Severity::Warning,
             ),
         ];
 
-        $output = $this->debtRenderer->render($violations);
+        $output = $this->debtRenderer->render($findings);
 
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
@@ -303,33 +303,33 @@ final class DetailedViolationRendererTest extends TestCase
     }
 
     #[Test]
-    public function itUsesAllViolationsForDebtBreakdownWhenProvided(): void
+    public function itUsesAllFindingsForDebtBreakdownWhenProvided(): void
     {
         $displayed = [
-            self::violation(
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'a'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
         ];
 
-        $extra = self::violation(
+        $extra = self::finding(
             location: new Location(RelativePath::fromString('src/Bar.php'), 5),
             symbolPath: SymbolPath::forClass('App', 'Bar'),
             ruleName: 'cohesion.lcom',
-            violationCode: 'cohesion.lcom',
+            code: 'cohesion.lcom',
             message: 'LCOM high',
             severity: Severity::Warning,
         );
 
-        $allViolations = [...$displayed, $extra];
+        $allFindings = [...$displayed, $extra];
 
-        $output = $this->debtRenderer->render($displayed, $allViolations);
+        $output = $this->debtRenderer->render($displayed, $allFindings);
 
-        // Debt breakdown must include the rule from $allViolations, not just $displayed
+        // Debt breakdown must include the rule from $allFindings, not just $displayed
         self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
     }
@@ -337,12 +337,12 @@ final class DetailedViolationRendererTest extends TestCase
     #[Test]
     public function itShowsTheAcceptedLevelOnABreach(): void
     {
-        $violations = [
-            (self::violation(
+        $findings = [
+            (self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complexity is 31',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -350,7 +350,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($violations, $context);
+        $output = $this->detailRenderer->render($findings, $context);
 
         self::assertStringContainsString('Complexity is 31 (accepted at 25, now 31)', $output);
     }
@@ -358,12 +358,12 @@ final class DetailedViolationRendererTest extends TestCase
     #[Test]
     public function itOmitsTheAcceptedLevelFragmentWhenAbsent(): void
     {
-        $violations = [
-            self::violation(
+        $findings = [
+            self::finding(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic.callable',
                 message: 'Complexity is 31',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -371,38 +371,38 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($violations, $context);
+        $output = $this->detailRenderer->render($findings, $context);
 
         self::assertStringNotContainsString('accepted at', $output);
     }
 
     #[Test]
-    public function itShowsProjectLevelViolationGroupHeader(): void
+    public function itShowsProjectLevelFindingGroupHeader(): void
     {
-        $violations = [
-            self::violation(
+        $findings = [
+            self::finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace('App\\Service'),
                 ruleName: 'architecture.circular-dependency',
-                violationCode: 'architecture.circular-dependency',
+                code: 'architecture.circular-dependency',
                 message: 'Circular dependency detected',
                 severity: Severity::Error,
             ),
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($violations, $context);
+        $output = $this->detailRenderer->render($findings, $context);
 
         self::assertStringContainsString('[project]', $output);
     }
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
-        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+        return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
 }

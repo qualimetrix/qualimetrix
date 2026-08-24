@@ -42,7 +42,7 @@ final class SensitiveParameterRuleTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenDisabled(): void
+    public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions(enabled: false));
 
@@ -56,7 +56,7 @@ final class SensitiveParameterRuleTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenNoFindings(): void
+    public function itReturnsNoFindingsWhenNoFindings(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
@@ -66,7 +66,7 @@ final class SensitiveParameterRuleTest extends TestCase
     }
 
     #[Test]
-    public function itCreatesViolationForSingleFinding(): void
+    public function itCreatesFindingForSingleFinding(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
@@ -75,17 +75,17 @@ final class SensitiveParameterRuleTest extends TestCase
                 ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 12, 'paramName' => 'password']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(12, $violations[0]->location->line);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('security.sensitive-parameter', $violations[0]->ruleName);
-        self::assertStringContainsString('SensitiveParameter', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(12, $findings[0]->location->line);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('security.sensitive-parameter', $findings[0]->ruleName);
+        self::assertStringContainsString('SensitiveParameter', $findings[0]->message);
     }
 
     #[Test]
-    public function itCreatesMultipleViolationsForMultipleFindings(): void
+    public function itCreatesMultipleFindingsForMultipleFindings(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
@@ -96,12 +96,12 @@ final class SensitiveParameterRuleTest extends TestCase
                 ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 22, 'paramName' => 'password']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(3, $violations);
-        self::assertSame(5, $violations[0]->location->line);
-        self::assertSame(10, $violations[1]->location->line);
-        self::assertSame(22, $violations[2]->location->line);
+        self::assertCount(3, $findings);
+        self::assertSame(5, $findings[0]->location->line);
+        self::assertSame(10, $findings[1]->location->line);
+        self::assertSame(22, $findings[2]->location->line);
     }
 
     #[Test]

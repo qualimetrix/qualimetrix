@@ -16,7 +16,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 /**
- * Binds every prose statement that counts or enumerates violation channels to
+ * Binds every prose statement that counts or enumerates finding channels to
  * the machine-readable channel declarations.
  *
  * Counts and channel lists were maintained as prose in eight documentation

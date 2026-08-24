@@ -32,5 +32,5 @@ interface ChannelPresentationInterface
      *                                  from reaching a consumer as if it were
      *                                  a legitimate answer.
      */
-    public function presentationFor(string $violationCode): ?ChannelPresentation;
+    public function presentationFor(string $code): ?ChannelPresentation;
 }

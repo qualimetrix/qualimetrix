@@ -5,27 +5,27 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Support;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 
-/** Renders sorted and grouped violation details. */
-final class ViolationDetailRenderer
+/** Renders sorted and grouped finding details. */
+final class FindingDetailRenderer
 {
-    /** @param list<Violation> $violations */
-    public function render(array $violations, FormatterContext $context): string
+    /** @param list<Finding> $findings */
+    public function render(array $findings, FormatterContext $context): string
     {
         $color = new AnsiColor($context->useColor);
         $lines = [];
         $effectiveGroupBy = $context->isGroupByExplicit ? $context->groupBy : GroupBy::File;
-        $sorted = ViolationSorter::sort($violations, $effectiveGroupBy);
+        $sorted = FindingSorter::sort($findings, $effectiveGroupBy);
 
         if ($effectiveGroupBy === GroupBy::None) {
             $this->renderFlat($sorted, $color, $context, $lines);
         } else {
             $this->renderGrouped(
-                ViolationSorter::group($sorted, $effectiveGroupBy),
+                FindingSorter::group($sorted, $effectiveGroupBy),
                 $effectiveGroupBy,
                 $color,
                 $context,
@@ -37,23 +37,23 @@ final class ViolationDetailRenderer
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param list<string> $lines
      */
-    private function renderFlat(array $violations, AnsiColor $color, FormatterContext $context, array &$lines): void
+    private function renderFlat(array $findings, AnsiColor $color, FormatterContext $context, array &$lines): void
     {
-        foreach ($violations as $violation) {
-            $this->renderViolation(
-                $violation,
+        foreach ($findings as $finding) {
+            $this->renderFinding(
+                $finding,
                 $color,
-                $this->formatFullLocation($violation, $context),
+                $this->formatFullLocation($finding, $context),
                 $lines,
             );
         }
     }
 
     /**
-     * @param array<string, list<Violation>> $groups
+     * @param array<string, list<Finding>> $groups
      * @param list<string> $lines
      */
     private function renderGrouped(
@@ -63,15 +63,15 @@ final class ViolationDetailRenderer
         FormatterContext $context,
         array &$lines,
     ): void {
-        foreach ($groups as $key => $violations) {
-            $count = \count($violations);
+        foreach ($groups as $key => $findings) {
+            $count = \count($findings);
             $lines[] = $this->formatGroupHeader($key, $count, $groupBy, $color);
 
-            foreach ($violations as $violation) {
+            foreach ($findings as $finding) {
                 $location = $groupBy === GroupBy::File
-                    ? $this->formatLineOnly($violation)
-                    : $this->formatFullLocation($violation, $context);
-                $this->renderViolation($violation, $color, $location, $lines);
+                    ? $this->formatLineOnly($finding)
+                    : $this->formatFullLocation($finding, $context);
+                $this->renderFinding($finding, $color, $location, $lines);
             }
         }
     }
@@ -108,14 +108,14 @@ final class ViolationDetailRenderer
     }
 
     /** @param list<string> $lines */
-    private function renderViolation(
-        Violation $violation,
+    private function renderFinding(
+        Finding $finding,
         AnsiColor $color,
         string $location,
         array &$lines,
     ): void {
-        $severity = $this->formatSeverityTag($violation->severity, $color);
-        $symbol = $violation->symbolPath->getSymbolName();
+        $severity = $this->formatSeverityTag($finding->severity, $color);
+        $symbol = $finding->symbolPath->getSymbolName();
 
         $line = '  ' . $severity;
         if ($location !== '') {
@@ -126,8 +126,8 @@ final class ViolationDetailRenderer
         }
         $lines[] = $line;
 
-        $message = $violation->getDisplayMessage() . $this->formatBreachSuffix($violation);
-        $ruleCode = $color->dim('[' . $violation->violationCode . ']');
+        $message = $finding->getDisplayMessage() . $this->formatBreachSuffix($finding);
+        $ruleCode = $color->dim('[' . $finding->code . ']');
         $lines[] = \sprintf('    %s  %s', $message, $ruleCode);
         $lines[] = '';
     }
@@ -151,28 +151,28 @@ final class ViolationDetailRenderer
         };
     }
 
-    private function formatFullLocation(Violation $violation, FormatterContext $context): string
+    private function formatFullLocation(Finding $finding, FormatterContext $context): string
     {
-        if ($violation->location->file === null) {
+        if ($finding->location->file === null) {
             return '[project]';
         }
 
-        $file = $context->relativizePath($violation->location->file);
-        $line = $violation->location->line;
+        $file = $context->relativizePath($finding->location->file);
+        $line = $finding->location->line;
 
-        return $line === null || !$violation->location->precise ? $file : \sprintf('%s:%d', $file, $line);
+        return $line === null || !$finding->location->precise ? $file : \sprintf('%s:%d', $file, $line);
     }
 
-    private function formatLineOnly(Violation $violation): string
+    private function formatLineOnly(Finding $finding): string
     {
-        $line = $violation->location->line;
+        $line = $finding->location->line;
 
-        return $line !== null && $violation->location->precise ? \sprintf('at line %d', $line) : '';
+        return $line !== null && $finding->location->precise ? \sprintf('at line %d', $line) : '';
     }
 
-    private function formatBreachSuffix(Violation $violation): string
+    private function formatBreachSuffix(Finding $finding): string
     {
-        $breach = AcceptedLevelNarrator::describe($violation);
+        $breach = AcceptedLevelNarrator::describe($finding);
 
         return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }

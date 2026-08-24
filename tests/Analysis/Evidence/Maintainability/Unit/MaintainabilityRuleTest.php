@@ -139,13 +139,13 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Maintainability Index is 30.0', $violations[0]->message);
-        self::assertSame(30.0, $violations[0]->metricValue);
-        self::assertSame('maintainability.index', $violations[0]->ruleName);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('Maintainability Index is 30.0', $findings[0]->message);
+        self::assertSame(30.0, $findings[0]->metricValue);
+        self::assertSame('maintainability.index', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -172,15 +172,15 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(15.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(15.0, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function itProducesNoViolationForHighMi(): void
+    public function itProducesNoFindingForHighMi(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
@@ -203,9 +203,9 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -231,11 +231,11 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(25.7, $violations[0]->metricValue);
-        self::assertIsFloat($violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(25.7, $findings[0]->metricValue);
+        self::assertIsFloat($findings[0]->metricValue);
     }
 
     #[Test]
@@ -260,9 +260,9 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     // Options tests
@@ -332,13 +332,13 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -419,9 +419,9 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -432,7 +432,7 @@ final class MaintainabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Tests', 'UserServiceTest', 'testCalculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('tests/Service/UserServiceTest.php'), 10);
 
-        // Low MI that would normally trigger a violation
+        // Low MI that would normally trigger a finding
         $metricBag = (new MetricBag())
             ->with('mi', 15.0)
             ->with('methodStatementCount', 20);
@@ -448,10 +448,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Should be skipped because it's a test file
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -462,7 +462,7 @@ final class MaintainabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Tests', 'UserServiceTest', 'testCalculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('tests/Service/UserServiceTest.php'), 10);
 
-        // Low MI that would trigger a violation
+        // Low MI that would trigger a finding
         $metricBag = (new MetricBag())
             ->with('mi', 15.0)
             ->with('methodStatementCount', 20);
@@ -478,11 +478,11 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Should NOT be skipped
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -509,10 +509,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Should be skipped because methodStatementCount < minStatements.
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -539,11 +539,11 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Should NOT be skipped
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -613,11 +613,11 @@ PHP;
             (new MetricBag())->with('mi', 30.0)->with('methodStatementCount', 15),
         );
 
-        $violations = (new MaintainabilityRule(new MaintainabilityOptions()))
+        $findings = (new MaintainabilityRule(new MaintainabilityOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:callable:App\\Service\\Twin::run@src/A.php',

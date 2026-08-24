@@ -11,9 +11,9 @@ use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
 
 /**
- * Exports all collected metrics as JSON (not just violations).
+ * Exports all collected metrics as JSON (not just findings).
  *
- * Unlike JsonFormatter which outputs violations, this formatter outputs
+ * Unlike JsonFormatter which outputs findings, this formatter outputs
  * raw metric data for every analyzed symbol — useful for custom dashboards,
  * trend analysis, and third-party integrations.
  */
@@ -78,7 +78,7 @@ final class MetricsJsonFormatter implements FormatterInterface
                 'filesAnalyzed' => $report->filesAnalyzed,
                 'filesSkipped' => $report->filesSkipped,
                 'duration' => round($report->duration, 3),
-                'violations' => $report->getTotalViolations(),
+                'violations' => $report->getTotalFindings(),
                 'errors' => $report->errorCount,
                 'warnings' => $report->warningCount,
                 'info' => $report->infoCount,

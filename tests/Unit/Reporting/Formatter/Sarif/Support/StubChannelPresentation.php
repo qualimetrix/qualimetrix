@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
  */
 final class StubChannelPresentation implements ChannelPresentationInterface
 {
-    public function presentationFor(string $violationCode): ChannelPresentation
+    public function presentationFor(string $code): ChannelPresentation
     {
         return new ChannelPresentation('Stub description for tests', 'rules/complexity.md');
     }

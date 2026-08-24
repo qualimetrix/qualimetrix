@@ -13,7 +13,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * {@see MembershipResult}. The Match variant carries one {@see MatchedCriterion}
  * per criterion kind that fired (in declaration order: patterns, suffix,
  * attributes, implements, extends). {@see LayerRegistry::resolveAll()} feeds
- * the descriptor list into {@see LayerMatch} so the violation message and the
+ * the descriptor list into {@see LayerMatch} so the finding message and the
  * {@code architecture.potential-shadow} diagnostic can report WHICH criterion
  * caught the class.
  *

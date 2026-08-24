@@ -12,15 +12,15 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\Wors
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
@@ -36,7 +36,7 @@ final class HintRendererTest extends TestCase
     protected function setUp(): void
     {
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $offenderList = new OffenderListRenderer(new ViolationFilter(), new WorstClassDrillDown($definitionCatalog));
+        $offenderList = new OffenderListRenderer(new FindingFilter(), new WorstClassDrillDown($definitionCatalog));
         $this->renderer = new HintRenderer($offenderList);
         $this->color = new AnsiColor(false);
     }
@@ -44,19 +44,19 @@ final class HintRendererTest extends TestCase
     #[Test]
     public function itShowsHintDetailWhenNotInDetailMode(): void
     {
-        // Report must be non-empty (has violations) for --detail hint to appear
-        $violation = new Violation(
+        // Report must be non-empty (has findings) for --detail hint to appear
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Service'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App\\Service', 'Service'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Test',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [$violation],
+            findings: [$finding],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
@@ -76,18 +76,18 @@ final class HintRendererTest extends TestCase
     #[Test]
     public function itHidesHintDetailInDetailMode(): void
     {
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Service'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App\\Service', 'Service'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Test',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [$violation],
+            findings: [$finding],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
@@ -134,7 +134,7 @@ final class HintRendererTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -172,7 +172,7 @@ final class HintRendererTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -225,7 +225,7 @@ final class HintRendererTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -251,7 +251,7 @@ final class HintRendererTest extends TestCase
     public function itSkipsDrillDownHintWhenNoHealthScores(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -274,7 +274,7 @@ final class HintRendererTest extends TestCase
     public function itSkipsDrillDownHintInClassScope(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -314,9 +314,9 @@ final class HintRendererTest extends TestCase
     #[Test]
     public function itHidesHintDetailWhenReportIsEmpty(): void
     {
-        // isEmpty() returns true when violations === []
+        // isEmpty() returns true when findings === []
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -332,15 +332,15 @@ final class HintRendererTest extends TestCase
         $this->renderer->render($report, $context, $this->color, $lines);
 
         $output = implode("\n", $lines);
-        // Report is empty (no violations), so --detail hint should be shown
-        // Actually: !$report->isEmpty() means violations !== [], so for empty report detail hint is hidden
+        // Report is empty (no findings), so --detail hint should be shown
+        // Actually: !$report->isEmpty() means findings !== [], so for empty report detail hint is hidden
         self::assertStringNotContainsString('--detail', $output);
     }
 
     private function createNonEmptyReport(): Report
     {
         return new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,

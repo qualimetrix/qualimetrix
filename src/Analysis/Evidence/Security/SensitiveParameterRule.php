@@ -9,13 +9,13 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -66,7 +66,7 @@ final class SensitiveParameterRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -74,7 +74,7 @@ final class SensitiveParameterRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
@@ -85,20 +85,20 @@ final class SensitiveParameterRule extends AbstractRule
             }
 
             foreach ($entries as $entry) {
-                $violation = $this->violationForEntry($fileInfo, $entry, $context);
-                if ($violation !== null) {
-                    $violations[] = $violation;
+                $finding = $this->findingForEntry($fileInfo, $entry, $context);
+                if ($finding !== null) {
+                    $findings[] = $finding;
                 }
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
      * @param array<string, bool|float|int|string> $entry
      */
-    private function violationForEntry(SymbolInfo $fileInfo, array $entry, AnalysisContext $context): ?Violation
+    private function findingForEntry(SymbolInfo $fileInfo, array $entry, AnalysisContext $context): ?Finding
     {
         \assert($this->options instanceof SensitiveParameterOptions);
         $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
@@ -109,12 +109,12 @@ final class SensitiveParameterRule extends AbstractRule
             return null;
         }
 
-        return new Violation(
+        return new Finding(
             location: new Location($file, $line, precise: true),
             subject: $subject,
             symbolPath: $fileInfo->symbolPath,
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: 'Sensitive parameter missing #[\\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces',
             severity: $severity,
             metricValue: 1.0,
@@ -136,7 +136,7 @@ final class SensitiveParameterRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Callable),
         ];
     }
 }

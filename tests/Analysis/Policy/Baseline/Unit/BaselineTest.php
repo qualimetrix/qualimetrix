@@ -9,7 +9,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
@@ -51,7 +51,7 @@ final class BaselineTest extends TestCase
 
         self::assertFalse($baseline->hasIdentity(new BaselineIdentity(
             'callable:App\Foo::other',
-            new ViolationChannel('code-smell.goto', 'code-smell.goto'),
+            new FindingChannel('code-smell.goto', 'code-smell.goto'),
         )));
     }
 
@@ -165,10 +165,10 @@ final class BaselineTest extends TestCase
     private static function entry(
         string $symbolKey,
         string $ruleName = 'code-smell.goto',
-        string $violationCode = 'code-smell.goto',
+        string $code = 'code-smell.goto',
     ): BaselineEntry {
         return new BaselineEntry(
-            new BaselineIdentity($symbolKey, new ViolationChannel($ruleName, $violationCode)),
+            new BaselineIdentity($symbolKey, new FindingChannel($ruleName, $code)),
             null,
             1,
         );

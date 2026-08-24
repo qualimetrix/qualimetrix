@@ -47,7 +47,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions(enabled: false));
 
@@ -60,7 +60,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoViolations(): void
+    public function noSmellsProducesNoFindings(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
@@ -81,7 +81,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesViolation(): void
+    public function smellDetectedProducesFinding(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
@@ -99,14 +99,14 @@ final class ErrorSuppressionRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(8, $violations[0]->location->line);
-        self::assertSame(22, $violations[1]->location->line);
-        self::assertSame('code-smell.error-suppression', $violations[0]->ruleName);
-        self::assertSame(1.0, $violations[0]->metricValue);
+        self::assertCount(2, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(8, $findings[0]->location->line);
+        self::assertSame(22, $findings[1]->location->line);
+        self::assertSame('code-smell.error-suppression', $findings[0]->ruleName);
+        self::assertSame(1.0, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -127,10 +127,10 @@ final class ErrorSuppressionRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame('Error suppression (@) on fopen() - handle errors explicitly', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame('Error suppression (@) on fopen() - handle errors explicitly', $findings[0]->message);
     }
 
     #[Test]
@@ -155,12 +155,12 @@ final class ErrorSuppressionRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        // fopen is allowed, so only exec and the no-function entry should produce violations
-        self::assertCount(2, $violations);
-        self::assertSame(20, $violations[0]->location->line);
-        self::assertSame(30, $violations[1]->location->line);
+        // fopen is allowed, so only exec and the no-function entry should produce findings
+        self::assertCount(2, $findings);
+        self::assertSame(20, $findings[0]->location->line);
+        self::assertSame(30, $findings[1]->location->line);
     }
 
     #[Test]
@@ -181,12 +181,12 @@ final class ErrorSuppressionRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         self::assertSame(
             'Error suppression operator (@) detected - handle errors explicitly',
-            $violations[0]->message,
+            $findings[0]->message,
         );
     }
 
@@ -211,9 +211,9 @@ final class ErrorSuppressionRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
     }
 
 }

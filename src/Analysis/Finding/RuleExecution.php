@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Finding;
 
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
@@ -14,7 +15,6 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -24,7 +24,7 @@ use Traversable;
  * Default implementation of RuleExecutionInterface.
  *
  * Filters rules at runtime based on configuration (disabled_rules, only_rules)
- * and executes only active rules. Filters individual violations by violationCode.
+ * and executes only active rules. Filters individual findings by code.
  */
 final class RuleExecution implements RuleExecutionInterface
 {
@@ -42,8 +42,8 @@ final class RuleExecution implements RuleExecutionInterface
     /** @var array<string, int> */
     private array $pathExclusionCounts = [];
 
-    /** @var list<Violation> */
-    private array $excludedViolations = [];
+    /** @var list<Finding> */
+    private array $excludedFindings = [];
 
     private bool $capturesExcluded = false;
 
@@ -68,7 +68,7 @@ final class RuleExecution implements RuleExecutionInterface
 
     public function execute(AnalysisContext $context): array
     {
-        $violations = [];
+        $findings = [];
         $profiler = $this->profiler;
 
         $this->beginExclusionAccounting();
@@ -84,39 +84,39 @@ final class RuleExecution implements RuleExecutionInterface
             // was while the diagnostics lived in the rule class.
             $spanName = 'rule.' . $ruleName;
             $profiler->start($spanName, 'rules');
-            $ruleViolations = $rule->analyze($context);
+            $ruleFindings = $rule->analyze($context);
             foreach ($this->validatorsByProducer[$ruleName] ?? [] as $validator) {
-                $ruleViolations = [...$ruleViolations, ...$this->validate($validator, $context)];
+                $ruleFindings = [...$ruleFindings, ...$this->validate($validator, $context)];
             }
             $profiler->stop($spanName);
 
-            $ruleViolations = $this->withoutExcludedNamespaces($ruleName, $ruleViolations);
-            $ruleViolations = $this->withoutExcludedPaths($ruleName, $ruleViolations);
+            $ruleFindings = $this->withoutExcludedNamespaces($ruleName, $ruleFindings);
+            $ruleFindings = $this->withoutExcludedPaths($ruleName, $ruleFindings);
 
             // Apply rule selectors while the producing rule is still known.
-            // A violation's channel ruleName may differ from its producer's
+            // A finding's channel ruleName may differ from its producer's
             // NAME, so flattening first would discard information required by
             // producer-level selectors such as `computed.health`.
-            $ruleViolations = array_values(array_filter(
-                $ruleViolations,
-                fn(Violation $violation): bool => $this->ruleSelector->isChannelEnabled(
+            $ruleFindings = array_values(array_filter(
+                $ruleFindings,
+                fn(Finding $finding): bool => $this->ruleSelector->isChannelEnabled(
                     $ruleName,
-                    $violation->channel(),
+                    $finding->channel(),
                     $selection->only,
                     $selection->disabled,
                 ),
             ));
 
-            $violations = [...$violations, ...$ruleViolations];
+            $findings = [...$findings, ...$ruleFindings];
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
      * Per-run exclusion tallies live in fields only between
      * {@see beginExclusionAccounting()} and the end of {@see execute()}; the
-     * two filters below are where a violation is counted out, and keeping the
+     * two filters below are where a finding is counted out, and keeping the
      * counters here is what lets each of them stay one short loop rather than
      * a loop plus two out-parameters.
      */
@@ -124,72 +124,72 @@ final class RuleExecution implements RuleExecutionInterface
     {
         $this->namespaceExclusionCounts = [];
         $this->pathExclusionCounts = [];
-        $this->excludedViolations = [];
-        $this->capturesExcluded = $this->ruleOptionsRegistry->capturesExcludedViolations();
+        $this->excludedFindings = [];
+        $this->capturesExcluded = $this->ruleOptionsRegistry->capturesExcludedFindings();
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function withoutExcludedNamespaces(string $ruleName, array $violations): array
+    private function withoutExcludedNamespaces(string $ruleName, array $findings): array
     {
         $kept = [];
 
-        foreach ($violations as $violation) {
-            if (!$this->isNamespaceExcluded($ruleName, $violation)) {
-                $kept[] = $violation;
+        foreach ($findings as $finding) {
+            if (!$this->isNamespaceExcluded($ruleName, $finding)) {
+                $kept[] = $finding;
 
                 continue;
             }
 
             $this->namespaceExclusionCounts[$ruleName] = ($this->namespaceExclusionCounts[$ruleName] ?? 0) + 1;
-            $this->recordExcluded($violation);
+            $this->recordExcluded($finding);
         }
 
         return $kept;
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function withoutExcludedPaths(string $ruleName, array $violations): array
+    private function withoutExcludedPaths(string $ruleName, array $findings): array
     {
         $kept = [];
 
-        foreach ($violations as $violation) {
-            $file = $violation->location->file;
+        foreach ($findings as $finding) {
+            $file = $finding->location->file;
 
             if ($file === null || !$this->ruleOptionsRegistry->isPathExcluded($ruleName, $file)) {
-                $kept[] = $violation;
+                $kept[] = $finding;
 
                 continue;
             }
 
             $this->pathExclusionCounts[$ruleName] = ($this->pathExclusionCounts[$ruleName] ?? 0) + 1;
-            $this->recordExcluded($violation);
+            $this->recordExcluded($finding);
         }
 
         return $kept;
     }
 
-    private function recordExcluded(Violation $violation): void
+    private function recordExcluded(Finding $finding): void
     {
         if ($this->capturesExcluded) {
-            $this->excludedViolations[] = $violation;
+            $this->excludedFindings[] = $finding;
         }
     }
 
-    private function isNamespaceExcluded(string $ruleName, Violation $violation): bool
+    private function isNamespaceExcluded(string $ruleName, Finding $finding): bool
     {
         // Occurrence-style rules attach a file symbol path (namespace null) to
-        // their violations; the declaring namespace lives on the subject, so
+        // their findings; the declaring namespace lives on the subject, so
         // fall back to it the same way NamespaceExclusionFilter does.
-        $namespace = $violation->symbolPath->namespace
-            ?? $violation->subject->toSymbolPath()->namespace
+        $namespace = $finding->symbolPath->namespace
+            ?? $finding->subject->toSymbolPath()->namespace
             ?? null;
         if ($namespace === null || $namespace === '') {
             return false;
@@ -199,8 +199,8 @@ final class RuleExecution implements RuleExecutionInterface
             return true;
         }
 
-        return $violation->symbolPath->getType()->value === 'namespace'
-            && $this->ruleOptionsRegistry->isNamespaceChannelExcluded($ruleName, $violation->channel(), $namespace);
+        return $finding->symbolPath->getType()->value === 'namespace'
+            && $this->ruleOptionsRegistry->isNamespaceChannelExcluded($ruleName, $finding->channel(), $namespace);
     }
 
     /**
@@ -214,15 +214,15 @@ final class RuleExecution implements RuleExecutionInterface
      * thresholds, no baseline story and no suppression — the exact confusion
      * the split exists to remove. It is a wiring error, so it ends the run.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function validate(ConfigurationValidatorInterface $validator, AnalysisContext $context): array
     {
         $declared = $validator::channelDeclarations();
-        $violations = $validator->validate($context);
+        $findings = $validator->validate($context);
 
-        foreach ($violations as $violation) {
-            $key = $violation->channel()->toKey();
+        foreach ($findings as $finding) {
+            $key = $finding->channel()->toKey();
 
             if (isset($declared[$key])) {
                 continue;
@@ -237,7 +237,7 @@ final class RuleExecution implements RuleExecutionInterface
             ));
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -261,7 +261,7 @@ final class RuleExecution implements RuleExecutionInterface
         return new RuleExclusionStats(
             namespaceExclusionsByRule: $this->namespaceExclusionCounts,
             pathExclusionsByRule: $this->pathExclusionCounts,
-            excludedViolations: $this->excludedViolations,
+            excludedFindings: $this->excludedFindings,
         );
     }
 

@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Finding\Support;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 
 /**
@@ -22,7 +22,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
 final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistryInterface
 {
     /**
-     * @param array<string, ChannelDeclaration> $declarations keyed by {@see ViolationChannel::toKey()}
+     * @param array<string, ChannelDeclaration> $declarations keyed by {@see FindingChannel::toKey()}
      * @param ?ChannelDeclaration $default answer for a channel absent from $declarations — for a test
      *                                     that needs every channel to resolve to the same shape rather
      *                                     than stating each one, see {@see alwaysHigherMagnitude()}
@@ -66,7 +66,7 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
         $this->declarations[$channelKey] = $declaration;
     }
 
-    public function declarationFor(ViolationChannel $channel): ?ChannelDeclaration
+    public function declarationFor(FindingChannel $channel): ?ChannelDeclaration
     {
         return $this->declarations[$channel->toKey()] ?? $this->default;
     }

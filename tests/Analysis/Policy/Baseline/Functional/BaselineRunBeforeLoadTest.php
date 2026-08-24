@@ -12,10 +12,10 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
@@ -301,7 +301,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
                 generated: (new FixedClock())->now(),
                 scope: ['src'],
                 entries: [new BaselineEntry(
-                    new BaselineIdentity(self::subject()->toCanonical(), ViolationChannel::fromKey(self::CHANNEL)),
+                    new BaselineIdentity(self::subject()->toCanonical(), FindingChannel::fromKey(self::CHANNEL)),
                     [25.0],
                     1,
                 )],
@@ -316,17 +316,17 @@ final class BaselineRunBeforeLoadTest extends TestCase
         return SymbolPath::forClass('App', 'OrderService');
     }
 
-    private static function finding(): Violation
+    private static function finding(): Finding
     {
-        $channel = ViolationChannel::fromKey(self::CHANNEL);
+        $channel = FindingChannel::fromKey(self::CHANNEL);
         $path = RelativePath::fromString(self::SOURCE_FILE);
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, 1),
             subject: self::subject(),
             symbolPath: self::symbol(),
             ruleName: $channel->ruleName,
-            violationCode: $channel->violationCode,
+            code: $channel->code,
             message: 'finding',
             severity: Severity::Warning,
             metricValue: 12.0,

@@ -6,10 +6,10 @@ namespace Qualimetrix\Analysis\Run;
 
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -120,13 +120,13 @@ final readonly class RuleProducerPreparation
      * The second question about the same directives, asked once the findings
      * exist: which of them silenced nothing.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function auditInlineDirectives(array $violations): array
+    public function auditInlineDirectives(array $findings): array
     {
-        return $this->inlineDirectivePolicy->auditDirectiveUsage($violations);
+        return $this->inlineDirectivePolicy->auditDirectiveUsage($findings);
     }
 
     /**

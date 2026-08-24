@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-24T09:22:08+00:00",
+  "generated": "2026-08-24T14:34:08+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -50,7 +50,7 @@
       {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[17]},
       {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[12]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder::countViolationsPerSymbol@src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder::countFindingsPerSymbol@src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php": [
       {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[20]},
       {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[13]}
     ],
@@ -200,7 +200,7 @@
       {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[18]},
       {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[12]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Baseline\\V5BaselineReader::parseViolations@src/Analysis/Policy/Baseline/V5BaselineReader.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Baseline\\V5BaselineReader::parseFindings@src/Analysis/Policy/Baseline/V5BaselineReader.php": [
       {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[16]},
       {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[11]}
     ],
@@ -304,6 +304,10 @@
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Health\\HealthTextFormatter::renderTable@src/Reporting/Formatter/Health/HealthTextFormatter.php": [
       {"channel":"code-smell.boolean-argument#code-smell.boolean-argument","occurrence":"8287b40263e2ac87","count":1}
     ],
+    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner::partition@src/Reporting/Formatter/Html/HtmlFindingPartitioner.php": [
+      {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[17]},
+      {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[14]}
+    ],
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::build@src/Reporting/Formatter/Html/HtmlTreeBuilder.php": [
       {"channel":"code-smell.boolean-argument#code-smell.boolean-argument","occurrence":"c7fac59b0cebc45a","count":1}
     ],
@@ -313,10 +317,6 @@
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::buildTree@src/Reporting/Formatter/Html/HtmlTreeBuilder.php": [
       {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[19]},
       {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[15]}
-    ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlViolationPartitioner::partition@src/Reporting/Formatter/Html/HtmlViolationPartitioner.php": [
-      {"channel":"complexity.cognitive#complexity.cognitive.callable","magnitudes":[17]},
-      {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[14]}
     ],
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection::format@src/Reporting/Formatter/Json/JsonHealthSection.php": [
       {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[11]}
@@ -526,7 +526,7 @@
     "declaration:class:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeNode@src/Reporting/Formatter/Html/HtmlTreeNode.php": [
       {"channel":"design.data-class#design.data-class","magnitudes":[11]}
     ],
-    "declaration:class:Qualimetrix\\Reporting\\Formatter\\Support\\ViolationSorter@src/Reporting/Formatter/Support/ViolationSorter.php": [
+    "declaration:class:Qualimetrix\\Reporting\\Formatter\\Support\\FindingSorter@src/Reporting/Formatter/Support/FindingSorter.php": [
       {"channel":"complexity.wmc#complexity.wmc","magnitudes":[54]}
     ],
     "declaration:class:Qualimetrix\\Reporting\\Health\\SummaryEnricher@src/Reporting/Health/SummaryEnricher.php": [
@@ -558,7 +558,7 @@
       {"channel":"coupling.cbo#coupling.cbo.namespace","magnitudes":[16]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement": [
-      {"channel":"coupling.distance#coupling.distance","magnitudes":[0.502369]}
+      {"channel":"coupling.distance#coupling.distance","magnitudes":[0.501165]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract": [
       {"channel":"coupling.cbo#coupling.cbo.namespace","magnitudes":[45]}
@@ -593,11 +593,11 @@
     "project:": [
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"1eefcbbb02d84e4e","magnitudes":[16]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"26a58f2d85548561","magnitudes":[31]},
-      {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"31b8775fc4e026b1","magnitudes":[29]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"34b279d1e8cbb107","magnitudes":[21]},
-      {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"463a8fb59c712c80","magnitudes":[37]},
+      {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"4fb818e89f84f257","magnitudes":[37]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"67c3f109dc2d3e97","magnitudes":[28]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"9964fabbf3e849d9","magnitudes":[46]},
+      {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"b3f1aa710dda6738","magnitudes":[29]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"cf1eed47dd349df2","magnitudes":[45]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"d3feecf066ef9d58","magnitudes":[30]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"d4a10c7cb6a1893d","magnitudes":[32]},

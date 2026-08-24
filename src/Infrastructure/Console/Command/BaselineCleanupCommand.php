@@ -101,7 +101,7 @@ final class BaselineCleanupCommand extends BaselineCommand
             return self::FAILURE;
         }
 
-        $candidates = $this->cleaner->candidates($baseline, $context->violations(), $this->declarations);
+        $candidates = $this->cleaner->candidates($baseline, $context->findings(), $this->declarations);
         self::reportCandidates($candidates, $output);
 
         $selectors = $this->readSelectors($input, $output);

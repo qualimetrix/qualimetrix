@@ -38,7 +38,7 @@ interface LayerPolicyPreparationInterface
      * than inferred from the `architecture.` spelling — see
      * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope}.
      *
-     * @var list<string> {@see \Qualimetrix\Analysis\Finding\Contract\ViolationChannel::toKey()} form
+     * @var list<string> {@see \Qualimetrix\Analysis\Finding\Contract\FindingChannel::toKey()} form
      */
     public const array PROJECT_SCOPED_CHANNELS = [
         self::PRODUCER_RULE_NAME . '#' . self::PRODUCER_RULE_NAME,

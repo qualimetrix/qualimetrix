@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
@@ -66,7 +66,7 @@ final class DeclaredLayerReachability
      *
      * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>} $state
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public static function coverage(CoverageMode $mode, array $state): array
     {
@@ -86,12 +86,12 @@ final class DeclaredLayerReachability
 
         $sampleList = DiagnosticSampleList::format($unmatched);
 
-        return [new Violation(
+        return [new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
-            violationCode: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
+            code: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
             message: \sprintf(
                 'Architecture coverage: %d edge(s) with unmatched source layer, %d edge(s) with unmatched target layer, %d class(es) outside all declared layers.',
                 $state['sourceEdges'],
@@ -119,11 +119,11 @@ final class DeclaredLayerReachability
      *                                         count, merged by the caller from the
      *                                         per-class and the per-edge walk.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public static function unreachableLayers(array $definitions, array $assignedHits): array
     {
-        $violations = [];
+        $findings = [];
 
         foreach ($definitions as $definition) {
             $layerName = $definition->name();
@@ -131,7 +131,7 @@ final class DeclaredLayerReachability
                 continue;
             }
 
-            $violations[] = self::projectDiagnostic(
+            $findings[] = self::projectDiagnostic(
                 LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 \sprintf(
                     'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase. Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
@@ -142,7 +142,7 @@ final class DeclaredLayerReachability
             );
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -171,11 +171,11 @@ final class DeclaredLayerReachability
      *                                          dependency-edge ends alike) whose criteria
      *                                          the layer matched, winning or not.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public static function pendingLayersMatched(array $definitions, array $matchedCounts): array
     {
-        $violations = [];
+        $findings = [];
 
         foreach ($definitions as $definition) {
             $layerName = $definition->name();
@@ -184,7 +184,7 @@ final class DeclaredLayerReachability
                 continue;
             }
 
-            $violations[] = self::projectDiagnostic(
+            $findings[] = self::projectDiagnostic(
                 LayerPolicyPreparationInterface::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
                 \sprintf(
                     'Layer "%s" is declared "pending: true" — code not written yet — but its criteria (%s) matched %d distinct symbol(s) during analysis (each counted once, whether seen as an analysed declaration or as an end of a dependency edge). A match counts even when a layer declared earlier won the assignment, so the layer may own nothing while the code it describes already exists. Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
@@ -199,7 +199,7 @@ final class DeclaredLayerReachability
             );
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -220,14 +220,14 @@ final class DeclaredLayerReachability
      *
      * @param list<string> $emptyTemplateNames
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public static function emptyTemplates(array $emptyTemplateNames): array
     {
-        $violations = [];
+        $findings = [];
 
         foreach ($emptyTemplateNames as $template) {
-            $violations[] = self::projectDiagnostic(
+            $findings[] = self::projectDiagnostic(
                 LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
                 \sprintf(
                     'Template layer "%s" expanded to zero concrete layers — no class in the analysed codebase '
@@ -242,7 +242,7 @@ final class DeclaredLayerReachability
             );
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -260,11 +260,11 @@ final class DeclaredLayerReachability
      *
      * @param array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>> $shadowEvidence
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public static function potentialShadows(array $shadowEvidence): array
     {
-        $violations = [];
+        $findings = [];
 
         foreach (self::sortedShadowPairs($shadowEvidence) as $pair) {
             $assignedLayer = $pair['assigned'];
@@ -279,7 +279,7 @@ final class DeclaredLayerReachability
                 $sampleList .= \sprintf(' ...and %d more', $remaining);
             }
 
-            $violations[] = self::projectDiagnostic(
+            $findings[] = self::projectDiagnostic(
                 LayerPolicyPreparationInterface::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
                 \sprintf(
                     'Layer "%s" (%s) shadows layer "%s" (%s) for %d class(es) including %s. Run "qmx debug:layer-assignment <class>" to inspect specific cases.',
@@ -298,7 +298,7 @@ final class DeclaredLayerReachability
             );
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -341,14 +341,14 @@ final class DeclaredLayerReachability
      * at, and pointing at one would make the finding look file-scoped when
      * {@see LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS} says it is not.
      */
-    private static function projectDiagnostic(string $channelName, string $message, string $recommendation): Violation
+    private static function projectDiagnostic(string $channelName, string $message, string $recommendation): Finding
     {
-        return new Violation(
+        return new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: $channelName,
-            violationCode: $channelName,
+            code: $channelName,
             message: $message,
             severity: self::DIAGNOSTIC_SEVERITY,
             recommendation: $recommendation,

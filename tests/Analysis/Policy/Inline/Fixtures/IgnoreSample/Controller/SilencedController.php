@@ -11,7 +11,7 @@ use Fixtures\IgnoreSample\Service\CustomerService;
  * Controller that violates the layered policy but suppresses the
  * `architecture.layer-violation` rule via an inline tag. The test treats
  * this as the "treatment" group: a working suppression filter must drop
- * the violation, leaving only the `PolicedController` violation in the
+ * the finding, leaving only the `PolicedController` finding in the
  * result set.
  *
  * @qmx-ignore architecture.layer-violation Intentional shortcut while we migrate the legacy code path.

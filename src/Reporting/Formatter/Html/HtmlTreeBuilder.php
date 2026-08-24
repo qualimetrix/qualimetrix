@@ -22,10 +22,10 @@ use Qualimetrix\Reporting\Report;
  * Builds the complete data structure for the HTML report.
  *
  * Constructs a hierarchical tree of namespaces and classes with metrics,
- * violations, and debt information attached to each node.
+ * findings, and debt information attached to each node.
  *
  * Delegates to focused helpers:
- * - {@see HtmlViolationPartitioner} — violation partitioning and attachment
+ * - {@see HtmlFindingPartitioner} — finding partitioning and attachment
  * - {@see HtmlMetricAggregator} — bottom-up metric aggregation
  * - {@see HtmlDebtCalculator} — debt computation and aggregation
  */
@@ -33,7 +33,7 @@ final class HtmlTreeBuilder
 {
     private const string NO_NAMESPACE_LABEL = '(no namespace)';
 
-    private readonly HtmlViolationPartitioner $violationPartitioner;
+    private readonly HtmlFindingPartitioner $findingPartitioner;
     private readonly HtmlMetricAggregator $metricAggregator;
     private readonly HtmlDebtCalculator $htmlDebtCalculator;
 
@@ -41,7 +41,7 @@ final class HtmlTreeBuilder
         private readonly DebtCalculator $debtCalculator,
         private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,
     ) {
-        $this->violationPartitioner = new HtmlViolationPartitioner();
+        $this->findingPartitioner = new HtmlFindingPartitioner();
         $this->metricAggregator = new HtmlMetricAggregator();
         $this->htmlDebtCalculator = new HtmlDebtCalculator($this->debtCalculator);
     }
@@ -58,21 +58,21 @@ final class HtmlTreeBuilder
         $projectName = $projectNameOpt !== '' ? $projectNameOpt : null;
         $root = $this->buildTree($report, $projectName);
 
-        // 2. Attach violations to tree nodes
+        // 2. Attach findings to tree nodes
         $nodesByPath = $this->indexNodes($root);
-        $violationsByNode = $this->violationPartitioner->partition($report->violations, $nodesByPath);
-        $this->violationPartitioner->attach($nodesByPath, $violationsByNode, $context);
+        $findingsByNode = $this->findingPartitioner->partition($report->findings, $nodesByPath);
+        $this->findingPartitioner->attach($nodesByPath, $findingsByNode, $context);
 
         // 3. Compute debt per node
-        $this->htmlDebtCalculator->computeDebt($violationsByNode, $nodesByPath);
+        $this->htmlDebtCalculator->computeDebt($findingsByNode, $nodesByPath);
 
         // 4. Compute violationCountTotal and aggregate debt bottom-up
         $this->htmlDebtCalculator->aggregateBottomUp($root);
 
         // 5. Override root debt with report-level total when available.
-        // Bottom-up aggregation misses file-level/project-level violations
+        // Bottom-up aggregation misses file-level/project-level findings
         // that aren't partitioned into tree nodes. Report's techDebtMinutes
-        // (set by SummaryEnricher) covers all violations.
+        // (set by SummaryEnricher) covers all findings.
         if ($report->techDebtMinutes > 0) {
             $root->debtMinutes = $report->techDebtMinutes;
         }
@@ -321,7 +321,7 @@ final class HtmlTreeBuilder
         return [
             'totalFiles' => $report->filesAnalyzed,
             'totalClasses' => $classCount,
-            'totalViolations' => $report->getTotalViolations(),
+            'totalViolations' => $report->getTotalFindings(),
             'totalDebtMinutes' => $root->debtMinutes,
             'healthScores' => (object) $healthScores,
         ];

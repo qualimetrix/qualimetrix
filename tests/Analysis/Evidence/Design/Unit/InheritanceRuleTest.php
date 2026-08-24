@@ -124,15 +124,15 @@ final class InheritanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('DIT (Depth of Inheritance) is 5', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 4', $violations[0]->message);
-        self::assertStringContainsString('Prefer composition over deep inheritance', $violations[0]->message);
-        self::assertSame(5, $violations[0]->metricValue);
-        self::assertSame('design.inheritance', $violations[0]->ruleName);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('DIT (Depth of Inheritance) is 5', $findings[0]->message);
+        self::assertStringContainsString('exceeds threshold of 4', $findings[0]->message);
+        self::assertStringContainsString('Prefer composition over deep inheritance', $findings[0]->message);
+        self::assertSame(5, $findings[0]->metricValue);
+        self::assertSame('design.inheritance', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -153,15 +153,15 @@ final class InheritanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(8, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(8, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function itProducesNoViolationForShallowDit(): void
+    public function itProducesNoFindingForShallowDit(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
@@ -178,9 +178,9 @@ final class InheritanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -201,9 +201,9 @@ final class InheritanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     // Options tests
@@ -267,13 +267,13 @@ final class InheritanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -311,11 +311,11 @@ final class InheritanceRuleTest extends TestCase
         ]);
         $repository->method('get')->willReturn((new MetricBag())->with('dit', 5));
 
-        $violations = (new InheritanceRule(new InheritanceOptions()))
+        $findings = (new InheritanceRule(new InheritanceOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

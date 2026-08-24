@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\Filter;
 
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStageResult;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 
 /**
  * Everything {@see BaselineCeilingStage::judgeAll()} learns from one pass
- * over one list of violations: the filtered/promoted result, the entries
+ * over one list of findings: the filtered/promoted result, the entries
  * whose identity was absent from that same list, and the entries the loader could
  * not apply at all, as ADR 0017 requires.
  *
@@ -25,7 +25,7 @@ use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
  * **Why it lives in `Baseline` rather than `Core`.** `staleEntries` and
  * `inertEntries` are `list<BaselineEntry>` and `list<InertBaselineEntry>`,
  * and `Core` may not depend on `Baseline` — the same constraint that makes
- * {@see ViolationFilterStageInterface} reach this type through a downcast
+ * {@see FindingFilterStageInterface} reach this type through a downcast
  * rather than carrying it directly.
  */
 final readonly class CeilingOutcome
@@ -38,7 +38,7 @@ final readonly class CeilingOutcome
      *                                               `check` names them so a user can act (ADR 0017)
      */
     public function __construct(
-        public ViolationFilterStageResult $result,
+        public FindingFilterStageResult $result,
         public array $staleEntries,
         public array $inertEntries,
     ) {}

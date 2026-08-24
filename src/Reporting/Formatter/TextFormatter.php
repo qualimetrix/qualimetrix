@@ -5,23 +5,23 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Support\CoverageNarrator;
-use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
-use Qualimetrix\Reporting\Formatter\Support\ViolationSorter;
+use Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer;
+use Qualimetrix\Reporting\Formatter\Support\FindingSorter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
 
 /**
- * Formats report as compact, parseable text output (one line per violation).
+ * Formats report as compact, parseable text output (one line per finding).
  *
- * Output format: file:line: severity[violationCode]: message (symbol)
+ * Output format: file:line: severity[code]: message (symbol)
  *
  * This format is:
  * - Compatible with GCC/Clang error format
@@ -34,7 +34,7 @@ final class TextFormatter implements FormatterInterface
 {
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
-        private readonly DetailedViolationRenderer $detailedRenderer,
+        private readonly DetailedFindingRenderer $detailedRenderer,
     ) {}
 
     public function format(Report $report, FormatterContext $context): string
@@ -59,12 +59,12 @@ final class TextFormatter implements FormatterInterface
     private function formatFlat(Report $report, FormatterContext $context): string
     {
         $color = new AnsiColor($context->useColor);
-        $sorted = ViolationSorter::sort($report->violations, $context->groupBy);
+        $sorted = FindingSorter::sort($report->findings, $context->groupBy);
 
         $lines = [];
 
-        foreach ($sorted as $violation) {
-            $lines[] = $this->formatViolation($violation, $color, $context);
+        foreach ($sorted as $finding) {
+            $lines[] = $this->formatFinding($finding, $color, $context);
         }
 
         // Summary line at the end
@@ -77,7 +77,7 @@ final class TextFormatter implements FormatterInterface
         }
 
         // Technical debt line (dimmed to visually distinguish from summary)
-        $debt = $this->debtCalculator->calculate($report->violations);
+        $debt = $this->debtCalculator->calculate($report->findings);
         $lines[] = $color->dim(\sprintf('Technical debt: %s', $debt->formatTotal()));
 
         return implode("\n", $lines) . "\n";
@@ -85,17 +85,17 @@ final class TextFormatter implements FormatterInterface
 
     private function formatDetailed(Report $report, FormatterContext $context): string
     {
-        $violations = $report->violations;
+        $findings = $report->findings;
         $limit = $context->detailLimit;
-        $totalCount = \count($violations);
+        $totalCount = \count($findings);
         $showAll = $limit === null || $limit === 0 || $totalCount <= $limit;
-        $displayViolations = $showAll ? $violations : \array_slice($violations, 0, $limit);
+        $displayFindings = $showAll ? $findings : \array_slice($findings, 0, $limit);
 
         $color = new AnsiColor($context->useColor);
         $lines = [];
 
-        // Detailed violation list
-        $lines[] = $this->detailedRenderer->render($displayViolations, $context, $violations);
+        // Detailed finding list
+        $lines[] = $this->detailedRenderer->render($displayFindings, $context, $findings);
 
         if (!$showAll) {
             $remaining = $totalCount - $limit;
@@ -117,19 +117,19 @@ final class TextFormatter implements FormatterInterface
         return implode("\n", $lines) . "\n";
     }
 
-    private function formatViolation(Violation $violation, AnsiColor $color, FormatterContext $context): string
+    private function formatFinding(Finding $finding, AnsiColor $color, FormatterContext $context): string
     {
-        $file = $violation->location->file === null
+        $file = $finding->location->file === null
             ? '[project]'
-            : $context->relativizePath($violation->location->file);
-        $line = $violation->location->line;
-        $severity = $this->formatSeverity($violation->severity, $color);
-        $rule = $color->dim($violation->violationCode);
-        $message = $violation->message . $this->formatBreachSuffix($violation);
-        $symbol = $this->formatSymbol($violation);
+            : $context->relativizePath($finding->location->file);
+        $line = $finding->location->line;
+        $severity = $this->formatSeverity($finding->severity, $color);
+        $rule = $color->dim($finding->code);
+        $message = $finding->message . $this->formatBreachSuffix($finding);
+        $symbol = $this->formatSymbol($finding);
 
         // Format: file:line: severity[rule]: message (accepted at X, now Y) (symbol)
-        $location = $line !== null && $violation->location->precise ? "{$file}:{$line}" : $file;
+        $location = $line !== null && $finding->location->precise ? "{$file}:{$line}" : $file;
 
         return \sprintf('%s: %s[%s]: %s%s', $location, $severity, $rule, $message, $symbol);
     }
@@ -137,9 +137,9 @@ final class TextFormatter implements FormatterInterface
     /**
      * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
      */
-    private function formatBreachSuffix(Violation $violation): string
+    private function formatBreachSuffix(Finding $finding): string
     {
-        $breach = AcceptedLevelNarrator::describe($violation);
+        $breach = AcceptedLevelNarrator::describe($finding);
 
         return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }
@@ -153,16 +153,16 @@ final class TextFormatter implements FormatterInterface
         };
     }
 
-    private function formatSymbol(Violation $violation): string
+    private function formatSymbol(Finding $finding): string
     {
-        $symbol = $violation->symbolPath->getSymbolName();
+        $symbol = $finding->symbolPath->getSymbolName();
 
         if ($symbol !== null && $symbol !== '') {
             return " ({$symbol})";
         }
 
-        if ($violation->symbolPath->getType() === SymbolType::Namespace_) {
-            $namespace = $violation->symbolPath->toString();
+        if ($finding->symbolPath->getType() === SymbolType::Namespace_) {
+            $namespace = $finding->symbolPath->toString();
 
             return $namespace !== '' ? \sprintf(' (namespace: %s)', $namespace) : '';
         }

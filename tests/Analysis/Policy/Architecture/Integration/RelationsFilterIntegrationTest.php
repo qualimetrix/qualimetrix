@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
@@ -33,7 +33,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * - {@code ProductTyper return-types Product}           — {@code TypeHint}
  *
  * Each test case picks a different {@code relations:} list and asserts which
- * of the three edges fire violations.
+ * of the three edges fire findings.
  */
 #[Group('integration')]
 final class RelationsFilterIntegrationTest extends TestCase
@@ -50,7 +50,7 @@ final class RelationsFilterIntegrationTest extends TestCase
             ],
         ];
 
-        $messages = $this->collectViolationMessages($config);
+        $messages = $this->collectFindingMessages($config);
 
         self::assertEdgeNotViolating($messages, 'OrderExtender', 'BaseEntity', 'inheritance must accept Extends');
         self::assertEdgeViolates($messages, 'PaymentCaller', 'Helper', 'inheritance must reject StaticCall');
@@ -67,7 +67,7 @@ final class RelationsFilterIntegrationTest extends TestCase
             ],
         ];
 
-        $messages = $this->collectViolationMessages($config);
+        $messages = $this->collectFindingMessages($config);
 
         self::assertEdgeViolates($messages, 'OrderExtender', 'BaseEntity', 'static_access must reject Extends');
         self::assertEdgeNotViolating($messages, 'PaymentCaller', 'Helper', 'static_access must accept StaticCall');
@@ -84,7 +84,7 @@ final class RelationsFilterIntegrationTest extends TestCase
             ],
         ];
 
-        $messages = $this->collectViolationMessages($config);
+        $messages = $this->collectFindingMessages($config);
 
         self::assertEdgeViolates($messages, 'OrderExtender', 'BaseEntity', 'type_reference must reject Extends');
         self::assertEdgeViolates($messages, 'PaymentCaller', 'Helper', 'type_reference must reject StaticCall');
@@ -103,7 +103,7 @@ final class RelationsFilterIntegrationTest extends TestCase
             ],
         ];
 
-        $messages = $this->collectViolationMessages($config);
+        $messages = $this->collectFindingMessages($config);
 
         self::assertEdgeNotViolating($messages, 'OrderExtender', 'BaseEntity', 'extends must be accepted');
         self::assertEdgeNotViolating($messages, 'PaymentCaller', 'Helper', 'static_call must be accepted');
@@ -120,7 +120,7 @@ final class RelationsFilterIntegrationTest extends TestCase
             'domain' => ['vendor'],
         ];
 
-        $messages = $this->collectViolationMessages($config);
+        $messages = $this->collectFindingMessages($config);
 
         self::assertSame([], $messages, 'bare-string target must not raise any layer violation');
     }
@@ -138,7 +138,7 @@ final class RelationsFilterIntegrationTest extends TestCase
             ],
         ];
 
-        $messages = $this->collectViolationMessages($config);
+        $messages = $this->collectFindingMessages($config);
 
         self::assertSame(
             [],
@@ -170,7 +170,7 @@ final class RelationsFilterIntegrationTest extends TestCase
 
         try {
             $loaded = (new YamlConfigLoader())->load($yamlPath);
-            $messages = $this->collectViolationMessages($loaded['architecture']);
+            $messages = $this->collectFindingMessages($loaded['architecture']);
 
             self::assertEdgeNotViolating($messages, 'OrderExtender', 'BaseEntity', 'YAML-loaded inheritance alias must accept Extends');
             self::assertEdgeViolates($messages, 'PaymentCaller', 'Helper', 'YAML-loaded inheritance alias must reject StaticCall');
@@ -182,17 +182,17 @@ final class RelationsFilterIntegrationTest extends TestCase
     /**
      * @param array<string, mixed> $configArray
      *
-     * @return list<string> Violation messages for the layer-violation rule only.
+     * @return list<string> Finding messages for the layer-violation rule only.
      */
-    private function collectViolationMessages(array $configArray): array
+    private function collectFindingMessages(array $configArray): array
     {
         $analysis = $this->runPipelineWithConfig($configArray);
 
         return array_values(array_map(
-            static fn(Violation $v): string => $v->message,
+            static fn(Finding $v): string => $v->message,
             array_filter(
-                $analysis->violations,
-                static fn(Violation $v): bool => $v->ruleName === LayerViolationRule::NAME,
+                $analysis->findings,
+                static fn(Finding $v): bool => $v->ruleName === LayerViolationRule::NAME,
             ),
         ));
     }

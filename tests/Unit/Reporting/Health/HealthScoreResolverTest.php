@@ -43,7 +43,7 @@ final class HealthScoreResolverTest extends TestCase
         ];
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
@@ -67,7 +67,7 @@ final class HealthScoreResolverTest extends TestCase
         ];
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
@@ -103,7 +103,7 @@ final class HealthScoreResolverTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
@@ -128,7 +128,7 @@ final class HealthScoreResolverTest extends TestCase
         $metrics = $this->createMetricRepository(new MetricBag());
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
@@ -163,7 +163,7 @@ final class HealthScoreResolverTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
@@ -191,7 +191,7 @@ final class HealthScoreResolverTest extends TestCase
         $metrics = $this->createMetricRepository(new MetricBag());
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,

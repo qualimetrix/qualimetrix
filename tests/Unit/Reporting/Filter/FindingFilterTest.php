@@ -9,87 +9,87 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\FormatterContext;
 
-#[CoversClass(ViolationFilter::class)]
-final class ViolationFilterTest extends TestCase
+#[CoversClass(FindingFilter::class)]
+final class FindingFilterTest extends TestCase
 {
-    private ViolationFilter $filter;
+    private FindingFilter $filter;
 
     protected function setUp(): void
     {
-        $this->filter = new ViolationFilter();
+        $this->filter = new FindingFilter();
     }
 
-    // --- filterViolations ---
+    // --- filterFindings ---
 
     #[Test]
-    public function itReturnsAllViolationsWhenNoFilter(): void
+    public function itReturnsAllFindingsWhenNoFilter(): void
     {
-        $violations = [
-            $this->createViolation('App\\Service', 'Foo'),
-            $this->createViolation('App\\Other', 'Bar'),
+        $findings = [
+            $this->createFinding('App\\Service', 'Foo'),
+            $this->createFinding('App\\Other', 'Bar'),
         ];
 
         $context = new FormatterContext();
 
-        $result = $this->filter->filterViolations($violations, $context);
+        $result = $this->filter->filterFindings($findings, $context);
 
         self::assertCount(2, $result);
     }
 
     #[Test]
-    public function itFiltersViolationsByNamespaceExactMatch(): void
+    public function itFiltersFindingsByNamespaceExactMatch(): void
     {
-        $violations = [
-            $this->createViolation('App\\Service', 'Foo'),
-            $this->createViolation('App\\Other', 'Bar'),
+        $findings = [
+            $this->createFinding('App\\Service', 'Foo'),
+            $this->createFinding('App\\Other', 'Bar'),
         ];
 
         $context = new FormatterContext(namespace: 'App\\Service');
 
-        $result = $this->filter->filterViolations($violations, $context);
+        $result = $this->filter->filterFindings($findings, $context);
 
         self::assertCount(1, $result);
         self::assertSame('Foo', $result[0]->symbolPath->type);
     }
 
     #[Test]
-    public function itFiltersViolationsByNamespaceMatchingChildren(): void
+    public function itFiltersFindingsByNamespaceMatchingChildren(): void
     {
-        $violations = [
-            $this->createViolation('App\\Service\\Payment', 'Gateway'),
-            $this->createViolation('App\\Other', 'Bar'),
+        $findings = [
+            $this->createFinding('App\\Service\\Payment', 'Gateway'),
+            $this->createFinding('App\\Other', 'Bar'),
         ];
 
         $context = new FormatterContext(namespace: 'App\\Service');
 
-        $result = $this->filter->filterViolations($violations, $context);
+        $result = $this->filter->filterFindings($findings, $context);
 
         self::assertCount(1, $result);
         self::assertSame('Gateway', $result[0]->symbolPath->type);
     }
 
     #[Test]
-    public function itDoesNotMatchViolationsBySimilarNamespacePrefix(): void
+    public function itDoesNotMatchFindingsBySimilarNamespacePrefix(): void
     {
-        $violations = [
-            $this->createViolation('App\\ServiceManager', 'Handler'),
+        $findings = [
+            $this->createFinding('App\\ServiceManager', 'Handler'),
         ];
 
         $context = new FormatterContext(namespace: 'App\\Service');
 
-        $result = $this->filter->filterViolations($violations, $context);
+        $result = $this->filter->filterFindings($findings, $context);
 
         self::assertSame([], $result);
     }
@@ -99,17 +99,17 @@ final class ViolationFilterTest extends TestCase
      * pattern here too rather than a prefix that happens to contain a star.
      */
     #[Test]
-    public function itFiltersViolationsByAGlobNamespaceSelector(): void
+    public function itFiltersFindingsByAGlobNamespaceSelector(): void
     {
-        $violations = [
-            $this->createViolation('App\\Domain\\Order', 'Handler'),
-            $this->createViolation('App\\Infra\\Order', 'Handler'),
-            $this->createViolation('Lib\\Domain\\Order', 'Handler'),
+        $findings = [
+            $this->createFinding('App\\Domain\\Order', 'Handler'),
+            $this->createFinding('App\\Infra\\Order', 'Handler'),
+            $this->createFinding('Lib\\Domain\\Order', 'Handler'),
         ];
 
         $context = new FormatterContext(namespace: 'App\\*\\Order');
 
-        $result = $this->filter->filterViolations($violations, $context);
+        $result = $this->filter->filterFindings($findings, $context);
 
         self::assertCount(2, $result);
     }
@@ -118,63 +118,63 @@ final class ViolationFilterTest extends TestCase
     #[Test]
     public function itSelectsNothingForAnEmptyNamespaceSelector(): void
     {
-        $violations = [
-            $this->createViolation('', 'Handler'),
-            $this->createViolation('App', 'Handler'),
+        $findings = [
+            $this->createFinding('', 'Handler'),
+            $this->createFinding('App', 'Handler'),
         ];
 
         $context = new FormatterContext(namespace: '');
 
-        self::assertSame([], $this->filter->filterViolations($violations, $context));
+        self::assertSame([], $this->filter->filterFindings($findings, $context));
     }
 
     #[Test]
-    public function itFiltersViolationsByClassExactMatch(): void
+    public function itFiltersFindingsByClassExactMatch(): void
     {
-        $violations = [
-            $this->createViolation('App\\Service', 'UserService'),
-            $this->createViolation('App\\Service', 'OrderService'),
+        $findings = [
+            $this->createFinding('App\\Service', 'UserService'),
+            $this->createFinding('App\\Service', 'OrderService'),
         ];
 
         $context = new FormatterContext(class: 'App\\Service\\UserService');
 
-        $result = $this->filter->filterViolations($violations, $context);
+        $result = $this->filter->filterFindings($findings, $context);
 
         self::assertCount(1, $result);
         self::assertSame('UserService', $result[0]->symbolPath->type);
     }
 
     #[Test]
-    public function itExcludesViolationByClassWhenNoType(): void
+    public function itExcludesFindingByClassWhenNoType(): void
     {
-        // Namespace-level violation (no type)
-        $violation = new Violation(
+        // Namespace-level finding (no type)
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 1),
             subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service')),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             ruleName: 'test.rule',
-            violationCode: 'T001',
+            code: 'T001',
             message: 'test',
             severity: Severity::Warning,
         );
 
         $context = new FormatterContext(class: 'App\\Service\\UserService');
 
-        $result = $this->filter->filterViolations([$violation], $context);
+        $result = $this->filter->filterFindings([$finding], $context);
 
         self::assertSame([], $result);
     }
 
     #[Test]
-    public function itFiltersViolationsByClassWithGlobalNamespace(): void
+    public function itFiltersFindingsByClassWithGlobalNamespace(): void
     {
-        $violations = [
-            $this->createViolation('', 'GlobalClass'),
+        $findings = [
+            $this->createFinding('', 'GlobalClass'),
         ];
 
         $context = new FormatterContext(class: 'GlobalClass');
 
-        $result = $this->filter->filterViolations($violations, $context);
+        $result = $this->filter->filterFindings($findings, $context);
 
         self::assertCount(1, $result);
     }
@@ -261,12 +261,12 @@ final class ViolationFilterTest extends TestCase
     #[Test]
     public function itIgnoresATrailingBackslashInTheNamespaceSelector(): void
     {
-        $violations = [
-            $this->createViolation('App\\Service', 'Foo'),
-            $this->createViolation('App\\Other', 'Bar'),
+        $findings = [
+            $this->createFinding('App\\Service', 'Foo'),
+            $this->createFinding('App\\Other', 'Bar'),
         ];
 
-        $result = $this->filter->filterViolations($violations, new FormatterContext(namespace: 'App\\Service\\'));
+        $result = $this->filter->filterFindings($findings, new FormatterContext(namespace: 'App\\Service\\'));
 
         self::assertCount(1, $result);
     }
@@ -287,45 +287,45 @@ final class ViolationFilterTest extends TestCase
     #[Test]
     public function itNeverSelectsProjectWideFindingsByNamespace(): void
     {
-        $violations = [
-            $this->createViolation('App\\Service', 'Foo'),
-            $this->createProjectViolation(),
+        $findings = [
+            $this->createFinding('App\\Service', 'Foo'),
+            $this->createProjectFinding(),
         ];
 
         foreach (['*', 'App\\*', 'App\\Service'] as $selector) {
-            $result = $this->filter->filterViolations($violations, new FormatterContext(namespace: $selector));
+            $result = $this->filter->filterFindings($findings, new FormatterContext(namespace: $selector));
 
-            foreach ($result as $violation) {
+            foreach ($result as $finding) {
                 self::assertNotSame(
                     SymbolType::Project,
-                    $violation->symbolPath->getType(),
+                    $finding->symbolPath->getType(),
                     \sprintf('Selector "%s" must not reach the project sentinel.', $selector),
                 );
             }
         }
     }
 
-    private function createProjectViolation(): Violation
+    private function createProjectFinding(): Finding
     {
-        return new Violation(
+        return new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: 'architecture.coverage',
-            violationCode: 'architecture.coverage',
+            code: 'architecture.coverage',
             message: 'project-wide finding',
             severity: Severity::Error,
         );
     }
 
-    private function createViolation(string $namespace, string $class): Violation
+    private function createFinding(string $namespace, string $class): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString('src/test.php'), 1),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString('src/test.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: 'test.rule',
-            violationCode: 'T001',
+            code: 'T001',
             message: 'test violation',
             severity: Severity::Warning,
         );

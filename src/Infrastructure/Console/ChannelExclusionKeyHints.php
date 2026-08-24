@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 
 /**
  * What to say about an `exclude_namespace_channels` key that can never exclude
@@ -36,8 +36,8 @@ final readonly class ChannelExclusionKeyHints
     }
 
     /**
-     * @param list<ViolationChannel> $addressed what the key covers in the whole universe
-     * @param list<ViolationChannel> $produced what the owning rule emits
+     * @param list<FindingChannel> $addressed what the key covers in the whole universe
+     * @param list<FindingChannel> $produced what the owning rule emits
      */
     public function refusal(
         string $ruleName,
@@ -56,7 +56,7 @@ final readonly class ChannelExclusionKeyHints
      * another rule name — the common mistake, because reports print the code
      * and not the pair — then a key that names nothing at all.
      *
-     * @param list<ViolationChannel> $addressed
+     * @param list<FindingChannel> $addressed
      */
     private function diagnosis(string $ruleName, ChannelSelector $parsed, array $addressed): string
     {
@@ -75,14 +75,14 @@ final readonly class ChannelExclusionKeyHints
 
         $sameCode = array_values(array_filter(
             $this->identity->channels(),
-            static fn(ViolationChannel $channel): bool => $channel->violationCode === $pair->violationCode,
+            static fn(FindingChannel $channel): bool => $channel->code === $pair->code,
         ));
 
         return $sameCode === []
-            ? \sprintf(' addresses no channel: no channel carries the code "%s".', $pair->violationCode)
+            ? \sprintf(' addresses no channel: no channel carries the code "%s".', $pair->code)
             : \sprintf(
                 ' addresses no channel: the rule half is wrong, "%s" is spelled %s.',
-                $pair->violationCode,
+                $pair->code,
                 self::spell($sameCode),
             );
     }
@@ -92,11 +92,11 @@ final readonly class ChannelExclusionKeyHints
         return \sprintf('Option "%s" for rule "%s" is keyed by "%s", which', self::OPTION, $ruleName, $key);
     }
 
-    /** @param list<ViolationChannel> $channels */
+    /** @param list<FindingChannel> $channels */
     private static function spell(array $channels): string
     {
         return $channels === [] ? 'none' : implode(', ', array_map(
-            static fn(ViolationChannel $channel): string => $channel->toKey(),
+            static fn(FindingChannel $channel): string => $channel->toKey(),
             $channels,
         ));
     }

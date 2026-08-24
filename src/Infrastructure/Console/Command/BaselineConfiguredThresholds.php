@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
@@ -13,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionObject;
@@ -22,7 +22,7 @@ use Throwable;
 
 /**
  * The `qmx.yaml` half of what `baseline:explain` prints: the warning boundary
- * each channel is configured with, keyed by {@see ViolationChannel::toKey()}.
+ * each channel is configured with, keyed by {@see FindingChannel::toKey()}.
  *
  * **Why it lives here and not in `Baseline`.** `qmx.yaml`'s own architecture
  * section allows the `Baseline` layer to depend on `Core` and nothing else,
@@ -34,7 +34,7 @@ use Throwable;
  * **The warning boundary, not the error one.** It is the number at which a
  * channel starts reporting, which is the boundary a user compares a baseline
  * entry against; the error threshold answers a different question
- * (`bin/qmx rules` and the violation's own message carry it).
+ * (`bin/qmx rules` and the finding's own message carry it).
  *
  * **A channel whose options expose no such number is left out of the map, not
  * guessed.** {@see \Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary::$configuredThreshold}
@@ -111,7 +111,7 @@ final readonly class BaselineConfiguredThresholds
             }
 
             foreach ($declarations as $channelKey => $declaration) {
-                $threshold = self::thresholdFor($options, ViolationChannel::fromKey($channelKey), $declaration);
+                $threshold = self::thresholdFor($options, FindingChannel::fromKey($channelKey), $declaration);
 
                 if ($threshold !== null) {
                     $thresholds[$channelKey] = $threshold;
@@ -140,7 +140,7 @@ final readonly class BaselineConfiguredThresholds
 
     private static function thresholdFor(
         RuleOptionsInterface $options,
-        ViolationChannel $channel,
+        FindingChannel $channel,
         ChannelDeclaration $declaration,
     ): int|float|null {
         if (\count($declaration->levels) === 1 && $options instanceof HierarchicalRuleOptionsInterface) {
@@ -215,26 +215,26 @@ final readonly class BaselineConfiguredThresholds
     }
 
     /**
-     * The part of the violation code that follows the rule name — the level
+     * The part of the finding code that follows the rule name — the level
      * or the axis the channel reports on, or `null` when the code is the rule
      * name itself.
      *
      * This is a **structural decomposition of one channel**, not a selector
      * match: it reads the two halves of a key the channel already declares
      * (`ChannelDeclarationFixtureDriftTest` pins the invariant that a
-     * `violationCode` is its `ruleName`, optionally with a `.suffix`). It is
+     * `code` is its `ruleName`, optionally with a `.suffix`). It is
      * therefore untouched by selectors becoming exact — there is no user text
      * here deciding which channels are addressed.
      */
-    private static function axisOf(ViolationChannel $channel): ?string
+    private static function axisOf(FindingChannel $channel): ?string
     {
         $prefix = $channel->ruleName . '.';
 
-        if (!str_starts_with($channel->violationCode, $prefix)) {
+        if (!str_starts_with($channel->code, $prefix)) {
             return null;
         }
 
-        $axis = substr($channel->violationCode, \strlen($prefix));
+        $axis = substr($channel->code, \strlen($prefix));
 
         return $axis === '' ? null : $axis;
     }

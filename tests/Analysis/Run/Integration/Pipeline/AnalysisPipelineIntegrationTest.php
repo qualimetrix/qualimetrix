@@ -35,12 +35,12 @@ use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
@@ -177,10 +177,10 @@ final class AnalysisPipelineIntegrationTest extends TestCase
      * cycles in AnalysisContext.
      *
      * This test creates a circular dependency (A -> B -> A) and runs the full pipeline
-     * with CircularDependencyRule. It should produce violations but currently won't.
+     * with CircularDependencyRule. It should produce findings but currently won't.
      */
     #[Test]
-    public function circularDependencyRuleProducesViolationsForActualCycles(): void
+    public function circularDependencyRuleProducesFindingsForActualCycles(): void
     {
         // Arrange: A circular dependency A -> B -> A
         $dependencies = [
@@ -238,14 +238,14 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Act
         $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString('/tmp/src')));
 
-        // Assert: should find circular dependency violations
-        $circularViolations = array_filter(
-            $result->violations,
-            static fn(Violation $v): bool => $v->ruleName === CircularDependencyRule::NAME,
+        // Assert: should find circular dependency findings
+        $circularFindings = array_filter(
+            $result->findings,
+            static fn(Finding $v): bool => $v->ruleName === CircularDependencyRule::NAME,
         );
 
         self::assertNotEmpty(
-            $circularViolations,
+            $circularFindings,
             'CircularDependencyRule should produce violations when circular dependencies exist. '
             . 'Currently the pipeline never calls CircularDependencyDetector and never populates '
             . 'the $cycles property in AnalysisContext.',
@@ -332,20 +332,20 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         try {
             [$first] = $run($cyclicRoot, $architectureDocument);
-            self::assertNotEmpty(self::violationsNamed($first->violations, LayerViolationRule::NAME));
-            self::assertNotEmpty(self::violationsNamed($first->violations, CircularDependencyRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($first->findings, LayerViolationRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($first->findings, CircularDependencyRule::NAME));
 
             [$second] = $run($cleanRoot, new ConfigurationDocument([], AbsolutePath::fromString($fixtureRoot)));
-            self::assertSame([], self::violationsNamed($second->violations, LayerViolationRule::NAME));
-            self::assertSame([], self::violationsNamed($second->violations, CircularDependencyRule::NAME));
+            self::assertSame([], self::findingsNamed($second->findings, LayerViolationRule::NAME));
+            self::assertSame([], self::findingsNamed($second->findings, CircularDependencyRule::NAME));
 
             [$withoutCycles, $cycleDisabledSpans] = $run(
                 $cyclicRoot,
                 $architectureDocument,
                 CircularDependencyRule::NAME,
             );
-            self::assertNotEmpty(self::violationsNamed($withoutCycles->violations, LayerViolationRule::NAME));
-            self::assertSame([], self::violationsNamed($withoutCycles->violations, CircularDependencyRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($withoutCycles->findings, LayerViolationRule::NAME));
+            self::assertSame([], self::findingsNamed($withoutCycles->findings, CircularDependencyRule::NAME));
             self::assertArrayHasKey('architecture-prepare', $cycleDisabledSpans);
             self::assertArrayNotHasKey('cycles', $cycleDisabledSpans);
 
@@ -357,8 +357,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 $architectureDocument,
                 ...LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES,
             );
-            self::assertSame([], self::violationsNamed($withoutLayers->violations, LayerViolationRule::NAME));
-            self::assertNotEmpty(self::violationsNamed($withoutLayers->violations, CircularDependencyRule::NAME));
+            self::assertSame([], self::findingsNamed($withoutLayers->findings, LayerViolationRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($withoutLayers->findings, CircularDependencyRule::NAME));
             self::assertArrayNotHasKey('architecture-prepare', $architectureDisabledSpans);
             self::assertArrayHasKey('cycles', $architectureDisabledSpans);
         } finally {
@@ -806,15 +806,15 @@ PHP);
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private static function violationsNamed(array $violations, string $ruleName): array
+    private static function findingsNamed(array $findings, string $ruleName): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $violation): bool => $violation->ruleName === $ruleName,
+            $findings,
+            static fn(Finding $finding): bool => $finding->ruleName === $ruleName,
         ));
     }
 

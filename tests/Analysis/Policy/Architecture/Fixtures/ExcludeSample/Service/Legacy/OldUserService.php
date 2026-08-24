@@ -9,7 +9,7 @@ use Fixtures\ExcludeSample\Marker\Marker;
 /**
  * Sits in the {@code Service\Legacy} subtree that the exclude clause filters
  * out of the {@code service} layer. With exclude active, this class is
- * unassigned — depending on Marker yields no architecture violation.
+ * unassigned — depending on Marker yields no architecture finding.
  */
 final class OldUserService
 {

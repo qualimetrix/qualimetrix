@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
@@ -157,7 +157,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         $this->usageReportingSeverity = $severity;
     }
 
-    public function auditDirectiveUsage(array $violations): array
+    public function auditDirectiveUsage(array $findings): array
     {
         $severity = $this->usageReportingSeverity;
         if ($severity === null) {
@@ -165,7 +165,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         }
 
         $selection = $this->ruleConfiguration->selection();
-        $findings = [];
+        $stale = [];
 
         foreach ($this->suppressions as $file => $fileSuppressions) {
             foreach (self::groupByAuthoredSite($fileSuppressions) as $group) {
@@ -174,15 +174,15 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
                     continue;
                 }
 
-                if (self::anyOfTheGroupFired($file, $group, $violations)) {
+                if (self::anyOfTheGroupFired($file, $group, $findings)) {
                     continue;
                 }
 
-                $findings[] = self::staleFinding(RelativePath::fromString($file), $directive, $severity);
+                $stale[] = self::staleFinding(RelativePath::fromString($file), $directive, $severity);
             }
         }
 
-        return $findings;
+        return $stale;
     }
 
     /**
@@ -215,12 +215,12 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      * silenced.
      *
      * @param list<Suppression> $group
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private static function anyOfTheGroupFired(string $file, array $group, array $violations): bool
+    private static function anyOfTheGroupFired(string $file, array $group, array $findings): bool
     {
         foreach ($group as $suppression) {
-            if (SuppressionFilter::suppressesAny($file, $suppression, $violations)) {
+            if (SuppressionFilter::suppressesAny($file, $suppression, $findings)) {
                 return true;
             }
         }
@@ -244,15 +244,15 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         RelativePath $path,
         Suppression $suppression,
         Severity $severity,
-    ): Violation {
+    ): Finding {
         $subject = MetricSubject::aggregate(SymbolPath::forFile($path));
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, $suppression->line, precise: true),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: self::UNUSED_DIRECTIVE_NAME,
-            violationCode: self::UNUSED_DIRECTIVE_NAME,
+            code: self::UNUSED_DIRECTIVE_NAME,
             message: \sprintf(
                 'Suppression "%s" matched nothing in this run — the finding it silences is gone.',
                 $suppression->target(),
@@ -294,8 +294,8 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
             return false;
         }
 
-        foreach ($this->addressedViolationCodes($suppression) as $violationCode) {
-            $producer = $this->identity->producerOf($violationCode);
+        foreach ($this->addressedCodes($suppression) as $code) {
+            $producer = $this->identity->producerOf($code);
             if ($producer === null) {
                 continue;
             }
@@ -312,7 +312,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
     }
 
     /**
-     * The violation codes a target addresses, whichever spelling it used.
+     * The finding codes a target addresses, whichever spelling it used.
      *
      * The explicit `ruleName#violationCode` pair needs no expansion — it
      * already names one channel — while the one-part form has to be resolved
@@ -320,14 +320,14 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      *
      * @return list<string>
      */
-    private function addressedViolationCodes(Suppression $suppression): array
+    private function addressedCodes(Suppression $suppression): array
     {
         $target = $suppression->target();
         $pair = $target->exactChannel();
         if ($pair !== null) {
             foreach ($this->identity->channels() as $channel) {
                 if ($channel->equals($pair)) {
-                    return [$channel->violationCode];
+                    return [$channel->code];
                 }
             }
 
@@ -345,7 +345,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
 
         $codes = [];
         foreach ($this->identity->expand($selector) as $channel) {
-            $codes[] = $channel->violationCode;
+            $codes[] = $channel->code;
         }
 
         return $codes;

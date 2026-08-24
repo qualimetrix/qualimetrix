@@ -14,14 +14,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 
 /**
- * A level reaches a channel code through {@see ViolationChannel::leveled()}
+ * A level reaches a channel code through {@see FindingChannel::leveled()}
  * and agrees with what that channel declares.
  *
  * **What an earlier version of this guard got wrong, because it matters.**
@@ -40,7 +40,7 @@ use RuntimeException;
  * have labelled a third level `.class` — and it is visible in the product,
  * whatever syntax produced it. So this guard compares outcomes: for every
  * statically declared channel whose code carries a level segment, the code
- * must be the one {@see ViolationChannel::leveled()} produces for the level
+ * must be the one {@see FindingChannel::leveled()} produces for the level
  * the channel declares.
  *
  * That closes one side of a triangle. The other two are
@@ -50,7 +50,7 @@ use RuntimeException;
  * level vocabulary is read from {@see SymbolLevel::cases()} rather than
  * spelled out here: a sixth level is covered the day it is added.
  */
-#[CoversClass(ViolationChannel::class)]
+#[CoversClass(FindingChannel::class)]
 final class ChannelLevelAssemblyTopologyTest extends TestCase
 {
     #[Test]
@@ -75,7 +75,7 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
             [],
             $offenders,
             'A level suffix written as a string literal is a second spelling of ' . SymbolLevel::class
-            . '. Build the code through ViolationChannel::leveled() instead.',
+            . '. Build the code through FindingChannel::leveled() instead.',
         );
     }
 
@@ -85,7 +85,7 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
         $checked = [];
 
         foreach (self::staticDeclarations() as $key => $declaration) {
-            $channel = ViolationChannel::fromKey($key);
+            $channel = FindingChannel::fromKey($key);
             $level = self::levelSegmentOf($channel);
 
             if ($level === null) {
@@ -106,9 +106,9 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
                 ),
             );
             self::assertSame(
-                ViolationChannel::leveled($channel->ruleName, $level)->violationCode,
-                $channel->violationCode,
-                \sprintf('Channel "%s" was not built by ViolationChannel::leveled().', $key),
+                FindingChannel::leveled($channel->ruleName, $level)->code,
+                $channel->code,
+                \sprintf('Channel "%s" was not built by FindingChannel::leveled().', $key),
             );
         }
 
@@ -122,15 +122,15 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
      * ADR 0030 split it into three rules) is not this
      * guard's business.
      */
-    private static function levelSegmentOf(ViolationChannel $channel): ?SymbolLevel
+    private static function levelSegmentOf(FindingChannel $channel): ?SymbolLevel
     {
         $prefix = $channel->ruleName . '.';
 
-        if (!str_starts_with($channel->violationCode, $prefix)) {
+        if (!str_starts_with($channel->code, $prefix)) {
             return null;
         }
 
-        return SymbolLevel::tryFrom(substr($channel->violationCode, \strlen($prefix)));
+        return SymbolLevel::tryFrom(substr($channel->code, \strlen($prefix)));
     }
 
     /**

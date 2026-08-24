@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
@@ -41,20 +41,20 @@ final readonly class BaselineGenerator
     ) {}
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param list<string> $scope the analysed paths that produced this run; {@see Baseline}
      *                            normalizes it, so the caller passes what it analysed
      */
-    public function generate(array $violations, array $scope): BaselineCapture
+    public function generate(array $findings, array $scope): BaselineCapture
     {
-        $groups = self::groupViolations($violations);
+        $groups = self::groupFindings($findings);
         $generated = $this->clock->now();
 
         $entries = [];
         $rejected = [];
 
         foreach ($groups as $group) {
-            $entry = $this->captureGroup($group['identity'], $group['violations']);
+            $entry = $this->captureGroup($group['identity'], $group['findings']);
 
             if ($entry instanceof BaselineEntry) {
                 $entries[] = $entry;
@@ -62,7 +62,7 @@ final readonly class BaselineGenerator
                 $rejected[] = [
                     'identity' => $group['identity'],
                     'reason' => $entry,
-                    'memberCount' => \count($group['violations']),
+                    'memberCount' => \count($group['findings']),
                 ];
             }
         }
@@ -78,20 +78,20 @@ final readonly class BaselineGenerator
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return array<string, array{identity: BaselineIdentity, violations: non-empty-list<Violation>}>
+     * @return array<string, array{identity: BaselineIdentity, findings: non-empty-list<Finding>}>
      */
-    private static function groupViolations(array $violations): array
+    private static function groupFindings(array $findings): array
     {
         $groups = [];
 
-        foreach ($violations as $violation) {
-            $identity = BaselineIdentity::forViolation($violation);
+        foreach ($findings as $finding) {
+            $identity = BaselineIdentity::forFinding($finding);
             $key = $identity->key();
 
-            $groups[$key] ??= ['identity' => $identity, 'violations' => []];
-            $groups[$key]['violations'][] = $violation;
+            $groups[$key] ??= ['identity' => $identity, 'findings' => []];
+            $groups[$key]['findings'][] = $finding;
         }
 
         return $groups;
@@ -100,7 +100,7 @@ final readonly class BaselineGenerator
     /**
      * The entry for a group, or the reason there is none.
      *
-     * @param non-empty-list<Violation> $group
+     * @param non-empty-list<Finding> $group
      */
     private function captureGroup(BaselineIdentity $identity, array $group): BaselineEntry|UncapturedReason
     {
@@ -123,12 +123,12 @@ final readonly class BaselineGenerator
         }
 
         $magnitudes = [];
-        foreach ($group as $violation) {
-            if ($violation->metricValue === null || !is_finite((float) $violation->metricValue)) {
+        foreach ($group as $finding) {
+            if ($finding->metricValue === null || !is_finite((float) $finding->metricValue)) {
                 return UncapturedReason::MagnitudeUnavailable;
             }
 
-            $magnitudes[] = $violation->metricValue;
+            $magnitudes[] = $finding->metricValue;
         }
 
         return new BaselineEntry($identity, $magnitudes, \count($group));

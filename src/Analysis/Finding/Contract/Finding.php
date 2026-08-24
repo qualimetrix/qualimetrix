@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
- * @qmx-threshold code-smell.constructor-overinjection warning=17 error=17 — Violation is a flat immutable transport VO; its 16 constructor parameters mirror independent public fields that a parameter bundle would obscure.
+ * @qmx-threshold code-smell.constructor-overinjection warning=17 error=17 — Finding is a flat immutable transport VO; its 15 constructor parameters mirror independent public fields that a parameter bundle would obscure.
  */
-final readonly class Violation
+final readonly class Finding
 {
     /**
      * @param list<Location> $relatedLocations Additional locations (e.g., other copies of duplicated code)
@@ -28,11 +27,10 @@ final readonly class Violation
         public MetricSubject $subject,
         public SymbolPath $symbolPath,
         public string $ruleName,
-        public string $violationCode,
+        public string $code,
         public string $message,
         public Severity $severity,
         public int|float|null $metricValue = null,
-        public ?SymbolLevel $level = null,
         public array $relatedLocations = [],
         public ?string $recommendation = null,
         public int|float|null $threshold = null,
@@ -55,14 +53,14 @@ final readonly class Violation
      * the rule gave them.
      *
      * The reconstruction lives here rather than at the call site because
-     * {@see Violation} is `final readonly` and PHP has no `clone … with`:
+     * {@see Finding} is `final readonly` and PHP has no `clone … with`:
      * open-coding a whole-object constructor call wherever a promotion
      * happens multiplies the places a later field can be dropped from.
      *
      * **Being the only such place does not make the copy self-maintaining.**
      * A field added to the constructor with a default is copied nowhere and
      * compiles fine, so what actually catches the omission is a test:
-     * `ViolationTest::itCopiesEveryOtherFieldWhenItReportsItselfAsABreach()`
+     * `FindingTest::itCopiesEveryOtherFieldWhenItReportsItselfAsABreach()`
      * reads the constructor's parameters reflectively and fails on any it
      * has not been told is either copied here or rewritten here.
      */
@@ -73,11 +71,10 @@ final readonly class Violation
             subject: $this->subject,
             symbolPath: $this->symbolPath,
             ruleName: $this->ruleName,
-            violationCode: $this->violationCode,
+            code: $this->code,
             message: $this->message,
             severity: Severity::Error,
             metricValue: $this->metricValue,
-            level: $this->level,
             relatedLocations: $this->relatedLocations,
             recommendation: $this->recommendation,
             threshold: $this->threshold,
@@ -89,14 +86,14 @@ final readonly class Violation
     }
 
     /**
-     * Returns the channel this violation was emitted on.
+     * Returns the channel this finding was emitted on.
      *
-     * The `(ruleName, violationCode)` pair, not the rule class — see
-     * {@see ViolationChannel} for why the distinction is load-bearing.
+     * The `(ruleName, code)` pair, not the rule class — see
+     * {@see FindingChannel} for why the distinction is load-bearing.
      */
-    public function channel(): ViolationChannel
+    public function channel(): FindingChannel
     {
-        return new ViolationChannel($this->ruleName, $this->violationCode);
+        return new FindingChannel($this->ruleName, $this->code);
     }
 
     /**

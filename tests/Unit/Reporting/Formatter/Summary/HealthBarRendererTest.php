@@ -507,7 +507,7 @@ final class HealthBarRendererTest extends TestCase
             });
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -530,7 +530,7 @@ final class HealthBarRendererTest extends TestCase
     private function createReport(array $healthScores = []): Report
     {
         return new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
