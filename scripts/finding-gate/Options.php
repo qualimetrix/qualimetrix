@@ -53,6 +53,19 @@ final class Options
             throw new GateError("--reference=<git-ref> is required.\n" . self::usage());
         }
 
+        // Deriving a declaration from a narrowed corpus deletes the rows the run
+        // did not measure — and with them the `reason` column, the one thing a
+        // run cannot produce. A PARTIAL run may not write the tracked
+        // declaration at all.
+        if ($mode === self::MODE_DERIVE_DECLARED_DELTA && ($cases !== [] || $incomplete)) {
+            throw new GateError(
+                "--derive-declared-delta measures the whole corpus or nothing: it rewrites the tracked declaration,"
+                . " and a run narrowed by --cases= or --incomplete-corpus would delete the surfaces it did not"
+                . " measure along with the reasons written against them. Drop the narrowing, or edit the declaration"
+                . " by hand and let a full run judge it.\n" . self::usage(),
+            );
+        }
+
         return new self($mode, $candidate, $reference, $cases, $report, $incomplete);
     }
 
@@ -62,7 +75,9 @@ final class Options
             Usage: php scripts/finding-gate.php [options]
 
             Exit codes: 0 GREEN (full corpus, equivalent), 1 RED (a failure class fired),
-            2 PARTIAL (nothing failed, but the run claims no equivalence), 3 the gate could not run.
+            2 PARTIAL (nothing failed, but the run claims no equivalence), 3 the gate could not run,
+            4 a declaration was written (--derive-*, never a verdict), 5 the run it would have been
+            derived from failed, so nothing was written.
 
               --reference=<git-ref>   The tree to prove equivalence against (required for a comparison).
               --candidate=<path>      The tree under test. Default: this checkout.

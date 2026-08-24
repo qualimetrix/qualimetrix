@@ -9,8 +9,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
+use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -162,7 +163,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
         ],
         [
             'path' => 'website/docs/rules/architecture.md',
-            'pattern' => '/The rule emits (?<count>\S+) channels, but the other \S+ carry rule names of their own \((?<list>[^)]*)\)/su',
+            'pattern' => '/The layer policy publishes (?<count>\S+) channels, but the other \S+ carry rule names of their own \((?<list>[^)]*)\)/su',
             'set' => 'layer-policy-channels',
             'omitted' => ['architecture.layer-violation'],
         ],
@@ -207,7 +208,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
         ],
         [
             'path' => 'website/docs/rules/architecture.ru.md',
-            'pattern' => '/Правило публикует (?<count>\S+) каналов, но остальные \S+ несут собственные имена правил \((?<list>[^)]*)\)/su',
+            'pattern' => '/Политика слоёв публикует (?<count>\S+) каналов, но остальные \S+ несут собственные имена правил \((?<list>[^)]*)\)/su',
             'set' => 'layer-policy-channels',
             'omitted' => ['architecture.layer-violation'],
         ],
@@ -419,10 +420,11 @@ final class ChannelPublicationConsistencyTest extends TestCase
 
         $layerPolicy = [];
 
-        // Both producer kinds of the family: the rule owns the two findings
-        // about the code, the validator the five about the declaration.
+        // Every producer of the family: one rule per finding about the code,
+        // and the validator for the five about the declaration.
         $layerPolicyKeys = [
             ...array_keys(LayerViolationRule::channelDeclarations()),
+            ...array_keys(UnassignedClassRule::channelDeclarations()),
             ...array_keys(LayerDeclarationValidator::channelDeclarations()),
         ];
 
@@ -433,7 +435,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
         $annotationChannels = [];
 
         $annotationKeys = [
-            ...array_keys(InlineDirectiveRule::channelDeclarations()),
+            ...array_keys(UnusedDirectiveRule::channelDeclarations()),
             ...array_keys(InlineDirectiveValidator::channelDeclarations()),
         ];
 

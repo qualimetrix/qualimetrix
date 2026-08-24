@@ -19,15 +19,14 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * declarations outside every declared layer — a verdict on the **code**, not
  * on the configuration.
  *
- * Extracted from {@see LayerViolationRule} rather than left beside the
- * per-edge diagnostic: this channel shares its sample formatting with the
- * unrelated `architecture.coverage` diagnostic (both delegate to
- * {@see DiagnosticSampleList}), but nothing else — it is debt a project can
- * record and pay down, gated by {@see UnassignedClassMode}, and it is why
- * this class has one consumer rather than sharing a class with the five
- * configuration-error diagnostics {@see LayerDeclarationValidator} owns.
+ * Kept apart from the per-edge diagnostic: this channel shares its sample
+ * formatting with the unrelated `architecture.coverage` diagnostic (both
+ * delegate to {@see DiagnosticSampleList}), but nothing else — it is debt a
+ * project can record and pay down, gated by {@see UnassignedClassMode}, and
+ * it is why this class has one consumer rather than sharing a class with the
+ * five configuration-error diagnostics {@see LayerDeclarationValidator} owns.
  *
- * @internal Consumed by {@see LayerViolationRule}.
+ * @internal Consumed by {@see UnassignedClassRule}.
  */
 final class UnassignedClassSummary
 {
@@ -45,8 +44,8 @@ final class UnassignedClassSummary
      * as debt — which is a deliberate difference from the five configuration
      * diagnostics {@see LayerDeclarationValidator} declares. A rule cannot
      * state the other classification at all: it follows from the producing
-     * type, and this channel is declared by the rule. Those describe a policy that
-     * no longer matches the code, which is never legitimate to accept. This
+     * type, and this channel is declared by a rule. Those describe a policy
+     * that no longer matches the code, which is never legitimate to accept. This
      * gate is off by default and turned on deliberately, so its findings are
      * the ordinary debt of a policy still being rolled out, and the ratchet is
      * the only way to adopt it on a live codebase.

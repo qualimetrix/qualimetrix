@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -125,7 +126,7 @@ final class RulesCommandTest extends TestCase
         $options = new LayerViolationOptions();
         $rule = new LayerViolationRule(
             $options,
-            new LayerEvidenceCollector($options, new ArchitecturePolicy()),
+            new LayerEvidenceCollector($options, new UnassignedClassOptions(), new ArchitecturePolicy()),
         );
 
         $tester = new CommandTester($this->createCommand([$rule]));

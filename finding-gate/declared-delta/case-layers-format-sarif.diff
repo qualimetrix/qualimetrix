@@ -1,0 +1,11 @@
+--- candidate
++++ reference (mapped)
+@@ -30,4 +30,4 @@
+-                                "text": "Counts analysed class-like declarations that no declared layer claims."
+-                            },
+-                            "fullDescription": {
+-                                "text": "Counts analysed class-like declarations that no declared layer claims."
++                                "text": "Detects dependencies between layers that are not explicitly allowed by the architecture policy."
++                            },
++                            "fullDescription": {
++                                "text": "Detects dependencies between layers that are not explicitly allowed by the architecture policy."

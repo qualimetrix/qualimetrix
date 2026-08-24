@@ -36,6 +36,17 @@ final class GateReport
     /** @var array<string, mixed> */
     private array $facts = [];
 
+    /**
+     * How many surfaces this run compared against a declaration rather than for
+     * equality, so the verdict sentence can name them.
+     */
+    private int $declaredDeltaCount = 0;
+
+    public function countDeclaredDeltas(int $count): void
+    {
+        $this->declaredDeltaCount = $count;
+    }
+
     /** @param list<string> $diff */
     public function fail(string $failureClass, string $scope, string $detail, array $diff = []): void
     {
@@ -108,7 +119,16 @@ final class GateReport
         }
 
         $lines[] = match ($this->verdict()) {
-            self::VERDICT_GREEN => '  GREEN — the two trees are finding-equivalent under the declared maps.',
+            // Every declaration named, not just the maps: a run with declared
+            // deltas is GREEN too, and this is the one sentence a later DoD
+            // quotes. "Under the declared maps" read as if nothing else had been
+            // waived.
+            self::VERDICT_GREEN => \sprintf(
+                '  GREEN — the two trees are finding-equivalent under the declared maps%s.',
+                $this->declaredDeltaCount === 0
+                    ? ''
+                    : \sprintf(' and %d declared delta(s)', $this->declaredDeltaCount),
+            ),
             self::VERDICT_PARTIAL => \sprintf(
                 "  PARTIAL — no equivalence is claimed: %s.\n"
                 . '  A PARTIAL run is not evidence of finding-equivalence; only a GREEN full-corpus run is.',

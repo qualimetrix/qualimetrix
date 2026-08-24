@@ -22,15 +22,17 @@ namespace QmxFindingGate;
  * than per string: the reference finding's own `(rule, code)` pair must be named
  * by a declared row, and the candidate must publish the pair that row computes,
  * on the same finding. An occurrence no declared row accounts for is
- * `split-unmapped`. What that check proves is then what
- * `delta-overreach` allows a declared delta to cover, and nothing wider.
+ * `split-unmapped`. What that check proves is then what `delta-overreach` allows
+ * a declared delta to cover, and nothing wider — {@see allowsMove()} stores the
+ * *pairs* those matched records produced, so a delta may show a compared field
+ * making a move the split performed and no other.
  */
 final class ChannelSplit
 {
     /** The finding fields whose values a split rewrites. */
     private const FIELDS = ['channel', 'rule', 'code'];
 
-    /** @var array<string, true> "field\0value" pairs an explained record accounts for */
+    /** @var array<string, true> "field\0from\0to" moves an explained record accounts for */
     private array $allowed = [];
 
     /**
@@ -62,9 +64,11 @@ final class ChannelSplit
      * Explains every reference finding that carries a split half, and reports
      * the ones nothing explains.
      *
-     * The reference findings are expected to have been through the forward map
-     * already: everything a row can translate is then translated, and what is
-     * left carrying a split half is exactly what has to be explained by record.
+     * The reference findings arrive **raw**, in the reference's own vocabulary,
+     * so that the pair read off one of them is a key a declared row can name.
+     * Handing them over forward-mapped translates the `code` half and leaves the
+     * untranslatable `rule` half in place, and the resulting pair is an identity
+     * no row ever declared — see {@see Gate::checkSplitExplanation()}.
      *
      * @param list<array<string, mixed>> $referenceFindings
      * @param list<array<string, mixed>> $candidateFindings
@@ -131,34 +135,57 @@ final class ChannelSplit
                 continue;
             }
 
-            $this->allow($finding);
-            $this->allow($match);
+            $this->allowMove($finding, $match);
         }
 
         return $unexplained;
     }
 
     /**
-     * Whether a declared delta may show this field carrying this value.
+     * Whether a declared delta may show this field moving from this reference
+     * value to this candidate value.
      *
-     * Only the values of records `unexplained()` has already accounted for are
-     * allowed, so the delta's reach is exactly the machine-checked split and not
-     * one record wider.
+     * A **move**, not a value. The first version asked only whether each side's
+     * value belonged to the set of values explained records carry, which let a
+     * line move `rule` between any two members of the split family on any
+     * record — including `design.param-type-coverage` → `design.property-type-coverage`,
+     * a pair no explained record ever produced. What is stored now is the pair
+     * itself, taken from the two findings `unexplained()` matched, so the reach
+     * of a declared delta is the set of moves the split actually performed and
+     * nothing wider.
+     *
+     * Both directions are accepted for one reason: a declared diff is rendered
+     * candidate-first, but the token order inside one line is the formatter's,
+     * and asking the caller to know which side it is holding would move a
+     * decision into the caller that belongs here.
      */
-    public function allows(string $field, string $value): bool
+    public function allowsMove(string $field, string $from, string $to): bool
     {
-        return isset($this->allowed[$field . "\0" . $value]);
+        return isset($this->allowed[$field . "\0" . $from . "\0" . $to])
+            || isset($this->allowed[$field . "\0" . $to . "\0" . $from]);
     }
 
-    /** @param array<string, mixed> $finding */
-    private function allow(array $finding): void
+    /**
+     * Records the moves one explained record performed, field by field.
+     *
+     * A field whose value did not move is recorded as a move to itself, so a
+     * line that repeats an unchanged compared field inside a changed record is
+     * not read as an unexplained move.
+     *
+     * @param array<string, mixed> $reference
+     * @param array<string, mixed> $candidate
+     */
+    private function allowMove(array $reference, array $candidate): void
     {
         foreach (self::FIELDS as $field) {
-            $value = self::string($finding, $field);
+            $from = self::string($reference, $field);
+            $to = self::string($candidate, $field);
 
-            if ($value !== '') {
-                $this->allowed[$field . "\0" . $value] = true;
+            if ($from === '' && $to === '') {
+                continue;
             }
+
+            $this->allowed[$field . "\0" . $from . "\0" . $to] = true;
         }
     }
 

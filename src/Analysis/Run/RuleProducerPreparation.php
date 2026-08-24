@@ -41,11 +41,23 @@ final readonly class RuleProducerPreparation
         ProfilerInterface $profiler,
     ): void {
         $selection = $this->ruleConfiguration->selection();
-        if (!$this->ruleSelector->isProducerEnabled(
-            LayerPolicyPreparationInterface::PRODUCER_RULE_NAME,
-            $selection->only,
-            $selection->disabled,
-        )) {
+        $enabled = false;
+
+        // Every producer that reads the prepared policy, not just the first
+        // one: `architecture.unassigned-class` used to be a channel of the
+        // layer-violation rule and so was covered by asking about that rule
+        // alone. As a producer of its own it is not, and asking about one of
+        // two left `--only-rule=architecture.unassigned-class` reaching an
+        // unprepared policy. The list is the capability's, not the run's.
+        foreach (LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES as $producerRuleName) {
+            if ($this->ruleSelector->isProducerEnabled($producerRuleName, $selection->only, $selection->disabled)) {
+                $enabled = true;
+
+                break;
+            }
+        }
+
+        if (!$enabled) {
             $this->layerPolicyPreparation->reset();
 
             return;

@@ -21,12 +21,12 @@ use ReflectionClass;
  *
  * The number of registered rules is asserted, not assumed, so a rule quietly
  * dropped from registration cannot shrink the swept set and pass by vacuous
- * agreement — obtained via `bin/qmx rules --no-ansi` ("42 rules available").
+ * agreement — obtained via `bin/qmx rules --no-ansi` ("45 rules available").
  */
 #[CoversClass(RuleRemediationMinutesReader::class)]
 final class RuleRemediationMinutesCoverageTest extends TestCase
 {
-    private const int REGISTERED_RULE_COUNT = 42;
+    private const int REGISTERED_RULE_COUNT = 45;
 
     #[Test]
     public function everyRegisteredRuleDeclaresItsOwnRemediationMinutes(): void
@@ -58,7 +58,7 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
     /**
      * The cross-view page (`website/docs/reference/remediation-time.md`)
      * exists so a reader can compare estimates across rules without visiting
-     * 42 files — the same trade the project already makes for default
+     * 45 files — the same trade the project already makes for default
      * thresholds. A page that drifts from the constants it summarises is
      * worse than no page, so every number on it is checked against the rule
      * that declares it, not merely trusted to have been transcribed right.

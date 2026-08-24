@@ -336,8 +336,8 @@ final class RuleOptionsFactory
      * > **Note:** reflection only sees constructor parameter names. Any
      * > {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser} shorthand key that
      * > isn't also a constructor parameter — e.g. the bare `threshold` key,
-     * > or rule-specific ones like `param-threshold` on `design.type-coverage`
-     * > or `vo-threshold` on `code-smell.long-parameter-list` — is invisible
+     * > or rule-specific ones like `vo-threshold` on
+     * > `code-smell.long-parameter-list` — is invisible
      * > to reflection. `ShorthandOptionKeysInterface` closes that gap: an
      * > Options class implements it to declare the extra keys its
      * > `fromArray()` actually accepts, and this method merges them into the

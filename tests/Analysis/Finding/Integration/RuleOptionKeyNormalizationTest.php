@@ -10,8 +10,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
+use Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\ReturnTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
@@ -21,8 +22,8 @@ use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
 /**
  * Regression test: composite (multi-word) rule option names — `vo-warning` /
  * `vo-error` / `vo-threshold` for {@see LongParameterListRule}, and
- * `param_warning` / `param_error` / `param_threshold` (plus the `return_*` /
- * `property_*` equivalents) for {@see \Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule}
+ * bare `warning` / `error` / `threshold` on each of the three type-coverage
+ * rules
  * — must apply identically no matter which of the three channels sets them:
  *
  * 1. `qmx.yaml` / preset config-file options
@@ -65,7 +66,8 @@ final class RuleOptionKeyNormalizationTest extends TestCase
         $this->factory = new RuleOptionsFactory($this->registry, $this->logger);
         $this->ruleOptionsParser = (new RuleOptionsParserFactory())->createFromClasses([
             LongParameterListRule::class,
-            TypeCoverageRule::class,
+            ParamTypeCoverageRule::class,
+            ReturnTypeCoverageRule::class,
         ]);
     }
 
@@ -154,48 +156,51 @@ final class RuleOptionKeyNormalizationTest extends TestCase
         );
     }
 
-    // -- TypeCoverageRule: param_* / return_* / property_* --------------------
+    // -- the three type-coverage rules: bare warning / error ------------------
     //
-    // Note: the per-dimension `param_threshold`/`return_threshold`/
-    // `property_threshold` unified shorthand is not exercised through
+    // Note: the `threshold` shorthand is not exercised through
     // RuleOptionsFactory in this file — that path is already covered by
-    // RuleOptionsFactoryTest::itDoesNotWarnAboutTheParamThresholdShorthandOnTypeCoverage().
+    // RuleOptionsFactoryTest::itDoesNotWarnAboutTheThresholdShorthandOnTypeCoverage().
     // A previous version of RuleOptionsFactory::create() always seeded
-    // $merged with every constructor default (paramWarning/paramError/etc.)
-    // before fromArray() ran, which made ThresholdParser's mixing-conflict
-    // check see "warning"/"error" as present even when the user only set
-    // `threshold` — that bug has since been fixed (RuleOptionsFactory now
-    // passes through only what the user actually configured). See
-    // TypeCoverageOptionsTest::itAcceptsCamelCaseThresholdShorthand() for the
-    // case-normalization regression test at the Options::fromArray() level,
-    // which does not go through RuleOptionsFactory.
+    // $merged with every constructor default before fromArray() ran, which
+    // made ThresholdParser's mixing-conflict check see "warning"/"error" as
+    // present even when the user only set `threshold` — that bug has since
+    // been fixed (RuleOptionsFactory now passes through only what the user
+    // actually configured).
 
     #[Test]
-    public function itAppliesParamErrorViaDedicatedCliFlagWithoutFalseWarning(): void
+    public function itAppliesErrorViaDedicatedCliFlagWithoutFalseWarning(): void
     {
-        $parsed = $this->ruleOptionsParser->parseShortAlias('type-coverage-param-error', 90.0);
+        $parsed = $this->ruleOptionsParser->parseShortAlias('param-type-coverage-error', 90.0);
         self::assertNotNull($parsed);
 
         $this->registry->setCliOptions($parsed['rule'], [$parsed['option'] => $parsed['value']]);
 
         /** @var TypeCoverageOptions $options */
-        $options = $this->factory->create('design.type-coverage', TypeCoverageOptions::class);
+        $options = $this->factory->create('design.param-type-coverage', TypeCoverageOptions::class);
 
-        self::assertSame(90.0, $options->paramError);
+        self::assertSame(90.0, $options->error);
         self::assertSame([], $this->logger->records);
     }
 
+    /**
+     * One rule's option must not reach its siblings: they share the Options
+     * class, and configuration is keyed by producer, not by class.
+     */
     #[Test]
-    public function itAppliesReturnErrorViaRuleOptSnakeCaseSpelling(): void
+    public function itAppliesErrorViaRuleOptToOneDimensionOnly(): void
     {
         $this->applyCliOptions($this->ruleOptionsParser->parseRuleOptions([
-            'design.type-coverage:return_error=85',
+            'design.return-type-coverage:error=85',
         ]));
 
-        /** @var TypeCoverageOptions $options */
-        $options = $this->factory->create('design.type-coverage', TypeCoverageOptions::class);
+        /** @var TypeCoverageOptions $configured */
+        $configured = $this->factory->create('design.return-type-coverage', TypeCoverageOptions::class);
+        /** @var TypeCoverageOptions $untouched */
+        $untouched = $this->factory->create('design.param-type-coverage', TypeCoverageOptions::class);
 
-        self::assertSame(85.0, $options->returnError);
+        self::assertSame(85.0, $configured->error);
+        self::assertSame(50.0, $untouched->error);
         self::assertSame([], $this->logger->records);
     }
 

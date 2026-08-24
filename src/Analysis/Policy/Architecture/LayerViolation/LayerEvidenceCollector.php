@@ -8,6 +8,7 @@ use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -46,21 +47,26 @@ final class LayerEvidenceCollector
     private WeakMap $memo;
 
     /**
-     * The options are the producer's own, the same instance the rule and the
-     * validator answer to: what the walk materialises depends on which
-     * consumers the configuration turned on.
+     * Both consumers' options, because what the walk materialises depends on
+     * which of them the configuration turned on. They are two objects since
+     * `architecture.unassigned-class` became a producer of its own, and this
+     * collector is where the disjunction between them belongs — it is the one
+     * place that knows both.
      */
     public function __construct(
         private readonly LayerViolationOptions $options,
+        private readonly UnassignedClassOptions $unassignedClass,
         private readonly ArchitecturePolicy $processor,
     ) {
         $this->memo = new WeakMap();
     }
 
     /**
-     * `null` when the producer is disabled or the run declares no layers —
-     * the two states a caller may legitimately reach. Reaching an unprepared
-     * policy is refused instead: see {@see walk()}.
+     * `null` when **every** consumer is disabled or the run declares no
+     * layers — the two states a caller may legitimately reach. A caller whose
+     * own gate is off still has to check it: this method answers "is there
+     * evidence", not "may you report". Reaching an unprepared policy is
+     * refused instead: see {@see walk()}.
      */
     public function collect(AnalysisContext $context): ?LayerEvidence
     {
@@ -78,7 +84,14 @@ final class LayerEvidenceCollector
 
     private function walk(AnalysisContext $context): ?LayerEvidence
     {
-        if (!$this->options->isEnabled()) {
+        // Any consumer, not the first one. This gate used to read the
+        // layer-violation rule's `enabled` alone, which made
+        // `architecture.unassigned-class` — a producer of its own since ADR
+        // 0030 — fall silent when its neighbour was switched off in options,
+        // the exact coupling the split exists to remove. Publication stays
+        // each consumer's own decision: the rule, the validator and the
+        // unassigned-class rule each check their own gate before emitting.
+        if (!$this->options->isEnabled() && !$this->unassignedClass->isEnabled()) {
             return null;
         }
 
@@ -135,6 +148,21 @@ final class LayerEvidenceCollector
     }
 
     /**
+     * Whether the per-class walk must materialise the set of declarations
+     * outside every layer.
+     *
+     * Two independent consumers, so the predicate is their disjunction rather
+     * than either alone: the project that turned `coverage` off because
+     * dependency-edge ends drowned it in vendor code is precisely the one that
+     * turns `architecture.unassigned-class` on, and reading the coverage mode
+     * alone would leave that channel with no evidence to report.
+     */
+    private function materializesUncovered(ArchitectureConfiguration $architecture): bool
+    {
+        return $architecture->coverage() !== CoverageMode::Ignore || $this->unassignedClass->isEnabled();
+    }
+
+    /**
      * @param array<string, int> $into
      * @param array<string, int> $from
      *
@@ -170,13 +198,9 @@ final class LayerEvidenceCollector
      *    every analysed class outside all declared layers. Canonical keys make
      *    the later merge with dependency-edge coverage deterministic and
      *    deduplicate a class observed through both repository and graph views.
-     *    Materialised only when {@see LayerViolationOptions::collectsOutsideLayerEvidence()}
-     *    says a consumer exists, because the map is the size of the
-     *    unclassified codebase. The source-side walk materialises it for
-     *    either consumer independently: `coverage: ignore` with
-     *    `unassigned_class: warn` is the ordinary configuration for a project
-     *    that turned coverage off because of vendor edge ends, and gating the
-     *    walk on coverage alone would leave the other channel with no data.
+     *    Materialised only when {@see materializesUncovered()} says a
+     *    consumer exists, because the map is the size of the unclassified
+     *    codebase.
      * 4. `analysedDeclarations` — how many class-like declarations the walk
      *    saw, the denominator `architecture.unassigned-class` reports its
      *    percentage against.
@@ -194,7 +218,7 @@ final class LayerEvidenceCollector
         AnalysisContext $context,
     ): array {
         $registry = $architecture->registry();
-        $materializeUncovered = $this->options->collectsOutsideLayerEvidence($architecture->coverage());
+        $materializeUncovered = $this->materializesUncovered($architecture);
 
         $assignedHits = [];
         $matchedSymbols = [];

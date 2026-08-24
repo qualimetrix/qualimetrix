@@ -15,8 +15,8 @@ use Qualimetrix\Analysis\Evidence\Design\DataClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\DataClassRule;
 use Qualimetrix\Analysis\Evidence\Design\GodClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\GodClassRule;
+use Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
@@ -43,7 +43,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  */
 #[CoversClass(ThresholdOverrideExtractor::class)]
 #[CoversClass(MaintainabilityRule::class)]
-#[CoversClass(TypeCoverageRule::class)]
+#[CoversClass(ParamTypeCoverageRule::class)]
 #[CoversClass(DataClassRule::class)]
 #[CoversClass(GodClassRule::class)]
 #[CoversClass(MethodCountRule::class)]
@@ -117,9 +117,9 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     public function invertedRuleAcceptsTypeCoverageOverride(): void
     {
         $result = $this->extract(
-            ruleName: TypeCoverageRule::NAME,
+            ruleName: ParamTypeCoverageRule::NAME,
             validator: TypeCoverageOptions::getOverrideValidator(),
-            docblock: '/** @qmx-threshold design.type-coverage warning=70 error=40 */',
+            docblock: '/** @qmx-threshold design.param-type-coverage warning=70 error=40 */',
         );
 
         self::assertSame(InvertedOverrideValidator::instance(), TypeCoverageOptions::getOverrideValidator());

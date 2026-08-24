@@ -107,12 +107,12 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
-            'design.type-coverage#design.type-coverage.class',
+            'design.param-type-coverage#design.param-type-coverage',
             ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
         );
 
-        $recorded = self::findingOn('design.type-coverage', 'design.type-coverage.class', self::someClass(), 60.0);
-        $current = self::findingOn('design.type-coverage', 'design.type-coverage.class', self::someClass(), 75.0);
+        $recorded = self::findingOn('design.param-type-coverage', 'design.param-type-coverage', self::someClass(), 60.0);
+        $current = self::findingOn('design.param-type-coverage', 'design.param-type-coverage', self::someClass(), 75.0);
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [60.0])]), $declarations);
 
@@ -430,7 +430,8 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
      * "at least as bad as `t`" reading `<= t`.
      *
      * No `lower` channel emits more than one finding per identity today —
-     * `maintainability.index` and `design.type-coverage.*` are one per class
+     * `maintainability.index` and the three `design.*-type-coverage` rules are
+     * one per class
      * — so these groups are constructed, not observed. That is deliberate:
      * the rule is written over a direction, not over a channel, and nothing
      * in the design confines multi-member groups to `higher`. A channel that

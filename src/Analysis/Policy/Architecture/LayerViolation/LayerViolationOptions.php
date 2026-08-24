@@ -8,21 +8,25 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 
 /**
  * Options for {@see LayerViolationRule}.
  *
- * One options set for the whole producer: the rule, its configuration
- * validator and the walk they share all read this instance, because
- * `--rule-opt=architecture.layer-violation:*` has always addressed the family
- * as a whole. Only three things are configured here:
- * - {@see $enabled} — short-circuits the shared walk when false, so both
- *   verdicts fall silent together.
+ * One options set for the layer-policy verdicts on the code and on the
+ * declaration: the rule and its configuration validator both read this
+ * instance, because `--rule-opt=architecture.layer-violation:*` has always
+ * addressed that family as a whole. Two things are configured here:
+ * - {@see $enabled} — silences this rule and the five declaration verdicts.
+ *   It does **not** silence `architecture.unassigned-class`: the shared walk
+ *   runs for either producer, and each consumer checks its own gate before
+ *   emitting. It used to, and that was the coupling ADR 0030's split exists to
+ *   remove — one producer's option silencing another producer's channel.
  * - {@see $severity} — the severity of every reported `architecture.layer-violation`.
- * - {@see $unassignedClass} — the gate for `architecture.unassigned-class`,
- *   off by default. A mode rather than a severity because `ignore` also
- *   decides whether the walk collects the evidence at all.
+ *
+ * `architecture.unassigned-class` is configured by
+ * {@see UnassignedClassOptions} instead: it became a producer of its own, and
+ * a gate read from a sibling's options would be a gate nobody looking at the
+ * sibling expects to find.
  *
  * The five verdicts on the declaration itself belong to
  * {@see LayerDeclarationValidator} and are configuration errors by virtue of
@@ -70,12 +74,10 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
     /**
      * @param bool $enabled Whether the rule is enabled.
      * @param Severity $severity Severity assigned to every reported `architecture.layer-violation`.
-     * @param UnassignedClassMode $unassignedClass Gate for `architecture.unassigned-class`.
      */
     public function __construct(
         public bool $enabled = true,
         public Severity $severity = Severity::Warning,
-        public UnassignedClassMode $unassignedClass = UnassignedClassMode::Ignore,
     ) {}
 
     /**
@@ -92,48 +94,7 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             severity: self::resolveSeverity($config['severity'] ?? null, 'severity', Severity::Warning),
-            unassignedClass: self::resolveUnassignedClass($config['unassignedClass'] ?? null),
         );
-    }
-
-    /**
-     * Parses the `unassigned_class` gate, falling back to `ignore` when unset.
-     *
-     * @throws InvalidArgumentException When $raw is set but not a recognized mode string.
-     */
-    private static function resolveUnassignedClass(mixed $raw): UnassignedClassMode
-    {
-        if ($raw === null) {
-            return UnassignedClassMode::Ignore;
-        }
-
-        if ($raw instanceof UnassignedClassMode) {
-            return $raw;
-        }
-
-        if (!\is_string($raw)) {
-            throw new InvalidArgumentException(\sprintf(
-                'Option "unassigned_class" for rule "%s" must be a string, got %s.',
-                self::RULE_NAME,
-                get_debug_type($raw),
-            ));
-        }
-
-        $normalized = strtolower($raw);
-        foreach (UnassignedClassMode::cases() as $case) {
-            if ($case->value === $normalized) {
-                return $case;
-            }
-        }
-
-        $allowed = implode(', ', array_map(static fn(UnassignedClassMode $c): string => "'{$c->value}'", UnassignedClassMode::cases()));
-
-        throw new InvalidArgumentException(\sprintf(
-            'Option "unassigned_class" for rule "%s" has unknown value "%s"; expected one of %s.',
-            self::RULE_NAME,
-            $raw,
-            $allowed,
-        ));
     }
 
     /**
@@ -174,21 +135,6 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
     public function isEnabled(): bool
     {
         return $this->enabled;
-    }
-
-    /**
-     * Whether the per-class walk must materialise the set of declarations
-     * outside every layer.
-     *
-     * Two independent consumers, so the predicate is their disjunction rather
-     * than either mode alone: the project that turned `coverage` off because
-     * dependency-edge ends drowned it in vendor code is precisely the one that
-     * turns this gate on, and reading the coverage mode alone would leave the
-     * gate with no evidence to report.
-     */
-    public function collectsOutsideLayerEvidence(CoverageMode $coverage): bool
-    {
-        return $coverage !== CoverageMode::Ignore || $this->unassignedClass !== UnassignedClassMode::Ignore;
     }
 
     /**

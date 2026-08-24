@@ -47,8 +47,11 @@ use Throwable;
  *   declaration, never parsed back out of the channel code: the code spells
  *   the level today and will not always, and a reader of the name fails by
  *   printing nothing rather than by failing;
- * - a multi-axis rule's channel names its axis (`…#design.type-coverage.return`),
- *   so a property named after that axis is preferred (`returnWarning`).
+ * - a multi-axis rule's channel names its axis, so a property named after that
+ *   axis is preferred. No channel names an axis since ADR 0030 gave each
+ *   type-coverage dimension its own rule — the branch is kept because what
+ *   selects it is the shape of the channel, not a list of rule names, and the
+ *   next multi-axis rule would otherwise resolve to the wrong number silently.
  *
  * Rules with neither resolve to nothing, correctly.
  *

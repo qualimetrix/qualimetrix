@@ -70,13 +70,15 @@ rules:
     error: 10
     vo-warning: 12
     vo-error: 18
-  design.type-coverage:
-    param_warning: 30
-    param_error: 10
-    return_warning: 30
-    return_error: 10
-    property_warning: 30
-    property_error: 10
+  design.param-type-coverage:
+    warning: 30
+    error: 10
+  design.return-type-coverage:
+    warning: 30
+    error: 10
+  design.property-type-coverage:
+    warning: 30
+    error: 10
 
 disabledRules:
   - code-smell.boolean-argument

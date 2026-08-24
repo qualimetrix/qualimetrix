@@ -17,18 +17,17 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInte
 
 /**
  * Reports what the *code* does wrong against the declared architecture policy:
- * a dependency edge the allow-list forbids, and how much of the analysed code
- * no layer claims.
+ * a dependency edge the allow-list forbids.
  *
  * Under declaration-order matching (ADR 0006), a class is assigned to the
- * FIRST layer whose patterns match its FQN. Two channels come out of that:
+ * FIRST layer whose patterns match its FQN. One channel comes out of that:
+ * `architecture.layer-violation`, per use-site, one violation per forbidden
+ * dependency edge.
  *
- * - `architecture.layer-violation` — per use-site, one violation per
- *   forbidden dependency edge.
- * - `architecture.unassigned-class` — the per-run count of analysed
- *   declarations outside every declared layer, gated by
- *   {@see LayerViolationOptions::$unassignedClass} and built by
- *   {@see UnassignedClassSummary}.
+ * How much of the analysed code no layer claims is a fact about the run
+ * rather than about one edge, and belongs to {@see UnassignedClassRule}. It
+ * reads the same {@see LayerEvidenceCollector}, so the two rules still share
+ * one traversal.
  *
  * The five verdicts on the *declaration* — coverage, unreachable layer,
  * pending layer matched, potential shadow, empty template — are not here.
@@ -47,15 +46,12 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInte
  */
 #[CliAlias('layer-violation', 'enabled')]
 #[CliAlias('layer-violation-severity', 'severity')]
-#[CliAlias('layer-violation-unassigned-class', 'unassigned_class')]
 final class LayerViolationRule extends AbstractRule
 {
     public const string NAME = LayerPolicyPreparationInterface::PRODUCER_RULE_NAME;
     public const string DOCS_PAGE = 'rules/architecture.md';
 
     public const int REMEDIATION_MINUTES = 15;
-
-    public const string UNASSIGNED_CLASS_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME;
 
     /**
      * The collector is injected by {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass::resolveExtraDependencies()}.
@@ -109,19 +105,12 @@ final class LayerViolationRule extends AbstractRule
      * is an identity-layer concern the channel declaration itself does not
      * encode.
      *
-     * `architecture.unassigned-class` is the exception in shape, and that
-     * shape is a judgement call rather than a consequence; the argument for it
-     * lives with the code that emits it, in
-     * {@see UnassignedClassSummary::unassignedClassChannel()}.
-     *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
             (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_),
-            (new ViolationChannel(self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME, self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME))->toKey()
-                => UnassignedClassSummary::unassignedClassChannel(),
         ];
     }
 
@@ -132,6 +121,12 @@ final class LayerViolationRule extends AbstractRule
     {
         \assert($this->options instanceof LayerViolationOptions);
 
+        // Own gate, because the shared walk now runs for either producer: the
+        // collector answers "is there evidence", not "may this rule report".
+        if (!$this->options->isEnabled()) {
+            return [];
+        }
+
         $evidence = $this->evidence->collect($context);
         if ($evidence === null) {
             return [];
@@ -139,14 +134,7 @@ final class LayerViolationRule extends AbstractRule
 
         $ownedTargets = OwnedLayerTargets::fromDeclarations($context->metrics->allDeclarations());
 
-        return [
-            ...$this->buildViolations($evidence, $ownedTargets),
-            ...UnassignedClassSummary::unassignedClasses(
-                $this->options->unassignedClass,
-                $evidence->uncoveredClasses(),
-                $evidence->analysedDeclarations(),
-            ),
-        ];
+        return $this->buildViolations($evidence, $ownedTargets);
     }
 
     /**

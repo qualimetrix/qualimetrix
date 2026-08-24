@@ -2311,17 +2311,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itReturnsCollectorName
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itReturnsCorrectMetricDefinitions
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itSkipsAnonymousClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::fromArray_perDimensionThresholdSetsBothValues
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::fromArray_snakeCaseKeysTakePrecedenceOverCamelCase
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::fromArray_thresholdMixedWithWarningThrows
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::fromArray_withCamelCaseKeys_appliesCorrectly
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::fromArray_withDefaults_usesDefaultValues
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::fromArray_withEmptyArray_disablesRule
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::fromArray_withSnakeCaseKeys_appliesCorrectly
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::getParamSeverity_returnsCorrectSeverity
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::getPropertySeverity_returnsCorrectSeverity
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::getReturnSeverity_returnsCorrectSeverity
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itAcceptsCamelCaseThresholdShorthand
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itAdvertisesOnlyTheBareShorthand
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itAppliesAnOverridePerBoundary
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itDefaultsToEightyAndFifty
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itDisablesOnAnEmptyConfig
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itDoesNotAnswerToTheOldPrefixedKeys
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itLetsTheBareThresholdShorthandSetBothBoundaries
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itReadsLessCoverageAsWorse
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itReadsTheBareThresholdPair
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itRefusesAThresholdMixedWithAGraduatedKey
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itValidatesOverridesInInvertedDirection
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itDefaultsMissingTypedCountsToZero
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itProvidesTypeCoveragePctMetric
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itRequiresTypeCoverageDependency
@@ -2332,39 +2331,44 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturnsClassLevelMetricDefinitionWithNoAggregation
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturnsCollectorName
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturnsCorrectPercentageForPartiallyTypedClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itAnalyzeDisabledReturnsEmpty
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itComputesSeverityViaOptionsMethods
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itDisablesWhenLoadedFromEmptyArray
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itErrorsOnLowParamCoverage
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itFlagsLowPropertyCoverage
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itFlagsLowReturnCoverage
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itGetsCategory
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itGetsCliAliases
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itGetsDescription
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itGetsName
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itGetsOptionsClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itHasOptionsDefaults
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itLoadsCustomThresholds
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"param at error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"param at warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"param just below error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"param just below warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"property at error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"property at warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"property just below error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"property just below warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"return at error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"return at warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"return just below error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundariesForEveryCoverageDimension"return just below warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itProducesMultipleViolationsPerClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itProducesNoViolationForClassWithNoMethods
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itProducesNoViolationsWithFullCoverage
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentOnFullCoverage"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentOnFullCoverage"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentOnFullCoverage"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentWhenTheDimensionHasNoDeclarations"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentWhenTheDimensionHasNoDeclarations"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentWhenTheDimensionHasNoDeclarations"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itJudgesEachDimensionAgainstItsOwnConfiguration
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itNamesItselfAndItsSingleChannel"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itNamesItselfAndItsSingleChannel"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itNamesItselfAndItsSingleChannel"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"param at error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"param at warning"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"param just below error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"param just below warning"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"property at error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"property at warning"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"property just below error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"property just below warning"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"return at error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"return at warning"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"return just below error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"return just below warning"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itRejectsWrongOptionsTypeInConstructor
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itRequires
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itWarnsOnLowParamCoverage
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReadsNothingWhenDisabled"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReadsNothingWhenDisabled"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReadsNothingWhenDisabled"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itRejectsWrongOptionsTypeInConstructor"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itRejectsWrongOptionsTypeInConstructor"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itRejectsWrongOptionsTypeInConstructor"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReportsItsOwnCodeSeverityAndMessage"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReportsItsOwnCodeSeverityAndMessage"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReportsItsOwnCodeSeverityAndMessage"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"return"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageScaleTest::fullyTypedClassProducesPercentage100NotRatio1
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageScaleTest::halfTypedClassProducesPercentage50NotRatio05
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageScaleTest::partialCoverageProducesCorrectPercentage
@@ -2877,7 +2881,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.god-class"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.inheritance"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.noc"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.type-coverage"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.param-type-coverage"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.property-type-coverage"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.return-type-coverage"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"duplication.code-duplication"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"file-size"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"fixture.rule"
@@ -3522,6 +3528,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelOrderFixtureDriftTest::theContainerYieldsChannelsInTheOrderTheFixtureRecords
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyConfiguredComputedMetricChannelAlsoResolvesToARealDescriptionAndAnExistingDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelPresentationCoverageTest::everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::aTieIsReachableBetweenTheThreeTypeCoverageChannels
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::noInputCanTieTheChannelThatChangedPositionAgainstAnythingItMovedPast
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::theTiedTypeCoverageChannelsAreYieldedInTheDeclaredOrder
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyDeclaredChannelHasAProducer
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRegisteredRuleIsAddressableIncludingOnesThatDeclareNoChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRulesDeclaredThresholdSupportMatchesWhatItsOptionsCanHonour
@@ -3569,8 +3578,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::theTwoNonPrefixPagesAreDeclaredExplicitly
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::noHandSpelledCodeInAFixtureOrDocPageNamesANonexistentRuleOrChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::noProductionFileOutsideARuleOrChannelsOwningCapabilityHoldsItsLiteral
- - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesParamErrorViaDedicatedCliFlagWithoutFalseWarning
- - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesReturnErrorViaRuleOptSnakeCaseSpelling
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesErrorViaDedicatedCliFlagWithoutFalseWarning
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesErrorViaRuleOptToOneDimensionOnly
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaConfigFileKebabKey
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaDedicatedCliFlagWithoutFalseWarning
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptCamelSpelling
@@ -3807,9 +3816,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itCreatesWithDefaults
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDeepMergesNestedArrays
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotWarnAboutTheDocumentedThresholdShorthandOnASupportingRule
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotWarnAboutTheParamThresholdShorthandOnTypeCoverage
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotWarnAboutTheThresholdShorthandOnCboAndAppliesItToBothLevels
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotWarnAboutTheThresholdShorthandOnInstabilityAndAppliesItToBothLevels
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotWarnAboutTheThresholdShorthandOnTypeCoverage
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itDoesNotWarnAboutTheVoThresholdShorthandOnLongParameterList
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itExpandsDeepDotNotationInCliOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::itExpandsDotNotationInCliOptions
@@ -3994,15 +4003,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.noc::(top)#0[error]=error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.noc::(top)#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.noc::(top)#0[warning]=warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage::(top)#0[error]=param_error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage::(top)#0[threshold]=param_threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage::(top)#0[warning]=param_warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage::(top)#1[error]=return_error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage::(top)#1[threshold]=return_threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage::(top)#1[warning]=return_warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage::(top)#2[error]=property_error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage::(top)#2[threshold]=property_threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage::(top)#2[warning]=property_warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.param-type-coverage::(top)#0[error]=error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.param-type-coverage::(top)#0[threshold]=threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.param-type-coverage::(top)#0[warning]=warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.property-type-coverage::(top)#0[error]=error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.property-type-coverage::(top)#0[threshold]=threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.property-type-coverage::(top)#0[warning]=warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.return-type-coverage::(top)#0[error]=error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.return-type-coverage::(top)#0[threshold]=threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.return-type-coverage::(top)#0[warning]=warning"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"duplication.code-duplication::(top)#0[error]=error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"duplication.code-duplication::(top)#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"duplication.code-duplication::(top)#0[warning]=warning"
@@ -4042,7 +4051,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"coupling.instability::namespace"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.inheritance::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.noc::"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.type-coverage::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.param-type-coverage::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.property-type-coverage::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.return-type-coverage::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"duplication.code-duplication::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"maintainability.index::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"size.class-count::"
@@ -4072,7 +4083,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"coupling.instability::namespace"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.inheritance::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.noc::"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.type-coverage::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.param-type-coverage::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.property-type-coverage::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.return-type-coverage::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"duplication.code-duplication::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"maintainability.index::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"size.class-count::"
@@ -4859,17 +4872,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::fromArrayRejectsUnknownSeverity
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::getSeverityReturnsConfiguredSeverityForAnyValueWhenEnabled
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::getSeverityReturnsNullWhenDisabled
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itLeavesTheUnassignedClassGateOffByDefault
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesTheUnassignedClassGate#0
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesTheUnassignedClassGate#1
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesTheUnassignedClassGate#2
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#0
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#1
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#2
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#3
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#4
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#5
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsAnUnknownUnassignedClassGateValue
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::allowedEdgeProducesNoViolation
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::anUnpreparedPolicyIsRefusedInsteadOfMemoisedAsAbsentEvidence
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::disabledRuleReturnsNoViolations
@@ -4912,6 +4920,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::unreachableLayer_doesNotFireForDtoOnlyLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::unreachableLayer_firesForShadowedLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::unreachableLayer_firesWhenPatternMatchesNoClass
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::eachGateReachesOnlyItsOwnChannels
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itCollectsEvidenceWhenCoverageIsIgnoredAndOnlyTheGateIsOn
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itDeclaresTheChannelAsAMagnitudeThatIsNotAConfigurationError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itEmitsNothingWhenEveryAnalysedDeclarationIsAssigned
@@ -4920,6 +4929,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itIgnoresDependencyEdgeEndsOutsideTheAnalysedSet
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itMirrorsTheModeNameInTheReportedSeverity
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itReportsTheAbsoluteCountAndKeepsTheShareInTheMessageOnly
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itAcceptsAnEnabledFalseThatAgreesWithTheDefaultMode
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itDerivesEnablementFromTheModeAndAcceptsNoOtherKey
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itIsTheOptionsClassOfItsOwnRule
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itLeavesTheGateOffByDefault
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itParsesTheMode#0
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itParsesTheMode#1
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itParsesTheMode#2
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itReadsTheModeAsTheReportedSeverity
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itRefusesAnEnabledThatWouldLie#0
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itRefusesAnEnabledThatWouldLie#1
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itRefusesAnEnabledThatWouldLie#2
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassOptionsTest::itRejectsAnUnknownMode
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itAllowsARunWiderThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itDoesNotOfferAnEntryTheRunStillReports
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itRefusesARunThatDoesNotCoverTheRecordedScope
@@ -5359,28 +5380,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReportsASymbolWhoseValueIsNotAListOfRecords
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReportsNothingUnreadableForAWellFormedFile
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReturnsTheMalformedRowsInsteadOfDroppingThem
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAComputedMetricChannelThatOnlyTheResolvedConfigurationKnows
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAThresholdOnARuleThatDeclaresOverrideSupport
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAThresholdOnTypeCoverageItself
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAnExactChannelAndAGroupThatCoversSomething
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAnExplicitChannelPair
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsTheNoRuleFilterForm
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itExplainsTheGrammarWhenAFileFormCarriesABareReason
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itExplainsWhichFormMayOmitTheChannel
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itKeepsDistinctAuthoredDirectivesApart
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itPointsAThresholdNamingAChannelAtTheProducingRule
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itPointsAThresholdNamingATypeCoverageDimensionAtTheRule
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsADanglingReferenceToAMetricNoLongerConfigured
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAGroupFormThatCoversNoChannel
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAMisspelledChannel
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsARuleNameWhereASuppressionMustNameAChannel
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAThresholdNamingARuleFamilyRatherThanARule
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAThresholdOnARuleThatDeclaresNoOverrideSupport
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAnExplicitPairWhoseHalvesDoNotBelongTogether
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsGroupAndWildcardThresholds
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itReportsNothingWhenTheOwningRuleIsDisabled
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itReportsOneFindingPerAuthoredDirectiveNotPerBoundDeclaration
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itReportsOneFindingPerAuthoredThresholdDirective
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineSuppressionLayerViolationIntegrationTest::qmxIgnoreOnSourceDoesNotDropTargetAttributedArchitectureLayerViolation
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::hierarchicalRuleValidationDelegatesToLevelOptions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::independentAxisRuleAcceptsArbitraryOrdering
@@ -5397,6 +5396,29 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::compilerPassNoOpsWhenExtractorIsAbsent
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::compilerPassWritesValidatorMapOntoExtractorArgument
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::factoryProducesValidatorForEveryThresholdAwareRuleInRegistry
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAComputedMetricChannelThatOnlyTheResolvedConfigurationKnows
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAThresholdOnARuleThatDeclaresOverrideSupport
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAThresholdOnOneTypeCoverageDimension
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAnExactChannelAndAGroupThatCoversSomething
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAnExplicitChannelPair
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsTheNoRuleFilterForm
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itExplainsTheGrammarWhenAFileFormCarriesABareReason
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itExplainsWhichFormMayOmitTheChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itKeepsDistinctAuthoredDirectivesApart
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itPointsAThresholdNamingAChannelAtTheProducingRule
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsADanglingReferenceToAMetricNoLongerConfigured
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAGroupFormThatCoversNoChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAMisspelledChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsARuleNameWhereASuppressionMustNameAChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingARuleFamilyRatherThanARule
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingTheOldTypeCoverageDimensionSpelling
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingTheSplitTypeCoverageRule
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdOnARuleThatDeclaresNoOverrideSupport
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAnExplicitPairWhoseHalvesDoNotBelongTogether
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsGroupAndWildcardThresholds
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsNothingWhenTheOwningRuleIsDisabled
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredDirectiveNotPerBoundDeclaration
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredThresholdDirective
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsAValueWhoseCaseDiffersFromTheEnum
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsAnAlreadyResolvedSeverity
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsTheDocumentedSpelling
@@ -5572,7 +5594,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesMethodLevelOverrideOnlyToSpecificMethod
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesOverriddenThresholdInMethodCountRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesTheExactCboSelectorBeforeSeverityProjection
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesTheExactTypeCoverageSelectorToAllClosedDimensions
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesTheExactTypeCoverageSelectorToTheDimensionItNames
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itIncludesOverriddenThresholdInViolationMessage
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itOverridesMethodComplexityOptions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itOverridesMethodCountOptions
@@ -5733,9 +5755,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\DependencyGraphAnalyzerTest::itClassifiesParseAndProcessingFailuresWithoutDiscardingSuccessfulFiles
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\DependencyGraphAnalyzerTest::itReturnsGraphAndCanonicalCoverageForMixedDependencies
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\DependencyGraphAnalyzerTest::itUsesTheTraversalContractWithoutImportingDependencyModelInternals
+ - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itPreparesArchitecturePolicyForEitherOfItsProducersAlone#0
+ - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itPreparesArchitecturePolicyForEitherOfItsProducersAlone#1
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itPreparesArchitecturePolicyWhenLayerViolationRuleIsEnabled
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itPreparesTheArchitectureProducerWhenOnlyADiagnosticChannelIsSelected
- - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itResetsArchitecturePreparationWithoutDoingWorkWhenLayerViolationRuleIsDisabled
+ - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itResetsArchitecturePreparationWithoutDoingWorkWhenEveryLayerPolicyProducerIsDisabled
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itResetsCircularDependencyPreparationWithoutDoingWorkWhenRuleIsDisabled
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsCircularDependencyDetectionWhenRuleDisabled
  - Qualimetrix\Tests\Functional\Console\Command\HookInstallCommandTest::itFailsWhenHookExistsWithoutForceFlag
@@ -6138,6 +6162,7 @@ Available tests:
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerFactoryTest::itWiresGlobalContextCollectors
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerFactoryTest::itWiresOwnerLocalRuntimeConfiguration
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerFactoryTest::itWiresTheDuplicationCapabilityThroughItsContractAndRegistries
+ - Qualimetrix\Tests\Integration\DependencyInjection\RuleRegistrationDriftTest::everyConcreteRuleClassOnDiskIsRegistered
  - Qualimetrix\Tests\Integration\Documentation\ChannelPublicationConsistencyTest::itPublishesChannelCountsAndListsThatMatchTheDeclarations
  - Qualimetrix\Tests\Integration\Documentation\ChannelPublicationConsistencyTest::itRegistersEveryChannelCountStatement
  - Qualimetrix\Tests\Integration\Documentation\ChannelPublicationConsistencyTest::itRejectsDeclarationOnlyChannelDrift
@@ -7511,3 +7536,10 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itFiltersViolationsBySeverity
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itIsEmptyWhenNoViolations
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itIsNotEmptyWhenHasViolations
+ - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itLeavesAWildcardTargetInHistoryAlone
+ - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesExecutedHistoryThatNoLongerDescribesTheMeasurement
+ - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesToRetireADecisionWhoseTargetIsAWildcard
+ - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesToRetireWhenATargetExistedBeforeTheMeasurement
+ - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesToRetireWhenTheTargetIsMeasuredUnderAnotherKind
+ - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRetiresARenameWhoseTargetsAppeared
+ - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRetiresASplitOnlyWhenAllThreeTargetsAppeared

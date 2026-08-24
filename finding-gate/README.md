@@ -213,7 +213,9 @@ rename can be stated once. Two ways the halves stop being a function:
   a declared row, and the candidate must publish the pair that row computes on
   the same subject. An occurrence nothing accounts for is `split-unmapped`.
   `rule` and `code` are fields the equivalence tuple compares, so this is the
-  same rule normalization is held to; a declared delta gets no waiver here.
+  same rule normalization is held to; a declared delta gets no waiver here. What
+  the matched records produce is a set of `(from, to)` moves per field, and that
+  set — not the set of values in it — is what `delta-overreach` will allow.
 
 ## What a declared delta declares
 
@@ -232,25 +234,47 @@ judged on the diff the run **measures**, not on the declared text:
 - `delta-stale` — a delta is declared for a surface the two trees agree on.
 - `delta-too-large` — the diff is past the limit, so the pressure stays on
   declaring another map row rather than dropping in a blob.
-- `delta-overreach` — a diff line *changes* a field the equivalence tuple
-  compares, and no declared split explains that record. Changed, not mentioned:
-  a compact JSON record names `channel` on the same line as the magnitude it
-  records, so pairing the removed and added lines is what makes the question
-  answerable. Only the published `"field": value` syntax is read — that covers
-  the JSON family and the HTML report's embedded payload; the plain-text surfaces
-  print a bare name no field syntax marks, and there the record-level split check
-  is the guard.
+- `delta-overreach` — a diff line *moves* a field the equivalence tuple
+  compares, and no declared split performed that move. Three properties, each
+  narrower than the obvious version:
+  - **Moved, not mentioned.** A compact JSON record names `channel` on the same
+    line as the magnitude it records, so pairing the removed and added lines is
+    what makes the question answerable at all.
+  - **The move, not the values.** What a declared split licenses is the set of
+    `(from, to)` pairs its explained records actually produced. A line moving
+    `rule` between two *targets* of the same split — both values that explained
+    records carry — is refused, because no record ever paired them.
+  - **Read under the spelling each surface uses.** Only the published
+    `"field": value` syntax is read, which covers the JSON family and the HTML
+    report's embedded payload. The payload spells three tuple fields
+    differently (`ruleName`, `violationCode`, `symbolPath`), and those aliases
+    are declared in the gate and pinned against the partitioner that writes
+    them, so the HTML surface is read in its own vocabulary rather than skipped
+    in silence. The plain-text surfaces print a bare name no field syntax marks,
+    and there the record-level split check is the guard.
+  A line that publishes a *different number* of values for one field is refused
+  outright: the record set on that line changed, which no rename explains.
 
 A run with declared deltas still says GREEN, and says loudly how many there are
 and how big they are. Lines longer than 500 characters also get a token-level
 diff in the failure detail: the HTML report's embedded payload is one line of
 roughly 59 thousand characters, and without that nobody can read what moved.
 
-The exact diff is one hunk with no context lines: the shared head and tail are
-dropped and everything between the outermost differing lines is emitted whole.
-That is not a minimal edit script, and deliberately so — a minimal one would need
-a full LCS over artifacts the size of the HTML report, while a stated span is
-exact, cheap, and stops matching as soon as the surface moves.
+The exact diff is a series of hunks with no context lines: what the two sides
+share is dropped, and each hunk carries the line it starts at on both sides. It
+used to be a single hunk covering everything between the outermost differing
+lines, and that was wrong for the reason its first real user found — two small
+changes at opposite ends of a report restated the hundreds of identical lines
+between them, and `delta-too-large` then counted padding as change and refused a
+declaration that had nothing left to declare.
+
+The split is the longest common run of lines, recursively, not a full LCS over
+artifacts the size of the HTML report. Two consequences are worth knowing:
+a shared run shorter than four lines stays inside its hunk and *is* counted on
+both sides (in the tracked SARIF declaration that is 18 of 36 counted lines), and
+a differing span whose line pairs exceed the search budget is **refused** rather
+than emitted as one padded hunk — falling back would silently restore the
+behaviour the hunks exist to remove.
 
 ## Adding a channel
 

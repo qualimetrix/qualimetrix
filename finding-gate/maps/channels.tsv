@@ -1,1 +1,4 @@
 old	new	reason
+design.type-coverage#design.type-coverage.param	design.param-type-coverage#design.param-type-coverage	Ш4b renames this channel
+design.type-coverage#design.type-coverage.property	design.property-type-coverage#design.property-type-coverage	Ш4b renames this channel
+design.type-coverage#design.type-coverage.return	design.return-type-coverage#design.return-type-coverage	Ш4b renames this channel

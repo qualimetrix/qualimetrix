@@ -85,7 +85,7 @@ use RuntimeException;
  * - a local variable, resolved by finding its assignment(s) in the same
  *   method — including a `[$code, $hint] = match (...) { ... }`
  *   destructuring assignment, resolved per-arm at the destructured index
- *   (`design.type-coverage`'s `.param`/`.return`/`.property` split).
+ *   (`coupling.cbo`'s class/namespace split).
  *
  * **What this deliberately does not do**: trace values across function
  * calls (beyond the one `$this->method()` hop described above), or reason
@@ -443,6 +443,10 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             return self::resolveMethodCall($expr, $staticClass);
         }
 
+        if ($expr instanceof StaticCall) {
+            return self::resolveStaticCall($expr, $staticClass);
+        }
+
         if ($expr instanceof Variable && \is_string($expr->name)) {
             return self::resolveVariable($expr->name, $selfClass, $staticClass, $scope);
         }
@@ -505,8 +509,53 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             return null;
         }
 
-        $methodName = $expr->name->toString();
+        return self::resolveNoArgCall($expr->name->toString(), $staticClass);
+    }
 
+    /**
+     * The same for `static::methodName()` (no args), and **only** for it.
+     *
+     * A rule family whose shared base builds the finding reaches its own name
+     * through a static hook rather than through `$this`, because the base also
+     * needs it in `channelDeclarations()`, which is static. `static::` is late
+     * static binding, so resolving it against the concrete rule under test is
+     * PHP's own rule and the guard follows it exactly.
+     *
+     * `self::` is deliberately **not** accepted. PHP binds it to the class
+     * whose source contains the call and ignores an override, so resolving it
+     * the same way would let the guard check the subclass's name while the
+     * runtime publishes the base's — a guard reporting a channel that is never
+     * emitted, and missing the one that is. Refusing it makes the guard
+     * stricter than the code rather than more permissive: an emission written
+     * with `self::` fails here as unresolvable, which is a failure, not a
+     * shrug. (Measured: with a base `emit()` returning `self::n()` and a child
+     * overriding `n()`, PHP prints the base's value while reflection's
+     * declaring class is the child.)
+     *
+     * @param class-string $staticClass
+     *
+     * @return ?list<string>
+     */
+    private static function resolveStaticCall(StaticCall $expr, string $staticClass): ?array
+    {
+        if (!$expr->class instanceof Name || $expr->class->toString() !== 'static') {
+            return null;
+        }
+
+        if (!$expr->name instanceof Identifier || $expr->args !== []) {
+            return null;
+        }
+
+        return self::resolveNoArgCall($expr->name->toString(), $staticClass);
+    }
+
+    /**
+     * @param class-string $staticClass
+     *
+     * @return ?list<string>
+     */
+    private static function resolveNoArgCall(string $methodName, string $staticClass): ?array
+    {
         try {
             $declaringClass = (new ReflectionClass($staticClass))->getMethod($methodName)->getDeclaringClass()->getName();
         } catch (ReflectionException) {

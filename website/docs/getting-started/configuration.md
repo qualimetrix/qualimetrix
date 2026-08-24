@@ -190,14 +190,17 @@ rules:
     threshold: 15   # class AND namespace: warning=error=15
 ```
 
-For type coverage, dedicated shorthand keys are available:
+Each type-coverage dimension is a rule of its own, so each takes its own bare
+`threshold`:
 
 ```yaml
 rules:
-  design.type-coverage:
-    param_threshold: 90
-    return_threshold: 90
-    property_threshold: 80
+  design.param-type-coverage:
+    threshold: 90
+  design.return-type-coverage:
+    threshold: 90
+  design.property-type-coverage:
+    threshold: 80
 ```
 
 **Exclude namespaces from a rule:**

@@ -23,12 +23,12 @@ use ReflectionClass;
  *
  * The number of registered rules is asserted, not assumed, so a rule quietly
  * dropped from registration cannot shrink the swept set and pass by vacuous
- * agreement — obtained via `bin/qmx rules --no-ansi` ("42 rules available").
+ * agreement — obtained via `bin/qmx rules --no-ansi` ("45 rules available").
  */
 #[CoversClass(RuleDocsPageReader::class)]
 final class RuleDocsPageCoverageTest extends TestCase
 {
-    private const int REGISTERED_RULE_COUNT = 42;
+    private const int REGISTERED_RULE_COUNT = 45;
 
     #[Test]
     public function everyRegisteredRuleDeclaresItsOwnDocsPage(): void

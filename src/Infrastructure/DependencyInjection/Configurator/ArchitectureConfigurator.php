@@ -34,6 +34,7 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
     private const string LAYER_DECLARATION_VALIDATOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerDeclarationValidator';
     private const string LAYER_EVIDENCE_COLLECTOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector';
     private const string LAYER_VIOLATION_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule';
+    private const string UNASSIGNED_CLASS_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnassignedClassRule';
 
     public function __construct(
         private readonly string $srcDir,
@@ -87,30 +88,35 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
     }
 
     /**
-     * The two verdicts on the declared layers and the walk they share.
+     * The verdicts on the declared layers and the walk they share.
      *
      * Called after the rule scan, and that order is load-bearing: channels
      * enter the universe in the order their producers are registered, and this
-     * family's published order has the rule's two channels ahead of the
+     * family's published order has the two rules' channels ahead of the
      * validator's five. See ChannelDeclarationCompilerPass.
      *
-     * Both answer to one options service — the producer rule's own — because
-     * `--rule-opt=architecture.layer-violation:enabled=false` has always
-     * silenced the whole family, and a second Options instance would be a
-     * second place for that answer to be read. The id is derived from the rule
-     * the same way {@see RuleOptionsCompilerPass} derives it when it registers
-     * the service later in the build; a reference to a service defined by a
-     * later pass resolves at the end of compilation.
+     * The rule and its validator answer to one options service — the producer
+     * rule's own — because `--rule-opt=architecture.layer-violation:enabled=false`
+     * has always silenced that family, and a second Options instance would be a
+     * second place for that answer to be read. The ids are derived from the
+     * rules the same way {@see RuleOptionsCompilerPass} derives them when it
+     * registers the services later in the build; a reference to a service
+     * defined by a later pass resolves at the end of compilation.
+     *
+     * The shared walk gets a second options service on top of that one:
+     * `architecture.unassigned-class` is a producer of its own now, and what
+     * the walk has to materialise depends on both gates.
      */
     private function registerLayerVerdicts(ContainerBuilder $container): void
     {
         $options = new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::LAYER_VIOLATION_RULE));
+        $unassignedClassOptions = new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::UNASSIGNED_CLASS_RULE));
 
         $container->register(self::LAYER_EVIDENCE_COLLECTOR)
-            ->setArguments([$options, new Reference(self::ARCHITECTURE_POLICY)]);
+            ->setArguments([$options, $unassignedClassOptions, new Reference(self::ARCHITECTURE_POLICY)]);
 
         $container->register(self::LAYER_DECLARATION_VALIDATOR)
-            ->setArguments([new Reference(self::LAYER_EVIDENCE_COLLECTOR)])
+            ->setArguments([new Reference(self::LAYER_EVIDENCE_COLLECTOR), $options])
             ->setAutoconfigured(true)
             ->setAutowired(false)
             ->setLazy(true);

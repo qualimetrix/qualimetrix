@@ -56,7 +56,9 @@ use Qualimetrix\Analysis\Evidence\Design\GodClassRule;
 use Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector;
 use Qualimetrix\Analysis\Evidence\Design\InheritanceRule;
 use Qualimetrix\Analysis\Evidence\Design\NocRule;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\PropertyTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\ReturnTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
@@ -87,8 +89,9 @@ use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
-use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
+use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
@@ -798,7 +801,7 @@ PHP;
             DistanceRule::class,
             CircularDependencyRule::class,
             LayerViolationRule::class,
-            InlineDirectiveRule::class,
+            UnusedDirectiveRule::class,
             LongParameterListRule::class,
             BooleanArgumentRule::class,
             CountInLoopRule::class,
@@ -810,7 +813,10 @@ PHP;
             GotoRule::class,
             SuperglobalsRule::class,
             UnreachableCodeRule::class,
-            TypeCoverageRule::class,
+            ParamTypeCoverageRule::class,
+            ReturnTypeCoverageRule::class,
+            PropertyTypeCoverageRule::class,
+            UnassignedClassRule::class,
             HardcodedCredentialsRule::class,
             ClassRankRule::class,
             SqlInjectionRule::class,

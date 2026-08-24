@@ -4,12 +4,30 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\DeclaredDelta;
 use RuntimeException;
 use Throwable;
 
 /** Runs the controls and decides whether every one of them behaved as declared. */
+/**
+ * PASS means less than it did before a step declared a delta, and that has to be
+ * readable rather than inferred.
+ *
+ * Before, every control's every failure was either required or explicitly
+ * tolerated at a named surface. Now a red control additionally tolerates
+ * `delta-mismatch`, `delta-stale` and `delta-overreach` on the surfaces the step
+ * under test declares — and `surface-mismatch` there too, but only for a control
+ * that replaced the declaration index itself. Those surfaces are not compared
+ * for equality in the first place, so a control can no longer use them as
+ * evidence either way. What PASS still asserts, unchanged: the positive control
+ * is green with the step's declarations intact and byte-compared, every red
+ * control produced its required class at its required surface, and no red
+ * control produced anything else anywhere else.
+ */
 final class Harness
 {
+    private const DECLARED_DELTA_INDEX = 'finding-gate/declared-delta.tsv';
+
     private function __construct(
         private readonly string $repository,
         private readonly string $reference,
@@ -203,12 +221,46 @@ final class Harness
 
             $this->keepReport($control, $report);
 
-            return Outcome::of($control, $run, $report);
+            return Outcome::of(
+                $control,
+                $run,
+                $report,
+                $this->declaredSurfaces(),
+                \in_array(self::DECLARED_DELTA_INDEX, $control->mutation->relativePaths(), true),
+            );
         } catch (Throwable $error) {
             return Outcome::crashed($control, $error->getMessage());
         } finally {
             $scratch->remove();
         }
+    }
+
+    /**
+     * The surfaces the step under test declares a delta for.
+     *
+     * A red control cannot use them as evidence about the mechanism it tests,
+     * so failures that are statements about the declaration are tolerated
+     * there — bounded by class, and for `surface-mismatch` by whether this
+     * control replaced the index. See {@see Outcome::isDeclarationNoise()}.
+     *
+     * Read through the gate's own loader, not a second parser of the same file.
+     * The hand-rolled one this replaces was laxer in the dangerous direction:
+     * it accepted a row whose `reason` was still `?` and a row naming a diff
+     * file that does not exist, both of which the gate refuses, and a wider set
+     * of declared surfaces silently widens the toleration. Read from the
+     * repository, never from the scratch tree, because a control that plants its
+     * own declaration replaces the index and the step's own surfaces have to
+     * stay known even then.
+     *
+     * @return list<string>
+     */
+    private function declaredSurfaces(): array
+    {
+        if (!is_file($this->repository . '/' . self::DECLARED_DELTA_INDEX)) {
+            return [];
+        }
+
+        return DeclaredDelta::load($this->repository . '/finding-gate')->surfaces();
     }
 
     private function keepReport(Control $control, string $report): void

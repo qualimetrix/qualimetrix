@@ -22,8 +22,10 @@ use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Design\DataClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\GodClassOptions;
+use Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\PropertyTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\ReturnTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -390,24 +392,12 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $npathOverridden = $npath->withOverride(400, 900);
         self::assertTrue($npathOverridden->enabled, 'NPath: enabled must be preserved');
 
-        // TypeCoverageOptions — overrides all 3 dimensions uniformly with the same (warning, error)
-        $typeCov = new TypeCoverageOptions(
-            enabled: false,
-            paramWarning: 90.0,
-            paramError: 70.0,
-            returnWarning: 85.0,
-            returnError: 60.0,
-            propertyWarning: 95.0,
-            propertyError: 75.0,
-        );
+        // TypeCoverageOptions — one dimension per rule now, so one boundary pair
+        $typeCov = new TypeCoverageOptions(enabled: false, warning: 80.0, error: 50.0);
         $typeCovOverridden = $typeCov->withOverride(60.0, 30.0);
         self::assertFalse($typeCovOverridden->enabled, 'TypeCoverage: enabled must be preserved');
-        self::assertSame(60.0, $typeCovOverridden->paramWarning, 'TypeCoverage: paramWarning must take warning override');
-        self::assertSame(30.0, $typeCovOverridden->paramError, 'TypeCoverage: paramError must take error override');
-        self::assertSame(60.0, $typeCovOverridden->returnWarning, 'TypeCoverage: returnWarning must take warning override');
-        self::assertSame(30.0, $typeCovOverridden->returnError, 'TypeCoverage: returnError must take error override');
-        self::assertSame(60.0, $typeCovOverridden->propertyWarning, 'TypeCoverage: propertyWarning must take warning override');
-        self::assertSame(30.0, $typeCovOverridden->propertyError, 'TypeCoverage: propertyError must take error override');
+        self::assertSame(60.0, $typeCovOverridden->warning, 'TypeCoverage: warning must take the override');
+        self::assertSame(30.0, $typeCovOverridden->error, 'TypeCoverage: error must take the override');
 
         // GodClassOptions — warning overrides minCriteria; per-criterion thresholds preserved
         $godClass = new GodClassOptions(
@@ -698,8 +688,13 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
     }
 
+    /**
+     * One directive, one dimension. The selector used to name a rule that
+     * judged three, so a threshold written for parameters silently retuned
+     * returns and properties as well.
+     */
     #[Test]
-    public function itAppliesTheExactTypeCoverageSelectorToAllClosedDimensions(): void
+    public function itAppliesTheExactTypeCoverageSelectorToTheDimensionItNames(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'TypedService');
         $subject = self::declarationSubject($symbolPath, 'src/Service/TypedService.php', 100);
@@ -719,12 +714,14 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             metrics: $repository,
             thresholdOverrides: [
                 'src/Service/TypedService.php' => [
-                    self::override('design.type-coverage', 60.0, 40.0, $subject, ControlScope::Class_, 1, 100),
+                    self::override('design.param-type-coverage', 60.0, 40.0, $subject, ControlScope::Class_, 1, 100),
                 ],
             ],
         );
 
-        self::assertSame([], (new TypeCoverageRule(new TypeCoverageOptions()))->analyze($context));
+        self::assertSame([], (new ParamTypeCoverageRule(new TypeCoverageOptions()))->analyze($context));
+        self::assertCount(1, (new ReturnTypeCoverageRule(new TypeCoverageOptions()))->analyze($context));
+        self::assertCount(1, (new PropertyTypeCoverageRule(new TypeCoverageOptions()))->analyze($context));
     }
 
     #[Test]

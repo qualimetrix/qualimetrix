@@ -946,6 +946,11 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/Unit/PhpStan/')) {
         return ['TestSupport/ArchitectureStaticAnalysis', 'P8'];
     }
+    // The rule-vocabulary enumeration is repository tooling, not a capability:
+    // its owner is the governance that owns the plan's instruments.
+    if (str_starts_with($path, 'tests/Unit/RuleVocabulary/')) {
+        return ['Architecture.Governance', 'P8'];
+    }
     if (str_starts_with($path, 'tests/Unit/Core/')) {
         return ['Core', 'permanent'];
     }

@@ -193,7 +193,7 @@ rules:
     threshold: 15   # class И namespace: warning=error=15
 ```
 
-Для правила `design.type-coverage` доступны специализированные варианты: `param_threshold`, `return_threshold`, `property_threshold`.
+Каждое измерение покрытия типами -- отдельное правило (`design.param-type-coverage`, `design.return-type-coverage`, `design.property-type-coverage`), и у каждого свой обычный `threshold`.
 
 Вычисляемые метрики (computed metrics) также поддерживают `threshold`.
 

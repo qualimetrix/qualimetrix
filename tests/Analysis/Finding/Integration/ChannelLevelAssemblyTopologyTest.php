@@ -118,7 +118,8 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
     /**
      * The {@see SymbolLevel} a channel code names after its rule name, or
      * `null` when the code carries no level segment. A suffix that is not a
-     * level (`design.type-coverage.param` names an aspect) is not this
+     * level (an aspect, as `design.type-coverage.param` used to name before
+     * ADR 0030 split it into three rules) is not this
      * guard's business.
      */
     private static function levelSegmentOf(ViolationChannel $channel): ?SymbolLevel

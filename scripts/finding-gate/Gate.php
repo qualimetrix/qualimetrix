@@ -75,6 +75,7 @@ final class Gate
             $this->declaredDelta->count(),
             $this->declaredDelta->totalBytes(),
         ));
+        $this->report->countDeclaredDeltas($this->declaredDelta->count());
 
         if (!$this->declaredDelta->isEmpty()) {
             $this->report->warn(\sprintf(
@@ -590,21 +591,47 @@ final class Gate
                     continue;
                 }
 
-                $moved = array_merge(
-                    array_diff($onCandidate, $onReference),
-                    array_diff($onReference, $onCandidate),
-                );
+                // A line that publishes a different *number* of values for a
+                // compared field is not a rename of anything: the record set on
+                // that line changed, and no declared split can account for it.
+                if (\count($onCandidate) !== \count($onReference)) {
+                    $problems[] = \sprintf(
+                        'Hunk line %d publishes %d value(s) of the compared field "%s" where the reference publishes'
+                        . ' %d, so the change is not a rename a declared split could explain.',
+                        $index + 1,
+                        \count($onCandidate),
+                        $field,
+                        \count($onReference),
+                    );
 
-                foreach ($moved as $value) {
-                    if ($this->split->allows($field, $value)) {
+                    continue;
+                }
+
+                // Paired by position within the line, the same principle
+                // ExactDiff::pairs() uses across the hunk: a payload publishes
+                // its records in one order on both sides, so the n-th value of a
+                // field on one line answers the n-th on the other. Asking about
+                // the pair rather than about each value separately is what keeps
+                // a delta from moving a compared field between two values no
+                // explained record ever paired.
+                foreach ($onReference as $position => $referenceValue) {
+                    $candidateValue = $onCandidate[$position];
+
+                    if ($referenceValue === $candidateValue) {
+                        continue;
+                    }
+
+                    if ($this->split->allowsMove($field, $referenceValue, $candidateValue)) {
                         continue;
                     }
 
                     $problems[] = \sprintf(
-                        'Hunk line %d changes the compared field "%s" ("%s"), which no declared split explains.',
+                        'Hunk line %d changes the compared field "%s" ("%s" -> "%s"), a move no declared split'
+                        . ' explains.',
                         $index + 1,
                         $field,
-                        $value,
+                        $referenceValue,
+                        $candidateValue,
                     );
                 }
             }
@@ -624,19 +651,50 @@ final class Gate
             return [];
         }
 
-        $pattern = \sprintf('~"%s"\s*:\s*(?:"((?:[^"\\\\]|\\\\.)*)"|([^,}\]\s]+))~', preg_quote($field, '~'));
-
-        if (preg_match_all($pattern, $line, $matches) === false) {
-            throw new GateError(\sprintf('Cannot read published values of "%s".', $field));
-        }
-
         $values = [];
 
-        foreach ($matches[2] as $index => $bare) {
-            $values[] = $bare === '' ? $matches[1][$index] : $bare;
+        foreach (self::spellingsOf($field) as $spelling) {
+            $pattern = \sprintf('~"%s"\s*:\s*(?:"((?:[^"\\\\]|\\\\.)*)"|([^,}\]\s]+))~', preg_quote($spelling, '~'));
+
+            if (preg_match_all($pattern, $line, $matches) === false) {
+                throw new GateError(\sprintf('Cannot read published values of "%s".', $spelling));
+            }
+
+            foreach ($matches[2] as $index => $bare) {
+                $values[] = $bare === '' ? $matches[1][$index] : $bare;
+            }
         }
 
         return $values;
+    }
+
+    /**
+     * Every key a surface publishes one tuple field under.
+     *
+     * The tuple is named after the JSON report, and the HTML report's embedded
+     * payload publishes three of its fields under other keys. Reading only the
+     * tuple's own spelling therefore meant `delta-overreach` read *nothing* on
+     * `case:*|format:html` — the surface where every changed line is a compared
+     * datum moving — while both this class's docblock and finding-gate/README.md
+     * claimed the check covered that payload. It covered its syntax, not its
+     * vocabulary.
+     *
+     * Measured against `HtmlViolationPartitioner::partition()`, which is the one
+     * place the payload's keys are written, and pinned there by
+     * {@see SelfTest::htmlPayloadVocabulary()} so a rename on that side is loud
+     * rather than a silently unread field.
+     *
+     * @return list<string>
+     */
+    private static function spellingsOf(string $field): array
+    {
+        $aliases = [
+            'rule' => 'ruleName',
+            'code' => 'violationCode',
+            'symbol' => 'symbolPath',
+        ];
+
+        return isset($aliases[$field]) ? [$field, $aliases[$field]] : [$field];
     }
 
     /**
@@ -702,6 +760,15 @@ final class Gate
     /**
      * Every occurrence of a split half must be explained by a declared row.
      *
+     * The reference findings go in **raw**, in the reference's own vocabulary.
+     * Passing them forward-mapped first is what the first real split caught:
+     * the map translates the `code` half and leaves the untranslatable `rule`
+     * half alone, so the pair read off such a finding is a chimera
+     * (`old-rule#new-code`) that no declared key can ever be, and the lookup
+     * misses every time. A self-test on {@see ChannelSplit} could not see it —
+     * it fed the class the raw pair the class expects, which is to say it
+     * exercised a call this call site was not making.
+     *
      * @param array<string, string> $candidate
      * @param array<string, string> $reference
      */
@@ -715,7 +782,7 @@ final class Gate
             $key = Surfaces::key('case:' . $case->id, 'format:json');
 
             foreach ($this->split->unexplained(
-                self::findings($this->maps->forward($reference[$key] ?? '')),
+                self::findings($reference[$key] ?? ''),
                 self::findings($candidate[$key] ?? ''),
             ) as $problem) {
                 $this->report->fail(FailureClass::SPLIT_UNMAPPED, 'case:' . $case->id, $problem);

@@ -1,0 +1,11 @@
+--- candidate
++++ reference (mapped)
+@@ -2894,1 +2894,1 @@
+-                                                "ruleName": "design.param-type-coverage",
++                                                "ruleName": "design.type-coverage",
+@@ -2907,1 +2907,1 @@
+-                                                "ruleName": "design.return-type-coverage",
++                                                "ruleName": "design.type-coverage",
+@@ -2920,1 +2920,1 @@
+-                                                "ruleName": "design.property-type-coverage",
++                                                "ruleName": "design.type-coverage",

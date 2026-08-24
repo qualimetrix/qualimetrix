@@ -9,85 +9,154 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Design\AbstractTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\PropertyTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\ReturnTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use ReflectionClass;
 
-#[CoversClass(TypeCoverageRule::class)]
-#[CoversClass(TypeCoverageOptions::class)]
+/**
+ * The three type-coverage rules, swept as one set.
+ *
+ * Every case runs against all three: they share an emission helper, so a
+ * regression in it would otherwise be caught on one dimension and missed on
+ * the other two. What is deliberately NOT parameterised is
+ * {@see itJudgesEachDimensionAgainstItsOwnConfiguration()} — the point of the
+ * split is that the three no longer answer to one setting, and that can only
+ * be shown by configuring them differently in one run.
+ *
+ * @phpstan-type Dimension array{class: class-string<AbstractTypeCoverageRule>, name: string, description: string, total: string, coverage: string, label: string, hint: string}
+ */
+#[CoversClass(AbstractTypeCoverageRule::class)]
+#[CoversClass(ParamTypeCoverageRule::class)]
+#[CoversClass(ReturnTypeCoverageRule::class)]
+#[CoversClass(PropertyTypeCoverageRule::class)]
 final class TypeCoverageRuleTest extends TestCase
 {
-    #[Test]
-    public function itGetsName(): void
+    /**
+     * One argument, a struct, rather than seven positional ones: PHPUnit warns
+     * when a data set carries more arguments than the case reads, and most of
+     * these cases read two or three of the seven.
+     *
+     * The metric keys are written as **literals**, not read from
+     * {@see MetricName}. Reading the constants would make this provider and the
+     * rules under test one witness: a dimension swapped consistently in both —
+     * `ParamTypeCoverageRule` returning the return-type metric and this table
+     * agreeing — would pass. The literals are the second witness, and
+     * {@see itNamesItselfAndItsSingleChannel()} pins them against the constants
+     * so a rename of a constant is loud rather than silent drift.
+     *
+     * @return iterable<string, array{0: Dimension}>
+     */
+    public static function dimensions(): iterable
     {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions());
-
-        self::assertSame('design.type-coverage', $rule->getName());
+        yield 'param' => [[
+            'class' => ParamTypeCoverageRule::class,
+            'name' => 'design.param-type-coverage',
+            'description' => 'Checks type coverage of parameters per class',
+            'total' => 'typeCoverage.paramTotal',
+            'coverage' => 'typeCoverage.param',
+            'label' => 'Parameter',
+            'hint' => 'Add type declarations to method parameters',
+        ]];
+        yield 'return' => [[
+            'class' => ReturnTypeCoverageRule::class,
+            'name' => 'design.return-type-coverage',
+            'description' => 'Checks type coverage of return types per class',
+            'total' => 'typeCoverage.returnTotal',
+            'coverage' => 'typeCoverage.return',
+            'label' => 'Return',
+            'hint' => 'Add return type declarations to methods',
+        ]];
+        yield 'property' => [[
+            'class' => PropertyTypeCoverageRule::class,
+            'name' => 'design.property-type-coverage',
+            'description' => 'Checks type coverage of properties per class',
+            'total' => 'typeCoverage.propertyTotal',
+            'coverage' => 'typeCoverage.property',
+            'label' => 'Property',
+            'hint' => 'Add type declarations to properties',
+        ]];
     }
 
+    /**
+     * @param Dimension $dimension
+     */
     #[Test]
-    public function itGetsDescription(): void
+    #[DataProvider('dimensions')]
+    public function itNamesItselfAndItsSingleChannel(array $dimension): void
     {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions());
+        $ruleClass = $dimension['class'];
+        $rule = new $ruleClass(new TypeCoverageOptions());
 
-        self::assertSame(
-            'Checks type coverage of parameters, return types, and properties per class',
-            $rule->getDescription(),
-        );
-    }
-
-    #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions());
-
+        self::assertSame($dimension['name'], $rule->getName());
+        self::assertSame($dimension['description'], $rule->getDescription());
         self::assertSame(RuleCategory::Design, $rule->getCategory());
-    }
-
-    #[Test]
-    public function itRequires(): void
-    {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions());
-
-        self::assertSame(['typeCoverage.param'], $rule->requires());
-    }
-
-    #[Test]
-    public function itGetsOptionsClass(): void
-    {
-        self::assertSame(TypeCoverageOptions::class, TypeCoverageRule::getOptionsClass());
-    }
-
-    #[Test]
-    public function itGetsCliAliases(): void
-    {
+        self::assertSame([$dimension['coverage']], $rule->requires());
+        // The literals above are the second witness; this is where they are tied
+        // back to the constants, so a renamed constant fails here rather than
+        // leaving the table quietly measuring a key nothing produces.
+        self::assertContains(
+            $dimension['coverage'],
+            (new ReflectionClass(MetricName::class))->getConstants(),
+            'the metric key this table names is one MetricName declares',
+        );
+        self::assertContains(
+            $dimension['total'],
+            (new ReflectionClass(MetricName::class))->getConstants(),
+            'and so is its total',
+        );
+        self::assertSame(TypeCoverageOptions::class, $ruleClass::getOptionsClass());
         self::assertSame(
-            [
-                'type-coverage-param-warning' => 'param_warning',
-                'type-coverage-param-error' => 'param_error',
-                'type-coverage-return-warning' => 'return_warning',
-                'type-coverage-return-error' => 'return_error',
-                'type-coverage-property-warning' => 'property_warning',
-                'type-coverage-property-error' => 'property_error',
-            ],
-            CliAliasReader::read(TypeCoverageRule::class),
+            [$dimension['name'] . '#' . $dimension['name']],
+            array_keys($ruleClass::channelDeclarations()),
         );
     }
 
+    /**
+     * @param Dimension $dimension
+     */
     #[Test]
-    public function itRejectsWrongOptionsTypeInConstructor(): void
+    #[DataProvider('dimensions')]
+    public function itAliasesItsOwnTwoBoundariesOnly(array $dimension): void
     {
+        $short = substr($dimension['name'], \strlen('design.'));
+
+        self::assertSame(
+            [$short . '-warning' => 'warning', $short . '-error' => 'error'],
+            CliAliasReader::read($dimension['class']),
+        );
+    }
+
+    /**
+     * @param Dimension $dimension
+     */
+    #[Test]
+    #[DataProvider('dimensions')]
+    public function itRejectsWrongOptionsTypeInConstructor(array $dimension): void
+    {
+        $ruleClass = $dimension['class'];
+
         self::expectException(InvalidArgumentException::class);
 
-        new TypeCoverageRule(new class implements \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface {
+        new $ruleClass(new class implements RuleOptionsInterface {
             public static function fromArray(array $config): static
             {
                 return new static();
@@ -105,392 +174,162 @@ final class TypeCoverageRuleTest extends TestCase
         });
     }
 
+    /**
+     * @param Dimension $dimension
+     */
     #[Test]
-    public function itAnalyzeDisabledReturnsEmpty(): void
+    #[DataProvider('dimensions')]
+    public function itReadsNothingWhenDisabled(array $dimension): void
     {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions(enabled: false));
-
+        $ruleClass = $dimension['class'];
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->expects(self::never())->method('allDeclarations');
 
-        $context = new AnalysisContext($repository);
+        $rule = new $ruleClass(new TypeCoverageOptions(enabled: false));
 
-        self::assertSame([], $rule->analyze($context));
-    }
-
-    #[Test]
-    public function itProducesNoViolationsWithFullCoverage(): void
-    {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions());
-
-        $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
-
-        $metricBag = (new MetricBag())
-            ->with('typeCoverage.paramTotal', 5)
-            ->with('typeCoverage.paramTyped', 5)
-            ->with('typeCoverage.param', 100.0)
-            ->with('typeCoverage.returnTotal', 3)
-            ->with('typeCoverage.returnTyped', 3)
-            ->with('typeCoverage.return', 100.0)
-            ->with('typeCoverage.propertyTotal', 2)
-            ->with('typeCoverage.propertyTyped', 2)
-            ->with('typeCoverage.property', 100.0);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
-            ->willReturn([$classInfo]);
-        $repository->method('get')
-            ->willReturn($metricBag);
-
-        $context = new AnalysisContext($repository);
-
-        self::assertSame([], $rule->analyze($context));
-    }
-
-    #[Test]
-    public function itWarnsOnLowParamCoverage(): void
-    {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions(
-            paramWarning: 80.0,
-            paramError: 50.0,
-        ));
-
-        $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 5);
-
-        $metricBag = (new MetricBag())
-            ->with('typeCoverage.paramTotal', 10)
-            ->with('typeCoverage.paramTyped', 7)
-            ->with('typeCoverage.param', 70.0)
-            ->with('typeCoverage.returnTotal', 0)
-            ->with('typeCoverage.propertyTotal', 0);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
-            ->willReturn([$classInfo]);
-        $repository->method('get')
-            ->willReturn($metricBag);
-
-        $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
-
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('design.type-coverage.param', $violations[0]->violationCode);
-        self::assertStringContainsString('70.0%', $violations[0]->message);
-        self::assertStringContainsString('80.0%', $violations[0]->message);
-    }
-
-    #[Test]
-    public function itErrorsOnLowParamCoverage(): void
-    {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions(
-            paramWarning: 80.0,
-            paramError: 50.0,
-        ));
-
-        $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 5);
-
-        $metricBag = (new MetricBag())
-            ->with('typeCoverage.paramTotal', 10)
-            ->with('typeCoverage.paramTyped', 3)
-            ->with('typeCoverage.param', 30.0)
-            ->with('typeCoverage.returnTotal', 0)
-            ->with('typeCoverage.propertyTotal', 0);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
-            ->willReturn([$classInfo]);
-        $repository->method('get')
-            ->willReturn($metricBag);
-
-        $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
-
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('design.type-coverage.param', $violations[0]->violationCode);
-    }
-
-    #[Test]
-    public function itFlagsLowReturnCoverage(): void
-    {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions(
-            returnWarning: 80.0,
-            returnError: 50.0,
-        ));
-
-        $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 5);
-
-        $metricBag = (new MetricBag())
-            ->with('typeCoverage.paramTotal', 0)
-            ->with('typeCoverage.returnTotal', 4)
-            ->with('typeCoverage.returnTyped', 1)
-            ->with('typeCoverage.return', 25.0)
-            ->with('typeCoverage.propertyTotal', 0);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
-            ->willReturn([$classInfo]);
-        $repository->method('get')
-            ->willReturn($metricBag);
-
-        $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
-
-        self::assertCount(1, $violations);
-        self::assertSame('design.type-coverage.return', $violations[0]->violationCode);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-    }
-
-    #[Test]
-    public function itFlagsLowPropertyCoverage(): void
-    {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions(
-            propertyWarning: 80.0,
-            propertyError: 50.0,
-        ));
-
-        $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 5);
-
-        $metricBag = (new MetricBag())
-            ->with('typeCoverage.paramTotal', 0)
-            ->with('typeCoverage.returnTotal', 0)
-            ->with('typeCoverage.propertyTotal', 5)
-            ->with('typeCoverage.propertyTyped', 3)
-            ->with('typeCoverage.property', 60.0);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
-            ->willReturn([$classInfo]);
-        $repository->method('get')
-            ->willReturn($metricBag);
-
-        $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
-
-        self::assertCount(1, $violations);
-        self::assertSame('design.type-coverage.property', $violations[0]->violationCode);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-    }
-
-    #[Test]
-    public function itProducesMultipleViolationsPerClass(): void
-    {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions(
-            paramWarning: 80.0,
-            paramError: 50.0,
-            returnWarning: 80.0,
-            returnError: 50.0,
-            propertyWarning: 80.0,
-            propertyError: 50.0,
-        ));
-
-        $symbolPath = SymbolPath::forClass('App', 'BadClass');
-        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
-
-        $metricBag = (new MetricBag())
-            ->with('typeCoverage.paramTotal', 10)
-            ->with('typeCoverage.paramTyped', 2)
-            ->with('typeCoverage.param', 20.0)
-            ->with('typeCoverage.returnTotal', 5)
-            ->with('typeCoverage.returnTyped', 1)
-            ->with('typeCoverage.return', 20.0)
-            ->with('typeCoverage.propertyTotal', 4)
-            ->with('typeCoverage.propertyTyped', 0)
-            ->with('typeCoverage.property', 0.0);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
-            ->willReturn([$classInfo]);
-        $repository->method('get')
-            ->willReturn($metricBag);
-
-        $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
-
-        self::assertCount(3, $violations);
-        self::assertSame('design.type-coverage.param', $violations[0]->violationCode);
-        self::assertSame('design.type-coverage.return', $violations[1]->violationCode);
-        self::assertSame('design.type-coverage.property', $violations[2]->violationCode);
-    }
-
-    #[Test]
-    public function itProducesNoViolationForClassWithNoMethods(): void
-    {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions());
-
-        $symbolPath = SymbolPath::forClass('App', 'EmptyClass');
-        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
-
-        $metricBag = (new MetricBag())
-            ->with('typeCoverage.paramTotal', 0)
-            ->with('typeCoverage.returnTotal', 0)
-            ->with('typeCoverage.propertyTotal', 0);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
-            ->willReturn([$classInfo]);
-        $repository->method('get')
-            ->willReturn($metricBag);
-
-        $context = new AnalysisContext($repository);
-
-        self::assertSame([], $rule->analyze($context));
-    }
-
-    #[Test]
-    public function itLoadsCustomThresholds(): void
-    {
-        $options = TypeCoverageOptions::fromArray([
-            'enabled' => true,
-            'param_warning' => 90.0,
-            'param_error' => 70.0,
-            'return_warning' => 95.0,
-            'return_error' => 80.0,
-            'property_warning' => 85.0,
-            'property_error' => 60.0,
-        ]);
-
-        self::assertTrue($options->isEnabled());
-        self::assertSame(90.0, $options->paramWarning);
-        self::assertSame(70.0, $options->paramError);
-        self::assertSame(95.0, $options->returnWarning);
-        self::assertSame(80.0, $options->returnError);
-        self::assertSame(85.0, $options->propertyWarning);
-        self::assertSame(60.0, $options->propertyError);
-    }
-
-    #[Test]
-    public function itDisablesWhenLoadedFromEmptyArray(): void
-    {
-        $options = TypeCoverageOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
-    }
-
-    #[Test]
-    public function itHasOptionsDefaults(): void
-    {
-        $options = TypeCoverageOptions::fromArray(['enabled' => true]);
-
-        self::assertTrue($options->isEnabled());
-        self::assertSame(80.0, $options->paramWarning);
-        self::assertSame(50.0, $options->paramError);
-        self::assertSame(80.0, $options->returnWarning);
-        self::assertSame(50.0, $options->returnError);
-        self::assertSame(80.0, $options->propertyWarning);
-        self::assertSame(50.0, $options->propertyError);
-    }
-
-    #[Test]
-    public function itComputesSeverityViaOptionsMethods(): void
-    {
-        $options = new TypeCoverageOptions(
-            paramWarning: 80.0,
-            paramError: 50.0,
-            returnWarning: 80.0,
-            returnError: 50.0,
-            propertyWarning: 80.0,
-            propertyError: 50.0,
-        );
-
-        // Below error threshold
-        self::assertSame(Severity::Error, $options->getParamSeverity(30.0));
-        self::assertSame(Severity::Error, $options->getReturnSeverity(30.0));
-        self::assertSame(Severity::Error, $options->getPropertySeverity(30.0));
-
-        // Between warning and error
-        self::assertSame(Severity::Warning, $options->getParamSeverity(60.0));
-        self::assertSame(Severity::Warning, $options->getReturnSeverity(60.0));
-        self::assertSame(Severity::Warning, $options->getPropertySeverity(60.0));
-
-        // Above warning threshold
-        self::assertNull($options->getParamSeverity(90.0));
-        self::assertNull($options->getReturnSeverity(90.0));
-        self::assertNull($options->getPropertySeverity(90.0));
-
-        // Generic getSeverity always returns null
-        self::assertNull($options->getSeverity(30.0));
-    }
-
-    #[Test]
-    #[DataProvider('coverageBoundaryProvider')]
-    public function itPreservesStrictBoundariesForEveryCoverageDimension(
-        string $totalMetric,
-        string $coverageMetric,
-        string $code,
-        float $coverage,
-        ?Severity $expectedSeverity,
-        ?float $expectedThreshold,
-    ): void {
-        $symbolPath = SymbolPath::forClass('App\\Service', 'TypedService');
-        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/TypedService.php'), 17);
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn(
-            MetricBag::fromArray([$totalMetric => 1, $coverageMetric => $coverage]),
-        );
-
-        $violations = (new TypeCoverageRule(new TypeCoverageOptions()))
-            ->analyze(new AnalysisContext($repository));
-
-        if ($expectedSeverity === null) {
-            self::assertSame([], $violations);
-            return;
-        }
-
-        self::assertCount(1, $violations);
-        self::assertSame('design.type-coverage.' . $code, $violations[0]->violationCode);
-        self::assertSame($expectedSeverity, $violations[0]->severity);
-        self::assertSame($expectedThreshold, $violations[0]->threshold);
-        self::assertSame($classInfo->subject?->toCanonical(), $violations[0]->subject->toCanonical());
-        self::assertSame(17, $violations[0]->location->line);
+        self::assertSame([], $rule->analyze(new AnalysisContext($repository)));
     }
 
     /**
-     * @return iterable<string, array{string, string, string, float, ?Severity, ?float}>
+     * @param Dimension $dimension
      */
-    public static function coverageBoundaryProvider(): iterable
+    #[Test]
+    #[DataProvider('dimensions')]
+    public function itIsSilentOnFullCoverage(array $dimension): void
     {
-        $dimensions = [
-            'param' => [MetricName::TYPE_COVERAGE_PARAM_TOTAL, MetricName::TYPE_COVERAGE_PARAM],
-            'return' => [MetricName::TYPE_COVERAGE_RETURN_TOTAL, MetricName::TYPE_COVERAGE_RETURN],
-            'property' => [MetricName::TYPE_COVERAGE_PROPERTY_TOTAL, MetricName::TYPE_COVERAGE_PROPERTY],
-        ];
-
-        foreach ($dimensions as $code => [$totalMetric, $coverageMetric]) {
-            yield $code . ' just below warning' => [$totalMetric, $coverageMetric, $code, 79.9, Severity::Warning, 80.0];
-            yield $code . ' at warning' => [$totalMetric, $coverageMetric, $code, 80.0, null, null];
-            yield $code . ' just below error' => [$totalMetric, $coverageMetric, $code, 49.9, Severity::Error, 50.0];
-            yield $code . ' at error' => [$totalMetric, $coverageMetric, $code, 50.0, Severity::Warning, 80.0];
-        }
+        self::assertSame([], self::analyze($dimension['class'], [
+            $dimension['total'] => 5,
+            $dimension['coverage'] => 100.0,
+        ]));
     }
 
+    /**
+     * A class with nothing of this kind to type has no shortfall, which is a
+     * different answer from "everything is typed" and reached by a different
+     * branch.
+     *
+     * @param Dimension $dimension
+     */
     #[Test]
-    public function itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects(): void
+    #[DataProvider('dimensions')]
+    public function itIsSilentWhenTheDimensionHasNoDeclarations(array $dimension): void
     {
-        $symbolPath = SymbolPath::forClass('App\\Service', 'UntypedService');
-        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/UntypedService.php'), 19);
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn(
-            MetricBag::fromArray([MetricName::TYPE_COVERAGE_PARAM_TOTAL => 2]),
-        );
+        self::assertSame([], self::analyze($dimension['class'], [$dimension['total'] => 0]));
+    }
 
-        $violations = (new TypeCoverageRule(new TypeCoverageOptions()))
-            ->analyze(new AnalysisContext($repository));
+    /**
+     * @param Dimension $dimension
+     */
+    #[Test]
+    #[DataProvider('dimensions')]
+    public function itReportsItsOwnCodeSeverityAndMessage(array $dimension): void
+    {
+        $label = $dimension['label'];
+        $hint = $dimension['hint'];
+        $violations = self::analyze($dimension['class'], [$dimension['total'] => 10, $dimension['coverage'] => 20.0]);
 
         self::assertCount(1, $violations);
-        self::assertSame('design.type-coverage.param', $violations[0]->violationCode);
+        self::assertSame($dimension['name'], $violations[0]->ruleName);
+        self::assertSame($dimension['name'], $violations[0]->violationCode);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertSame(20.0, $violations[0]->metricValue);
+        self::assertSame(50.0, $violations[0]->threshold);
+        self::assertSame(
+            \sprintf('%s type coverage is 20.0%% (minimum: 50.0%%). %s', $label, $hint),
+            $violations[0]->message,
+        );
+        self::assertSame(
+            \sprintf('%s type coverage: 20.0%% (threshold: 50.0%%) — missing type declarations', $label),
+            $violations[0]->recommendation,
+        );
+    }
+
+    /**
+     * @param Dimension $dimension
+     */
+    #[Test]
+    #[DataProvider('dimensions')]
+    public function itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects(array $dimension): void
+    {
+        $violations = self::analyze($dimension['class'], [$dimension['total'] => 2]);
+
+        self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
         self::assertSame(0.0, $violations[0]->metricValue);
     }
 
+    /**
+     * @return iterable<string, array{class-string<AbstractTypeCoverageRule>, string, string, float, ?Severity, ?float}>
+     */
+    public static function boundaries(): iterable
+    {
+        foreach (self::dimensions() as $label => [$dimension]) {
+            $arguments = [$dimension['class'], $dimension['total'], $dimension['coverage']];
+
+            yield $label . ' just below warning' => [...$arguments, 79.9, Severity::Warning, 80.0];
+            yield $label . ' at warning' => [...$arguments, 80.0, null, null];
+            yield $label . ' just below error' => [...$arguments, 49.9, Severity::Error, 50.0];
+            yield $label . ' at error' => [...$arguments, 50.0, Severity::Warning, 80.0];
+        }
+    }
+
+    /**
+     * @param class-string<AbstractTypeCoverageRule> $ruleClass
+     */
+    #[Test]
+    #[DataProvider('boundaries')]
+    public function itPreservesStrictBoundaries(
+        string $ruleClass,
+        string $totalMetric,
+        string $coverageMetric,
+        float $coverage,
+        ?Severity $expectedSeverity,
+        ?float $expectedThreshold,
+    ): void {
+        $violations = self::analyze($ruleClass, [$totalMetric => 1, $coverageMetric => $coverage]);
+
+        if ($expectedSeverity === null) {
+            self::assertSame([], $violations);
+
+            return;
+        }
+
+        self::assertCount(1, $violations);
+        self::assertSame($expectedSeverity, $violations[0]->severity);
+        self::assertSame($expectedThreshold, $violations[0]->threshold);
+        self::assertSame(17, $violations[0]->location->line);
+    }
+
+    /**
+     * What the split is for: three settings, three answers, in one run.
+     */
+    #[Test]
+    public function itJudgesEachDimensionAgainstItsOwnConfiguration(): void
+    {
+        $metrics = [
+            MetricName::TYPE_COVERAGE_PARAM_TOTAL => 10,
+            MetricName::TYPE_COVERAGE_PARAM => 60.0,
+            MetricName::TYPE_COVERAGE_RETURN_TOTAL => 10,
+            MetricName::TYPE_COVERAGE_RETURN => 60.0,
+            MetricName::TYPE_COVERAGE_PROPERTY_TOTAL => 10,
+            MetricName::TYPE_COVERAGE_PROPERTY => 60.0,
+        ];
+
+        $param = self::analyze(ParamTypeCoverageRule::class, $metrics, new TypeCoverageOptions(warning: 90.0, error: 70.0));
+        $return = self::analyze(ReturnTypeCoverageRule::class, $metrics, new TypeCoverageOptions(warning: 65.0, error: 50.0));
+        $property = self::analyze(PropertyTypeCoverageRule::class, $metrics, new TypeCoverageOptions(enabled: false));
+
+        self::assertCount(1, $param);
+        self::assertSame(Severity::Error, $param[0]->severity);
+        self::assertCount(1, $return);
+        self::assertSame(Severity::Warning, $return[0]->severity);
+        self::assertSame([], $property);
+    }
+
+    /**
+     * Two declarations of one logical class are two subjects, and each gets
+     * its own finding — the projection ADR 0026 settled.
+     */
     #[Test]
     public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
     {
@@ -500,15 +339,12 @@ final class TypeCoverageRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(
-            (new MetricBag())
-                ->with('typeCoverage.paramTotal', 4)
-                ->with('typeCoverage.param', 25.0)
-                ->with('typeCoverage.returnTotal', 0)
-                ->with('typeCoverage.propertyTotal', 0),
-        );
+        $repository->method('get')->willReturn(MetricBag::fromArray([
+            MetricName::TYPE_COVERAGE_PARAM_TOTAL => 4,
+            MetricName::TYPE_COVERAGE_PARAM => 25.0,
+        ]));
 
-        $violations = (new TypeCoverageRule(new TypeCoverageOptions()))
+        $violations = (new ParamTypeCoverageRule(new TypeCoverageOptions()))
             ->analyze(new AnalysisContext($repository));
 
         self::assertCount(2, $violations);
@@ -520,18 +356,36 @@ final class TypeCoverageRuleTest extends TestCase
         ], $subjects);
     }
 
-    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    /**
+     * @param class-string<AbstractTypeCoverageRule> $ruleClass
+     * @param array<string, int|float> $metrics
+     *
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
+     */
+    private static function analyze(string $ruleClass, array $metrics, ?TypeCoverageOptions $options = null): array
+    {
+        $classInfo = self::subjectInfo(
+            SymbolPath::forClass('App\\Service', 'TypedService'),
+            RelativePath::fromString('src/TypedService.php'),
+            17,
+        );
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn(MetricBag::fromArray($metrics));
+
+        return (new $ruleClass($options ?? new TypeCoverageOptions()))->analyze(new AnalysisContext($repository));
+    }
+
+    private static function subjectInfo(SymbolPath $symbolPath, RelativePath $file, int $line): SymbolInfo
     {
         $type = $symbolPath->getType();
-        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
-            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
-        }
+        $kind = $type === SymbolType::Class_
+            ? null
+            : ($type === SymbolType::Function_ ? CallableKind::Function : CallableKind::Method);
 
-        \assert($file !== null);
-        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
-
-        return new \Qualimetrix\Core\Symbol\SymbolInfo(
-            \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
+        return new SymbolInfo(
+            MetricSubject::declaration(DeclarationPath::of($symbolPath, $file, DeclarationOrdinal::fromRank(0))),
             $file,
             $line,
             $kind,

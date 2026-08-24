@@ -305,6 +305,9 @@ final class RenameMaps
     /** @param list<array{0: string, 1: string, 2: int}> $substitutions */
     private static function buildPattern(array $substitutions): string
     {
+        // Ordering is not done here: buildSubstitutions() already sorts the list
+        // longest-first, and sorting the same list twice would read as if one of
+        // the two places were the authority.
         $alternatives = array_map(
             static fn(array $substitution): string => preg_quote($substitution[0], '~'),
             $substitutions,

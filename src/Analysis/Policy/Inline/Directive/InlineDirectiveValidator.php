@@ -25,7 +25,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * configuration mistake, and a mistake stays a mistake whether it is a typo, a
  * rule name written where a channel was meant, or a rule that simply cannot be
  * retuned. That is why these three channels belong to a validator and not to
- * {@see InlineDirectiveRule}: the classification is the producer's type.
+ * {@see UnusedDirectiveRule}: the classification is the producer's type.
  *
  * What is deliberately *not* reported here is a directive that addressed
  * something real and merely did not fire. That is what ordinary debt cleanup

@@ -30,13 +30,15 @@
 
 ## Правила дизайна (Design)
 
-| Правило                    | ID                     | Минуты |
-| -------------------------- | ---------------------- | ------ |
-| DIT (глубина наследования) | `design.inheritance`   | 30     |
-| NOC                        | `design.noc`           | 20     |
-| Type Coverage              | `design.type-coverage` | 15     |
-| Data Class                 | `design.data-class`    | 30     |
-| God Class                  | `design.god-class`     | 120    |
+| Правило                    | ID                              | Минуты |
+| -------------------------- | ------------------------------- | ------ |
+| DIT (глубина наследования) | `design.inheritance`            | 30     |
+| NOC                        | `design.noc`                    | 20     |
+| Покрытие типами параметров | `design.param-type-coverage`    | 15     |
+| Покрытие типами возврата   | `design.return-type-coverage`   | 15     |
+| Покрытие типами свойств    | `design.property-type-coverage` | 15     |
+| Data Class                 | `design.data-class`             | 30     |
+| God Class                  | `design.god-class`              | 120    |
 
 ## Правила размера (Size)
 
@@ -93,6 +95,7 @@
 | --------------------- | ---------------------------------- | ------ |
 | Circular Dependencies | `architecture.circular-dependency` | 120    |
 | Layer Violations      | `architecture.layer-violation`     | 15     |
+| Unassigned Classes    | `architecture.unassigned-class`    | 15     |
 
 ## Правила аннотаций
 

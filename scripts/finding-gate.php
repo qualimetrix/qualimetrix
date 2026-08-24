@@ -21,6 +21,7 @@ foreach (
         'CommandLine',
         'FailureClass',
         'GateError',
+        'BudgetExceeded',
         'Fs',
         'Tsv',
         'Process',
@@ -109,6 +110,16 @@ function deriveNormalization(Options $options): int
     return 0;
 }
 
+/**
+ * Rewrites the tracked declaration from a measurement — and never returns 0.
+ *
+ * A derive run is a write, not a verdict. Returning 0 made it look like a
+ * passing check to anything reading an exit code, including a DoD, while what it
+ * had actually done was replace the declaration the next real run will be judged
+ * against. Two distinct non-zero codes so the two outcomes are told apart: 4 for
+ * "wrote a declaration, now read it", 5 for "the run that was supposed to
+ * measure it failed, and nothing was written".
+ */
 function deriveDeclaredDelta(Options $options): int
 {
     $report = new GateReport();
@@ -117,16 +128,27 @@ function deriveDeclaredDelta(Options $options): int
     $written = $gate->deriveDeclaredDelta();
     echo $report->render();
 
+    // A declaration derived from a broken run describes the breakage: if it is
+    // deterministic — and a product bug on the reference side is — the next real
+    // run reproduces it and goes green against it.
+    if ($report->exitCode() !== 0) {
+        echo "The run this declaration would be derived from failed, so nothing was written: a declaration"
+            . " measured from a broken run would describe the breakage and let the next run agree with it.\n";
+
+        return 5;
+    }
+
     if ($written === []) {
         echo "No surface differs from the reference, so no delta was declared.\n";
 
-        return 0;
+        return 4;
     }
 
     echo 'Measured the declared delta into: ' . implode(', ', $written) . "\n";
     echo "Fill in the reason of every row marked \"?\" — the gate refuses to load one that is not explained.\n";
+    echo "This was a write, not a check: re-run without --derive-declared-delta to be judged against it.\n";
 
-    return 0;
+    return 4;
 }
 
 function selfTest(Options $options): int

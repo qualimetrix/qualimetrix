@@ -37,7 +37,7 @@ Architecture/
 │   └── Allow/                  # allow selectors and binding values
 ├── Layer/                      # membership and registry primitives
 │   └── Expansion/              # observed-template expansion
-├── LayerViolation/             # shared evidence walk, edge rule, declaration validator
+├── LayerViolation/             # shared evidence walk, two rules, declaration validator
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation
 ```
 
@@ -56,20 +56,27 @@ Architecture-specific branch or deferred-warning transport.
 Run prepares the policy after graph construction. Neither verdict traverses the
 AST or constructs lifecycle state.
 
-`LayerViolation/` is three subjects, not one. `LayerEvidenceCollector` walks the
+`LayerViolation/` is four subjects, not one. `LayerEvidenceCollector` walks the
 analysed classes and the dependency graph **once per run** — memoised weakly by
 the run's `AnalysisContext`, so nothing survives into the next run — and returns
 one `LayerEvidence`: the edges the allow-list rejects, per-layer tallies of what
 each layer was ASSIGNED and what it MATCHED at all, the shadow evidence, the
 classes outside every layer, and the coverage state. It short-circuits to `null`
 when the producer is disabled or no layers are declared, so "report nothing" has
-one answer rather than two.
+one answer rather than two. It answers to both consumer gates — the rule's
+`enabled` and `UnassignedClassOptions::$mode` — and materialises the
+outside-every-layer set when either of them, or the coverage mode, has a use
+for it.
 
-`LayerViolationRule` is the verdict on the **code** and emits two channels:
-`architecture.layer-violation` per forbidden edge, and the magnitude channel
-`architecture.unassigned-class`, gated by the rule's own `unassigned_class`
-option and built by `UnassignedClassSummary`. Both are ordinary debt a baseline
-may accept.
+Two rules report on the **code**, one finding each, over that one walk.
+`LayerViolationRule` emits `architecture.layer-violation` per forbidden edge.
+`UnassignedClassRule` emits the magnitude channel
+`architecture.unassigned-class`, gated by its own single `mode` option and built
+by `UnassignedClassSummary`; both are ordinary debt a baseline may accept. Being
+a producer of its own is why `LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES`
+names two rules: the run prepares the policy when either is selected, and asking
+about one of two left `--only-rule=architecture.unassigned-class` reaching an
+unprepared collector.
 
 `LayerDeclarationValidator` is the verdict on the **declaration** and is a
 `ConfigurationValidatorInterface`, not a rule — which is the whole statement

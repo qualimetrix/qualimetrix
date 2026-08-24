@@ -34,6 +34,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFindin
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -70,17 +71,22 @@ final class LayerViolationRuleTest extends TestCase
     public function metadataMatchesContract(): void
     {
         $options = new LayerViolationOptions();
-        $rule = new LayerViolationRule($options, new LayerEvidenceCollector($options, $this->processor));
+        $rule = new LayerViolationRule($options, new LayerEvidenceCollector($options, new UnassignedClassOptions(), $this->processor));
 
         self::assertSame('architecture.layer-violation', $rule->getName());
         self::assertSame(RuleCategory::Architecture, $rule->getCategory());
         self::assertSame([], $rule->requires());
         self::assertSame(LayerViolationOptions::class, LayerViolationRule::getOptionsClass());
+        // Two aliases, not three: the unassigned-class gate went with the
+        // producer that owns it.
         self::assertSame([
             'layer-violation' => 'enabled',
             'layer-violation-severity' => 'severity',
-            'layer-violation-unassigned-class' => 'unassigned_class',
         ], CliAliasReader::read(LayerViolationRule::class));
+        self::assertSame(
+            ['architecture.layer-violation#architecture.layer-violation'],
+            array_keys(LayerViolationRule::channelDeclarations()),
+        );
         self::assertStringContainsString('layer', strtolower($rule->getDescription()));
     }
 

@@ -26,8 +26,8 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
-use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
+use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -47,8 +47,8 @@ use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface
  * fails outright against a check written over the static declarations, and the
  * rejection cases fail if the directive is left inert.
  */
-#[CoversClass(InlineDirectiveRule::class)]
-final class InlineDirectiveRuleTest extends TestCase
+#[CoversClass(UnusedDirectiveRule::class)]
+final class UnusedDirectiveRuleTest extends TestCase
 {
     private const string FILE = 'src/Foo.php';
 
@@ -214,12 +214,12 @@ final class InlineDirectiveRuleTest extends TestCase
     }
 
     /**
-     * The dimensions of `design.type-coverage` are channels, not addressable
-     * units: one `withOverride` retunes all three together, so there is no
-     * per-dimension threshold for `.param` to have meant.
+     * The old spelling of a type-coverage dimension names nothing at all now:
+     * the aspect moved out of the channel code and into the rule name, so
+     * neither half of `design.type-coverage.param` exists to be pointed at.
      */
     #[Test]
-    public function itPointsAThresholdNamingATypeCoverageDimensionAtTheRule(): void
+    public function itRejectsAThresholdNamingTheOldTypeCoverageDimensionSpelling(): void
     {
         $findings = self::runWithThreshold('design.type-coverage.param');
 
@@ -228,14 +228,30 @@ final class InlineDirectiveRuleTest extends TestCase
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
             $findings[0]->violationCode,
         );
-        self::assertStringContainsString('is a channel of rule "design.type-coverage"', $findings[0]->message);
     }
 
-    /** The rule this addresses uniformly, and the one the plan's counterexample turns on. */
+    /** One dimension, one rule, one threshold that addresses it. */
     #[Test]
-    public function itAcceptsAThresholdOnTypeCoverageItself(): void
+    public function itAcceptsAThresholdOnOneTypeCoverageDimension(): void
     {
-        self::assertSame([], self::runWithThreshold('design.type-coverage'));
+        self::assertSame([], self::runWithThreshold('design.param-type-coverage'));
+    }
+
+    /**
+     * And the rule the three replaced is gone: a threshold naming it is the
+     * same mistake as a typo, which is what makes the split addressable
+     * rather than silently uniform.
+     */
+    #[Test]
+    public function itRejectsAThresholdNamingTheSplitTypeCoverageRule(): void
+    {
+        $findings = self::runWithThreshold('design.type-coverage');
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
+            $findings[0]->violationCode,
+        );
     }
 
     /**
@@ -558,7 +574,7 @@ final class InlineDirectiveRuleTest extends TestCase
         ChannelIdentityInterface $identity,
     ): array {
         return [
-            ...(new InlineDirectiveRule($options, $policy))->analyze(self::context()),
+            ...(new UnusedDirectiveRule($options, $policy))->analyze(self::context()),
             ...(new InlineDirectiveValidator($options, $policy, $identity))->validate(self::context()),
         ];
     }

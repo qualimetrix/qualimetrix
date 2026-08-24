@@ -588,9 +588,11 @@ Examples of unclassified classes: App\Legacy\Foo, App\Legacy\Bar, App\Legacy\Baz
 To suppress the diagnostic for a known set of unclassified classes, declare a catch-all layer covering them (or accept the gap by leaving `coverage: ignore`).
 <!-- llms:skip-end -->
 
-### Unassigned-class gate { #unassigned-class }
+### Unassigned classes { #unassigned-class }
 
-`architecture.unassigned-class` answers the one question `architecture.coverage`
+**Rule ID:** `architecture.unassigned-class`
+
+This rule answers the one question `architecture.coverage`
 cannot: *is every declaration I analysed assigned to a layer?* Coverage also
 counts the ends of dependency edges, and those include classes outside `paths:`
 — `Symfony\...`, `PHPUnit\...` — which no layer can classify, so the number it
@@ -599,13 +601,19 @@ prints is dominated by code the project does not own. This gate counts only
 the run itself measured. A declaration for which no collector recorded any
 class-level metric is not in the set and counts as assigned.
 
-It is off by default and set on the rule, not in the `architecture:` section:
+It is a rule of its own, off by default, with one option — the mode is the
+switch:
 
 ```yaml
 rules:
-  architecture.layer-violation:
-    unassigned_class: warn   # ignore (default) | warn | error
+  architecture.unassigned-class:
+    mode: warn   # ignore (default) | warn | error
 ```
+
+It reads the same single walk over classes and dependency edges that
+`architecture.layer-violation` does, so turning it on costs no extra traversal.
+There is no separate `enabled` key: `mode: ignore` is how the rule is declined,
+and a second switch would be a second answer to one question.
 
 | Mode               | Behaviour                                                                                       |
 | ------------------ | ----------------------------------------------------------------------------------------------- |
@@ -621,12 +629,12 @@ against the project, not against any file or declaration, so no inline directive
 is ever placed where it could address it. A `@qmx-ignore
 architecture.unassigned-class` written in a source file leaves the diagnostic
 standing and is itself reported as `annotation.unused-directive`. To decline the
-gate, set `unassigned_class: ignore`, or cover the declarations with a layer.
+gate, set `mode: ignore`, or cover the declarations with a layer.
 Its reported metric value is the absolute
 count of unassigned declarations, which is what makes the baseline useful — the
 percentage the message also prints would stay flat while the count grew with the
 project, so only the count can be ratcheted down. The CLI alias is
-`--layer-violation-unassigned-class`.
+`--unassigned-class-mode`.
 
 <!-- llms:skip-begin -->
 The diagnostic message looks like:
@@ -747,11 +755,10 @@ Exit codes follow the standard convention: `0` for any informational result (inc
 
 ### Options { #layer-violation-options }
 
-| Option             | Default   | Description                                                                                                                                                                                              |
-| ------------------ | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enabled`          | `true`    | Enable or disable this rule. When disabled, the rule short-circuits before walking the dependency graph. The rule is also a no-op when `architecture.layers` is empty.                                   |
-| `severity`         | `warning` | Severity used for every reported `architecture.layer-violation`. Allowed values: `info`, `warning`, `error`.                                                                                             |
-| `unassigned_class` | `ignore`  | Gate for `architecture.unassigned-class` — the count of analysed class-like declarations outside every layer. Allowed values: `ignore`, `warn`, `error`. See [Unassigned-class gate](#unassigned-class). |
+| Option     | Default   | Description                                                                                                                                                            |
+| ---------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`  | `true`    | Enable or disable this rule. When disabled, the rule short-circuits before walking the dependency graph. The rule is also a no-op when `architecture.layers` is empty. |
+| `severity` | `warning` | Severity used for every reported `architecture.layer-violation`. Allowed values: `info`, `warning`, `error`.                                                           |
 
 ```yaml
 rules:
@@ -768,8 +775,10 @@ gate the run unconditionally instead of going through `fail_on`. See the note
 under [Coverage modes](#coverage-modes).
 
 The CLI aliases are `--layer-violation` for the `enabled` option and
-`--layer-violation-unassigned-class` for the gate above, matching the
-convention used by other architecture rules.
+`--layer-violation-severity` for the severity, matching the convention used by
+other architecture rules. The unassigned-class gate moved to its own rule and
+its own alias, `--unassigned-class-mode` — see
+[Unassigned classes](#unassigned-class).
 
 <!-- llms:skip-begin -->
 ### Examples
@@ -851,7 +860,7 @@ final class LegacyAdminController
 }
 ```
 
-To suppress a layer violation, address the exact channel: `@qmx-ignore architecture.layer-violation`. There is no shorter form — prefix matching is gone, so a bare `@qmx-ignore architecture` is an error, not a stand-in for the whole family. `architecture.*` is tempting but wrong too: it would also reach the unrelated rule `architecture.circular-dependency`, and since `architecture.layer-violation` has only one channel (itself), `architecture.layer-violation.*` matches nothing and errors. "Every channel of the layer-policy rule" is therefore inexpressible by design. The rule emits seven channels, but the other six carry rule names of their own (`architecture.coverage`, `architecture.unassigned-class`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`), so no single selector spans them. Five of those six are configuration errors that no suppression can accept; `architecture.unassigned-class` is ordinary debt, but it is a per-run project-level summary, so no inline directive reaches it either — it is declined with `unassigned_class: ignore` or accepted in the baseline.
+To suppress a layer violation, address the exact channel: `@qmx-ignore architecture.layer-violation`. There is no shorter form — prefix matching is gone, so a bare `@qmx-ignore architecture` is an error, not a stand-in for the whole family. `architecture.*` is tempting but wrong too: it would also reach the unrelated rule `architecture.circular-dependency`, and since `architecture.layer-violation` has only one channel (itself), `architecture.layer-violation.*` matches nothing and errors. "Every channel of the layer-policy rule" is therefore inexpressible by design. The layer policy publishes seven channels, but the other six carry rule names of their own (`architecture.coverage`, `architecture.unassigned-class`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`), so no single selector spans them. Five of those six are configuration errors that no suppression can accept; `architecture.unassigned-class` is a rule of its own reporting ordinary debt, but it is a per-run project-level summary, so no inline directive reaches it either — it is declined with `mode: ignore` or accepted in the baseline.
 
 The baseline file stores layer violations by source layer, target layer, dependency target class, and dependency type — not by file line — so re-formatting or moving the use-site within the same file does not invalidate the baseline. Multiple use-sites of the same forbidden edge collapse into a single baseline entry.
 

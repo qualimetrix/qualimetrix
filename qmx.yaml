@@ -253,6 +253,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TypeDependencyHelper'
     - name: analysis-evidence-design
       patterns:
+        - 'Qualimetrix\Analysis\Evidence\Design\AbstractTypeCoverageRule'
         - 'Qualimetrix\Analysis\Evidence\Design\DataClassExclusionCheck'
         - 'Qualimetrix\Analysis\Evidence\Design\DataClassOptions'
         - 'Qualimetrix\Analysis\Evidence\Design\DataClassRule'
@@ -269,10 +270,12 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Design\NocCollector'
         - 'Qualimetrix\Analysis\Evidence\Design\NocOptions'
         - 'Qualimetrix\Analysis\Evidence\Design\NocRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\PropertyTypeCoverageRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\ReturnTypeCoverageRule'
         - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector'
         - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions'
         - 'Qualimetrix\Analysis\Evidence\Design\TypeCoveragePercentCollector'
-        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule'
         - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverageVisitor'
     - name: analysis-evidence-duplication
       patterns:
@@ -543,6 +546,8 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassSummary'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext'
@@ -637,8 +642,8 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveRejection'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy'
-        - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor'
         - 'Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter'
@@ -1390,6 +1395,9 @@ rules:
       # AbstractRule is a representative path for its namespace-level structural
       # instability, so renaming it intentionally brings the signal back for review.
       - src/Analysis/Finding/Contract/Rule/AbstractRule.php
+      # Same category: the walk and the emission the three type-coverage rules
+      # share. Its only afferent edges are those three subclasses.
+      - src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php
     class:
       min_afferent: 2
     namespace:

@@ -66,6 +66,8 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassSummary',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext',

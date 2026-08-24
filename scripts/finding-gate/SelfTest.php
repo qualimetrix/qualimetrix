@@ -44,8 +44,18 @@ final class SelfTest
         $this->same('code-smell.eval', $empty->forward('code-smell.eval'), 'identity forward');
         $this->same('code-smell.eval', $empty->reverse('code-smell.eval'), 'identity reverse');
 
+        // What the tracked declaration of THIS step is, asserted rather than
+        // assumed: loading already refuses chains, duplicate sources and
+        // duplicate targets, so what is left to check is that the step's own
+        // shape survived the load — a split derived from the rows, and nothing
+        // else derived beside it.
         $maps = RenameMaps::load($this->candidateRoot . '/finding-gate/maps');
-        $this->assert($maps->isIdentity(), 'the tracked maps are empty at this step');
+        $this->assert(!$maps->isIdentity(), 'this step declares renames, so the tracked maps are not the identity');
+        $this->same(
+            ['design.type-coverage'],
+            array_keys($maps->splits()),
+            'the tracked rows derive exactly one split half, and it is the rule this step splits',
+        );
 
         // One row, and it is the whole key: the halves are expanded from it, so
         // the two spellings of one rename can never be declared out of step.
@@ -262,9 +272,39 @@ final class SelfTest
             ['subject' => 'declaration:class:A@a.php', 'rule' => 'design.param-typing', 'code' => 'design.param-typing', 'channel' => 'design.param-typing#design.param-typing'],
         ];
         $this->same([], $explanation->unexplained($reference, $explained), 'an occurrence the declared row accounts for is explained');
-        $this->assert($explanation->allows('rule', 'design.type-coverage'), 'an explained record lets a delta show its old value');
-        $this->assert($explanation->allows('rule', 'design.param-typing'), 'and its new one');
-        $this->assert(!$explanation->allows('rule', 'design.god-class'), 'and nothing else');
+        $this->assert(
+            $explanation->allowsMove('rule', 'design.type-coverage', 'design.param-typing'),
+            'an explained record lets a delta show the move it performed',
+        );
+        $this->assert(
+            $explanation->allowsMove('rule', 'design.param-typing', 'design.type-coverage'),
+            'in either order, because the token order inside one line is the formatter\'s',
+        );
+        $this->assert(
+            !$explanation->allowsMove('rule', 'design.type-coverage', 'design.god-class'),
+            'and no move to somewhere the split never went',
+        );
+        // The hole the value-set version left: both of these values are carried
+        // by explained records, so a set-membership check accepted a move
+        // between them on any record. No explained record ever paired them.
+        $bothHalves = ChannelSplit::of(RenameMaps::fromPairs([
+            ['old' => 'design.type-coverage#design.type-coverage.param', 'new' => 'design.param-typing#design.param-typing', 'source' => 'channels.tsv'],
+            ['old' => 'design.type-coverage#design.type-coverage.return', 'new' => 'design.return-typing#design.return-typing', 'source' => 'channels.tsv'],
+        ]));
+        $this->same([], $bothHalves->unexplained(
+            [
+                ['subject' => 'declaration:class:A@a.php', 'rule' => 'design.type-coverage', 'code' => 'design.type-coverage.param', 'channel' => 'design.type-coverage#design.type-coverage.param'],
+                ['subject' => 'declaration:class:A@a.php', 'rule' => 'design.type-coverage', 'code' => 'design.type-coverage.return', 'channel' => 'design.type-coverage#design.type-coverage.return'],
+            ],
+            [
+                ['subject' => 'declaration:class:A@a.php', 'rule' => 'design.param-typing', 'code' => 'design.param-typing', 'channel' => 'design.param-typing#design.param-typing'],
+                ['subject' => 'declaration:class:A@a.php', 'rule' => 'design.return-typing', 'code' => 'design.return-typing', 'channel' => 'design.return-typing#design.return-typing'],
+            ],
+        ), 'two halves of one split, both explained');
+        $this->assert(
+            !$bothHalves->allowsMove('rule', 'design.param-typing', 'design.return-typing'),
+            'a move between two targets of the same split is not a move the split performed',
+        );
 
         $this->same(
             1,
@@ -280,6 +320,144 @@ final class SelfTest
             \count(ChannelSplit::of($split)->unexplained($undeclaredHalf, $explained)),
             'the third code of a split rule, left undeclared, is split-unmapped rather than absorbed',
         );
+    }
+
+    /**
+     * Two properties the reverse direction rests on, neither asserted before.
+     *
+     * One: a shorter row that is a prefix of a longer one does not shadow it.
+     * `:` and `=` are not name characters, so a channels-derived half is a
+     * legitimate prefix of an inputs token — exactly the pair this step
+     * declares — and PCRE alternation is leftmost-first rather than
+     * longest-match. `buildSubstitutions()` sorts longest-first for that reason;
+     * this pins the outcome rather than the sort, so a future refactor that
+     * loses the ordering fails here.
+     *
+     * Two: the channels map is **not** applied backwards. That is what keeps a
+     * collapse's target — textually the unchanged producer name a corpus writes
+     * into its own arguments — from being rewritten on the way in. It is stated
+     * in a constant and was asserted nowhere.
+     */
+    private function prefixShadowing(): void
+    {
+        $maps = RenameMaps::fromPairs([
+            ['old' => 'design.type-coverage#design.type-coverage.param', 'new' => 'design.param-type-coverage#design.param-type-coverage', 'source' => 'channels.tsv'],
+            ['old' => 'design.type-coverage:param_warning', 'new' => 'design.param-type-coverage:warning', 'source' => 'inputs.tsv'],
+        ]);
+
+        $this->same(
+            '--rule-opt=design.type-coverage:param_warning=-1',
+            $maps->reverse('--rule-opt=design.param-type-coverage:warning=-1'),
+            'the input token maps back whole, not as a shorter prefix row',
+        );
+        $this->same(
+            '--rule-opt=design.param-type-coverage:warning=-1',
+            $maps->forward('--rule-opt=design.type-coverage:param_warning=-1'),
+            'and forward the same way',
+        );
+        // Forward-only, asserted rather than trusted to the constant: a channels
+        // row must not translate anything on the way in.
+        $channelsOnly = RenameMaps::fromPairs([
+            ['old' => 'design.type-coverage#design.type-coverage.param', 'new' => 'design.param-type-coverage#design.param-type-coverage', 'source' => 'channels.tsv'],
+        ]);
+        $this->assert(!$channelsOnly->isIdentity(), 'a channels row is a rename');
+        $this->same(
+            '--only-rule=design.param-type-coverage',
+            $channelsOnly->reverse('--only-rule=design.param-type-coverage'),
+            'and it is never applied backwards, so an input naming the new name survives',
+        );
+        $this->same(
+            'design.param-type-coverage#design.param-type-coverage',
+            $channelsOnly->forward('design.type-coverage#design.type-coverage.param'),
+            'while forward it translates the whole key',
+        );
+    }
+
+    /**
+     * The keys the HTML report's embedded payload publishes compared fields
+     * under, pinned against the one place that writes them.
+     *
+     * `Gate::spellingsOf()` carries three aliases because the payload spells
+     * `rule`, `code` and `symbol` as `ruleName`, `violationCode` and
+     * `symbolPath`. A table like that rots silently: if the payload renames a
+     * key, `delta-overreach` stops reading that field on the HTML surface and
+     * nothing says so. So the alias is asserted to occur in the partitioner,
+     * and the tuple's own spelling is asserted **not** to — the point of the
+     * alias is that the payload does not use the tuple's name.
+     */
+    private function htmlPayloadVocabulary(): void
+    {
+        $partitioner = $this->candidateRoot . '/src/Reporting/Formatter/Html/HtmlViolationPartitioner.php';
+        $source = Fs::read($partitioner);
+
+        foreach (['rule' => 'ruleName', 'code' => 'violationCode', 'symbol' => 'symbolPath'] as $field => $alias) {
+            $this->assert(
+                str_contains($source, "'" . $alias . "' =>"),
+                'the HTML payload still publishes ' . $field . ' as ' . $alias,
+            );
+            $this->assert(
+                !str_contains($source, "'" . $field . "' =>"),
+                'and still does not publish it under the tuple spelling ' . $field,
+            );
+        }
+    }
+
+    /**
+     * The reason this diff has hunks at all, which is the repair Ш4b made to
+     * its own instrument and the one nothing covered.
+     *
+     * Two changes at opposite ends of an artifact used to be reported as one
+     * hunk spanning everything between them, so `delta-too-large` counted
+     * hundreds of identical lines as changed and refused a declaration that had
+     * nothing left to declare. Every case here is written as the pair
+     * "what the diff says" and "what it must not say".
+     */
+    private function multiHunkDiff(): void
+    {
+        $left = "head\n" . implode("\n", array_map(static fn(int $i): string => 'same ' . $i, range(1, 40))) . "\ntail\n";
+        $right = str_replace(["head\n", "\ntail\n"], ["HEAD\n", "\nTAIL\n"], $left);
+
+        $diff = ExactDiff::between($left, $right, 'candidate', 'reference (mapped)');
+
+        $this->same(2, substr_count($diff->render(), "\n@@ "), 'two changes far apart are two hunks, not one span');
+        $this->same(4, $diff->changedLineCount(), 'the identical lines between two hunks are not counted as changed');
+        $this->assert(
+            !str_contains($diff->render(), 'same 20'),
+            'the padding between two hunks is not emitted at all',
+        );
+        $this->same(
+            [['head', 'HEAD'], ['tail', 'TAIL']],
+            $diff->pairs(),
+            'pairs() pairs inside each hunk, which is what delta-overreach reads',
+        );
+        $this->assert(
+            str_contains($diff->render(), '@@ -1,1 +1,1 @@') && str_contains($diff->render(), '@@ -42,1 +42,1 @@'),
+            'each hunk carries the line it starts at on both sides',
+        );
+
+        // The anchor floor, stated: a shared run shorter than it stays inside
+        // its hunk and IS counted, which is why the class docblock no longer
+        // claims that nothing identical is counted.
+        $short = ExactDiff::between("a\nx\nb\nc\ny\nd\n", "A\nx\nb\nc\nY\nd\n", 'l', 'r');
+        $this->same(1, substr_count($short->render(), "\n@@ "), 'a shared run below the anchor is not split on');
+        $this->same(10, $short->changedLineCount(), 'and it is counted on both sides, padding included');
+
+        // The budget is a refusal, not a silent downgrade to one hunk. Both
+        // edges have to move: the span the search works on is what is left
+        // after the shared head and tail are trimmed, so a change at one end
+        // alone leaves nothing to spend a budget on.
+        $wide = static fn(string $first, string $last): string => $first . "\n"
+            . implode("\n", array_map(static fn(int $i): string => 'line ' . $i, range(1, 12100)))
+            . "\n" . $last . "\n";
+        $refused = false;
+
+        try {
+            ExactDiff::between($wide('first', 'last'), $wide('FIRST', 'LAST'), 'l', 'r');
+        } catch (BudgetExceeded $error) {
+            $refused = str_contains($error->getMessage(), 'refused rather than silently downgraded');
+        }
+
+        $this->assert($refused, 'a span past the search budget is refused, not emitted as one padded hunk');
     }
 
     /**
@@ -307,9 +485,24 @@ final class SelfTest
         $unclipped = ExactDiff::between($long . "1\n", $long . "2\n", 'l', 'r')->render();
         $this->assert(str_contains($unclipped, $long . '1'), 'a long line is declared whole, never clipped');
 
+        $this->prefixShadowing();
+        $this->multiHunkDiff();
+        $this->htmlPayloadVocabulary();
+
+        // Loading refuses a row whose reason is still "?", so a loaded index is
+        // already an explained one. What the self-test adds is that every
+        // declared surface carries a diff to compare against: an index row
+        // pointing at an empty file would make `delta-mismatch` unreachable for
+        // that surface.
         $delta = DeclaredDelta::load($this->candidateRoot . '/finding-gate');
-        $this->assert($delta->isEmpty(), 'no delta is declared at this step');
-        $this->same([], $delta->staleSurfaces(), 'and nothing is stale');
+        $this->assert(!$delta->isEmpty(), 'this step declares a delta, so the tracked index is not empty');
+
+        foreach ($delta->surfaces() as $surface) {
+            $this->assert(
+                ($delta->claim($surface) ?? '') !== '',
+                'the declared delta of ' . $surface . ' is a diff, not an empty file',
+            );
+        }
         $this->same(null, $delta->claim('case:smells|format:json'), 'a surface nothing declares claims nothing');
     }
 

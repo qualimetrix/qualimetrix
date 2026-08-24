@@ -1,0 +1,13 @@
+--- candidate
++++ reference (mapped)
+@@ -57,6 +57,4 @@
+-  size.property-count                      ~45min    (3 violations)
+-  design.noc                               ~20min    (1 violation)
+-  size.method-count                        ~20min    (1 violation)
+-  design.param-type-coverage               ~15min    (1 violation)
+-  design.return-type-coverage              ~15min    (1 violation)
+-  design.property-type-coverage            ~15min    (1 violation)
++  design.type-coverage                     ~45min    (3 violations)
++  size.property-count                      ~45min    (3 violations)
++  design.noc                               ~20min    (1 violation)
++  size.method-count                        ~20min    (1 violation)

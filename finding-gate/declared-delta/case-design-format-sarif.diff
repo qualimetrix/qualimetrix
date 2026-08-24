@@ -1,0 +1,41 @@
+--- candidate
++++ reference (mapped)
+@@ -70,6 +70,6 @@
+-                            "name": "Design Param Type Coverage",
+-                            "shortDescription": {
+-                                "text": "Checks type coverage of parameters per class"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Checks type coverage of parameters per class"
++                            "name": "Design Type Coverage Param",
++                            "shortDescription": {
++                                "text": "Checks type coverage of parameters, return types, and properties per class"
++                            },
++                            "fullDescription": {
++                                "text": "Checks type coverage of parameters, return types, and properties per class"
+@@ -84,6 +84,6 @@
+-                            "name": "Design Return Type Coverage",
+-                            "shortDescription": {
+-                                "text": "Checks type coverage of return types per class"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Checks type coverage of return types per class"
++                            "name": "Design Type Coverage Return",
++                            "shortDescription": {
++                                "text": "Checks type coverage of parameters, return types, and properties per class"
++                            },
++                            "fullDescription": {
++                                "text": "Checks type coverage of parameters, return types, and properties per class"
+@@ -98,6 +98,6 @@
+-                            "name": "Design Property Type Coverage",
+-                            "shortDescription": {
+-                                "text": "Checks type coverage of properties per class"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Checks type coverage of properties per class"
++                            "name": "Design Type Coverage Property",
++                            "shortDescription": {
++                                "text": "Checks type coverage of parameters, return types, and properties per class"
++                            },
++                            "fullDescription": {
++                                "text": "Checks type coverage of parameters, return types, and properties per class"

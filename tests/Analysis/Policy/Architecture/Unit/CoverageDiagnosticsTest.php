@@ -26,6 +26,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationVali
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -319,7 +320,7 @@ final class CoverageDiagnosticsTest extends TestCase
     public function itSkipsUncoveredClassMaterializationInIgnoreModeWithoutSkippingLayerEvidence(): void
     {
         $options = new LayerViolationOptions();
-        $collector = new LayerEvidenceCollector($options, $this->processor);
+        $collector = new LayerEvidenceCollector($options, new UnassignedClassOptions(), $this->processor);
         $arch = $this->buildArchitecture(
             layers: [
                 'broad' => ['App\\**'],

@@ -49,9 +49,9 @@ design.data-class#design.data-class	class	no	no	C1 C2	both
 design.god-class#design.god-class	class	no	no	C1 C2	both
 design.inheritance#design.inheritance	class	no	no	C1 C2	both
 design.noc#design.noc	class	no	no	C2	both
-design.type-coverage#design.type-coverage.param	class	no	no	C2	both
-design.type-coverage#design.type-coverage.property	class	no	no	C2	both
-design.type-coverage#design.type-coverage.return	class	no	no	C2	both
+design.param-type-coverage#design.param-type-coverage	class	no	no	C2	both
+design.property-type-coverage#design.property-type-coverage	class	no	no	C2	both
+design.return-type-coverage#design.return-type-coverage	class	no	no	C2	both
 duplication.code-duplication#duplication.code-duplication	project	no	no	C1	both
 maintainability.index#maintainability.index	callable	no	no	C1 C2	both
 security.command-injection#security.command-injection	callable	no	no	C2	both
@@ -104,7 +104,7 @@ size.property-count#size.property-count	class	no	no	C1 C2	both
 #   C4  a corpus of four classes plus a layer policy declaring a forbidden
 #       edge, an unmatched layer, a shadowing pair, a `pending: true` layer
 #       whose code exists, a template expanding to nothing, a class outside
-#       every layer, `coverage: error` and `unassigned_class=error`.
+#       every layer, `coverage: error` and `--rule-opt=architecture.unassigned-class:mode=error`.
 #   C5  a three-class dependency cycle.
 #   C6  src/ and C2 with every health threshold raised to 100, so all six
 #       health scores breach at every level they are computed at.

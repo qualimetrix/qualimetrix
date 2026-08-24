@@ -56,7 +56,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string FILE_PROCESSOR_CLASS = 'Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor';
     private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
     private const string INLINE_DIRECTIVE_POLICY_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy';
-    private const string INLINE_DIRECTIVE_RULE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule';
+    private const string INLINE_DIRECTIVE_RULE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule';
     private const string INLINE_DIRECTIVE_VALIDATOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator';
     private const string FILE_DISCOVERY_FACTORY = 'qmx.run.file_discovery_factory';
     private const string FILE_DISCOVERY_FACTORY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FileDiscoveryFactory';

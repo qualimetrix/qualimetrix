@@ -94,9 +94,9 @@ design.data-class#design.data-class magnitude:lower class
 design.god-class#design.god-class magnitude:higher class
 design.inheritance#design.inheritance magnitude:higher class
 design.noc#design.noc magnitude:higher class
-design.type-coverage#design.type-coverage.param magnitude:lower class
-design.type-coverage#design.type-coverage.property magnitude:lower class
-design.type-coverage#design.type-coverage.return magnitude:lower class
+design.param-type-coverage#design.param-type-coverage magnitude:lower class
+design.property-type-coverage#design.property-type-coverage magnitude:lower class
+design.return-type-coverage#design.return-type-coverage magnitude:lower class
 duplication.code-duplication#duplication.code-duplication magnitude:higher project
 maintainability.index#maintainability.index magnitude:lower callable
 security.command-injection#security.command-injection occurrence callable

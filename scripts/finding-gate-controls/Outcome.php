@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\FailureClass;
 use RuntimeException;
 
 /** What one control's gate run produced, and whether that is what it declared. */
@@ -35,9 +36,18 @@ final class Outcome
         return $outcome;
     }
 
-    /** @param array{stdout: string, stderr: string, exit: int} $run */
-    public static function of(Control $control, array $run, string $reportPath): self
-    {
+    /**
+     * @param array{stdout: string, stderr: string, exit: int} $run
+     * @param list<string> $declaredSurfaces the surfaces the step declares a delta for
+     * @param bool $declarationReplaced whether this control's mutation rewrote the declaration index
+     */
+    public static function of(
+        Control $control,
+        array $run,
+        string $reportPath,
+        array $declaredSurfaces = [],
+        bool $declarationReplaced = false,
+    ): self {
         $failures = self::failures($reportPath, $run);
         $reasons = [];
         $matched = $tolerated = $unexpected = [];
@@ -50,6 +60,11 @@ final class Outcome
                 $matched[] = $label;
             } elseif (!$control->expectsGreen && $control->tolerates($failureClass, $scope)) {
                 $tolerated[] = $label;
+            } elseif (!$control->expectsGreen && self::isDeclarationNoise($failureClass, $scope, $declaredSurfaces, $declarationReplaced)) {
+                // The step declares this surface, and this class is a statement
+                // about that declaration rather than about the mechanism under
+                // test. Bounded by class on purpose: see isDeclarationNoise().
+                $tolerated[] = $label . ' (declared surface)';
             } else {
                 $unexpected[] = $label;
             }
@@ -83,6 +98,55 @@ final class Outcome
         $outcome->unexpected = $unexpected;
 
         return $outcome;
+    }
+
+    /**
+     * Whether a failure on a declared surface is noise from the declaration
+     * rather than evidence about the control.
+     *
+     * Two conditions, and the second one is the repair. Scope alone was not
+     * enough: four classes carry the bare surface key as their scope, so
+     * tolerating "anything on a declared surface" swallowed
+     * `delta-too-large` — the one class of the five that no control has ever
+     * seen red, and whose code this step rewrote — along with
+     * `nondeterminism-undeclared` and a `surface-mismatch` meaning "one tree
+     * produced this surface and the other did not". None of those is a
+     * statement about a declaration.
+     *
+     * `Control` already argues at length that class-only toleration was a hole,
+     * and refuses an unpinned toleration in its constructor. This is the mirror
+     * of that argument: scope-only toleration is the same hole facing the other
+     * way, and both halves have to be named.
+     *
+     * `surface-mismatch` is the one class that needs the third condition. It
+     * lands on a declared surface for two unrelated reasons: because the
+     * control *replaced* the declaration index, leaving the surface undeclared
+     * and therefore compared for equality — noise — or because a tree failed to
+     * produce that artifact at all, which is exactly the kind of failure a
+     * control must not swallow. The two are told apart by asking whether this
+     * control's own mutation rewrote the index.
+     *
+     * @param list<string> $declaredSurfaces
+     */
+    private static function isDeclarationNoise(
+        string $failureClass,
+        string $scope,
+        array $declaredSurfaces,
+        bool $declarationReplaced,
+    ): bool {
+        if (!\in_array($scope, $declaredSurfaces, true)) {
+            return false;
+        }
+
+        if ($failureClass === FailureClass::SURFACE_MISMATCH) {
+            return $declarationReplaced;
+        }
+
+        return \in_array($failureClass, [
+            FailureClass::DELTA_MISMATCH,
+            FailureClass::DELTA_STALE,
+            FailureClass::DELTA_OVERREACH,
+        ], true);
     }
 
     /** @return list<string> */

@@ -636,24 +636,24 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 
 === "Проектирование"
 
-| Флаг                                 | Правило              | Опция               |
-| ------------------------------------ | -------------------- | ------------------- |
-| `--dit-warning=N`                    | design.inheritance   | warning             |
-| `--dit-error=N`                      | design.inheritance   | error               |
-| `--lcom-warning=N`                   | cohesion.lcom        | warning             |
-| `--lcom-error=N`                     | cohesion.lcom        | error               |
-| `--lcom-min-methods=N`               | cohesion.lcom        | minMethods          |
-| `--lcom-exclude-readonly`            | cohesion.lcom        | excludeReadonly     |
-| `--noc-warning=N`                    | design.noc           | warning             |
-| `--noc-error=N`                      | design.noc           | error               |
-| `--type-coverage-param-warning=N`    | design.type-coverage | param_warning       |
-| `--type-coverage-param-error=N`      | design.type-coverage | param_error         |
-| `--type-coverage-return-warning=N`   | design.type-coverage | return_warning      |
-| `--type-coverage-return-error=N`     | design.type-coverage | return_error        |
-| `--type-coverage-property-warning=N` | design.type-coverage | property_warning    |
-| `--type-coverage-property-error=N`   | design.type-coverage | property_error      |
-| `--property-exclude-readonly`        | size.property-count  | excludeReadonly     |
-| `--property-exclude-promoted-only`   | size.property-count  | excludePromotedOnly |
+| Флаг                                 | Правило                       | Опция               |
+| ------------------------------------ | ----------------------------- | ------------------- |
+| `--dit-warning=N`                    | design.inheritance            | warning             |
+| `--dit-error=N`                      | design.inheritance            | error               |
+| `--lcom-warning=N`                   | cohesion.lcom                 | warning             |
+| `--lcom-error=N`                     | cohesion.lcom                 | error               |
+| `--lcom-min-methods=N`               | cohesion.lcom                 | minMethods          |
+| `--lcom-exclude-readonly`            | cohesion.lcom                 | excludeReadonly     |
+| `--noc-warning=N`                    | design.noc                    | warning             |
+| `--noc-error=N`                      | design.noc                    | error               |
+| `--param-type-coverage-warning=N`    | design.param-type-coverage    | warning             |
+| `--param-type-coverage-error=N`      | design.param-type-coverage    | error               |
+| `--return-type-coverage-warning=N`   | design.return-type-coverage   | warning             |
+| `--return-type-coverage-error=N`     | design.return-type-coverage   | error               |
+| `--property-type-coverage-warning=N` | design.property-type-coverage | warning             |
+| `--property-type-coverage-error=N`   | design.property-type-coverage | error               |
+| `--property-exclude-readonly`        | size.property-count           | excludeReadonly     |
+| `--property-exclude-promoted-only`   | size.property-count           | excludePromotedOnly |
 
 === "Сопровождаемость"
 
@@ -691,13 +691,13 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 
 === "Архитектура"
 
-| Флаг                                      | Правило                          | Опция            |
-| ----------------------------------------- | -------------------------------- | ---------------- |
-| `--circular-deps`                         | architecture.circular-dependency | enabled          |
-| `--max-cycle-size=N`                      | architecture.circular-dependency | maxCycleSize     |
-| `--layer-violation`                       | architecture.layer-violation     | enabled          |
-| `--layer-violation-severity=SEVERITY`     | architecture.layer-violation     | severity         |
-| `--layer-violation-unassigned-class=MODE` | architecture.layer-violation     | unassigned_class |
+| Флаг                                  | Правило                          | Опция        |
+| ------------------------------------- | -------------------------------- | ------------ |
+| `--circular-deps`                     | architecture.circular-dependency | enabled      |
+| `--max-cycle-size=N`                  | architecture.circular-dependency | maxCycleSize |
+| `--layer-violation`                   | architecture.layer-violation     | enabled      |
+| `--layer-violation-severity=SEVERITY` | architecture.layer-violation     | severity     |
+| `--unassigned-class-mode=MODE`        | architecture.unassigned-class    | mode         |
 
 ---
 

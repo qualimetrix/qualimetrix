@@ -10,7 +10,7 @@
         "--rule-opt=coupling.class-rank:error=2",
         "--rule-opt=coupling.distance:max_distance_warning=2",
         "--rule-opt=coupling.distance:max_distance_error=2",
-        "--rule-opt=architecture.layer-violation:unassigned_class=error"
+        "--rule-opt=architecture.unassigned-class:mode=error"
     ],
     "channels": [
         "architecture.coverage#architecture.coverage",

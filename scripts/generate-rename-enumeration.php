@@ -20,7 +20,8 @@ use Symfony\Component\Finder\Finder;
  * DECISION Ш4/Ш5 make, not a measurement, so it is preserved across runs by
  * merging onto the existing file keyed by `old`+`kind` rather than being
  * recomputed. A row whose `new` was already filled in disappearing from the
- * measurement is a hard failure, not a silent drop — see mergeExistingNewColumn().
+ * measurement is either an executed rename or a lost identity, and the two are
+ * told apart by measurement — see retireExecutedRows().
  *
  * The eight per-surface occurrence columns are declared once in SURFACES so
  * that adding a surface is a single-line change, and the footer's surface
@@ -279,12 +280,35 @@ function measure(array $rows, array $surfaceContents, array $surfaceOrder): arra
  */
 function readExistingNewColumn(string $path): array
 {
+    return readPreviousFile($path)['decided'];
+}
+
+/**
+ * Every identity the previous generation measured, per kind.
+ *
+ * This is the "before" retirement needs and nothing else has: a rename is
+ * executed when its targets **appeared**, and an identity that was already
+ * there cannot have appeared. See retireExecutedRows() for what that buys.
+ *
+ * @return array<string, array<string, true>>
+ */
+function readPreviousIdentities(string $path): array
+{
+    return readPreviousFile($path)['identities'];
+}
+
+/**
+ * @return array{decided: array<string, array{new: string, step: string}>, identities: array<string, array<string, true>>}
+ */
+function readPreviousFile(string $path): array
+{
     if (!is_file($path)) {
-        return [];
+        return ['decided' => [], 'identities' => []];
     }
 
     $contents = readFileOrFail($path);
     $existing = [];
+    $identities = [];
     // The column may be absent: this file predates the `step` decision, and a
     // positional read would take the first occurrence count for a step name.
     $stepColumn = null;
@@ -304,18 +328,26 @@ function readExistingNewColumn(string $path): array
         }
 
         if (count($columns) < 3) {
-            continue;
+            throw new RuntimeException(sprintf(
+                'Line "%s" of %s has %d column(s), fewer than the three a decided row needs. Dropping it would'
+                . ' silently revert a recorded decision to "?" — the file says "do not hand-edit" precisely'
+                . ' because a lost tab is invisible otherwise.',
+                $line,
+                basename($path),
+                count($columns),
+            ));
         }
 
         [$old, $kind, $new] = $columns;
         $step = $stepColumn === null ? '' : ($columns[$stepColumn] ?? '');
+        $identities[$kind][$old] = true;
 
         if ($new !== '' && $new !== '?') {
             $existing[$old . "\t" . $kind] = ['new' => $new, 'step' => $step];
         }
     }
 
-    return $existing;
+    return ['decided' => $existing, 'identities' => $identities];
 }
 
 /**
@@ -323,7 +355,10 @@ function readExistingNewColumn(string $path): array
  * a step earlier asks for. The pair is therefore checked in both directions: a
  * decided `new` without a `step`, and a `step` on a row nobody has decided.
  *
- * @param list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string, step: string}> $rows
+ * Reads only the decided columns, so it holds a retired row to the same rule as
+ * a measured one — a decision without a step is unusable wherever it lives.
+ *
+ * @param list<array{old: string, kind: string, new: string, step: string}> $rows
  */
 function assertEveryDecisionNamesItsStep(array $rows): void
 {
@@ -375,7 +410,25 @@ function assertEveryDecisionNamesItsStep(array $rows): void
  * write it. A decision with several targets is a split, which no map row can
  * state, so it is emitted as a comment naming what it is.
  *
- * @param list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string, step: string}> $rows
+ * **What cannot be emitted, and why it is not a gap to close.** `inputs.tsv`
+ * carries whole tokens — `rule:option-key`, a flag with its two dashes — and
+ * this enumeration models *identities*: channels, producer names, metric keys.
+ * An option key is not an identity: it is a name inside one producer's options
+ * class, invented by that class, and nothing here measures it. So a step whose
+ * inputs move gets one emitted comment and hand-authored rows, and the check on
+ * those rows is the gate: an undeclared input makes the reference refuse its
+ * arguments (`reference-input-untranslated`), and a declared row that translates
+ * nothing is `map-stale`. Emitting them from this file would mean teaching it a
+ * second model of the world — every rule's option keys and CLI aliases — whose
+ * only consumer is a map the gate already checks from both sides. Ш4b measured
+ * the split: 3 of its 17 map rows are emitted here, 14 are hand-authored inputs,
+ * and all 17 are held by the gate.
+ *
+ * Reads only the decided columns, so a retired row — which no longer carries a
+ * measurement — is emitted the same way a measured one is. That is what keeps
+ * `--emit-maps=<step>` working after the step has landed.
+ *
+ * @param list<array{old: string, kind: string, new: string, step: string}> $rows
  */
 function emitMapsForStep(array $rows, string $step): string
 {
@@ -401,7 +454,13 @@ function emitMapsForStep(array $rows, string $step): string
         }
 
         sort($lines);
-        $sections[] = sprintf('# maps/%s — step %s, %d row(s)', $file, $step, count($lines));
+        $sections[] = sprintf('# maps/%s — step %s, %d emitted row(s)', $file, $step, count($lines));
+
+        if ($file === 'inputs.tsv') {
+            $sections[] = '# Option keys, CLI aliases and selector spellings are NOT emitted: this file models'
+                . ' identities, and an option key is a name inside one producer\'s options class. Author those rows'
+                . ' by hand; the gate holds them from both sides (reference-input-untranslated, map-stale).';
+        }
         $sections = [...$sections, ...$splits, ...$lines];
         $sections[] = '';
     }
@@ -410,10 +469,7 @@ function emitMapsForStep(array $rows, string $step): string
 }
 
 /**
- * Merges a previously decided `new` value onto a freshly measured row, and
- * fails loudly if a row that had a decision is missing from this run's
- * measurement — a disappearing identity must be investigated, not silently
- * dropped along with the decision recorded against it.
+ * Merges a previously decided `new` value onto a freshly measured row.
  *
  * @param list<array{old: string, kind: string, search: string, counts: array<string, int>}> $measuredRows
  * @param array<string, array{new: string, step: string}> $existingNew
@@ -423,26 +479,288 @@ function emitMapsForStep(array $rows, string $step): string
 function mergeExistingNewColumn(array $measuredRows, array $existingNew): array
 {
     $merged = [];
-    $seen = [];
 
     foreach ($measuredRows as $row) {
         $mergeKey = $row['old'] . "\t" . $row['kind'];
-        $seen[$mergeKey] = true;
         $decided = $existingNew[$mergeKey] ?? ['new' => '?', 'step' => ''];
         $merged[] = [...$row, 'new' => $decided['new'], 'step' => $decided['step']];
     }
 
-    $missing = array_diff(array_keys($existingNew), array_keys($seen));
+    return $merged;
+}
 
-    if ($missing !== []) {
+/**
+ * Retires the rows a step has executed, and refuses the rows an identity was
+ * merely lost from.
+ *
+ * A decided row whose `old` identity is no longer measured means one of two
+ * things, and only one of them is fine. Either the step that decided the
+ * rename has landed — in which case every name the decision promised is now a
+ * measured identity of the same kind — or the identity was lost, renamed by
+ * something nobody decided, or dropped along with a rule. The first retires
+ * into the tracked executed file; the second still fails, loudly, the way it
+ * always did.
+ *
+ * **Why retirement cannot be a flag.** A `--retire=Ш4b` switch, or a `retired`
+ * column somebody fills in, would let the operator assert the thing the check
+ * exists to test. The whole value of this guard is that it distinguishes "the
+ * step landed" from "an identity vanished", and those two states are
+ * indistinguishable in the operator's intent — they are only distinguishable
+ * in the measurement: did the new names *appear*. A flag would turn the one
+ * question nothing else asks into a question nobody asks.
+ *
+ * **Appeared, not merely present.** The first version asked only whether the
+ * targets are measured now, and review showed what that lets through: a
+ * collapse. Ш5 turns two identities into one, so once its first half lands the
+ * target is measured — and the second half could then vanish for any reason at
+ * all and retire as "executed" without ever being merged. The same hole
+ * retires a row whose `old` was deleted rather than renamed, as long as its
+ * target happened to exist already. So the previous generation's identity set
+ * is read back (it is on disk, in the file being regenerated) and a target that
+ * was *already there* forbids retirement. A collapse's second half therefore
+ * fails, loudly, on its own account.
+ *
+ * A target spelled with a wildcard is not a measurable identity, so a decision
+ * that names one can never retire automatically; the failure says so instead of
+ * guessing.
+ *
+ * **What this cannot see, and who owns it.** Nothing here can tell that a row
+ * was *removed* from the executed file, or that its `new` was edited after the
+ * fact: the file is the only record of a measurement that no longer exists, so
+ * re-deriving it is impossible by construction. That history is owned by git,
+ * not by this checker, and the two invariants a checker *can* hold — an
+ * executed row's `old` is not measured again, and every target it promised is
+ * measured — are enforced on every run in {@see assertExecutedRowsStillHold()}.
+ * `--emit-maps` additionally refuses to emit a step whose rows have retired,
+ * because that step's maps are already in git and re-emitting them from history
+ * would launder a tampered row into a fresh declaration.
+ *
+ * @param array<string, array{new: string, step: string}> $existingNew decided rows from the measured file
+ * @param list<array{old: string, kind: string, search: string, counts: array<string, int>}> $measuredRows
+ * @param list<array{old: string, kind: string, new: string, step: string}> $alreadyExecuted carried over verbatim
+ * @param array<string, array<string, true>> $previousIdentities what the previous generation measured, per kind
+ *
+ * @return list<array{old: string, kind: string, new: string, step: string}>
+ */
+function retireExecutedRows(array $existingNew, array $measuredRows, array $alreadyExecuted, array $previousIdentities): array
+{
+    $measuredKeys = [];
+    $identitiesByKind = [];
+
+    foreach ($measuredRows as $row) {
+        $measuredKeys[$row['old'] . "\t" . $row['kind']] = true;
+        $identitiesByKind[$row['kind']][$row['old']] = true;
+    }
+
+    assertExecutedRowsStillHold($alreadyExecuted, $measuredKeys, $identitiesByKind);
+
+    $retired = $alreadyExecuted;
+    $lost = [];
+
+    foreach ($existingNew as $mergeKey => $decision) {
+        if (isset($measuredKeys[$mergeKey])) {
+            continue;
+        }
+
+        [$old, $kind] = array_pad(explode("\t", $mergeKey, 2), 2, '');
+        $unmeasured = [];
+        $preexisting = [];
+
+        foreach (explode('|', $decision['new']) as $target) {
+            // A channel decision names a whole `rule#code` key and is measured
+            // as one; a producer or metric-key decision names a bare identity.
+            if (str_contains($target, '*') || !isset($identitiesByKind[$kind][$target])) {
+                $unmeasured[] = $target;
+
+                continue;
+            }
+
+            if (isset($previousIdentities[$kind][$target])) {
+                $preexisting[] = $target;
+            }
+        }
+
+        if ($unmeasured !== []) {
+            $lost[] = sprintf(
+                '%s (%s), decided by %s to become %s — not measured: %s',
+                $old,
+                $kind,
+                $decision['step'] === '' ? 'nobody' : $decision['step'],
+                $decision['new'],
+                implode(', ', $unmeasured),
+            );
+
+            continue;
+        }
+
+        if ($preexisting !== []) {
+            $lost[] = sprintf(
+                '%s (%s), decided by %s to become %s — target(s) that existed before this measurement and'
+                . ' therefore did not appear from this rename: %s',
+                $old,
+                $kind,
+                $decision['step'] === '' ? 'nobody' : $decision['step'],
+                $decision['new'],
+                implode(', ', $preexisting),
+            );
+
+            continue;
+        }
+
+        $retired[] = ['old' => $old, 'kind' => $kind, 'new' => $decision['new'], 'step' => $decision['step']];
+    }
+
+    if ($lost !== []) {
         throw new RuntimeException(
-            'The following rows carried a decided "new" value in the previous file but no longer appear in the'
-            . ' measurement — a disappeared identity with a recorded rename decision must be investigated, not'
-            . ' silently dropped: ' . implode(', ', $missing),
+            'The following rows carried a decided "new" value in the previous file, no longer appear in the'
+            . ' measurement, and cannot be retired as executed: a rename is executed only when every name it'
+            . ' promised APPEARED in this measurement. A disappeared identity must be investigated, not silently'
+            . ' dropped: ' . implode('; ', $lost),
         );
     }
 
-    return $merged;
+    usort($retired, static fn(array $a, array $b): int => [$a['step'], $a['kind'], $a['old']] <=> [$b['step'], $b['kind'], $b['old']]);
+
+    return $retired;
+}
+
+/**
+ * The two invariants an executed row must still satisfy on every later run.
+ *
+ * History cannot be re-derived — that is stated in retireExecutedRows() and
+ * owned by git — but it can be held to what it claims. Both directions are
+ * checked, because they fail differently: an `old` that is measured again means
+ * the rename was reverted or the row is wrong, and a promised target that is no
+ * longer measured means the row is describing an outcome that has since been
+ * undone. Neither is a state to carry silently.
+ *
+ * A target spelled with a wildcard is exempt from the second check: a wildcard
+ * was never a measurable identity, so a row that names one could not have
+ * retired automatically in the first place.
+ *
+ * @param list<array{old: string, kind: string, new: string, step: string}> $executed
+ * @param array<string, true> $measuredKeys
+ * @param array<string, array<string, true>> $identitiesByKind
+ */
+function assertExecutedRowsStillHold(array $executed, array $measuredKeys, array $identitiesByKind): void
+{
+    $problems = [];
+
+    foreach ($executed as $row) {
+        if (isset($measuredKeys[$row['old'] . "\t" . $row['kind']])) {
+            $problems[] = sprintf(
+                '%s (%s), recorded as executed by %s, is measured again: either the rename was reverted or the'
+                . ' executed file is wrong',
+                $row['old'],
+                $row['kind'],
+                $row['step'],
+            );
+
+            continue;
+        }
+
+        foreach (explode('|', $row['new']) as $target) {
+            if (str_contains($target, '*')) {
+                continue;
+            }
+
+            if (!isset($identitiesByKind[$row['kind']][$target])) {
+                $problems[] = sprintf(
+                    '%s (%s), recorded as executed by %s, promised %s — but %s is not measured any more',
+                    $row['old'],
+                    $row['kind'],
+                    $row['step'],
+                    $row['new'],
+                    $target,
+                );
+            }
+        }
+    }
+
+    if ($problems !== []) {
+        throw new RuntimeException(
+            'The executed-rename history no longer describes this measurement. Both directions are checked'
+            . ' because a checker cannot re-derive history, only hold it to its own claims: '
+            . implode('; ', $problems),
+        );
+    }
+}
+
+/**
+ * Reads the tracked executed file. Its rows are history: they are carried over
+ * verbatim and never re-measured, because a later step renaming one of their
+ * targets is ordinary and would otherwise resurrect a settled failure.
+ *
+ * @return list<array{old: string, kind: string, new: string, step: string}>
+ */
+function readExecutedRows(string $path): array
+{
+    if (!is_file($path)) {
+        return [];
+    }
+
+    $rows = [];
+
+    foreach (explode("\n", readFileOrFail($path)) as $line) {
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+
+        $columns = explode("\t", $line);
+
+        if ($columns[0] === 'old') {
+            continue;
+        }
+
+        if (count($columns) < 4) {
+            throw new RuntimeException(sprintf(
+                'Line "%s" of the executed-rename history has %d column(s), fewer than the four a retired row'
+                . ' needs. Dropping it would lose history this script cannot re-derive.',
+                $line,
+                count($columns),
+            ));
+        }
+
+        [$old, $kind, $new, $step] = $columns;
+        $rows[] = ['old' => $old, 'kind' => $kind, 'new' => $new, 'step' => $step];
+    }
+
+    return $rows;
+}
+
+/**
+ * @param list<array{old: string, kind: string, new: string, step: string}> $rows
+ */
+function renderExecutedTsv(array $rows): string
+{
+    $lines = [];
+
+    foreach ($rows as $row) {
+        $lines[] = implode("\t", [$row['old'], $row['kind'], $row['new'], $row['step']]);
+    }
+
+    $header = <<<HEADER
+# Renames this plan has EXECUTED, and therefore stopped measuring.
+#
+# A row lands here by measurement, never by a flag: its `old` identity is gone
+# from the production container (or from MetricName), and every name its `new`
+# column promised is a measured identity of the same kind. A row whose identity
+# is gone while its promised names are NOT measured is not retired — it fails
+# `composer enumeration:renames`, because that is a lost identity rather than an
+# executed step. See retireExecutedRows() in
+# scripts/generate-rename-enumeration.php for why the difference has to come
+# from the measurement and not from whoever runs the script.
+#
+# Rows here are history and are never re-measured: a later step renaming one of
+# the names promised below is ordinary, and re-checking would resurrect a
+# settled question. Do not hand-edit; both this file and
+# enumeration-renames.tsv are regenerated by `composer enumeration:renames`.
+#
+# `new` carries several `|`-separated names when the rename was a split.
+old	kind	new	step
+HEADER;
+
+    return $header . "\n" . ($lines === [] ? '' : implode("\n", $lines) . "\n");
 }
 
 /**
@@ -517,12 +835,17 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 #
 # THE `new` AND `step` COLUMNS ARE DECISIONS, NOT MEASUREMENTS. This script
 # never invents either: an unfilled row keeps `?` and an empty `step`. Both
-# survive every later regeneration (merged back in by `old`+`kind`); if the row
-# they were recorded against stops being measured, the script fails instead of
-# quietly dropping the decision. A decided row must name the step that makes the
-# decision, and a step must not name an undecided row: `--emit-maps=<step>`
-# renders one step's decisions as map rows, which is how a step's map stays free
-# of a later step's renames.
+# survive every later regeneration (merged back in by `old`+`kind`). When the row
+# they were recorded against stops being measured there are two cases, and they
+# are told apart by measurement rather than by assertion: if every name the
+# decision promised APPEARED in this measurement, the rename has landed and the
+# row retires into enumeration-renames-executed.tsv; otherwise the script fails
+# instead of quietly dropping the decision. A target that existed before this
+# measurement cannot have appeared, so it forbids retirement — that is what
+# stops a collapse from retiring the half that was lost. A decided row must name
+# the step that makes the decision, and a step must not name an undecided row:
+# `--emit-maps=<step>` renders one step's decisions as map rows, and refuses a
+# step that has already landed, whose maps are in git.
 #
 # WHAT THIS METHOD DOES NOT SEE:
 #  - a name assembled at runtime (string concatenation, a value read from
@@ -555,9 +878,9 @@ FOOTER;
  * onto whatever `new` decisions already sit in $outputPath. Used by both the
  * generate and the `--check` path so the two can never measure differently.
  *
- * @return array{content: string, rows: list<array{old: string, kind: string, search: string, counts: array<string, int>, new: string, step: string}>, channelCount: int, producerCount: int, metricKeyCount: int}
+ * @return array{content: string, executedContent: string, rows: list<array{old: string, kind: string, new: string, step: string}>, executedRows: list<array{old: string, kind: string, new: string, step: string}>, channelCount: int, producerCount: int, metricKeyCount: int, executedCount: int}
  */
-function renderCurrentState(string $root, string $outputPath, ContainerFactory $factory): array
+function renderCurrentState(string $root, string $outputPath, string $executedPath, ContainerFactory $factory): array
 {
     $rows = [];
 
@@ -578,15 +901,26 @@ function renderCurrentState(string $root, string $outputPath, ContainerFactory $
 
     $measuredRows = measure(array_values($rows), $surfaceContents, $surfaceOrder);
     $existingNew = readExistingNewColumn($outputPath);
+    $executedRows = retireExecutedRows(
+        $existingNew,
+        $measuredRows,
+        readExecutedRows($executedPath),
+        readPreviousIdentities($outputPath),
+    );
     $finalRows = mergeExistingNewColumn($measuredRows, $existingNew);
-    assertEveryDecisionNamesItsStep($finalRows);
+    assertEveryDecisionNamesItsStep([...$finalRows, ...$executedRows]);
 
     return [
         'content' => renderTsv($finalRows, $surfaceOrder),
+        'executedContent' => renderExecutedTsv($executedRows),
+        // Only the measured rows answer `--emit-maps`. A landed step's rows are
+        // history, and its maps are already in git — see the refusal in main().
         'rows' => $finalRows,
+        'executedRows' => $executedRows,
         'channelCount' => count(array_filter($finalRows, static fn(array $row): bool => $row['kind'] === 'channel')),
         'producerCount' => count(array_filter($finalRows, static fn(array $row): bool => $row['kind'] === 'producer')),
         'metricKeyCount' => count(array_filter($finalRows, static fn(array $row): bool => $row['kind'] === 'metric-key')),
+        'executedCount' => count($executedRows),
     ];
 }
 
@@ -660,9 +994,10 @@ function main(): int
 
     $root = dirname(__DIR__);
     $outputPath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-renames.tsv';
+    $executedPath = $root . '/docs/internal/plans/rule-vocabulary/enumeration-renames-executed.tsv';
     $factory = new ContainerFactory();
 
-    $state = renderCurrentState($root, $outputPath, $factory);
+    $state = renderCurrentState($root, $outputPath, $executedPath, $factory);
 
     if ($emitStep !== null) {
         if ($emitStep === '') {
@@ -671,7 +1006,43 @@ function main(): int
             return 2;
         }
 
-        fwrite(STDOUT, emitMapsForStep($state['rows'], $emitStep));
+        // A landed step is refused rather than re-emitted. Its rows are in the
+        // executed file, which is history this script cannot re-derive, and its
+        // maps are already tracked in git: emitting from history would launder a
+        // tampered row into a fresh-looking declaration, and comparing the
+        // output against the tracked maps by eye is exactly the check nobody
+        // performs. Read the maps from git instead.
+        $retired = array_values(array_filter(
+            $state['executedRows'],
+            static fn(array $row): bool => $row['step'] === $emitStep,
+        ));
+
+        if ($retired !== []) {
+            fwrite(STDERR, sprintf(
+                "Step %s has already landed: %d of its rows are retired into %s, so its maps are in git rather than"
+                . " re-derivable here. Read finding-gate/maps/*.tsv from the commit that landed it.\n",
+                $emitStep,
+                count($retired),
+                'enumeration-renames-executed.tsv',
+            ));
+
+            return 2;
+        }
+
+        $emitted = emitMapsForStep($state['rows'], $emitStep);
+
+        if (!str_contains($emitted, "\t")) {
+            fwrite(STDERR, sprintf(
+                "Step %s has no decided row in the measured enumeration, so there is no map to emit. Decide the"
+                . " renames first (the `new` and `step` columns of %s).\n",
+                $emitStep,
+                'enumeration-renames.tsv',
+            ));
+
+            return 2;
+        }
+
+        fwrite(STDOUT, $emitted);
 
         return 0;
     }
@@ -691,30 +1062,58 @@ function main(): int
             return 1;
         }
 
+        $executedOnDisk = is_file($executedPath) ? file_get_contents($executedPath) : '';
+
+        if ($executedOnDisk === false || $executedOnDisk !== $state['executedContent']) {
+            fwrite(STDERR, describeMismatch(
+                $executedOnDisk === false ? '' : $executedOnDisk,
+                $state['executedContent'],
+                $executedPath,
+            ));
+
+            return 1;
+        }
+
         fwrite(STDOUT, sprintf(
-            "Checked %s: up to date (%d channel, %d producer, %d metric-key rows).\n",
+            "Checked %s: up to date (%d channel, %d producer, %d metric-key rows, %d executed).\n",
             $outputPath,
             $state['channelCount'],
             $state['producerCount'],
             $state['metricKeyCount'],
+            $state['executedCount'],
         ));
 
         return 0;
     }
 
-    $tmpPath = $outputPath . '.tmp.' . getmypid();
-    file_put_contents($tmpPath, $state['content']);
-    rename($tmpPath, $outputPath);
+    writeAtomically($outputPath, $state['content']);
+    writeAtomically($executedPath, $state['executedContent']);
 
     fwrite(STDOUT, sprintf(
-        "Wrote %s: %d channel, %d producer, %d metric-key rows.\n",
+        "Wrote %s: %d channel, %d producer, %d metric-key rows; %d executed rename(s) retired to %s.\n",
         $outputPath,
         $state['channelCount'],
         $state['producerCount'],
         $state['metricKeyCount'],
+        $state['executedCount'],
+        basename($executedPath),
     ));
 
     return 0;
 }
 
-exit(main());
+function writeAtomically(string $path, string $contents): void
+{
+    $tmpPath = $path . '.tmp.' . getmypid();
+    file_put_contents($tmpPath, $contents);
+    rename($tmpPath, $path);
+}
+
+// Include-safe: running the file executes it, requiring it only defines the
+// functions. The retirement predicate is the one piece of this script a test
+// has to reach directly — its branches are all fail-closed, and a fail-closed
+// branch nobody has seen fire is a branch nobody has tested. See
+// tests/Unit/RuleVocabulary/RenameEnumerationRetirementTest.php.
+if (realpath((string) ($_SERVER['argv'][0] ?? '')) === realpath(__FILE__)) {
+    exit(main());
+}

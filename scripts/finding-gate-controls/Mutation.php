@@ -26,6 +26,7 @@ final class Mutation
     private const EDIT = 'edit';
     private const DELETE = 'delete';
     private const CREATE = 'create';
+    private const REPLACE = 'replace';
 
     /** @param list<array{kind: string, path: string, replacements: array<string, string>, contents: string}> $actions */
     private function __construct(
@@ -54,6 +55,30 @@ final class Mutation
 
         foreach ($contentsByPath as $path => $contents) {
             $actions[] = self::action(self::CREATE, $path, [], $contents);
+        }
+
+        return new self($description, $actions);
+    }
+
+    /**
+     * The whole file, over one that must already be there.
+     *
+     * Distinct from {@see create()} because the two guard opposite things:
+     * creating a file the repository already has proves nothing about its
+     * absence, and replacing one it does not have silently invents the state
+     * under test. A replace that writes what was already there is refused for
+     * the same reason {@see edit()} demands exactly one occurrence of its old
+     * fragment: a mutation that mutates nothing turns its control into a second
+     * positive control.
+     *
+     * @param array<string, string> $contentsByPath path => the whole file to write
+     */
+    public static function replace(array $contentsByPath, string $description): self
+    {
+        $actions = [];
+
+        foreach ($contentsByPath as $path => $contents) {
+            $actions[] = self::action(self::REPLACE, $path, [], $contents);
         }
 
         return new self($description, $actions);
@@ -125,14 +150,19 @@ final class Mutation
             ));
         }
 
+        // Kept for the no-op assertion below: a REPLACE that writes exactly what
+        // was already there mutates nothing, and its control would silently
+        // become a second positive control.
+        $applied = [...$action, 'before' => $action['kind'] === self::REPLACE ? Shell::read($target) : ''];
+
         match ($action['kind']) {
             self::DELETE => self::removeFrom($target, $action['path']),
-            self::CREATE => self::createAt($target, $action['contents']),
+            self::CREATE, self::REPLACE => self::createAt($target, $action['contents']),
             default => Shell::replace($target, self::rewrite(Shell::read($target), $action)),
         };
 
         self::assertRepositoryUntouched($original, $before);
-        self::assertApplied($target, $action);
+        self::assertApplied($target, $applied);
     }
 
     /**
@@ -192,7 +222,7 @@ final class Mutation
         }
     }
 
-    /** @param array{kind: string, path: string, replacements: array<string, string>, contents: string} $action */
+    /** @param array{kind: string, path: string, replacements: array<string, string>, contents: string, before: string} $action */
     private static function assertApplied(string $target, array $action): void
     {
         if ($action['kind'] === self::DELETE) {
@@ -203,7 +233,15 @@ final class Mutation
             return;
         }
 
-        if ($action['kind'] === self::CREATE) {
+        if ($action['kind'] === self::REPLACE && Shell::read($target) === $action['before']) {
+            throw new RuntimeException(\sprintf(
+                '%s already held exactly what the mutation writes, so this control mutates nothing and is a second'
+                . ' positive control. Re-point it.',
+                $action['path'],
+            ));
+        }
+
+        if ($action['kind'] === self::CREATE || $action['kind'] === self::REPLACE) {
             if (Shell::read($target) !== $action['contents']) {
                 throw new RuntimeException(\sprintf('%s does not hold what the mutation wrote.', $action['path']));
             }

@@ -513,11 +513,11 @@
       {"channel":"computed.health#health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger@src/Infrastructure/Logging/DelegatingLogger.php": [
-      {"channel":"design.type-coverage#design.type-coverage.param","magnitudes":[75]}
+      {"channel":"design.param-type-coverage#design.param-type-coverage","magnitudes":[75]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Logging\\FileLogger@src/Infrastructure/Logging/FileLogger.php": [
       {"channel":"computed.health#health.typing","magnitudes":[75]},
-      {"channel":"design.type-coverage#design.type-coverage.property","magnitudes":[50]}
+      {"channel":"design.property-type-coverage#design.property-type-coverage","magnitudes":[50]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Logging\\LoggerHolder@src/Infrastructure/Logging/LoggerHolder.php": [
       {"channel":"design.data-class#design.data-class","magnitudes":[0]}
@@ -563,13 +563,16 @@
       {"channel":"coupling.instability#coupling.instability.namespace","magnitudes":[0.953846]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
-      {"channel":"size.class-count#size.class-count","magnitudes":[21]}
+      {"channel":"size.class-count#size.class-count","magnitudes":[24]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Duplication": [
       {"channel":"size.class-count#size.class-count","magnitudes":[17]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Maintainability": [
       {"channel":"coupling.cbo#coupling.cbo.namespace","magnitudes":[16]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Evidence\\Measurement": [
+      {"channel":"coupling.distance#coupling.distance","magnitudes":[0.502369]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract": [
       {"channel":"coupling.cbo#coupling.cbo.namespace","magnitudes":[45]}

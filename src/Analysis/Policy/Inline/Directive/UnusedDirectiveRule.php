@@ -30,7 +30,7 @@ use Qualimetrix\Analysis\Finding\Contract\Violation;
  * {@see InlineDirectivePolicy}, and only when this rule ran and was enabled.
  * One switch, not two.
  */
-final class InlineDirectiveRule extends AbstractRule
+final class UnusedDirectiveRule extends AbstractRule
 {
     public const string NAME = InlineDirectivePolicy::PRODUCER_RULE_NAME;
     public const string DOCS_PAGE = 'rules/annotation.md';

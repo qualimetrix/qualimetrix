@@ -202,20 +202,16 @@ bin/qmx check src/ --rule-opt="design.inheritance:error=7"
 
 ---
 
-## Покрытие типами (Type Coverage)
+## Покрытие типами параметров (Parameter Type Coverage) { #parameter-type-coverage }
 
-**Rule ID:** `design.type-coverage`
+**Rule ID:** `design.param-type-coverage`
 
 <!-- llms:skip-begin -->
 ### Что измеряет
 
-Проверяет процент объявлений типов в классе. Может создать до трёх нарушений на класс:
+Процент параметров методов и функций класса, у которых объявлен тип.
 
-- **Покрытие типами параметров** -- процент параметров методов с объявлениями типов
-- **Покрытие типами возвращаемых значений** -- процент методов с объявлениями типов возвращаемых значений
-- **Покрытие типами свойств** -- процент свойств с объявлениями типов
-
-В отличие от большинства правил, это правило использует **инвертированные пороги**: меньшие значения хуже. Предупреждение выдаётся, когда покрытие падает ниже порога warning, а ошибка -- когда падает ниже порога error.
+Как и два правила ниже, это правило использует **инвертированные пороги**: меньшие значения хуже. Предупреждение выдаётся, когда покрытие падает ниже порога warning, а ошибка -- когда падает ниже порога error. Класс без параметров типизировать нечего, и он не сообщается никогда.
 
 **Как читать значение:**
 
@@ -225,16 +221,17 @@ bin/qmx check src/ --rule-opt="design.inheritance:error=7"
 | 50--79%  | Умеренное покрытие типами |
 | 80--100% | Хорошее покрытие типами   |
 
+!!! info "Три правила, а не одно"
+    Параметры, возвращаемые значения и свойства раньше были тремя каналами одного правила `design.type-coverage` с одним набором опций. Теперь это три правила, у каждого свой порог, своё подавление и своя запись в бейзлайне: кодовая база обычно типизирует их с разной скоростью -- см. [примечание о миграции](../changelog.md).
+
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Пороговые значения
 
-| Аспект    | Warning (ниже) | Error (ниже) |
-| --------- | -------------- | ------------ |
-| Параметры | 80%            | 50%          |
-| Возврат   | 80%            | 50%          |
-| Свойства  | 80%            | 50%          |
+| Warning (ниже) | Error (ниже) |
+| -------------- | ------------ |
+| 80%            | 50%          |
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -243,24 +240,18 @@ bin/qmx check src/ --rule-opt="design.inheritance:error=7"
 ```php
 class LegacyService
 {
-    private $cache;       // нет типа -> снижает покрытие свойств
-    public $debug = true; // нет типа -> снижает покрытие свойств
-
-    // Нет типа возврата -> снижает покрытие возвратов
-    // $data без типа -> снижает покрытие параметров
+    // у $data нет типа -> снижает покрытие параметров
     public function process($data)
     {
         // ...
     }
 
-    public function reset(): void
+    public function reset(int $attempts): void
     {
-        // есть тип возврата -- хорошо
+        // типизировано -- хорошо
     }
 }
-// Покрытие параметров: 0% (0 из 1 типизированы) -> Error
-// Покрытие возвратов: 50% (1 из 2 типизированы) -> Warning
-// Покрытие свойств: 0% (0 из 2 типизированы) -> Error
+// Покрытие параметров: 50% (1 из 2) -> Warning
 ```
 
 <!-- llms:skip-end -->
@@ -268,45 +259,159 @@ class LegacyService
 <!-- llms:skip-begin -->
 ### Как исправить
 
-Добавьте объявления типов:
+Добавьте объявления типов параметрам:
 
 ```php
-class LegacyService
+public function process(array $data)
 {
-    private CacheInterface $cache;
-    public bool $debug = true;
-
-    public function process(array $data): Result
-    {
-        // ...
-    }
-
-    public function reset(): void { /* ... */ }
+    // ...
 }
 ```
 
-!!! tip "Совет"
-    Начните с добавления типов в новый код и постепенно добавляйте типы в существующий код при рефакторинге. PHP 8.0+ поддерживает union-типы (`string|int`), а PHP 8.1+ -- intersection-типы (`Countable&Iterator`) для сложных случаев.
+!!! tip
+    Начните с типизации нового кода, а существующий типизируйте по ходу рефакторинга. PHP 8.0+ поддерживает union-типы (`string|int`), PHP 8.1+ -- intersection-типы (`Countable&Iterator`) для неудобных случаев.
 
 <!-- llms:skip-end -->
 
-### Настройка
+### Конфигурация
 
 ```yaml
 # qmx.yaml
 rules:
-  design.type-coverage:
-    param_warning: 80
-    param_error: 50
-    return_warning: 80
-    return_error: 50
-    property_warning: 80
-    property_error: 50
+  design.param-type-coverage:
+    warning: 80
+    error: 50
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="design.type-coverage:param_warning=90"
-bin/qmx check src/ --rule-opt="design.type-coverage:param_error=60"
+bin/qmx check src/ --rule-opt="design.param-type-coverage:warning=90"
+bin/qmx check src/ --param-type-coverage-error=60
+```
+
+---
+
+## Покрытие типами возвращаемых значений (Return Type Coverage)
+
+**Rule ID:** `design.return-type-coverage`
+
+<!-- llms:skip-begin -->
+### Что измеряет
+
+Процент методов и функций класса, у которых объявлен тип возвращаемого значения. Пороги инвертированные, ровно как у [покрытия типами параметров](#parameter-type-coverage): меньше -- хуже.
+
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### Пороговые значения
+
+| Warning (ниже) | Error (ниже) |
+| -------------- | ------------ |
+| 80%            | 50%          |
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### Пример
+
+```php
+class LegacyService
+{
+    // нет типа возврата -> снижает покрытие возвращаемых значений
+    public function process(array $data)
+    {
+        // ...
+    }
+
+    public function reset(): void
+    {
+        // тип возврата есть -- хорошо
+    }
+}
+// Покрытие возвращаемых значений: 50% (1 из 2) -> Warning
+```
+
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### Как исправить
+
+Объявите, что метод возвращает; используйте `void`, когда он не возвращает ничего, и `never`, когда он всегда бросает исключение или завершает процесс.
+
+<!-- llms:skip-end -->
+
+### Конфигурация
+
+```yaml
+# qmx.yaml
+rules:
+  design.return-type-coverage:
+    warning: 80
+    error: 50
+```
+
+```bash
+bin/qmx check src/ --rule-opt="design.return-type-coverage:warning=90"
+bin/qmx check src/ --return-type-coverage-error=60
+```
+
+---
+
+## Покрытие типами свойств (Property Type Coverage)
+
+**Rule ID:** `design.property-type-coverage`
+
+<!-- llms:skip-begin -->
+### Что измеряет
+
+Процент объявленных свойств класса, у которых есть тип. Пороги инвертированные, ровно как у [покрытия типами параметров](#parameter-type-coverage): меньше -- хуже.
+
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### Пороговые значения
+
+| Warning (ниже) | Error (ниже) |
+| -------------- | ------------ |
+| 80%            | 50%          |
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### Пример
+
+```php
+class LegacyService
+{
+    private $cache;                 // нет типа -> снижает покрытие свойств
+    public bool $debug = true;      // типизировано -- хорошо
+}
+// Покрытие свойств: 50% (1 из 2) -> Warning
+```
+
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### Как исправить
+
+Типизируйте свойства, а те, что присваивает конструктор, объявляйте через promotion:
+
+```php
+public function __construct(private readonly CacheInterface $cache) {}
+```
+
+<!-- llms:skip-end -->
+
+### Конфигурация
+
+```yaml
+# qmx.yaml
+rules:
+  design.property-type-coverage:
+    warning: 80
+    error: 50
+```
+
+```bash
+bin/qmx check src/ --rule-opt="design.property-type-coverage:warning=90"
+bin/qmx check src/ --property-type-coverage-error=60
 ```
 
 ---

@@ -11,7 +11,6 @@ use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode;
 
 #[CoversClass(LayerViolationOptions::class)]
 final class LayerViolationOptionsTest extends TestCase
@@ -128,30 +127,5 @@ final class LayerViolationOptionsTest extends TestCase
 
         self::assertNull($options->getSeverity(0));
         self::assertNull($options->getSeverity(1000));
-    }
-
-    #[Test]
-    public function itLeavesTheUnassignedClassGateOffByDefault(): void
-    {
-        self::assertSame(UnassignedClassMode::Ignore, (new LayerViolationOptions())->unassignedClass);
-        self::assertSame(UnassignedClassMode::Ignore, LayerViolationOptions::fromArray([])->unassignedClass);
-    }
-
-    #[Test]
-    #[TestWith(['warn', UnassignedClassMode::Warn])]
-    #[TestWith(['ERROR', UnassignedClassMode::Error])]
-    #[TestWith(['ignore', UnassignedClassMode::Ignore])]
-    public function itParsesTheUnassignedClassGate(string $raw, UnassignedClassMode $expected): void
-    {
-        self::assertSame($expected, LayerViolationOptions::fromArray(['unassignedClass' => $raw])->unassignedClass);
-    }
-
-    #[Test]
-    public function itRejectsAnUnknownUnassignedClassGateValue(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('unassigned_class');
-
-        LayerViolationOptions::fromArray(['unassignedClass' => 'fail']);
     }
 }

@@ -11,12 +11,13 @@ interface LayerPolicyPreparationInterface
     public const string PRODUCER_RULE_NAME = 'architecture.layer-violation';
 
     /**
-     * The six diagnostics the layer-policy producer emits under rule names
-     * other than its own: `architecture.unassigned-class` from the rule, the
-     * other five from its configuration validator. They are `ruleName`s in
-     * their own right — nothing else declares them — so they live beside
-     * {@see PRODUCER_RULE_NAME} for the same reason it does: one literal,
-     * readable by a cross-owner consumer without importing either producer.
+     * The five diagnostics the layer-policy producer's configuration validator
+     * emits under rule names other than its own, plus the rule name of the
+     * second producer that reads the same prepared policy. They are
+     * `ruleName`s in their own right — nothing else declares them — so they
+     * live beside {@see PRODUCER_RULE_NAME} for the same reason it does: one
+     * literal, readable by a cross-owner consumer without importing either
+     * producer.
      */
     public const string COVERAGE_DIAGNOSTIC_NAME = 'architecture.coverage';
 
@@ -47,6 +48,28 @@ interface LayerPolicyPreparationInterface
         self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME . '#' . self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME . '#' . self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
         self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME . '#' . self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
+    ];
+
+    /**
+     * Every rule name whose findings need this policy prepared for the run.
+     *
+     * Two, not one, and the second was learned the hard way: while
+     * `architecture.unassigned-class` was a channel of the layer-violation
+     * rule, asking whether that one producer was enabled covered it, because
+     * a selector naming the channel matched its producer. Once it became a
+     * producer of its own, `--only-rule=architecture.unassigned-class` left
+     * the policy unprepared and the rule reached an unprepared collector.
+     *
+     * The list lives here rather than in the caller for the same reason
+     * {@see PRODUCER_RULE_NAME} does: the caller is the run, which may not
+     * import a rule to ask it its name. A third rule reading the prepared
+     * policy has to be added here, and the run needs no change.
+     *
+     * @var list<string>
+     */
+    public const array PRODUCER_RULE_NAMES = [
+        self::PRODUCER_RULE_NAME,
+        self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
     ];
 
     /** @param iterable<\Qualimetrix\Core\Symbol\SymbolPath> $classUniverse */

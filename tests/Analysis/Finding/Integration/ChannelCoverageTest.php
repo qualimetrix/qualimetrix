@@ -20,8 +20,8 @@ use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule;
+use Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
@@ -51,8 +51,8 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
-use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
+use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -217,7 +217,7 @@ final class ChannelCoverageTest extends TestCase
     #[Test]
     public function theTypeCoverageParamMagnitudeChannelIsDeclaredLowerIsWorse(): void
     {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions(paramWarning: 80.0, paramError: 50.0));
+        $rule = new ParamTypeCoverageRule(new TypeCoverageOptions(warning: 80.0, error: 50.0));
 
         $classInfo = self::classInfo('TestClass', RelativePath::fromString('src/TestClass.php'));
         $metricBag = (new MetricBag())
@@ -387,7 +387,7 @@ final class ChannelCoverageTest extends TestCase
 
         $context = new AnalysisContext(self::createStub(MetricRepositoryInterface::class));
         $options = new InlineDirectiveOptions();
-        self::assertSame([], (new InlineDirectiveRule($options, $policy))->analyze($context));
+        self::assertSame([], (new UnusedDirectiveRule($options, $policy))->analyze($context));
         self::assertSame([], (new InlineDirectiveValidator($options, $policy, self::channelIdentity()))->validate($context));
 
         $unused = $policy->auditDirectiveUsage([]);

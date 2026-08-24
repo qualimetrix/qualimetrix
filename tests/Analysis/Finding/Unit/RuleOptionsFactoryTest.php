@@ -1394,21 +1394,21 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itDoesNotWarnAboutTheParamThresholdShorthandOnTypeCoverage(): void
+    public function itDoesNotWarnAboutTheThresholdShorthandOnTypeCoverage(): void
     {
         $logger = new RecordingLogger();
         $factory = new RuleOptionsFactory($this->registry, $logger);
 
         $this->registry->setConfigFileOptions([
-            'design.type-coverage' => ['param_threshold' => 70.0],
+            'design.param-type-coverage' => ['threshold' => 70.0],
         ]);
 
         /** @var TypeCoverageOptions $options */
-        $options = $factory->create('design.type-coverage', TypeCoverageOptions::class);
+        $options = $factory->create('design.param-type-coverage', TypeCoverageOptions::class);
 
-        self::assertSame(70.0, $options->paramWarning);
-        self::assertSame(70.0, $options->paramError);
-        self::assertSame([], $logger->records, 'The documented `param_threshold` shorthand must not trigger a false Unknown option warning');
+        self::assertSame(70.0, $options->warning);
+        self::assertSame(70.0, $options->error);
+        self::assertSame([], $logger->records, 'The documented `threshold` shorthand must not trigger a false Unknown option warning');
     }
 
     #[Test]

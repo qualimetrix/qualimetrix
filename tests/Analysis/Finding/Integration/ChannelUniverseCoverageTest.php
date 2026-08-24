@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
@@ -63,13 +62,14 @@ final class ChannelUniverseCoverageTest extends TestCase
     private const int DECLARED_CHANNEL_COUNT = 57;
 
     /**
-     * Nine subclasses of `AbstractCodeSmellRule` plus three of
-     * `AbstractSecurityPatternRule` declare their channel in the ancestor and
+     * Nine subclasses of `AbstractCodeSmellRule`, three of
+     * `AbstractSecurityPatternRule` and three of
+     * `AbstractTypeCoverageRule` declare their channel in the ancestor and
      * bind their own name through late static binding. A scan over
      * `*Rule.php` files does not see them, which is exactly why this count is
      * pinned separately from the total.
      */
-    private const int CHANNELS_DECLARED_BY_AN_ANCESTOR = 12;
+    private const int CHANNELS_DECLARED_BY_AN_ANCESTOR = 15;
 
     #[Test]
     public function everyDeclaredChannelHasAProducer(): void
@@ -163,13 +163,12 @@ final class ChannelUniverseCoverageTest extends TestCase
         self::assertSame(CboRule::NAME, $universe->producerOf('coupling.cbo.class'));
         self::assertSame(CboRule::NAME, $universe->producerOf('coupling.cbo.namespace'));
 
-        // match over string literals, in TypeCoverageRule.
+        // Three rules, three producers, and that is the point of the split:
+        // the facet used to be a suffix on one producer's channel code, and a
+        // reader had to know the rule to know which facet it was looking at.
         foreach (['param', 'property', 'return'] as $facet) {
-            self::assertSame(
-                TypeCoverageRule::NAME,
-                $universe->producerOf('design.type-coverage.' . $facet),
-                $facet,
-            );
+            $name = 'design.' . $facet . '-type-coverage';
+            self::assertSame($name, $universe->producerOf($name), $facet);
         }
 
         // Declaration in an abstract ancestor, resolved by late static binding.

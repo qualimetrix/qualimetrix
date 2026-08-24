@@ -42,8 +42,16 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
 
     public const string PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
 
+    /**
+     * The producer's options as well as the walk, because the walk now runs
+     * for either producer of the family (ADR 0030): "is there evidence" and
+     * "may this validator report" became two questions, and the five
+     * declaration verdicts belong to `architecture.layer-violation`, so they
+     * answer to its `enabled`.
+     */
     public function __construct(
         private readonly LayerEvidenceCollector $evidence,
+        private readonly LayerViolationOptions $options,
     ) {}
 
     public static function producerRuleName(): string
@@ -87,6 +95,10 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
      */
     public function validate(AnalysisContext $context): array
     {
+        if (!$this->options->isEnabled()) {
+            return [];
+        }
+
         $evidence = $this->evidence->collect($context);
 
         if ($evidence === null) {

@@ -175,15 +175,17 @@
   #   warning: 10                # default: 10
   #   error: 15
 
-  # Type coverage — percentage of typed parameters, returns, properties.
+  # Type coverage — one rule per dimension, each with its own thresholds.
   # Inverted: values BELOW the threshold trigger violations.
-  # design.type-coverage:
-  #   param_warning: 80          # default: 80%
-  #   param_error: 50
-  #   return_warning: 80
-  #   return_error: 50
-  #   property_warning: 80
-  #   property_error: 50
+  # design.param-type-coverage:
+  #   warning: 80                # default: 80%
+  #   error: 50
+  # design.return-type-coverage:
+  #   warning: 80
+  #   error: 50
+  # design.property-type-coverage:
+  #   warning: 80
+  #   error: 50
 
   # God Class detection (Lanza & Marinescu heuristics).
   # design.god-class:

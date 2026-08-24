@@ -9,9 +9,15 @@ use QmxFindingGate\FailureClass;
 /**
  * The controls, as a list.
  *
- * Eight negative controls — the four the Ш1 DoD names and the four Ш4a adds for
- * the declared delta and the reference's vocabulary — plus the positive one
- * without which eight reds could all be reds for an environmental reason.
+ * Nine negative controls — the four the Ш1 DoD names, the four Ш4a adds for the
+ * declared delta and the reference's vocabulary, and the one Ш4b adds for
+ * `delta-too-large` — plus the positive one without which nine reds could all be
+ * reds for an environmental reason.
+ *
+ * `delta-too-large` was the one class of the five that no control had ever seen
+ * red. Ш4a named the gap in its own record; Ш4b rewrote the code that computes
+ * the count, which is the worst moment to still be relying on the name of a
+ * class nobody has watched fire.
  *
  * Every expectation — required and tolerated alike — pins the surface it must
  * land on. An unpinned class would let an unrelated failure elsewhere in the
@@ -38,6 +44,7 @@ final class Controls
             self::deltaMismatch(),
             self::deltaStale(),
             self::deltaOverreach(),
+            self::deltaTooLarge(),
             self::referenceInputUntranslated(),
         ];
 
@@ -209,9 +216,14 @@ final class Controls
     /**
      * A declared delta on a surface the two trees agree on.
      *
-     * Nothing is perturbed, so this is the positive control with one declaration
-     * added: the same lie as a map row that translated nothing, and it has to
-     * fail the same way or a delta could outlive the change it described.
+     * No product code is perturbed, so this is the positive control with the
+     * declaration *replaced*: one row added on a surface that does not differ,
+     * and the step's own rows removed with it. Both halves show up in the run —
+     * the added row as `delta-stale`, the removed ones as the declared surfaces
+     * being compared for equality again — which is why this control tolerates
+     * them there (see Outcome::isDeclarationNoise()). The lie under test is the
+     * added row: the same lie as a map row that translated nothing, and it has
+     * to fail the same way or a delta could outlive the change it described.
      */
     private static function deltaStale(): Control
     {
@@ -257,6 +269,66 @@ final class Controls
                     'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
                 ),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'tree|rules'),
+            ],
+        );
+    }
+
+    /**
+     * A declared delta bigger than a declaration may be.
+     *
+     * The perturbation is a formatter, not a rule: `JsonViolationSection` gains
+     * a field on every finding, so every line of the `json` surface of a case
+     * moves and the measured diff runs to hundreds of changed lines. The
+     * declaration planted beside it names that surface, so the run reaches the
+     * size check rather than stopping at "undeclared surface" — and the size
+     * check is the whole point, because it is the class this harness had never
+     * seen red.
+     *
+     * The `health` case is the target because it is the largest: two moved
+     * lines per finding over its 69 message-bearing findings measure 256 changed
+     * lines against a limit of 200, so the control is not sitting on the edge of
+     * the threshold it is testing.
+     *
+     * `delta-mismatch` and `delta-overreach` are tolerated on the same surface
+     * for the reason the overreach control gives in reverse: reach and size are
+     * judged on the diff the run measures, so a declaration that is too large
+     * must fail for being too large and not be excused by also failing to match
+     * — and a diff this wide inevitably pairs a moved field against a line that
+     * does not carry it, which is overreach by the record-level rule.
+     */
+    private static function deltaTooLarge(): Control
+    {
+        return Control::red(
+            'delta-too-large',
+            'a declared delta whose measured diff is past the limit a declaration may be',
+            Mutation::edit(
+                'src/Reporting/Formatter/Json/JsonViolationSection.php',
+                [
+                    "'message' => \$violation->message," => "'message' => '(padded) ' . \$violation->message,",
+                    "'recommendation' => \$violation->recommendation," => "'recommendation' => '(padded) ' . \$violation->recommendation,",
+                ],
+                'two lines of every JSON finding move, which on the largest case is past the declaration limit',
+            )->and(self::declare(
+                'case:health|format:json',
+                'a delta declared for a surface whose measured diff is hundreds of lines',
+            )),
+            [new Expectation(FailureClass::DELTA_TOO_LARGE, 'case:health|format:json')],
+            [
+                new Expectation(FailureClass::DELTA_MISMATCH, 'case:health|format:json'),
+                new Expectation(FailureClass::DELTA_OVERREACH, 'case:health|format:json'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:annotations'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:coupling'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:cycle'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:design'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:disabled-rule'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:duplication'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:excluded-path'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:health'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:layers'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:only-rules'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:security'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
             ],
         );
     }
@@ -344,19 +416,31 @@ final class Controls
      * Plants a declared delta for one surface: the index row plus a diff file no
      * measurement produced.
      */
+    /**
+     * One declaration, and only it: the index is replaced, so the step's own
+     * declared surfaces are removed by the same call. That is deliberate — a
+     * control on the declaration mechanism must not also be judged against the
+     * step's declaration — and it is why the delta controls' reports carry
+     * tolerated failures on those surfaces.
+     */
     private static function declare(string $surface, string $reason): Mutation
     {
         $slug = trim((string) preg_replace('~[^A-Za-z0-9]+~', '-', $surface), '-');
         $file = 'declared-delta/' . $slug . '.diff';
 
-        return Mutation::create(
+        // The index is REPLACED, not created: a step that declares a delta of
+        // its own already committed one, and a control's declaration has to be
+        // the only row in it whether or not that is so.
+        return Mutation::replace(
+            ['finding-gate/declared-delta.tsv' => "surface\tfile\treason\n" . $surface . "\t" . $file . "\t" . $reason . "\n"],
+            'a delta declared for ' . $surface,
+        )->and(Mutation::create(
             [
-                'finding-gate/declared-delta.tsv' => "surface\tfile\treason\n" . $surface . "\t" . $file . "\t" . $reason . "\n",
                 'finding-gate/' . $file => "--- candidate\n+++ reference (mapped)\n@@ -1,1 +1,1 @@\n"
                     . "-a line no measurement produced\n+nor did it produce this one\n",
             ],
-            'a delta declared for ' . $surface,
-        );
+            'with a diff no measurement produced',
+        ));
     }
 
     /**

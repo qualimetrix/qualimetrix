@@ -30,13 +30,15 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 ## Design Rules
 
-| Rule                    | ID                     | Minutes |
-| ----------------------- | ---------------------- | ------- |
-| DIT (Inheritance Depth) | `design.inheritance`   | 30      |
-| NOC                     | `design.noc`           | 20      |
-| Type Coverage           | `design.type-coverage` | 15      |
-| Data Class              | `design.data-class`    | 30      |
-| God Class               | `design.god-class`     | 120     |
+| Rule                    | ID                              | Minutes |
+| ----------------------- | ------------------------------- | ------- |
+| DIT (Inheritance Depth) | `design.inheritance`            | 30      |
+| NOC                     | `design.noc`                    | 20      |
+| Parameter Type Coverage | `design.param-type-coverage`    | 15      |
+| Return Type Coverage    | `design.return-type-coverage`   | 15      |
+| Property Type Coverage  | `design.property-type-coverage` | 15      |
+| Data Class              | `design.data-class`             | 30      |
+| God Class               | `design.god-class`              | 120     |
 
 ## Size Rules
 
@@ -93,6 +95,7 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 | --------------------- | ---------------------------------- | ------- |
 | Circular Dependencies | `architecture.circular-dependency` | 120     |
 | Layer Violations      | `architecture.layer-violation`     | 15      |
+| Unassigned Classes    | `architecture.unassigned-class`    | 15      |
 
 ## Annotation Rules
 

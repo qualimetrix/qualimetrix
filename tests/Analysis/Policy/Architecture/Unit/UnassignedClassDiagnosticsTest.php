@@ -27,6 +27,8 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationVali
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -68,16 +70,18 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     }
 
     /**
-     * The whole point of the separate gate: the project that suffers from
-     * vendor edge ends keeps `coverage: ignore`, so evidence collection must
-     * not hang off the coverage mode.
+     * The whole point of the separate gate, and "only the gate" means only the
+     * gate: `coverage: ignore` **and** the neighbouring layer-violation rule
+     * switched off in options. This case used to pass the neighbour enabled,
+     * which is why the coupling below went unnoticed until review.
      */
     #[Test]
     public function itCollectsEvidenceWhenCoverageIsIgnoredAndOnlyTheGateIsOn(): void
     {
         $rule = new LayerVerdicts(
-            new LayerViolationOptions(unassignedClass: UnassignedClassMode::Warn),
+            new LayerViolationOptions(enabled: false),
             $this->processor,
+            new UnassignedClassOptions(UnassignedClassMode::Warn),
         );
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
 
@@ -103,8 +107,9 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     public function itIgnoresDependencyEdgeEndsOutsideTheAnalysedSet(): void
     {
         $rule = new LayerVerdicts(
-            new LayerViolationOptions(unassignedClass: UnassignedClassMode::Warn),
+            new LayerViolationOptions(),
             $this->processor,
+            new UnassignedClassOptions(UnassignedClassMode::Warn),
         );
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
 
@@ -132,8 +137,9 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     public function itEmitsNothingWhenEveryAnalysedDeclarationIsAssigned(): void
     {
         $rule = new LayerVerdicts(
-            new LayerViolationOptions(unassignedClass: UnassignedClassMode::Error),
+            new LayerViolationOptions(),
             $this->processor,
+            new UnassignedClassOptions(UnassignedClassMode::Error),
         );
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
 
@@ -150,8 +156,9 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     public function itEmitsNothingWhenNoDeclarationWasAnalysedAtAll(): void
     {
         $rule = new LayerVerdicts(
-            new LayerViolationOptions(unassignedClass: UnassignedClassMode::Error),
+            new LayerViolationOptions(),
             $this->processor,
+            new UnassignedClassOptions(UnassignedClassMode::Error),
         );
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
 
@@ -164,8 +171,9 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     public function itReportsTheAbsoluteCountAndKeepsTheShareInTheMessageOnly(): void
     {
         $rule = new LayerVerdicts(
-            new LayerViolationOptions(unassignedClass: UnassignedClassMode::Warn),
+            new LayerViolationOptions(),
             $this->processor,
+            new UnassignedClassOptions(UnassignedClassMode::Warn),
         );
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
 
@@ -191,8 +199,9 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     public function itMirrorsTheModeNameInTheReportedSeverity(): void
     {
         $rule = new LayerVerdicts(
-            new LayerViolationOptions(unassignedClass: UnassignedClassMode::Error),
+            new LayerViolationOptions(),
             $this->processor,
+            new UnassignedClassOptions(UnassignedClassMode::Error),
         );
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
 
@@ -208,13 +217,58 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     }
 
     /**
+     * The four combinations of the two gates, in one case, because the
+     * regression they guard against is a *pair* of settings: the walk's entry
+     * condition used to read the layer-violation rule's `enabled` alone, so
+     * `{layer-violation: disabled, unassigned-class: error}` reported nothing
+     * at all. Each gate must reach exactly its own channels.
+     */
+    #[Test]
+    public function eachGateReachesOnlyItsOwnChannels(): void
+    {
+        $architecture = $this->buildArchitecture(CoverageMode::Ignore);
+        $classes = ['App\\Controller\\UserController', 'App\\Unowned\\Lonely'];
+
+        $run = function (bool $layerViolation, UnassignedClassMode $mode) use ($architecture, $classes): array {
+            $verdicts = new LayerVerdicts(
+                new LayerViolationOptions(enabled: $layerViolation),
+                $this->processor,
+                new UnassignedClassOptions($mode),
+            );
+
+            $violations = $verdicts->analyze($this->buildContext($architecture, $this->buildGraph([]), $classes));
+
+            return [
+                'unassigned' => \count($this->unassignedDiagnostics($violations)),
+                'family' => \count(array_filter(
+                    $violations,
+                    static fn(Violation $v): bool => $v->ruleName !== UnassignedClassRule::NAME,
+                )),
+            ];
+        };
+
+        self::assertSame(
+            ['unassigned' => 1, 'family' => 0],
+            $run(false, UnassignedClassMode::Error),
+            'the gate must report on its own while its neighbour is switched off in options',
+        );
+        self::assertSame(
+            ['unassigned' => 0, 'family' => 0],
+            $run(false, UnassignedClassMode::Ignore),
+            'both gates off must report nothing at all',
+        );
+        self::assertSame(0, $run(true, UnassignedClassMode::Ignore)['unassigned']);
+        self::assertSame(1, $run(true, UnassignedClassMode::Error)['unassigned']);
+    }
+
+    /**
      * The only magnitude channel of this rule, and the only one a project may
      * accept into a baseline — both are deliberate, so both are pinned.
      */
     #[Test]
     public function itDeclaresTheChannelAsAMagnitudeThatIsNotAConfigurationError(): void
     {
-        $declaration = LayerViolationRule::channelDeclarations()['architecture.unassigned-class#architecture.unassigned-class']
+        $declaration = UnassignedClassRule::channelDeclarations()['architecture.unassigned-class#architecture.unassigned-class']
             ?? null;
 
         self::assertNotNull($declaration);
@@ -287,7 +341,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     {
         return array_values(array_filter(
             $violations,
-            static fn(Violation $v): bool => $v->ruleName === LayerViolationRule::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
+            static fn(Violation $v): bool => $v->ruleName === UnassignedClassRule::NAME,
         ));
     }
 

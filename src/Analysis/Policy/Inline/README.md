@@ -29,8 +29,8 @@ Inline/
 │   ├── DirectiveRejection.php
 │   ├── InlineDirectiveOptions.php
 │   ├── InlineDirectivePolicy.php   # per-run directives + usage accounting
-│   ├── InlineDirectiveRule.php     # owns annotation.unused-directive; arms usage reporting
-│   └── InlineDirectiveValidator.php # owns the three annotation.* directive errors
+│   ├── InlineDirectiveValidator.php # owns the three annotation.* directive errors
+│   └── UnusedDirectiveRule.php     # owns annotation.unused-directive; arms usage reporting
 ├── Suppression/
 │   └── SuppressionFilter.php   # internal annotation matching
 └── ThresholdOverrideExtractionResult.php
@@ -74,7 +74,7 @@ validator names `annotation.directive` as its producer, so those three are
 registered, addressed, excluded and switched off exactly as they were while the
 rule declared them, and it answers to that rule's `enabled` option.
 
-The fourth, `annotation.unused-directive`, stays with `InlineDirectiveRule`
+The fourth, `annotation.unused-directive`, stays with `UnusedDirectiveRule`
 because it is ordinary debt: a suppression that
 addressed something real and matched nothing this run. It defaults below
 `Warning`, and its accounting is deliberately narrow — only directives naming

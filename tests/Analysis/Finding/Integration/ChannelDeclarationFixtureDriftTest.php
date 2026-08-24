@@ -292,7 +292,6 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         }
 
         $names[] = LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME;
-        $names[] = LayerViolationRule::UNASSIGNED_CLASS_DIAGNOSTIC_NAME;
         $names[] = LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
         $names[] = LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
         $names[] = LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;

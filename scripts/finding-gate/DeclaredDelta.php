@@ -24,8 +24,10 @@ namespace QmxFindingGate;
  * record (`delta-overreach`).
  *
  * The `reason` column is the one thing a run cannot produce, so a re-derivation
- * carries the existing reasons over by surface and writes `?` for a new row.
- * Loading refuses `?`: an undeclared reason is not a declaration.
+ * carries an existing reason over — and only while the diff it was written
+ * against is unchanged. A surface that is new, or whose diff moved, gets `?`,
+ * and loading refuses `?`: an undeclared reason is not a declaration, and a
+ * sentence inherited by a diff it was never written for is worse than none.
  */
 final class DeclaredDelta
 {
@@ -166,7 +168,7 @@ final class DeclaredDelta
         foreach ($diffs as $surface => $diff) {
             $file = self::DIRECTORY . '/' . self::slug($surface) . '.diff';
             Fs::write($this->root . '/' . $file, $diff);
-            $rows[] = [$surface, $file, $this->entries[$surface]['reason'] ?? '?'];
+            $rows[] = [$surface, $file, $this->reasonFor($surface, $diff)];
             $written[] = $file;
         }
 
@@ -174,6 +176,28 @@ final class DeclaredDelta
         $written[] = self::INDEX;
 
         return $written;
+    }
+
+    /**
+     * The sentence already written against this surface — but only while the
+     * diff it explains is the same diff.
+     *
+     * Carry-over used to be keyed on the surface alone, so a later step that
+     * changed `case:design|format:json` structurally for an entirely different
+     * reason inherited this step's sentence and nothing noticed: loading refuses
+     * `?`, not a sentence that has stopped being true. The reason is the one
+     * thing a run cannot measure, which is exactly why it must not be allowed to
+     * outlive the measurement it was written for.
+     */
+    private function reasonFor(string $surface, string $diff): string
+    {
+        $existing = $this->entries[$surface] ?? null;
+
+        if ($existing === null || $existing['diff'] !== $diff) {
+            return '?';
+        }
+
+        return $existing['reason'];
     }
 
     private static function slug(string $surfaceKey): string

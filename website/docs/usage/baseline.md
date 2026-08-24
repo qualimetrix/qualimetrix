@@ -155,14 +155,13 @@ Suppression "complexity" addresses no channel. Addressable names closest to it: 
 
 For most rules the rule name and its one channel are the same string, so the distinction never surfaces. It surfaces for the rules below, which report through more than one channel — their bare rule name is **not** a valid `@qmx-ignore` argument:
 
-| Rule                    | Channels                                                                                     |
-| ----------------------- | -------------------------------------------------------------------------------------------- |
-| `complexity.cyclomatic` | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class`                              |
-| `complexity.cognitive`  | `complexity.cognitive.callable`, `complexity.cognitive.class`                                |
-| `complexity.npath`      | `complexity.npath.callable`, `complexity.npath.class`                                        |
-| `coupling.cbo`          | `coupling.cbo.class`, `coupling.cbo.namespace`                                               |
-| `coupling.instability`  | `coupling.instability.class`, `coupling.instability.namespace`                               |
-| `design.type-coverage`  | `design.type-coverage.param`, `design.type-coverage.property`, `design.type-coverage.return` |
+| Rule                    | Channels                                                        |
+| ----------------------- | --------------------------------------------------------------- |
+| `complexity.cyclomatic` | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class` |
+| `complexity.cognitive`  | `complexity.cognitive.callable`, `complexity.cognitive.class`   |
+| `complexity.npath`      | `complexity.npath.callable`, `complexity.npath.class`           |
+| `coupling.cbo`          | `coupling.cbo.class`, `coupling.cbo.namespace`                  |
+| `coupling.instability`  | `coupling.instability.class`, `coupling.instability.namespace`  |
 
 Suppress one channel with its exact name, or every channel of the rule with the wildcard, e.g. `@qmx-ignore complexity.cyclomatic.*`.
 

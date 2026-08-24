@@ -10,6 +10,13 @@
 # Blank lines and '#' comments are ignored. Regenerate by hand only after a
 # deliberate decision about the published order — never to make a red run go
 # green.
+#
+# Two positions here are decisions rather than consequences. The three
+# type-coverage rules are named one by one in DesignConfigurator so that
+# param/return/property is the published order and not the alphabetical one a
+# glob would give. And architecture.unassigned-class sits after the five
+# declaration verdicts because keys group by producer: the verdicts are the
+# layer-violation producer's, and the unassigned-class rule is its own.
 code-smell.boolean-argument
 code-smell.constructor-overinjection
 code-smell.count-in-loop
@@ -42,9 +49,9 @@ design.data-class
 design.god-class
 design.inheritance
 design.noc
-design.type-coverage.param
-design.type-coverage.return
-design.type-coverage.property
+design.param-type-coverage
+design.return-type-coverage
+design.property-type-coverage
 maintainability.index
 security.command-injection
 security.hardcoded-credentials
@@ -55,12 +62,12 @@ size.class-count
 size.method-count
 size.property-count
 architecture.layer-violation
-architecture.unassigned-class
 architecture.coverage
 architecture.unreachable-layer
 architecture.potential-shadow
 architecture.empty-template
 architecture.pending-layer-matched
+architecture.unassigned-class
 architecture.circular-dependency
 duplication.code-duplication
 annotation.unresolved-directive

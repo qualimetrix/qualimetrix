@@ -155,14 +155,13 @@ Suppression "complexity" addresses no channel. Addressable names closest to it: 
 
 У большинства правил имя правила и его единственный канал совпадают, поэтому различие незаметно. Оно становится заметным для правил ниже, которые сообщают через несколько каналов — голое имя правила для них **не** является допустимым аргументом `@qmx-ignore`:
 
-| Правило                 | Каналы                                                                                       |
-| ----------------------- | -------------------------------------------------------------------------------------------- |
-| `complexity.cyclomatic` | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class`                              |
-| `complexity.cognitive`  | `complexity.cognitive.callable`, `complexity.cognitive.class`                                |
-| `complexity.npath`      | `complexity.npath.callable`, `complexity.npath.class`                                        |
-| `coupling.cbo`          | `coupling.cbo.class`, `coupling.cbo.namespace`                                               |
-| `coupling.instability`  | `coupling.instability.class`, `coupling.instability.namespace`                               |
-| `design.type-coverage`  | `design.type-coverage.param`, `design.type-coverage.property`, `design.type-coverage.return` |
+| Правило                 | Каналы                                                          |
+| ----------------------- | --------------------------------------------------------------- |
+| `complexity.cyclomatic` | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class` |
+| `complexity.cognitive`  | `complexity.cognitive.callable`, `complexity.cognitive.class`   |
+| `complexity.npath`      | `complexity.npath.callable`, `complexity.npath.class`           |
+| `coupling.cbo`          | `coupling.cbo.class`, `coupling.cbo.namespace`                  |
+| `coupling.instability`  | `coupling.instability.class`, `coupling.instability.namespace`  |
 
 Подавляй один канал по точному имени или все каналы правила через wildcard, например `@qmx-ignore complexity.cyclomatic.*`.
 

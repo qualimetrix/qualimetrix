@@ -13,7 +13,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  * Constants follow the naming pattern: CATEGORY_METRIC (e.g., COMPLEXITY_CCN).
  * Values match the metric key strings used in MetricBag.
  *
- * @qmx-threshold coupling.cbo 63 -- Canonical names are an intentional Measurement contract hub; current raw CBO 62 gets one-edge headroom.
+ * @qmx-threshold coupling.cbo 65 -- Canonical names are an intentional Measurement contract hub; current raw CBO 64 gets one-edge headroom. It rose from 62 when design.type-coverage became three rules, each naming its own dimension's metrics.
  */
 final class MetricName
 {
