@@ -17,8 +17,7 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
  * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope}.
  *
  * The residual consequence is harmless: a category value happening to equal
- * the first segment of a rule name (and `computed.health` disagreeing with
- * `Maintainability`) is now a correlation nothing reads.
+ * the first segment of a rule name is now a correlation nothing reads.
  */
 enum RuleCategory: string
 {
@@ -35,4 +34,13 @@ enum RuleCategory: string
 
     /** Source annotations themselves — what a `@qmx-*` directive says about the configuration. */
     case Annotation = 'annotation';
+
+    /**
+     * The six built-in health dimensions, each of which is its own producer
+     * since the computed-metric family stopped publishing under one name.
+     */
+    case Health = 'health';
+
+    /** User-defined computed metrics, which share the one open producer. */
+    case Computed = 'computed';
 }

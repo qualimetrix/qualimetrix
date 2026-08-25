@@ -1,5 +1,13 @@
-# Every runtime channel the single `computed.health` producer carries today, as
-# a (producer, code) pair. Ш5b retired the `producer#code` key form and
+# Every runtime channel of the computed-metric family, as a (producer, code)
+# pair.
+#
+# UPDATED AFTER Ш5d LANDED. The pairs below are the post-split state, which is
+# the point of the file: the sweep was taken to decide what the split would
+# produce, and leaving it at the pre-split `computed.health` for all seven would
+# have made it a record of a question rather than of an answer. The producer
+# column is now `ComputedMetricChannelFamily::producerFor()`'s answer for each
+# name, cross-checked against the generated
+# enumeration-runtime-channels.tsv (see CROSS-CHECK). Ш5b retired the `producer#code` key form and
 # `FindingChannel` now throws on `#`, so this table names the two fields
 # separately rather than spelling a key no run can emit — the first redaction of
 # this file used the retired form and claimed a run could emit it, which is a
@@ -47,10 +55,10 @@
 #
 # CROSS-CHECK (third, independent confirmation): the tracked generator was re-run —
 #   php scripts/generate-rename-enumeration.php --runtime-channels
-#   diff'd byte-for-byte against the pre-run copy of enumeration-runtime-channels.tsv
-#   (2026-08-25) — output was IDENTICAL, so the script's own derivation (reflection over
-#   ComputedMetricDefaults::getDefaults() + glob over finding-gate/cases/*/qmx.yaml) landed
-#   on the same 6+1 rows found by channels A and B above, independently walked by hand.
+#   diff'd against enumeration-runtime-channels.tsv (re-run 2026-08-26, after Ш5d) — the
+#   script's own derivation (reflection over ComputedMetricDefaults::getDefaults() + glob
+#   over finding-gate/cases/*/qmx.yaml) lands on the same 6+1 channels and the same seven
+#   producer answers found by channels A and B above, independently walked by hand.
 #   No `--preset=*` YAML and the project's own root qmx.yaml declare a `computed_metrics`
 #   section at all (grep -rl computed_metrics --include="*.yaml" . minus finding-gate*),
 #   so presets and self-dogfooding config are not a third source of runtime keys.
@@ -59,10 +67,10 @@
 # keys any real-world user could ever produce — see CHANNEL B's blind spot above — it is
 # the full set this repository's evidence can currently name.
 producer	code	family	source
-computed.health	health.complexity	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Complexity
-computed.health	health.cohesion	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Cohesion
-computed.health	health.coupling	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Coupling
-computed.health	health.typing	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Typing
-computed.health	health.maintainability	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Maintainability
-computed.health	health.overall	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Overall
-computed.health	computed.branch_load	corpus-observed	finding-gate/cases/health/qmx.yaml
+health.complexity	health.complexity	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Complexity
+health.cohesion	health.cohesion	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Cohesion
+health.coupling	health.coupling	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Coupling
+health.typing	health.typing	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Typing
+health.maintainability	health.maintainability	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Maintainability
+health.overall	health.overall	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Overall
+computed	computed.branch_load	corpus-observed	finding-gate/cases/health/qmx.yaml

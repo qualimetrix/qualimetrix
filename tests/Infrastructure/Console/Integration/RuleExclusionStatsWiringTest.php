@@ -119,7 +119,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
             '--format' => 'text',
             '--no-progress' => true,
             '--show-suppressed' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
         ], $exitCode, $diagnostics);
 
         // The only finding this fixture could produce is excluded — the
@@ -173,7 +173,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
             '--config' => $configPath,
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
         ], $exitCode, $diagnostics);
 
         self::assertSame(0, $exitCode, $display);

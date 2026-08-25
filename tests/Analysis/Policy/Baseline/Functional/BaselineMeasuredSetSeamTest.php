@@ -197,7 +197,7 @@ final class BaselineMeasuredSetSeamTest extends TestCase
         // Three distinct spellings, because the output path is a hash of the
         // selector: the producing rule, the channel itself, and the group above
         // it. The pair form used to be the third and is gone.
-        $selectors = ['computed.health', self::COMPUTED_CHANNEL, 'health.*'];
+        $selectors = ['computed', self::COMPUTED_CHANNEL, 'health.*'];
 
         foreach ([
             BaselineGenerateCommand::class,

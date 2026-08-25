@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -21,9 +22,17 @@ use ReflectionClass;
  * remembered to look at — see `docs/internal/plans/sarif-channel-descriptions.md`,
  * package P1.
  *
- * The number of registered rules is asserted, not assumed, so a rule quietly
+ * The sweep has two halves, because a producer is no longer the same thing as
+ * a rule class. The class half checks that each class declares its own
+ * `DOCS_PAGE` and that the page carries that rule's anchor. The classless half
+ * checks the same anchor for the producers of the computed-metric family that
+ * have no class — without it the split would have quietly removed six names
+ * from the guarantee while every assertion still passed.
+ *
+ * The number of rule **classes** is asserted, not assumed, so a rule quietly
  * dropped from registration cannot shrink the swept set and pass by vacuous
- * agreement — obtained via `bin/qmx rules --no-ansi` ("45 rules available").
+ * agreement. It is 45 and is a count of `RuleRegistryInterface::getClasses()`;
+ * `bin/qmx rules` now reports 51, because it counts producers.
  */
 #[CoversClass(RuleDocsPageReader::class)]
 final class RuleDocsPageCoverageTest extends TestCase
@@ -84,6 +93,35 @@ final class RuleDocsPageCoverageTest extends TestCase
                     $ruleClass,
                     $docsPage,
                     $ruleName,
+                ),
+            );
+        }
+    }
+
+    /**
+     * The classless half: every producer of the computed-metric family carries
+     * the same anchor on the page the family declares, so that a reader who
+     * meets `health.coupling` in a report finds it named on the page a report
+     * links to.
+     */
+    #[Test]
+    public function everyClasslessProducerOfTheComputedFamilyCarriesItsAnchor(): void
+    {
+        $path = self::docsRoot() . '/' . ComputedMetricChannelFamily::DOCS_PAGE;
+        self::assertFileExists($path);
+
+        $contents = file_get_contents($path);
+        self::assertIsString($contents, $path);
+
+        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producerRuleName) {
+            self::assertStringContainsString(
+                \sprintf('**Rule ID:** `%s`', $producerRuleName),
+                $contents,
+                \sprintf(
+                    '%s does not carry the "Rule ID: %s" anchor, so that producer\'s name appears in reports'
+                    . ' and nowhere in the documentation those reports point at.',
+                    ComputedMetricChannelFamily::DOCS_PAGE,
+                    $producerRuleName,
                 ),
             );
         }

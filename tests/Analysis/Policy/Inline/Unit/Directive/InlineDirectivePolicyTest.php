@@ -302,7 +302,6 @@ final class InlineDirectivePolicyTest extends TestCase
                 [$channel->code => ChannelDeclaration::occurrence(SymbolLevel::Class_)],
                 ['code-smell.goto' => [$channel->code]],
                 ['code-smell.goto' => false],
-                'computed.health',
                 new ResolvedComputedMetricDefinitions([]),
             ),
             new RuleSelector(new InMemoryRuleChannelRegistry()),

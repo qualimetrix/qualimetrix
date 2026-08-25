@@ -5,38 +5,33 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Rule;
 
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
-use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
-
-use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 
 /**
- * Adapter that extracts known rule names from registered rule classes.
+ * Hands the configuration pipeline the set of names a `rules:` key may address.
  *
- * Bridges the Infrastructure layer's RuleRegistry to the Configuration
- * layer's KnownRuleNamesProviderInterface, enabling rule name validation
- * in configuration stages (ConfigFileStage, PresetStage).
+ * The list arrives finished, from
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}.
+ * It used to be derived here by reflecting over rule classes, which was a
+ * second enumeration of "every registered rule" and stopped being complete the
+ * moment a producer existed without a class: the six built-in health dimensions
+ * are addressable names that no `NAME` constant declares. Injecting the same
+ * list the channel universe is keyed by leaves one authority instead of two.
  *
- * Uses reflection on NAME constants — does not instantiate rules.
+ * The pipeline cannot ask the universe itself: {@see \Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator}
+ * runs inside the stage that reads `qmx.yaml`, and the universe's run-time half
+ * is resolved from that very document.
  */
 final readonly class KnownRuleNamesAdapter implements KnownRuleNamesProviderInterface
 {
     /**
-     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
+     * @param list<string> $ruleNames every addressable producer name
      */
     public function __construct(
-        private array $ruleClasses,
+        private array $ruleNames,
     ) {}
 
     public function getKnownRuleNames(): array
     {
-        $names = [];
-
-        foreach ($this->ruleClasses as $ruleClass) {
-            $names[] = RuleNameReader::read($ruleClass);
-        }
-
-        return $names;
+        return $this->ruleNames;
     }
 }

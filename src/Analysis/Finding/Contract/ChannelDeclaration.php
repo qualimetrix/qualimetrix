@@ -17,7 +17,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
  * **Shape itself is not here.** It is a property of the producer, declared
  * once via {@see \Qualimetrix\Analysis\Finding\Rule\RuleInterface::shape()} or
  * {@see ConfigurationValidatorInterface::shape()}, not repeated per channel —
- * see {@see ChannelShape}'s own docblock for why (`computed.health`: one
+ * see {@see ChannelShape}'s own docblock for why (the computed-metric family: one
  * producer, one shape, six per-channel directions). What this class carries
  * instead is `$direction` alone: non-null for every channel of a `magnitude`
  * producer, null for every channel of an `occurrence` one. Registry assembly

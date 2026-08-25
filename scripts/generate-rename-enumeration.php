@@ -1005,21 +1005,21 @@ function describeMismatch(string $onDisk, string $fresh, string $path, string $c
  *    this file narrows it explicitly to the corpus the finding gate runs
  *    (`finding-gate/cases/*​/qmx.yaml`) and says so in the `origin` column.
  *
- * The producer half of the key is read from
- * {@see ComputedMetricChannelFamily::PRODUCER_RULE_NAME} rather than spelled
- * out, because that constant is what the universe compares against.
+ * The `producer` column is measured, not decided: Ш5d has landed, so it is
+ * {@see ComputedMetricChannelFamily::producerFor()}'s answer — the same arbiter
+ * the universe and the emission use. The rename it records is history and lives
+ * in enumeration-renames-executed.tsv; what this file states is the standing
+ * property that a built-in dimension is its own producer while every
+ * user-defined metric shares the open one.
  *
- * The `new` column is the Р5 decision applied mechanically: the producer name
- * is taken from the channel, so every key becomes `<code>#<code>`. Both halves
- * of the decision are held fail-closed — a built-in name that is not
- * `health.*`, or an observed name that is not `computed.*`, is a name Р5 says
+ * Both shapes are held fail-closed — a built-in name that is not `health.*`, or
+ * an observed name that is not `computed.*`, is a name the vocabulary says
  * nothing about, and this refuses to invent an answer for it.
  *
- * @return list<array{old: string, origin: string, source: string, new: string, step: string}>
+ * @return list<array{channel: string, origin: string, source: string, producer: string, step: string}>
  */
 function runtimeChannelRows(string $root): array
 {
-    $producer = ComputedMetricChannelFamily::PRODUCER_RULE_NAME;
     $defaultsFile = relativeToRoot((string) (new ReflectionClass(ComputedMetricDefaults::class))->getFileName(), $root);
 
     $builtin = [];
@@ -1047,11 +1047,11 @@ function runtimeChannelRows(string $root): array
 
     foreach (array_keys($builtin) as $name) {
         $rows[$name] = [
-            'old' => $producer . '#' . $name,
+            'channel' => $name,
             'origin' => 'builtin',
             'source' => $defaultsFile,
-            'new' => $name . '#' . $name,
-            'step' => "\u{0428}5",
+            'producer' => ComputedMetricChannelFamily::producerFor($name),
+            'step' => "\u{0428}5d",
         ];
     }
 
@@ -1071,16 +1071,16 @@ function runtimeChannelRows(string $root): array
         }
 
         $rows[$name] = [
-            'old' => $producer . '#' . $name,
+            'channel' => $name,
             'origin' => 'corpus-observed',
             'source' => implode(',', $sources),
-            'new' => $name . '#' . $name,
-            'step' => "\u{0428}5",
+            'producer' => ComputedMetricChannelFamily::producerFor($name),
+            'step' => "\u{0428}5d",
         ];
     }
 
     $rows = array_values($rows);
-    usort($rows, static fn(array $a, array $b): int => [$a['origin'], $a['old']] <=> [$b['origin'], $b['old']]);
+    usort($rows, static fn(array $a, array $b): int => [$a['origin'], $a['channel']] <=> [$b['origin'], $b['channel']]);
 
     return $rows;
 }
@@ -1141,7 +1141,7 @@ function relativeToRoot(string $path, string $root): string
 }
 
 /**
- * @param list<array{old: string, origin: string, source: string, new: string, step: string}> $rows
+ * @param list<array{channel: string, origin: string, source: string, producer: string, step: string}> $rows
  */
 function renderRuntimeChannelsTsv(array $rows): string
 {
@@ -1149,11 +1149,12 @@ function renderRuntimeChannelsTsv(array $rows): string
     $observedCount = count($rows) - $builtinCount;
 
     $header = <<<HEADER
-# RUNTIME channels: the `computed.health#*` half of the channel universe, which
+# RUNTIME channels: the computed-metric half of the channel universe, which
 # `ChannelDeclarationRegistryInterface::staticDeclarations()` does not contain
-# and enumeration-renames.tsv therefore does not list. Its `computed.health`
-# producer row carries a `|`-separated decision, which is a record of a SPLIT and
-# not a map row — `RenameMaps` knows neither `|` nor a wildcard.
+# and enumeration-renames.tsv therefore does not list. The split that created
+# these producers is recorded once, as a retired `|`-separated row in
+# enumeration-renames-executed.tsv; it is a record of a SPLIT and not a map row
+# — `RenameMaps` knows neither `|` nor a wildcard.
 #
 # Do not hand-edit. Regenerate with:
 #   php scripts/generate-rename-enumeration.php --runtime-channels
@@ -1170,15 +1171,13 @@ function renderRuntimeChannelsTsv(array $rows): string
 #   computed metric is open-ended by construction (it is a name in somebody's
 #   own qmx.yaml), so it is not enumerable — only observable, and only over the
 #   corpus this run read. That narrowing is the `origin` column's whole point.
-# - the producer half of every key comes from
-#   `ComputedMetricChannelFamily::PRODUCER_RULE_NAME`.
-#
-# `new` IS A DECISION, applied mechanically. Р5 takes the producer name from the
-# channel, so `computed.health#health.X` becomes `health.X#health.X` and
-# `computed.health#computed.<name>` becomes `computed.<name>#computed.<name>`.
-# A built-in name that is not `health.*`, or an observed name that is not
-# `computed.*`, fails the generator instead of getting an invented target: Р5
-# names those two shapes and no others.
+# - `producer` is MEASURED, through `ComputedMetricChannelFamily::producerFor()`
+#   — the same arbiter the channel universe and the finding emission ask. Since
+#   Ш5d a built-in dimension is its own producer and every user-defined metric
+#   shares the open producer `computed`; this column is where that stops being
+#   prose. A built-in name that is not `health.*`, or an observed name that is
+#   not `computed.*`, fails the generator instead of getting an invented
+#   answer: the vocabulary names those two shapes and no others.
 #
 # WHAT THIS DOES NOT SEE
 # - a computed metric defined in a qmx.yaml outside the gate corpus (a user's
@@ -1186,13 +1185,13 @@ function renderRuntimeChannelsTsv(array $rows): string
 # - whether a channel listed here actually FIRES. A case may disable a built-in
 #   dimension (`enabled: false`) or threshold it out of range; what fires is
 #   measured by the gate's coverage check, against each case's `channels` claim.
-old	origin	source	new	step
+channel	origin	source	producer	step
 HEADER;
 
     $lines = [];
 
     foreach ($rows as $row) {
-        $lines[] = implode("\t", [$row['old'], $row['origin'], $row['source'], $row['new'], $row['step']]);
+        $lines[] = implode("\t", [$row['channel'], $row['origin'], $row['source'], $row['producer'], $row['step']]);
     }
 
     return $header . "\n" . ($lines === [] ? '' : implode("\n", $lines) . "\n");

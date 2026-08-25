@@ -31,6 +31,40 @@
 #   - amphp/parallel worker bootstrap re-resolution of rule classes in a
 #     forked process (WorkerBootstrap) was not read in detail — only the
 #     defensive comment referencing it in RuleValidatorMapFactory was seen.
+#
+# ANSWERED BY Ш5d (2026-08-26). Six of the family's seven producers now have no
+# class at all, so every fact above needed a source that does not require one.
+# Each is now declared on
+# src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetricChannelFamily.php
+# and read by ChannelDeclarationCompilerPass::collectClasslessProducers() at the
+# same point it reads a class's constants:
+#   NAME                        -> PRODUCER_RULE_NAMES (and HEALTH_PRODUCER_RULE_NAMES)
+#   NAME_direct_constant_access -> gone: RuleInputValidator now reads
+#                                  ChannelUniverseInterface::ruleNames(), not $class::NAME
+#   channelDeclarations         -> CHANNEL_DECLARATIONS, explicitly []
+#   SUPPORTS_THRESHOLD_OVERRIDE -> SUPPORTS_THRESHOLD_OVERRIDE, explicitly false
+#   DOCS_PAGE                   -> DOCS_PAGE
+#   REMEDIATION_MINUTES         -> REMEDIATION_MINUTES
+#   SHAPE                       -> SHAPE
+#   cli_aliases                 -> CLI_ALIASES, explicitly []
+#   getOptionsClass             -> read off the one producer of the family that IS a class
+#                                  (ChannelDeclarationCompilerPass::openProducerOptionsClass())
+#   getCategory                 -> categoryOf(): RuleCategory::Health / RuleCategory::Computed
+#   getDescription              -> descriptionOf()
+# The three silent defaults (SUPPORTS_THRESHOLD_OVERRIDE, channelDeclarations,
+# cli_aliases) are the three declared EXPLICITLY above: for a producer with no
+# class, a forgotten fact does not fail the build, it quietly impoverishes
+# behaviour.
+#
+# The five FileSetInspectionParticipant / ConfigurationValidator facts remain
+# irrelevant to this family, re-checked after the split: no participant and no
+# validator names any of the seven producers.
+#
+# The four facts a producer without a class cannot carry as reflection targets
+# reach RuleExecution as a Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration
+# (name, hostRuleName, optionsClass, category, description, aliases), which is
+# what makes allRules()/activeRules()/totalRuleCount() enumerate 51 producers
+# over 45 rule classes.
 fact	declared_at	read_by	consumers	missing_behaviour	channel_of_discovery
 NAME	src/Analysis/Evidence/Complexity/ComplexityRule.php:40	src/Analysis/Finding/Contract/Rule/RuleNameReader.php:36	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:127;src/Infrastructure/DependencyInjection/CompilerPass/RuleOptionsCompilerPass.php:62;src/Infrastructure/DependencyInjection/CompilerPass/RuleRegistryCompilerPass.php:70;src/Infrastructure/Rule/RuleRegistry.php:53;src/Infrastructure/Rule/KnownRuleNamesAdapter.php:37;src/Analysis/Finding/RuleConfiguration/RuleOptionsParserFactory.php:28;src/Analysis/Policy/Inline/Contract/RuleValidatorMapFactory.php:52;src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php:131	throws:src/Analysis/Finding/Contract/Rule/RuleNameReader.php:44	1,2,3
 NAME_direct_constant_access	src/Analysis/Evidence/Complexity/ComplexityRule.php:40	src/Infrastructure/Console/RuleInputValidator.php:54	src/Infrastructure/Console/RuleInputValidator.php:64	throws:src/Infrastructure/Console/RuleInputValidator.php:54	2,3

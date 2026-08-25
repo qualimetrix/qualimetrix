@@ -7,7 +7,17 @@ Qualimetrix вычисляет 6 оценок здоровья для каждо
 определений заменяется атомарно, поэтому конфигурация предыдущего запуска не
 может протечь в следующий.
 
-**Rule ID:** `computed.health`
+**Rule ID:** `computed` — пользовательские вычисляемые метрики.
+
+Каждое встроенное измерение — самостоятельный производитель и публикует свои
+находки под собственным rule ID:
+
+- **Rule ID:** `health.complexity`
+- **Rule ID:** `health.cohesion`
+- **Rule ID:** `health.coupling`
+- **Rule ID:** `health.typing`
+- **Rule ID:** `health.maintainability`
+- **Rule ID:** `health.overall`
 
 ---
 

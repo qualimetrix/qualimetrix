@@ -28,7 +28,7 @@ use LogicException;
  * derivation outright —
  *
  * - `cohesion.lcom` documents at `rules/cohesion.md`;
- * - `computed.health` documents at `reference/health-scores.md`, entirely
+ * - the computed-metric family documents at `reference/health-scores.md`, entirely
  *   outside `rules/` — no category value and no prefix rewrite can produce
  *   that path.
  *

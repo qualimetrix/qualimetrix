@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
@@ -281,7 +280,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
             return null;
         });
 
-        return new ChannelUniverse([], [], [], ComputedMetricRule::NAME, $catalog);
+        return new ChannelUniverse([], [], [], $catalog);
     }
 
     private static function definition(): ComputedMetricDefinition

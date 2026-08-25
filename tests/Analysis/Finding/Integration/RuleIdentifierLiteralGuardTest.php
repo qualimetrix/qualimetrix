@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -51,6 +52,13 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 final class RuleIdentifierLiteralGuardTest extends TestCase
 {
     /**
+     * The owner of every producer the computed-metric family declares without
+     * a class — the capability that declares them, computed the same way
+     * {@see capabilityRootFromClass()} computes a rule class's.
+     */
+    private const string COMPUTED_METRICS_CAPABILITY_ROOT = 'Analysis/Evidence/ComputedMetrics';
+
+    /**
      * Files legitimately allowed to hold a rule-name or channel-code literal
      * outside the capability that owns it, each with why it cannot be
      * derived instead. An entry with no argument is indistinguishable from
@@ -60,6 +68,14 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * @var array<string, string>
      */
     private const array ALLOWED_FILES = [
+        'src/Analysis/Finding/Contract/Rule/RuleCategory.php' =>
+            'Not a copy of a producer name — a coincidence between two vocabularies. The enum\'s backing'
+            . ' values are the display groups `qmx rules --group` accepts, and one of them ("computed")'
+            . ' happens to be spelled like the open producer of the computed-metric family, because both'
+            . ' name the same idea from different sides. A category is deliberately not addressable (see'
+            . ' the enum\'s own docblock), so nothing resolves this literal as a rule name, and deriving'
+            . ' the group label from a producer name would make the name space\'s spelling a behavioural'
+            . ' contract again — the exact thing that docblock records having removed.',
         'src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php' =>
             'Declared, audited hand-kept copy of each rule\'s ThresholdParser::parse()'
             . ' key spelling. Its own docblock argues why it cannot be derived at'
@@ -103,11 +119,26 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         \assert($ruleExecution instanceof RuleExecutionInterface);
         $registeredNames = array_map(static fn($metadata) => $metadata->name, $ruleExecution->allRules());
 
+        // Two halves, because a registered producer is no longer the same
+        // thing as a rule class. A name that is neither a class nor a declared
+        // classless producer means the two enumerations of "every registered
+        // rule" have drifted; a classless producer that names no capability
+        // owner would leave its literal unguarded everywhere.
+        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producerRuleName) {
+            $ownerByRuleName[$producerRuleName] ??= self::COMPUTED_METRICS_CAPABILITY_ROOT;
+        }
+
         self::assertSame(
             [],
             array_values(array_diff($registeredNames, array_keys($ownerByRuleName))),
-            'RuleExecutionInterface::allRules() names a rule that RuleRegistryInterface::getClasses() does not'
-            . ' — the two enumerations of "every registered rule" disagree.',
+            'RuleExecutionInterface::allRules() names a producer that is neither a registered rule class nor a'
+            . ' declared classless producer of the computed-metric family.',
+        );
+
+        self::assertSame(
+            [],
+            array_values(array_diff(array_keys($ownerByRuleName), $registeredNames)),
+            'A rule class or a declared classless producer is missing from RuleExecutionInterface::allRules().',
         );
 
         $universe = $container->get(ChannelUniverseInterface::class);
@@ -125,8 +156,6 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             );
             $ownerByLiteral[$channel->code] ??= $ownerByRuleName[$producer];
         }
-
-        self::assertNotEmpty($ownerByLiteral);
 
         $root = self::projectRoot();
         $findings = [];
@@ -168,7 +197,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     {
         $container = (new ContainerFactory())->create();
 
-        $knownNames = array_keys(self::ownerByRuleName($container));
+        $knownNames = [...array_keys(self::ownerByRuleName($container)), ...ComputedMetricChannelFamily::PRODUCER_RULE_NAMES];
 
         $universe = $container->get(ChannelUniverseInterface::class);
         \assert($universe instanceof ChannelUniverseInterface);

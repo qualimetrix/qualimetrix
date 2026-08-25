@@ -7,9 +7,12 @@ namespace Qualimetrix\Tests\Infrastructure\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
+
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -47,10 +50,23 @@ final class RulesCommandWiringTest extends TestCase
         self::assertSame(0, $tester->getStatusCode());
 
         $display = $tester->getDisplay();
-        self::assertStringContainsString(\sprintf('%d rules available', \count($ruleClasses)), $display);
 
-        foreach ($ruleClasses as $ruleClass) {
-            self::assertStringContainsString(RuleNameReader::read($ruleClass), $display);
+        // The listing is producer-oriented, and a producer is not a class: the
+        // computed-metric family runs in one class and publishes under seven
+        // names. Counting classes here would have quietly stopped covering six
+        // of them.
+        $execution = $container->get(RuleExecutionInterface::class);
+        \assert($execution instanceof RuleExecutionInterface);
+        $producerNames = array_map(static fn(RuleMetadata $rule): string => $rule->name, $execution->allRules());
+
+        self::assertSame(
+            \count($ruleClasses) + \count(ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES),
+            \count($producerNames),
+        );
+        self::assertStringContainsString(\sprintf('%d rules available', \count($producerNames)), $display);
+
+        foreach ($producerNames as $producerName) {
+            self::assertStringContainsString($producerName, $display);
         }
     }
 

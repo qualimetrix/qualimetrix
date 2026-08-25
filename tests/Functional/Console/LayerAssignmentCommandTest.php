@@ -504,7 +504,7 @@ final class LayerAssignmentCommandTest extends TestCase
     #[Test]
     public function validatesDynamicComputedSelectorsFromYamlBeforeResolvingAssignment(): void
     {
-        foreach (['computed.health', 'health.complexity', 'health.complexity'] as $selector) {
+        foreach (['computed', 'health.complexity', 'health.*'] as $selector) {
             $configPath = $this->writeConfigWithComputedSelector($selector);
             $tester = $this->newTester();
             $exit = $tester->execute([

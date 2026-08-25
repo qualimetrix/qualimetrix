@@ -26,7 +26,7 @@ final class SarifRuleCollector
     public const INFORMATION_URI = 'https://github.com/qualimetrix/qualimetrix';
 
     /**
-     * Site root, not `/rules/`: `computed.health` documents outside `rules/`
+     * Site root, not `/rules/`: the computed-metric family documents outside `rules/`
      * entirely (`reference/health-scores`), which no `/rules/`-rooted base
      * could ever address. See `docs/internal/plans/sarif-channel-descriptions.md`,
      * the "helpUri" section.

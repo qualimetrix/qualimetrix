@@ -52,16 +52,11 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
      * @param array<string, bool> $thresholdOverrideSupportByRule every registered rule name => its
      *                                                            declared answer, so that the key set doubles
      *                                                            as the set of addressable rule names
-     * @param string $computedMetricRuleName the family discriminator for the run-time half — every
-     *                                       `computed.*` / `health.*` channel is emitted under this one rule
-     *                                       name. Injected rather than imported so this class needs no
-     *                                       dependency edge onto a capability internal just to know one string
      */
     public function __construct(
         private array $staticDeclarations,
         private array $staticChannelKeysByProducer,
         private array $thresholdOverrideSupportByRule,
-        private string $computedMetricRuleName,
         private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
     ) {
         $producerByCode = [];
@@ -118,12 +113,10 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
             $this->staticChannelKeysByProducer[$producerRuleName] ?? [],
         );
 
-        if ($producerRuleName !== $this->computedMetricRuleName) {
-            return $channels;
-        }
-
         foreach ($this->definitionCatalog->all() as $definition) {
-            $channels[] = new FindingChannel($definition->name);
+            if ($definition->producerRuleName() === $producerRuleName) {
+                $channels[] = new FindingChannel($definition->name);
+            }
         }
 
         return $channels;
@@ -173,7 +166,7 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
     public function producerOf(string $code): ?string
     {
         $static = $this->staticProducerByCode[$code] ?? null;
-        $runtime = $this->definitionCatalog->find($code) === null ? null : $this->computedMetricRuleName;
+        $runtime = $this->definitionCatalog->find($code)?->producerRuleName();
 
         if ($static !== null && $runtime !== null) {
             throw new LogicException(\sprintf(
@@ -224,7 +217,6 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
             $this->staticDeclarations,
             $this->staticChannelKeysByProducer,
             $this->thresholdOverrideSupportByRule,
-            $this->computedMetricRuleName,
             $definitions,
         );
     }
@@ -240,9 +232,17 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
      * `qmx.yaml`, which is why this is a configuration refusal and not an
      * assertion about our own code.
      *
-     * Reachable today, not hypothetically: `computed_metrics: { computed.health:
-     * ... }` is accepted by the resolver (the `computed.` prefix is exactly what
-     * it requires) and names the rule every computed channel is produced under.
+     * Reachable today, not hypothetically: a `computed_metrics:` key spelled
+     * like a registered rule passes the resolver, which only checks the
+     * `computed.` prefix.
+     *
+     * **The producer half is the definition's own answer, never a list of
+     * exceptions.** Since the family split, the six built-in dimensions are
+     * themselves keys of `$thresholdOverrideSupportByRule`, and the catalog
+     * hands the same six names back on every run — a membership test alone
+     * would refuse every `bin/qmx check` before it read a file. A definition
+     * that names its own producer is the producer of its own channel, which is
+     * the one case where two claims are one thing.
      */
     private function assertRuntimeNamesUnclaimed(ComputedMetricDefinitionCatalogInterface $definitions): void
     {
@@ -253,7 +253,8 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
                     'a channel declared by rule "%s"',
                     $this->staticProducerByCode[$name],
                 ),
-                isset($this->thresholdOverrideSupportByRule[$name]) => 'a registered rule',
+                isset($this->thresholdOverrideSupportByRule[$name])
+                    && $definition->producerRuleName() !== $name => 'a registered rule',
                 default => null,
             };
 

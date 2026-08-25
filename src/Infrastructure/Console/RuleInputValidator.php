@@ -50,10 +50,12 @@ final readonly class RuleInputValidator
     ): RuleChannelRegistryInterface {
         $this->validateWorkers($input);
         $channels = $this->ruleChannelSnapshotFactory->snapshot($definitions);
-        $producers = array_map(
-            static fn(string $class): string => $class::NAME,
-            $this->ruleRegistry->getClasses(),
-        );
+
+        // The universe's own name set, not a second one read off rule classes:
+        // six producers of the computed-metric family have no class to read a
+        // NAME off, so a class-derived list would refuse selectors and option
+        // owners the run itself accepts.
+        $producers = $channels->ruleNames();
 
         // The run's own universe, not the container's: a computed-metric
         // channel declares its levels only once configuration has resolved, and

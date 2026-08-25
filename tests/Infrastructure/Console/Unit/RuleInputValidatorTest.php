@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
@@ -61,7 +62,7 @@ final class RuleInputValidatorTest extends TestCase
             ),
         ]);
 
-        foreach (['computed.health', 'health.complexity', 'health.complexity'] as $selector) {
+        foreach (['health.complexity', 'health.*'] as $selector) {
             $configuration = new FindingConfiguration(
                 new RuleOptionsDocument([]),
                 new FindingCliOverrides([]),
@@ -71,7 +72,7 @@ final class RuleInputValidatorTest extends TestCase
             $snapshot = $validator->validate(new ArrayInput([], new InputDefinition()), $configuration, $definitions);
             self::assertSame(
                 ['health.complexity'],
-                array_map(static fn($channel): string => $channel->code, $snapshot->channelsProducedBy(ComputedMetricRule::NAME)),
+                array_map(static fn($channel): string => $channel->code, $snapshot->channelsProducedBy('health.complexity')),
             );
         }
     }
@@ -102,7 +103,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $accepted = new FindingConfiguration(
             new RuleOptionsDocument([
-                'computed.health' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
+                'health.complexity' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -111,7 +112,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $rejected = new FindingConfiguration(
             new RuleOptionsDocument([
-                'computed.health' => ['exclude_namespace_channels' => ['health' => ['App\\Legacy']]],
+                'health.complexity' => ['exclude_namespace_channels' => ['health' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -137,7 +138,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $accepted = new FindingConfiguration(
             new RuleOptionsDocument([
-                'computed.health' => [
+                'health.complexity' => [
                     'exclude_namespace_channels' => ['health.complexity:namespace' => ['App\\Legacy']],
                 ],
             ]),
@@ -148,7 +149,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $rejected = new FindingConfiguration(
             new RuleOptionsDocument([
-                'computed.health' => ['exclude_namespace_channels' => ['health.complexity:file' => ['App\\Legacy']]],
+                'health.complexity' => ['exclude_namespace_channels' => ['health.complexity:file' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -255,7 +256,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $configuration = new FindingConfiguration(
             new RuleOptionsDocument([
-                'computed.health' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
+                'health.complexity' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -310,7 +311,7 @@ final class RuleInputValidatorTest extends TestCase
     {
         $rules = self::createStub(RuleRegistryInterface::class);
         $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
-        $static = new ChannelUniverse([], [], [], ComputedMetricRule::NAME, new ResolvedComputedMetricDefinitions([]));
+        $static = self::universe($rules);
         $selector = new RuleSelector($static);
         $validator = new RuleInputValidator($rules, $selector, new FindingConfigurationResolver(), $static);
         $disabled = ['health.complexity:class'];
@@ -326,7 +327,7 @@ final class RuleInputValidatorTest extends TestCase
         );
         $validator->replaceChannels($snapshot);
 
-        self::assertFalse($selector->isProducerEnabled(ComputedMetricRule::NAME, [], $disabled));
+        self::assertFalse($selector->isProducerEnabled('health.complexity', [], $disabled));
     }
 
     private function validatorForComputedHealth(): RuleInputValidator
@@ -356,7 +357,7 @@ final class RuleInputValidatorTest extends TestCase
     {
         return new FindingConfiguration(
             new RuleOptionsDocument([
-                'computed.health' => ['exclude_namespace_channels' => [$key => ['App\\Legacy']]],
+                'health.complexity' => ['exclude_namespace_channels' => [$key => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -365,7 +366,7 @@ final class RuleInputValidatorTest extends TestCase
 
     private function validator(RuleRegistryInterface $rules): RuleInputValidator
     {
-        $static = new ChannelUniverse([], [], [], ComputedMetricRule::NAME, new ResolvedComputedMetricDefinitions([]));
+        $static = self::universe($rules);
 
         return new RuleInputValidator(
             $rules,
@@ -373,5 +374,22 @@ final class RuleInputValidatorTest extends TestCase
             new FindingConfigurationResolver(),
             $static,
         );
+    }
+
+    /**
+     * The addressable names are the universe's, not the registry's: since the
+     * computed-metric family split, six producers have no class to read a NAME
+     * off, so a universe built without them refuses selectors the run accepts.
+     * Assembled here the way ChannelDeclarationCompilerPass assembles it.
+     */
+    private static function universe(RuleRegistryInterface $rules): ChannelUniverse
+    {
+        $names = array_map(static fn(string $class): string => $class::NAME, $rules->getClasses());
+
+        if (\in_array(ComputedMetricRule::NAME, $names, true)) {
+            $names = [...$names, ...ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES];
+        }
+
+        return new ChannelUniverse([], [], array_fill_keys($names, false), new ResolvedComputedMetricDefinitions([]));
     }
 }

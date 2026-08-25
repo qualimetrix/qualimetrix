@@ -11,13 +11,17 @@ use Qualimetrix\Analysis\Finding\ChannelPresentationView;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -48,9 +52,16 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * services and likewise hands the container a finished map.
  *
  * A rule that declares no channels still contributes its name and its
- * threshold-override answer: names exist independently of channels, and
- * `computed.health` — whose channels are entirely run-time — would otherwise
- * be absent from the universe as a rule.
+ * threshold-override answer: names exist independently of channels, and the
+ * computed-metric family — whose channels are entirely run-time — would
+ * otherwise be absent from the universe as a producer.
+ *
+ * A second pass adds the producers that have no class at all
+ * ({@see collectClasslessProducers()}). It fills the same four maps from
+ * {@see ComputedMetricChannelFamily} and hands
+ * the finding executor their declarations, so
+ * that "every registered rule" means the same set of names wherever it is
+ * asked.
  *
  * Each rule's `channelDeclarations()` already returns full channel keys
  * (the channel's own name, per {@see ChannelDeclarationReader}), so this pass
@@ -74,9 +85,10 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * even inspected. Both checks read `$shapeByRule`, built alongside
  * `$minutesByRule` in the same first pass over every rule.
  *
- * The capability-owned channel family contract supplies the computed-metric
- * producer name as a plain string constructor argument. The pass never imports
- * the internal rule, and `Infrastructure\Rule` remains independent of
+ * The capability-owned channel family contract supplies the names and the
+ * facts of the classless producers. The pass never imports the internal rule
+ * or its Options class — the latter is read off the one producer of the family
+ * that does have a class — and `Infrastructure\Rule` remains independent of
  * capability internals.
  *
  * **Accepted, not fixed: this file's own `RuleShapeReader::read()` call
@@ -105,6 +117,9 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 
     private const string VALIDATOR_INTERFACE = 'Qualimetrix\\Analysis\\Finding\\Contract\\ConfigurationValidatorInterface';
 
+    /** Named by literal, not imported: it is a Finding internal, as in {@see RuleCompilerPass}. */
+    private const string RULE_EXECUTION = 'Qualimetrix\\Analysis\\Finding\\RuleExecution';
+
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition(ChannelUniverse::class)) {
@@ -114,13 +129,70 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         $ruleClasses = $this->taggedClasses($container, RuleRegistryCompilerPass::TAG, self::RULE_INTERFACE);
         $validatorClasses = $this->taggedClasses($container, ConfigurationValidatorCompilerPass::TAG, self::VALIDATOR_INTERFACE);
 
-        /** @var array<string, bool> $thresholdOverrideSupport */
+        [$thresholdOverrideSupport, $docsPageByRule, $minutesByRule, $shapeByRule] = $this->readProducerFacts($ruleClasses);
+
+        $classlessProducers = $this->collectClasslessProducers(
+            $ruleClasses,
+            $thresholdOverrideSupport,
+            $docsPageByRule,
+            $minutesByRule,
+            $shapeByRule,
+        );
+
+        /** @var array<string, ChannelDeclaration> $declarations */
+        $declarations = [];
+        /** @var array<string, list<string>> $channelKeysByProducer */
+        $channelKeysByProducer = [];
+
+        $this->collectChannels(
+            $container,
+            $ruleClasses,
+            $validatorClasses,
+            $declarations,
+            $channelKeysByProducer,
+            $minutesByRule,
+            $shapeByRule,
+        );
+
+        $container->getDefinition(ChannelUniverse::class)
+            ->setArgument('$staticDeclarations', $declarations)
+            ->setArgument('$staticChannelKeysByProducer', $channelKeysByProducer)
+            ->setArgument('$thresholdOverrideSupportByRule', $thresholdOverrideSupport);
+
+        if ($container->hasDefinition(KnownRuleNamesAdapter::class)) {
+            $container->getDefinition(KnownRuleNamesAdapter::class)
+                ->setArgument('$ruleNames', array_keys($thresholdOverrideSupport));
+        }
+
+        if ($container->hasDefinition(self::RULE_EXECUTION)) {
+            $container->getDefinition(self::RULE_EXECUTION)
+                ->setArgument('$classlessProducers', $classlessProducers);
+        }
+
+        if ($container->hasDefinition(ChannelPresentationView::class)) {
+            $container->getDefinition(ChannelPresentationView::class)
+                ->setArgument('$docsPageByRule', $docsPageByRule);
+        }
+
+        if ($container->hasDefinition(RemediationTimeRegistry::class)) {
+            $container->getDefinition(RemediationTimeRegistry::class)
+                ->setArgument('$minutesByRule', $minutesByRule);
+        }
+    }
+
+    /**
+     * The first pass: the four facts every rule class declares about itself,
+     * gathered before any validator can borrow its producer's name.
+     *
+     * @param array<string, class-string> $ruleClasses
+     *
+     * @return array{array<string, bool>, array<string, string>, array<string, int>, array<string, ChannelShape>}
+     */
+    private function readProducerFacts(array $ruleClasses): array
+    {
         $thresholdOverrideSupport = [];
-        /** @var array<string, string> $docsPageByRule */
         $docsPageByRule = [];
-        /** @var array<string, int> $minutesByRule */
         $minutesByRule = [];
-        /** @var array<string, ChannelShape> $shapeByRule */
         $shapeByRule = [];
 
         foreach ($ruleClasses as $class) {
@@ -131,14 +203,34 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
             $shapeByRule[$producerRuleName] = RuleShapeReader::read($class);
         }
 
-        /** @var array<string, ChannelDeclaration> $declarations */
-        $declarations = [];
-        /** @var array<string, list<string>> $channelKeysByProducer */
-        $channelKeysByProducer = [];
+        return [$thresholdOverrideSupport, $docsPageByRule, $minutesByRule, $shapeByRule];
+    }
+
+    /**
+     * The ordered walk over both producer kinds, in container definition order
+     * — see {@see collectValidatorChannels()} for why the order is published
+     * behaviour rather than an implementation detail.
+     *
+     * @param array<string, class-string> $ruleClasses
+     * @param array<string, class-string> $validatorClasses
+     * @param array<string, ChannelDeclaration> $declarations
+     * @param array<string, list<string>> $channelKeysByProducer
+     * @param array<string, int> $minutesByRule
+     * @param array<string, ChannelShape> $shapeByRule
+     */
+    private function collectChannels(
+        ContainerBuilder $container,
+        array $ruleClasses,
+        array $validatorClasses,
+        array &$declarations,
+        array &$channelKeysByProducer,
+        array &$minutesByRule,
+        array $shapeByRule,
+    ): void {
         /** @var array<string, string> $producerByCode */
         $producerByCode = [];
 
-        foreach ($container->getDefinitions() as $id => $definition) {
+        foreach (array_keys($container->getDefinitions()) as $id) {
             if (isset($ruleClasses[$id])) {
                 $this->collectRuleChannels(
                     $ruleClasses[$id],
@@ -163,22 +255,109 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                 );
             }
         }
+    }
 
-        $container->getDefinition(ChannelUniverse::class)
-            ->setArgument('$staticDeclarations', $declarations)
-            ->setArgument('$staticChannelKeysByProducer', $channelKeysByProducer)
-            ->setArgument('$thresholdOverrideSupportByRule', $thresholdOverrideSupport)
-            ->setArgument('$computedMetricRuleName', ComputedMetricChannelFamily::PRODUCER_RULE_NAME);
+    /**
+     * The producers the computed-metric capability owns without a rule class,
+     * and the four class-keyed maps they have to appear in.
+     *
+     * Missing any one of the four is a different kind of wrong, and only the
+     * first is invisible: `$thresholdOverrideSupport`'s keys **are** the set of
+     * addressable rule names ({@see \Qualimetrix\Infrastructure\Rule\ChannelUniverse::ruleNames()}),
+     * so a producer absent from it is absent from selection, from option-owner
+     * validation and from `@qmx-threshold` diagnostics while every other map
+     * looks complete. The other three end a run: an unmapped producer throws
+     * out of {@see \Qualimetrix\Analysis\Finding\ChannelPresentationView::presentationFor()}
+     * and {@see RemediationTimeRegistry::getBaseMinutes()}, and an unmapped
+     * shape out of this pass's own validator check.
+     *
+     * The seven names, and each fact about them, come from
+     * {@see ComputedMetricChannelFamily} — the capability declares them, this
+     * pass only reads them, exactly as it reads a rule class's constants.
+     *
+     * @param array<string, class-string> $ruleClasses
+     * @param array<string, bool> $thresholdOverrideSupport
+     * @param array<string, string> $docsPageByRule
+     * @param array<string, int> $minutesByRule
+     * @param array<string, ChannelShape> $shapeByRule
+     *
+     * @return list<ProducerDeclaration>
+     */
+    private function collectClasslessProducers(
+        array $ruleClasses,
+        array &$thresholdOverrideSupport,
+        array &$docsPageByRule,
+        array &$minutesByRule,
+        array &$shapeByRule,
+    ): array {
+        $optionsClass = $this->openProducerOptionsClass($ruleClasses);
+        $declarations = [];
 
-        if ($container->hasDefinition(ChannelPresentationView::class)) {
-            $container->getDefinition(ChannelPresentationView::class)
-                ->setArgument('$docsPageByRule', $docsPageByRule);
+        foreach (ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES as $producerRuleName) {
+            if (isset($thresholdOverrideSupport[$producerRuleName])) {
+                throw new LogicException(\sprintf(
+                    'Computed-metric producer "%s" is also a registered rule class. Exactly one name of the'
+                    . ' family, "%s", may be a class; a name that is both would be read twice with no rule'
+                    . ' about which reading wins.',
+                    $producerRuleName,
+                    ComputedMetricChannelFamily::OPEN_PRODUCER_RULE_NAME,
+                ));
+            }
+
+            if ($optionsClass === null) {
+                // The family's one class is not in this container — a fixture
+                // container in a unit test. Its classless producers exist only
+                // alongside it, so there is nothing to declare and nothing to
+                // silently lose.
+                continue;
+            }
+
+            $thresholdOverrideSupport[$producerRuleName] = ComputedMetricChannelFamily::SUPPORTS_THRESHOLD_OVERRIDE;
+            $docsPageByRule[$producerRuleName] = ComputedMetricChannelFamily::DOCS_PAGE;
+            $minutesByRule[$producerRuleName] = ComputedMetricChannelFamily::REMEDIATION_MINUTES;
+            $shapeByRule[$producerRuleName] = ComputedMetricChannelFamily::SHAPE;
+
+            $declarations[] = new ProducerDeclaration(
+                name: $producerRuleName,
+                hostRuleName: ComputedMetricChannelFamily::OPEN_PRODUCER_RULE_NAME,
+                optionsClass: $optionsClass,
+                category: ComputedMetricChannelFamily::categoryOf($producerRuleName),
+                description: ComputedMetricChannelFamily::descriptionOf($producerRuleName),
+                aliases: ComputedMetricChannelFamily::CLI_ALIASES,
+            );
         }
 
-        if ($container->hasDefinition(RemediationTimeRegistry::class)) {
-            $container->getDefinition(RemediationTimeRegistry::class)
-                ->setArgument('$minutesByRule', $minutesByRule);
+        return $declarations;
+    }
+
+    /**
+     * The Options class the whole family is configured through, asked of the
+     * one producer that has a class.
+     *
+     * Not spelled here: the six classless producers share the open producer's
+     * options by construction (one class runs all seven), so reading it off
+     * that class keeps a single authority and adds no import of a capability
+     * internal to this pass.
+     *
+     * @param array<string, class-string> $ruleClasses
+     *
+     * @return class-string<RuleOptionsInterface>|null null when the family is not registered at all
+     */
+    private function openProducerOptionsClass(array $ruleClasses): ?string
+    {
+        foreach ($ruleClasses as $class) {
+            if (RuleNameReader::read($class) !== ComputedMetricChannelFamily::OPEN_PRODUCER_RULE_NAME) {
+                continue;
+            }
+
+            /** @var class-string<RuleDefinitionInterface> $class */
+            $optionsClass = $class::getOptionsClass();
+
+            /** @var class-string<RuleOptionsInterface> $optionsClass */
+            return $optionsClass;
         }
+
+        return null;
     }
 
     /**

@@ -357,7 +357,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $loggerFactory->method('create')->willReturn(new NullLogger());
         $architecture = self::createStub(ArchitecturePolicyConfiguratorInterface::class);
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
-        $staticChannels = new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+        $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
         $ruleSelector = new RuleSelector($staticChannels);
         $ruleInputValidator = new RuleInputValidator(
             $ruleRegistry,
@@ -387,7 +387,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
 
     private static function ruleInputValidator(RuleRegistryInterface $rules): RuleInputValidator
     {
-        $staticChannels = new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+        $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
 
         return new RuleInputValidator(
             $rules,

@@ -135,7 +135,6 @@ final class DirectiveAddressabilityTest extends TestCase
                 'complexity.cyclomatic' => true,
                 'coupling.cbo' => true,
             ],
-            'computed.health',
             new ResolvedComputedMetricDefinitions([]),
         ));
     }

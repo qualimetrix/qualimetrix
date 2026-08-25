@@ -41,11 +41,11 @@ the universe validates and resolves. `ChannelDeclaration` carries `direction`
 `ChannelShape` (ADR 0031) is a producer property, not a channel one:
 `RuleInterface::shape()` and `ConfigurationValidatorInterface::shape()` answer
 it once per producer, read by a plain static call the same way
-`getOptionsClass()` already is. `computed.health` is why direction stayed on
-the channel instead of moving with shape — its per-dimension direction comes
-from each `ComputedMetricDefinition`'s own `inverted` flag at run time, so one
-producer answers both `higher` and `lower` depending on the channel, while its
-shape is uniformly `magnitude`. `ChannelDeclarationCompilerPass` checks two
+`getOptionsClass()` already is. The computed-metric family is why direction
+stayed on the channel instead of moving with shape — its per-dimension direction
+comes from each `ComputedMetricDefinition`'s own `inverted` flag at run time, so
+one producer answers both `higher` and `lower` depending on the channel, while
+its shape is uniformly `magnitude`. `ChannelDeclarationCompilerPass` checks two
 things registry assembly alone can: that a producer's declared shape agrees
 with whether its own channels carry a direction, and that a validator agrees
 with the rule whose name it borrows.

@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
@@ -211,8 +213,11 @@ final class ChannelUniverseCoverageTest extends TestCase
         );
     }
 
+    /**
+     * The class half: one addressable name per registered rule class.
+     */
     #[Test]
-    public function everyRegisteredRuleIsAddressableIncludingOnesThatDeclareNoChannel(): void
+    public function everyRegisteredRuleClassIsAddressableIncludingOnesThatDeclareNoChannel(): void
     {
         $universe = self::universe();
 
@@ -224,7 +229,75 @@ final class ChannelUniverseCoverageTest extends TestCase
             $universe->hasRule(ComputedMetricRule::NAME),
             'The computed-metric producer declares no static channel at all, and must still be an addressable rule.',
         );
-        self::assertCount(\count(self::ruleClasses()), $universe->ruleNames());
+    }
+
+    /**
+     * The classless half, checked against the tracked fixture rather than
+     * against the family constant the registry is assembled from — a guard fed
+     * by the registry's own source would agree with any set, the empty one
+     * included.
+     */
+    #[Test]
+    public function everyClasslessProducerOfTheComputedFamilyIsAddressable(): void
+    {
+        $universe = self::universe();
+        $expected = self::computedProducersFromFixture();
+
+        foreach ($expected as $producerRuleName) {
+            self::assertTrue(
+                $universe->hasRule($producerRuleName),
+                \sprintf('Producer "%s" is not addressable, so no selector, option key or directive can name it.', $producerRuleName),
+            );
+        }
+
+        $classNames = array_map(RuleNameReader::read(...), self::ruleClasses());
+
+        self::assertSame(
+            array_values(array_diff($expected, $classNames)),
+            array_values(array_diff($universe->ruleNames(), $classNames)),
+            'The addressable names that no rule class declares must be exactly the family\'s classless producers.',
+        );
+    }
+
+    /**
+     * The two halves add up, so a name cannot leave one and enter the other
+     * unnoticed.
+     */
+    #[Test]
+    public function theAddressableNamesAreTheRuleClassesPlusTheClasslessProducers(): void
+    {
+        $classNames = array_map(RuleNameReader::read(...), self::ruleClasses());
+        $classless = array_values(array_diff(self::computedProducersFromFixture(), $classNames));
+
+        self::assertCount(\count($classNames) + \count($classless), self::universe()->ruleNames());
+    }
+
+    /**
+     * The family constant and the dimension enum are two independent spellings
+     * of the same closed set; comparing them is why the constant is written out
+     * rather than mapped from the enum.
+     */
+    #[Test]
+    public function theFamilysHealthProducersAreExactlyTheDeclaredHealthDimensions(): void
+    {
+        self::assertSame(
+            array_map(static fn(HealthDimension $dimension): string => $dimension->value, HealthDimension::all()),
+            ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES,
+        );
+
+        self::assertSame(self::computedProducersFromFixture(), ComputedMetricChannelFamily::PRODUCER_RULE_NAMES);
+
+        self::assertSame(
+            ComputedMetricChannelFamily::OPEN_PRODUCER_RULE_NAME,
+            ComputedMetricChannelFamily::PRODUCER_RULE_NAMES[\count(ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES)] ?? null,
+            'The open producer must close the list: the fixture and the enum both order the six first.',
+        );
+    }
+
+    /** @return list<string> */
+    private static function computedProducersFromFixture(): array
+    {
+        return self::linesOfFixture('computed-producers.txt');
     }
 
     /**
@@ -345,14 +418,27 @@ final class ChannelUniverseCoverageTest extends TestCase
     /** @return list<string> */
     private static function codesFromFixture(): array
     {
-        $path = \dirname(__DIR__) . '/Fixtures/Channels/declared.txt';
+        return array_map(
+            static fn(string $key): string => new FindingChannel($key)->code,
+            self::linesOfFixture('declared.txt'),
+        );
+    }
+
+    /**
+     * The first whitespace-delimited word of every non-comment line.
+     *
+     * @return list<string>
+     */
+    private static function linesOfFixture(string $name): array
+    {
+        $path = \dirname(__DIR__) . '/Fixtures/Channels/' . $name;
         $contents = file_get_contents($path);
 
         if ($contents === false) {
             throw new RuntimeException(\sprintf('Could not read fixture file %s.', $path));
         }
 
-        $codes = [];
+        $values = [];
         foreach (explode("\n", $contents) as $line) {
             $line = trim($line);
 
@@ -362,10 +448,10 @@ final class ChannelUniverseCoverageTest extends TestCase
 
             $key = strtok($line, ' ');
             \assert(\is_string($key));
-            $codes[] = new FindingChannel($key)->code;
+            $values[] = $key;
         }
 
-        return $codes;
+        return $values;
     }
 
     /** @return list<class-string> */

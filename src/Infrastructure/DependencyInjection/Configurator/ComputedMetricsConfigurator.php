@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -88,9 +91,39 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
         ]);
     }
 
+    /**
+     * One rule class, seven producers — so seven Options objects, each built by
+     * the same factory the options compiler pass would have used.
+     *
+     * That pass walks tagged rule **services** and therefore cannot see a
+     * producer without one. Registering the six here is not only about the
+     * `enabled` switch: `RuleOptionsFactory::create()` is where a producer's
+     * `exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths`
+     * keys are lifted into the exclusion providers, so a producer whose options
+     * are never built passes validation and then excludes nothing.
+     */
     private function registerRule(ContainerBuilder $container): void
     {
         $rule = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricRule';
+        $options = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricRuleOptions';
+        $producerOptions = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricProducerOptions';
+
+        $byProducer = [];
+
+        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producerRuleName) {
+            $id = RuleOptionsCompilerPass::optionsServiceId($producerRuleName, $options);
+
+            if (!$container->hasDefinition($id)) {
+                $container->register($id, $options)
+                    ->setFactory([new Reference(RuleOptionsFactory::class), 'create'])
+                    ->setArguments([$producerRuleName, $options]);
+            }
+
+            $byProducer[$producerRuleName] = new Reference($id);
+        }
+
+        $container->register($producerOptions)->setArguments(['$byProducer' => $byProducer]);
+
         $container->register($rule, $rule)
             ->setAutoconfigured(true)
             ->setAutowired(false)

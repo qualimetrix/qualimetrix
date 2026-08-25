@@ -8,10 +8,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricProducerOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -226,7 +228,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame('health.custom', $findings[0]->code);
-        self::assertSame('computed.health', $findings[0]->ruleName);
+        self::assertSame('computed', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -456,11 +458,18 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn($definitions);
 
+        $byProducer = [];
+
+        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producer) {
+            $byProducer[$producer] = new ComputedMetricRuleOptions(enabled: true);
+        }
+
         return new ComputedMetricRule(
             new ComputedMetricRuleOptions(enabled: true),
             $catalog,
             new ComputedMetricFindingBuilder(),
             self::createStub(ProfilerInterface::class),
+            new ComputedMetricProducerOptions($byProducer),
         );
     }
 

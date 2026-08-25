@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
@@ -128,16 +129,34 @@ final class ChannelUniverseTest extends TestCase
         );
     }
 
+    /**
+     * A built-in dimension is its own producer; a user-defined metric belongs
+     * to the open one. Both directions in one case, so it cannot pass by
+     * routing everything to a single name.
+     */
     #[Test]
-    public function itAddsRuntimeComputedMetricChannelsToTheirProducer(): void
+    public function itAddsRuntimeComputedMetricChannelsToTheirOwnProducer(): void
     {
-        $this->definitions = [$this->definition('health.complexity', inverted: true)];
+        $this->definitions = [
+            $this->definition('health.complexity', inverted: true),
+            $this->definition('computed.branch_load', inverted: false),
+        ];
 
-        $channels = $this->universe()->channelsProducedBy(ComputedMetricRule::NAME);
+        $universe = $this->universe();
 
         self::assertSame(
             ['health.complexity'],
-            array_map(static fn(FindingChannel $channel): string => $channel->code, $channels),
+            array_map(
+                static fn(FindingChannel $channel): string => $channel->code,
+                $universe->channelsProducedBy('health.complexity'),
+            ),
+        );
+        self::assertSame(
+            ['computed.branch_load'],
+            array_map(
+                static fn(FindingChannel $channel): string => $channel->code,
+                $universe->channelsProducedBy(ComputedMetricRule::NAME),
+            ),
         );
     }
 
@@ -165,7 +184,7 @@ final class ChannelUniverseTest extends TestCase
 
         $universe = $this->universe();
 
-        self::assertSame(ComputedMetricRule::NAME, $universe->producerOf('health.cohesion'));
+        self::assertSame('health.cohesion', $universe->producerOf('health.cohesion'));
         self::assertTrue($universe->hasChannel('health.cohesion'));
         self::assertFalse($universe->hasChannel('health.removed'));
     }
@@ -344,14 +363,35 @@ final class ChannelUniverseTest extends TestCase
     #[Test]
     public function itRefusesAComputedMetricNamedAfterARegisteredRule(): void
     {
-        $universe = $this->universe(thresholdSupport: [ComputedMetricRule::NAME => false]);
+        $universe = $this->universe(thresholdSupport: ['computed.taken' => false]);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Computed metric "computed.health" is named after a registered rule');
+        $this->expectExceptionMessage('Computed metric "computed.taken" is named after a registered rule');
 
         $universe->snapshot(new ResolvedComputedMetricDefinitions([
-            $this->definition(ComputedMetricRule::NAME, false),
+            $this->definition('computed.taken', false),
         ]));
+    }
+
+    /**
+     * The six built-in dimensions are addressable rule names AND the names of
+     * the definitions they publish, so a membership test alone would refuse
+     * every run before it read a file. Only a name whose producer is somebody
+     * else is a collision.
+     */
+    #[Test]
+    public function itAcceptsABuiltInDimensionThatIsAlsoItsOwnProducersName(): void
+    {
+        $universe = $this->universe(
+            thresholdSupport: array_fill_keys(ComputedMetricChannelFamily::PRODUCER_RULE_NAMES, false),
+        );
+
+        $snapshot = $universe->snapshot(new ResolvedComputedMetricDefinitions(array_map(
+            fn(string $name): ComputedMetricDefinition => $this->definition($name, false),
+            ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES,
+        )));
+
+        self::assertSame('health.cohesion', $snapshot->producerOf('health.cohesion'));
     }
 
     #[Test]
@@ -397,7 +437,6 @@ final class ChannelUniverseTest extends TestCase
             $declarations,
             $channelsByProducer,
             $thresholdSupport,
-            ComputedMetricRule::NAME,
             $this->catalog(),
         );
     }

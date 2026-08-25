@@ -21,26 +21,28 @@ use Qualimetrix\Core\Symbol\SymbolType;
 
 final class ComputedMetricRule extends AbstractRule
 {
-    public const string NAME = ComputedMetricChannelFamily::PRODUCER_RULE_NAME;
-    public const string DOCS_PAGE = 'reference/health-scores.md';
-
-    public const int REMEDIATION_MINUTES = 15;
+    public const string NAME = ComputedMetricChannelFamily::OPEN_PRODUCER_RULE_NAME;
 
     /**
-     * Uniform across every `computed.*` / `health.*` dimension (Р3 of the
-     * rule-vocabulary plan): a computed metric always reports a real measured
-     * value. Its per-channel {@see \Qualimetrix\Core\Observation\WorseDirection}
-     * still varies — it comes from each definition's own `inverted` flag,
-     * resolved at run time — which is exactly why shape and direction are two
-     * separate facts rather than one.
+     * Every one of the four facts below is the family's, not this class's: six
+     * of the seven producers have no class to declare them on, so declaring
+     * them here as literals would be one of two spellings of the same answer.
+     * The constants stay because a rule class is read by reflection for them.
      */
-    public const ChannelShape SHAPE = ChannelShape::Magnitude;
+    public const string DOCS_PAGE = ComputedMetricChannelFamily::DOCS_PAGE;
+
+    public const int REMEDIATION_MINUTES = ComputedMetricChannelFamily::REMEDIATION_MINUTES;
+
+    public const bool SUPPORTS_THRESHOLD_OVERRIDE = ComputedMetricChannelFamily::SUPPORTS_THRESHOLD_OVERRIDE;
+
+    public const ChannelShape SHAPE = ComputedMetricChannelFamily::SHAPE;
 
     public function __construct(
         ComputedMetricRuleOptions $options,
         private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,
         private readonly ComputedMetricFindingBuilder $findingBuilder,
         private readonly ProfilerInterface $profiler,
+        private readonly ComputedMetricProducerOptions $producerOptions,
     ) {
         parent::__construct($options);
     }
@@ -52,12 +54,12 @@ final class ComputedMetricRule extends AbstractRule
 
     public function getDescription(): string
     {
-        return 'Checks computed health metrics against thresholds';
+        return ComputedMetricChannelFamily::descriptionOf(self::NAME);
     }
 
     public function getCategory(): RuleCategory
     {
-        return RuleCategory::Maintainability;
+        return ComputedMetricChannelFamily::categoryOf(self::NAME);
     }
 
     /**
@@ -73,21 +75,26 @@ final class ComputedMetricRule extends AbstractRule
      */
     public function analyze(AnalysisContext $context): array
     {
-        if (!$this->options instanceof ComputedMetricRuleOptions || !$this->options->isEnabled()) {
-            return [];
-        }
-
         $findings = [];
         $profiler = $this->profiler;
 
         foreach ($this->definitionCatalog->all() as $definition) {
+            // One class runs seven producers, so `enabled` is asked of the
+            // producer this definition belongs to. Asking once before the loop
+            // would make `rules: { health.cohesion: { enabled: false } }` mean
+            // either all seven or none.
+            if (!$this->producerOptions->isEnabledFor($definition->name)) {
+                continue;
+            }
+
             // Skip definitions without thresholds
             if ($definition->warningThreshold === null && $definition->errorThreshold === null) {
                 continue;
             }
 
-            $spanName = 'rule.' . self::NAME . '.' . $definition->name;
-            $profiler->start($spanName, 'rule.' . self::NAME);
+            $producer = $definition->producerRuleName();
+            $spanName = 'rule.' . $producer . '.' . $definition->name;
+            $profiler->start($spanName, 'rule.' . $producer);
 
             foreach ($definition->levels as $level) {
                 $this->checkLevel($context, $definition, $level, $findings);
@@ -118,7 +125,14 @@ final class ComputedMetricRule extends AbstractRule
                 continue;
             }
 
-            $finding = $this->findingBuilder->build($definition, (float) $value, $subject, $symbolPath, $location, $this->getName());
+            $finding = $this->findingBuilder->build(
+                $definition,
+                (float) $value,
+                $subject,
+                $symbolPath,
+                $location,
+                $definition->producerRuleName(),
+            );
             if ($finding !== null) {
                 $findings[] = $finding;
             }

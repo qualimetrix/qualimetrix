@@ -229,7 +229,7 @@ final class TestPipelineBuilder
     private function resolveInlineDirectivePolicy(): InlineDirectivePolicyInterface
     {
         return $this->inlineDirectivePolicy ?? new InlineDirectivePolicy(
-            new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([])),
+            new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([])),
             $this->ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry()),
             $this->ruleConfiguration ?? new RuleOptionsRegistry(),
         );

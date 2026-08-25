@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -39,6 +40,8 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
                 '$ruleOptionsRegistry' => new Reference($ruleOptionsRegistry),
                 '$ruleSelector' => new Reference(RuleSelector::class),
                 '$configurationValidators' => [],
+                '$classlessProducers' => [],
+                '$channelIdentity' => new Reference(ChannelIdentityInterface::class),
             ]);
         $container->setAlias(RuleExecutionInterface::class, $ruleExecution)
             ->setPublic(true);

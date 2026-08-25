@@ -105,9 +105,9 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 ## Computed Metrics
 
-| Rule            | ID                | Minutes |
-| --------------- | ----------------- | ------- |
-| Computed Metric | `computed.health` | 15      |
+| Rule            | ID         | Minutes |
+| --------------- | ---------- | ------- |
+| Computed Metric | `computed` | 15      |
 
 ## Why These Values Differ From Default Thresholds
 

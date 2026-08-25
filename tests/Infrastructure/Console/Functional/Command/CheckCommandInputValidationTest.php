@@ -34,7 +34,7 @@ final class CheckCommandInputValidationTest extends TestCase
                 [
                     'paths' => ['tests/Fixtures/Ast/invalid_syntax.php'],
                     '--format' => 'json',
-                    '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+                    '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
                 ],
                 ['capture_stderr_separately' => true],
             );
@@ -70,7 +70,7 @@ final class CheckCommandInputValidationTest extends TestCase
                     'paths' => ['tests/Fixtures/Ast/empty_file.php'],
                     '--format' => 'json',
                     '--config' => $config,
-                    '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+                    '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
                 ],
                 ['capture_stderr_separately' => true],
             );
@@ -225,7 +225,7 @@ final class CheckCommandInputValidationTest extends TestCase
             [
                 'paths' => ['tests/Fixtures/Ast/empty_file.php'],
                 '--format' => 'json',
-                '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+                '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
             ],
             ['capture_stderr_separately' => true],
         );
@@ -247,7 +247,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
         $tester = $this->tester();
         try {
-            foreach (['computed.health', 'health.complexity', 'health.complexity', 'computed.a'] as $selector) {
+            foreach (['computed', 'health.complexity', 'health.*', 'computed.a'] as $selector) {
                 $tester->execute([
                     'paths' => ['tests/Fixtures/Ast/empty_file.php'],
                     '--format' => 'json',

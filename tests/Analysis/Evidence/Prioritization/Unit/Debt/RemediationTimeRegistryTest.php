@@ -191,14 +191,14 @@ final class RemediationTimeRegistryTest extends TestCase
         // inverted definition.
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry([
-                ComputedMetricChannelFamily::PRODUCER_RULE_NAME
+                ComputedMetricChannelFamily::OPEN_PRODUCER_RULE_NAME
                     => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
             ]),
             StubRemediationMinutes::withRealValues(),
         );
 
         // health score=30 (below threshold=50): ratio=50/30=1.667, ln=0.511, max(1, 0.511)=1 → 15*1=15
-        $finding = $this->createFinding(ComputedMetricChannelFamily::PRODUCER_RULE_NAME, metricValue: 30, threshold: 50);
+        $finding = $this->createFinding(ComputedMetricChannelFamily::OPEN_PRODUCER_RULE_NAME, metricValue: 30, threshold: 50);
 
         $minutes = $registry->getMinutesForFinding($finding);
 
@@ -210,14 +210,14 @@ final class RemediationTimeRegistryTest extends TestCase
     {
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry([
-                ComputedMetricChannelFamily::PRODUCER_RULE_NAME
+                ComputedMetricChannelFamily::OPEN_PRODUCER_RULE_NAME
                     => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
             ]),
             StubRemediationMinutes::withRealValues(),
         );
 
         // Normal computed metric value > threshold: ratio=100/50=2, ln(2)=0.693, max(1, 0.693)=1 → 15*1=15
-        $finding = $this->createFinding(ComputedMetricChannelFamily::PRODUCER_RULE_NAME, metricValue: 100, threshold: 50);
+        $finding = $this->createFinding(ComputedMetricChannelFamily::OPEN_PRODUCER_RULE_NAME, metricValue: 100, threshold: 50);
 
         $minutes = $registry->getMinutesForFinding($finding);
 

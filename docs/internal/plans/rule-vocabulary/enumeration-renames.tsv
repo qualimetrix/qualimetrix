@@ -11,7 +11,7 @@ architecture.pending-layer-matched	channel	?		8	10	0	0	0	25	0	1
 architecture.potential-shadow	channel	?		13	8	0	0	0	32	0	1
 architecture.unassigned-class	channel	?		25	17	0	0	0	21	0	2
 architecture.unreachable-layer	channel	?		15	21	0	0	0	41	0	1
-code-smell.boolean-argument	channel	?		4	21	1	2	29	34	0	1
+code-smell.boolean-argument	channel	?		3	21	1	2	29	34	0	1
 code-smell.constructor-overinjection	channel	?		9	7	2	2	6	21	0	1
 code-smell.count-in-loop	channel	?		1	5	0	0	0	12	0	1
 code-smell.debug-code	channel	?		1	30	0	0	0	13	0	1
@@ -27,10 +27,10 @@ code-smell.unreachable-code	channel	?		6	6	0	1	0	23	0	1
 code-smell.unused-private	channel	?		2	6	0	0	0	15	0	3
 cohesion.lcom	channel	?		19	37	2	2	0	27	0	4
 complexity.cognitive	channel	?		10	26	2	2	32	46	0	8
-complexity.cyclomatic	channel	?		37	617	2	2	56	120	0	9
+complexity.cyclomatic	channel	?		37	618	2	2	56	120	0	9
 complexity.npath	channel	?		9	9	2	2	12	38	0	7
 complexity.wmc	channel	?		11	13	2	2	11	27	0	4
-coupling.cbo	channel	?		49	225	2	4	8	92	0	6
+coupling.cbo	channel	?		50	225	2	4	8	92	0	6
 coupling.class-rank	channel	?		18	55	0	2	1	26	0	25
 coupling.distance	channel	?		8	29	2	2	3	30	0	27
 coupling.instability	channel	?		12	29	2	3	9	46	0	8
@@ -48,7 +48,7 @@ security.hardcoded-credentials	channel	?		4	9	0	0	0	15	0	1
 security.sensitive-parameter	channel	?		3	5	0	0	0	13	0	1
 security.sql-injection	channel	?		3	6	0	0	0	13	0	1
 security.xss	channel	?		4	17	0	0	0	13	0	1
-size.class-count	channel	?		9	26	2	1	5	24	0	3
+size.class-count	channel	?		9	27	2	1	5	24	0	3
 size.method-count	channel	?		9	60	2	2	0	46	0	3
 size.property-count	channel	?		9	7	2	2	0	22	0	3
 abstractClassCount	metric-key	?		14	11	0	0	0	0	0	0
@@ -126,7 +126,7 @@ annotation.directive	producer	?		4	3	0	0	0	23	0	1
 architecture.circular-dependency	producer	?		9	29	0	2	0	39	0	1
 architecture.layer-violation	producer	?		26	101	0	3	0	79	0	1
 architecture.unassigned-class	producer	?		25	17	0	0	0	21	0	2
-code-smell.boolean-argument	producer	?		4	21	1	2	29	34	0	1
+code-smell.boolean-argument	producer	?		3	21	1	2	29	34	0	1
 code-smell.constructor-overinjection	producer	?		9	7	2	2	6	21	0	1
 code-smell.count-in-loop	producer	?		1	5	0	0	0	12	0	1
 code-smell.debug-code	producer	?		1	30	0	0	0	13	0	1
@@ -142,11 +142,11 @@ code-smell.unreachable-code	producer	?		6	6	0	1	0	23	0	1
 code-smell.unused-private	producer	?		2	6	0	0	0	15	0	3
 cohesion.lcom	producer	?		19	37	2	2	0	27	0	4
 complexity.cognitive	producer	?		10	26	2	2	32	46	0	8
-complexity.cyclomatic	producer	?		37	617	2	2	56	120	0	9
+complexity.cyclomatic	producer	?		37	618	2	2	56	120	0	9
 complexity.npath	producer	?		9	9	2	2	12	38	0	7
 complexity.wmc	producer	?		11	13	2	2	11	27	0	4
-computed.health	producer	health.cohesion|health.complexity|health.coupling|health.maintainability|health.overall|health.typing|computed.*	Ш5d	15	144	0	1	0	14	0	2
-coupling.cbo	producer	?		49	225	2	4	8	92	0	6
+computed	producer	?		80	76	0	1	0	17	0	6
+coupling.cbo	producer	?		50	225	2	4	8	92	0	6
 coupling.class-rank	producer	?		18	55	0	2	1	26	0	25
 coupling.distance	producer	?		8	29	2	2	3	30	0	27
 coupling.instability	producer	?		12	29	2	3	9	46	0	8
@@ -158,17 +158,23 @@ design.param-type-coverage	producer	?		5	25	2	1	1	24	0	4
 design.property-type-coverage	producer	?		5	7	2	1	1	22	0	5
 design.return-type-coverage	producer	?		5	10	2	1	0	22	0	5
 duplication.code-duplication	producer	?		14	52	0	2	12	35	0	3
+health.cohesion	producer	?		36	93	0	2	31	18	0	17
+health.complexity	producer	?		47	169	0	1	0	19	0	20
+health.coupling	producer	?		36	33	0	0	0	8	0	17
+health.maintainability	producer	?		14	23	0	0	0	9	0	17
+health.overall	producer	?		107	133	0	0	0	12	0	17
+health.typing	producer	?		18	41	0	1	1	12	0	17
 maintainability.index	producer	?		11	45	2	2	0	27	0	3
 security.command-injection	producer	?		3	5	0	0	0	13	0	1
 security.hardcoded-credentials	producer	?		4	9	0	0	0	15	0	1
 security.sensitive-parameter	producer	?		3	5	0	0	0	13	0	1
 security.sql-injection	producer	?		3	6	0	0	0	13	0	1
 security.xss	producer	?		4	17	0	0	0	13	0	1
-size.class-count	producer	?		9	26	2	1	5	24	0	3
+size.class-count	producer	?		9	27	2	1	5	24	0	3
 size.method-count	producer	?		9	60	2	2	0	46	0	3
 size.property-count	producer	?		9	7	2	2	0	22	0	3
 #
-# ROW COUNTS: 52 channel, 45 producer, 71 metric-key
+# ROW COUNTS: 52 channel, 51 producer, 71 metric-key
 #
 # HOW THIS WAS PRODUCED: `php scripts/generate-rename-enumeration.php`.
 # - `channel` rows: 52 keys from
@@ -176,7 +182,7 @@ size.property-count	producer	?		9	7	2	2	0	22	0	3
 #   production container (the same oracle
 #   `ChannelDeclarationFixtureDriftTest` uses) — never regex over rule files,
 #   because a rule can name its own channel through an inherited constant.
-# - `producer` rows: 45 names from
+# - `producer` rows: 51 names from
 #   `RuleExecutionInterface::allRules()` (`RuleMetadata::name`).
 # - `metric-key` rows: 71 values, `ReflectionClass(MetricName::class)->getConstants()`.
 #   `MetricName` is a plain final class with `public const string` members,

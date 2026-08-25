@@ -431,9 +431,10 @@ selector validation. It distinguishes a registered **producer rule** from the fu
 `FindingChannel` values that producer emits; their names need not share a prefix.
 
 A selector (`X` or `X.*`) can address the producer name or a channel's own name.
-`--only-rule=computed.health` therefore selects every channel produced by that
-rule, while `--only-rule=health.complexity` selects only that computed channel and
-still starts its `computed.health` producer.
+`--only-rule=coupling.cbo` therefore selects every channel produced by that rule,
+while `--only-rule=health.complexity` selects one producer of the computed-metric
+family — and still runs the one class that hosts all seven of them, because six
+of those producers have no analysis of their own to run.
 
 `RuleChannelRegistryInterface::channelsProducedBy()` — one view of the channel universe — supplies the producer relationship.
 Its Infrastructure implementation combines compiler-collected static declarations with
@@ -460,10 +461,11 @@ carries no methods. `qmx rules --group` is its sole consumer, reading
 | `CodeSmell`       | Boolean Arguments, Debug Code, etc.                    |
 | `Security`        | Hardcoded Credentials, Sensitive Parameter             |
 | `Duplication`     | Code Duplication                                       |
+| `Health`          | The six built-in health dimensions                     |
+| `Computed`        | User-defined computed metrics                          |
 
-The value happening to equal the first segment of a rule name (and
-`computed.health` disagreeing with `Maintainability`) is a harmless
-correlation nothing reads. Behavioural exemptions such as "always let
+The value happening to equal the first segment of a rule name — or, for
+`Computed`, the whole of one — is a harmless correlation nothing reads. Behavioural exemptions such as "always let
 architecture findings through an `exclude_paths`/`exclude_namespaces` filter"
 are declared per channel instead, see `ChannelFileScope` below.
 

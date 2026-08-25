@@ -129,7 +129,6 @@ final class ChannelExclusionKeyValidatorTest extends TestCase
                 'coupling.class-rank' => ['coupling.class-rank'],
             ],
             ['coupling.cbo' => true, 'coupling.class-rank' => true],
-            'computed.health',
             new ResolvedComputedMetricDefinitions([]),
         );
     }

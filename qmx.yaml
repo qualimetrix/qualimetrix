@@ -171,6 +171,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphCalculator'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricProducerOptions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver'
@@ -451,6 +452,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\FindingChannel'
         - 'Qualimetrix\Analysis\Finding\Contract\Location'
         - 'Qualimetrix\Analysis\Finding\Contract\OccurrenceKey'
+        - 'Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface'
@@ -494,6 +496,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider'
+        - 'Qualimetrix\Analysis\Finding\FindingExclusionLedger'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionThresholdModeResolver'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser'
@@ -1603,8 +1606,7 @@ rules:
     error: 20
 
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
-  computed.health:
-    enabled: true
+  health.cohesion:
     exclude_namespace_channels:
       health.cohesion:
         # Coupling collectors expose independent graph calculations; shared-field

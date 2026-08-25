@@ -7,10 +7,12 @@ namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricProducerOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -38,23 +40,23 @@ final class ComputedMetricRuleTest extends TestCase
     {
         $rule = $this->createRuleWithDefinitions([]);
 
-        self::assertSame('computed.health', $rule->getName());
+        self::assertSame('computed', $rule->getName());
     }
 
     #[Test]
-    public function itReturnsCorrectDescription(): void
+    public function itDescribesTheOpenHalfOfTheFamilyNotTheWholeOfIt(): void
     {
         $rule = $this->createRuleWithDefinitions([]);
 
-        self::assertSame('Checks computed health metrics against thresholds', $rule->getDescription());
+        self::assertSame('Checks user-defined computed metrics against their thresholds', $rule->getDescription());
     }
 
     #[Test]
-    public function itReturnsMaintainabilityCategory(): void
+    public function itReturnsComputedCategory(): void
     {
         $rule = $this->createRuleWithDefinitions([]);
 
-        self::assertSame(RuleCategory::Maintainability, $rule->getCategory());
+        self::assertSame(RuleCategory::Computed, $rule->getCategory());
     }
 
     #[Test]
@@ -81,6 +83,7 @@ final class ComputedMetricRuleTest extends TestCase
             $catalog,
             new ComputedMetricFindingBuilder(),
             self::createStub(ProfilerInterface::class),
+            self::producerOptions(enabled: false),
         );
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
@@ -420,7 +423,20 @@ final class ComputedMetricRuleTest extends TestCase
             $catalog,
             new ComputedMetricFindingBuilder(),
             self::createStub(ProfilerInterface::class),
+            self::producerOptions(),
         );
+    }
+
+    /** Every producer of the family enabled — the default the container builds. */
+    private static function producerOptions(bool $enabled = true): ComputedMetricProducerOptions
+    {
+        $byProducer = [];
+
+        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producer) {
+            $byProducer[$producer] = new ComputedMetricRuleOptions(enabled: $enabled);
+        }
+
+        return new ComputedMetricProducerOptions($byProducer);
     }
 
     private function repositoryWithExactClassDeclaration(

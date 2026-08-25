@@ -13,7 +13,7 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  * declaration: {@see ChannelDeclaration} carries only the direction that
  * makes a `magnitude` producer's number comparable (present exactly when the
  * producer is `magnitude`), plus levels and configuration-error status.
- * `computed.health` is why the two are not one type — its direction is
+ * The computed-metric family is why the two are not one type — its direction is
  * per-channel runtime data (`inverted` per metric definition), while its
  * shape is uniformly `magnitude` for every dimension.
  *

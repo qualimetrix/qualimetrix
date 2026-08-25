@@ -1,8 +1,9 @@
-# RUNTIME channels: the `computed.health#*` half of the channel universe, which
+# RUNTIME channels: the computed-metric half of the channel universe, which
 # `ChannelDeclarationRegistryInterface::staticDeclarations()` does not contain
-# and enumeration-renames.tsv therefore does not list. Its `computed.health`
-# producer row carries a `|`-separated decision, which is a record of a SPLIT and
-# not a map row — `RenameMaps` knows neither `|` nor a wildcard.
+# and enumeration-renames.tsv therefore does not list. The split that created
+# these producers is recorded once, as a retired `|`-separated row in
+# enumeration-renames-executed.tsv; it is a record of a SPLIT and not a map row
+# — `RenameMaps` knows neither `|` nor a wildcard.
 #
 # Do not hand-edit. Regenerate with:
 #   php scripts/generate-rename-enumeration.php --runtime-channels
@@ -19,15 +20,13 @@
 #   computed metric is open-ended by construction (it is a name in somebody's
 #   own qmx.yaml), so it is not enumerable — only observable, and only over the
 #   corpus this run read. That narrowing is the `origin` column's whole point.
-# - the producer half of every key comes from
-#   `ComputedMetricChannelFamily::PRODUCER_RULE_NAME`.
-#
-# `new` IS A DECISION, applied mechanically. Р5 takes the producer name from the
-# channel, so `computed.health#health.X` becomes `health.X#health.X` and
-# `computed.health#computed.<name>` becomes `computed.<name>#computed.<name>`.
-# A built-in name that is not `health.*`, or an observed name that is not
-# `computed.*`, fails the generator instead of getting an invented target: Р5
-# names those two shapes and no others.
+# - `producer` is MEASURED, through `ComputedMetricChannelFamily::producerFor()`
+#   — the same arbiter the channel universe and the finding emission ask. Since
+#   Ш5d a built-in dimension is its own producer and every user-defined metric
+#   shares the open producer `computed`; this column is where that stops being
+#   prose. A built-in name that is not `health.*`, or an observed name that is
+#   not `computed.*`, fails the generator instead of getting an invented
+#   answer: the vocabulary names those two shapes and no others.
 #
 # WHAT THIS DOES NOT SEE
 # - a computed metric defined in a qmx.yaml outside the gate corpus (a user's
@@ -35,11 +34,11 @@
 # - whether a channel listed here actually FIRES. A case may disable a built-in
 #   dimension (`enabled: false`) or threshold it out of range; what fires is
 #   measured by the gate's coverage check, against each case's `channels` claim.
-old	origin	source	new	step
-computed.health#health.cohesion	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.cohesion#health.cohesion	Ш5
-computed.health#health.complexity	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.complexity#health.complexity	Ш5
-computed.health#health.coupling	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.coupling#health.coupling	Ш5
-computed.health#health.maintainability	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.maintainability#health.maintainability	Ш5
-computed.health#health.overall	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.overall#health.overall	Ш5
-computed.health#health.typing	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.typing#health.typing	Ш5
-computed.health#computed.branch_load	corpus-observed	finding-gate/cases/health/qmx.yaml	computed.branch_load#computed.branch_load	Ш5
+channel	origin	source	producer	step
+health.cohesion	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.cohesion	Ш5d
+health.complexity	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.complexity	Ш5d
+health.coupling	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.coupling	Ш5d
+health.maintainability	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.maintainability	Ш5d
+health.overall	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.overall	Ш5d
+health.typing	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.typing	Ш5d
+computed.branch_load	corpus-observed	finding-gate/cases/health/qmx.yaml	computed	Ш5d

@@ -48,6 +48,7 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Finding\\ComputedMetricChannelFamily', 'Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass'],
+        ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Finding\\ComputedMetricChannelFamily', 'Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ComputedMetricsConfigurator'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\HealthFormulaExclusionInterface', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition', 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder'],
         ['Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\HealthDimension', 'Qualimetrix\\Reporting\\Formatter\\Html\\HtmlMetricAggregator'],
@@ -88,7 +89,7 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
     public function itAcceptsTheMaterializedInternalDag(): void
     {
         $declarations = $this->productionDeclarations();
-        self::assertCount(40, $declarations);
+        self::assertCount(41, $declarations);
 
         foreach ($declarations as $source => $path) {
             $sourceZone = $this->zone($source);
@@ -116,9 +117,9 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         $expected = [...self::EXPECTED_RELATIONS, ...self::COMPOSED_CARRIER_RELATIONS];
         sort($expected);
         self::assertSame($expected, $relations, 'Every raw cross-owner Contract import must be explicitly classified.');
-        self::assertCount(43, $relations);
-        self::assertCount(38, self::EXPECTED_RELATIONS);
-        self::assertCount(22, array_filter(self::EXPECTED_RELATIONS, static fn(array $relation): bool => !str_contains($relation[0], '\\Health\\Contract\\')));
+        self::assertCount(44, $relations);
+        self::assertCount(39, self::EXPECTED_RELATIONS);
+        self::assertCount(23, array_filter(self::EXPECTED_RELATIONS, static fn(array $relation): bool => !str_contains($relation[0], '\\Health\\Contract\\')));
         self::assertCount(16, array_filter(self::EXPECTED_RELATIONS, static fn(array $relation): bool => str_contains($relation[0], '\\Health\\Contract\\')));
 
         $source = implode("\n", array_map(static fn(string $path): string => (string) file_get_contents($path), $declarations));

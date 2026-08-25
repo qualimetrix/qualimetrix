@@ -87,7 +87,7 @@ final class StubRemediationMinutes
             'architecture.layer-violation' => 15,
             'annotation.directive' => 15,
             'duplication.code-duplication' => 15,
-            'computed.health' => 15,
+            'computed' => 15,
 
             'architecture.unassigned-class' => 15,
 

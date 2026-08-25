@@ -6,7 +6,17 @@ Definitions are resolved per analysis run and evaluated after raw metric
 aggregation. Reusing a process for multiple runs replaces the prior definition
 set atomically, so configuration from an earlier run cannot leak into the next.
 
-**Rule ID:** `computed.health`
+**Rule ID:** `computed` — user-defined computed metrics.
+
+Each built-in dimension is its own producer, and publishes its findings under
+its own rule ID:
+
+- **Rule ID:** `health.complexity`
+- **Rule ID:** `health.cohesion`
+- **Rule ID:** `health.coupling`
+- **Rule ID:** `health.typing`
+- **Rule ID:** `health.maintainability`
+- **Rule ID:** `health.overall`
 
 ---
 

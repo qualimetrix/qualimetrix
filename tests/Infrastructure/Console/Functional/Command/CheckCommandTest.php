@@ -46,7 +46,7 @@ final class CheckCommandTest extends TestCase
             'paths' => [$this->tempDir],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         // Assert success (exit code 0 - no findings)
@@ -117,7 +117,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'json',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         // Assert success
@@ -173,7 +173,7 @@ class ComplexClass {
             '--exclude' => ['vendor'],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         // Assert success
@@ -290,7 +290,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'checkstyle',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -310,7 +310,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'sarif',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -333,7 +333,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'gitlab',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -354,7 +354,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'health',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -373,7 +373,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'summary',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -394,7 +394,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'github',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         // No findings -> empty output, exit code 0
@@ -459,7 +459,7 @@ class SimpleClass {
             'paths' => [$this->tempDir],
             '--format' => 'health',
             '--no-progress' => true,
-            // Do NOT disable computed.health — test full pipeline
+            // Do NOT disable the computed-metric family — test full pipeline
         ]);
 
         $output = $commandTester->getDisplay();
@@ -500,7 +500,7 @@ PHP);
         $configPath = $this->tempDir . '/qmx.yaml';
         file_put_contents($configPath, <<<'YAML'
 rules:
-  computed.health:
+  health.cohesion:
     enabled: true
 YAML);
 
@@ -512,7 +512,7 @@ YAML);
             '--workers' => 0,
             '--no-cache' => true,
             '--no-progress' => true,
-            '--only-rule' => ['computed.health'],
+            '--only-rule' => ['health.*'],
         ]);
 
         /** @var array{violations: list<array{symbol: string, code: string}>} $report */

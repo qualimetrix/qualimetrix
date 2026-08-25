@@ -30,3 +30,4 @@ coupling.cbo.class	channel	coupling.cbo	Ш5c
 coupling.cbo.namespace	channel	coupling.cbo	Ш5c
 coupling.instability.class	channel	coupling.instability	Ш5c
 coupling.instability.namespace	channel	coupling.instability	Ш5c
+computed.health	producer	health.cohesion|health.complexity|health.coupling|health.maintainability|health.overall|health.typing|computed	Ш5d

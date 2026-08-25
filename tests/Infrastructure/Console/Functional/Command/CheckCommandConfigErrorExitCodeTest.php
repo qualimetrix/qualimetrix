@@ -138,7 +138,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         $tester->execute([
             'paths' => ['tests/Fixtures/Ast/empty_file.php'],
             '--format' => 'json',
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
             ...$options,
         ], ['capture_stderr_separately' => true]);
 

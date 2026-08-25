@@ -115,11 +115,12 @@ final class RuntimeConfiguratorTest extends TestCase
         $loggerFactory->method('create')->willReturn(new NullLogger());
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
         $ruleRegistry->method('getClasses')->willReturn([LcomRule::class]);
+        // The universe carries the addressable names, which is what the
+        // validator reads; a registry stub alone no longer says which they are.
         $staticChannels = new ChannelUniverse(
             [],
             [],
-            [],
-            'computed.health',
+            [LcomRule::NAME => false],
             new ResolvedComputedMetricDefinitions([]),
         );
         $ruleSelector = $selectorOverride ?? new RuleSelector($staticChannels);

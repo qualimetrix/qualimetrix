@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -24,8 +25,24 @@ final readonly class ComputedMetricDefinition
         public ?float $warningThreshold = null,
         public ?float $errorThreshold = null,
     ) {
-        $this->validateName($name);
-        $this->validateLevels($name, $levels);
+        $this->validateName();
+        $this->validateLevels();
+    }
+
+    /**
+     * The producer this metric's findings are published under.
+     *
+     * Answered by the definition rather than looked up by each consumer: a
+     * built-in health dimension is its own producer and a user-defined metric
+     * belongs to the open one, and every seam that needs the distinction —
+     * emission, the channel universe's forward and reverse lookups, the
+     * run-time name-collision guard — would otherwise apply
+     * {@see ComputedMetricChannelFamily::producerFor()} itself and take a
+     * dependency on this capability's naming rule to do it.
+     */
+    public function producerRuleName(): string
+    {
+        return ComputedMetricChannelFamily::producerFor($this->name);
     }
 
     /**
@@ -88,21 +105,25 @@ final readonly class ComputedMetricDefinition
      * used to reach that declaration and throw from a lookup every finding
      * makes.
      *
-     * @param list<SymbolType> $levels
+     * Reads the object's own state rather than taking it as arguments: both
+     * validators are statements about *this* definition, and promoted
+     * properties are already assigned when the constructor body runs.
      */
-    private function validateLevels(string $name, array $levels): void
+    private function validateLevels(): void
     {
-        $values = array_map(static fn(SymbolType $level): string => $level->value, $levels);
+        $values = array_map(static fn(SymbolType $level): string => $level->value, $this->levels);
 
         if (\count(array_unique($values)) !== \count($values)) {
             throw new InvalidArgumentException(
-                \sprintf('Computed metric "%s" declares the same level more than once', $name),
+                \sprintf('Computed metric "%s" declares the same level more than once', $this->name),
             );
         }
     }
 
-    private function validateName(string $name): void
+    private function validateName(): void
     {
+        $name = $this->name;
+
         // No double underscores (reserved for variable mapping)
         if (str_contains($name, '__')) {
             throw new InvalidArgumentException(

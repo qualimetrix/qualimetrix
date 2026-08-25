@@ -1610,6 +1610,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleOptionsTest::itIsEnabledByDefault
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleOptionsTest::itLoadsDefinitionsFromHolderWhenPopulated
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleOptionsTest::itReturnsHolderDefinitions
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itDescribesTheOpenHalfOfTheFamilyNotTheWholeOfIt
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itDoesNotEmitClassScoresWithoutNamedClassDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itEmitsNoFindingWhenMetricAbsent
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itEmitsNoFindingsWhenNoThresholdsDefined
@@ -1617,10 +1618,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itProcessesMultipleLevels
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarationsInEitherMergeOrder
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRequiresNothing
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsCorrectDescription
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsComputedCategory
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsCorrectName
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsCorrectOptionsClass
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsMaintainabilityCategory
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itUsesFileAndLineForClassLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itUsesNoneLocationForNamespaceLevel
@@ -2885,7 +2885,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity.cyclomatic"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity.npath"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"complexity.wmc"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"computed.health"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"computed"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"coupling.cbo"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"coupling.class-rank"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"coupling.distance"
@@ -3554,13 +3554,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::aTieIsReachableBetweenTheThreeTypeCoverageChannels
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::noInputCanTieTheChannelThatChangedPositionAgainstAnythingItMovedPast
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest::theTiedTypeCoverageChannelsAreYieldedInTheDeclaredOrder
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyClasslessProducerOfTheComputedFamilyIsAddressable
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyDeclaredChannelHasAProducer
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRegisteredRuleIsAddressableIncludingOnesThatDeclareNoChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRegisteredRuleClassIsAddressableIncludingOnesThatDeclareNoChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRulesDeclaredThresholdSupportMatchesWhatItsOptionsCanHonour
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::itAnswersDidYouMeanByQueryingTheRegistryNotByStrippingASuffix
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::itNamesTheProducerForEveryIdentityMechanismThatDefeatsAScan
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theAddressableNamesAreTheRuleClassesPlusTheClasslessProducers
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theAssembledUniverseAgreesWithTheRuleClassesReadDirectly
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theEnumerationAgreesWithTheTrackedFixture
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theFamilysHealthProducersAreExactlyTheDeclaredHealthDimensions
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::aChannelDeclaredByBothAProducerKindsFailsTheBuild
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::aValidatorEmittingOnAChannelItDoesNotDeclareEndsTheRun
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::aValidatorNamingAProducerThatIsNotARuleFailsTheBuild
@@ -3596,6 +3599,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"architecture.potential-shadow"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"architecture.unreachable-layer"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::theEnumeratedEightAreExactlyTheConfigurationErrorChannels
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyClasslessProducerOfTheComputedFamilyCarriesItsAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyDeclaredDocsPageCarriesTheRulesOwnAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyRegisteredRuleDeclaresItsOwnDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::theTwoNonPrefixPagesAreDeclaredExplicitly
@@ -6121,8 +6125,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itPrefersTheConfiguredDefinitionsOwnDescriptionOverTheProducersGenericOne
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itReturnsNullWhenTheInnerViewAlreadyDoes
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::aRepeatedLevelCannotReachTheChannelDeclaration
+ - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAcceptsABuiltInDimensionThatIsAlsoItsOwnProducersName
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAcceptsASnapshotWhoseComputedNamesAreFree
- - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAddsRuntimeComputedMetricChannelsToTheirProducer
+ - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAddsRuntimeComputedMetricChannelsToTheirOwnProducer
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAnswersTheReverseLookupForAConfiguredComputedMetric
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAnswersTheReverseLookupWithTheProducingRuleNotTheChannelsOwnRuleName
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itBuildsAPreflightUniverseOverExplicitDefinitionsWithoutTouchingTheLiveCatalog
@@ -6163,7 +6168,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Unit\GlobalCollectorCompilerPassTest::collectsTaggedServicesIntoGlobalCollectorRunner
  - Qualimetrix\Tests\Infrastructure\Unit\GlobalCollectorCompilerPassTest::doesNothingWhenRunnerNotRegistered
  - Qualimetrix\Tests\Infrastructure\Unit\GlobalCollectorCompilerPassTest::setsEmptyArrayWhenNoTaggedServices
- - Qualimetrix\Tests\Infrastructure\Unit\KnownRuleNamesAdapterTest::itExtractsNamesFromRuleClasses
+ - Qualimetrix\Tests\Infrastructure\Unit\KnownRuleNamesAdapterTest::itHandsBackTheInjectedNamesUnchanged
  - Qualimetrix\Tests\Infrastructure\Unit\KnownRuleNamesAdapterTest::itReturnsAnEmptyArrayWhenThereAreNoRules
  - Qualimetrix\Tests\Infrastructure\Unit\ParallelCollectorClassesCompilerPassTest::itDoesNothingWhenFileProcessingTaskFactoryIsNotRegistered
  - Qualimetrix\Tests\Infrastructure\Unit\ParallelCollectorClassesCompilerPassTest::itExtractsClassNameFromDefinitionWhenDifferentFromServiceId

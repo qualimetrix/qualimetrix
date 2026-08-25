@@ -46,9 +46,11 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
         $container->setAlias(RuleRegistryInterface::class, RuleRegistry::class)
             ->setPublic(true);
 
-        // KnownRuleNamesAdapter will have rule classes injected by RuleRegistryCompilerPass
+        // The finished list of producer names is injected by
+        // ChannelDeclarationCompilerPass, which is the one place the classless
+        // producers are known as well as the rule classes.
         $container->register(KnownRuleNamesAdapter::class)
-            ->setArguments(['$ruleClasses' => []])
+            ->setArguments(['$ruleNames' => []])
             ->setPublic(false);
 
         $container->setAlias(KnownRuleNamesProviderInterface::class, KnownRuleNamesAdapter::class);
@@ -75,7 +77,6 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
                 '$staticDeclarations' => [],
                 '$staticChannelKeysByProducer' => [],
                 '$thresholdOverrideSupportByRule' => [],
-                '$computedMetricRuleName' => '',
                 '$definitionCatalog' => new Reference($computedMetricCatalog),
             ])
             ->setPublic(true);

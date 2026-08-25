@@ -360,7 +360,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
 
         return array_values(array_map(
             static fn($channel): string => $channel->code,
-            $channels->channelsProducedBy('computed.health'),
+            $channels->channelsProducedBy('computed'),
         ));
     }
 }

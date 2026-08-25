@@ -12,6 +12,13 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
  * This interface decouples rule execution from the Analyzer,
  * allowing rules to be filtered at runtime based on configuration
  * (disabled_rules, only_rules) without affecting DI container setup.
+ *
+ * **A registered rule here is a producer, not a class.** The three registry
+ * answers below enumerate every name a finding can be published under, which
+ * is a larger set than the rule classes the container instantiates: the
+ * computed-metric family runs in one class and publishes under seven producer
+ * names. Execution is still per instance — a producer without a class has
+ * nothing to run — so only {@see execute()} is keyed by instance.
  */
 interface RuleExecutionInterface
 {
@@ -23,21 +30,22 @@ interface RuleExecutionInterface
     public function execute(AnalysisContext $context): array;
 
     /**
-     * Returns list of active (not disabled) rules.
+     * The producers `$selection` leaves enabled.
      *
      * @return list<RuleMetadata>
      */
     public function activeRules(RuleSelection $selection): array;
 
     /**
-     * Returns all registered rules (before filtering by disabled/only rules).
+     * Every registered producer, each carrying whether the resolved selection
+     * leaves it enabled — the same enumeration {@see activeRules()} filters.
      *
      * @return list<RuleMetadata>
      */
     public function allRules(): array;
 
     /**
-     * Returns count of all registered rules (before filtering).
+     * How many producers {@see allRules()} enumerates.
      */
     public function totalRuleCount(): int;
 
