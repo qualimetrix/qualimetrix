@@ -90,6 +90,31 @@ final class ClasslessProducerThresholdRefusalTest extends TestCase
     }
 
     /**
+     * The paired spelling moved with the bare one, and further: before the
+     * split `health.cohesion:class` resolved to no rule at all, so the level
+     * half was never reached. Now the rule half resolves, and the refusal has
+     * to say that the rule cannot be retuned at any level — not offer the
+     * level-blind advice, whose `--rule-opt` recommendation the CLI accepts,
+     * warns about as an unknown option, and exits zero on.
+     *
+     * If this disappears, the product can go back to recommending that no-op.
+     */
+    #[Test]
+    #[DataProvider('provideFamilyProducers')]
+    public function aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp(string $producerRuleName): void
+    {
+        $rejection = self::addressability()->problemWithThreshold(self::threshold($producerRuleName . ':class'));
+
+        self::assertNotNull($rejection);
+        self::assertStringContainsString(
+            \sprintf('rule "%s" at level "class", and that rule declares no @qmx-threshold support', $producerRuleName),
+            $rejection->message,
+        );
+        self::assertStringNotContainsString('--rule-opt', $rejection->message);
+        self::assertStringNotContainsString('is not a rule name', $rejection->message);
+    }
+
+    /**
      * If this disappears, the case above stops distinguishing anything: a
      * universe that answered "cannot be retuned" to every name would pass it.
      *

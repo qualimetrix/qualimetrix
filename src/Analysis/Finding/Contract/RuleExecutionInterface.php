@@ -30,24 +30,17 @@ interface RuleExecutionInterface
     public function execute(AnalysisContext $context): array;
 
     /**
-     * The producers `$selection` leaves enabled.
-     *
-     * @return list<RuleMetadata>
-     */
-    public function activeRules(RuleSelection $selection): array;
-
-    /**
      * Every registered producer, each carrying whether the resolved selection
-     * leaves it enabled — the same enumeration {@see activeRules()} filters.
+     * leaves it enabled.
+     *
+     * One answer, not three: the enabled subset and the count were separate
+     * operations that nothing outside tests ever asked for, and three
+     * enumerations of "every registered rule" are three chances to disagree.
+     * A caller that wants either filters or counts this list.
      *
      * @return list<RuleMetadata>
      */
     public function allRules(): array;
-
-    /**
-     * How many producers {@see allRules()} enumerates.
-     */
-    public function totalRuleCount(): int;
 
     /**
      * Returns per-rule `exclude_namespaces`, `exclude_namespace_channels`, and

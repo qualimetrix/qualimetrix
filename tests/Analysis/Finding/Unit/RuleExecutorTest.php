@@ -18,6 +18,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
@@ -57,8 +59,8 @@ final class RuleExecutorTest extends TestCase
         $context = $this->createMinimalContext();
 
         self::assertSame([], $executor->execute($context));
-        self::assertSame([], $executor->activeRules($provider->selection()));
-        self::assertSame(0, $executor->totalRuleCount());
+        self::assertSame([], self::activeRules($executor));
+        self::assertCount(0, $executor->allRules());
     }
 
     #[Test]
@@ -227,7 +229,7 @@ final class RuleExecutorTest extends TestCase
         self::assertCount(2, $findings);
         self::assertSame($finding1, $findings[0]);
         self::assertSame($finding2, $findings[1]);
-        self::assertSame(2, $executor->totalRuleCount());
+        self::assertCount(2, $executor->allRules());
     }
 
     #[Test]
@@ -283,7 +285,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
-        $activeRules = $executor->activeRules($provider->selection());
+        $activeRules = self::activeRules($executor);
 
         self::assertCount(1, $activeRules);
         self::assertSame('enabled-rule', $activeRules[0]->name);
@@ -299,8 +301,8 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
-        self::assertSame(2, $executor->totalRuleCount());
-        self::assertCount(1, $executor->activeRules($provider->selection()));
+        self::assertCount(2, $executor->allRules());
+        self::assertCount(1, self::activeRules($executor));
     }
 
     #[Test]
@@ -320,7 +322,7 @@ final class RuleExecutorTest extends TestCase
         $findings = $executor->execute($context);
 
         self::assertCount(1, $findings);
-        self::assertSame(1, $executor->totalRuleCount());
+        self::assertCount(1, $executor->allRules());
     }
 
     #[Test]
@@ -340,7 +342,7 @@ final class RuleExecutorTest extends TestCase
         $findings = $executor->execute($context);
 
         self::assertSame([], $findings);
-        self::assertSame([], $executor->activeRules($provider->selection()));
+        self::assertSame([], self::activeRules($executor));
     }
 
     // --- Group selector tests ---
@@ -406,7 +408,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
-        $activeRules = $executor->activeRules($provider->selection());
+        $activeRules = self::activeRules($executor);
 
         self::assertCount(2, $activeRules);
     }
@@ -420,7 +422,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider(new RuleSelection(only: ['complexity']));
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
-        self::assertSame([], $executor->activeRules($provider->selection()));
+        self::assertSame([], self::activeRules($executor));
     }
 
     #[Test]
@@ -453,7 +455,7 @@ final class RuleExecutorTest extends TestCase
         self::assertSame([$complexity], $executor->execute($this->createMinimalContext()));
         self::assertSame(['computed.health'], array_map(
             static fn($metadata): string => $metadata->name,
-            $executor->activeRules($provider->selection()),
+            self::activeRules($executor),
         ));
     }
 
@@ -1108,6 +1110,25 @@ final class RuleExecutorTest extends TestCase
                 ];
             }
         });
+    }
+
+    /**
+     * The enabled subset of the registry, filtered from the one enumeration
+     * {@see RuleExecutionInterface::allRules()} publishes.
+     *
+     * The executor used to answer this itself. Nothing outside these tests ever
+     * asked, so the operation was removed rather than kept as a third
+     * enumeration of "every registered rule" — filtering here is what a real
+     * caller would have had to do anyway.
+     *
+     * @return list<RuleMetadata>
+     */
+    private static function activeRules(RuleExecutionInterface $executor): array
+    {
+        return array_values(array_filter(
+            $executor->allRules(),
+            static fn(RuleMetadata $metadata): bool => $metadata->active,
+        ));
     }
 }
 

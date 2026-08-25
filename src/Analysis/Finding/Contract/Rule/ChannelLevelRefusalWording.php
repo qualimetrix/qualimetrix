@@ -147,6 +147,29 @@ final class ChannelLevelRefusalWording
         );
     }
 
+    /**
+     * The same mistake as {@see thresholdIgnoresLevels()}, made against a rule
+     * that could not have been retuned at any level.
+     *
+     * Separate wording because the advice is the whole point of the other one,
+     * and here every clause of that advice is false: "retune the whole rule"
+     * names something the rule declares it cannot do, and
+     * `--rule-opt X:level.<option>=<value>` is a command the CLI accepts,
+     * warns about as an unknown option, and exits zero on — a no-op
+     * recommended by the product itself.
+     */
+    public static function thresholdCannotBeRetunedAtAnyLevel(string $subject, string $ruleHalf, string $level): string
+    {
+        return \sprintf(
+            '%s addresses rule "%s" at level "%s", and that rule declares no @qmx-threshold support: it cannot be'
+            . ' retuned at that level or at any other. Remove the annotation, or configure the rule under its'
+            . ' "rules:" key.',
+            $subject,
+            $ruleHalf,
+            $level,
+        );
+    }
+
     private static function subjectOf(?string $subject, string $raw): string
     {
         return $subject ?? '"' . $raw . '"';

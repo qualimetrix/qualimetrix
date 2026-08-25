@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterfa
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 
 /**
  * Builds the `rule-name => OverrideValidatorInterface` map consumed by
@@ -26,9 +25,17 @@ use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
  * `getOverrideValidator()` accessor. Rules without thresholds are
  * skipped silently.
  *
- * Selection criterion matches {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline::ruleSupportsThresholdOverrides()}
- * — the two methods must agree on which rules accept `@qmx-threshold`,
- * otherwise hierarchical rules silently bypass per-rule validation.
+ * The criterion below is mechanical — what a rule's Options class *can*
+ * carry. What the run answers is what the rule *declares*, through its
+ * `SUPPORTS_THRESHOLD_OVERRIDE` constant
+ * ({@see \Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface::supportsThresholdOverride()}).
+ * The two are pinned against each other by
+ * `ChannelUniverseCoverageTest::everyRulesDeclaredThresholdSupportMatchesWhatItsOptionsCanHonour()`,
+ * because a rule that declares support its options cannot honour promises a
+ * retune the runtime never performs, and one that stays silent while its
+ * options are threshold-aware silently loses a feature. They must not drift
+ * here either: a hierarchical rule missed by this walk bypasses per-rule
+ * validation while still being addressable.
  */
 final readonly class RuleValidatorMapFactory
 {
@@ -74,9 +81,9 @@ final readonly class RuleValidatorMapFactory
 
         // Hierarchical rules (complexity, cbo, instability, …) keep
         // level-specific ThresholdAware Options behind a non-ThresholdAware
-        // root. AnalysisPipeline::ruleSupportsThresholdOverrides() walks
-        // those levels at analyse-time; the parser must use the same
-        // criterion or the rule's annotations silently skip validation.
+        // root, so the walk has to descend into the levels: stopping at the
+        // root would skip per-rule validation for exactly the rules whose
+        // annotations carry a level.
         if (!is_subclass_of($optionsClass, HierarchicalRuleOptionsInterface::class)) {
             return null;
         }

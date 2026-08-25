@@ -189,7 +189,7 @@ final readonly class ChannelLevelAddressing
      * pair — the `@qmx-threshold` mistake.
      *
      * A threshold does not distinguish levels (ADR 0024), so the pair is
-     * always refused; the order the three refusals are tried in is the point.
+     * always refused; the order the four refusals are tried in is the point.
      * Answering "addresses a channel at a level" first told an author who
      * mistyped the level, or the rule, to go and write a `--rule-opt` key
      * built out of that same mistyped half — a command the CLI accepts and
@@ -215,6 +215,18 @@ final readonly class ChannelLevelAddressing
 
         if (!$this->identity->hasRule($ruleHalf)) {
             return ChannelLevelRefusalWording::namesNoRule($subject, $ruleHalf);
+        }
+
+        // Fourth refusal, and it exists for the same reason as the ordering
+        // above: the advice must recommend a spelling that works. A rule that
+        // declares no threshold support has no threshold to set at a level, so
+        // both clauses of the level-blind wording — retune the whole rule, or
+        // set the level with `--rule-opt` — would name commands that do
+        // nothing. This became reachable when the computed-metric family
+        // stopped being one producer: its seven names are addressable rules
+        // that can never be retuned.
+        if (!$this->identity->supportsThresholdOverride($ruleHalf)) {
+            return ChannelLevelRefusalWording::thresholdCannotBeRetunedAtAnyLevel($subject, $ruleHalf, $level->value);
         }
 
         return ChannelLevelRefusalWording::thresholdIgnoresLevels($subject, $ruleHalf, $level->value);

@@ -3560,6 +3560,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRulesDeclaredThresholdSupportMatchesWhatItsOptionsCanHonour
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::itAnswersDidYouMeanByQueryingTheRegistryNotByStrippingASuffix
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::itNamesTheProducerForEveryIdentityMechanismThatDefeatsAScan
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::noProducerOfTheComputedFamilyDeclaresAStaticChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theAddressableNamesAreTheRuleClassesPlusTheClasslessProducers
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theAssembledUniverseAgreesWithTheRuleClassesReadDirectly
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::theEnumerationAgreesWithTheTrackedFixture
@@ -3612,6 +3613,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptCamelSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptKebabSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itStillWarnsAboutAGenuinelyUnknownOption
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyAddressableProducerHasAnInjectedRemediationEstimate
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyProducerOfTheComputedFamilyIsOnTheReferencePage
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRegisteredRuleDeclaresItsOwnRemediationMinutes
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRulesRemediationMinutesMatchTheReferencePage
  - Qualimetrix\Tests\Analysis\Finding\Unit\AbstractRuleSubjectControlTest::itPassesTheMetricSubjectToTheThresholdResolutionSeam
@@ -3678,6 +3681,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::aPlainRuleNameIsNotTheRulePairQuestion
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::aRulePairCarryingTwoSeparatorsIsRefusedAsALevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::aRulePairIsRefusedByLevelThenByRuleAndOnlyThenAdvises
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::aRulePairOnARuleThatCannotBeRetunedIsRefusedWithoutAdvisingANoOp
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::coverageIsQuantifiedOverEveryChannelOfTheProducer
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::levelFreeTextIsJudgedAgainstTheSetAsWell
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::nothingDeclaredIsNotCoverage
@@ -5422,6 +5426,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReportsASymbolWhoseValueIsNotAListOfRecords
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReportsNothingUnreadableForAWellFormedFile
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReturnsTheMalformedRowsInsteadOfDroppingThem
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp"computed"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp"health.cohesion"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp"health.complexity"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp"health.coupling"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp"health.maintainability"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp"health.overall"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp"health.typing"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aThresholdNamingAFamilyProducerIsRefusedAsUnretunableNotAsUnknown"computed"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aThresholdNamingAFamilyProducerIsRefusedAsUnretunableNotAsUnknown"health.cohesion"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aThresholdNamingAFamilyProducerIsRefusedAsUnretunableNotAsUnknown"health.complexity"

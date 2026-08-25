@@ -29,11 +29,21 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
  * runs *inside*, so it can never be a name the build knows: the open half
  * shares one producer, {@see OPEN_PRODUCER_RULE_NAME}.
  *
- * The three facts whose readers silently default when a producer stays silent
- * ({@see SUPPORTS_THRESHOLD_OVERRIDE}, {@see CHANNEL_DECLARATIONS},
- * {@see CLI_ALIASES}) are declared here rather than left out: for a producer
- * with no class, a forgotten fact would not fail the build, it would quietly
- * impoverish behaviour.
+ * Two of the three facts whose readers silently default when a producer stays
+ * silent are declared here rather than left out ({@see SUPPORTS_THRESHOLD_OVERRIDE},
+ * {@see CLI_ALIASES}): for a producer with no class, a forgotten fact would not
+ * fail the build, it would quietly impoverish behaviour, and both are read by
+ * the compiler pass at the point it reads a class's own constants.
+ *
+ * The third — the channels a producer declares at build time — is not a
+ * constant here, and deliberately not: this family declares none, and that is
+ * enforced rather than asserted. The static half of the universe is assembled
+ * only from rule classes and configuration validators, and the tracked
+ * `declared.txt` fixture pins its exact contents, so a family channel appearing
+ * statically fails `ChannelUniverseCoverageTest` — which also names the
+ * property directly. A constant repeating the same `[]` would be a claim
+ * nothing reads: there is no rule saying which of the seven producers would own
+ * an entry in it, so no mechanism could have used one.
  */
 final class ComputedMetricChannelFamily
 {
@@ -89,15 +99,6 @@ final class ComputedMetricChannelFamily
      * configuration diagnostics, and the second is the accurate one.
      */
     public const bool SUPPORTS_THRESHOLD_OVERRIDE = false;
-
-    /**
-     * Explicitly empty. Every channel of this family is a configured metric
-     * definition, resolved per run; none of them is knowable at build time, so
-     * no producer here contributes to the static half of the universe.
-     *
-     * @var array<string, \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration>
-     */
-    public const array CHANNEL_DECLARATIONS = [];
 
     /**
      * Explicitly empty. A CLI alias is a short flag for one option of one

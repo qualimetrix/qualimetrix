@@ -260,6 +260,40 @@ final class ChannelUniverseCoverageTest extends TestCase
     }
 
     /**
+     * If this disappears, a producer of the computed-metric family could start
+     * contributing a build-time channel, and the run-time half would silently
+     * stop being the whole of its vocabulary: a name resolvable both statically
+     * and from the definition catalog makes `producerOf()` throw mid-run.
+     *
+     * This is the mechanism, not a restatement: the family declares no static
+     * channel because nothing collects one for it, and that is what is checked
+     * here — the alternative, a `CHANNEL_DECLARATIONS = []` constant on the
+     * family, would have been a claim no code reads.
+     */
+    #[Test]
+    public function noProducerOfTheComputedFamilyDeclaresAStaticChannel(): void
+    {
+        $universe = self::universe();
+        $family = array_flip(self::computedProducersFromFixture());
+        $owned = [];
+
+        foreach (array_keys($universe->staticDeclarations()) as $key) {
+            $producer = $universe->producerOf(new FindingChannel($key)->code);
+
+            if ($producer !== null && isset($family[$producer])) {
+                $owned[] = \sprintf('%s (declared by "%s")', $key, $producer);
+            }
+        }
+
+        self::assertSame(
+            [],
+            $owned,
+            'Every channel of the computed-metric family is a configured metric definition, resolved per run.'
+            . ' One reaching the static half would be addressable twice.',
+        );
+    }
+
+    /**
      * The two halves add up, so a name cannot leave one and enter the other
      * unnoticed.
      */

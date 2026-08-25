@@ -33,6 +33,19 @@ final class ChannelLevelAddressingTest extends TestCase
     ];
 
     /**
+     * Which of the universe's rules can be retuned. Spelled separately from
+     * {@see UNIVERSE} because the two are separate declarations in production
+     * too: a rule's channels and its `@qmx-threshold` support are different
+     * facts, and the pair refusal reads both.
+     */
+    private const array RETUNABLE = [
+        'coupling.cbo' => true,
+        'coupling.class-rank' => true,
+        'duplication.code-duplication' => true,
+        'computed.debt' => false,
+    ];
+
+    /**
      * The global question and a separate membership check are two independent
      * existentials, and their witnesses need not be the same channel: the
      * level comes from `coupling.cbo`, the membership from
@@ -200,6 +213,34 @@ final class ChannelLevelAddressingTest extends TestCase
         self::assertStringContainsString('--rule-opt coupling.cbo:class.<option>=<value>', $levelBlind);
     }
 
+    /**
+     * If this disappears, the product goes back to answering a threshold on a
+     * non-retunable rule with advice that does nothing: `--rule-opt
+     * X:level.<option>=<value>` is accepted by the CLI, warns "Unknown option",
+     * and exits zero.
+     */
+    #[Test]
+    public function aRulePairOnARuleThatCannotBeRetunedIsRefusedWithoutAdvisingANoOp(): void
+    {
+        $problem = $this->addressing()->problemWithRulePair(
+            'computed.debt:class',
+            '@qmx-threshold "computed.debt:class"',
+        );
+
+        self::assertNotNull($problem);
+        self::assertStringContainsString('declares no @qmx-threshold support', $problem);
+        self::assertStringNotContainsString(
+            '--rule-opt',
+            $problem,
+            'The rule has no threshold to set at a level, so no --rule-opt spelling can be recommended.',
+        );
+        self::assertStringNotContainsString(
+            'Retune the whole rule',
+            $problem,
+            'The rule declares it cannot be retuned at all, so retuning it whole is not the alternative.',
+        );
+    }
+
     /** Two separators are a level mistake, not an invitation to advise on half a name. */
     #[Test]
     public function aRulePairCarryingTwoSeparatorsIsRefusedAsALevel(): void
@@ -276,6 +317,9 @@ final class ChannelLevelAddressingTest extends TestCase
         );
         $identity->method('hasRule')->willReturnCallback(
             static fn(string $name): bool => \array_key_exists($name, self::UNIVERSE),
+        );
+        $identity->method('supportsThresholdOverride')->willReturnCallback(
+            static fn(string $name): bool => self::RETUNABLE[$name] ?? false,
         );
         $identity->method('expand')->willReturnCallback(
             static function (NameSelector $selector): array {

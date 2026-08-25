@@ -214,31 +214,14 @@ final class RuleExecution implements RuleExecutionInterface
         return $this->exclusions->stats();
     }
 
-    public function activeRules(RuleSelection $selection): array
-    {
-        return array_values(array_filter(
-            $this->allProducers($selection),
-            static fn(RuleMetadata $metadata): bool => $metadata->active,
-        ));
-    }
-
     public function allRules(): array
     {
         return $this->allProducers($this->ruleOptionsRegistry->selection());
     }
 
-    public function totalRuleCount(): int
-    {
-        return \count($this->allRules) + \count($this->classlessProducers);
-    }
-
     /**
      * Every producer this container knows, rule instances and classless
      * declarations alike, each carrying whether `$selection` leaves it enabled.
-     *
-     * The three public answers are one enumeration seen three ways, which is
-     * what {@see RuleExecutionInterface} has always claimed and what a
-     * per-answer implementation would quietly stop being.
      *
      * @return list<RuleMetadata>
      */
