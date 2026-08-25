@@ -143,6 +143,14 @@ bin/qmx check src/ --exclude-health=typing
 
 Both paths produce the same result: the dimension is removed from the pipeline AND `health.overall` weights are renormalized across the remaining dimensions (the disabled dimension is not silently treated as a neutral 75-point contribution). If you override `health.overall` with a non-canonical formula (e.g. `min(...)` or a conditional), excluding dimensions will throw an explicit error — handle the disabled dimension via `??` fallbacks in your custom formula instead.
 
+!!! warning "Two switches that look alike, and do different things"
+    Each built-in dimension is its own producer, so it can be turned off two ways that read almost the same:
+
+    - `rules: { health.cohesion: { enabled: false } }` stops the `health.cohesion` producer from **publishing findings**. The dimension is still computed and still contributes to `health.overall`.
+    - `computed_metrics: { health.cohesion: { enabled: false } }` **removes the dimension itself** — this is the "Disabling a Dimension" switch above. `health.overall`'s weights are renormalized across what remains.
+
+    A dimension removed the second way leaves its producer with no channel at all. An `exclude_namespace_channels` key that used to address `health.cohesion` is then rejected: the key must name a channel the rule under it actually emits, and after removal it emits none.
+
 ### Overriding Formulas
 
 ```yaml

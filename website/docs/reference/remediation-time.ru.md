@@ -105,9 +105,20 @@
 
 ## Вычисляемые метрики
 
-| Правило         | ID         | Минуты |
-| --------------- | ---------- | ------ |
-| Computed Metric | `computed` | 15     |
+У всех производителей этого семейства одна и та же базовая оценка, потому что
+это одно правило, обслуживающее семь производителей. Почему шесть встроенных
+измерений здоровья стали каждый сам себе производителем, а все пользовательские
+метрики делят одного, `computed`, — см. [Оценки здоровья](health-scores.ru.md).
+
+| Правило                 | ID                       | Минуты |
+| ----------------------- | ------------------------ | ------ |
+| Health: Complexity      | `health.complexity`      | 15     |
+| Health: Cohesion        | `health.cohesion`        | 15     |
+| Health: Coupling        | `health.coupling`        | 15     |
+| Health: Typing          | `health.typing`          | 15     |
+| Health: Maintainability | `health.maintainability` | 15     |
+| Health: Overall         | `health.overall`         | 15     |
+| Computed Metric         | `computed`               | 15     |
 
 ## Почему эти значения отличаются от пороговых значений по умолчанию
 

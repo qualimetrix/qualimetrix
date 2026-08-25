@@ -49,25 +49,40 @@ final class SelfTest
         $this->same('code-smell.eval', $empty->forward('code-smell.eval'), 'identity forward');
         $this->same('code-smell.eval', $empty->reverse('code-smell.eval'), 'identity reverse');
 
-        // The tracked declaration is loaded, and what is asserted about it is
-        // what holds however many rows it has: loading already refuses chains,
-        // duplicate sources and duplicate targets, and no tracked row derives a
-        // split.
+        // About the tracked map files this self-test asserts ONE thing: that they
+        // load. Nothing about how many rows they hold, what those rows rename,
+        // or what shapes they derive. Loading is a real assertion — it is where
+        // a chain, a duplicated source, a duplicated target and a row renaming
+        // nothing are refused — and it is the only one that stays true whoever
+        // edits the file next.
         //
-        // Nothing here asserts that the file declares anything. Two spellings
-        // tried to and both went red on a later step rather than on a defect:
-        // first a named Ш5b row, then "the tracked maps are not the identity",
-        // which the repair after Ш5c falsified by renaming nothing and tracking
-        // four header-only files. How many rows a step declares is a fact about
-        // that step; the machinery under test here is the same with none. The
-        // shapes a row can have are proved on synthetic pairs below and in
-        // {@see ambiguities()}, where the input cannot go stale.
-        $maps = RenameMaps::load($this->candidateRoot . '/finding-gate/maps');
-        $this->same(
-            [],
-            array_keys($maps->splits()),
-            'the tracked rows derive no split — a collapse declares one target per source',
-        );
+        // Three spellings have now claimed more than that, and all three died on
+        // the NEXT step rather than on a defect: a named Ш5b row, then "the
+        // tracked maps are not the identity" (falsified by the repair after Ш5c,
+        // which renamed nothing and tracked four header-only files), then "the
+        // tracked rows derive no split" (falsified by Ш5d, whose producer move
+        // derives a split by construction — that is what stops the half
+        // `computed.health` being substituted textually over every reference
+        // mention of it). The pattern is one mistake wearing three faces: what a
+        // step happens to declare is a fact about that step, and a self-test on
+        // the machinery is entitled to no opinion about it. A fourth face would
+        // be any assertion here that reads the file's contents at all.
+        //
+        // Every shape a row can have is therefore proved on synthetic pairs,
+        // where the input cannot go stale because the case carries it: chains,
+        // duplicate sources, duplicate targets and rows renaming nothing below
+        // in this method; collapse and split in {@see ambiguities()}; the
+        // producer move, its staleness credit and the collapse that moves
+        // nothing in {@see producerMoves()}.
+        $refusal = null;
+
+        try {
+            RenameMaps::load($this->candidateRoot . '/finding-gate/maps');
+        } catch (GateError $error) {
+            $refusal = $error->getMessage();
+        }
+
+        $this->assert($refusal === null, 'the tracked maps do not load: ' . ($refusal ?? ''));
 
         // One row, and it is the whole key: the halves are expanded from it, so
         // the two spellings of one rename can never be declared out of step.

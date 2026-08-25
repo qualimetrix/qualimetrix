@@ -233,7 +233,7 @@ part of the namespace tree, but class findings and the producer's other channels
 
 ```yaml
 rules:
-  computed.health:
+  health.cohesion:
     exclude_namespace_channels:
       health.cohesion:
         - App\Metrics\Coupling

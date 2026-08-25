@@ -553,9 +553,9 @@ bin/qmx check src/ --only-rule=complexity.*
 # Run two specific rules
 bin/qmx check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
 
-# Select one channel emitted by the computed.health producer
+# Select one channel of a built-in health dimension: producer and channel
+# share the name, since each of the six dimensions is its own producer
 bin/qmx check src/ --only-rule=health.complexity
-bin/qmx check src/ --only-rule=computed.health#health.complexity
 ```
 
 Selectors must match a registered producer, group, or emitted channel exactly, or resolve an

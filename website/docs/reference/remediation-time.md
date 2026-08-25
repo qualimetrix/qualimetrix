@@ -105,9 +105,20 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 ## Computed Metrics
 
-| Rule            | ID         | Minutes |
-| --------------- | ---------- | ------- |
-| Computed Metric | `computed` | 15      |
+Every producer of this family shares the same base estimate, because it is one
+rule serving seven producers — see [Health Scores](health-scores.md) for why
+the six built-in health dimensions are producers of their own while every
+user-defined metric shares one, `computed`.
+
+| Rule                    | ID                       | Minutes |
+| ----------------------- | ------------------------ | ------- |
+| Health: Complexity      | `health.complexity`      | 15      |
+| Health: Cohesion        | `health.cohesion`        | 15      |
+| Health: Coupling        | `health.coupling`        | 15      |
+| Health: Typing          | `health.typing`          | 15      |
+| Health: Maintainability | `health.maintainability` | 15      |
+| Health: Overall         | `health.overall`         | 15      |
+| Computed Metric         | `computed`               | 15      |
 
 ## Why These Values Differ From Default Thresholds
 

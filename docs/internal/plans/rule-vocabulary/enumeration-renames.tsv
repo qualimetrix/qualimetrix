@@ -41,7 +41,7 @@ design.noc	channel	?		7	9	2	2	0	20	0	3
 design.param-type-coverage	channel	?		5	25	2	1	1	24	0	4
 design.property-type-coverage	channel	?		5	7	2	1	1	22	0	5
 design.return-type-coverage	channel	?		5	10	2	1	0	22	0	5
-duplication.code-duplication	channel	?		14	52	0	2	12	35	0	3
+duplication.code-duplication	channel	?		14	52	0	2	12	35	0	4
 maintainability.index	channel	?		11	45	2	2	0	27	0	3
 security.command-injection	channel	?		3	5	0	0	0	13	0	1
 security.hardcoded-credentials	channel	?		4	9	0	0	0	15	0	1
@@ -85,7 +85,7 @@ isPromotedPropertiesOnly	metric-key	?		2	9	0	0	0	0	0	0
 isReadonly	metric-key	?		8	39	0	0	0	0	0	0
 isVoConstructor	metric-key	?		5	28	0	0	0	0	0	0
 lcc	metric-key	?		11	56	0	0	0	6	0	0
-lcom	metric-key	?		41	134	0	0	0	3	0	0
+lcom	metric-key	?		41	136	0	0	0	3	0	0
 lloc	metric-key	?		16	22	0	0	0	3	0	0
 loc	metric-key	?		72	191	0	0	0	5	0	0
 methodCount	metric-key	?		46	127	0	0	0	5	0	0
@@ -145,7 +145,7 @@ complexity.cognitive	producer	?		10	26	2	2	32	46	0	8
 complexity.cyclomatic	producer	?		37	618	2	2	56	120	0	9
 complexity.npath	producer	?		9	9	2	2	12	38	0	7
 complexity.wmc	producer	?		11	13	2	2	11	27	0	4
-computed	producer	?		80	76	0	1	0	17	0	6
+computed	producer	?		81	80	0	1	0	23	0	46
 coupling.cbo	producer	?		50	225	2	4	8	92	0	6
 coupling.class-rank	producer	?		18	55	0	2	1	26	0	25
 coupling.distance	producer	?		8	29	2	2	3	30	0	27
@@ -157,13 +157,13 @@ design.noc	producer	?		7	9	2	2	0	20	0	3
 design.param-type-coverage	producer	?		5	25	2	1	1	24	0	4
 design.property-type-coverage	producer	?		5	7	2	1	1	22	0	5
 design.return-type-coverage	producer	?		5	10	2	1	0	22	0	5
-duplication.code-duplication	producer	?		14	52	0	2	12	35	0	3
-health.cohesion	producer	?		36	93	0	2	31	18	0	17
-health.complexity	producer	?		47	169	0	1	0	19	0	20
-health.coupling	producer	?		36	33	0	0	0	8	0	17
-health.maintainability	producer	?		14	23	0	0	0	9	0	17
-health.overall	producer	?		107	133	0	0	0	12	0	17
-health.typing	producer	?		18	41	0	1	1	12	0	17
+duplication.code-duplication	producer	?		14	52	0	2	12	35	0	4
+health.cohesion	producer	?		37	112	0	2	31	34	0	40
+health.complexity	producer	?		48	173	0	1	0	20	0	48
+health.coupling	producer	?		37	37	0	0	0	11	0	37
+health.maintainability	producer	?		15	27	0	0	0	12	0	48
+health.overall	producer	?		108	137	0	0	0	20	0	50
+health.typing	producer	?		19	49	0	1	1	15	0	50
 maintainability.index	producer	?		11	45	2	2	0	27	0	3
 security.command-injection	producer	?		3	5	0	0	0	13	0	1
 security.hardcoded-credentials	producer	?		4	9	0	0	0	15	0	1

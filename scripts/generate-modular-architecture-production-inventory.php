@@ -2443,6 +2443,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0029-channel-presentation-join.md' => ['Analysis.Finding', 'P6-A'],
         'docs/adr/0030-one-rule-per-type-coverage-dimension.md' => ['Analysis.Evidence.Design', 'P7'],
         'docs/adr/0031-channel-shape-is-a-producer-property.md' => ['Analysis.Finding', 'P6-A'],
+        'docs/adr/0032-computed-metric-producer-split.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
         'docs/internal/plans/modular-architecture.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture/decisions-and-target.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture/p0-governance.md' => ['Architecture.Governance', 'P2'],

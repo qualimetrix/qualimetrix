@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QmxFindingGateControls;
 
 use QmxFindingGate\FailureClass;
+use RuntimeException;
 
 /**
  * The controls, as a list.
@@ -423,37 +424,54 @@ final class Controls
     /**
      * The reference addressed in a vocabulary it does not have.
      *
-     * **Why `design.noc` in the `design` case, and not `cohesion.lcom` in the
-     * `complexity` one, where this control used to live.** The mutation makes one
-     * whole case's reference run fail, so every surface of that case moves — and
-     * Ш5c declares a delta on `case:complexity|format:sarif`, which is compared
-     * as an exact diff. A failed reference run leaves nothing to diff against
-     * that declaration, the measured diff becomes rubbish, and the run reports
-     * `delta-too-large` there: a statement about the declaration rather than
-     * about the reference's vocabulary. Repinning the expectation onto a
-     * `delta-*` class would move the control off its own subject, so the control
-     * moves to a case that declares nothing instead. `design` qualifies on four
-     * counts, each read off the tree rather than recalled: it declares no delta,
-     * it addresses `design.noc` through `--rule-opt` and claims that channel, no
-     * other case claims it, and its threshold-key group is spelled exactly as
-     * `cohesion.lcom`'s was (`'' => BARE_PAIR`), so the rename meets the same
-     * option plumbing the old target met.
+     * A name the step renamed is written into a case's input with no
+     * `inputs.tsv` row to restate it, so the reference — which predates the
+     * rename — is handed a token it cannot resolve. It answers with the
+     * product's config-error exit code, and the point of the control is that
+     * this is reported as its own class instead of arriving as eleven surface
+     * diffs and an empty findings section, which reads as a product change.
      *
-     * A rule renamed in product code, and the one case that addresses that rule
-     * through `--rule-opt` repointed onto the new name — which is what a step
-     * that renames a rule has to do — with no `inputs.tsv` row to restate it for
-     * the reference. The reference then refuses its input with the product's
-     * config-error exit code, and the point of the control is that this says so
-     * instead of arriving as eleven surface diffs and an empty findings section,
-     * which would read as a product change.
+     * **Why a CHANNEL of a multi-channel rule, and not a rule.** This control
+     * used to rename `design.noc`, and Ш5d made that unrunnable: the step
+     * declares a delta on `tree|rules`, a renamed producer moves that listing,
+     * and an expectation pinned to a surface a declaration covers can never be
+     * met — the harness refuses such a control before it clones anything
+     * ({@see Control::assertNotPinnedToDeclaredDelta()}). Repinning onto a
+     * `delta-*` class was rejected outright: that would assert about the
+     * declaration rather than about the reference's vocabulary, which is what
+     * this control is for. So the mutation stops reaching the listing at all.
      *
-     * The case's `channels` claim is repointed with the arguments on purpose: the
-     * claim is not what is under test here, and leaving it stale would add a
-     * failure of a different mechanism to every line of the table. Our own
-     * `qmx.yaml` is repointed for a harder reason, measured: the channel probe
-     * resolves the candidate tree's own configuration, and that configuration
-     * names `design.noc` — so without this the probe dies on an unknown rule
-     * and the gate never gets as far as running anything.
+     * It can, because the listing and the channel vocabulary are different sets
+     * of names. `bin/qmx rules` prints producer names, their descriptions and
+     * their option tokens; it prints no channel codes. `architecture.potential-shadow`
+     * is a diagnostic the `architecture.layer-violation` rule emits under a rule
+     * name of its own and is not a registered rule, so it appears nowhere in the
+     * listing. Measured, not assumed: the listing was captured before and after
+     * the one-literal edit below and the two files are byte-identical.
+     *
+     * **Why the input is a selector, and why in this case.** A selector resolves
+     * a producer, a group **or a channel** — measured from the product's own
+     * refusal, `Rule selector "…" does not match any registered producer, group,
+     * or channel`, which exits 3. `disabled-rule` is the auxiliary case that
+     * exists to carry a selector on the gate's input, and no architecture
+     * channel fires in it (its config declares no layer policy), so the
+     * candidate's own output there is unchanged and the only thing this
+     * mutation does to that case is make the *reference* refuse its input.
+     *
+     * A CLI flag would have been the other shape an `inputs.tsv` row can carry,
+     * and it was measured and rejected: an unknown option exits **1**, not 3, so
+     * a renamed flag proves `run-failed` rather than this class.
+     *
+     * The new name keeps the old one's length, as every rename in this file
+     * does: two surfaces pad a name-bearing column, and a row cannot declare
+     * padding.
+     *
+     * The `layers` case's claim is repointed with the rename because the claim
+     * is not what is under test, and a stale one would add a failure of another
+     * mechanism to every line of the table. The tracked declaration fixture is
+     * deliberately NOT repointed: the disagreement is this mutation's honest
+     * radius and is tolerated as such, exactly as it was when this control
+     * renamed a rule.
      */
     private static function referenceInputUntranslated(): Control
     {
@@ -461,38 +479,37 @@ final class Controls
             'reference-input',
             'a case input that needs translating, with no inputs.tsv row to translate it',
             Mutation::edit(
-                'src/Analysis/Evidence/Design/NocRule.php',
-                ["public const string NAME = 'design.noc';" => "public const string NAME = 'design.noc2';"],
-                'the rule and its channel are renamed to design.noc2',
-            )->and(Mutation::edit(
-                'finding-gate/cases/design/case.json',
+                'src/Analysis/Policy/Architecture/Contract/LayerPolicyPreparationInterface.php',
                 [
-                    '"--rule-opt=design.noc:warning=2"' => '"--rule-opt=design.noc2:warning=2"',
-                    '"--rule-opt=design.noc:error=4"' => '"--rule-opt=design.noc2:error=4"',
-                    // The claim carries a level, and the mutation deliberately
-                    // stops short of it: a control coupled to the level
-                    // vocabulary would go stale every time that vocabulary
-                    // moves, which is exactly what Ш5 does to it. Matching the
-                    // channel name up to the level separator keeps "exactly one
-                    // occurrence" sharp without asserting anything about levels.
-                    '"design.noc@' => '"design.noc2@',
+                    "POTENTIAL_SHADOW_DIAGNOSTIC_NAME = 'architecture.potential-shadow';"
+                        => "POTENTIAL_SHADOW_DIAGNOSTIC_NAME = 'architecture.potential-shado2';",
                 ],
-                'the case addresses the new name',
+                'the channel architecture.potential-shadow is renamed, and the producing rule is left alone',
+            )->and(Mutation::edit(
+                'finding-gate/cases/disabled-rule/case.json',
+                [
+                    // The trailing bracket is part of the fragment on purpose: a
+                    // Mutation may not leave its own anchor behind, so an added
+                    // line has to consume something. The comma is what changes.
+                    "\"--disable-rule=code-smell.eval\"\n    ],"
+                        => "\"--disable-rule=code-smell.eval\",\n        \"--disable-rule=architecture.potential-shado2\"\n    ],",
+                ],
+                'the auxiliary selector case addresses the new channel name',
             ))->and(Mutation::edit(
-                'qmx.yaml',
-                ['  design.noc:' => '  design.noc2:'],
-                'our own configuration addresses the new name too',
+                'finding-gate/cases/layers/case.json',
+                ['"architecture.potential-shadow@project"' => '"architecture.potential-shado2@project"'],
+                'the case that fires the channel claims it under its new name',
             )),
-            [new Expectation(FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:design')],
+            [new Expectation(FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:disabled-rule')],
             [
-                new Expectation(FailureClass::RUN_FAILED, 'reference / design'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:design'),
-                new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design'),
+                new Expectation(FailureClass::RUN_FAILED, 'reference / disabled-rule'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:disabled-rule'),
+                new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:disabled-rule'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:layers'),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
                     'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
                 ),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'tree|rules'),
             ],
         );
     }
@@ -551,7 +568,6 @@ final class Controls
             ],
             [
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'tree|rules'),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:smells'),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
@@ -661,23 +677,9 @@ final class Controls
             // would be comparing two different changes.
             self::unusedPrivateChannelMutation()
                 ->and(self::unusedPrivateRenameDeclarations())
-                ->and(Mutation::replace(
-                    [
-                        // Written whole rather than inserted at an anchor. An
-                        // insertion needs a row to anchor on, and the repair that
-                        // follows Ш5c renames nothing, so its tracked map is a
-                        // header and nothing else — anchoring on the header alone
-                        // is the prefix trap a run already caught here: the
-                        // fragment searched for would still be present afterwards
-                        // and Mutation would refuse the write as unapplied.
-                        // Whole-file content states the one declaration this
-                        // control makes and withdraws none, because there are
-                        // none to withdraw.
-                        'finding-gate/maps/channels.tsv' => "old\tnew\treason\n"
-                            . "code-smell.unused-private\tcode-smell.unused-privat2\t"
-                            . "the control renames the channel's code\n",
-                    ],
-                    "the control's rename is the map's one declared row",
+                ->and(self::trackedChannelMapPlus(
+                    ["code-smell.unused-private\tcode-smell.unused-privat2\tthe control renames the channel's code"],
+                    "the step's own rows, plus the one row that declares this control's rename",
                 )),
         );
     }
@@ -717,23 +719,25 @@ final class Controls
             'a row of a declared split that explained nothing, beside one that explained every record',
             self::unusedPrivateChannelMutation()
                 ->and(self::unusedPrivateRenameDeclarations())
-                ->and(Mutation::replace(
+                ->and(self::trackedChannelMapPlus(
                     [
-                        'finding-gate/maps/channels.tsv' => "old\tnew\treason\n"
-                            . "code-smell.unused-private#code-smell.unused-private\t"
+                        "code-smell.unused-private#code-smell.unused-private\t"
                             . "code-smell.unused-privat2#code-smell.unused-privat2\t"
-                            . "the producer and its code move together, and this row explains every record of them\n"
-                            . "code-smell.unused-private#code-smell.never-emitted\t"
+                            . 'the producer and its code move together, and this row explains every record of them',
+                        "code-smell.unused-private#code-smell.never-emitted\t"
                             . "code-smell.unused-privat3#code-smell.unused-privat3\t"
-                            . "a second half of the same split, over a code the product never emits\n",
+                            . 'a second half of the same split, over a code the product never emits',
                     ],
                     'the rename is declared as a split, one of whose two rows can explain nothing',
                 )),
             [new Expectation(FailureClass::MAP_STALE, 'code-smell.never-emitted')],
-            [
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'tree|rules'),
-            ],
+            // `tree|rules` moves here too — the mutation renames a producer and
+            // the listing prints producer names — but the step declares a delta
+            // for that surface, so what the run reports there is a delta class
+            // and {@see Outcome::isDeclarationNoise()} absorbs it. A
+            // `surface-mismatch` toleration would match nothing and fail this
+            // control for an unmeasured radius.
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells')],
         );
     }
 
@@ -764,20 +768,55 @@ final class Controls
         return Control::red(
             'split-no-row',
             'a finding whose rule is a declared split half, with no declared row naming its key',
-            Mutation::replace(
+            self::trackedChannelMapPlus(
                 [
-                    'finding-gate/maps/channels.tsv' => "old\tnew\treason\n"
-                        . "code-smell.unused-private#code-smell.never-emitted\t"
+                    "code-smell.unused-private#code-smell.never-emitted\t"
                         . "code-smell.split-one#code-smell.split-one\t"
-                        . "one half of a declared split, over a code the product never emits\n"
-                        . "code-smell.unused-private#code-smell.never-emitted-either\t"
+                        . 'one half of a declared split, over a code the product never emits',
+                    "code-smell.unused-private#code-smell.never-emitted-either\t"
                         . "code-smell.split-two#code-smell.split-two\t"
-                        . "the other half, so the producer is split and its own key is declared by neither\n",
+                        . 'the other half, so the producer is split and its own key is declared by neither',
                 ],
                 'a split declared over codes the product never emits, leaving the emitted one unaccounted',
             ),
             [new Expectation(FailureClass::SPLIT_UNMAPPED, 'case:smells')],
             [new Expectation(FailureClass::MAP_STALE, 'channels.tsv')],
+        );
+    }
+
+    /**
+     * The map a control declares: every row the step tracks, plus the control's
+     * own.
+     *
+     * A control that writes the map whole has to write the step's rows too, and
+     * copying them into this file would be a second, silently ageing copy of a
+     * tracked declaration. They are read from the tracked file instead, so the
+     * only thing stated here is what this control adds.
+     *
+     * Whole-file, not an insertion: {@see Mutation} refuses an edit whose own
+     * anchor survives it, and an appended row leaves whatever it anchored on in
+     * place. The reason the step's rows must survive is measured rather than
+     * tidy — they declare the split that explains the producer move, and without
+     * them the health surfaces the step declares a delta for fail as
+     * `delta-overreach`, which for the green control means no green at all.
+     *
+     * @param list<string> $rows tab-separated old, new, reason
+     */
+    private static function trackedChannelMapPlus(array $rows, string $description): Mutation
+    {
+        $path = 'finding-gate/maps/channels.tsv';
+        $tracked = @file_get_contents(\dirname(__DIR__, 2) . '/' . $path);
+
+        if ($tracked === false || trim($tracked) === '') {
+            throw new RuntimeException(\sprintf(
+                'Cannot read %s, so a control cannot state its declaration on top of the step\'s own rows.',
+                $path,
+            ));
+        }
+
+        return Mutation::replace(
+            [$path => rtrim($tracked, "\n") . "\n" . implode("\n", $rows) . "\n"],
+            $description,
         );
     }
 
@@ -878,8 +917,13 @@ final class Controls
      */
     private static function declare(string $surface, string $reason): Mutation
     {
+        // `control-` prefixed on purpose: a step may track a diff for the very
+        // surface a control plants one for, and Mutation refuses to CREATE a
+        // file the repository already has — measured on Ш5d, whose
+        // `case:health|format:json` diff collided with delta-too-large's slug
+        // and would have crashed that control at mutation time.
         $slug = trim((string) preg_replace('~[^A-Za-z0-9]+~', '-', $surface), '-');
-        $file = 'declared-delta/' . $slug . '.diff';
+        $file = 'declared-delta/control-' . $slug . '.diff';
 
         // The index is REPLACED, not created: a step that declares a delta of
         // its own already committed one, and a control's declaration has to be

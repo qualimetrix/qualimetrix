@@ -551,9 +551,9 @@ bin/qmx check src/ --only-rule=complexity.*
 # Запустить два конкретных правила
 bin/qmx check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
 
-# Выбрать один канал, который создаёт правило computed.health
+# Выбрать один канал встроенного измерения здоровья: производитель и канал
+# называются одинаково, потому что каждое из шести измерений — сам себе производитель
 bin/qmx check src/ --only-rule=health.complexity
-bin/qmx check src/ --only-rule=computed.health#health.complexity
 ```
 
 Селектор должен точно совпасть с зарегистрированным producer, группой или выводимым каналом,

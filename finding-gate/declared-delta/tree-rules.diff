@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-51 rules available
++45 rules available
+@@ -64,2 +64,0 @@
+-Computed
+-  computed                                 Checks user-defined computed metrics against their thresholds
+@@ -116,8 +114,2 @@
+-Health
+-  health.cohesion                          Checks the cohesion health score against its thresholds
+-  health.complexity                        Checks the complexity health score against its thresholds
+-  health.coupling                          Checks the coupling health score against its thresholds
+-  health.maintainability                   Checks the maintainability health score against its thresholds
+-  health.overall                           Checks the overall health score against its thresholds
+-  health.typing                            Checks the typing health score against its thresholds
+-Maintainability
++Maintainability
++  computed.health                          Checks computed health metrics against thresholds

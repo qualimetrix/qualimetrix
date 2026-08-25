@@ -227,7 +227,7 @@ rules:
 
 ```yaml
 rules:
-  computed.health:
+  health.cohesion:
     exclude_namespace_channels:
       health.cohesion:
         - App\Metrics\Coupling

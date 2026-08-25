@@ -489,12 +489,12 @@ to touch this list; it exists because the last change to the claim format
 recorded its blast radius as "one literal, one mutation" and two of these four
 survived by luck.
 
-| Consumer                                                                  | What it reads                                                                                                                                                                          |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`                  | every `cases/*/case.json`, as the schema                                                                                                                                               |
-| `scripts/finding-gate-controls/Controls.php`                              | six exact corpus paths it mutates: `cases/smells/src/Dead.php`, `cases/health/qmx.yaml`, `cases/design/case.json`, `cases/smells/case.json`, `maps/channels.tsv`, `declared-delta.tsv` |
-| `tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check`                                                                    |
-| `scripts/generate-rename-enumeration.php`                                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                                                                                     |
+| Consumer                                                                  | What it reads                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`                  | every `cases/*/case.json`, as the schema                                                                                                                                                                                                                                                                                                        |
+| `scripts/finding-gate-controls/Controls.php`                              | seven exact corpus paths it mutates: `cases/smells/src/Dead.php`, `cases/health/qmx.yaml`, `cases/disabled-rule/case.json`, `cases/layers/case.json`, `cases/smells/case.json`, `maps/channels.tsv`, `declared-delta.tsv`; it also reads `maps/channels.tsv` to write it back with a control's row, and creates `declared-delta/control-*.diff` |
+| `tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check`                                                                                                                                                                                                                             |
+| `scripts/generate-rename-enumeration.php`                                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                                                                                                                                                                                                                                              |
 
 Measured, not recalled: `git grep -E "finding-gate/cases|case\.json"` over a
 stopped tree, minus prose. The product test is one field-read away from breaking
@@ -577,6 +577,17 @@ knowing before adding one:
   the control off its own subject. A broader pin that merely spans a declared
   surface is fine: the other ten formats and the baseline file are still compared
   for equality, and the declared one among them is absorbed as declaration noise.
+- **A step's own declarations reach into the controls twice more, and both are
+  fail-closed rather than obvious.** A control that plants a declared delta
+  writes its diff as `declared-delta/control-<surface>.diff`: `Mutation` refuses
+  to create a file the repository already has, and without the prefix a control's
+  slug collides with the tracked diff of the same surface the moment a step
+  declares one. And a control that writes `maps/channels.tsv` whole writes the
+  step's rows **plus** its own, read from the tracked file rather than copied
+  into the control: the step's rows declare the split that explains its own
+  producer move, and dropping them turns the surfaces it declares a delta for
+  into `delta-overreach` — which the red controls absorb as declaration noise and
+  the green one cannot absorb at all.
 - `split-row-idle` and `split-no-row` are the controls on the split mechanism,
   and they watch the two failures a split can hide. `split-row-idle` declares the
   `code-smell.unused-private` rename as a split whose second row names a code the
@@ -584,11 +595,13 @@ knowing before adding one:
   idle, the second explains none and must fail as `map-stale`. That is the
   boundary of the staleness credit — a relaxation granted per split rather than
   per row would make this control green. Its measured cost is that a split half
-  is untranslatable, so the `smells` case's surfaces and the `qmx rules` listing
-  differ, and both are tolerated — that pair of tolerations is drawn as an
-  outline, `case:smells` and `tree|rules`, rather than enumerated artifact by
-  artifact the way the delta controls enumerate theirs. `split-no-row` perturbs no
-  product code at all: it declares a split of the same channel into two codes the
+  is untranslatable, so the `smells` case's surfaces differ; that toleration is
+  drawn as an outline, `case:smells`, rather than enumerated artifact by artifact
+  the way the delta controls enumerate theirs. The `qmx rules` listing moves too,
+  and is tolerated by nothing: the step declares a delta for it, so what the run
+  reports there is a delta class, absorbed as declaration noise — a
+  `surface-mismatch` toleration would match nothing and fail the control.
+  `split-no-row` perturbs no product code at all: it declares a split of the same channel into two codes the
   product never emits, so the twelve findings that *do* carry the split half have
   no declared row naming their key, and `split-unmapped` is required on that
   case. That class carries the whole delta of the `rule` field whenever a
@@ -603,9 +616,11 @@ knowing before adding one:
 - `lost-level-fixture` is the control on a lost level. Its mutation takes the
   `class` level away from the `health` case's user-defined computed metric, which
   is the only way this corpus can lose one level of a multi-level channel:
-  measured, the seven `computed.health` channels are the only ones firing at more
-  than one level in a case, they are computed for every class, and deleting any
-  single fixture of that case leaves the level set untouched. Nothing is
+  measured, the seven channels of that case's computed family — the six
+  `health.*` dimensions and `computed.branch_load`, each with a producer of its
+  own since Ш5d — are the only ones firing at more than one level in a case, they
+  are computed for every class, and deleting any single fixture of that case
+  leaves the level set untouched. Nothing is
   tolerated, and the absence of `coverage-shortfall` from its expectations is the
   assertion: the channel is still declared and still observed, so the claim is the
   only place the loss can be seen.

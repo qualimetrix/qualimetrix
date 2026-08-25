@@ -58,4 +58,15 @@ class Directives
     public function equidistantAcrossFamilies(): void
     {
     }
+
+    /**
+     * A pair whose level the channel it names does not declare. The name half
+     * resolves, so what is unaddressable here is the pair -- the one shape the
+     * level vocabulary added and the corpus did not yet hold.
+     *
+     * @qmx-ignore duplication.code-duplication:class -- that channel reports at project level only
+     */
+    public function impossiblePair(): void
+    {
+    }
 }
