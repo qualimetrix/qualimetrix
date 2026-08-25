@@ -6,8 +6,10 @@ namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
@@ -288,6 +290,58 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
     }
 
+    /**
+     * A level is a coordinate beside the channel name, addressed via
+     * `channel:level`, never a word inside the name itself — the same
+     * invariant Ш5c enforces for statically declared channels
+     * ({@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest}).
+     * A user-defined metric name is the one place that invariant can still be
+     * broken at runtime, since the user picks the name.
+     */
+    #[Test]
+    public function itRefusesAUserDefinedMetricNameEndingInALevelWord(): void
+    {
+        self::expectException(ComputedMetricConfigurationException::class);
+        self::expectExceptionMessage('must not end in the level word "class"');
+
+        $this->resolver->resolve([
+            'computed.foo.class' => [
+                'formula' => '1',
+                'levels' => ['class'],
+                'warning' => 0,
+            ],
+        ]);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function provideLevelWordsEndingAName(): array
+    {
+        return [
+            'callable' => ['computed.foo.callable'],
+            'class' => ['computed.foo.class'],
+            'file' => ['computed.foo.file'],
+            'namespace' => ['computed.foo.namespace'],
+            'project' => ['computed.foo.project'],
+            'bare name, no prefix segment' => ['computed.namespace'],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('provideLevelWordsEndingAName')]
+    public function itRefusesEveryLevelWordAsTheLastSegment(string $name): void
+    {
+        self::expectException(ComputedMetricConfigurationException::class);
+
+        $this->resolver->resolve([
+            $name => [
+                'formula' => '1',
+                'levels' => ['namespace'],
+            ],
+        ]);
+    }
+
     #[Test]
     public function itThrowsForInvalidPrefix(): void
     {
@@ -394,6 +448,77 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertSame('ccn * 5', $complexity->getFormulaForLevel(SymbolType::Class_));
         // Other levels get the singular formula
         self::assertSame('ccn__avg * 10', $complexity->getFormulaForLevel(SymbolType::Namespace_));
+    }
+
+    /**
+     * @return array<string, array{string, SymbolType}>
+     */
+    public static function provideLevelSpellingsAcceptedForAComputedMetric(): array
+    {
+        return [
+            'class' => ['class', SymbolType::Class_],
+            'namespace' => ['namespace', SymbolType::Namespace_],
+            'project' => ['project', SymbolType::Project],
+        ];
+    }
+
+    /**
+     * `mapLevel()` used to spell the level vocabulary as its own private
+     * `match ('class', 'namespace', 'project')`, independent of
+     * {@see \Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel}.
+     * Routing it through `SymbolLevel` must not narrow the spellings a
+     * `computed_metrics.*.levels` entry accepts — every spelling accepted
+     * before this change is accepted after it too.
+     */
+    #[Test]
+    #[DataProvider('provideLevelSpellingsAcceptedForAComputedMetric')]
+    public function itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted(string $spelling, SymbolType $expected): void
+    {
+        $result = $this->resolver->resolve([
+            'computed.spelling' => [
+                'formula' => 'loc__avg',
+                'levels' => [$spelling],
+            ],
+        ]);
+
+        $custom = $this->findByName($result, 'computed.spelling');
+        self::assertNotNull($custom);
+        self::assertSame([$expected], $custom->levels);
+    }
+
+    /**
+     * `callable` and `file` are real words in the level vocabulary
+     * ({@see \Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel}) that a
+     * computed metric cannot report at — {@see ComputedMetricDefinition}'s
+     * `formulas` keys are class/namespace/project only. Both the old private
+     * word list and the vocabulary-backed replacement refuse them; this pins
+     * that the replacement did not accidentally widen the accepted spellings.
+     */
+    #[Test]
+    public function itStillRefusesLevelsAComputedMetricCannotReportAt(): void
+    {
+        self::expectException(ComputedMetricConfigurationException::class);
+
+        $this->resolver->resolve([
+            'computed.unsupported' => [
+                'formula' => 'loc__avg',
+                'levels' => ['callable'],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function itThrowsForAWordThatIsNotALevelAtAll(): void
+    {
+        self::expectException(ComputedMetricConfigurationException::class);
+        self::expectExceptionMessage('Invalid computed metric level: "bogus"');
+
+        $this->resolver->resolve([
+            'computed.bogus' => [
+                'formula' => 'loc__avg',
+                'levels' => ['bogus'],
+            ],
+        ]);
     }
 
     #[Test]

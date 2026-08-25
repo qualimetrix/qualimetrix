@@ -82,6 +82,16 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
         );
     }
 
+    /**
+     * This guard's subject is {@see self::staticDeclarations()} only — the
+     * rule-declared channel vocabulary. It says nothing about a name chosen
+     * at runtime, which is possible for exactly one producer: a user-defined
+     * `computed_metrics.*` entry, whose name the resolver reads from
+     * configuration rather than declaring in code. That runtime family is
+     * closed separately, by
+     * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver::assertNameDoesNotEndInALevel()},
+     * which refuses such a name before it can become a channel.
+     */
     #[Test]
     public function noDeclaredChannelCodeCarriesALevel(): void
     {
