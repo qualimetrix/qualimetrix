@@ -189,6 +189,13 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
         return $static ?? $runtime;
     }
 
+    public function levelsOf(string $code): array
+    {
+        $declaration = $this->declarationFor(new FindingChannel($code));
+
+        return $declaration === null ? [] : $declaration->levels;
+    }
+
     public function supportsThresholdOverride(string $ruleName): bool
     {
         return $this->thresholdOverrideSupportByRule[$ruleName] ?? false;

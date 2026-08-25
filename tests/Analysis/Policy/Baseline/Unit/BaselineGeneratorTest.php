@@ -280,7 +280,7 @@ final class BaselineGeneratorTest extends TestCase
         );
         self::assertSame([2, 1], array_map(static fn($group): int => $group->memberCount, $capture->uncaptured));
         self::assertSame(
-            ['complexity.cyclomatic.callable', 'this.channel'],
+            ['complexity.cyclomatic', 'this.channel'],
             $capture->uncapturedChannels(),
         );
     }
@@ -340,7 +340,7 @@ final class BaselineGeneratorTest extends TestCase
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'no magnitude reported',
             severity: Severity::Warning,
         );
@@ -353,7 +353,7 @@ final class BaselineGeneratorTest extends TestCase
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'magnitude reported',
             severity: Severity::Warning,
             metricValue: $magnitude,

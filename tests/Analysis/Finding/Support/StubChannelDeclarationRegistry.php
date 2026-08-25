@@ -40,7 +40,7 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
     public static function withDefaults(): self
     {
         return new self([
-            'complexity.cyclomatic.callable' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
+            'complexity.cyclomatic' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
             'duplication.code-duplication' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
             'maintainability.index.class' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
             'code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::Callable),

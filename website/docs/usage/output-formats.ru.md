@@ -84,9 +84,9 @@ bin/qmx check src/ --detail=50
 **Пример вывода:**
 
 ```
-src/Service/UserService.php:42: error[complexity.cyclomatic.callable]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
+src/Service/UserService.php:42: error[complexity.cyclomatic]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
 src/Service/UserService.php:87: warning[size.method-count]: Class has 22 methods, max recommended is 20 (UserService)
-src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max allowed is 15 (OrderRepository)
+src/Repository/OrderRepository.php:15: error[coupling.cbo]: CBO is 18, max allowed is 15 (OrderRepository)
 
 3 error(s), 0 warning(s) in 45 file(s)
 ```
@@ -183,12 +183,12 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
             "line": 42,
             "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "symbol": "App\\Service\\UserService::calculate",
-            "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
+            "channel": "complexity.cyclomatic",
             "occurrence": null,
             "edge": null,
             "namespace": "App\\Service",
             "rule": "complexity.cyclomatic",
-            "code": "complexity.cyclomatic.callable",
+            "code": "complexity.cyclomatic",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
             "recommendation": null,
@@ -359,7 +359,7 @@ Checkstyle 3.0 XML: `<file name="...">` с вложенными `<error line="" 
     <error line="42"
            severity="error"
            message="Cyclomatic complexity is 15, max allowed is 10"
-           source="qmx.complexity.cyclomatic.callable"/>
+           source="qmx.complexity.cyclomatic"/>
     <error line="87"
            severity="warning"
            message="Class has 22 methods, max recommended is 20"
@@ -403,7 +403,7 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `level` (error/warning), `message.t
             },
             "results": [
                 {
-                    "ruleId": "complexity.cyclomatic.callable",
+                    "ruleId": "complexity.cyclomatic",
                     "level": "error",
                     "message": {
                         "text": "Cyclomatic complexity is 15, max allowed is 10"
@@ -459,7 +459,7 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `level` (error/warning), `message.t
 [
     {
         "description": "Cyclomatic complexity is 15, max allowed is 10",
-        "check_name": "complexity.cyclomatic.callable",
+        "check_name": "complexity.cyclomatic",
         "fingerprint": "a1b2c3d4e5f6...",
         "severity": "critical",
         "location": {
@@ -502,7 +502,7 @@ code_quality:
 
 ```
 ::warning file=src/Service/UserService.php,line=87,title=size.method-count::Class has 22 methods, max recommended is 20
-::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic.callable::Cyclomatic complexity is 15, max allowed is 10
+::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic::Cyclomatic complexity is 15, max allowed is 10
 ```
 
 **Использование в CI (GitHub Actions):**

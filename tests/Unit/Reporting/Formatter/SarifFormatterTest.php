@@ -77,7 +77,7 @@ final class SarifFormatterTest extends TestCase
             subject: MetricSubject::declaration(DeclarationPath::of($logical, RelativePath::fromString('src/Service/DuplicateService.php'), DeclarationOrdinal::fromRank($ordinal))),
             symbolPath: $logical,
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Same message must not participate in the fingerprint',
             severity: Severity::Warning,
         );
@@ -97,7 +97,7 @@ final class SarifFormatterTest extends TestCase
             location: new Location(RelativePath::fromString('src/Service/UnrelatedService.php'), 5),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UnrelatedService', 'run'),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'An unrelated finding',
             severity: Severity::Warning,
         );
@@ -208,7 +208,7 @@ final class SarifFormatterTest extends TestCase
         $rule = $run['tool']['driver']['rules'][0];
         self::assertSame('complexity.cyclomatic', $rule['id']);
         self::assertSame('Complexity Cyclomatic', $rule['name']);
-        self::assertSame('Complexity cyclomatic', $rule['shortDescription']['text']);
+        self::assertSame('Checks cyclomatic complexity at method and class levels', $rule['shortDescription']['text']);
         // Max severity is Error, so defaultConfiguration level should be 'error'
         self::assertSame('error', $rule['defaultConfiguration']['level']);
 
@@ -584,7 +584,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic.class',
+                code: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -619,7 +619,7 @@ final class SarifFormatterTest extends TestCase
         }
 
         // Known categories map to their docs page
-        self::assertSame('https://qualimetrix.dev/rules/complexity/', $rulesByCode['complexity.cyclomatic.class']['helpUri']);
+        self::assertSame('https://qualimetrix.dev/rules/complexity/', $rulesByCode['complexity.cyclomatic']['helpUri']);
         self::assertSame('https://qualimetrix.dev/rules/code-smell/', $rulesByCode['code-smell.boolean-argument']['helpUri']);
 
         // Unknown category falls back to repository URL
@@ -650,7 +650,7 @@ final class SarifFormatterTest extends TestCase
 
         $rule = $data['runs'][0]['tool']['driver']['rules'][0];
         // Should use the description matching 'complexity.cyclomatic', not 'cyclomatic-complexity'
-        self::assertSame('Complexity cyclomatic', $rule['shortDescription']['text']);
+        self::assertSame('Checks cyclomatic complexity at method and class levels', $rule['shortDescription']['text']);
     }
 
     #[Test]

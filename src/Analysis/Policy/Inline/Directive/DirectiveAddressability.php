@@ -6,6 +6,8 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
@@ -32,16 +34,29 @@ final readonly class DirectiveAddressability
 {
     private DirectiveNameHints $hints;
 
+    /**
+     * The shared refusal for a `channel:level` pair. Built here rather than
+     * injected for the same reason the hints are: a pure function of the same
+     * universe, with no lifecycle of its own.
+     */
+    private ChannelLevelAddressing $levels;
+
     public function __construct(
         private ChannelIdentityInterface $identity,
     ) {
         $this->hints = new DirectiveNameHints($identity);
+        $this->levels = new ChannelLevelAddressing($identity);
     }
 
     /**
-     * A suppression addresses a **channel**. Three spellings are legitimate:
-     * the absence of a rule filter, an exact channel name, and `X.*` for the
-     * channels below `X`. Everything else names nothing.
+     * A suppression addresses a **channel**, optionally at one level. Four
+     * spellings are legitimate: the absence of a rule filter, an exact channel
+     * name, `X.*` for the channels below `X`, and either of the last two with
+     * `:level` after it. Everything else names nothing.
+     *
+     * An impossible pair is refused by {@see ChannelLevelAddressing} and by
+     * nothing here: the configuration seam asks the same question of the same
+     * object, so the two families of directive cannot answer it differently.
      */
     public function problemWithSuppression(Suppression $suppression): ?string
     {
@@ -70,25 +85,31 @@ final readonly class DirectiveAddressability
             );
         }
 
+        $pairProblem = $this->levels->problemWith($raw);
+        if ($pairProblem !== null) {
+            return \sprintf('Suppression %s A reason goes after "%s".', $pairProblem, Suppression::REASON_SEPARATOR);
+        }
+
         $selector = $target->selector();
         if ($selector === null) {
             return \sprintf(
                 'Suppression "%s" is not a channel selector. Write an exact channel name,'
-                . ' or "X.*" for the channels below X.'
+                . ' or "X.*" for the channels below X, either optionally followed by "%slevel".'
                 . ' A reason goes after "%s".',
                 $raw,
+                ChannelLevelSelector::LEVEL_SEPARATOR,
                 Suppression::REASON_SEPARATOR,
             );
         }
 
-        if ($this->identity->expand($selector) !== []) {
+        if ($this->identity->expand($selector->channel()) !== []) {
             return null;
         }
 
         return \sprintf(
             'Suppression "%s" addresses no channel. %s Prose belongs after "%s".',
             $raw,
-            $this->hints->forChannelSelector($selector),
+            $this->hints->forChannelSelector($selector->channel()),
             Suppression::REASON_SEPARATOR,
         );
     }
@@ -108,6 +129,24 @@ final readonly class DirectiveAddressability
                 . ' producing rule by its own name.',
                 $name,
                 FindingChannel::retiredPairAdvice($name),
+            ));
+        }
+
+        // Captured by the grammar so that it can be refused here. Truncating
+        // the pair to its left half would silently retune the whole rule,
+        // which is the one outcome worse than either a match or a refusal.
+        if (ChannelLevelSelector::carriesLevelSeparator($name)) {
+            $rule = ChannelLevelSelector::channelHalf($name);
+            $level = substr($name, \strlen($rule) + 1);
+
+            return new DirectiveRejection(false, \sprintf(
+                '@qmx-threshold "%s" addresses a channel at a level. A threshold addresses the producing rule by its'
+                . ' own name and does not distinguish levels (ADR 0024). Write "@qmx-threshold %s <values>" for the'
+                . ' whole rule, or set the level alone with --rule-opt %s:%s.<option>=<value>.',
+                $name,
+                $rule,
+                $rule,
+                $level,
             ));
         }
 

@@ -299,7 +299,7 @@ final class BaselineUpdaterTest extends TestCase
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'no magnitude reported',
             severity: Severity::Warning,
         );

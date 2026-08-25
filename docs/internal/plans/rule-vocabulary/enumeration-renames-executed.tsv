@@ -20,3 +20,13 @@ design.type-coverage#design.type-coverage.param	channel	design.param-type-covera
 design.type-coverage#design.type-coverage.property	channel	design.property-type-coverage#design.property-type-coverage	Ш4b
 design.type-coverage#design.type-coverage.return	channel	design.return-type-coverage#design.return-type-coverage	Ш4b
 design.type-coverage	producer	design.param-type-coverage|design.return-type-coverage|design.property-type-coverage	Ш4b
+complexity.cognitive.callable	channel	complexity.cognitive	Ш5c
+complexity.cognitive.class	channel	complexity.cognitive	Ш5c
+complexity.cyclomatic.callable	channel	complexity.cyclomatic	Ш5c
+complexity.cyclomatic.class	channel	complexity.cyclomatic	Ш5c
+complexity.npath.callable	channel	complexity.npath	Ш5c
+complexity.npath.class	channel	complexity.npath	Ш5c
+coupling.cbo.class	channel	coupling.cbo	Ш5c
+coupling.cbo.namespace	channel	coupling.cbo	Ш5c
+coupling.instability.class	channel	coupling.instability	Ш5c
+coupling.instability.namespace	channel	coupling.instability	Ш5c

@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -125,23 +124,22 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     }
 
     /**
-     * Both NPath channels report the metric they check as `metricValue`
-     * (`$npathValue` in {@see analyzeMethodLevel()}, `$maxNpathValue` in
-     * {@see analyzeClassLevel()}), judged worse the higher it goes:
-     * {@see MethodNpathComplexityOptions::getSeverity()}'s `$value >=
-     * $this->error` (line 48) / `$value >= $this->warning` (line 52) for the
-     * method channel, and
+     * Both levels of the channel report the metric they check as
+     * `metricValue` (`$npathValue` in {@see analyzeMethodLevel()},
+     * `$maxNpathValue` in {@see analyzeClassLevel()}), judged worse the higher
+     * it goes: {@see MethodNpathComplexityOptions::getSeverity()}'s `$value >=
+     * $this->error` (line 48) / `$value >= $this->warning` (line 52) at the
+     * callable level, and
      * {@see ClassNpathComplexityOptions::getSeverity()}'s `$value >=
      * $this->maxError` (line 48) / `$value >= $this->maxWarning` (line 52)
-     * for the class channel.
+     * at the class level.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
-            FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
         ];
     }
 
@@ -196,7 +194,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
                     subject: $subject,
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
-                    code: FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->code,
+                    code: self::NAME,
                     message: \sprintf('NPath complexity (execution paths) is %s (%s), exceeds threshold of %s.%s Reduce branching or extract methods', $displayValue, $categoryLabel, $threshold, $chain !== '' ? " {$chain}." : ''),
                     severity: $severity,
                     metricValue: $npathValue,
@@ -247,7 +245,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
                     subject: $subject,
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
-                    code: FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->code,
+                    code: self::NAME,
                     message: \sprintf('Maximum method NPath complexity is %s (%s), exceeds threshold of %s. Refactor the most complex methods', $displayValue, $categoryLabel, $threshold),
                     severity: $severity,
                     metricValue: $maxNpathValue,

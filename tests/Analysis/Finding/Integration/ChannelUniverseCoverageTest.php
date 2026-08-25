@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -59,7 +60,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * pass by agreeing with itself on a smaller set. It is obtained, not
      * remembered: `grep -vc '^#\|^$' tests/Analysis/Finding/Fixtures/Channels/declared.txt`.
      */
-    private const int DECLARED_CHANNEL_COUNT = 57;
+    private const int DECLARED_CHANNEL_COUNT = 52;
 
     /**
      * Nine subclasses of `AbstractCodeSmellRule`, three of
@@ -159,9 +160,16 @@ final class ChannelUniverseCoverageTest extends TestCase
             self::assertSame(LayerViolationRule::NAME, $universe->producerOf($siblingCode), $siblingCode);
         }
 
-        // Ternary over the level, in CboRule.
-        self::assertSame(CboRule::NAME, $universe->producerOf('coupling.cbo.class'));
-        self::assertSame(CboRule::NAME, $universe->producerOf('coupling.cbo.namespace'));
+        // One channel reporting at two levels: the level used to be a suffix
+        // on the code, so `coupling.cbo` used to be a producer with no channel
+        // of its own name. It is one channel now, and the two levels are a
+        // declared property of it rather than two names.
+        self::assertSame(CboRule::NAME, $universe->producerOf(CboRule::NAME));
+        self::assertSame(
+            [SymbolLevel::Class_, SymbolLevel::Namespace_],
+            $universe->levelsOf(CboRule::NAME),
+        );
+        self::assertSame([], $universe->levelsOf('coupling.cbo.class'));
 
         // Three rules, three producers, and that is the point of the split:
         // the facet used to be a suffix on one producer's channel code, and a
@@ -184,10 +192,12 @@ final class ChannelUniverseCoverageTest extends TestCase
     {
         $universe = self::universe();
 
-        // The reported channel a user copies into @qmx-threshold. It names no
-        // rule; the rule that owns its thresholds is the answer.
-        self::assertFalse($universe->hasRule('coupling.cbo.class'));
-        self::assertSame('coupling.cbo', $universe->producerOf('coupling.cbo.class'));
+        // The retired spelling a user may still have written down. Stripping
+        // its last segment would answer "coupling.cbo" and look like a working
+        // lookup; the registry answers that nothing carries the name, which is
+        // what lets the diagnostic say the level moved beside the name.
+        self::assertFalse($universe->hasChannel('coupling.cbo.class'));
+        self::assertNull($universe->producerOf('coupling.cbo.class'));
         self::assertTrue($universe->supportsThresholdOverride('coupling.cbo'));
 
         // Where suffix stripping would answer wrongly rather than merely fail:

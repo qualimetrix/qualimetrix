@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
@@ -91,7 +90,7 @@ final readonly class BaselineConfiguredThresholds
     ) {}
 
     /**
-     * @return array<string, int|float> channel key => configured warning boundary
+     * @return array<string, array<string, int|float>> channel key => level value => configured warning boundary
      */
     public function resolve(): array
     {
@@ -111,15 +110,17 @@ final readonly class BaselineConfiguredThresholds
             }
 
             foreach ($declarations as $channelKey => $declaration) {
-                $threshold = self::thresholdFor(
-                    $options,
-                    RuleNameReader::read($ruleClass),
-                    new FindingChannel($channelKey),
-                    $declaration,
-                );
+                foreach ($declaration->levels as $level) {
+                    $threshold = self::thresholdFor(
+                        $options,
+                        RuleNameReader::read($ruleClass),
+                        new FindingChannel($channelKey),
+                        $level,
+                    );
 
-                if ($threshold !== null) {
-                    $thresholds[$channelKey] = $threshold;
+                    if ($threshold !== null) {
+                        $thresholds[$channelKey][$level->value] = $threshold;
+                    }
                 }
             }
         }
@@ -143,14 +144,22 @@ final readonly class BaselineConfiguredThresholds
         }
     }
 
+    /**
+     * The boundary one channel is judged against **at one level**.
+     *
+     * Resolved per level rather than per channel because a channel reports at
+     * more than one now, and a hierarchical rule's two levels have separate
+     * boundaries: one number keyed by the channel alone would have to pick a
+     * level and print the choice as a fact.
+     */
     private static function thresholdFor(
         RuleOptionsInterface $options,
         string $declaringRuleName,
         FindingChannel $channel,
-        ChannelDeclaration $declaration,
+        SymbolLevel $level,
     ): int|float|null {
-        if (\count($declaration->levels) === 1 && $options instanceof HierarchicalRuleOptionsInterface) {
-            $levelOptions = self::levelOptions($options, $declaration->levels[0]);
+        if ($options instanceof HierarchicalRuleOptionsInterface) {
+            $levelOptions = self::levelOptions($options, $level);
 
             return $levelOptions !== null ? self::readProperty($levelOptions, self::GENERIC_PROPERTIES) : null;
         }

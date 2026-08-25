@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -131,27 +130,23 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     /**
-     * `complexity.cyclomatic.callable` reports the method's raw CCN
-     * (`$ccnValue`, an `int`) as `metricValue` — see the emission at
-     * {@see analyzeMethodLevel()} — and is judged worse the higher it goes,
-     * per {@see MethodComplexityOptions::getSeverity()}'s `$value >=
-     * $this->error` (line 53) / `$value >= $this->warning` (line 57)
-     * comparisons. `complexity.cyclomatic.class` reports the class's maximum
-     * method CCN (`$maxCcnValue` — see {@see analyzeClassLevel()}), also
-     * higher-is-worse, per {@see ClassComplexityOptions::getSeverity()}'s
-     * `$value >= $this->maxError` (line 55) / `$value >= $this->maxWarning`
-     * (line 59).
-     *
-     * Keyed by the full channel key: the `ruleName` half is `self::NAME`,
-     * the `code` half adds the `.callable`/`.class` suffix.
+     * One channel at two levels, and both report a raw CCN as `metricValue`
+     * judged worse the higher it goes: the method's own (`$ccnValue` — see
+     * {@see analyzeMethodLevel()}), per
+     * {@see MethodComplexityOptions::getSeverity()}'s `$value >= $this->error`
+     * (line 53) / `$value >= $this->warning` (line 57), and the maximum among
+     * a class's methods (`$maxCcnValue` — see {@see analyzeClassLevel()}), per
+     * {@see ClassComplexityOptions::getSeverity()}'s `$value >=
+     * $this->maxError` (line 55) / `$value >= $this->maxWarning` (line 59).
+     * One direction for both, which is why one declaration carries both
+     * levels.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
-            FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
         ];
     }
 
@@ -194,7 +189,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
                     subject: $subject,
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
-                    code: FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->code,
+                    code: self::NAME,
                     message: \sprintf('Cyclomatic complexity is %d, exceeds threshold of %d. Consider extracting methods or simplifying conditions', $ccnValue, $threshold),
                     severity: $severity,
                     metricValue: $ccnValue,
@@ -286,7 +281,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            code: FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->code,
+            code: self::NAME,
             message: \sprintf('Maximum method cyclomatic complexity is %d, exceeds threshold of %d. Refactor the most complex methods', $maximum, $threshold),
             severity: $severity,
             metricValue: $maximum,

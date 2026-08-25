@@ -101,18 +101,30 @@ final class Outcome
             $reasons[] = \sprintf('expected exit 0, got %d', $run['exit']);
         }
 
-        // A green control asserts that the declaration absorbed the change. A
-        // run that reached GREEN by comparing a surface against a declared
-        // delta asserts something else entirely, and the exit code cannot tell
-        // the two apart — GREEN is GREEN either way.
-        if ($control->expectsGreen) {
+        // A green control asserts that the *map row* absorbed the change, and
+        // the exit code cannot tell that apart from a surface absorbed by a
+        // declared delta — GREEN is GREEN either way. The assertion is therefore
+        // on the count, and the count it is held to is the one the repository
+        // already declares, not zero: once a step declares a delta of its own,
+        // an unmutated tree legitimately compares those surfaces against it, and
+        // demanding zero would fail the positive control for being correct.
+        // What stays forbidden is a green control introducing a delta beyond
+        // that baseline. A control that replaced the index declares its own
+        // baseline, so there is nothing to hold it to.
+        if ($control->expectsGreen && !$declarationReplaced) {
             $declared = self::declaredDeltaCount($reportPath);
+            $baseline = \count($declaredSurfaces);
 
-            if ($declared !== 0) {
+            if ($declared !== $baseline) {
                 $reasons[] = $declared === null
                     ? 'the gate report does not state how many surfaces were compared against a declared delta, so'
-                        . ' "green without a delta" cannot be asserted'
-                    : \sprintf('expected no declared delta; %d surface(s) were compared against one', $declared);
+                        . ' "green without a delta of its own" cannot be asserted'
+                    : \sprintf(
+                        'expected the %d declared delta(s) this repository states and no more; %d surface(s) were'
+                        . ' compared against one',
+                        $baseline,
+                        $declared,
+                    );
             }
         }
 

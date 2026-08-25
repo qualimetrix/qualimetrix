@@ -281,7 +281,7 @@ final class ViolationDensityTest extends TestCase
                 subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString("src/{$class}.php"), DeclarationOrdinal::fromRank(0))),
                 symbolPath: SymbolPath::forClass($namespace, $class),
                 ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic',
                 message: "test violation {$i}",
                 severity: Severity::Error,
             );

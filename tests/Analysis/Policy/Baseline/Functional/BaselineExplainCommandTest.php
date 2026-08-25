@@ -59,8 +59,8 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(BaselineConfiguredThresholds::class)]
 final class BaselineExplainCommandTest extends TestCase
 {
-    private const string CCN_CHANNEL = 'complexity.cyclomatic.callable';
-    private const string CBO_CHANNEL = 'coupling.cbo.class';
+    private const string CCN_CHANNEL = 'complexity.cyclomatic';
+    private const string CBO_CHANNEL = 'coupling.cbo';
     private const string LONG_PARAMETER_LIST_CHANNEL = 'code-smell.long-parameter-list';
     private const string SYMBOL_FILE = 'src/OrderService.php';
 
@@ -213,10 +213,10 @@ final class BaselineExplainCommandTest extends TestCase
     #[Test]
     public function itRejectsAChannelWrittenInTheRetiredPairForm(): void
     {
-        $tester = $this->execute([], ['--channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable']);
+        $tester = $this->execute([], ['--channel' => 'complexity.cyclomatic#complexity.cyclomatic']);
 
         self::assertSame(Command::INVALID, $tester->getStatusCode());
-        self::assertStringContainsString('Write "complexity.cyclomatic.callable"', $tester->getDisplay());
+        self::assertStringContainsString('Write "complexity.cyclomatic"', $tester->getDisplay());
     }
 
     #[Test]
@@ -434,7 +434,7 @@ final class BaselineExplainCommandTest extends TestCase
      * A channel-to-producer edge for the fixtures below: the channel's own name,
      * minus a trailing level segment where it carries one. That is exactly the
      * relation the retired left half of a channel key encoded, so a fixture
-     * naming `complexity.cyclomatic.callable` still resolves to the rule a
+     * naming `complexity.cyclomatic` still resolves to the rule a
      * `@qmx-threshold complexity.cyclomatic` addresses.
      */
     private static function producerEdge(): ChannelIdentityInterface

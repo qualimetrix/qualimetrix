@@ -266,7 +266,7 @@ final class MeasuredFindingSetTest extends TestCase
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'CCN too high',
             severity: Severity::Warning,
             metricValue: 25,

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Stringable;
 
 /**
@@ -58,11 +57,36 @@ final readonly class FindingChannel implements Stringable
      */
     public const string RETIRED_PAIR_SEPARATOR = '#';
 
+    /**
+     * The character that separates a channel name from a level in the one
+     * grammar that addresses the pair,
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector}.
+     *
+     * Declared here, beside the retired separator and for the same reason:
+     * this is the type that says what a channel name is, and both characters
+     * are ones a name may never carry. Owning them here also keeps the name
+     * authority free of an edge onto the selector grammar — the selector reads
+     * this constant, not the other way round.
+     */
+    public const string LEVEL_SEPARATOR = ':';
+
     public function __construct(
         public string $code,
     ) {
         if ($code === '') {
             throw new InvalidArgumentException('FindingChannel code must not be empty.');
+        }
+
+        // A level is addressed beside the name, never inside it: a code
+        // carrying the separator would make one authored pair decompose two
+        // ways. Refused at construction so no producer can declare one.
+        if (str_contains($code, self::LEVEL_SEPARATOR)) {
+            throw new InvalidArgumentException(\sprintf(
+                'FindingChannel code "%s" carries "%s", which addresses a level beside a channel name'
+                . ' and can never be part of one.',
+                $code,
+                self::LEVEL_SEPARATOR,
+            ));
         }
 
         if (self::isRetiredPairSpelling($code)) {
@@ -73,24 +97,6 @@ final readonly class FindingChannel implements Stringable
                 self::retiredPairAdvice($code),
             ));
         }
-    }
-
-    /**
-     * The channel a producer emits for one level of its own name — the one
-     * place a level is turned into a channel code.
-     *
-     * The suffix is a property of the **static** rules that report at more
-     * than one level, not of multi-level reporting as such: the six
-     * `health.*` channels report at three levels each under one name with no
-     * suffix at all, which is the evidence Р1 uses to take the level out of
-     * the name in Ш5c. What the static ones share is that each used to write
-     * its suffix out by hand at both its declaration and its emission point.
-     * That is how `CboRule` came to pick `.class` for any level that was not
-     * `namespace`: a third level would have been mislabelled silently.
-     */
-    public static function leveled(string $ruleName, SymbolLevel $level): self
-    {
-        return new self($ruleName . '.' . $level->value);
     }
 
     /** Whether authored text is written in the retired `rule#code` spelling. */

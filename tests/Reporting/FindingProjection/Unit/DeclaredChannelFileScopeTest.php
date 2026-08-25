@@ -43,7 +43,7 @@ final class DeclaredChannelFileScopeTest extends TestCase
         $scope = DeclaredChannelFileScope::create();
 
         self::assertTrue($scope->isFileScoped(new FindingChannel('health.cohesion')));
-        self::assertTrue($scope->isFileScoped(new FindingChannel('coupling.cbo.class')));
+        self::assertTrue($scope->isFileScoped(new FindingChannel('coupling.cbo')));
         // A dotted descendant of a declared channel is a different channel and
         // inherits nothing.
         self::assertTrue($scope->isFileScoped(new FindingChannel(

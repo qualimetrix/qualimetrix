@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Suppression;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Stringable;
 
 /**
@@ -13,9 +14,11 @@ use Stringable;
  *
  * Two states, and the second one is the point of this type:
  *
- * - **a channel selector** — an exact channel name, or `X.*` for its strict
- *   descendants. Both are {@see NameSelector}, which is the whole of the
- *   grammar and is shared with configuration's channel-keyed surfaces;
+ * - **a channel selector** — an exact channel name, `X.*` for its strict
+ *   descendants, and either of those narrowed to one level of the aggregation
+ *   tree with `:level`. All of it is {@see ChannelLevelSelector}, which is the
+ *   whole of the grammar and is shared with configuration's channel-keyed
+ *   surfaces;
  * - **no rule filter at all** — "every finding here, whatever it is". This is
  *   what `@qmx-ignore *` on a symbol or line means, and what a bare
  *   `@qmx-ignore-file` with no argument means.
@@ -43,7 +46,7 @@ final readonly class SuppressionTarget implements Stringable
 
     private function __construct(
         private string $raw,
-        private ?NameSelector $selector,
+        private ?ChannelLevelSelector $selector,
         private bool $everyChannel,
     ) {}
 
@@ -53,7 +56,7 @@ final readonly class SuppressionTarget implements Stringable
             return new self($rule, null, true);
         }
 
-        return new self($rule, NameSelector::tryParse($rule), false);
+        return new self($rule, ChannelLevelSelector::tryParse($rule), false);
     }
 
     /** Whether the directive carries no rule filter at all. */
@@ -76,18 +79,18 @@ final readonly class SuppressionTarget implements Stringable
     }
 
     /** The parsed selector, or `null` when the text is not one. */
-    public function selector(): ?NameSelector
+    public function selector(): ?ChannelLevelSelector
     {
         return $this->selector;
     }
 
-    public function matches(string $code): bool
+    public function matches(string $code, ?SymbolLevel $level): bool
     {
         if ($this->everyChannel) {
             return true;
         }
 
-        return $this->selector?->matches($code) === true;
+        return $this->selector?->matches($code, $level) === true;
     }
 
     /** The authored text, so a directive round-trips into diagnostics unchanged. */

@@ -541,7 +541,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic',
                 message: 'Complex',
                 severity: Severity::Error,
             ))
@@ -577,7 +577,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString("src/Foo{$i}.php"), 10),
                 symbolPath: SymbolPath::forClass('App', "Foo{$i}"),
                 ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic',
                 message: 'Complex',
                 severity: Severity::Error,
             ));

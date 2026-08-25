@@ -4,16 +4,23 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 
 /**
  * Applies rule filters to producer rules and finding channels.
  *
- * A selector is a {@see NameSelector}: an exact name, or `X.*` for its strict
- * descendants. It may address a producer rule or a channel — selection is the
- * one surface that deliberately reads both vocabularies, because
- * `--disable-rule` has always been asked to mean both "stop running this rule"
- * and "stop reporting this channel".
+ * A selector is a {@see ChannelLevelSelector}: an exact name, or `X.*` for its
+ * strict descendants, either optionally narrowed to one level of the
+ * aggregation tree with `:level`. It may address a producer rule or a channel
+ * — selection is the one surface that deliberately reads both vocabularies,
+ * because `--disable-rule` has always been asked to mean both "stop running
+ * this rule" and "stop reporting this channel".
+ *
+ * A selector carrying a level addresses a **channel** and never a producer
+ * name, so it never stops a rule from running: `--disable-rule
+ * coupling.cbo:namespace` leaves the class findings of the same channel
+ * reported, exactly as a channel-specific selector always has.
  *
  * There is no second, channel-specific grammar any more. A channel is named by
  * one name, so the `ruleName#violationCode` form has nothing left to
@@ -72,10 +79,11 @@ final class RuleSelector
     public function isChannelEnabled(
         string $producerRuleName,
         FindingChannel $channel,
+        SymbolLevel $level,
         array $onlySelectors,
         array $disabledSelectors,
     ): bool {
-        if ($this->anyMatchesProducerOrChannel($disabledSelectors, $producerRuleName, $channel)) {
+        if ($this->anyMatchesProducerOrChannel($disabledSelectors, $producerRuleName, $channel, $level)) {
             return false;
         }
 
@@ -83,7 +91,7 @@ final class RuleSelector
             return true;
         }
 
-        return $this->anyMatchesProducerOrChannel($onlySelectors, $producerRuleName, $channel);
+        return $this->anyMatchesProducerOrChannel($onlySelectors, $producerRuleName, $channel, $level);
     }
 
     /**
@@ -169,7 +177,7 @@ final class RuleSelector
         }
 
         foreach ($channels->channelsProducedBy($producerRuleName) as $channel) {
-            if ($this->matchesChannel($selector, $channel)) {
+            if (self::matchesChannel($selector, $channel, null)) {
                 return true;
             }
         }
@@ -184,13 +192,14 @@ final class RuleSelector
         array $selectors,
         string $producerRuleName,
         FindingChannel $channel,
+        ?SymbolLevel $level,
     ): bool {
         foreach ($selectors as $selector) {
             if (self::matchesName($selector, $producerRuleName)) {
                 return true;
             }
 
-            if ($this->matchesChannel($selector, $channel)) {
+            if (self::matchesChannel($selector, $channel, $level)) {
                 return true;
             }
         }
@@ -198,9 +207,24 @@ final class RuleSelector
         return false;
     }
 
-    private function matchesChannel(string $selector, FindingChannel $channel): bool
+    /**
+     * A selector without a level addresses every level of the channels it
+     * names; one with a level addresses that level alone. The `null` level is
+     * the reach question — "could this selector ever address this channel" —
+     * asked where no finding exists yet, and there a level-bearing selector
+     * still counts as reaching the channel.
+     */
+    private static function matchesChannel(string $selector, FindingChannel $channel, ?SymbolLevel $level): bool
     {
-        return self::matchesName($selector, $channel->code);
+        $parsed = ChannelLevelSelector::tryParse($selector);
+
+        if ($parsed === null) {
+            return false;
+        }
+
+        return $level === null
+            ? $parsed->channel()->matches($channel->code)
+            : $parsed->matches($channel->code, $level);
     }
 
     /**

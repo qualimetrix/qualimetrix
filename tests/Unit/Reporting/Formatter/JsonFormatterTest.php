@@ -140,7 +140,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity of 25 exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -151,7 +151,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity of 12 exceeds threshold of 10',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -175,7 +175,7 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('App\Service\UserService::calculateDiscount', $v1['symbol']);
         self::assertSame('App\Service', $v1['namespace']);
         self::assertSame('complexity.cyclomatic', $v1['rule']);
-        self::assertSame('complexity.cyclomatic.callable', $v1['code']);
+        self::assertSame('complexity.cyclomatic', $v1['code']);
         self::assertSame('error', $v1['severity']);
         self::assertSame('Cyclomatic complexity of 25 exceeds threshold of 10', $v1['message']);
         self::assertSame(25, $v1['metricValue']);
@@ -1363,7 +1363,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -1371,7 +1371,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'process'),
                 ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic',
                 message: 'Also complex',
                 severity: Severity::Warning,
             ))
@@ -1422,7 +1422,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))

@@ -78,7 +78,7 @@ final class BaselineTest extends TestCase
     {
         $symbol = 'callable:App\Foo::bar';
         $goto = self::entry($symbol, 'code-smell.goto', 'code-smell.goto');
-        $cyclomatic = self::entry($symbol, 'complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $cyclomatic = self::entry($symbol, 'complexity.cyclomatic', 'complexity.cyclomatic');
 
         $baseline = self::baselineOf($goto, $cyclomatic);
 

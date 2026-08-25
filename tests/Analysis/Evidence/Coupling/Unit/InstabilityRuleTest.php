@@ -185,7 +185,7 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame('Instability is 0.85 (Ca=2, Ce=12), exceeds threshold of 0.80. Reduce outgoing dependencies', $findings[0]->message);
         self::assertSame(0.85, $findings[0]->metricValue);
         self::assertSame('coupling.instability', $findings[0]->ruleName);
-        self::assertSame('coupling.instability.class', $findings[0]->code);
+        self::assertSame('coupling.instability', $findings[0]->code);
     }
 
     #[Test]
@@ -404,7 +404,7 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
         self::assertStringContainsString('Instability is 0.88 (Ca=3, Ce=22), exceeds threshold of 0.80. Reduce outgoing dependencies', $findings[0]->message);
-        self::assertSame('coupling.instability.namespace', $findings[0]->code);
+        self::assertSame('coupling.instability', $findings[0]->code);
     }
 
     #[Test]

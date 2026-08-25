@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -94,6 +96,23 @@ final readonly class Finding
     public function channel(): FindingChannel
     {
         return new FindingChannel($this->code);
+    }
+
+    /**
+     * The aggregation level this finding reports at, read off its subject.
+     *
+     * The subject — not `$symbolPath`, which a few producers fill from the
+     * measured symbol rather than from the subject — is the only record of
+     * the level: a channel no longer spells
+     * one into its name, and nothing on this object repeats it. Emission
+     * therefore cannot disagree with what is published, and what a channel
+     * *declares* is compared against this by
+     * {@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelDeclarationDriftTest}
+     * over the whole corpus.
+     */
+    public function level(): SymbolLevel
+    {
+        return SymbolLevelProjection::ofDeclaration($this->subject->toSymbolPath()->getType());
     }
 
     /**

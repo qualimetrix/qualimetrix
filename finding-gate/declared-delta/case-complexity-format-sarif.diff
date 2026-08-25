@@ -1,0 +1,73 @@
+--- candidate
++++ reference (mapped)
+@@ -41,0 +41,14 @@
++                            "id": "complexity.cognitive",
++                            "name": "Complexity Cognitive",
++                            "shortDescription": {
++                                "text": "Checks cognitive complexity at method and class levels"
++                            },
++                            "fullDescription": {
++                                "text": "Checks cognitive complexity at method and class levels"
++                            },
++                            "helpUri": "https://qualimetrix.dev/rules/complexity/",
++                            "defaultConfiguration": {
++                                "level": "error"
++                            }
++                        },
++                        {
+@@ -48,0 +62,28 @@
++                            },
++                            "helpUri": "https://qualimetrix.dev/rules/complexity/",
++                            "defaultConfiguration": {
++                                "level": "error"
++                            }
++                        },
++                        {
++                            "id": "complexity.cyclomatic",
++                            "name": "Complexity Cyclomatic",
++                            "shortDescription": {
++                                "text": "Checks cyclomatic complexity at method and class levels"
++                            },
++                            "fullDescription": {
++                                "text": "Checks cyclomatic complexity at method and class levels"
++                            },
++                            "helpUri": "https://qualimetrix.dev/rules/complexity/",
++                            "defaultConfiguration": {
++                                "level": "error"
++                            }
++                        },
++                        {
++                            "id": "complexity.npath",
++                            "name": "Complexity Npath",
++                            "shortDescription": {
++                                "text": "Checks NPath complexity at method and class levels"
++                            },
++                            "fullDescription": {
++                                "text": "Checks NPath complexity at method and class levels"
+@@ -202,1 +244,1 @@
+-                    "ruleIndex": 1,
++                    "ruleIndex": 2,
+@@ -227,1 +269,1 @@
+-                    "ruleIndex": 2,
++                    "ruleIndex": 3,
+@@ -252,1 +294,1 @@
+-                    "ruleIndex": 2,
++                    "ruleIndex": 3,
+@@ -277,1 +319,1 @@
+-                    "ruleIndex": 2,
++                    "ruleIndex": 4,
+@@ -302,1 +344,1 @@
+-                    "ruleIndex": 3,
++                    "ruleIndex": 5,
+@@ -327,1 +369,1 @@
+-                    "ruleIndex": 3,
++                    "ruleIndex": 5,
+@@ -352,1 +394,1 @@
+-                    "ruleIndex": 3,
++                    "ruleIndex": 6,
+@@ -377,1 +419,1 @@
+-                    "ruleIndex": 4,
++                    "ruleIndex": 7,
+@@ -402,1 +444,1 @@
+-                    "ruleIndex": 5,
++                    "ruleIndex": 8,

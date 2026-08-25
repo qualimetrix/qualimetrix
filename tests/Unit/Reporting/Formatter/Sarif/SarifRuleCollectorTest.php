@@ -18,10 +18,9 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 
 /**
  * The old version of this test asserted the collector's `match` table
- * against finding codes the product never emits (`code:
- * 'complexity.cyclomatic'` — the product emits `complexity.cyclomatic.callable`
- * / `.class`), so it validated the table against itself. This version drives
- * the collector against `complexity.cyclomatic.callable`, a code the real
+ * against finding codes the product never emitted (the code carried the level
+ * then, so `complexity.cyclomatic` named nothing), so it validated the table
+ * against itself. This version drives the collector against codes the real
  * container's {@see ChannelPresentationInterface} actually resolves — see
  * `docs/internal/plans/sarif-channel-descriptions.md`, package P4, for the
  * broader guard that sweeps every channel of the real universe.
@@ -54,7 +53,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -64,8 +63,8 @@ final class SarifRuleCollectorTest extends TestCase
         self::assertCount(1, $rules);
         $rule = $rules[0];
 
-        self::assertSame('complexity.cyclomatic.callable', $rule['id']);
-        self::assertSame('Complexity Cyclomatic Callable', $rule['name']);
+        self::assertSame('complexity.cyclomatic', $rule['id']);
+        self::assertSame('Complexity Cyclomatic', $rule['name']);
         self::assertArrayHasKey('text', $rule['shortDescription']);
         self::assertSame('Checks cyclomatic complexity at method and class levels', $rule['shortDescription']['text']);
         self::assertArrayHasKey('text', $rule['fullDescription']);
@@ -80,7 +79,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -89,7 +88,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('b.php'), 5),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Also too complex',
             severity: Severity::Warning,
         );
@@ -106,7 +105,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Complex',
             severity: Severity::Warning,
         );
@@ -124,7 +123,7 @@ final class SarifRuleCollectorTest extends TestCase
 
         self::assertCount(2, $rules);
         $ids = array_column($rules, 'id');
-        self::assertContains('complexity.cyclomatic.callable', $ids);
+        self::assertContains('complexity.cyclomatic', $ids);
         self::assertContains('size.class-count', $ids);
     }
 
@@ -135,7 +134,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Complex',
             severity: Severity::Warning,
         );
@@ -144,7 +143,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Very complex',
             severity: Severity::Error,
         );
@@ -155,14 +154,54 @@ final class SarifRuleCollectorTest extends TestCase
         self::assertSame('error', $rules[0]['defaultConfiguration']['level']);
     }
 
+    /**
+     * Two channels of one producer keep distinct descriptors. The example used
+     * to be `coupling.cbo`'s two levels; a level is not a channel any more, so
+     * it is the layer policy's own two channels instead — the mechanism the
+     * test is about (one producer, several names) is unchanged.
+     */
     #[Test]
-    public function itGivesSubCodesOfOneRuleDistinctIdsAndTheSameDescription(): void
+    public function itGivesTwoChannelsOfOneProducerDistinctIds(): void
+    {
+        $violation = self::finding(
+            location: new Location(RelativePath::fromString('a.php'), 1),
+            symbolPath: SymbolPath::forClass('App', 'Service'),
+            ruleName: 'architecture.layer-violation',
+            code: 'architecture.layer-violation',
+            message: 'Forbidden dependency',
+            severity: Severity::Warning,
+        );
+
+        $coverage = self::finding(
+            location: new Location(RelativePath::fromString('a.php'), 1),
+            symbolPath: SymbolPath::forProject(),
+            ruleName: 'architecture.coverage',
+            code: 'architecture.coverage',
+            message: 'Uncovered classes',
+            severity: Severity::Warning,
+        );
+
+        $rules = $this->collector->collectRules([$violation, $coverage]);
+
+        self::assertCount(2, $rules);
+        $ids = array_column($rules, 'id');
+        self::assertContains('architecture.layer-violation', $ids);
+        self::assertContains('architecture.coverage', $ids);
+    }
+
+    /**
+     * The two levels of one channel are one descriptor: the SARIF rule table
+     * is keyed by the channel, and a level is a property of each result rather
+     * than of the rule it was reported on.
+     */
+    #[Test]
+    public function itGivesTheTwoLevelsOfOneChannelASingleDescriptor(): void
     {
         $namespaceLevel = self::finding(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forNamespace('App'),
             ruleName: 'coupling.cbo',
-            code: 'coupling.cbo.namespace',
+            code: 'coupling.cbo',
             message: 'Too coupled',
             severity: Severity::Warning,
         );
@@ -171,22 +210,15 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'coupling.cbo',
-            code: 'coupling.cbo.class',
+            code: 'coupling.cbo',
             message: 'Too coupled',
             severity: Severity::Warning,
         );
 
         $rules = $this->collector->collectRules([$namespaceLevel, $classLevel]);
 
-        self::assertCount(2, $rules);
-        $byId = array_column($rules, null, 'id');
-        self::assertArrayHasKey('coupling.cbo.namespace', $byId);
-        self::assertArrayHasKey('coupling.cbo.class', $byId);
-        self::assertNotSame($byId['coupling.cbo.namespace']['id'], $byId['coupling.cbo.class']['id']);
-        self::assertSame(
-            $byId['coupling.cbo.namespace']['shortDescription']['text'],
-            $byId['coupling.cbo.class']['shortDescription']['text'],
-        );
+        self::assertCount(1, $rules);
+        self::assertSame('coupling.cbo', $rules[0]['id']);
     }
 
     // --- formatRuleName ---
@@ -216,7 +248,7 @@ final class SarifRuleCollectorTest extends TestCase
     {
         self::assertSame(
             'Checks cyclomatic complexity at method and class levels',
-            $this->collector->getRuleDescription('complexity.cyclomatic.callable'),
+            $this->collector->getRuleDescription('complexity.cyclomatic'),
         );
         self::assertSame(
             'Detects circular dependencies between classes',
@@ -263,8 +295,8 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itReturnsHelpUriForKnownChannelsFromTheRealPresentation(): void
     {
-        self::assertSame('https://qualimetrix.dev/rules/complexity/', $this->collector->getHelpUri('complexity.cyclomatic.callable'));
-        self::assertSame('https://qualimetrix.dev/rules/coupling/', $this->collector->getHelpUri('coupling.cbo.class'));
+        self::assertSame('https://qualimetrix.dev/rules/complexity/', $this->collector->getHelpUri('complexity.cyclomatic'));
+        self::assertSame('https://qualimetrix.dev/rules/coupling/', $this->collector->getHelpUri('coupling.cbo'));
         self::assertSame('https://qualimetrix.dev/rules/cohesion/', $this->collector->getHelpUri('cohesion.lcom'));
         self::assertSame('https://qualimetrix.dev/rules/code-smell/', $this->collector->getHelpUri('code-smell.empty-catch'));
         self::assertSame('https://qualimetrix.dev/rules/security/', $this->collector->getHelpUri('security.sql-injection'));

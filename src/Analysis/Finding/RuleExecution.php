@@ -102,6 +102,7 @@ final class RuleExecution implements RuleExecutionInterface
                 fn(Finding $finding): bool => $this->ruleSelector->isChannelEnabled(
                     $ruleName,
                     $finding->channel(),
+                    $finding->level(),
                     $selection->only,
                     $selection->disabled,
                 ),

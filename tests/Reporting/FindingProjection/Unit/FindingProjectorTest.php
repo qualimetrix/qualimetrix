@@ -786,7 +786,7 @@ final class FindingProjectorTest extends TestCase
             subject: MetricSubject::aggregate($symbol),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'CCN too high',
             severity: Severity::Error,
         );
@@ -934,7 +934,7 @@ final class FindingProjectorTest extends TestCase
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: $ruleName,
-            code: $code ?? ($ruleName === 'code-smell.goto' ? $ruleName : $ruleName . '.callable'),
+            code: $code ?? $ruleName,
             message: 'CCN too high',
             severity: $severity,
             metricValue: $metricValue,

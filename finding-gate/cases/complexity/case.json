@@ -33,12 +33,12 @@
     ],
     "channels": [
         "cohesion.lcom@class",
-        "complexity.cognitive.callable@callable",
-        "complexity.cognitive.class@class",
-        "complexity.cyclomatic.callable@callable",
-        "complexity.cyclomatic.class@class",
-        "complexity.npath.callable@callable",
-        "complexity.npath.class@class",
+        "complexity.cognitive@callable",
+        "complexity.cognitive@class",
+        "complexity.cyclomatic@callable",
+        "complexity.cyclomatic@class",
+        "complexity.npath@callable",
+        "complexity.npath@class",
         "complexity.wmc@class",
         "maintainability.index@callable"
     ],

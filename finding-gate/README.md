@@ -114,8 +114,8 @@ levels come from the case's own configuration, so that level and the corpus that
 fires it move together and pair coverage cannot see one leave —
 `lost-level-fixture` is caught by the claim. A static channel's levels come from
 product code, so they *can* part company with the corpus, and there a lost level
-is a `coverage-shortfall`. Every static channel declares exactly one level today;
-Ш5c is what makes that stop being true.
+is a `coverage-shortfall`. Five static channels declare two levels since Ш5c
+took the level out of the name; the rest declare one.
 
 `--incomplete-corpus` downgrades a pair shortfall exactly as it downgraded a name
 shortfall. A pair observed that nothing declares — including a level a declared
@@ -212,10 +212,10 @@ a channel.
 The two publications are not the same problem, and the gate treats them
 differently:
 
-| Publication                                        | Form                | How it is compared                                             |
-| -------------------------------------------------- | ------------------- | -------------------------------------------------------------- |
-| SARIF `partialFingerprints.primaryLocationLineHash` | the identity, plain | as text, through the maps, like any other name                 |
-| GitLab `fingerprint`                               | `md5` of it        | the hash is **substituted** by the identity, then compared     |
+| Publication                                         | Form                | How it is compared                                         |
+| --------------------------------------------------- | ------------------- | ---------------------------------------------------------- |
+| SARIF `partialFingerprints.primaryLocationLineHash` | the identity, plain | as text, through the maps, like any other name             |
+| GitLab `fingerprint`                                | `md5` of it         | the hash is **substituted** by the identity, then compared |
 
 Three rules, and each one is a failure class rather than a promise:
 
@@ -271,10 +271,11 @@ comparison it is part of:
 declaration to these properties:
 
 - **Whole names only.** A row translates a complete name, never a prefix of a
-  longer one: `complexity.cyclomatic` does not rewrite
-  `complexity.cyclomatic.callable`. Renaming a family means declaring every
-  member of it. A name reaches an artifact in more spellings than a row can be
-  written in, and every spelling is substituted by that same row: the
+  longer one: a row for `X` does not rewrite `X.y`. Renaming a family means
+  declaring every member of it. Two rows may share a *target* — that is a
+  collapse, which the map states forwards — but no two may share a source. A
+  name reaches an artifact in more spellings than a row can be written in, and
+  every spelling is substituted by that same row: the
   JSON-escaped form of a backslash-bearing symbol, checkstyle's
   `source="qmx.<code>"` — the only prefix any surface adds, measured across all
   eleven formats, the baseline file, `baseline:explain` and the rules snapshot —
@@ -459,12 +460,12 @@ to touch this list; it exists because the last change to the claim format
 recorded its blast radius as "one literal, one mutation" and two of these four
 survived by luck.
 
-| Consumer                                                                  | What it reads                                                                                                       |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`                  | every `cases/*/case.json`, as the schema                                                                            |
-| `scripts/finding-gate-controls/Controls.php`                              | five exact corpus paths it mutates: a fixture file, a case `qmx.yaml`, `cases/complexity/case.json`, `maps/channels.tsv`, `declared-delta.tsv` |
-| `tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check` |
-| `scripts/generate-rename-enumeration.php`                                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                  |
+| Consumer                                                                  | What it reads                                                                                                                                                                          |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`                  | every `cases/*/case.json`, as the schema                                                                                                                                               |
+| `scripts/finding-gate-controls/Controls.php`                              | six exact corpus paths it mutates: `cases/smells/src/Dead.php`, `cases/health/qmx.yaml`, `cases/design/case.json`, `cases/smells/case.json`, `maps/channels.tsv`, `declared-delta.tsv` |
+| `tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check`                                                                    |
+| `scripts/generate-rename-enumeration.php`                                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                                                                                     |
 
 Measured, not recalled: `git grep -E "finding-gate/cases|case\.json"` over a
 stopped tree, minus prose. The product test is one field-read away from breaking
@@ -496,13 +497,34 @@ knowing before adding one:
   since the required one is what absorbed those failures.
 - A **green control with a mutation** (`fingerprint-declared-rename`) asserts the
   other direction: a change the maps declare is absorbed by the declaration and
-  by nothing else. It is held to exit 0 *and* to a run that compared no surface
-  against a declared delta — otherwise "the row absorbed it" would be
-  indistinguishable from "a blob of hashes absorbed it". Its channel is
-  `complexity.cyclomatic`'s callable level rather than `cohesion.lcom`, because
-  lcom's code half is spelled exactly like its rule name and a whole-name map
-  cannot tell the two fields apart: the row would rewrite the rule name too and
-  the run could never be green.
+  by nothing else. It is held to exit 0 *and* to a run that compared no more
+  surfaces against a declared delta than this repository itself declares —
+  otherwise "the row absorbed it" would be indistinguishable from "a blob of
+  hashes absorbed it". Zero was the earlier bar and it stopped being right the
+  moment a step declared a delta of its own: an unmutated tree legitimately
+  compares those surfaces against their declarations, and the positive control
+  would fail for being correct. Its channel is `code-smell.unused-private`,
+  because the channel has to be claimed by a case that declares no delta, and
+  its code half has to move together with the published `rule` field — after the
+  level left the channel names, no static channel's code differs from its rule
+  field, so the only rename a whole-name row can make green is one that moves
+  both. The new name is also the **same length** as the old one, which is a
+  constraint on any rename of a rule name rather than a quirk of this control:
+  `qmx rules` and the per-rule debt breakdown in `--format=text-verbose` print
+  that name in a `%-40s` column, so a name a character longer moves the text
+  beside it by one space, and a row translates a name and not the padding after
+  it. A step renaming a rule name to a different length has to declare a delta
+  on those two surfaces; a step renaming only a channel is untouched by this,
+  because neither column prints a channel.
+- **An expectation may not be pinned to the exact surface a declaration covers.**
+  Such a surface is compared against the declared diff and never for equality, so
+  a `surface-mismatch` cannot arise there and a control asking for one is
+  asserting about a comparison that no longer happens. The harness refuses that
+  control before it clones anything; the repair is to move the mutation to a case
+  that declares nothing, not to repin onto a `delta-*` class, which would move
+  the control off its own subject. A broader pin that merely spans a declared
+  surface is fine: the other ten formats and the baseline file are still compared
+  for equality, and the declared one among them is absorbed as declaration noise.
 - `lost-level-fixture` is the control on a lost level. Its mutation takes the
   `class` level away from the `health` case's user-defined computed metric, which
   is the only way this corpus can lose one level of a multi-level channel:

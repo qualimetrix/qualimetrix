@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -92,13 +93,19 @@ final class FindingChannelTest extends TestCase
         self::assertSame($channel->code, (string) $channel);
     }
 
+    /**
+     * A level is a coordinate beside the name, so the separator that writes
+     * the pair down can never be part of a code: `coupling.cbo:class` would
+     * otherwise be a name that decomposes two ways, and a producer could
+     * declare one.
+     */
     #[Test]
-    public function itBuildsALeveledNameFromARuleNameAndALevel(): void
+    public function itRefusesACodeCarryingTheLevelSeparator(): void
     {
-        self::assertSame(
-            'complexity.cyclomatic.callable',
-            FindingChannel::leveled('complexity.cyclomatic', SymbolLevel::Callable)->code,
-        );
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('coupling.cbo:class');
+
+        new FindingChannel('coupling.cbo' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Class_->value);
     }
 
     /**

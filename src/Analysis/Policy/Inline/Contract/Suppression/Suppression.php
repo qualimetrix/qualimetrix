@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Suppression;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Core\Symbol\MetricSubject;
 
 /**
  * Represents a suppression tag from docblock.
  *
- * Example: `@qmx-ignore complexity.cyclomatic.callable -- Reason why it's ignored`
+ * Example: `@qmx-ignore complexity.cyclomatic -- Reason why it's ignored`
  *
  * `$rule` keeps the authored text; what it actually filters on is
  * {@see SuppressionTarget}, derived from it once here.
@@ -60,14 +61,14 @@ final readonly class Suppression
      * Checks whether this suppression addresses the given channel.
      *
      * The directive addresses a **channel**, by its own name: an exact name,
-     * or `X.*` for the strict descendants of `X`. A rule name is not a channel
-     * — `@qmx-ignore coupling.instability` no longer covers
-     * `coupling.instability.class`. The one form that filters on nothing is
-     * `@qmx-ignore *` (and a bare `@qmx-ignore-file`), see
-     * {@see SuppressionTarget}.
+     * or `X.*` for the strict descendants of `X`. A level is addressed beside
+     * the name — `@qmx-ignore coupling.cbo:namespace` silences the namespace
+     * aggregate and leaves the class findings of the same channel reported.
+     * The one form that filters on nothing is `@qmx-ignore *` (and a bare
+     * `@qmx-ignore-file`), see {@see SuppressionTarget}.
      */
-    public function matches(string $code): bool
+    public function matches(string $code, ?SymbolLevel $level): bool
     {
-        return $this->target->matches($code);
+        return $this->target->matches($code, $level);
     }
 }

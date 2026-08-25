@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use InvalidArgumentException;
-
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -60,11 +60,11 @@ final readonly class BoundaryExplanationService
      *                                                                         overrides — read
      *                                                                         straight off
      *                                                                         `AnalysisResult::$thresholdOverrides`
-     * @param array<string, int|float> $configuredThresholds the rule's `qmx.yaml`-configured
-     *                                                       boundary, keyed by channel name;
-     *                                                       a channel absent from this map
-     *                                                       reports {@see EffectiveBoundary::$configuredThreshold}
-     *                                                       as `null`
+     * @param array<string, array<string, int|float>> $configuredThresholds the rule's `qmx.yaml`-configured
+     *                                                                      boundary, keyed by channel name;
+     *                                                                      a channel absent from this map
+     *                                                                      reports {@see EffectiveBoundary::$configuredThreshold}
+     *                                                                      as `null`
      * @param ?MetricRepositoryInterface $symbolLocations the run's measured exact subjects;
      *                                                    repository evidence is the fallback
      *                                                    when no current finding has that
@@ -195,7 +195,7 @@ final readonly class BoundaryExplanationService
     /**
      * @param list<Finding> $measuredFindings
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile
-     * @param array<string, int|float> $configuredThresholds
+     * @param array<string, array<string, int|float>> $configuredThresholds
      * @param ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} $repositoryRecord
      */
     private function explainIdentity(
@@ -207,14 +207,38 @@ final readonly class BoundaryExplanationService
         ?array $repositoryRecord,
     ): EffectiveBoundary {
         $baselineSource = self::baselineSourceFor($identity, $baseline, $measuredFindings);
-        $configuredThreshold = $configuredThresholds[$identity->channel->code] ?? null;
 
         $subject = self::subjectForIdentity($identity, $measuredFindings, $repositoryRecord);
+        $configuredThreshold = self::configuredThresholdFor(
+            $configuredThresholds[$identity->channel->code] ?? [],
+            $subject,
+        );
         $annotation = $subject !== null
             ? $this->annotationFor($identity->channel, $thresholdOverridesByFile, $subject)
             : null;
 
         return new EffectiveBoundary($identity, $baselineSource, $configuredThreshold, $annotation);
+    }
+
+    /**
+     * The boundary a channel is judged against **at the level of the subject
+     * being explained**.
+     *
+     * A channel reports at more than one level now, so the level is what
+     * chooses between its boundaries. When the subject could not be resolved
+     * at all there is nothing to choose with, and a channel with one boundary
+     * still has an unambiguous answer; a channel with two does not, and
+     * printing either would be a guess printed as a fact.
+     *
+     * @param array<string, int|float> $byLevel
+     */
+    private static function configuredThresholdFor(array $byLevel, ?MetricSubject $subject): int|float|null
+    {
+        if ($subject !== null) {
+            return $byLevel[SymbolLevelProjection::ofDeclaration($subject->toSymbolPath()->getType())->value] ?? null;
+        }
+
+        return \count($byLevel) === 1 ? reset($byLevel) : null;
     }
 
     /**

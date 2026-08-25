@@ -29,7 +29,7 @@ final class ChannelPresentationCoverageTest extends TestCase
      * read the same real container's static declarations, so a divergence
      * between the two counts would itself be a regression.
      */
-    private const int DECLARED_CHANNEL_COUNT = 57;
+    private const int DECLARED_CHANNEL_COUNT = 52;
 
     #[Test]
     public function everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage(): void
@@ -79,7 +79,7 @@ final class ChannelPresentationCoverageTest extends TestCase
      * own `everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage()`
      * and {@see \Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest},
      * whose docblocks both say so. That leaves P2's own DoD — "the view
-     * answers for all 57 static channels and for a configured `computed.*` /
+     * answers for all 52 static channels and for a configured `computed.*` /
      * `health.*` definition" — half-checked. This resolves the six built-in
      * health-score definitions the same way a real run would (through
      * {@see ComputedMetricConfiguratorInterface::resolve()} against an empty
@@ -107,7 +107,7 @@ final class ChannelPresentationCoverageTest extends TestCase
         self::assertCount(
             self::DECLARED_CHANNEL_COUNT + \count(ComputedMetricDefaults::getDefaults()),
             $channels,
-            'The universe should now report the 57 static channels plus the 6 built-in computed/health definitions.',
+            'The universe should now report the 52 static channels plus the 6 built-in computed/health definitions.',
         );
 
         $missing = [];

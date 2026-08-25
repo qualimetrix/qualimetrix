@@ -185,7 +185,18 @@ final class Controls
      * in the corpus that fires `code-smell.unreachable-code`, so its loss
      * genuinely narrows what the gate proves. Nothing is tolerated: both sides
      * run the candidate's corpus, so a fixture missing from it is missing from
-     * both, and no surface or count can differ. The `layers` case would not do:
+     * both, and no surface or count can differ.
+     *
+     * A `map-stale` toleration on this channel's row used to sit here, from the
+     * step whose map declared a row per channel: taking the only fixture that
+     * fires one away left that row translating nothing. Ш5c's map declares ten
+     * rows and every one of them is a `complexity.*` or `coupling.*` collapse,
+     * so no row names this channel and none of them goes idle when this fixture
+     * leaves. A toleration nothing matches now fails the control, which is why
+     * the withdrawal is the fix rather than a preference — and the docblock
+     * above it had claimed "nothing is tolerated" the whole time.
+     *
+     * The `layers` case would not do:
      * its layer-policy diagnostics are computed from the policy and the import
      * edge rather than from the target file, so removing a fixture there does
      * not always shrink the channel set.
@@ -202,15 +213,6 @@ final class Controls
             [
                 new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus'),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:smells'),
-            ],
-            [
-                // Since the step declares a row per channel, removing the only
-                // fixture that fires one makes that row translate nothing — a
-                // real staleness, not noise, so it is tolerated at the row
-                // rather than suppressed. Pinned to the row: a different row
-                // going idle would be a side effect this mutation does not
-                // explain.
-                new Expectation(FailureClass::MAP_STALE, 'code-smell.unreachable-code'),
             ],
         );
     }
@@ -418,6 +420,22 @@ final class Controls
     /**
      * The reference addressed in a vocabulary it does not have.
      *
+     * **Why `design.noc` in the `design` case, and not `cohesion.lcom` in the
+     * `complexity` one, where this control used to live.** The mutation makes one
+     * whole case's reference run fail, so every surface of that case moves — and
+     * Ш5c declares a delta on `case:complexity|format:sarif`, which is compared
+     * as an exact diff. A failed reference run leaves nothing to diff against
+     * that declaration, the measured diff becomes rubbish, and the run reports
+     * `delta-too-large` there: a statement about the declaration rather than
+     * about the reference's vocabulary. Repinning the expectation onto a
+     * `delta-*` class would move the control off its own subject, so the control
+     * moves to a case that declares nothing instead. `design` qualifies on four
+     * counts, each read off the tree rather than recalled: it declares no delta,
+     * it addresses `design.noc` through `--rule-opt` and claims that channel, no
+     * other case claims it, and its threshold-key group is spelled exactly as
+     * `cohesion.lcom`'s was (`'' => BARE_PAIR`), so the rename meets the same
+     * option plumbing the old target met.
+     *
      * A rule renamed in product code, and the one case that addresses that rule
      * through `--rule-opt` repointed onto the new name — which is what a step
      * that renames a rule has to do — with no `inputs.tsv` row to restate it for
@@ -431,7 +449,7 @@ final class Controls
      * failure of a different mechanism to every line of the table. Our own
      * `qmx.yaml` is repointed for a harder reason, measured: the channel probe
      * resolves the candidate tree's own configuration, and that configuration
-     * names `cohesion.lcom` — so without this the probe dies on an unknown rule
+     * names `design.noc` — so without this the probe dies on an unknown rule
      * and the gate never gets as far as running anything.
      */
     private static function referenceInputUntranslated(): Control
@@ -440,34 +458,33 @@ final class Controls
             'reference-input',
             'a case input that needs translating, with no inputs.tsv row to translate it',
             Mutation::edit(
-                'src/Analysis/Evidence/Cohesion/LcomRule.php',
-                ["public const string NAME = 'cohesion.lcom';" => "public const string NAME = 'cohesion.lcom4';"],
-                'the rule and its channel are renamed to cohesion.lcom4',
+                'src/Analysis/Evidence/Design/NocRule.php',
+                ["public const string NAME = 'design.noc';" => "public const string NAME = 'design.noc2';"],
+                'the rule and its channel are renamed to design.noc2',
             )->and(Mutation::edit(
-                'finding-gate/cases/complexity/case.json',
+                'finding-gate/cases/design/case.json',
                 [
-                    '"--rule-opt=cohesion.lcom:warning=2"' => '"--rule-opt=cohesion.lcom4:warning=2"',
-                    '"--rule-opt=cohesion.lcom:error=4"' => '"--rule-opt=cohesion.lcom4:error=4"',
-                    '"--rule-opt=cohesion.lcom:minMethods=2"' => '"--rule-opt=cohesion.lcom4:minMethods=2"',
+                    '"--rule-opt=design.noc:warning=2"' => '"--rule-opt=design.noc2:warning=2"',
+                    '"--rule-opt=design.noc:error=4"' => '"--rule-opt=design.noc2:error=4"',
                     // The claim carries a level, and the mutation deliberately
                     // stops short of it: a control coupled to the level
                     // vocabulary would go stale every time that vocabulary
                     // moves, which is exactly what Ш5 does to it. Matching the
                     // channel name up to the level separator keeps "exactly one
                     // occurrence" sharp without asserting anything about levels.
-                    '"cohesion.lcom@' => '"cohesion.lcom4@',
+                    '"design.noc@' => '"design.noc2@',
                 ],
                 'the case addresses the new name',
             ))->and(Mutation::edit(
                 'qmx.yaml',
-                ['  cohesion.lcom:' => '  cohesion.lcom4:'],
+                ['  design.noc:' => '  design.noc2:'],
                 'our own configuration addresses the new name too',
             )),
-            [new Expectation(FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:complexity')],
+            [new Expectation(FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:design')],
             [
-                new Expectation(FailureClass::RUN_FAILED, 'reference / complexity'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
-                new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:complexity'),
+                new Expectation(FailureClass::RUN_FAILED, 'reference / design'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:design'),
+                new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design'),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
                     'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
@@ -480,9 +497,9 @@ final class Controls
     /**
      * The identity a consumer tracks moves, and no declared row explains it.
      *
-     * The mutation is the channel rename, and the point of this control is
-     * *where* the required failure is pinned: on the two surfaces that publish
-     * the fingerprint. Ш5b0 stopped comparing the GitLab hash as hex and started
+     * The mutation is a channel rename, and the point of this control is *where*
+     * the required failure is pinned: on the two surfaces that publish the
+     * fingerprint. Ш5b0 stopped comparing the GitLab hash as hex and started
      * comparing the identity it hashes, and a substitution that quietly redacted
      * instead of substituting would leave that surface agreeing with itself
      * under any rename. That is the guard, and this is what watches it.
@@ -492,21 +509,47 @@ final class Controls
      * the SARIF one too would have to notice that this control now watches only
      * half of it.
      *
-     * The tolerated set is the rename control's measured radius, stated there.
+     * **Why this control stopped sharing the lcom mutation.** Both required
+     * expectations name an exact surface, and one of them named
+     * `case:complexity|format:sarif` — which Ш5c declares a delta for. A declared
+     * surface is compared against that exact diff and never for equality, so the
+     * rename arrived there as `delta-mismatch` and the sarif half of the pair
+     * could not fire at all. Two repairs were possible and only one keeps the
+     * subject: repinning the sarif expectation onto `delta-mismatch` would assert
+     * something about the declaration, so the mutation moves to a channel whose
+     * case declares nothing. `code-smell.unused-private` in the `smells` case is
+     * that channel — claimed by that one case and named nowhere else in the
+     * corpus, and reported there often enough that both publications carry it.
+     *
+     * The mutation is {@see unusedPrivateChannelMutation()}, the very one {@see
+     * fingerprintDeclaredRename()} declares a row for. The pair differs in its
+     * declaration and in nothing else — one product change, two declarations,
+     * opposite verdicts — and any other arrangement would have the two controls
+     * comparing two different changes. {@see ceilingMutation()} perturbs the
+     * reported value of the same rule; it touches another fragment of the file
+     * and each control runs in its own clone.
+     *
+     * `tree|rules` is tolerated because the mutation moves the producing rule's
+     * name and `qmx rules` publishes it: with no row to translate it, the two
+     * trees disagree about a listing that is not a finding at all. It is the
+     * mutation's measured radius, not a fingerprint statement — and it is the
+     * one toleration the green twin does not need, because there the row
+     * translates that listing too.
      */
     private static function fingerprintUnexplained(): Control
     {
         return Control::red(
             'fingerprint-no-map',
             'the fingerprinted identity moves with no finding-gate/maps/channels.tsv row naming it',
-            self::lcomChannelMutation(),
+            self::unusedPrivateChannelMutation(),
             [
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity|format:gitlab'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity|format:sarif'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells|format:gitlab'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells|format:sarif'),
             ],
             [
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
-                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'tree|rules'),
+                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:smells'),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
                     'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
@@ -549,83 +592,105 @@ final class Controls
     }
 
     /**
-     * The positive half of the fingerprint mechanism: a declared row absorbs the
-     * moved identity, and no declared delta is involved.
+     * A channel rename moves every fingerprint of every finding on it, and one
+     * declared row is what makes that green. Registered under "no undeclared
+     * deltas" so that a delta creeping back in fails it.
      *
-     * Every fingerprint of the renamed channel moves, on both publications, and
-     * before Ш5b0 that meant a diff of hashes on the GitLab surface — a
-     * declaration made of hex, which is the blob `delta-too-large` exists to
-     * refuse and which proves nothing about what moved. This control states that
-     * the row is now enough, and {@see Outcome} holds it to "green **and** zero
-     * declared deltas" so that a delta creeping back in fails it.
+     * **The channel is chosen, not incidental, and Ш5c changed what the choice
+     * has to satisfy.** Two constraints, both measured:
      *
-     * The channel is `complexity.cyclomatic`'s callable level, not
-     * `cohesion.lcom`, and the reason is measured rather than aesthetic: lcom's
-     * code half is spelled exactly like its rule name, so a row renaming the
-     * code half also rewrites every occurrence of the rule name in the
-     * reference's output — a whole-name map cannot tell the two fields apart —
-     * and the run could never be green. A code half that is not also a rule name
-     * is the shape a collapse row will have.
+     * - *the case must declare no delta of its own.* Ш5c declares one on
+     *   `case:complexity|format:sarif` and one on `case:coupling|format:sarif`
+     *   — SARIF publishes one rule descriptor per channel, so collapsing the
+     *   level pairs removes descriptors and renumbers every `ruleIndex`. A
+     *   declared delta is compared as an **exact** diff, so mutating a rule of
+     *   either case rewrites that diff and the control would fail as
+     *   `delta-mismatch`, saying nothing about fingerprints. That is why this
+     *   control no longer lives on `complexity.cyclomatic`, where it used to;
+     * - *the code and the published `rule` field must move together.* They used
+     *   to be told apart by the level suffix: renaming only the code half was
+     *   expressible because the rule half was a shorter, different string. After
+     *   Ш5c no static channel's code differs from its rule field, so the only
+     *   rename a whole-name row can absorb is one that moves both — which is
+     *   what renaming the rule's own `NAME` does, in one place, and which one
+     *   row then translates on the reference side. Renaming the code alone
+     *   leaves the `rule` field standing while the row rewrites it on the
+     *   reference side; measured, that failed here on the smells case's `html`,
+     *   `json` and `text-verbose` surfaces and on `tree|rules`, none of which
+     *   says anything about fingerprints. The lcom objection this replaces was
+     *   never about lcom: it was about a map row rewriting a field the mutation
+     *   had left alone. What makes the rename expressible at all is stated where
+     *   it is measured, on {@see unusedPrivateChannelMutation()}: the new name is
+     *   the same length as the old one, because two of the surfaces pad the
+     *   channel column and a row cannot declare padding.
+     *
+     * `code-smell.unused-private` is claimed by one case and named nowhere else
+     * in the corpus, and reports twelve findings in it. Both facts are checked by
+     * the gate itself rather than recalled: claims and observations are compared
+     * per case in both directions, so a GREEN run is what says no other case
+     * fires this channel. {@see ceilingMutation()} perturbs the same rule's
+     * reported value from another fragment of the same file, and each control
+     * runs in its own clone.
+     *
+     * One thing this channel does **not** bring, corrected from the claim that
+     * stood here: it carries no occurrence key. Measured over the `smells` case's
+     * SARIF surface, its twelve findings publish four identities of the form
+     * `channel:subject`, three findings to each class. So the substitution is
+     * exercised on the two-part shape, and the shape *with* an occurrence is
+     * exercised by no control — a gap worth naming rather than a reason to move
+     * again.
      *
      * The claim and the tracked declaration fixture move with the rename because
      * they are declarations of the channel, not evidence about it: leaving them
      * stale would make this control fail on two other mechanisms and say nothing
-     * about fingerprints.
+     * about fingerprints. The map row is **inserted** rather than re-pointed —
+     * the step's own ten rows say nothing about this channel, and withdrawing
+     * any of them would judge the control against undeclared renames instead.
      */
     private static function fingerprintDeclaredRename(): Control
     {
         return Control::greenWith(
             'fingerprint-declared-rename',
             'a channel rename that moves every fingerprint, declared as one channels.tsv row',
-            Mutation::edit(
-                'src/Analysis/Evidence/Complexity/ComplexityRule.php',
-                [
-                    // Two spellings, each made unique by its context rather than
-                    // by relaxing edit()'s exactly-one rule: that rule is the
-                    // guard that catches a moved product, and this control has
-                    // already been caught by it once.
-                    'FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->code => ChannelDeclaration::magnitude'
-                        => "'complexity.cyclomatic.callable2' => ChannelDeclaration::magnitude",
-                    'code: FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->code,'
-                        => "code: 'complexity.cyclomatic.callable2',",
-                ],
-                'the callable-level channel of complexity.cyclomatic is renamed',
-            )->and(Mutation::edit(
-                'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
-                [
-                    'complexity.cyclomatic.callable higher callable'
-                        => 'complexity.cyclomatic.callable2 higher callable',
-                ],
-                'the tracked declaration fixture names the new channel',
-            ))->and(Mutation::edit(
-                'finding-gate/cases/complexity/case.json',
-                [
-                    '"complexity.cyclomatic.callable@callable"'
-                        => '"complexity.cyclomatic.callable2@callable"',
-                ],
-                'the case claims the new channel',
-            ))->and(Mutation::edit(
-                'finding-gate/maps/channels.tsv',
-                [
-                    // The step's own tracked row for this channel is repointed
-                    // rather than the whole file replaced: replacing it would
-                    // withdraw the other 63 declarations of the same step, and
-                    // the control would then be judged against 63 undeclared
-                    // renames instead of against fingerprints.
-                    // Two rows, because the step's row translates the whole key
-                    // only: the rule survives as its own published field, so a
-                    // code rename needs its own row. The control renames the
-                    // code, so without the second row the bare spelling on the
-                    // ten text-shaped surfaces is undeclared and the control
-                    // fails for a reason that has nothing to do with
-                    // fingerprints — measured, not predicted.
-                    "complexity.cyclomatic#complexity.cyclomatic.callable\tcomplexity.cyclomatic.callable\t"
-                        => "complexity.cyclomatic#complexity.cyclomatic.callable\tcomplexity.cyclomatic.callable2\t"
-                            . "the control renames the channel's code\n"
-                            . "complexity.cyclomatic.callable\tcomplexity.cyclomatic.callable2\t",
-                ],
-                "the step's own row for that channel declares the control's rename instead",
-            )),
+            // The SAME product change as fingerprint-no-map, which declares no
+            // row and must go red. That symmetry is the control: one mutation,
+            // two declarations, opposite verdicts — anything else and the pair
+            // would be comparing two different changes.
+            self::unusedPrivateChannelMutation()
+                ->and(Mutation::edit(
+                    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+                    [
+                        'code-smell.unused-private higher class'
+                            => 'code-smell.unused-privat2 higher class',
+                    ],
+                    'the tracked declaration fixture names the new channel',
+                ))->and(Mutation::edit(
+                    'finding-gate/cases/smells/case.json',
+                    [
+                        '"code-smell.unused-private@class"'
+                            => '"code-smell.unused-privat2@class"',
+                    ],
+                    'the case claims the new channel',
+                ))->and(Mutation::edit(
+                    'finding-gate/maps/channels.tsv',
+                    [
+                        // Inserted between the header and the step's first row,
+                        // which is the only anchor an insertion can use here.
+                        // Anchoring on the header alone was the defect a run caught:
+                        // the fragment searched for is a *prefix* of the fragment
+                        // written, so the file still contained it afterwards and
+                        // Mutation refused the write as unapplied. Naming the first
+                        // row's start makes the two fragments disjoint, keeps
+                        // "exactly one occurrence" sharp, and leaves the step's own
+                        // rows standing.
+                        "old\tnew\treason\ncomplexity.cognitive.callable\t"
+                            => "old\tnew\treason\n"
+                                . "code-smell.unused-private\tcode-smell.unused-privat2\t"
+                                . "the control renames the channel's code\n"
+                                . "complexity.cognitive.callable\t",
+                    ],
+                    "the control's rename is declared as one inserted row",
+                )),
         );
     }
 
@@ -636,6 +701,44 @@ final class Controls
             'src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php',
             ['metricValue: $total,' => 'metricValue: $total + 1,'],
             'the unused-private count each finding records is one higher',
+        );
+    }
+
+    /**
+     * The channel rename both fingerprint controls apply: one product edit, and
+     * the channel code, its declaration key and the published `rule` field all
+     * move with it.
+     *
+     * The rule's `NAME` is that one place — the declaration key, the emitted
+     * `code` and the emitted `ruleName` all read it — so renaming it renames the
+     * channel without letting the two published fields drift apart. A code-only
+     * rename is not expressible: a whole-name row would go on to rewrite the
+     * `rule` field the mutation had left alone. Measured on the green control:
+     * that variant failed on the smells case's `html`, `json` and `text-verbose`
+     * surfaces and on `tree|rules`.
+     *
+     * **The new name is the same length as the old one, and that is load-bearing
+     * rather than tidy.** `qmx rules` and `--format=text-verbose` pad the channel
+     * column to a fixed width, so a name one character longer shifts the text
+     * beside it by one space — a shift no row can declare, because a row
+     * translates a name and not the padding after it. Measured on `qmx rules`
+     * alone: `code-smell.unused-private2` leaves exactly one line differing by
+     * one space, and `code-smell.unused-privat2` leaves the whole output
+     * identical under a single substitution. That is also why this is the shape
+     * a real step's rename has to have, or declare a delta for.
+     *
+     * A private mutation rather than a second caller of {@see
+     * lcomChannelMutation()}: the fingerprint pair needs a case that declares no
+     * delta, and the two controls that share the lcom mutation both pin their
+     * expectations to the whole `case:complexity`, where the declared sarif
+     * surface is one artifact among eleven and cannot swallow the control.
+     */
+    private static function unusedPrivateChannelMutation(): Mutation
+    {
+        return Mutation::edit(
+            'src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php',
+            ["public const string NAME = 'code-smell.unused-private';" => "public const string NAME = 'code-smell.unused-privat2';"],
+            'channel code-smell.unused-private -> code-smell.unused-privat2, its code and published rule field together',
         );
     }
 

@@ -123,6 +123,49 @@ final class RuleInputValidatorTest extends TestCase
     }
 
     /**
+     * The second seam of the one refusal point for an impossible
+     * `channel:level` pair — the exclusion key. Both directions from one
+     * configuration, so the case cannot pass by rejecting everything.
+     */
+    #[Test]
+    public function itRejectsAChannelExclusionKeyNamingALevelItsChannelDoesNotReportAt(): void
+    {
+        $rules = self::createStub(RuleRegistryInterface::class);
+        $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
+        $validator = $this->validator($rules);
+        $definitions = new ResolvedComputedMetricDefinitions([
+            new ComputedMetricDefinition(
+                name: 'health.complexity',
+                formulas: ['class' => 'ccn__avg'],
+                description: 'Complexity health',
+                levels: [SymbolType::Class_],
+                inverted: true,
+            ),
+        ]);
+
+        $accepted = new FindingConfiguration(
+            new RuleOptionsDocument([
+                'computed.health' => ['exclude_namespace_channels' => ['health.complexity:class' => ['App\\Legacy']]],
+            ]),
+            new FindingCliOverrides([]),
+            new RuleSelection(),
+        );
+        $validator->validate(new ArrayInput([], new InputDefinition()), $accepted, $definitions);
+
+        $rejected = new FindingConfiguration(
+            new RuleOptionsDocument([
+                'computed.health' => ['exclude_namespace_channels' => ['health.complexity:file' => ['App\\Legacy']]],
+            ]),
+            new FindingCliOverrides([]),
+            new RuleSelection(),
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('none of them reports at level "file"');
+        $validator->validate(new ArrayInput([], new InputDefinition()), $rejected, $definitions);
+    }
+
+    /**
      * The documented grammar is one grammar everywhere, and this option is the
      * one whose key *is* a channel, so it must accept the channel by its own
      * name.

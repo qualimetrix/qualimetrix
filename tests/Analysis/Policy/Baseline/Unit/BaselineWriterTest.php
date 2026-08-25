@@ -78,7 +78,7 @@ final class BaselineWriterTest extends TestCase
 
         self::assertArrayHasKey('callable:App\Foo::bar', $data['entries']);
         self::assertSame(
-            'complexity.cyclomatic.callable',
+            'complexity.cyclomatic',
             $data['entries']['callable:App\Foo::bar'][0]['channel'],
         );
     }
@@ -413,7 +413,7 @@ final class BaselineWriterTest extends TestCase
     public function itWritesAsManyEntriesUnderASymbolAsItRead(): void
     {
         $undeclared = ['channel' => 'this.channel', 'count' => 1];
-        $duplicated = 'complexity.cyclomatic.callable';
+        $duplicated = 'complexity.cyclomatic';
 
         $path = $this->tempDir . '/hand-written.json';
         file_put_contents($path, json_encode([
@@ -695,7 +695,7 @@ final class BaselineWriterTest extends TestCase
             new BaselineEntry(
                 new BaselineIdentity(
                     'callable:App\Foo::bar',
-                    new FindingChannel('complexity.cyclomatic.callable'),
+                    new FindingChannel('complexity.cyclomatic'),
                 ),
                 [25],
                 1,
@@ -735,7 +735,7 @@ final class BaselineWriterTest extends TestCase
             entries: [new BaselineEntry(
                 new BaselineIdentity(
                     'callable:App\Foo::bar',
-                    new FindingChannel('complexity.cyclomatic.callable'),
+                    new FindingChannel('complexity.cyclomatic'),
                 ),
                 [0.1, 1.2345678, 40.0, 1234.5678912],
                 4,

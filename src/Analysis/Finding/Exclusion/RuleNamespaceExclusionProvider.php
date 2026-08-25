@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Exclusion;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
@@ -62,9 +63,10 @@ final class RuleNamespaceExclusionProvider
     /**
      * Stores namespace-aggregate exclusions scoped to one channel selector.
      *
-     * The selector is a {@see NameSelector}: an exact channel name, or `X.*`
-     * for its strict descendants. A bare prefix such as `health` no longer
-     * stands for a group — write `health.*`.
+     * The selector is a {@see ChannelLevelSelector}: an exact channel name, or
+     * `X.*` for its strict descendants, either optionally narrowed to one
+     * level with `:level`. A bare prefix such as `health` no longer stands for
+     * a group — write `health.*`.
      *
      * @param list<string> $patterns Namespace patterns (prefixes or globs)
      */
@@ -190,7 +192,10 @@ final class RuleNamespaceExclusionProvider
     public function isChannelExcluded(string $ruleName, FindingChannel $channel, string $namespace): bool
     {
         foreach ($this->channelMatchers[$ruleName] ?? [] as $selector => $matcher) {
-            if (NameSelector::tryParse($selector)?->matches($channel->code) === true && $matcher->matches($namespace)) {
+            if (
+                ChannelLevelSelector::tryParse($selector)?->matches($channel->code, SymbolLevel::Namespace_) === true
+                && $matcher->matches($namespace)
+            ) {
                 return true;
             }
         }

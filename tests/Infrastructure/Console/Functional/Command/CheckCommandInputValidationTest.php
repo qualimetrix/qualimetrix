@@ -114,7 +114,7 @@ final class CheckCommandInputValidationTest extends TestCase
             [
                 'paths' => ['tests/Fixtures/Ast/empty_file.php'],
                 '--format' => 'json',
-                '--only-rule' => ['complexity.cyclomatic#complexity.cyclomatic.callable'],
+                '--only-rule' => ['complexity.cyclomatic#complexity.cyclomatic'],
             ],
             ['capture_stderr_separately' => true],
         );
@@ -122,9 +122,70 @@ final class CheckCommandInputValidationTest extends TestCase
         self::assertSame(3, $tester->getStatusCode());
         self::assertSame('', $tester->getDisplay());
         self::assertStringContainsString(
-            'Write "complexity.cyclomatic.callable"',
+            'Write "complexity.cyclomatic"',
             $tester->getErrorOutput(),
         );
+    }
+
+    /**
+     * The configuration and CLI seam of the one refusal point for an
+     * impossible `channel:level` pair, {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing}.
+     * The other seam is the inline directive one, checked by
+     * {@see \Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest}
+     * — both ask the same object, so the two families of directive cannot
+     * answer one mistake two ways.
+     */
+    #[Test]
+    public function itRejectsASelectionSelectorNamingALevelItsChannelDoesNotReportAt(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                '--disable-rule' => ['coupling.cbo:file'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('none of them reports at level "file"', $tester->getErrorOutput());
+    }
+
+    /** A level a channel does declare is accepted, so the refusal above is not refusing every pair. */
+    #[Test]
+    public function itAcceptsASelectionSelectorNamingADeclaredLevel(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                '--disable-rule' => ['coupling.cbo:namespace'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertNotSame(3, $tester->getStatusCode(), $tester->getErrorOutput());
+    }
+
+    /** A level word outside the vocabulary is refused by the same one point. */
+    #[Test]
+    public function itRejectsASelectionSelectorWhoseLevelIsNotOne(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                '--disable-rule' => ['coupling.cbo:klass'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('names no level after ":"', $tester->getErrorOutput());
     }
 
     #[Test]

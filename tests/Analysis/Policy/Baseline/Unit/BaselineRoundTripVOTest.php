@@ -151,7 +151,7 @@ final class BaselineRoundTripVOTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'callable:App\Foo::bar',
-                        new FindingChannel('complexity.cyclomatic.callable'),
+                        new FindingChannel('complexity.cyclomatic'),
                     ),
                     [25],
                     1,
@@ -159,7 +159,7 @@ final class BaselineRoundTripVOTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'callable:App\Foo::bar',
-                        new FindingChannel('complexity.cognitive.callable'),
+                        new FindingChannel('complexity.cognitive'),
                     ),
                     [18],
                     1,

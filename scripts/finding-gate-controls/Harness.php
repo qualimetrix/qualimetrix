@@ -172,6 +172,15 @@ final class Harness
             throw new RuntimeException('No control selected.');
         }
 
+        $declaredSurfaces = $this->declaredSurfaces();
+
+        // Before the first clone: an expectation pinned to a surface this
+        // repository declares a delta for can never be met, and a twenty-minute
+        // run is a poor way to hear it. See Control::assertNotPinnedToDeclaredDelta().
+        foreach ($selected as $control) {
+            $control->assertNotPinnedToDeclaredDelta($declaredSurfaces, self::replacesDeclaration($control));
+        }
+
         $targets = self::mutationTargets($selected);
         $before = $this->workingTreeState();
         $beforeTargets = $this->targetDigests($targets);
@@ -232,13 +241,19 @@ final class Harness
                 $run,
                 $report,
                 $this->declaredSurfaces(),
-                \in_array(self::DECLARED_DELTA_INDEX, $control->mutation->relativePaths(), true),
+                self::replacesDeclaration($control),
             );
         } catch (Throwable $error) {
             return Outcome::crashed($control, $error->getMessage());
         } finally {
             $scratch->remove();
         }
+    }
+
+    /** Whether this control plants a declaration of its own over the repository's. */
+    private static function replacesDeclaration(Control $control): bool
+    {
+        return \in_array(self::DECLARED_DELTA_INDEX, $control->mutation->relativePaths(), true);
     }
 
     /**

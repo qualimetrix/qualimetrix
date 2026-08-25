@@ -6,17 +6,25 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 
 /**
  * Whether one `exclude_namespace_channels` key addresses a channel the rule it
  * is written under produces.
  *
  * The key reads the one selector grammar there is: an exact channel name, or
- * `X.*` for the channels below it. The retired `ruleName#violationCode`
- * spelling is refused by name rather than left to fall through as an unknown
- * name — this option is the one whose *key is a channel*, so it is where a
+ * `X.*` for the channels below it, either optionally narrowed to one level of
+ * the aggregation tree with `:level`. Two spellings are refused by name rather
+ * than left to fall through as unknown names — the retired
+ * `ruleName#violationCode` pair, and a `channel:level` pair the channel cannot
+ * produce. This option is the one whose *key is a channel*, so it is where a
  * stale spelling is most likely to have been written down.
+ *
+ * The impossible pair is not decided here: it is decided by
+ * {@see ChannelLevelAddressing}, the same object the inline directives ask, so
+ * the configuration and the annotation families cannot answer one mistake two
+ * ways. What is decided here is that the answer ends the run.
  *
  * Addressing a channel is necessary and not sufficient. The map is applied to
  * the findings of the rule it is configured under, so a key naming a channel
@@ -39,10 +47,20 @@ final readonly class ChannelExclusionKeyValidator
     /** @throws InvalidArgumentException when the key can never exclude anything */
     public function assertAddressesAProducedChannel(string $ruleName, string $key): void
     {
-        $parsed = NameSelector::tryParse($key)
+        $pairProblem = (new ChannelLevelAddressing($this->channels))->problemWith($key);
+
+        if ($pairProblem !== null) {
+            throw new InvalidArgumentException(\sprintf(
+                'Option "exclude_namespace_channels" for rule "%s": %s',
+                $ruleName,
+                $pairProblem,
+            ));
+        }
+
+        $parsed = ChannelLevelSelector::tryParse($key)
             ?? throw new InvalidArgumentException(ChannelExclusionKeyHints::notASelector($ruleName, $key));
 
-        $addressed = $this->channels->expand($parsed);
+        $addressed = $this->channels->expand($parsed->channel());
         $produced = $this->channels->channelsProducedBy($ruleName);
 
         foreach ($addressed as $channel) {
@@ -53,6 +71,8 @@ final readonly class ChannelExclusionKeyValidator
             }
         }
 
-        throw new InvalidArgumentException(ChannelExclusionKeyHints::refusal($ruleName, $parsed, $addressed, $produced));
+        throw new InvalidArgumentException(
+            ChannelExclusionKeyHints::refusal($ruleName, $parsed->channel(), $addressed, $produced),
+        );
     }
 }

@@ -43,7 +43,7 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
      * empty until configuration resolves it, so `channels()` and
      * `staticDeclarations()` agree here.
      */
-    private const int UNIVERSE_CHANNEL_COUNT = 57;
+    private const int UNIVERSE_CHANNEL_COUNT = 52;
 
     /**
      * Mirrors {@see SarifRuleCollector}'s own private `DOCS_BASE_URI` — kept

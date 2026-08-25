@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
@@ -105,7 +106,7 @@ final class SelectorCompatibilityOracleTest extends TestCase
 
         $selected = [];
         foreach (self::channels() as $channel) {
-            if ($rules->isChannelEnabled(self::PRODUCER, $channel, [$selector], [])) {
+            if ($rules->isChannelEnabled(self::PRODUCER, $channel, SymbolLevel::Class_, [$selector], [])) {
                 $selected[] = $channel->code;
             }
         }
@@ -127,7 +128,7 @@ final class SelectorCompatibilityOracleTest extends TestCase
 
         $removed = [];
         foreach (self::channels() as $channel) {
-            if (!$rules->isChannelEnabled(self::PRODUCER, $channel, [], [$selector])) {
+            if (!$rules->isChannelEnabled(self::PRODUCER, $channel, SymbolLevel::Class_, [], [$selector])) {
                 $removed[] = $channel->code;
             }
         }

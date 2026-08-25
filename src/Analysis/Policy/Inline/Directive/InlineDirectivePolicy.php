@@ -323,7 +323,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         }
 
         $codes = [];
-        foreach ($this->identity->expand($selector) as $channel) {
+        foreach ($this->identity->expand($selector->channel()) as $channel) {
             $codes[] = $channel->code;
         }
 

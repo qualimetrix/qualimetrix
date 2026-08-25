@@ -371,8 +371,9 @@ nothing is inferred from the number of dot-separated segments.
   meaning both is written twice
 
 Anything else is not a selector and `tryParse()` answers `null` for it — in
-particular a bare prefix (`coupling`) and a lone `*`. Text that is not a
-selector matches nothing.
+particular a bare prefix (`coupling`), a lone `*`, and anything carrying `:`,
+which addresses a level beside a name and is `ChannelLevelSelector`'s business.
+Text that is not a selector matches nothing.
 
 **Methods:**
 - `tryParse(string $raw): ?self` — the two accepted forms, or `null`
@@ -382,11 +383,41 @@ selector matches nothing.
 - `selectsDescendantsOnly(): bool` — whether this is the `X.*` form
 
 There is no second, channel-specific grammar. A channel is one name, so every
-surface that addresses one reads `NameSelector` directly: the three inline
+surface that addresses one reads `ChannelLevelSelector` — `NameSelector` plus an
+optional level — and the name half of it is this type: the three inline
 suppression directives, the `exclude_namespace_channels` keys, and rule selection
 (`only_rules` / `disabled_rules` / `--only-rule` / `--disable-rule`), which also
-matches a producer name. `@qmx-threshold` addresses a rule rather than a channel
-and reads the same grammar for rule names.
+matches a producer name. `@qmx-threshold` addresses a rule rather than a channel,
+takes no level (ADR 0024 §2), and reads this grammar for rule names.
+
+### ChannelLevelSelector
+
+A channel selector optionally narrowed to one level of the aggregation tree:
+`channel`, `channel.*`, `channel:level`, `channel.*:level`. The level used to be
+a segment of the channel's own name; it is a coordinate beside the name now, and
+this type is the whole grammar for writing the pair.
+
+The separator is `:` rather than another dot because a dot separates the segments
+of a name, so any dotted spelling of a level is one a producer could also have
+chosen for a channel. The level half is closed by `SymbolLevel` — `callable`,
+`class`, `file`, `namespace`, `project` — and nothing else, so a mistyped level
+is refused rather than quietly addressing nothing.
+
+**Methods:**
+- `tryParse(string $raw): ?self` / `carriesLevelSeparator(string $raw): bool` /
+  `levelHalf(string $raw): ?SymbolLevel` / `channelHalf(string $raw): string`
+- `channel(): NameSelector` / `level(): ?SymbolLevel`
+- `matches(string $code, ?SymbolLevel $level): bool` — a selector carrying no
+  level addresses every level of the channels it names
+
+Whether a written pair *can* exist — whether the addressed channel declares that
+level — is a different question, and `ChannelLevelAddressing` is the one place it
+is answered. Both families of directive ask it: the configuration and CLI seams
+(`RuleInputValidator`, `ChannelExclusionKeyValidator`) turn its answer into a
+refusal that ends the run, and the inline seam (`DirectiveAddressability`) turns
+it into `annotation.unresolved-directive`, which is a configuration error and
+ends the run too. Neither decides on its own, so the two cannot answer one
+mistake two ways.
 
 The retired `ruleName#violationCode` spelling is refused rather than left to
 parse into a name nothing carries: `FindingChannel::isRetiredPairSpelling()` and
@@ -536,10 +567,12 @@ Channels are **not** in bijection with rule classes, which is why nothing downst
 - one rule class can emit one channel per configured definition (`ComputedMetricRule`, one per `health.*` / `computed.*` metric), each with its own thresholds and inversion;
 - one rule class can emit one channel whose boundaries depend on the symbol (`LongParameterListRule`).
 
-**Fields:** `code: string` (non-empty, free of the retired `#` separator).
+**Fields:** `code: string` (non-empty, free of the retired `#` separator and of the `:` level separator).
+
+**Constants:**
+- `RETIRED_PAIR_SEPARATOR = '#'` / `LEVEL_SEPARATOR = ':'` — the two characters a channel name may never carry, declared here because this is the type that says what a name is. `ChannelLevelSelector` and `NameSelector` read them rather than restating them, which also keeps the name authority free of an edge onto the selector grammar.
 
 **Methods:**
-- `leveled(string $ruleName, SymbolLevel $level): self` — the channel a producer emits for one level of its own name
 - `equals(self $other): bool`
 - `isRetiredPairSpelling(string $raw): bool` / `retiredPairAdvice(string $raw): string` — how a surface refuses the retired `ruleName#violationCode` spelling by name instead of letting it address nothing
 - `__toString(): string` — the name, so it is usable as an array key directly via `$channel->code`
@@ -702,8 +735,8 @@ Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore 
 - `endLine: ?int` — end line for scoped suppressions
 
 **Methods:**
-- `matches(string $code): bool` — checks if suppression applies to a finding code
-- `target(): SuppressionTarget` — what the directive filters on: a `NameSelector`, or the
+- `matches(string $code, ?SymbolLevel $level): bool` — checks if suppression applies to a finding on that channel at that level
+- `target(): SuppressionTarget` — what the directive filters on: a `ChannelLevelSelector`, or the
   explicit "no rule filter" state that `@qmx-ignore *` and a bare `@qmx-ignore-file` carry
 
 ### SuppressionType (Enum)

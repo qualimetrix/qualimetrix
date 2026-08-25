@@ -19,10 +19,10 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
  * no severity.
  *
  * Every answer is a reverse query against the universe rather than string
- * surgery on what was typed. Stripping `.class` off `coupling.cbo.class`
- * happens to give the right rule; stripping anything off `architecture.coverage`
- * does not, and two rules of the forty-one do not derive their channel codes
- * from their name at all.
+ * surgery on what was typed. There is no suffix to strip since a channel name
+ * carries no level: stripping anything off `architecture.coverage` gives a
+ * name that is not a rule, and two rules of the forty-one do not derive their
+ * channel codes from their name at all.
  */
 final readonly class DirectiveNameHints
 {

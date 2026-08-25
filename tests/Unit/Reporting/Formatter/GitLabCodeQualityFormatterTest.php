@@ -220,7 +220,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             subject: MetricSubject::declaration(DeclarationPath::of($logical, RelativePath::fromString('src/Service/DuplicateService.php'), DeclarationOrdinal::fromRank($ordinal))),
             symbolPath: $logical,
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Same message must not participate in the fingerprint',
             severity: Severity::Warning,
         );
@@ -236,7 +236,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             location: new Location(RelativePath::fromString('src/Service/UnrelatedService.php'), 5),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UnrelatedService', 'run'),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'An unrelated finding',
             severity: Severity::Warning,
         );

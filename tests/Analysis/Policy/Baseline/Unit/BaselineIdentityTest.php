@@ -35,7 +35,7 @@ final class BaselineIdentityTest extends TestCase
         );
 
         self::assertSame('declaration:callable:App\Foo::bar@src/Foo.php', $identity->subjectKey);
-        self::assertSame('complexity.cyclomatic.callable', $identity->channel->code);
+        self::assertSame('complexity.cyclomatic', $identity->channel->code);
         self::assertNull($identity->edge);
     }
 
@@ -180,7 +180,7 @@ final class BaselineIdentityTest extends TestCase
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/a/Duplicated.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'from the first declaration',
             severity: Severity::Warning,
             metricValue: 12,
@@ -190,7 +190,7 @@ final class BaselineIdentityTest extends TestCase
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/b/Duplicated.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'from the second declaration',
             severity: Severity::Warning,
             metricValue: 30,
@@ -213,7 +213,7 @@ final class BaselineIdentityTest extends TestCase
     #[Test]
     public function itKeepsNamespaceLevelsApartAcrossAggregationDepths(): void
     {
-        $channel = new FindingChannel('coupling.cbo.namespace');
+        $channel = new FindingChannel('coupling.cbo');
 
         $parent = new BaselineIdentity(SymbolPath::forNamespace('App')->toCanonical(), $channel);
         $child = new BaselineIdentity(SymbolPath::forNamespace('App\Service')->toCanonical(), $channel);

@@ -15,14 +15,15 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 
 /**
- * A level reaches a channel code through {@see FindingChannel::leveled()}
- * and agrees with what that channel declares.
+ * No channel code carries a level at all: a level is a coordinate beside the
+ * name, read off the subject of each finding.
  *
  * **What an earlier version of this guard got wrong, because it matters.**
  * It counted syntax: `Concat` nodes with a `SymbolLevel` `->value` operand,
@@ -34,21 +35,23 @@ use RuntimeException;
  * a token in exception messages all over Measurement. So "how many places
  * spell a level" is both hard to count and not the question.
  *
- * The question is whether a channel's *name* and its *declared level* say
- * the same thing. `CboRule`'s historical defect was exactly that
- * disagreement — `$level === Namespace_ ? '.namespace' : '.class'` would
- * have labelled a third level `.class` — and it is visible in the product,
- * whatever syntax produced it. So this guard compares outcomes: for every
- * statically declared channel whose code carries a level segment, the code
- * must be the one {@see FindingChannel::leveled()} produces for the level
- * the channel declares.
+ * Ш5c answers it by removing the question. A channel's name and its declared
+ * level cannot disagree once the name carries no level — `CboRule`'s
+ * historical `$level === Namespace_ ? '.namespace' : '.class'`, which would
+ * have labelled a third level `.class`, has nothing left to be wrong about.
+ * So this guard asserts the absence: no statically declared code ends in a
+ * level, and none carries the level separator either, which would put the
+ * pair *into* a name instead of beside it.
  *
  * That closes one side of a triangle. The other two are
  * {@see ChannelLevelDeclarationDriftTest}, which compares the declaration
  * against what the product is observed emitting, and the literal check
- * below, which keeps the segment from being written out by hand at all. The
- * level vocabulary is read from {@see SymbolLevel::cases()} rather than
+ * below, which keeps a level segment from being written out by hand at all.
+ * The level vocabulary is read from {@see SymbolLevel::cases()} rather than
  * spelled out here: a sixth level is covered the day it is added.
+ *
+ * The detector is itself held against a positive example, because a guard
+ * asserting an empty set is green when it stops recognising anything.
  */
 #[CoversClass(FindingChannel::class)]
 final class ChannelLevelAssemblyTopologyTest extends TestCase
@@ -75,43 +78,46 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
             [],
             $offenders,
             'A level suffix written as a string literal is a second spelling of ' . SymbolLevel::class
-            . '. Build the code through FindingChannel::leveled() instead.',
+            . '. A level belongs on the finding\'s subject, never in a channel name.',
         );
     }
 
     #[Test]
-    public function everyLevelBearingChannelCodeIsTheOneItsDeclaredLevelProduces(): void
+    public function noDeclaredChannelCodeCarriesALevel(): void
     {
-        $checked = [];
+        $declarations = self::staticDeclarations();
+        self::assertNotEmpty($declarations, 'No channel is declared — this guard is measuring nothing.');
 
-        foreach (self::staticDeclarations() as $key => $declaration) {
-            $level = self::levelSegmentOf($key);
+        $offenders = [];
 
-            if ($level === null) {
-                continue;
+        foreach (array_keys($declarations) as $key) {
+            if (self::levelSegmentOf($key) !== null || str_contains($key, ChannelLevelSelector::LEVEL_SEPARATOR)) {
+                $offenders[] = $key;
             }
-
-            $checked[] = $key;
-
-            self::assertSame(
-                [$level],
-                $declaration->levels,
-                \sprintf(
-                    'Channel "%s" names the level "%s" but declares [%s]. The name and the declaration disagree,'
-                    . ' which is the defect CboRule carried for years.',
-                    $key,
-                    $level->value,
-                    implode(', ', array_map(static fn(SymbolLevel $case): string => $case->value, $declaration->levels)),
-                ),
-            );
-            self::assertSame(
-                FindingChannel::leveled(substr($key, 0, (int) strrpos($key, '.')), $level)->code,
-                $key,
-                \sprintf('Channel "%s" is not what FindingChannel::leveled() produces for that level.', $key),
-            );
         }
 
-        self::assertNotEmpty($checked, 'No channel carries a level segment — this guard is measuring nothing.');
+        self::assertSame(
+            [],
+            $offenders,
+            'A channel name ending in a level is the level written twice: once in the name and once in the subject'
+            . ' every finding on that channel already carries. Declare the level instead, and let the name stand'
+            . ' for the judgement alone.',
+        );
+    }
+
+    /**
+     * The detector, against a name that *does* carry a level. Without it the
+     * assertion above is green the day `levelSegmentOf()` stops recognising
+     * anything — the failure mode of every guard whose subject is an empty
+     * set.
+     */
+    #[Test]
+    public function theLevelDetectorRecognisesARetiredLevelBearingName(): void
+    {
+        self::assertSame(SymbolLevel::Class_, self::levelSegmentOf('coupling.cbo.class'));
+        self::assertSame(SymbolLevel::Namespace_, self::levelSegmentOf('coupling.cbo.namespace'));
+        self::assertNull(self::levelSegmentOf('coupling.cbo'));
+        self::assertNull(self::levelSegmentOf('design.param-type-coverage'));
     }
 
     /**

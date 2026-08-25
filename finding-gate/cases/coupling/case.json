@@ -22,12 +22,12 @@
         "--rule-opt=code-smell.long-parameter-list:vo-error=40"
     ],
     "channels": [
-        "coupling.cbo.class@class",
-        "coupling.cbo.namespace@namespace",
+        "coupling.cbo@class",
+        "coupling.cbo@namespace",
         "coupling.class-rank@class",
         "coupling.distance@namespace",
-        "coupling.instability.class@class",
-        "coupling.instability.namespace@namespace"
+        "coupling.instability@class",
+        "coupling.instability@namespace"
     ],
     "explainSubjects": [
         "declaration:class:Corpus\\Coupling\\Service\\CacheService@src/Service/CacheService.php",

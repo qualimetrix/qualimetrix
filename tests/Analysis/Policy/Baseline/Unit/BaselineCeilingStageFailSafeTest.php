@@ -156,7 +156,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
         $recorded = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $current = self::findingOn(
             'complexity.cyclomatic',
-            'complexity.cyclomatic.callable',
+            'complexity.cyclomatic',
             SymbolPath::forMethod('App', 'Foo', 'bar'),
             null,
         );
@@ -202,7 +202,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
         $recorded = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $current = self::findingOn(
             'complexity.cyclomatic',
-            'complexity.cyclomatic.callable',
+            'complexity.cyclomatic',
             SymbolPath::forMethod('App', 'Foo', 'bar'),
             $metricValue,
         );
@@ -223,7 +223,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
                 BaselineIdentity::forFinding($finding),
                 $reason,
                 'the file said something this build does not read',
-                ['channel' => 'complexity.cyclomatic.callable'],
+                ['channel' => 'complexity.cyclomatic'],
             ),
         ]));
 

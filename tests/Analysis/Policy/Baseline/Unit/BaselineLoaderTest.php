@@ -57,7 +57,7 @@ final class BaselineLoaderTest extends TestCase
                 "entries": {
                     "callable:App\\OrderService::calculate": [
                         {
-                            "channel": "complexity.cyclomatic.callable",
+                            "channel": "complexity.cyclomatic",
                             "magnitudes": [25]
                         }
                     ],
@@ -333,7 +333,7 @@ final class BaselineLoaderTest extends TestCase
                 "entries": {
                     "callable:App\\Good::method": [
                         {
-                            "channel": "complexity.cyclomatic.callable",
+                            "channel": "complexity.cyclomatic",
                             "magnitudes": [25]
                         }
                     ],
@@ -619,7 +619,7 @@ final class BaselineLoaderTest extends TestCase
     #[Test]
     public function itDeclinesARepeatedSubjectKeyTheWholeDocumentPathWouldCollapse(): void
     {
-        $entry = '{"channel":"complexity.cyclomatic.callable","magnitudes":[%d]}';
+        $entry = '{"channel":"complexity.cyclomatic","magnitudes":[%d]}';
 
         $repeated = "{\n"
             . "  \"version\": 13,\n"
@@ -773,8 +773,8 @@ final class BaselineLoaderTest extends TestCase
             . "  \"scope\": [\"src\",\"tests\"],\n"
             . "  \"entries\": {\n"
             . "    \"callable:App\\\\OrderService::calculate\": [\n"
-            . "      {\"channel\":\"complexity.cognitive.callable\",\"magnitudes\":[18]},\n"
-            . "      {\"channel\":\"complexity.cyclomatic.callable\",\"magnitudes\":[25]},\n"
+            . "      {\"channel\":\"complexity.cognitive\",\"magnitudes\":[18]},\n"
+            . "      {\"channel\":\"complexity.cyclomatic\",\"magnitudes\":[25]},\n"
             . "      {\"channel\":\"nonsense.not-a-channel\",\"count\":1}\n"
             . "    ],\n"
             . "    \"class:App\\\\Legacy\\\\Report\": [\n"

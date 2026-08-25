@@ -84,7 +84,7 @@ final class SummaryEnricherTest extends TestCase
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'test',
             severity: Severity::Error,
         );
@@ -136,7 +136,7 @@ final class SummaryEnricherTest extends TestCase
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Payment', 'PaymentService'), RelativePath::fromString('src/Payment/PaymentService.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App\\Payment', 'PaymentService'),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'test',
             severity: Severity::Error,
         );
@@ -384,7 +384,7 @@ final class SummaryEnricherTest extends TestCase
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'test',
             severity: Severity::Error,
         );

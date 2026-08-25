@@ -79,9 +79,10 @@ find out whether they have.
 
 Three artefacts have to agree about a level, and each pair is compared by a
 test rather than by convention: the channel **name** against the channel's
-**declaration** (`ChannelLevelAssemblyTopologyTest` — a code carrying a level
-segment must be the one `FindingChannel::leveled()` produces for the level it
-declares, and no level segment may be written as a literal anywhere in `src/`),
+**declaration** (`ChannelLevelAssemblyTopologyTest` — no declared code carries a
+level at all, and no level segment may be written as a literal anywhere in
+`src/`; the detector is held against a retired level-bearing name so an empty
+offender list cannot mean "it stopped recognising anything"),
 the declaration against what the product is **observed** emitting
 (`ChannelLevelDeclarationDriftTest`), and the declaration against the tracked
 fixture (`ChannelDeclarationFixtureDriftTest`). Finding neither resolves computed

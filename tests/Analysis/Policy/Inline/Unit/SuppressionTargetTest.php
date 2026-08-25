@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 
 #[CoversClass(SuppressionTarget::class)]
@@ -24,8 +25,8 @@ final class SuppressionTargetTest extends TestCase
         $target = SuppressionTarget::fromAnnotation(SuppressionTarget::NO_RULE_FILTER);
 
         self::assertTrue($target->appliesToEveryChannel());
-        self::assertTrue($target->matches('complexity.cyclomatic.callable'));
-        self::assertTrue($target->matches('anything.at.all'));
+        self::assertTrue($target->matches('complexity.cyclomatic.callable', SymbolLevel::Class_));
+        self::assertTrue($target->matches('anything.at.all', SymbolLevel::Class_));
         self::assertSame('*', (string) $target);
     }
 
@@ -35,9 +36,9 @@ final class SuppressionTargetTest extends TestCase
         $target = SuppressionTarget::fromAnnotation('coupling.instability.class');
 
         self::assertFalse($target->appliesToEveryChannel());
-        self::assertTrue($target->matches('coupling.instability.class'));
-        self::assertFalse($target->matches('coupling.instability'));
-        self::assertFalse($target->matches('coupling.instability.namespace'));
+        self::assertTrue($target->matches('coupling.instability.class', SymbolLevel::Class_));
+        self::assertFalse($target->matches('coupling.instability', SymbolLevel::Class_));
+        self::assertFalse($target->matches('coupling.instability.namespace', SymbolLevel::Class_));
     }
 
     #[Test]
@@ -45,9 +46,9 @@ final class SuppressionTargetTest extends TestCase
     {
         $target = SuppressionTarget::fromAnnotation('coupling.instability.*');
 
-        self::assertTrue($target->matches('coupling.instability.class'));
-        self::assertTrue($target->matches('coupling.instability.namespace'));
-        self::assertFalse($target->matches('coupling.instability'));
+        self::assertTrue($target->matches('coupling.instability.class', SymbolLevel::Class_));
+        self::assertTrue($target->matches('coupling.instability.namespace', SymbolLevel::Class_));
+        self::assertFalse($target->matches('coupling.instability', SymbolLevel::Class_));
     }
 
     /**
@@ -63,7 +64,7 @@ final class SuppressionTargetTest extends TestCase
         self::assertTrue($target->usesRetiredChannelPair());
         self::assertNull($target->selector());
         self::assertFalse($target->appliesToEveryChannel());
-        self::assertFalse($target->matches('coupling.instability.class'));
+        self::assertFalse($target->matches('coupling.instability.class', SymbolLevel::Class_));
     }
 
     #[Test]
@@ -78,7 +79,7 @@ final class SuppressionTargetTest extends TestCase
         $target = SuppressionTarget::fromAnnotation('coupling.*.class');
 
         self::assertFalse($target->appliesToEveryChannel());
-        self::assertFalse($target->matches('coupling.instability.class'));
+        self::assertFalse($target->matches('coupling.instability.class', SymbolLevel::Class_));
         self::assertSame('coupling.*.class', (string) $target);
     }
 }

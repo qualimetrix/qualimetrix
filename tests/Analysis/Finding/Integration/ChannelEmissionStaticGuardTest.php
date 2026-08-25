@@ -15,7 +15,6 @@ use PhpParser\Node\Expr\List_;
 use PhpParser\Node\Expr\Match_;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
-use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\Expr\Throw_;
@@ -30,7 +29,6 @@ use PhpParser\NodeFinder;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -82,12 +80,6 @@ use SplFileInfo;
  *   is never evaluated — both outcomes are real emissions on different
  *   inputs, e.g. `coupling.cbo`'s class/namespace split);
  * - a `match` expression, resolved to the union of every non-throwing arm;
- * - `FindingChannel::leveled($name, $level)->code`, the one place
- *   a level is spelled into a channel code, resolved by resolving both
- *   halves — the level from an enum case, or, when it arrives as a
- *   parameter, from every value passed at every call of that method in the
- *   same class (`coupling.cbo`'s class/namespace split reaches its emission
- *   point that way);
  * - a local variable, resolved by finding its assignment(s) in the same
  *   method — including a `[$code, $hint] = match (...) { ... }`
  *   destructuring assignment, resolved per-arm at the destructured index
@@ -122,15 +114,6 @@ final class ChannelEmissionStaticGuardTest extends TestCase
 
     /** @var array<string, array<\PhpParser\Node\Stmt>> */
     private static array $astCache = [];
-
-    /**
-     * Level parameters currently being resolved, keyed by class, method and
-     * argument position — the base case a cyclic call chain would otherwise
-     * lack.
-     *
-     * @var array<string, true>
-     */
-    private static array $levelParametersInProgress = [];
 
     #[Test]
     public function everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded(): void
@@ -752,10 +735,6 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             return array_values(array_unique([...$ifResolved, ...$elseResolved]));
         }
 
-        if ($expr instanceof PropertyFetch) {
-            return self::resolveLeveledChannelProperty($expr, $selfClass, $staticClass, $scope);
-        }
-
         if ($expr instanceof Match_) {
             return self::resolveMatchArms($expr, $selfClass, $staticClass, $scope, null);
         }
@@ -908,235 +887,6 @@ final class ChannelEmissionStaticGuardTest extends TestCase
         }
 
         return self::resolveExpr($onlyStmt->expr, $declaringClass, $staticClass, $methodNode);
-    }
-
-    /**
-     * Resolves `FindingChannel::leveled($name, $level)->ruleName` and
-     * `->code` — the single assembly point of a level-bearing
-     * channel, and therefore the only shape through which a level reaches an
-     * emitted code at all.
-     *
-     * @param class-string $selfClass
-     * @param class-string $staticClass
-     *
-     * @return ?list<string>
-     */
-    private static function resolveLeveledChannelProperty(
-        PropertyFetch $expr,
-        string $selfClass,
-        string $staticClass,
-        ClassMethod $scope,
-    ): ?array {
-        $call = $expr->var;
-
-        if (!$expr->name instanceof Identifier || !$call instanceof StaticCall) {
-            return null;
-        }
-
-        if (!$call->class instanceof Name || $call->class->getLast() !== self::shortNameOf(FindingChannel::class)) {
-            return null;
-        }
-
-        if (!$call->name instanceof Identifier || $call->name->toString() !== 'leveled') {
-            return null;
-        }
-
-        $arguments = $call->args;
-
-        if (\count($arguments) !== 2 || !$arguments[0] instanceof Arg || !$arguments[1] instanceof Arg) {
-            return null;
-        }
-
-        $ruleNames = self::resolveExpr($arguments[0]->value, $selfClass, $staticClass, $scope);
-
-        if ($ruleNames === null) {
-            return null;
-        }
-
-        if ($expr->name->toString() === 'ruleName') {
-            return $ruleNames;
-        }
-
-        if ($expr->name->toString() !== 'code') {
-            return null;
-        }
-
-        $levels = self::resolveLevelValues($arguments[1]->value, $selfClass, $staticClass, $scope);
-
-        if ($levels === null) {
-            return null;
-        }
-
-        $codes = [];
-
-        foreach ($ruleNames as $ruleName) {
-            foreach ($levels as $level) {
-                $codes[] = $ruleName . '.' . $level;
-            }
-        }
-
-        return array_values(array_unique($codes));
-    }
-
-    /**
-     * The {@see SymbolLevel} values an expression can carry, as strings.
-     *
-     * A parameter is resolved from the values its own class passes at every
-     * call of the enclosing method — an over-approximation in the same
-     * direction as the ternary and match arms: naming one channel too many
-     * asks for one more declaration, naming one too few would reopen the
-     * hole this guard exists to close.
-     *
-     * @param class-string $selfClass
-     * @param class-string $staticClass
-     *
-     * @return ?list<string>
-     */
-    private static function resolveLevelValues(
-        Expr $expr,
-        string $selfClass,
-        string $staticClass,
-        ClassMethod $scope,
-    ): ?array {
-        if ($expr instanceof ClassConstFetch) {
-            return self::resolveLevelConstant($expr, $selfClass, $staticClass);
-        }
-
-        if ($expr instanceof Variable && \is_string($expr->name)) {
-            return self::resolveLevelParameter($expr->name, $selfClass, $staticClass, $scope);
-        }
-
-        return null;
-    }
-
-    /**
-     * @param class-string $selfClass
-     * @param class-string $staticClass
-     *
-     * @return ?list<string>
-     */
-    private static function resolveLevelConstant(ClassConstFetch $expr, string $selfClass, string $staticClass): ?array
-    {
-        if (!$expr->class instanceof Name || !$expr->name instanceof Identifier) {
-            return null;
-        }
-
-        $targetClass = match ($expr->class->toString()) {
-            'self' => $selfClass,
-            'static' => $staticClass,
-            default => $expr->class->getLast() === 'SymbolLevel' ? SymbolLevel::class : null,
-        };
-
-        if ($targetClass === null || !(new ReflectionClass($targetClass))->hasConstant($expr->name->toString())) {
-            return null;
-        }
-
-        $value = (new ReflectionClass($targetClass))->getConstant($expr->name->toString());
-
-        return $value instanceof SymbolLevel ? [$value->value] : null;
-    }
-
-    /**
-     * @param class-string $selfClass
-     * @param class-string $staticClass
-     *
-     * @return ?list<string>
-     */
-    private static function resolveLevelParameter(
-        string $name,
-        string $selfClass,
-        string $staticClass,
-        ClassMethod $scope,
-    ): ?array {
-        $position = null;
-
-        foreach (array_values($scope->params) as $index => $param) {
-            if ($param->var instanceof Variable && $param->var->name === $name) {
-                $position = $index;
-            }
-        }
-
-        $classNode = self::findClassNode($selfClass);
-
-        if ($position === null || $classNode === null) {
-            return null;
-        }
-
-        $method = $scope->name->toString();
-        $reentryKey = $selfClass . '::' . $method . '#' . $position;
-
-        // A parameter passed along a cycle of calls would otherwise recurse
-        // without a base case and kill the run with a stack overflow instead
-        // of the readable refusal this guard promises. Re-entry resolves to
-        // nothing, which the caller records as an unresolvable site.
-        if (isset(self::$levelParametersInProgress[$reentryKey])) {
-            return null;
-        }
-
-        self::$levelParametersInProgress[$reentryKey] = true;
-
-        try {
-            return self::resolveLevelArguments($classNode, $method, $position, $selfClass, $staticClass);
-        } finally {
-            unset(self::$levelParametersInProgress[$reentryKey]);
-        }
-    }
-
-    /**
-     * Every value the class passes at the given argument position of the
-     * given method.
-     *
-     * Each argument expression is resolved in the scope of the method that
-     * *writes* it, not of the method that receives it. Resolving it in the
-     * callee's scope is what an earlier version did, and it is wrong in the
-     * silent direction: a variable at the call site whose name happens to
-     * match one of the callee's own parameters would resolve to that other
-     * parameter's values, narrowing the guard without saying so.
-     *
-     * @param class-string $selfClass
-     * @param class-string $staticClass
-     *
-     * @return ?list<string>
-     */
-    private static function resolveLevelArguments(
-        Class_ $classNode,
-        string $method,
-        int $position,
-        string $selfClass,
-        string $staticClass,
-    ): ?array {
-        $finder = new NodeFinder();
-        $values = [];
-        $foundAny = false;
-
-        foreach ($classNode->getMethods() as $callerNode) {
-            /** @var list<MethodCall|StaticCall> $calls */
-            $calls = $finder->find(
-                $callerNode,
-                static fn(object $node): bool => ($node instanceof MethodCall || $node instanceof StaticCall)
-                    && $node->name instanceof Identifier
-                    && $node->name->toString() === $method,
-            );
-
-            foreach ($calls as $call) {
-                $argument = $call->args[$position] ?? null;
-
-                if (!$argument instanceof Arg || $argument->name !== null) {
-                    return null;
-                }
-
-                $foundAny = true;
-                $resolved = self::resolveLevelValues($argument->value, $selfClass, $staticClass, $callerNode);
-
-                if ($resolved === null) {
-                    return null;
-                }
-
-                $values = [...$values, ...$resolved];
-            }
-        }
-
-        return $foundAny ? array_values(array_unique($values)) : null;
     }
 
     /**

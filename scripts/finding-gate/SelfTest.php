@@ -51,21 +51,23 @@ final class SelfTest
         // What the tracked declaration of THIS step is, asserted rather than
         // assumed: loading already refuses chains, duplicate sources and
         // duplicate targets, so what is left to check is that the step's own
-        // shape survived the load. Ш5b collapses `rule#code` into the code, so
-        // every tracked row is a whole-key row onto a single name, and none of
-        // them derives a split: a collapse is many rows onto many distinct
-        // targets, never one source onto several.
+        // shape survived the load — it declares something, and none of its rows
+        // derives a split.
+        //
+        // No concrete row is named here. The previous spelling asserted one of
+        // Ш5b's rows (`code-smell.eval#code-smell.eval` -> `code-smell.eval`)
+        // against the tracked map, which is a fact about the step that wrote the
+        // file rather than a property of the machinery, and it went red the
+        // moment the next step declared different rows. The mechanism it meant
+        // to prove — a collapse maps several sources onto one target and derives
+        // no split — is proved on synthetic pairs in {@see ambiguities()}, where
+        // the input cannot go stale.
         $maps = RenameMaps::load($this->candidateRoot . '/finding-gate/maps');
         $this->assert(!$maps->isIdentity(), 'this step declares renames, so the tracked maps are not the identity');
         $this->same(
             [],
             array_keys($maps->splits()),
             'the tracked rows derive no split — a collapse declares one target per source',
-        );
-        $this->same(
-            'code-smell.eval',
-            $maps->forward('code-smell.eval#code-smell.eval'),
-            'a tracked row collapses the pair into the channel name',
         );
 
         // One row, and it is the whole key: the halves are expanded from it, so
@@ -885,12 +887,28 @@ final class SelfTest
         // already an explained one. What the self-test adds is that every
         // declared surface carries a diff to compare against: an index row
         // pointing at an empty file would make `delta-mismatch` unreachable for
-        // that surface. Ш4c declares no delta — see the note on the tracked
-        // maps above — so the tracked index is empty and there is no surface
-        // left to check a diff file for.
+        // that surface.
+        //
+        // Both halves are asserted against something that cannot go stale. The
+        // empty case reads a root with no index at all rather than the tracked
+        // one: the previous spelling asserted "the tracked index is empty",
+        // which was a fact about the step that wrote it (Ш4c declared no delta)
+        // dressed up as the property, and it went red the moment a later step
+        // declared one — saying nothing about the mechanism either way.
+        $this->same(
+            [],
+            DeclaredDelta::load(sys_get_temp_dir() . '/qmx-gate-no-declared-delta')->surfaces(),
+            'an empty declared delta claims no surface',
+        );
+
         $delta = DeclaredDelta::load($this->candidateRoot . '/finding-gate');
-        $this->assert($delta->isEmpty(), 'this step declares no delta, so the tracked index is empty');
-        $this->same([], $delta->surfaces(), 'an empty declared delta claims no surface');
+
+        foreach ($delta->surfaces() as $surface) {
+            $this->assert(
+                $delta->claim($surface) !== null && $delta->claim($surface) !== '',
+                \sprintf('the declared delta of %s carries a diff to compare against', $surface),
+            );
+        }
 
         foreach ($delta->surfaces() as $surface) {
             $this->assert(

@@ -28,7 +28,7 @@ final class FindingFactory
         SymbolPath $symbolPath,
         int|float $metricValue,
         string $ruleName = 'complexity.cyclomatic',
-        string $code = 'complexity.cyclomatic.callable',
+        string $code = 'complexity.cyclomatic',
         ?MetricSubject $subject = null,
     ): Finding {
         return new Finding(

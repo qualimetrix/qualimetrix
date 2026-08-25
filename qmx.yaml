@@ -461,6 +461,8 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface'
@@ -1269,7 +1271,7 @@ rules:
       # because it aggregates every subclass dependency. The precise path below
       # keeps the remaining classes measured.
     exclude_namespace_channels:
-      coupling.cbo.namespace:
+      coupling.cbo:namespace:
         # This exact public-contract namespace replaces four broad historical
         # consumer namespaces with five mandatory ADR 0022 named capability
         # consumers. Namespace-union granularity raises CBO by one although
@@ -1376,7 +1378,7 @@ rules:
 
   coupling.instability:
     exclude_namespace_channels:
-      coupling.instability.namespace:
+      coupling.instability:namespace:
         # This delivery-adapter namespace has Ca=3 / Ce=31: three inward
         # composition/runtime seams and 31 necessary outward capability,
         # framework, serialization, and process dependencies. Its I=0.911765

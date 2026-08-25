@@ -194,7 +194,15 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
                 continue;
             }
 
-            $oracle[self::channelNameOf($fields[0])] = self::canonical(explode(' ', $fields[1]));
+            $channel = self::channelNameOf($fields[0]);
+            // Ш5c collapsed ten level-suffixed channels into five, so two rows
+            // of the enumeration now describe one channel at two levels. Their
+            // levels are unioned rather than one overwriting the other: what
+            // the measurement recorded is that this channel reports at both.
+            $oracle[$channel] = self::canonical([
+                ...($oracle[$channel] ?? []),
+                ...explode(' ', $fields[1]),
+            ]);
         }
 
         return $oracle;
@@ -212,19 +220,30 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     }
 
     /**
-     * The channel a row of the Ш0 enumeration names.
+     * The channel a row of the Ш0 enumeration names, in today's vocabulary.
      *
-     * The enumeration was measured while a channel was a `rule#code` pair, and
-     * it is left in the vocabulary it was measured in: the measurement is what
-     * the row is worth, and rewriting 63 rows would restate it rather than
-     * preserve it. The name a channel is identified by is the second half, so
-     * the reader takes it and the comparison stays a comparison of names.
+     * The enumeration was measured while a channel was a `rule#code` pair
+     * whose code could end in a level, and it is left in the vocabulary it was
+     * measured in: the measurement is what the row is worth, and rewriting 63
+     * rows would restate it rather than preserve it. Two translations happen
+     * here instead, both of them removals — the rule half (Ш5b) and a trailing
+     * level segment (Ш5c) — so the comparison stays a comparison of names.
+     *
+     * A trailing segment that is not a {@see SymbolLevel} is left alone: an
+     * aspect (`design.type-coverage.param`, before ADR 0030) is part of the
+     * name, not a level.
      */
     private static function channelNameOf(string $row): string
     {
         $separator = strpos($row, FindingChannel::RETIRED_PAIR_SEPARATOR);
+        $code = $separator === false ? $row : substr($row, $separator + 1);
+        $lastDot = strrpos($code, '.');
 
-        return $separator === false ? $row : substr($row, $separator + 1);
+        if ($lastDot !== false && SymbolLevel::tryFrom(substr($code, $lastDot + 1)) !== null) {
+            return substr($code, 0, $lastDot);
+        }
+
+        return $code;
     }
 
     /**

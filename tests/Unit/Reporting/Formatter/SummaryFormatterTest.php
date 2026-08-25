@@ -173,7 +173,7 @@ final class SummaryFormatterTest extends TestCase
                     location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                     symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                     ruleName: 'complexity.cyclomatic',
-                    code: 'complexity.cyclomatic.callable',
+                    code: 'complexity.cyclomatic',
                     message: 'Too complex',
                     severity: Severity::Error,
                 ),
@@ -842,7 +842,7 @@ final class SummaryFormatterTest extends TestCase
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'Foo'),
                     ruleName: 'complexity.cyclomatic',
-                    code: 'complexity.cyclomatic.callable',
+                    code: 'complexity.cyclomatic',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
@@ -850,7 +850,7 @@ final class SummaryFormatterTest extends TestCase
                     location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'Bar'),
                     ruleName: 'coupling.cbo',
-                    code: 'coupling.cbo.class',
+                    code: 'coupling.cbo',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
@@ -884,7 +884,7 @@ final class SummaryFormatterTest extends TestCase
                     location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
                     ruleName: 'coupling.cbo',
-                    code: 'coupling.cbo.class',
+                    code: 'coupling.cbo',
                     message: 'Out of scope',
                     severity: Severity::Error,
                 ),
@@ -936,7 +936,7 @@ final class SummaryFormatterTest extends TestCase
                     location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                     symbolPath: SymbolPath::forClass('App', 'Foo'),
                     ruleName: 'complexity.cyclomatic',
-                    code: 'complexity.cyclomatic.callable',
+                    code: 'complexity.cyclomatic',
                     message: 'Cyclomatic complexity is 15',
                     severity: Severity::Error,
                     recommendation: 'Cyclomatic complexity: 15 (threshold: 10) — too many code paths',
@@ -956,7 +956,7 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('Violations', $output);
         self::assertStringContainsString('src/Foo.php (1 violation)', $output);
         self::assertStringContainsString('too many code paths', $output);
-        self::assertStringContainsString('[complexity.cyclomatic.callable]', $output);
+        self::assertStringContainsString('[complexity.cyclomatic]', $output);
         self::assertStringContainsString('ERROR', $output);
     }
 
@@ -1175,7 +1175,7 @@ final class SummaryFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/File' . $i . '.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'Class' . $i),
                 ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic',
                 message: 'Too complex #' . $i,
                 severity: Severity::Error,
                 recommendation: 'Cyclomatic complexity too high #' . $i,
@@ -1206,7 +1206,7 @@ final class SummaryFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo' . $i . '.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo' . $i),
                 ruleName: 'complexity.cyclomatic',
-                code: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic',
                 message: 'Complex',
                 severity: Severity::Error,
             );

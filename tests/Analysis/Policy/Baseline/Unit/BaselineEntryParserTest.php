@@ -36,7 +36,7 @@ final class BaselineEntryParserTest extends TestCase
     public function itParsesAMagnitudeEntry(): void
     {
         $entry = $this->parser->parse('callable:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic.callable',
+            'channel' => 'complexity.cyclomatic',
             'magnitudes' => [25],
         ]);
 
@@ -167,7 +167,7 @@ final class BaselineEntryParserTest extends TestCase
         // JSON has no literal for infinity, but an overflowing exponent
         // decodes to one.
         $entry = $this->parser->parse('callable:App\Foo::bar', json_decode(
-            '{"channel":"complexity.cyclomatic.callable","magnitudes":[1e400]}',
+            '{"channel":"complexity.cyclomatic","magnitudes":[1e400]}',
             true,
             512,
             \JSON_THROW_ON_ERROR,
@@ -186,7 +186,7 @@ final class BaselineEntryParserTest extends TestCase
     public function itTurnsAnEntryWithCountAlongsideMagnitudesInert(): void
     {
         $entry = $this->parser->parse('callable:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic.callable',
+            'channel' => 'complexity.cyclomatic',
             'magnitudes' => [10, 20],
             'count' => 2,
         ]);
@@ -215,7 +215,7 @@ final class BaselineEntryParserTest extends TestCase
     public function itTurnsAMagnitudeChannelWithoutMagnitudesInert(): void
     {
         $entry = $this->parser->parse('callable:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic.callable',
+            'channel' => 'complexity.cyclomatic',
             'count' => 1,
         ]);
 
@@ -278,8 +278,8 @@ final class BaselineEntryParserTest extends TestCase
             ['channel' => 12, 'count' => 1],
             ['channel' => 'code-smell.goto', 'occurrence' => [], 'count' => 1],
             ['channel' => 'code-smell.goto', 'count' => 1.0],
-            ['channel' => 'complexity.cyclomatic.callable', 'magnitudes' => ['value' => 1]],
-            ['channel' => 'complexity.cyclomatic.callable', 'magnitudes' => ['one']],
+            ['channel' => 'complexity.cyclomatic', 'magnitudes' => ['value' => 1]],
+            ['channel' => 'complexity.cyclomatic', 'magnitudes' => ['one']],
             ['channel' => 'architecture.layer-violation', 'edge' => ['target' => ''], 'count' => 1],
             ['channel' => 'architecture.layer-violation', 'edge' => ['target' => 'class:App\\Target', 'type' => 1], 'count' => 1],
         ];
@@ -302,7 +302,7 @@ final class BaselineEntryParserTest extends TestCase
     public function itGivesAnInertEntryWithAnIdentityThatIdentitysSelector(): void
     {
         $entry = $this->parser->parse('callable:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic.callable',
+            'channel' => 'complexity.cyclomatic',
             'count' => 1,
         ]);
 

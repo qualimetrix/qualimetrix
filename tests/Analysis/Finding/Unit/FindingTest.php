@@ -373,7 +373,7 @@ final class FindingTest extends TestCase
             subject: self::subject(),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Cyclomatic complexity is 31',
             severity: Severity::Warning,
             metricValue: 31,

@@ -63,7 +63,7 @@ final class NpathSaturationCeilingTest extends TestCase
         );
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
-            'complexity.npath.callable',
+            'complexity.npath',
             ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
         );
         $stage = new BaselineCeilingStage($baseline, $declarations);

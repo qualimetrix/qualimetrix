@@ -136,7 +136,7 @@ final class NamespaceExclusionFilterTest extends TestCase
             symbolPath: SymbolPath::forFile($file),
             subject: MetricSubject::aggregate(SymbolPath::forFile($file)),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Test',
             severity: Severity::Warning,
         );

@@ -109,7 +109,7 @@ final class AcceptedLevelNarratorTest extends TestCase
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            code: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Cyclomatic complexity exceeds threshold',
             severity: Severity::Warning,
             metricValue: $metricValue,

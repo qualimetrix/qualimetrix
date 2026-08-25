@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 
 /**
@@ -26,9 +27,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
  * A channel's `ruleName` half is not necessarily a rule: the layer policy
  * emits channels under rule names no class declares as its own. That is
  * why {@see producerOf()} exists and why a "did you mean" suggestion must be
- * a reverse query here rather than a suffix stripped off the typed string —
- * stripping `.class` off `coupling.cbo.class` happens to work, and stripping
- * anything off `architecture.coverage` does not.
+ * a reverse query here rather than a suffix stripped off the typed string:
+ * no channel name carries a level any more, so there is no suffix to strip.
  */
 interface ChannelIdentityInterface
 {
@@ -81,4 +81,20 @@ interface ChannelIdentityInterface
      * @return list<FindingChannel>
      */
     public function expand(NameSelector $selector): array;
+
+    /**
+     * The levels a channel declares it reports at, or `[]` when no channel
+     * carries that name.
+     *
+     * A declared property of the name, like
+     * {@see supportsThresholdOverride()} — which is why it is answered here
+     * and not by resolving the whole declaration: the one caller that needs
+     * it, {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing},
+     * decides whether an authored `channel:level` pair can exist, and must
+     * not acquire the ability to read directions or acceptability along the
+     * way.
+     *
+     * @return list<SymbolLevel>
+     */
+    public function levelsOf(string $code): array;
 }

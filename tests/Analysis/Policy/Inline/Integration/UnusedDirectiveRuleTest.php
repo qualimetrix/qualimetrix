@@ -53,14 +53,15 @@ final class UnusedDirectiveRuleTest extends TestCase
     private const string FILE = 'src/Foo.php';
 
     /**
-     * A rule name is not a channel, and the rules whose name is not also a
-     * channel are exactly the multi-channel ones. Silence here is what the
-     * old prefix matcher gave and is the defect being removed.
+     * A rule name is not a channel. Since Ш5c a level is no longer a name, so
+     * the rules whose name is not also a channel are the ones emitting several
+     * *judgements* — the inline-directive producer among them. Silence here is
+     * what the old prefix matcher gave and is the defect being removed.
      */
     #[Test]
     public function itRejectsARuleNameWhereASuppressionMustNameAChannel(): void
     {
-        $findings = self::runWithSuppression('coupling.instability');
+        $findings = self::runWithSuppression(InlineDirectivePolicyInterface::PRODUCER_RULE_NAME);
 
         self::assertCount(1, $findings);
         self::assertSame(
@@ -69,7 +70,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         );
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertStringContainsString('names a rule, not a channel', $findings[0]->message);
-        self::assertStringContainsString('coupling.instability.class', $findings[0]->message);
+        self::assertStringContainsString(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->message);
     }
 
     #[Test]
@@ -88,8 +89,8 @@ final class UnusedDirectiveRuleTest extends TestCase
     #[Test]
     public function itAcceptsAnExactChannelAndAGroupThatCoversSomething(): void
     {
-        self::assertSame([], self::runWithSuppression('coupling.instability.class'));
-        self::assertSame([], self::runWithSuppression('coupling.instability.*'));
+        self::assertSame([], self::runWithSuppression(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME));
+        self::assertSame([], self::runWithSuppression('annotation.*'));
     }
 
     /**
@@ -109,7 +110,37 @@ final class UnusedDirectiveRuleTest extends TestCase
     #[Test]
     public function itAcceptsAnExactChannelName(): void
     {
-        self::assertSame([], self::runWithSuppression('coupling.instability.class'));
+        self::assertSame([], self::runWithSuppression('coupling.instability'));
+    }
+
+    /**
+     * A level is addressed beside the name. Both halves are checked against
+     * the run's universe: the level a channel declares is accepted, and one it
+     * does not report at is refused rather than left to match nothing.
+     */
+    #[Test]
+    public function itAcceptsADeclaredLevelBesideAChannelNameAndRefusesAnUndeclaredOne(): void
+    {
+        self::assertSame([], self::runWithSuppression('coupling.instability:namespace'));
+
+        $findings = self::runWithSuppression('coupling.instability:file');
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
+            $findings[0]->code,
+        );
+        self::assertStringContainsString('none of them reports at level "file"', $findings[0]->message);
+    }
+
+    /** A level outside the vocabulary is refused by the same one point. */
+    #[Test]
+    public function itRefusesALevelThatIsNotOne(): void
+    {
+        $findings = self::runWithSuppression('coupling.instability:klass');
+
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('names no level after ":"', $findings[0]->message);
     }
 
     /**
@@ -194,14 +225,35 @@ final class UnusedDirectiveRuleTest extends TestCase
     #[Test]
     public function itPointsAThresholdNamingAChannelAtTheProducingRule(): void
     {
-        $findings = self::runWithThreshold('coupling.cbo.class');
+        $findings = self::runWithThreshold(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME);
 
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
             $findings[0]->code,
         );
-        self::assertStringContainsString('is a channel of rule "coupling.cbo"', $findings[0]->message);
+        self::assertStringContainsString(
+            \sprintf('is a channel of rule "%s"', InlineDirectivePolicyInterface::PRODUCER_RULE_NAME),
+            $findings[0]->message,
+        );
+    }
+
+    /**
+     * A threshold takes no level (ADR 0024 §2). The pair is captured by the
+     * grammar so that it is *refused*: truncated to its left half it would
+     * silently retune the whole rule, which is worse than either outcome.
+     */
+    #[Test]
+    public function itRefusesALevelOnAThresholdInsteadOfTruncatingIt(): void
+    {
+        $findings = self::runWithThreshold('coupling.cbo:class');
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
+            $findings[0]->code,
+        );
+        self::assertStringContainsString('addresses a channel at a level', $findings[0]->message);
     }
 
     /** A threshold is never group-shaped, so neither spelling is accepted. */

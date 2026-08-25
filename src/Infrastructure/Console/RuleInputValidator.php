@@ -12,6 +12,8 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
@@ -65,6 +67,11 @@ final readonly class RuleInputValidator
      * `only_rules` / `disabled_rules` and their CLI twins: each addresses a
      * producer or one of its channels, and nothing else.
      *
+     * A level narrows a selector to one level of the channels it names, and a
+     * level a channel does not report at is refused by
+     * {@see ChannelLevelAddressing} — the one place that judgement is made,
+     * shared with the inline directives.
+     *
      * The retired `rule#code` spelling is refused before the lookup, so a stale
      * selector is told what to write instead of being told it matches nothing.
      *
@@ -74,9 +81,17 @@ final readonly class RuleInputValidator
     private function validateSelectionSelectors(
         array $selectors,
         array $producers,
-        RuleChannelRegistryInterface $channels,
+        ChannelUniverseInterface $channels,
     ): void {
+        $levels = new ChannelLevelAddressing($channels);
+
         foreach ($selectors as $selector) {
+            $pairProblem = $levels->problemWith($selector);
+
+            if ($pairProblem !== null) {
+                throw new InvalidArgumentException(\sprintf('Rule selector %s', $pairProblem));
+            }
+
             if (FindingChannel::isRetiredPairSpelling($selector)) {
                 throw new InvalidArgumentException(\sprintf(
                     'Rule selector "%s" is written in the retired channel-pair form. %s',
@@ -87,8 +102,9 @@ final readonly class RuleInputValidator
 
             if ($selector === '' || !$this->ruleSelector->matchesKnownIn($selector, $producers, $channels)) {
                 throw new InvalidArgumentException(\sprintf(
-                    'Rule selector "%s" does not match any registered producer, group, or channel.',
+                    'Rule selector "%s" does not match any registered producer, group, or channel%s.',
                     $selector,
+                    ChannelLevelSelector::carriesLevelSeparator($selector) ? ' at that level' : '',
                 ));
             }
         }

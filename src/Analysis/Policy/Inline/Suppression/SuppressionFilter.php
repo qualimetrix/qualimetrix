@@ -125,7 +125,7 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
      */
     private static function applies(string $file, Suppression $suppression, Finding $finding): bool
     {
-        if (!$suppression->matches($finding->code)) {
+        if (!$suppression->matches($finding->code, $finding->level())) {
             return false;
         }
 

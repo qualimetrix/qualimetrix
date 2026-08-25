@@ -7,7 +7,9 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 
@@ -45,6 +47,7 @@ final class RuleSelectorTest extends TestCase
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
             new FindingChannel('health.complexity'),
+            SymbolLevel::Class_,
             ['computed.health'],
             [],
         ));
@@ -57,12 +60,14 @@ final class RuleSelectorTest extends TestCase
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
             new FindingChannel('health.complexity'),
+            SymbolLevel::Class_,
             ['health.complexity'],
             [],
         ));
         self::assertFalse($this->selector->isChannelEnabled(
             'computed.health',
             new FindingChannel('health.cohesion'),
+            SymbolLevel::Class_,
             ['health.complexity'],
             [],
         ));
@@ -79,6 +84,7 @@ final class RuleSelectorTest extends TestCase
         self::assertTrue($this->selector->isChannelEnabled(
             'architecture.layer-violation',
             new FindingChannel('architecture.coverage'),
+            SymbolLevel::Class_,
             ['architecture.coverage'],
             [],
         ));
@@ -93,13 +99,76 @@ final class RuleSelectorTest extends TestCase
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
             new FindingChannel('health.complexity'),
+            SymbolLevel::Class_,
             [$fullSelector],
             [],
         ));
         self::assertFalse($this->selector->isChannelEnabled(
             'computed.health',
             new FindingChannel('health.cohesion'),
+            SymbolLevel::Class_,
             [$fullSelector],
+            [],
+        ));
+    }
+
+    /**
+     * A level narrows a channel selector without touching the channel's other
+     * levels, and it never reaches the producer: disabling one level of a
+     * channel must leave the rule running, or the other level would go with
+     * it.
+     */
+    #[Test]
+    public function itNarrowsAChannelSelectorToOneLevel(): void
+    {
+        $pair = 'health.complexity' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Class_->value;
+
+        self::assertTrue($this->selector->isProducerEnabled('computed.health', [], [$pair]));
+        self::assertFalse($this->selector->isChannelEnabled(
+            'computed.health',
+            new FindingChannel('health.complexity'),
+            SymbolLevel::Class_,
+            [],
+            [$pair],
+        ));
+        self::assertTrue($this->selector->isChannelEnabled(
+            'computed.health',
+            new FindingChannel('health.complexity'),
+            SymbolLevel::Namespace_,
+            [],
+            [$pair],
+        ));
+        self::assertTrue($this->selector->isChannelEnabled(
+            'computed.health',
+            new FindingChannel('health.cohesion'),
+            SymbolLevel::Class_,
+            [],
+            [$pair],
+        ));
+    }
+
+    /**
+     * `--only-rule health.complexity:class` has to keep its producer running:
+     * a producer filtered out never emits the level that was asked for.
+     */
+    #[Test]
+    public function aLevelPairInOnlySelectorsStillReachesItsProducer(): void
+    {
+        $pair = 'health.complexity' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Class_->value;
+
+        self::assertTrue($this->selector->isProducerEnabled('computed.health', [$pair], []));
+        self::assertTrue($this->selector->isChannelEnabled(
+            'computed.health',
+            new FindingChannel('health.complexity'),
+            SymbolLevel::Class_,
+            [$pair],
+            [],
+        ));
+        self::assertFalse($this->selector->isChannelEnabled(
+            'computed.health',
+            new FindingChannel('health.complexity'),
+            SymbolLevel::Callable,
+            [$pair],
             [],
         ));
     }
@@ -125,12 +194,14 @@ final class RuleSelectorTest extends TestCase
         self::assertFalse($this->selector->isChannelEnabled(
             'computed.health',
             new FindingChannel('health.complexity'),
+            SymbolLevel::Class_,
             [],
             ['health.complexity'],
         ));
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
             new FindingChannel('health.cohesion'),
+            SymbolLevel::Class_,
             [],
             ['health.complexity'],
         ));

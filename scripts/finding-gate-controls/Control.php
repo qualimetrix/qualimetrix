@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\FailureClass;
 use RuntimeException;
 
 /**
@@ -26,6 +27,15 @@ use RuntimeException;
  *
  * Everything else the gate reports is unexpected, and an unexpected failure
  * means the control did not do what it claims, even though the gate went red.
+ *
+ * One more shape is refused, and it is refused before a single clone is made:
+ * an expectation pinned to a surface the repository declares a delta for. A
+ * declared surface is compared against that exact diff and never for equality,
+ * so `surface-mismatch` cannot arise there and a control asking for one is
+ * asserting about a comparison that no longer happens. This is the failure the
+ * step that first declared a delta walked into on two controls at once, and it
+ * cost a full controls run to find out — twenty minutes to learn something a
+ * substring comparison knows. {@see assertNotPinnedToDeclaredDelta}.
  *
  * And a toleration that lands nowhere is a failure of the control too. Pinning it
  * to a surface made the claim precise; it did not make it true. A toleration no
@@ -89,6 +99,62 @@ final class Control
     public static function greenWith(string $id, string $subject, Mutation $mutation): self
     {
         return new self($id, $subject, $mutation, [], [], expectsGreen: true);
+    }
+
+    /**
+     * The classes that *are* statements about a declaration, and may therefore be
+     * pinned to a declared surface.
+     */
+    private const DECLARATION_CLASSES = [
+        FailureClass::DELTA_MISMATCH,
+        FailureClass::DELTA_STALE,
+        FailureClass::DELTA_OVERREACH,
+        FailureClass::DELTA_TOO_LARGE,
+    ];
+
+    /**
+     * Refuses a control whose expectation is pinned to a surface the repository
+     * declares a delta for, unless the class is a statement about a declaration.
+     *
+     * Exact equality, not substring containment, and that is the whole
+     * calibration. A pin naming one artifact of one case (`case:coupling|format:sarif`)
+     * claims that artifact and nothing else; a broader pin (`case:coupling`)
+     * spans eleven formats plus the baseline file, ten of which are still
+     * compared for equality, so the control keeps its subject and the declared
+     * one among them is absorbed as declaration noise by
+     * {@see Outcome::isDeclarationNoise()}. Refusing the broad pin too would
+     * reject controls that are correct.
+     *
+     * A control that replaces the declaration index is exempt: the repository's
+     * declarations are not in its scratch tree at all, so its own pins are
+     * judged against the declaration it plants.
+     *
+     * @param list<string> $declaredSurfaces
+     */
+    public function assertNotPinnedToDeclaredDelta(array $declaredSurfaces, bool $declarationReplaced): void
+    {
+        if ($declarationReplaced) {
+            return;
+        }
+
+        foreach ([...$this->required, ...$this->tolerated] as $expectation) {
+            if ($expectation->scopeContains === null
+                || !\in_array($expectation->scopeContains, $declaredSurfaces, true)
+                || \in_array($expectation->failureClass, self::DECLARATION_CLASSES, true)
+            ) {
+                continue;
+            }
+
+            throw new RuntimeException(\sprintf(
+                'Control "%s" expects %s, and this repository declares a delta for that exact surface. It is'
+                . ' compared against the declared diff and never for equality, so what the run produces there is'
+                . ' a delta class and this expectation can never be met. Move the mutation to a case that'
+                . ' declares nothing rather than repinning onto a delta class: a delta class asserts about the'
+                . ' declaration, not about what this control is for.',
+                $this->id,
+                $expectation->label(),
+            ));
+        }
     }
 
     /**

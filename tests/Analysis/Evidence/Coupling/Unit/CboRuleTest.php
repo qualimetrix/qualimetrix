@@ -252,7 +252,7 @@ final class CboRuleTest extends TestCase
         self::assertStringContainsString('Coupling too high: 8 inbound + 10 outbound (CBO: 18, threshold: 14)', $findings[0]->message);
         self::assertSame(18.0, $findings[0]->metricValue);
         self::assertSame('coupling.cbo', $findings[0]->ruleName);
-        self::assertSame('coupling.cbo.class', $findings[0]->code);
+        self::assertSame('coupling.cbo', $findings[0]->code);
     }
 
     #[Test]
@@ -454,7 +454,7 @@ final class CboRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
         self::assertStringContainsString('Coupling too high: 6 inbound + 10 outbound (CBO: 16, threshold: 14)', $findings[0]->message);
-        self::assertSame('coupling.cbo.namespace', $findings[0]->code);
+        self::assertSame('coupling.cbo', $findings[0]->code);
     }
 
     #[Test]

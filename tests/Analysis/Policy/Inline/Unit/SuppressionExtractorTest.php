@@ -12,6 +12,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -165,6 +166,40 @@ final class SuppressionExtractorTest extends TestCase
         // lets it be refused by name instead of silently addressing nothing.
         self::assertTrue($suppressions[0]->target()->usesRetiredChannelPair());
         self::assertNull($suppressions[0]->target()->selector());
+    }
+
+    /**
+     * The directive target is captured whole, level and all.
+     *
+     * Red on the unfixed pattern: without `:` in the target character class
+     * the match stops at the separator, so `coupling.cbo:namespace` arrives as
+     * `coupling.cbo` and silences **every** level of the channel — a
+     * suppression quietly broader than the one that was written, which is the
+     * one outcome worse than either a match or a refusal.
+     */
+    #[Test]
+    public function itKeepsTheLevelHalfOfAChannelLevelPair(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @qmx-ignore coupling.cbo:namespace -- levelled
+             */
+            DOC,
+            10,
+            10,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('coupling.cbo:namespace', $suppressions[0]->rule);
+        self::assertSame('levelled', $suppressions[0]->reason);
+        self::assertTrue($suppressions[0]->matches('coupling.cbo', SymbolLevel::Namespace_));
+        self::assertFalse($suppressions[0]->matches('coupling.cbo', SymbolLevel::Class_));
     }
 
     #[Test]

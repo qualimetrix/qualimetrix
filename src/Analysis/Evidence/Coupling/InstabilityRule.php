@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -127,23 +126,22 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     }
 
     /**
-     * Both instability channels report the instability value
+     * Both levels of the channel report the instability value
      * (`$instabilityValue` — see {@see analyzeClassLevel()} and
      * {@see analyzeNamespaceLevel()}) as `metricValue`, judged worse the
      * higher it goes: {@see ClassInstabilityOptions::getSeverity()}'s
      * `$instability >= $this->maxError` (line 61) / `$instability >=
-     * $this->maxWarning` (line 65) for the class channel, and
+     * $this->maxWarning` (line 65) at the class level, and
      * {@see NamespaceInstabilityOptions::getSeverity()}'s `$instability >=
      * $this->maxError` (line 62) / `$instability >= $this->maxWarning`
-     * (line 66) for the namespace channel.
+     * (line 66) at the namespace level.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
-            FindingChannel::leveled(self::NAME, SymbolLevel::Namespace_)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_, SymbolLevel::Namespace_),
         ];
     }
 
@@ -206,7 +204,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            code: FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->code,
+            code: self::NAME,
             message: \sprintf(
                 'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                 $instabilityValue,
@@ -272,7 +270,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                     subject: $subject,
                     symbolPath: $nsInfo->symbolPath,
                     ruleName: $this->getName(),
-                    code: FindingChannel::leveled(self::NAME, SymbolLevel::Namespace_)->code,
+                    code: self::NAME,
                     message: \sprintf(
                         'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,

@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -119,9 +118,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     }
 
     /**
-     * Both CBO channels report the raw CBO value (`(float) $cbo` — see
-     * {@see checkCbo()}) as `metricValue`, judged worse the higher it goes.
-     * {@see ClassCboOptions::getSeverity()} and
+     * Both levels of the channel report the raw CBO value (`(float) $cbo` —
+     * see {@see checkCbo()}) as `metricValue`, judged worse the higher it
+     * goes. {@see ClassCboOptions::getSeverity()} and
      * {@see NamespaceCboOptions::getSeverity()} delegate the `>= error`, then
      * `>= warning` comparisons for their respective levels.
      *
@@ -130,8 +129,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public static function channelDeclarations(): array
     {
         return [
-            FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
-            FindingChannel::leveled(self::NAME, SymbolLevel::Namespace_)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_, SymbolLevel::Namespace_),
         ];
     }
 
@@ -177,7 +175,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $info,
             $subject,
             $options,
-            SymbolLevel::Class_,
             $context,
             ['applicationScope' => $applicationScope, 'frameworkCe' => $frameworkCe],
         );
@@ -218,7 +215,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $info,
             $subject,
             $options,
-            SymbolLevel::Namespace_,
             $context,
             ['applicationScope' => false, 'frameworkCe' => null],
         );
@@ -234,7 +230,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         SymbolInfo $symbolInfo,
         MetricSubject $subject,
         ClassCboOptions|NamespaceCboOptions $options,
-        SymbolLevel $level,
         AnalysisContext $context,
         array $presentation,
     ): ?Finding {
@@ -250,14 +245,13 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         }
 
         $threshold = $severity === Severity::Error ? $options->error : $options->warning;
-        $code = FindingChannel::leveled(self::NAME, $level)->code;
 
         return new Finding(
             location: new Location($symbolInfo->file, $symbolInfo->line),
             subject: $subject,
             symbolPath: $symbolInfo->symbolPath,
             ruleName: $this->getName(),
-            code: $code,
+            code: self::NAME,
             message: $this->buildMessage($cbo, $ca, $ce, $threshold, $presentation['applicationScope'], $presentation['frameworkCe']),
             severity: $severity,
             metricValue: (float) $cbo,

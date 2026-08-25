@@ -27,7 +27,8 @@ final class ChannelExclusionKeyHints
         return self::prefix($ruleName, $key) . ' is not a channel selector.'
             . (FindingChannel::isRetiredPairSpelling($key)
                 ? ' ' . FindingChannel::retiredPairAdvice($key)
-                : ' Write an exact channel name, or "X.*" for the channels below it.');
+                : ' Write an exact channel name, or "X.*" for the channels below it,'
+                    . ' either optionally followed by ":<level>".');
     }
 
     /**
