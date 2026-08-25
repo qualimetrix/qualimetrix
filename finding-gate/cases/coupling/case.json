@@ -1,6 +1,6 @@
 {
     "id": "coupling",
-    "description": "Four namespaces \u2014 stable concrete kernel, abstract contracts, services and wiring \u2014 with CBO, instability and distance thresholds floored.",
+    "description": "Four namespaces — stable concrete kernel, abstract contracts, services and wiring — with CBO, instability and distance thresholds floored.",
     "paths": [
         "src"
     ],
@@ -22,12 +22,12 @@
         "--rule-opt=code-smell.long-parameter-list:vo-error=40"
     ],
     "channels": [
-        "coupling.cbo#coupling.cbo.class@class",
-        "coupling.cbo#coupling.cbo.namespace@namespace",
-        "coupling.class-rank#coupling.class-rank@class",
-        "coupling.distance#coupling.distance@namespace",
-        "coupling.instability#coupling.instability.class@class",
-        "coupling.instability#coupling.instability.namespace@namespace"
+        "coupling.cbo.class@class",
+        "coupling.cbo.namespace@namespace",
+        "coupling.class-rank@class",
+        "coupling.distance@namespace",
+        "coupling.instability.class@class",
+        "coupling.instability.namespace@namespace"
     ],
     "explainSubjects": [
         "declaration:class:Corpus\\Coupling\\Service\\CacheService@src/Service/CacheService.php",

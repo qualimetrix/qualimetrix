@@ -104,21 +104,10 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
     public static function channelDeclarations(): array
     {
         return [
-            self::key(self::UNRESOLVED_CHANNEL) => ChannelDeclaration::occurrence(SymbolLevel::File),
-            self::key(self::UNSUPPORTED_CHANNEL) => ChannelDeclaration::occurrence(SymbolLevel::File),
-            self::key(self::INVALID_CHANNEL) => ChannelDeclaration::occurrence(SymbolLevel::File),
+            self::UNRESOLVED_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File),
+            self::UNSUPPORTED_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File),
+            self::INVALID_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File),
         ];
-    }
-
-    /**
-     * Each of these channels carries its own name in both halves of the key,
-     * so the key is that name twice — spelled out rather than built through a
-     * value object, because a declaration read by reflection should need
-     * nothing but strings.
-     */
-    private static function key(string $channelName): string
-    {
-        return $channelName . '#' . $channelName;
     }
 
     /**

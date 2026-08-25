@@ -61,7 +61,7 @@ final class RuleInputValidatorTest extends TestCase
             ),
         ]);
 
-        foreach (['computed.health', 'health.complexity', 'computed.health#health.complexity'] as $selector) {
+        foreach (['computed.health', 'health.complexity', 'health.complexity'] as $selector) {
             $configuration = new FindingConfiguration(
                 new RuleOptionsDocument([]),
                 new FindingCliOverrides([]),
@@ -70,8 +70,8 @@ final class RuleInputValidatorTest extends TestCase
 
             $snapshot = $validator->validate(new ArrayInput([], new InputDefinition()), $configuration, $definitions);
             self::assertSame(
-                ['computed.health#health.complexity'],
-                array_map(static fn($channel): string => $channel->toKey(), $snapshot->channelsProducedBy(ComputedMetricRule::NAME)),
+                ['health.complexity'],
+                array_map(static fn($channel): string => $channel->code, $snapshot->channelsProducedBy(ComputedMetricRule::NAME)),
             );
         }
     }
@@ -124,50 +124,39 @@ final class RuleInputValidatorTest extends TestCase
 
     /**
      * The documented grammar is one grammar everywhere, and this option is the
-     * one whose key *is* a channel, so it must accept the channel spelled in
-     * full. The pair used to parse as a name containing a `#`, address nothing,
-     * and be refused with advice that contradicted the documentation.
+     * one whose key *is* a channel, so it must accept the channel by its own
+     * name.
      */
     #[Test]
-    public function itAcceptsAChannelExclusionKeyWrittenAsTheExplicitPair(): void
+    public function itAcceptsAChannelExclusionKeyNamingTheChannel(): void
     {
         $validator = $this->validatorForComputedHealth();
 
         $validator->validate(
             new ArrayInput([], new InputDefinition()),
-            self::channelExclusion('computed.health#health.complexity'),
+            self::channelExclusion('health.complexity'),
             self::healthComplexityDefinitions(),
         );
 
         $this->expectNotToPerformAssertions();
     }
 
+    /**
+     * A key left in the retired `rule#code` spelling is refused **by name**,
+     * with the name to write instead. Silence here is the failure mode the
+     * refusal exists for: the key would parse as nothing, exclude nothing, and
+     * say nothing.
+     */
     #[Test]
-    public function itNamesTheRuleHalfWhenOnlyTheRuleHalfIsWrong(): void
+    public function itRefusesAChannelExclusionKeyInTheRetiredPairForm(): void
     {
         $validator = $this->validatorForComputedHealth();
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'the rule half is wrong, "health.complexity" is spelled computed.health#health.complexity',
-        );
+        $this->expectExceptionMessage('Write "health.complexity"');
         $validator->validate(
             new ArrayInput([], new InputDefinition()),
-            self::channelExclusion('coupling.cbo#health.complexity'),
-            self::healthComplexityDefinitions(),
-        );
-    }
-
-    #[Test]
-    public function itRefusesAGroupInsideTheExplicitPair(): void
-    {
-        $validator = $this->validatorForComputedHealth();
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('takes exactly two exact halves and no "*" in either');
-        $validator->validate(
-            new ArrayInput([], new InputDefinition()),
-            self::channelExclusion('computed.health#health.*'),
+            self::channelExclusion('computed.health#health.complexity'),
             self::healthComplexityDefinitions(),
         );
     }

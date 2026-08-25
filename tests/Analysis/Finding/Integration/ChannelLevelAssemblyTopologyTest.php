@@ -85,8 +85,7 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
         $checked = [];
 
         foreach (self::staticDeclarations() as $key => $declaration) {
-            $channel = FindingChannel::fromKey($key);
-            $level = self::levelSegmentOf($channel);
+            $level = self::levelSegmentOf($key);
 
             if ($level === null) {
                 continue;
@@ -106,9 +105,9 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
                 ),
             );
             self::assertSame(
-                FindingChannel::leveled($channel->ruleName, $level)->code,
-                $channel->code,
-                \sprintf('Channel "%s" was not built by FindingChannel::leveled().', $key),
+                FindingChannel::leveled(substr($key, 0, (int) strrpos($key, '.')), $level)->code,
+                $key,
+                \sprintf('Channel "%s" is not what FindingChannel::leveled() produces for that level.', $key),
             );
         }
 
@@ -116,21 +115,23 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
     }
 
     /**
-     * The {@see SymbolLevel} a channel code names after its rule name, or
-     * `null` when the code carries no level segment. A suffix that is not a
-     * level (an aspect, as `design.type-coverage.param` used to name before
-     * ADR 0030 split it into three rules) is not this
-     * guard's business.
+     * The {@see SymbolLevel} a channel name carries as its last segment, or
+     * `null` when it carries none. A last segment that is not a level (an
+     * aspect, as `design.type-coverage.param` used to name before ADR 0030
+     * split it into three rules) is not this guard's business.
+     *
+     * Read off the name itself rather than off what the name is prefixed by: a
+     * channel is one name now, so there is no rule half to subtract from it.
      */
-    private static function levelSegmentOf(FindingChannel $channel): ?SymbolLevel
+    private static function levelSegmentOf(string $channelName): ?SymbolLevel
     {
-        $prefix = $channel->ruleName . '.';
+        $lastDot = strrpos($channelName, '.');
 
-        if (!str_starts_with($channel->code, $prefix)) {
+        if ($lastDot === false) {
             return null;
         }
 
-        return SymbolLevel::tryFrom(substr($channel->code, \strlen($prefix)));
+        return SymbolLevel::tryFrom(substr($channelName, $lastDot + 1));
     }
 
     /**

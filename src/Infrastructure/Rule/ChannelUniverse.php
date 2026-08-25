@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Rule;
 
+use InvalidArgumentException;
+use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
@@ -45,7 +47,7 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
     private array $staticProducerByCode;
 
     /**
-     * @param array<string, ChannelDeclaration> $staticDeclarations keyed by {@see FindingChannel::toKey()}
+     * @param array<string, ChannelDeclaration> $staticDeclarations keyed by channel name
      * @param array<string, list<string>> $staticChannelKeysByProducer producing rule name => channel keys
      * @param array<string, bool> $thresholdOverrideSupportByRule every registered rule name => its
      *                                                            declared answer, so that the key set doubles
@@ -66,7 +68,7 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
 
         foreach ($staticChannelKeysByProducer as $producerRuleName => $channelKeys) {
             foreach ($channelKeys as $channelKey) {
-                $producerByCode[FindingChannel::fromKey($channelKey)->code] = $producerRuleName;
+                $producerByCode[$channelKey] = $producerRuleName;
             }
         }
 
@@ -75,32 +77,33 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
 
     public function declarationFor(FindingChannel $channel): ?ChannelDeclaration
     {
-        if ($channel->ruleName === $this->computedMetricRuleName) {
-            $definition = $this->definitionCatalog->find($channel->code);
+        $static = $this->staticDeclarations[$channel->code] ?? null;
 
-            if ($definition === null) {
-                return null;
-            }
-
-            // Six health dimensions report at three levels under one name,
-            // which is why no static map could hold this half of the
-            // universe.
-            $levels = $definition->reportingLevels();
-
-            if ($levels === []) {
-                // `levels: []` is accepted by the resolver and makes the
-                // metric emit nothing at all, so there is no channel to
-                // declare — the same answer an unknown name gets.
-                return null;
-            }
-
-            return ChannelDeclaration::magnitude(
-                $definition->inverted ? WorseDirection::Lower : WorseDirection::Higher,
-                ...$levels,
-            );
+        if ($static !== null) {
+            return $static;
         }
 
-        return $this->staticDeclarations[$channel->toKey()] ?? null;
+        $definition = $this->definitionCatalog->find($channel->code);
+
+        if ($definition === null) {
+            return null;
+        }
+
+        // Six health dimensions report at three levels under one name, which is
+        // why no static map could hold this half of the universe.
+        $levels = $definition->reportingLevels();
+
+        if ($levels === []) {
+            // `levels: []` is accepted by the resolver and makes the metric
+            // emit nothing at all, so there is no channel to declare — the same
+            // answer an unknown name gets.
+            return null;
+        }
+
+        return ChannelDeclaration::magnitude(
+            $definition->inverted ? WorseDirection::Lower : WorseDirection::Higher,
+            ...$levels,
+        );
     }
 
     public function staticDeclarations(): array
@@ -111,7 +114,7 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
     public function channelsProducedBy(string $producerRuleName): array
     {
         $channels = array_map(
-            FindingChannel::fromKey(...),
+            static fn(string $code): FindingChannel => new FindingChannel($code),
             $this->staticChannelKeysByProducer[$producerRuleName] ?? [],
         );
 
@@ -120,7 +123,7 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
         }
 
         foreach ($this->definitionCatalog->all() as $definition) {
-            $channels[] = new FindingChannel($producerRuleName, $definition->name);
+            $channels[] = new FindingChannel($definition->name);
         }
 
         return $channels;
@@ -142,12 +145,12 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
 
         foreach ($this->staticChannelKeysByProducer as $channelKeys) {
             foreach ($channelKeys as $channelKey) {
-                $channels[] = FindingChannel::fromKey($channelKey);
+                $channels[] = new FindingChannel($channelKey);
             }
         }
 
         foreach ($this->definitionCatalog->all() as $definition) {
-            $channels[] = new FindingChannel($this->computedMetricRuleName, $definition->name);
+            $channels[] = new FindingChannel($definition->name);
         }
 
         return $channels;
@@ -158,15 +161,32 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
         return $this->producerOf($code) !== null;
     }
 
+    /**
+     * The registry edge from a channel to the rule that produces it — what used
+     * to be the left half of the channel key.
+     *
+     * Fail-closed on a name both halves claim. The static half used to win in
+     * silence, which made a collision look like a working configuration: the
+     * channel resolved, the runtime definition it was written for did not, and
+     * nothing said so. A run whose vocabulary is ambiguous stops instead.
+     */
     public function producerOf(string $code): ?string
     {
-        if (isset($this->staticProducerByCode[$code])) {
-            return $this->staticProducerByCode[$code];
+        $static = $this->staticProducerByCode[$code] ?? null;
+        $runtime = $this->definitionCatalog->find($code) === null ? null : $this->computedMetricRuleName;
+
+        if ($static !== null && $runtime !== null) {
+            throw new LogicException(\sprintf(
+                'The name "%s" is claimed by a statically declared channel of rule "%s" and by a computed metric'
+                . ' definition. A channel is identified by its name alone, so one name cannot address two'
+                . ' channels — %s should have refused this configuration.',
+                $code,
+                $static,
+                self::class . '::snapshot()',
+            ));
         }
 
-        return $this->definitionCatalog->find($code) === null
-            ? null
-            : $this->computedMetricRuleName;
+        return $static ?? $runtime;
     }
 
     public function supportsThresholdOverride(string $ruleName): bool
@@ -191,6 +211,8 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
      */
     public function snapshot(ComputedMetricDefinitionCatalogInterface $definitions): ChannelUniverseInterface
     {
+        $this->assertRuntimeNamesUnclaimed($definitions);
+
         return new self(
             $this->staticDeclarations,
             $this->staticChannelKeysByProducer,
@@ -198,5 +220,47 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
             $this->computedMetricRuleName,
             $definitions,
         );
+    }
+
+    /**
+     * Refuses a computed metric whose name the static half already owns.
+     *
+     * The two halves of the universe share **one** name space: a channel is
+     * addressed by its own name, a producer by its own, and selection reads both
+     * vocabularies with the same selector. So a computed metric named after a
+     * declared channel, or after a registered rule, makes an authored name mean
+     * two things — and the name of a computed metric comes from the user's
+     * `qmx.yaml`, which is why this is a configuration refusal and not an
+     * assertion about our own code.
+     *
+     * Reachable today, not hypothetically: `computed_metrics: { computed.health:
+     * ... }` is accepted by the resolver (the `computed.` prefix is exactly what
+     * it requires) and names the rule every computed channel is produced under.
+     */
+    private function assertRuntimeNamesUnclaimed(ComputedMetricDefinitionCatalogInterface $definitions): void
+    {
+        foreach ($definitions->all() as $definition) {
+            $name = $definition->name;
+            $claim = match (true) {
+                isset($this->staticProducerByCode[$name]) => \sprintf(
+                    'a channel declared by rule "%s"',
+                    $this->staticProducerByCode[$name],
+                ),
+                isset($this->thresholdOverrideSupportByRule[$name]) => 'a registered rule',
+                default => null,
+            };
+
+            if ($claim === null) {
+                continue;
+            }
+
+            throw new InvalidArgumentException(\sprintf(
+                'Computed metric "%s" is named after %s. A channel is identified by its name alone, so the two'
+                . ' would be one address for two different things: every selector, suppression and baseline entry'
+                . ' naming it would be ambiguous. Rename the computed metric.',
+                $name,
+                $claim,
+            ));
+        }
     }
 }

@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
@@ -114,7 +113,7 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new FindingChannel(static::NAME, static::NAME))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            static::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable),
         ];
     }
 

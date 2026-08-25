@@ -150,7 +150,7 @@ final readonly class BaselineEntry
      */
     public function toArray(): array
     {
-        $data = ['channel' => $this->identity->channel->toKey()];
+        $data = ['channel' => $this->identity->channel->code];
 
         if ($this->identity->occurrenceKey !== null) {
             $data['occurrence'] = $this->identity->occurrenceKey;

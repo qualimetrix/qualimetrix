@@ -12,19 +12,19 @@
         "--rule-opt=coupling.distance:max_distance_error=2"
     ],
     "channels": [
-        "code-smell.boolean-argument#code-smell.boolean-argument@callable",
-        "code-smell.constructor-overinjection#code-smell.constructor-overinjection@callable",
-        "code-smell.count-in-loop#code-smell.count-in-loop@callable",
-        "code-smell.debug-code#code-smell.debug-code@callable",
-        "code-smell.empty-catch#code-smell.empty-catch@callable",
-        "code-smell.error-suppression#code-smell.error-suppression@callable",
-        "code-smell.eval#code-smell.eval@callable",
-        "code-smell.exit#code-smell.exit@callable",
-        "code-smell.goto#code-smell.goto@callable",
-        "code-smell.identical-subexpression#code-smell.identical-subexpression@callable",
-        "code-smell.long-parameter-list#code-smell.long-parameter-list@callable",
-        "code-smell.unreachable-code#code-smell.unreachable-code@callable",
-        "code-smell.unused-private#code-smell.unused-private@class"
+        "code-smell.boolean-argument@callable",
+        "code-smell.constructor-overinjection@callable",
+        "code-smell.count-in-loop@callable",
+        "code-smell.debug-code@callable",
+        "code-smell.empty-catch@callable",
+        "code-smell.error-suppression@callable",
+        "code-smell.eval@callable",
+        "code-smell.exit@callable",
+        "code-smell.goto@callable",
+        "code-smell.identical-subexpression@callable",
+        "code-smell.long-parameter-list@callable",
+        "code-smell.unreachable-code@callable",
+        "code-smell.unused-private@class"
     ],
     "explainSubjects": [
         "declaration:class:Corpus\\Smells\\Injection@src/Injection.php",

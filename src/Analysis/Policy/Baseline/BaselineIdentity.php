@@ -58,7 +58,7 @@ final readonly class BaselineIdentity
 
         foreach ([
             'subject key' => $subjectKey,
-            'channel' => $channel->toKey(),
+            'channel' => $channel->code,
             'occurrence key' => $occurrenceKey ?? '',
             'edge' => $edge?->key() ?? '',
         ] as $part => $value) {
@@ -100,7 +100,7 @@ final readonly class BaselineIdentity
     public function key(): string
     {
         return $this->subjectKey
-            . self::KEY_SEPARATOR . $this->channel->toKey()
+            . self::KEY_SEPARATOR . $this->channel->code
             . self::KEY_SEPARATOR . ($this->occurrenceKey ?? '')
             . self::KEY_SEPARATOR . ($this->edge?->key() ?? '');
     }
@@ -124,7 +124,7 @@ final readonly class BaselineIdentity
      */
     public function describe(): string
     {
-        $description = $this->subjectKey . ' ' . $this->channel->toKey();
+        $description = $this->subjectKey . ' ' . $this->channel->code;
 
         if ($this->occurrenceKey !== null) {
             $description .= ' [' . $this->occurrenceKey . ']';

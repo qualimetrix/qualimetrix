@@ -84,7 +84,7 @@ final class LayerViolationRuleTest extends TestCase
             'layer-violation-severity' => 'severity',
         ], CliAliasReader::read(LayerViolationRule::class));
         self::assertSame(
-            ['architecture.layer-violation#architecture.layer-violation'],
+            ['architecture.layer-violation'],
             array_keys(LayerViolationRule::channelDeclarations()),
         );
         self::assertStringContainsString('layer', strtolower($rule->getDescription()));

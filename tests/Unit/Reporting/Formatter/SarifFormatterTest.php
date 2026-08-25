@@ -131,7 +131,7 @@ final class SarifFormatterTest extends TestCase
         foreach ($data['runs'][0]['results'] as $result) {
             $fingerprints[$result['message']['text']] = $result['partialFingerprints']['primaryLocationLineHash'];
         }
-        $prefix = 'r#r.edge:file:src/Foo.php';
+        $prefix = 'r.edge:file:src/Foo.php';
 
         self::assertSame($prefix, $fingerprints['no-edge']);
         self::assertSame($prefix . ':untyped-edge:15:class:App\\Alpha', $fingerprints['untyped-alpha']);

@@ -35,7 +35,7 @@ final class BaselineIdentityTest extends TestCase
         );
 
         self::assertSame('declaration:callable:App\Foo::bar@src/Foo.php', $identity->subjectKey);
-        self::assertSame('complexity.cyclomatic#complexity.cyclomatic.callable', $identity->channel->toKey());
+        self::assertSame('complexity.cyclomatic.callable', $identity->channel->code);
         self::assertNull($identity->edge);
     }
 
@@ -107,8 +107,8 @@ final class BaselineIdentityTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
 
         self::assertNotSame(
-            (new BaselineIdentity($symbol->toCanonical(), new FindingChannel('a.rule', 'a.code')))->key(),
-            (new BaselineIdentity($symbol->toCanonical(), new FindingChannel('a.rule', 'other.code')))->key(),
+            (new BaselineIdentity($symbol->toCanonical(), new FindingChannel('a.code')))->key(),
+            (new BaselineIdentity($symbol->toCanonical(), new FindingChannel('other.code')))->key(),
         );
     }
 
@@ -164,7 +164,7 @@ final class BaselineIdentityTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new BaselineIdentity('', new FindingChannel('a.rule', 'a.code'));
+        new BaselineIdentity('', new FindingChannel('a.code'));
     }
 
     /**
@@ -213,7 +213,7 @@ final class BaselineIdentityTest extends TestCase
     #[Test]
     public function itKeepsNamespaceLevelsApartAcrossAggregationDepths(): void
     {
-        $channel = new FindingChannel('coupling.cbo', 'coupling.cbo.namespace');
+        $channel = new FindingChannel('coupling.cbo.namespace');
 
         $parent = new BaselineIdentity(SymbolPath::forNamespace('App')->toCanonical(), $channel);
         $child = new BaselineIdentity(SymbolPath::forNamespace('App\Service')->toCanonical(), $channel);
@@ -247,7 +247,7 @@ final class BaselineIdentityTest extends TestCase
         ));
 
         self::assertSame(
-            'declaration:class:App\Web\Controller@src/Foo.php architecture.layer-violation#architecture.layer-violation'
+            'declaration:class:App\Web\Controller@src/Foo.php architecture.layer-violation'
             . ' -> class:App\Db\Connection (new)',
             $identity->describe(),
         );

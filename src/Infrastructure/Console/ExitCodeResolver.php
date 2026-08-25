@@ -129,7 +129,7 @@ final class ExitCodeResolver
                     'Channel "%s" declares a configuration error but emitted a finding at severity "info".'
                     . ' A configuration error fails the run unconditionally, so reporting it below "warning"'
                     . ' would print a weight the finding does not have.',
-                    $finding->channel()->toKey(),
+                    $finding->channel()->code,
                 ));
             }
 

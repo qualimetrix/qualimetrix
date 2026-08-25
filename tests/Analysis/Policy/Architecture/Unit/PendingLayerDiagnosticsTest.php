@@ -230,7 +230,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
     #[Test]
     public function itDeclaresTheChannelAsAConfigurationError(): void
     {
-        $declaration = LayerDeclarationValidator::channelDeclarations()['architecture.pending-layer-matched#architecture.pending-layer-matched']
+        $declaration = LayerDeclarationValidator::channelDeclarations()['architecture.pending-layer-matched']
             ?? null;
 
         self::assertNotNull($declaration);
@@ -242,7 +242,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
             'The classification is the producing type; nothing on the declaration states it.',
         );
         self::assertArrayNotHasKey(
-            'architecture.pending-layer-matched#architecture.pending-layer-matched',
+            'architecture.pending-layer-matched',
             LayerViolationRule::channelDeclarations(),
         );
     }

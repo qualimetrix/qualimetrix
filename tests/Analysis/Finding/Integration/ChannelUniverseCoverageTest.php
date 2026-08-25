@@ -78,7 +78,7 @@ final class ChannelUniverseCoverageTest extends TestCase
         $orphans = [];
 
         foreach (array_keys($universe->staticDeclarations()) as $key) {
-            $channel = FindingChannel::fromKey($key);
+            $channel = new FindingChannel($key);
 
             if ($universe->producerOf($channel->code) === null) {
                 $orphans[] = $key;
@@ -104,7 +104,7 @@ final class ChannelUniverseCoverageTest extends TestCase
 
         $witnessA = [];
         foreach (array_keys($universe->staticDeclarations()) as $key) {
-            $code = FindingChannel::fromKey($key)->code;
+            $code = new FindingChannel($key)->code;
             $witnessA[$code] = $universe->producerOf($code);
         }
         ksort($witnessA);
@@ -127,7 +127,7 @@ final class ChannelUniverseCoverageTest extends TestCase
         $universe = self::universe();
 
         $fromUniverse = array_map(
-            static fn(string $key): string => FindingChannel::fromKey($key)->code,
+            static fn(string $key): string => new FindingChannel($key)->code,
             array_keys($universe->staticDeclarations()),
         );
         sort($fromUniverse);
@@ -262,7 +262,7 @@ final class ChannelUniverseCoverageTest extends TestCase
             $ruleName = RuleNameReader::read($ruleClass);
 
             foreach (array_keys(ChannelDeclarationReader::read($ruleClass)) as $key) {
-                $producers[FindingChannel::fromKey($key)->code] = $ruleName;
+                $producers[new FindingChannel($key)->code] = $ruleName;
             }
         }
 
@@ -271,7 +271,7 @@ final class ChannelUniverseCoverageTest extends TestCase
         // registries or it enumerates a different universe than the pass did.
         foreach (self::validatorClasses() as $validatorClass) {
             foreach (array_keys($validatorClass::channelDeclarations()) as $key) {
-                $producers[FindingChannel::fromKey($key)->code] = $validatorClass::producerRuleName();
+                $producers[new FindingChannel($key)->code] = $validatorClass::producerRuleName();
             }
         }
 
@@ -298,7 +298,7 @@ final class ChannelUniverseCoverageTest extends TestCase
             }
 
             foreach (array_keys(ChannelDeclarationReader::read($ruleClass)) as $key) {
-                $inherited[FindingChannel::fromKey($key)->code] = RuleNameReader::read($ruleClass);
+                $inherited[new FindingChannel($key)->code] = RuleNameReader::read($ruleClass);
             }
         }
 
@@ -352,7 +352,7 @@ final class ChannelUniverseCoverageTest extends TestCase
 
             $key = strtok($line, ' ');
             \assert(\is_string($key));
-            $codes[] = FindingChannel::fromKey($key)->code;
+            $codes[] = new FindingChannel($key)->code;
         }
 
         return $codes;

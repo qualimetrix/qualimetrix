@@ -23,7 +23,6 @@ declare(strict_types=1);
 use QmxFindingGate\CommandLine;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
@@ -70,7 +69,7 @@ foreach ($registry->staticDeclarations() as $channel => $declaration) {
 $computedChannels = [];
 
 foreach ($computed->resolve($document)->all() as $definition) {
-    $computedChannels[ComputedMetricRule::NAME . '#' . $definition->name] = $values($definition->reportingLevels());
+    $computedChannels[$definition->name] = $values($definition->reportingLevels());
 }
 
 echo json_encode([

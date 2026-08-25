@@ -143,7 +143,7 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
             return [\sprintf('%s: no presentation resolved for a channel the universe itself declares.', $code)];
         }
 
-        $rules = $collector->collectRules([self::finding($channel->ruleName, $code)]);
+        $rules = $collector->collectRules([self::finding($channel->code, $code)]);
 
         if (\count($rules) !== 1) {
             return [\sprintf('%s: collectRules() returned %d entries, expected 1.', $code, \count($rules))];

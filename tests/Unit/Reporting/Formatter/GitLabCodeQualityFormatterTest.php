@@ -264,7 +264,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             new FormatterContext(),
         ), true, 512, \JSON_THROW_ON_ERROR);
         $fingerprints = array_column($data, 'fingerprint', 'description');
-        $prefix = 'r#r.edge:file:src/Foo.php';
+        $prefix = 'r.edge:file:src/Foo.php';
 
         self::assertSame(md5($prefix), $fingerprints['no-edge']);
         self::assertSame(md5($prefix . ':untyped-edge:15:class:App\\Alpha'), $fingerprints['untyped-alpha']);

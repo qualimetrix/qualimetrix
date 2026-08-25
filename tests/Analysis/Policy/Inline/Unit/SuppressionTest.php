@@ -17,13 +17,6 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(Suppression::class)]
 final class SuppressionTest extends TestCase
 {
-    /**
-     * The rule half of a channel, for the spellings that do not read it: a
-     * one-part selector filters on the finding code alone, so any producer
-     * name proves the same thing.
-     */
-    private const string ANY_RULE = 'any.producer';
-
     #[Test]
     public function itMatchesExactRule(): void
     {
@@ -36,8 +29,8 @@ final class SuppressionTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        self::assertTrue($suppression->matches(self::ANY_RULE, 'complexity.cyclomatic'));
-        self::assertFalse($suppression->matches(self::ANY_RULE, 'complexity.cognitive'));
+        self::assertTrue($suppression->matches('complexity.cyclomatic'));
+        self::assertFalse($suppression->matches('complexity.cognitive'));
     }
 
     #[Test]
@@ -54,10 +47,10 @@ final class SuppressionTest extends TestCase
 
         // `complexity` addresses the channel called `complexity` — there is
         // none — and nothing else. A group is written `complexity.*`.
-        self::assertTrue($suppression->matches(self::ANY_RULE, 'complexity'));
-        self::assertFalse($suppression->matches(self::ANY_RULE, 'complexity.cyclomatic'));
-        self::assertFalse($suppression->matches(self::ANY_RULE, 'complexity.cyclomatic.callable'));
-        self::assertFalse($suppression->matches(self::ANY_RULE, 'coupling'));
+        self::assertTrue($suppression->matches('complexity'));
+        self::assertFalse($suppression->matches('complexity.cyclomatic'));
+        self::assertFalse($suppression->matches('complexity.cyclomatic.callable'));
+        self::assertFalse($suppression->matches('coupling'));
     }
 
     #[Test]
@@ -72,12 +65,12 @@ final class SuppressionTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        self::assertTrue($suppression->matches(self::ANY_RULE, 'complexity.cyclomatic.callable'));
-        self::assertTrue($suppression->matches(self::ANY_RULE, 'complexity.cyclomatic.class'));
+        self::assertTrue($suppression->matches('complexity.cyclomatic.callable'));
+        self::assertTrue($suppression->matches('complexity.cyclomatic.class'));
         // The parent is not one of its own descendants: a directive meaning
         // both is written twice.
-        self::assertFalse($suppression->matches(self::ANY_RULE, 'complexity.cyclomatic'));
-        self::assertFalse($suppression->matches(self::ANY_RULE, 'complexity.cognitive.callable'));
+        self::assertFalse($suppression->matches('complexity.cyclomatic'));
+        self::assertFalse($suppression->matches('complexity.cognitive.callable'));
     }
 
     #[Test]
@@ -95,8 +88,8 @@ final class SuppressionTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        self::assertTrue($suppression->matches(self::ANY_RULE, 'architecture.coverage'));
-        self::assertFalse($suppression->matches(self::ANY_RULE, 'architecture.coverage.source'));
+        self::assertTrue($suppression->matches('architecture.coverage'));
+        self::assertFalse($suppression->matches('architecture.coverage.source'));
     }
 
     #[Test]
@@ -109,9 +102,9 @@ final class SuppressionTest extends TestCase
             type: SuppressionType::File,
         );
 
-        self::assertTrue($suppression->matches(self::ANY_RULE, 'complexity.cyclomatic'));
-        self::assertTrue($suppression->matches(self::ANY_RULE, 'coupling.distance'));
-        self::assertTrue($suppression->matches(self::ANY_RULE, 'size.method-count'));
+        self::assertTrue($suppression->matches('complexity.cyclomatic'));
+        self::assertTrue($suppression->matches('coupling.distance'));
+        self::assertTrue($suppression->matches('size.method-count'));
     }
 
     #[Test]
@@ -158,8 +151,8 @@ final class SuppressionTest extends TestCase
         );
 
         // More specific pattern does NOT match less specific subject
-        self::assertFalse($suppression->matches(self::ANY_RULE, 'complexity.cyclomatic'));
-        self::assertFalse($suppression->matches(self::ANY_RULE, 'complexity'));
+        self::assertFalse($suppression->matches('complexity.cyclomatic'));
+        self::assertFalse($suppression->matches('complexity'));
     }
 
     private function subject(): MetricSubject

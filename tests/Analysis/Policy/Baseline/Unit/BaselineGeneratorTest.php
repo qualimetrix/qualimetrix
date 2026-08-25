@@ -280,7 +280,7 @@ final class BaselineGeneratorTest extends TestCase
         );
         self::assertSame([2, 1], array_map(static fn($group): int => $group->memberCount, $capture->uncaptured));
         self::assertSame(
-            ['complexity.cyclomatic#complexity.cyclomatic.callable', 'nobody.declares#this.channel'],
+            ['complexity.cyclomatic.callable', 'this.channel'],
             $capture->uncapturedChannels(),
         );
     }
@@ -291,7 +291,7 @@ final class BaselineGeneratorTest extends TestCase
         $baseline = $this->capture([], ['src']);
         $identity = new BaselineIdentity(
             'project:',
-            new FindingChannel('nobody.declares', 'this.channel'),
+            new FindingChannel('this.channel'),
         );
 
         $empty = BaselineCapture::fromRejectedGroups($baseline, []);

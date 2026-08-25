@@ -160,10 +160,11 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity.cyclomatic#complexity.cyclomatic.callable', $suppressions[0]->rule);
-        self::assertSame(
-            'complexity.cyclomatic#complexity.cyclomatic.callable',
-            (string) $suppressions[0]->target()->exactChannel(),
-        );
+        // The separator is still inside the grammar of a directive target, so
+        // the retired spelling is extracted rather than skipped — which is what
+        // lets it be refused by name instead of silently addressing nothing.
+        self::assertTrue($suppressions[0]->target()->usesRetiredChannelPair());
+        self::assertNull($suppressions[0]->target()->selector());
     }
 
     #[Test]

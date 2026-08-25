@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Suppression;
 
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Stringable;
 
 /**
@@ -13,10 +13,9 @@ use Stringable;
  *
  * Two states, and the second one is the point of this type:
  *
- * - **a channel selector** — an exact `code`, `X.*` for its strict
- *   descendants, or the explicit `ruleName#violationCode` pair. All three are
- *   {@see ChannelSelector}, which is the whole of the grammar and is shared
- *   with configuration's channel-keyed surfaces;
+ * - **a channel selector** — an exact channel name, or `X.*` for its strict
+ *   descendants. Both are {@see NameSelector}, which is the whole of the
+ *   grammar and is shared with configuration's channel-keyed surfaces;
  * - **no rule filter at all** — "every finding here, whatever it is". This is
  *   what `@qmx-ignore *` on a symbol or line means, and what a bare
  *   `@qmx-ignore-file` with no argument means.
@@ -44,7 +43,7 @@ final readonly class SuppressionTarget implements Stringable
 
     private function __construct(
         private string $raw,
-        private ?ChannelSelector $selector,
+        private ?NameSelector $selector,
         private bool $everyChannel,
     ) {}
 
@@ -54,7 +53,7 @@ final readonly class SuppressionTarget implements Stringable
             return new self($rule, null, true);
         }
 
-        return new self($rule, ChannelSelector::tryParse($rule), false);
+        return new self($rule, NameSelector::tryParse($rule), false);
     }
 
     /** Whether the directive carries no rule filter at all. */
@@ -64,31 +63,31 @@ final readonly class SuppressionTarget implements Stringable
     }
 
     /**
-     * The channel addressed by the explicit `ruleName#violationCode` form, or
-     * `null` when the directive was not written in it.
+     * Whether the authored text is written in the retired `rule#code` spelling.
      *
-     * Callers that have to decide whether the target addresses anything need
-     * the pair, because the answer is a channel lookup rather than a name
-     * expansion.
+     * Kept as a question of its own because such a target parses to nothing —
+     * the separator is out of the name grammar — and "parses to nothing" is the
+     * same state a typo produces. Only this predicate separates the two, and
+     * the difference is what the author is told.
      */
-    public function exactChannel(): ?FindingChannel
+    public function usesRetiredChannelPair(): bool
     {
-        return $this->selector?->exactChannel();
+        return FindingChannel::isRetiredPairSpelling($this->raw);
     }
 
-    /** Whether the authored text used the explicit pair separator at all. */
-    public function looksLikeChannelPair(): bool
+    /** The parsed selector, or `null` when the text is not one. */
+    public function selector(): ?NameSelector
     {
-        return ChannelSelector::looksLikePair($this->raw);
+        return $this->selector;
     }
 
-    public function matches(string $ruleName, string $code): bool
+    public function matches(string $code): bool
     {
         if ($this->everyChannel) {
             return true;
         }
 
-        return $this->selector?->matchesNames($ruleName, $code) === true;
+        return $this->selector?->matches($code) === true;
     }
 
     /** The authored text, so a directive round-trips into diagnostics unchanged. */

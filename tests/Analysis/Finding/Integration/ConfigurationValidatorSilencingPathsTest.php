@@ -173,7 +173,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
         $fromRegistry = [];
         foreach ($registry->staticDeclarations() as $key => $declaration) {
             if ($declaration->isConfigurationError()) {
-                $fromRegistry[] = FindingChannel::fromKey($key)->code;
+                $fromRegistry[] = new FindingChannel($key)->code;
             }
         }
         sort($fromRegistry);
@@ -412,7 +412,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
 
         $reported = [];
         foreach ($report['violations'] as $finding) {
-            $reported[] = FindingChannel::fromKey($finding['channel'])->code;
+            $reported[] = new FindingChannel($finding['channel'])->code;
         }
 
         return array_values(array_filter(

@@ -219,12 +219,12 @@ final class BaselineWorkflowTest extends TestCase
         $subjectEntries = $written['entries'][$subject->toCanonical()];
         self::assertSame([
             [
-                'channel' => 'architecture.layer-violation#architecture.layer-violation',
+                'channel' => 'architecture.layer-violation',
                 'edge' => ['target' => $target->toCanonical()],
                 'count' => 1,
             ],
             [
-                'channel' => 'architecture.layer-violation#architecture.layer-violation',
+                'channel' => 'architecture.layer-violation',
                 'edge' => ['target' => $target->toCanonical(), 'type' => DependencyType::New_->value],
                 'count' => 1,
             ],

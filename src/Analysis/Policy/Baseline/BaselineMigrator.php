@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+
 /**
  * Converts a version 5 baseline into a version 10 one — `bin/qmx
  * baseline:migrate` (ADR 0017).
@@ -17,8 +19,11 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
  *
  * **Matching is on `($symbolKey, $rule)` only**, because that pair is the
  * one thing a v5 record and a v10 finding both carry: the v5 key already is
- * `SymbolPath::toCanonical()`, and `$rule` is the prefix of a v10 channel
- * key up to `#`. Everything finer — `code`, the dependency edge,
+ * `SymbolPath::toCanonical()`, and `$rule` names a rule, which on the v10 side
+ * is the rule the registry says produces the entry's channel. That edge used to
+ * be the left half of the channel key; a channel is one name now, so it is read
+ * from the registry instead. Everything finer — the channel itself, the
+ * dependency edge,
  * the magnitude itself — exists only on one side and cannot be matched
  * across the format boundary. A symbol/rule pair that produced two v10
  * entries (two finding codes, or two edges) still counts as one carried
@@ -32,6 +37,7 @@ final readonly class BaselineMigrator
 {
     public function __construct(
         private V5BaselineReader $v5Reader,
+        private ChannelIdentityInterface $channels,
     ) {}
 
     /**
@@ -43,7 +49,7 @@ final readonly class BaselineMigrator
     public function migrate(V5Baseline $v5, BaselineCapture $freshCapture): BaselineMigratorResult
     {
         $v5Pairs = self::groupV5ByPair($v5);
-        $v10CountsByPair = self::groupV10ByPair($freshCapture->baseline);
+        $v10CountsByPair = $this->groupV10ByPair($freshCapture->baseline);
 
         $carriedV5EntryCount = 0;
         $carriedV10EntryCount = 0;
@@ -116,12 +122,13 @@ final readonly class BaselineMigrator
     /**
      * @return array<string, int> pair key => how many v10 entries share it
      */
-    private static function groupV10ByPair(Baseline $baseline): array
+    private function groupV10ByPair(Baseline $baseline): array
     {
         $counts = [];
 
         foreach ($baseline->entries as $entry) {
-            $pairKey = self::pairKey($entry->identity->subjectKey, $entry->identity->channel->ruleName);
+            $code = $entry->identity->channel->code;
+            $pairKey = self::pairKey($entry->identity->subjectKey, $this->channels->producerOf($code) ?? $code);
 
             $counts[$pairKey] = ($counts[$pairKey] ?? 0) + 1;
         }

@@ -137,7 +137,7 @@ final class BaselineExplainCommand extends BaselineCommand
     }
 
     /**
-     * `false` when `--channel` was given but is not a channel key; `null`
+     * `false` when `--channel` was given but is not a channel name; `null`
      * when it was not given at all, which means "every channel".
      */
     private function readChannel(InputInterface $input, OutputInterface $output): FindingChannel|false|null
@@ -149,7 +149,7 @@ final class BaselineExplainCommand extends BaselineCommand
         }
 
         try {
-            return FindingChannel::fromKey($raw);
+            return new FindingChannel($raw);
         } catch (InvalidArgumentException $e) {
             $output->writeln(\sprintf('<error>%s</error>', $e->getMessage()));
 
@@ -176,7 +176,7 @@ final class BaselineExplainCommand extends BaselineCommand
 
         foreach ($explanation->boundaries as $boundary) {
             $output->writeln('');
-            $output->writeln(\sprintf('  Channel: <info>%s</info>', $boundary->identity->channel->toKey()));
+            $output->writeln(\sprintf('  Channel: <info>%s</info>', $boundary->identity->channel->code));
 
             if ($boundary->identity->edge !== null) {
                 $output->writeln(\sprintf('    Edge: %s', $boundary->identity->edge->target));

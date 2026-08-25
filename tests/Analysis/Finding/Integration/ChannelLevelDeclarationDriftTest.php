@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
@@ -64,8 +63,19 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     /** @var array<string, list<string>>|null channel key => observed level values */
     private static ?array $observed = null;
 
-    /** @var array<string, list<string>>|null channel key => declared level values */
+    /** @var array<string, list<string>>|null channel name => declared level values */
     private static ?array $declared = null;
+
+    /**
+     * The channels that exist only because a case's own `qmx.yaml` defines a
+     * computed metric — collected from the resolved definitions of every case,
+     * so that "which rows of the oracle are not statically declared" is
+     * answered by the configuration rather than by the fixture the rows are
+     * about.
+     *
+     * @var list<string>|null
+     */
+    private static ?array $runtime = null;
 
     #[Test]
     public function theCorpusStillReportsEveryChannelAtTheLevelItWasMeasuredAt(): void
@@ -91,12 +101,13 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
                 continue;
             }
 
-            self::assertSame(
-                ComputedMetricRule::NAME,
-                FindingChannel::fromKey($channel)->ruleName,
+            self::assertNotContains(
+                $channel,
+                self::readDeclaredChannels(),
                 \sprintf(
-                    'Channel "%s" is observed but absent from %s. Only a user-defined computed metric may be'
-                    . ' outside that enumeration; a new static channel must be measured into it.',
+                    'Channel "%s" is observed but absent from %s. Only a channel that exists because of a user\'s'
+                    . ' own configuration may be outside that enumeration; a statically declared one must be'
+                    . ' measured into it.',
                     $channel,
                     self::OBSERVATION_ORACLE,
                 ),
@@ -108,11 +119,12 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     public function theOracleCoversEveryStaticallyDeclaredChannel(): void
     {
         $oracle = array_keys(self::readOracle());
+        $declared = self::readDeclaredChannels();
+        $runtimeNames = self::runtimeChannelNames();
         $staticOracle = array_values(array_filter(
             $oracle,
-            static fn(string $channel): bool => FindingChannel::fromKey($channel)->ruleName !== ComputedMetricRule::NAME,
+            static fn(string $channel): bool => !\in_array($channel, $runtimeNames, true),
         ));
-        $declared = self::readDeclaredChannels();
 
         sort($staticOracle);
         sort($declared);
@@ -182,10 +194,37 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
                 continue;
             }
 
-            $oracle[$fields[0]] = self::canonical(explode(' ', $fields[1]));
+            $oracle[self::channelNameOf($fields[0])] = self::canonical(explode(' ', $fields[1]));
         }
 
         return $oracle;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function runtimeChannelNames(): array
+    {
+        self::measure();
+        \assert(self::$runtime !== null);
+
+        return self::$runtime;
+    }
+
+    /**
+     * The channel a row of the Ш0 enumeration names.
+     *
+     * The enumeration was measured while a channel was a `rule#code` pair, and
+     * it is left in the vocabulary it was measured in: the measurement is what
+     * the row is worth, and rewriting 63 rows would restate it rather than
+     * preserve it. The name a channel is identified by is the second half, so
+     * the reader takes it and the comparison stays a comparison of names.
+     */
+    private static function channelNameOf(string $row): string
+    {
+        $separator = strpos($row, FindingChannel::RETIRED_PAIR_SEPARATOR);
+
+        return $separator === false ? $row : substr($row, $separator + 1);
     }
 
     /**
@@ -258,6 +297,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         $container = (new ContainerFactory())->create();
         $observed = [];
         $declared = [];
+        self::$runtime = [];
 
         foreach (self::cases() as $directory => $case) {
             $channelsInCase = [];
@@ -311,12 +351,19 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
                 [],
             ),
         );
-        $computed->replace($computed->resolve($document));
+        $definitions = $computed->resolve($document);
+        $computed->replace($definitions);
+
+        foreach ($definitions->all() as $definition) {
+            if (!\in_array($definition->name, self::$runtime ?? [], true)) {
+                self::$runtime[] = $definition->name;
+            }
+        }
 
         $declarations = [];
 
         foreach ($channels as $channel) {
-            $declaration = $registry->declarationFor(FindingChannel::fromKey($channel));
+            $declaration = $registry->declarationFor(new FindingChannel($channel));
 
             if ($declaration === null) {
                 continue;

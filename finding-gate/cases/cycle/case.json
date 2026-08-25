@@ -12,7 +12,7 @@
         "--rule-opt=coupling.distance:max_distance_error=2"
     ],
     "channels": [
-        "architecture.circular-dependency#architecture.circular-dependency@project"
+        "architecture.circular-dependency@project"
     ],
     "explainSubjects": [
         "project:"

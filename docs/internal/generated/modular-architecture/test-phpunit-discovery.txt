@@ -3515,8 +3515,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theMaintainabilityIndexMagnitudeChannelIsDeclared
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theTypeCoverageParamMagnitudeChannelIsDeclaredLowerIsWorse
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theUnusedDirectiveChannelIsDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyDeclaredCodeEqualsOrIsPrefixedByItsRuleName
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyDeclaredRuleNameHalfNamesARealRuleOrALayerViolationDiagnostic
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyDeclaredChannelNameIsAnEmittingNameOrOneSuffixBelowIt
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyFixtureLineIsStillDeclaredInCode
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyStaticallyDeclaredChannelIsListedInTheFixture
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::exactlyTheLayerPolicyAndDirectiveDiagnosticsDeclareAConfigurationError
@@ -3627,18 +3626,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsWhenTwoClassesUnderOneProducerNameDeclareDifferentShapes
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itReadsARealRulesDeclarationsCorrectly
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itReadsTheDeclaredChannelsWithoutInstantiatingTheRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRefusesTheEmptyKeyAnAbstractCodeSmellRuleDeclaresWhenReadDirectly
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRefusesTheEmptyKeyAnAbstractSecurityPatternRuleDeclaresWhenReadDirectly
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsAClassThatCannotBeLoaded
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsADeclarationMethodNotTypedToReturnArray
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsANonStaticDeclarationMethod
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsAPrivateDeclarationMethod
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsAnEntryKeyedByAKeyWithAnEmptyCodeHalf
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsAnEntryKeyedByAKeyWithAnEmptyRuleNameHalf
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsAnEntryKeyedByAStringWithNoSeparator
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsAnEntryKeyedByAnEmptyString
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsAnEntryKeyedByTheRetiredChannelPairSpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itRejectsAnEntryWhoseValueIsNotAChannelDeclaration
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itReturnsAnEmptyArrayForARuleThatDeclaresNothing
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itThrowsALogicExceptionRatherThanTheVosOwnExceptionWhenReadingAbstractCodeSmellRuleDirectly
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itThrowsALogicExceptionRatherThanTheVosOwnExceptionWhenReadingAbstractSecurityPatternRuleDirectly
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itWrapsAnExceptionThrownFromWithinChannelDeclarationsInALogicException
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAMagnitudeDeclarationViaTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAnOccurrenceDeclarationViaTheFactory
@@ -3655,32 +3652,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itJoinsTheProducersDescriptionAndDeclaredDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullForACodeNoChannelCarries
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullWhenTheResolvedDescriptionIsEmpty
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"bare separator"
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty dot segment"
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty rule half"
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty violation code half"
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty"
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"group inside the rule half"
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"group inside the violation code half"
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"three halves"
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"wildcard alone"
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itKeepsTheGroupFormOfTheOnePartSelector
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itReadsAOnePartSelectorAgainstTheCodeAlone
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itReadsBothHalvesOfThePairForm
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itRefusesAChannelWhoseRuleHalfDiffers
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itReportsThePairSpellingBeforeParsingSoAFailureCanBeExplained
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itRoundTripsTheAuthoredText
- - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itDistinguishesTwoCodesUnderOneRuleName
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itAdvisesTheNameToWriteInsteadOfTheRetiredPair
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itBuildsALeveledNameFromARuleNameAndALevel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itDistinguishesTwoChannelsOfOneRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itIsEqualToAnIdenticallyAddressedChannel
- - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itParsesAKeyBackIntoTheSameChannel
- - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itParsesAKeyWhoseRuleNameDiffersFromItsCode
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itReadsTheChannelOffAnEmittedFinding
- - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRejectsAKeyWithAnEmptyCodeHalf
- - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRejectsAKeyWithAnEmptyRuleNameHalf
- - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRejectsAKeyWithNoSeparator
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRecognisesTheRetiredChannelPairSpelling
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRefusesTheRetiredChannelPairSpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRejectsAnEmptyCode
- - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRejectsAnEmptyRuleName
- - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRendersAsItsKey
+ - Qualimetrix\Tests\Analysis\Finding\Unit\FindingChannelTest::itRendersAsItsName
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itFoldsRuleSourcesWithThresholdModeEvictionAndSelectorSemantics
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest::itCoversEveryStageInTheMembershipTable
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingFilterStageTest::itKnowsWhetherItDefinesTheMeasuredSet"baseline"
@@ -3814,7 +3794,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsAClassThatCannotBeLoaded
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsANonStringNameConstant
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsRulesWithoutANameConstant
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itAcceptsTheTwoPartChannelFormAsAnExclusionKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itClearsAllExclusionsOnReset
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itClearsChannelExclusionsOnReset
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itConfiguresAndQueriesNamespaceChannelExclusionsWithoutProviderAccess
@@ -3822,13 +3801,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itDoesNotFalselyMatchPrefix
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itDoesNotStoreEmptyArray
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itDoesNotTreatABareSelectorPrefixAsAGroup
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itExcludesNothingForAKeyInTheRetiredChannelPairForm
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itGetsExclusions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itHandlesMultiplePrefixes
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itHandlesTrailingBackslash
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itKeepsDifferentRulesExclusionsIndependent
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itMatchesByNamespacePrefix
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itMatchesExactNamespace
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itMatchesThePairAgainstTheChannelRuleNameNotTheOptionOwner
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itMatchesTheKeyAgainstTheChannelNotTheOptionOwner
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itReturnsFalseForRuleWithNoExclusions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itScopesNamespaceExclusionToTheCode
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itUsesGroupSelectorSemanticsForChannelExclusions
@@ -4989,7 +4969,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsTheAnnotationForASymbolThatViolatesNothing
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsTheStoredAndTheCurrentNumberOnADriftingChannel
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRefusesToPickOneOfTwoThresholdsAChannelIsJudgedAgainst
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRejectsAChannelThatIsNotAChannelKey
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRejectsAChannelWrittenInTheRetiredPairForm
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRejectsAnUnknownSubjectEvenWhenAChannelWasExplicitlyRequested
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itSpellsAnAbsentSourceDifferentlyFromAZero
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itStillResolvesAChannelWhoseOptionsHoldOneBoundary
@@ -5406,7 +5386,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAThresholdOnARuleThatDeclaresOverrideSupport
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAThresholdOnOneTypeCoverageDimension
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAnExactChannelAndAGroupThatCoversSomething
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAnExplicitChannelPair
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAnExactChannelName
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsTheNoRuleFilterForm
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itExplainsTheGrammarWhenAFileFormCarriesABareReason
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itExplainsWhichFormMayOmitTheChannel
@@ -5416,12 +5396,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAGroupFormThatCoversNoChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAMisspelledChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsARuleNameWhereASuppressionMustNameAChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdInTheRetiredChannelPairForm
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingARuleFamilyRatherThanARule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingTheOldTypeCoverageDimensionSpelling
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingTheSplitTypeCoverageRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdOnARuleThatDeclaresNoOverrideSupport
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAnExplicitPairWhoseHalvesDoNotBelongTogether
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsGroupAndWildcardThresholds
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsTheRetiredChannelPairSpellingAndSaysWhatToWrite
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsNothingWhenTheOwningRuleIsDisabled
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredDirectiveNotPerBoundDeclaration
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredThresholdDirective
@@ -5434,7 +5415,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itAccountsForADirectiveWrittenAsAnExplicitChannelPair
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itAccountsForTheFileForm
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itAccountsForTheNextLineForm
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itDoesNotAlsoCallAnUnaddressablePairStale
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itDoesNotAlsoCallAnUnaddressableTargetStale
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itForgetsTheReportingGateOnReset
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itIgnoresDirectivesAddressingARuleSwitchedOffByItsOwnOptions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itIgnoresDirectivesAddressingARuleSwitchedOffByTheScalarSpelling
@@ -5545,13 +5526,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSymbolSuppressionDoesNotSuppressNullLineFinding
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSymbolSuppressionWithoutEndLineActsUntilEndOfFile
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itWildcardFileSuppressesAllRules
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itDoesNotMistakeAPlainNameForTheRetiredPairSpelling
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersNothingAndNamesTheRetiredPairSpelling
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersNothingWhenTheTextIsNotASelector
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersOnAGroupOfDescendants
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersOnAnExactChannel
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersOnAnExplicitChannelPair
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itKeepsTheNoRuleFilterFormWorking
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itRefusesAPairWithMoreThanTwoHalves
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itRefusesAWildcardInsideTheExplicitPair
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itConstructorProperties
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itConstructorWithNullReason
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itDoesNotCaptureADottedDescendantOfAnExactName
@@ -5893,6 +5873,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFailsClosedForUnknownRuleSelectorWithoutPollutingStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFormatsIncompleteAnalysisAndGivesItExitCodePriority
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsAChannelAsRuleOptionOwner
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsASelectionSelectorInTheRetiredChannelPairForm
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsWrongTypedScalarConfigValueAsConfigError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itValidatesDynamicComputedSelectorsAgainstTheCurrentCommandConfiguration
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itWritesPartialScopeWarningOnlyToStderrBeforeStructuredPayload
@@ -5977,10 +5958,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itDefaultsToErrorOnlyExitBehavior
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRelativizesOnlyTheProjectRootPrefixInCoverageFailureMessages
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itUsesTheExplicitResolvedFormatAndProjectRoot
- - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsAChannelExclusionKeyWrittenAsTheExplicitPair
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsAChannelExclusionKeyNamingTheChannel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itIgnoresAnAbsentWorkersOption
- - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itNamesTheRuleHalfWhenOnlyTheRuleHalfIsWrong
- - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesAGroupInsideTheExplicitPair
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesAChannelExclusionKeyInTheRetiredPairForm
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesAKeyAddressingAnotherRulesChannel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesAKeyNamingAComputedChannelNoLongerDefined
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRejectsAChannelExclusionKeyThatAddressesNoChannel
@@ -6065,6 +6045,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itPrefersTheConfiguredDefinitionsOwnDescriptionOverTheProducersGenericOne
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ComputedMetricChannelPresentationTest::itReturnsNullWhenTheInnerViewAlreadyDoes
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::aRepeatedLevelCannotReachTheChannelDeclaration
+ - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAcceptsASnapshotWhoseComputedNamesAreFree
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAddsRuntimeComputedMetricChannelsToTheirProducer
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAnswersTheReverseLookupForAConfiguredComputedMetric
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itAnswersTheReverseLookupWithTheProducingRuleNotTheChannelsOwnRuleName
@@ -6077,6 +6058,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itKnowsEveryRegisteredRuleIncludingOnesDeclaringNoChannel
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itPreservesTheProducerOfStaticChannelsWithDifferentRuleNames
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itProjectsEveryDeclaredLevelOfAComputedMetricOntoTheChannel
+ - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itRefusesAComputedMetricNamedAfterARegisteredRule
+ - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itRefusesAComputedMetricNamedAfterAStaticallyDeclaredChannel
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itReportsThresholdOverrideSupportAsDeclaredAndDefaultsToNoSupport
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itResolvesABuiltInHealthChannelAtRunTimeFromTheDefinitionsInvertedFlag
  - Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest::itResolvesAUserDefinedComputedMetricAtRunTimeAsHigherIsWorseByDefault

@@ -37,7 +37,7 @@ final readonly class ChannelFileScope
     private array $projectScoped;
 
     /**
-     * @param list<string> $projectScopedChannelKeys {@see FindingChannel::toKey()} form
+     * @param list<string> $projectScopedChannelKeys channel names
      */
     public function __construct(array $projectScopedChannelKeys)
     {
@@ -46,6 +46,6 @@ final readonly class ChannelFileScope
 
     public function isFileScoped(FindingChannel $channel): bool
     {
-        return !isset($this->projectScoped[$channel->toKey()]);
+        return !isset($this->projectScoped[$channel->code]);
     }
 }

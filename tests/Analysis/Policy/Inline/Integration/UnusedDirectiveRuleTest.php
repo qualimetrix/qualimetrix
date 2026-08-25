@@ -105,26 +105,25 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertStringContainsString('has no channels below it', $findings[0]->message);
     }
 
-    /** The explicit pair is a legitimate spelling of a channel that exists. */
+    /** The channel's own name is the one spelling that addresses it. */
     #[Test]
-    public function itAcceptsAnExplicitChannelPair(): void
+    public function itAcceptsAnExactChannelName(): void
     {
-        self::assertSame([], self::runWithSuppression('coupling.instability#coupling.instability.class'));
+        self::assertSame([], self::runWithSuppression('coupling.instability.class'));
     }
 
     /**
-     * A pair whose halves belong to different channels is refused, and the
-     * diagnostic names the spelling the author should have written — the
-     * useful answer when both halves are exact is *which half* is wrong.
+     * The retired `rule#code` spelling is refused **by name**, and the
+     * diagnostic names the channel the author should have written instead.
      *
-     * The alternative this rules out is the one that shipped: the argument
-     * pattern stopped at "#", so the second half was silently dropped and the
-     * directive was judged against the truncated first half.
+     * The alternative this rules out is silence: the argument pattern still
+     * admits "#", so a stale directive parses into a name no producer can have
+     * and would otherwise suppress nothing without saying so.
      */
     #[Test]
-    public function itRejectsAnExplicitPairWhoseHalvesDoNotBelongTogether(): void
+    public function itRejectsTheRetiredChannelPairSpellingAndSaysWhatToWrite(): void
     {
-        $findings = self::runWithSuppression('complexity.cyclomatic#coupling.instability.class');
+        $findings = self::runWithSuppression('coupling.instability#coupling.instability.class');
 
         self::assertCount(1, $findings);
         self::assertSame(
@@ -132,11 +131,11 @@ final class UnusedDirectiveRuleTest extends TestCase
             $findings[0]->code,
         );
         self::assertStringContainsString(
-            'complexity.cyclomatic#coupling.instability.class',
+            'coupling.instability#coupling.instability.class',
             $findings[0]->message,
             'The authored text must round-trip whole; reporting half of it is the defect.',
         );
-        self::assertStringContainsString('coupling.instability#coupling.instability.class', $findings[0]->message);
+        self::assertStringContainsString('Write "coupling.instability.class"', $findings[0]->message);
     }
 
     /**
@@ -270,6 +269,28 @@ final class UnusedDirectiveRuleTest extends TestCase
         );
     }
 
+    /**
+     * A threshold written in the retired `rule#code` spelling is refused **by
+     * name**, with the name to write instead.
+     *
+     * The separator was outside the threshold grammar, so the pattern used to
+     * stop at it and silently retune the left half — a directive doing
+     * something other than what it says, which is worse than either a match or
+     * a refusal. `#` is admitted into the grammar for exactly this refusal.
+     */
+    #[Test]
+    public function itRejectsAThresholdInTheRetiredChannelPairForm(): void
+    {
+        $findings = self::runWithThreshold('coupling.cbo#coupling.cbo.class');
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
+            $findings[0]->code,
+        );
+        self::assertStringContainsString('Write "coupling.cbo.class"', $findings[0]->message);
+    }
+
     #[Test]
     public function itAcceptsAThresholdOnARuleThatDeclaresOverrideSupport(): void
     {
@@ -289,7 +310,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         $universe = self::productionUniverse();
 
         self::assertArrayNotHasKey(
-            'computed.health#health.cohesion',
+            'health.cohesion',
             $universe->staticDeclarations(),
             'If this name ever became a static declaration the case below would stop proving anything.',
         );

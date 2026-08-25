@@ -63,7 +63,7 @@ interface ChannelDeclarationRegistryInterface
      * this map, never against {@see declarationFor()}'s run-time-widened
      * answer.
      *
-     * @return array<string, ChannelDeclaration> keyed by {@see FindingChannel::toKey()}
+     * @return array<string, ChannelDeclaration> keyed by channel name
      */
     public function staticDeclarations(): array;
 }

@@ -92,7 +92,7 @@ final class ProjectScopedChannelProjectionTest extends TestCase
     private function assertEveryDeclaredChannelSurvives(FindingProjectionOptions $options): void
     {
         foreach (self::declaredProjectScopedKeys() as $key) {
-            $channel = FindingChannel::fromKey($key);
+            $channel = new FindingChannel($key);
             $result = $this->createProjector()->project([$this->finding($channel)], [], $options);
 
             self::assertCount(
@@ -136,7 +136,7 @@ final class ProjectScopedChannelProjectionTest extends TestCase
             location: new Location($path, 10),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
-            ruleName: $channel->ruleName,
+            ruleName: $channel->code,
             code: $channel->code,
             message: 'A statement about the project',
             severity: Severity::Error,

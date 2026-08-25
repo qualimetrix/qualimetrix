@@ -22,7 +22,7 @@ use Throwable;
 
 /**
  * The `qmx.yaml` half of what `baseline:explain` prints: the warning boundary
- * each channel is configured with, keyed by {@see FindingChannel::toKey()}.
+ * each channel is configured with, keyed by channel name.
  *
  * **Why it lives here and not in `Baseline`.** `qmx.yaml`'s own architecture
  * section allows the `Baseline` layer to depend on `Core` and nothing else,
@@ -111,7 +111,12 @@ final readonly class BaselineConfiguredThresholds
             }
 
             foreach ($declarations as $channelKey => $declaration) {
-                $threshold = self::thresholdFor($options, FindingChannel::fromKey($channelKey), $declaration);
+                $threshold = self::thresholdFor(
+                    $options,
+                    RuleNameReader::read($ruleClass),
+                    new FindingChannel($channelKey),
+                    $declaration,
+                );
 
                 if ($threshold !== null) {
                     $thresholds[$channelKey] = $threshold;
@@ -140,6 +145,7 @@ final readonly class BaselineConfiguredThresholds
 
     private static function thresholdFor(
         RuleOptionsInterface $options,
+        string $declaringRuleName,
         FindingChannel $channel,
         ChannelDeclaration $declaration,
     ): int|float|null {
@@ -149,7 +155,7 @@ final readonly class BaselineConfiguredThresholds
             return $levelOptions !== null ? self::readProperty($levelOptions, self::GENERIC_PROPERTIES) : null;
         }
 
-        $axis = self::axisOf($channel);
+        $axis = self::axisOf($declaringRuleName, $channel);
 
         if ($axis !== null) {
             $onAxis = self::readProperty($options, [self::axisProperty($axis)]);
@@ -215,20 +221,24 @@ final readonly class BaselineConfiguredThresholds
     }
 
     /**
-     * The part of the finding code that follows the rule name — the level
-     * or the axis the channel reports on, or `null` when the code is the rule
-     * name itself.
+     * The part of the channel name that follows the name of the rule that
+     * declared it — the level or the axis the channel reports on, or `null`
+     * when the channel is named after the rule itself.
+     *
+     * The declaring rule's name is passed in rather than read off the channel:
+     * a channel is one name now, and the name it is decomposed against is the
+     * name of the class whose `channelDeclarations()` this key came from. That
+     * is the same rule whose options are being read here, so the two halves of
+     * the decomposition come from one place instead of from a key that used to
+     * carry both. `ChannelDeclarationFixtureDriftTest` pins the invariant that a
+     * channel name is its declaring rule's name, optionally with a `.suffix`.
      *
      * This is a **structural decomposition of one channel**, not a selector
-     * match: it reads the two halves of a key the channel already declares
-     * (`ChannelDeclarationFixtureDriftTest` pins the invariant that a
-     * `code` is its `ruleName`, optionally with a `.suffix`). It is
-     * therefore untouched by selectors becoming exact — there is no user text
-     * here deciding which channels are addressed.
+     * match: there is no user text here deciding which channels are addressed.
      */
-    private static function axisOf(FindingChannel $channel): ?string
+    private static function axisOf(string $declaringRuleName, FindingChannel $channel): ?string
     {
-        $prefix = $channel->ruleName . '.';
+        $prefix = $declaringRuleName . '.';
 
         if (!str_starts_with($channel->code, $prefix)) {
             return null;

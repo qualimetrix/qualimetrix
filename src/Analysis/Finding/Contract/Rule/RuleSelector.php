@@ -7,19 +7,19 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 
 /**
- * Applies rule filters to producer rules and full finding channels.
+ * Applies rule filters to producer rules and finding channels.
  *
- * A one-part selector is a {@see NameSelector}: an exact name, or `X.*` for
- * its strict descendants. It may address a producer rule, a channel's rule
- * name, or a channel's finding code — selection is the one surface that
- * deliberately reads both halves, because `--disable-rule` has always been
- * asked to mean both "stop running this rule" and "stop reporting this
- * channel".
+ * A selector is a {@see NameSelector}: an exact name, or `X.*` for its strict
+ * descendants. It may address a producer rule or a channel — selection is the
+ * one surface that deliberately reads both vocabularies, because
+ * `--disable-rule` has always been asked to mean both "stop running this rule"
+ * and "stop reporting this channel".
  *
- * A selector in `ruleName#violationCode` form addresses both halves
- * explicitly, and both halves are exact. That form exists precisely to say
- * which half is meant, so a wildcard inside it would multiply the surface
- * without adding anything a one-part group selector cannot say.
+ * There is no second, channel-specific grammar any more. A channel is named by
+ * one name, so the `ruleName#violationCode` form has nothing left to
+ * disambiguate; it is refused where a selector is validated
+ * ({@see \Qualimetrix\Infrastructure\Console\RuleInputValidator}) rather than
+ * quietly matching nothing here.
  *
  * Two behaviours are gone, and neither was ever written down as a decision:
  * a bare prefix silently standing for a group, and the reverse match by which
@@ -151,7 +151,7 @@ final class RuleSelector
     private function matchesProducerName(array $selectors, string $producerRuleName): bool
     {
         foreach ($selectors as $selector) {
-            if (!ChannelSelector::looksLikePair($selector) && self::matchesName($selector, $producerRuleName)) {
+            if (self::matchesName($selector, $producerRuleName)) {
                 return true;
             }
         }
@@ -164,7 +164,7 @@ final class RuleSelector
         string $producerRuleName,
         RuleChannelRegistryInterface $channels,
     ): bool {
-        if (!ChannelSelector::looksLikePair($selector) && self::matchesName($selector, $producerRuleName)) {
+        if (self::matchesName($selector, $producerRuleName)) {
             return true;
         }
 
@@ -186,7 +186,7 @@ final class RuleSelector
         FindingChannel $channel,
     ): bool {
         foreach ($selectors as $selector) {
-            if (!ChannelSelector::looksLikePair($selector) && self::matchesName($selector, $producerRuleName)) {
+            if (self::matchesName($selector, $producerRuleName)) {
                 return true;
             }
 
@@ -200,12 +200,7 @@ final class RuleSelector
 
     private function matchesChannel(string $selector, FindingChannel $channel): bool
     {
-        if (!ChannelSelector::looksLikePair($selector)) {
-            return self::matchesName($selector, $channel->ruleName)
-                || self::matchesName($selector, $channel->code);
-        }
-
-        return ChannelSelector::tryParse($selector)?->exactChannel()?->equals($channel) === true;
+        return self::matchesName($selector, $channel->code);
     }
 
     /**

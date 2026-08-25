@@ -51,7 +51,7 @@ final class BaselineTest extends TestCase
 
         self::assertFalse($baseline->hasIdentity(new BaselineIdentity(
             'callable:App\Foo::other',
-            new FindingChannel('code-smell.goto', 'code-smell.goto'),
+            new FindingChannel('code-smell.goto'),
         )));
     }
 
@@ -168,7 +168,7 @@ final class BaselineTest extends TestCase
         string $code = 'code-smell.goto',
     ): BaselineEntry {
         return new BaselineEntry(
-            new BaselineIdentity($symbolKey, new FindingChannel($ruleName, $code)),
+            new BaselineIdentity($symbolKey, new FindingChannel($code)),
             null,
             1,
         );

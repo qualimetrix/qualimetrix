@@ -167,7 +167,7 @@ final class BaselineEntryValuesTest extends TestCase
         $values = BaselineEntryValues::decode(['magnitudes' => [\INF]]);
         $identity = new BaselineIdentity(
             'project:',
-            new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
+            new FindingChannel('complexity.cyclomatic.callable'),
         );
 
         $this->expectException(InvalidArgumentException::class);

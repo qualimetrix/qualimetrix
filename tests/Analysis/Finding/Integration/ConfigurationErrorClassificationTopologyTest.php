@@ -186,8 +186,8 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
         /** @var array<string, ChannelDeclaration> $declarations */
         $declarations = $container->getDefinition(ChannelUniverse::class)->getArgument('$staticDeclarations');
 
-        self::assertFalse($declarations['stamp.rule#stamp.rule']->isConfigurationError());
-        self::assertTrue($declarations['stamp.rule#stamp.diagnostic']->isConfigurationError());
+        self::assertFalse($declarations['stamp.rule']->isConfigurationError());
+        self::assertTrue($declarations['stamp.diagnostic']->isConfigurationError());
     }
 
     /**
@@ -361,7 +361,7 @@ final class StampRule implements RuleInterface
     /** @return array<string, ChannelDeclaration> */
     public static function channelDeclarations(): array
     {
-        return ['stamp.rule#stamp.rule' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+        return ['stamp.rule' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
     }
 }
 
@@ -398,7 +398,7 @@ final class StampValidator implements ConfigurationValidatorInterface
 
     public static function channelDeclarations(): array
     {
-        return ['stamp.rule#stamp.diagnostic' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+        return ['stamp.diagnostic' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
     }
 
     public function validate(AnalysisContext $context): array
@@ -421,7 +421,7 @@ final class OrphanedValidator implements ConfigurationValidatorInterface
 
     public static function channelDeclarations(): array
     {
-        return ['stamp.nobody#stamp.nobody' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+        return ['stamp.nobody' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
     }
 
     public function validate(AnalysisContext $context): array
@@ -444,7 +444,7 @@ final class PoachingValidator implements ConfigurationValidatorInterface
 
     public static function channelDeclarations(): array
     {
-        return ['stamp.rule#stamp.rule' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+        return ['stamp.rule' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
     }
 
     public function validate(AnalysisContext $context): array
@@ -467,7 +467,7 @@ final class TrespassingValidator implements ConfigurationValidatorInterface
 
     public static function channelDeclarations(): array
     {
-        return ['stamp.rule#stamp.diagnostic' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+        return ['stamp.diagnostic' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
     }
 
     public function validate(AnalysisContext $context): array

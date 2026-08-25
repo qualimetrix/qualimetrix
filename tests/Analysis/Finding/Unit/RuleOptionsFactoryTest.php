@@ -1036,12 +1036,12 @@ final class RuleOptionsFactoryTest extends TestCase
 
         self::assertTrue($this->registry->isNamespaceChannelExcluded(
             'computed.health',
-            new FindingChannel('computed.health', 'health.cohesion'),
+            new FindingChannel('health.cohesion'),
             'App\\Metrics',
         ));
         self::assertTrue($this->registry->isNamespaceChannelExcluded(
             'computed.health',
-            new FindingChannel('computed.health', 'health.typing'),
+            new FindingChannel('health.typing'),
             'App\\Generated',
         ));
     }

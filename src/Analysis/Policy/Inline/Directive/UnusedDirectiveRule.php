@@ -94,7 +94,7 @@ final class UnusedDirectiveRule extends AbstractRule
     {
         $name = InlineDirectivePolicy::UNUSED_DIRECTIVE_NAME;
 
-        return [$name . '#' . $name => ChannelDeclaration::occurrence(SymbolLevel::File)];
+        return [$name => ChannelDeclaration::occurrence(SymbolLevel::File)];
     }
 
     /**

@@ -11,7 +11,9 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -76,7 +78,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(BaselineExplainCommand::class)]
 final class BaselineRunBeforeLoadTest extends TestCase
 {
-    private const string CHANNEL = 'computed.health#computed.debtRatio';
+    private const string CHANNEL = 'computed.debtRatio';
     private const string METRIC = 'computed.debtRatio';
     private const string SOURCE_FILE = 'src/OrderService.php';
 
@@ -227,7 +229,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $command = new BaselineExplainCommand(
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(),
+            new BoundaryExplanationService(self::producerEdge()),
             new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsFactory(new RuleOptionsRegistry())),
         );
 
@@ -301,7 +303,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
                 generated: (new FixedClock())->now(),
                 scope: ['src'],
                 entries: [new BaselineEntry(
-                    new BaselineIdentity(self::subject()->toCanonical(), FindingChannel::fromKey(self::CHANNEL)),
+                    new BaselineIdentity(self::subject()->toCanonical(), new FindingChannel(self::CHANNEL)),
                     [25.0],
                     1,
                 )],
@@ -318,14 +320,14 @@ final class BaselineRunBeforeLoadTest extends TestCase
 
     private static function finding(): Finding
     {
-        $channel = FindingChannel::fromKey(self::CHANNEL);
+        $channel = new FindingChannel(self::CHANNEL);
         $path = RelativePath::fromString(self::SOURCE_FILE);
 
         return new Finding(
             location: new Location($path, 1),
             subject: self::subject(),
             symbolPath: self::symbol(),
-            ruleName: $channel->ruleName,
+            ruleName: $channel->code,
             code: $channel->code,
             message: 'finding',
             severity: Severity::Warning,
@@ -377,5 +379,26 @@ final class BaselineRunBeforeLoadTest extends TestCase
                 return [];
             }
         };
+    }
+
+    /**
+     * A channel-to-producer edge for the fixtures below: the channel's own name,
+     * minus a trailing level segment where it carries one. That is exactly the
+     * relation the retired left half of a channel key encoded, so a fixture
+     * naming `complexity.cyclomatic.callable` still resolves to the rule a
+     * `@qmx-threshold complexity.cyclomatic` addresses.
+     */
+    private static function producerEdge(): ChannelIdentityInterface
+    {
+        $identity = self::createStub(ChannelIdentityInterface::class);
+        $identity->method('producerOf')->willReturnCallback(static function (string $code): string {
+            $lastDot = strrpos($code, '.');
+
+            return $lastDot !== false && SymbolLevel::tryFrom(substr($code, $lastDot + 1)) !== null
+                ? substr($code, 0, $lastDot)
+                : $code;
+        });
+
+        return $identity;
     }
 }

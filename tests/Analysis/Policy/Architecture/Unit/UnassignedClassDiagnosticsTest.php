@@ -270,7 +270,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
     #[Test]
     public function itDeclaresTheChannelAsAMagnitudeThatIsNotAConfigurationError(): void
     {
-        $declaration = UnassignedClassRule::channelDeclarations()['architecture.unassigned-class#architecture.unassigned-class']
+        $declaration = UnassignedClassRule::channelDeclarations()['architecture.unassigned-class']
             ?? null;
 
         self::assertNotNull($declaration);

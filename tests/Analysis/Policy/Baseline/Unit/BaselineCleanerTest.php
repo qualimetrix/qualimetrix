@@ -152,7 +152,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itRemovesOneOfTwoEntriesDifferingOnlyByEdge(): void
     {
-        $channel = new FindingChannel('architecture.layer-violation', 'architecture.layer-violation');
+        $channel = new FindingChannel('architecture.layer-violation');
         $toConnection = new BaselineEntry(
             new BaselineIdentity('class:App\Web\Controller', $channel, null, new BaselineEdge('class:App\Db\Connection', DependencyType::New_)),
             null,
@@ -301,7 +301,7 @@ final class BaselineCleanerTest extends TestCase
 
     private static function gotoChannel(): FindingChannel
     {
-        return new FindingChannel('code-smell.goto', 'code-smell.goto');
+        return new FindingChannel('code-smell.goto');
     }
 
     private static function inertEntry(string $symbolKey, InertEntryReason $reason, ?EntrySelector $selector = null): InertBaselineEntry

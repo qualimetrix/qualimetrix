@@ -28,7 +28,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * - `@qmx-ignore-file [channel] [-- reason]`
  *
  * The argument names a **channel**: an exact `code`, the explicit
- * `ruleName#violationCode` pair, or `X.*` for the strict descendants of `X`.
+ * or `X.*` for the strict descendants of `X`.
  * The two "everything here" spellings survive unchanged: `*` on the symbol
  * and next-line forms, and an omitted argument on the file form. Both mean
  * "no rule filter", not "a wildcard selector"; see {@see SuppressionTarget}.

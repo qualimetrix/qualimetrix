@@ -51,17 +51,21 @@ final class SelfTest
         // What the tracked declaration of THIS step is, asserted rather than
         // assumed: loading already refuses chains, duplicate sources and
         // duplicate targets, so what is left to check is that the step's own
-        // shape survived the load. Ш4c (ADR 0031 — shape moves off the channel
-        // onto the producer) publishes nothing, so its tracked maps are the
-        // identity and derive no split — Ш4b's own assertion here (a
-        // `design.type-coverage` split) belonged to that step's tracked state
-        // and is retired with it, not carried forward.
+        // shape survived the load. Ш5b collapses `rule#code` into the code, so
+        // every tracked row is a whole-key row onto a single name, and none of
+        // them derives a split: a collapse is many rows onto many distinct
+        // targets, never one source onto several.
         $maps = RenameMaps::load($this->candidateRoot . '/finding-gate/maps');
-        $this->assert($maps->isIdentity(), 'this step declares no renames, so the tracked maps are the identity');
+        $this->assert(!$maps->isIdentity(), 'this step declares renames, so the tracked maps are not the identity');
         $this->same(
             [],
             array_keys($maps->splits()),
-            'the tracked rows derive no split — this step\'s maps are empty',
+            'the tracked rows derive no split — a collapse declares one target per source',
+        );
+        $this->same(
+            'code-smell.eval',
+            $maps->forward('code-smell.eval#code-smell.eval'),
+            'a tracked row collapses the pair into the channel name',
         );
 
         // One row, and it is the whole key: the halves are expanded from it, so
@@ -477,22 +481,28 @@ final class SelfTest
             ]));
         };
 
-        $write(['a.rule#a.code@class', 'a.rule#a.code@callable']);
+        $write(['a.code@class', 'a.code@callable']);
         $this->assert(
             !self::throws(static fn(): mixed => CaseDefinition::load($directory)),
             'a case claiming one channel at two levels loads: that is the pair the level segment leaves behind',
         );
 
-        $write(['a.rule#a.code@class', 'a.rule#a.code@class']);
+        $write(['a.code@class', 'a.code@class']);
         $this->assert(
             self::throws(static fn(): mixed => CaseDefinition::load($directory)),
             'a case claiming one pair twice is refused: the observed set could never satisfy it',
         );
 
-        $write(['a.rule#a.code']);
+        $write(['a.code']);
         $this->assert(
             self::throws(static fn(): mixed => CaseDefinition::load($directory)),
-            'and a case still claiming a bare channel name is refused when it loads',
+            'and a case claiming a channel with no level is refused when it loads',
+        );
+
+        $write(['a.rule#a.code@class']);
+        $this->assert(
+            self::throws(static fn(): mixed => CaseDefinition::load($directory)),
+            'a claim still written as a "rule#code" pair is refused: no channel carries that name',
         );
 
         Fs::removeRecursively($root);

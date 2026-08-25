@@ -222,7 +222,7 @@ final class RuleExecution implements RuleExecutionInterface
         $findings = $validator->validate($context);
 
         foreach ($findings as $finding) {
-            $key = $finding->channel()->toKey();
+            $key = $finding->channel()->code;
 
             if (isset($declared[$key])) {
                 continue;

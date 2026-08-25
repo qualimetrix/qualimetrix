@@ -1145,6 +1145,20 @@ final class Gate
      */
     private function checkStaleMaps(): void
     {
+        // Staleness means "declared, but there was nothing to translate". When a
+        // tree run failed, there was nothing to translate for *any* row of that
+        // case, so every one of them reads as stale and the real failure is
+        // buried under its own consequences — measured: the control that makes
+        // one reference run fail reported nine of them. The run is already red,
+        // so this adds noise rather than signal, and a row that is genuinely
+        // idle will still be caught by every run that does not fail.
+        if (array_intersect(
+            [FailureClass::RUN_FAILED, FailureClass::REFERENCE_INPUT_UNTRANSLATED],
+            $this->report->failureClasses(),
+        ) !== []) {
+            return;
+        }
+
         foreach ($this->maps->staleRows() as $row) {
             $this->report->fail(
                 FailureClass::MAP_STALE,

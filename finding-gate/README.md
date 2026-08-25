@@ -242,8 +242,8 @@ already compares, so the hash carries no datum the comparison loses. That is
 checked against the tracked tuple on every run, and a composition reaching
 outside it fails as `tuple-field-drift`.
 
-Measured on 2026-08-24, over the whole corpus, with `FindingChannel::toKey()`
-publishing the code alone (the Ш5b collapse): before substituting, twelve GitLab
+Measured on 2026-08-24, over the whole corpus, with a channel published as its
+own name alone (the Ш5b collapse): before substituting, twelve GitLab
 surfaces differed by 376 lines of nothing but hashes — a declaration made of hex,
 which is the blob `delta-too-large` exists to refuse; after substituting, every
 surface of every case agreed under the declared channel rows alone.

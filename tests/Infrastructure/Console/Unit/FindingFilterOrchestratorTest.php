@@ -233,8 +233,8 @@ final class FindingFilterOrchestratorTest extends TestCase
         $stillFiring = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
         $baselinePath = $this->writeBaseline([
             $stillFiring->subject->toCanonical() => [
-                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
-                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
+                ['channel' => $stillFiring->channel()->code, 'magnitudes' => [25]],
+                ['channel' => 'code-smell.goto', 'count' => 2],
             ],
         ]);
 
@@ -265,8 +265,8 @@ final class FindingFilterOrchestratorTest extends TestCase
         $stillFiring = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
         $baselinePath = $this->writeBaseline([
             $stillFiring->subject->toCanonical() => [
-                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
-                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
+                ['channel' => $stillFiring->channel()->code, 'magnitudes' => [25]],
+                ['channel' => 'code-smell.goto', 'count' => 2],
             ],
         ]);
 
@@ -300,8 +300,8 @@ final class FindingFilterOrchestratorTest extends TestCase
         $stillFiring = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
         $baselinePath = $this->writeBaseline([
             $stillFiring->subject->toCanonical() => [
-                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
-                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
+                ['channel' => $stillFiring->channel()->code, 'magnitudes' => [25]],
+                ['channel' => 'code-smell.goto', 'count' => 2],
             ],
         ]);
 

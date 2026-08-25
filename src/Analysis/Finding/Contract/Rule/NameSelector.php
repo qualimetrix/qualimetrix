@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Stringable;
 
 /**
@@ -109,13 +110,22 @@ final readonly class NameSelector implements Stringable
 
     /**
      * A name is the literal text of one rule or channel: non-empty, free of
-     * the wildcard token, and with no empty dot-separated segment (which
-     * would make `a.` and `a..b` addressable spellings of names no producer
-     * can ever have).
+     * the wildcard token and of the retired channel-pair separator, and with no
+     * empty dot-separated segment (which would make `a.` and `a..b` addressable
+     * spellings of names no producer can ever have).
      */
     private static function isWellFormedName(string $name): bool
     {
         if ($name === '' || str_contains($name, '*')) {
+            return false;
+        }
+
+        // The retired `rule#code` spelling of a channel would otherwise be a
+        // well-formed name that nothing can ever carry, i.e. a selector that
+        // silently addresses nothing. It is refused here so that every surface
+        // validating a selector reaches its "not a selector" branch, where
+        // FindingChannel::retiredPairAdvice() says what to write instead.
+        if (FindingChannel::isRetiredPairSpelling($name)) {
             return false;
         }
 

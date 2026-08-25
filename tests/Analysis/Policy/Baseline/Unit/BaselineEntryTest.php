@@ -98,7 +98,7 @@ final class BaselineEntryTest extends TestCase
     {
         $identity = new BaselineIdentity(
             'class:App\Web\Controller',
-            new FindingChannel('architecture.layer-violation', 'architecture.layer-violation'),
+            new FindingChannel('architecture.layer-violation'),
             null,
             new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
         );
@@ -121,7 +121,7 @@ final class BaselineEntryTest extends TestCase
         $entry = new BaselineEntry(self::identity(), null, 3);
 
         self::assertSame(
-            ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 3],
+            ['channel' => 'code-smell.goto', 'count' => 3],
             $entry->toArray(),
         );
     }
@@ -132,7 +132,7 @@ final class BaselineEntryTest extends TestCase
         $entry = new BaselineEntry(self::identity(), [40.0, 65.0], 2);
 
         self::assertSame(
-            ['channel' => 'code-smell.goto#code-smell.goto', 'magnitudes' => [40.0, 65.0]],
+            ['channel' => 'code-smell.goto', 'magnitudes' => [40.0, 65.0]],
             $entry->toArray(),
         );
         self::assertArrayNotHasKey('count', $entry->toArray());
@@ -164,7 +164,7 @@ final class BaselineEntryTest extends TestCase
     {
         return new BaselineIdentity(
             'callable:App\Foo::bar',
-            new FindingChannel('code-smell.goto', 'code-smell.goto'),
+            new FindingChannel('code-smell.goto'),
         );
     }
 }

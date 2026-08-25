@@ -32,10 +32,9 @@ Finding owns the channel name space as a contract and not as an implementation.
 `RuleChannelRegistryInterface` (what a producer emits) and
 `ChannelIdentityInterface` (which names exist, what they belong to, what `X.*`
 expands to) — and Infrastructure supplies the single instance behind them.
-Matching stays string comparison in `NameSelector` — and, for the surfaces that
-address a whole channel rather than a bare code, in `ChannelSelector`, which adds
-the exact `ruleName#violationCode` pair. Neither consults the universe; the
-universe validates and resolves. `ChannelDeclaration` carries `direction`
+Matching stays string comparison in `NameSelector`, the one selector grammar
+there is now that a channel is one name; it does not consult the universe, and
+the universe validates and resolves. `ChannelDeclaration` carries `direction`
 (present only for a `magnitude` producer's channel), `levels`, and
 `configurationError`.
 

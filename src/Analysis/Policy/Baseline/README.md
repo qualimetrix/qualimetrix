@@ -351,7 +351,7 @@ reported absent rather than guessed.
 
 ## Entry Identity
 
-An entry is about an **identity**: the symbol, the channel (`ruleName#violationCode`),
+An entry is about an **identity**: the symbol, the channel (its own name),
 and — when the finding carries one — the dependency edge (target plus reference kind).
 The set of findings in a run sharing one identity is that entry's **group**.
 

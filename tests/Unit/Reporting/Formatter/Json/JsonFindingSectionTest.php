@@ -107,7 +107,7 @@ final class JsonFindingSectionTest extends TestCase
 
         self::assertSame($subject->toCanonical(), $result[0]['subject']);
         self::assertSame($logical->toString(), $result[0]['symbol']);
-        self::assertSame('architecture.layer-violation#architecture.layer-violation', $result[0]['channel']);
+        self::assertSame('architecture.layer-violation', $result[0]['channel']);
         self::assertSame(OccurrenceKey::semantic('dependency', ['name' => 'target'])->value, $result[0]['occurrence']);
         self::assertSame([
             'type' => DependencyType::New_->value,

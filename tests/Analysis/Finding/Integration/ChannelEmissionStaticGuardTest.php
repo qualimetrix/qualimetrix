@@ -153,8 +153,8 @@ final class ChannelEmissionStaticGuardTest extends TestCase
 
                 foreach ($ruleNames as $ruleName) {
                     foreach ($codes as $code) {
-                        $channel = new FindingChannel($ruleName, $code);
-                        $key = $channel->toKey();
+                        $channel = new FindingChannel($code);
+                        $key = $channel->code;
 
                         if ($registry->declarationFor($channel) === null && !\in_array($key, $excludedKeys, true)) {
                             $failures[] = \sprintf(

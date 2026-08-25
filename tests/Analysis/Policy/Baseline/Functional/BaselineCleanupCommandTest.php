@@ -46,8 +46,8 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(BaselineCleanupCommand::class)]
 final class BaselineCleanupCommandTest extends TestCase
 {
-    private const string EDGE_CHANNEL = 'architecture.layer-violation#architecture.layer-violation';
-    private const string OCCURRENCE_CHANNEL = 'code-smell.goto#code-smell.goto';
+    private const string EDGE_CHANNEL = 'architecture.layer-violation';
+    private const string OCCURRENCE_CHANNEL = 'code-smell.goto';
 
     private string $tempDir;
     private string $baselinePath;
@@ -245,7 +245,7 @@ final class BaselineCleanupCommandTest extends TestCase
             MetricSubject::declaration(
                 DeclarationPath::of($symbol, RelativePath::fromString('src/Web/Controller.php'), DeclarationOrdinal::fromRank(0)),
             )->toCanonical(),
-            FindingChannel::fromKey(self::EDGE_CHANNEL),
+            new FindingChannel(self::EDGE_CHANNEL),
             edge: new BaselineEdge($target, DependencyType::New_),
         );
     }
@@ -258,7 +258,7 @@ final class BaselineCleanupCommandTest extends TestCase
         return new BaselineEntry(
             new BaselineIdentity(
                 MetricSubject::aggregate($symbol)->toCanonical(),
-                FindingChannel::fromKey(self::OCCURRENCE_CHANNEL),
+                new FindingChannel(self::OCCURRENCE_CHANNEL),
             ),
             null,
             3,

@@ -332,7 +332,7 @@ final class ContainerFactoryTest extends TestCase
         $channels = $container->get(ChannelDeclarationRegistryInterface::class);
         self::assertInstanceOf(ChannelDeclarationRegistryInterface::class, $channels);
         self::assertArrayHasKey(
-            CodeDuplicationRule::NAME . '#' . CodeDuplicationRule::NAME,
+            CodeDuplicationRule::NAME,
             $channels->staticDeclarations(),
         );
 

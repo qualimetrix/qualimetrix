@@ -18,18 +18,11 @@ use Throwable;
  *
  * A rule declares its channels via an optional static
  * `channelDeclarations(): array<string, ChannelDeclaration>` method, keyed by
- * the **full channel key** — exactly {@see FindingChannel::toKey()}'s
- * `ruleName#violationCode` form, the same form ADR 0017
- * plan stores in the file. There is deliberately no shorthand that accepts a
- * bare `code` paired with the declaring rule's own name: a rule may
- * emit a channel under a `ruleName` other than its own (`LayerViolationRule`
- * does this for all but one of its channels — see {@see FindingChannel}'s
- * docblock), and a shorthand that assumed otherwise would make exactly those
- * channels undeclarable. One form means one behaviour; the cost is that the
- * ~40 simple rules whose emitted `ruleName` always equals their own `NAME`
- * repeat it in every key, which is cheap and self-documenting (e.g.
- * `self::NAME . '#' . self::NAME`, or
- * `(new FindingChannel(self::NAME, self::NAME))->toKey()`).
+ * the **channel's own name** — the same string the baseline file stores and a
+ * finding publishes as its `code`. A rule may declare a channel whose name is
+ * nothing like its own (`LayerViolationRule` does this for all but one of its
+ * channels — see {@see FindingChannel}'s docblock), so the key is the name
+ * outright and never derived from the declaring class.
  *
  * This is deliberately not part of `RuleInterface` and not an attribute: an
  * interface method would force every rule — including the majority that
@@ -54,7 +47,7 @@ final class ChannelDeclarationReader
      * @throws LogicException when the class cannot be loaded, when it
      *                        declares the method with a shape this reader
      *                        cannot trust (non-static, non-public, a key
-     *                        that does not parse as a channel, or a value
+     *                        that is not a valid channel name, or a value
      *                        that is not a {@see ChannelDeclaration}), or
      *                        when invoking the method itself throws — e.g.
      *                        an abstract base's `channelDeclarations()`
@@ -63,8 +56,7 @@ final class ChannelDeclarationReader
      *                        exit from this method is a `LogicException`;
      *                        no other exception type escapes it.
      *
-     * @return array<string, ChannelDeclaration> keyed by
-     *                                           {@see FindingChannel::toKey()}
+     * @return array<string, ChannelDeclaration> keyed by channel name
      */
     public static function read(string $ruleClass): array
     {
@@ -151,17 +143,17 @@ final class ChannelDeclarationReader
         foreach ($declared as $key => $declaration) {
             if (!\is_string($key) || $key === '') {
                 throw new LogicException(\sprintf(
-                    '%s::%s() must be keyed by a non-empty channel key string ("ruleName#violationCode").',
+                    '%s::%s() must be keyed by a non-empty channel name.',
                     $ruleClass,
                     self::METHOD,
                 ));
             }
 
             try {
-                FindingChannel::fromKey($key);
+                new FindingChannel($key);
             } catch (InvalidArgumentException $exception) {
                 throw new LogicException(\sprintf(
-                    '%s::%s() key "%s" is not a valid channel key: %s',
+                    '%s::%s() key "%s" is not a valid channel name: %s',
                     $ruleClass,
                     self::METHOD,
                     $key,

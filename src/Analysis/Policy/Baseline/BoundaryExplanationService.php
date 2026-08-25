@@ -8,6 +8,7 @@ use InvalidArgumentException;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
@@ -39,6 +40,17 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final readonly class BoundaryExplanationService
 {
     /**
+     * @param ChannelIdentityInterface $channels the registry edge from a channel to the rule
+     *                                           that produces it — a channel is one name now,
+     *                                           and `@qmx-threshold` addresses the producing
+     *                                           rule, so the two are joined here rather than
+     *                                           read off two halves of a key
+     */
+    public function __construct(
+        private ChannelIdentityInterface $channels,
+    ) {}
+
+    /**
      * @param list<Finding> $measuredFindings the measured set (ADR 0017) this run produced —
      *                                        both the "currently compared" magnitudes of
      *                                        ADR 0017 and the first exact typed subject for
@@ -49,8 +61,7 @@ final readonly class BoundaryExplanationService
      *                                                                         straight off
      *                                                                         `AnalysisResult::$thresholdOverrides`
      * @param array<string, int|float> $configuredThresholds the rule's `qmx.yaml`-configured
-     *                                                       boundary, keyed by
-     *                                                       {@see FindingChannel::toKey()};
+     *                                                       boundary, keyed by channel name;
      *                                                       a channel absent from this map
      *                                                       reports {@see EffectiveBoundary::$configuredThreshold}
      *                                                       as `null`
@@ -74,7 +85,7 @@ final readonly class BoundaryExplanationService
 
         $boundaries = [];
         foreach ($identities as $identity) {
-            $boundaries[] = self::explainIdentity(
+            $boundaries[] = $this->explainIdentity(
                 $identity,
                 $baseline,
                 $measuredFindings,
@@ -187,7 +198,7 @@ final readonly class BoundaryExplanationService
      * @param array<string, int|float> $configuredThresholds
      * @param ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} $repositoryRecord
      */
-    private static function explainIdentity(
+    private function explainIdentity(
         BaselineIdentity $identity,
         ?Baseline $baseline,
         array $measuredFindings,
@@ -196,11 +207,11 @@ final readonly class BoundaryExplanationService
         ?array $repositoryRecord,
     ): EffectiveBoundary {
         $baselineSource = self::baselineSourceFor($identity, $baseline, $measuredFindings);
-        $configuredThreshold = $configuredThresholds[$identity->channel->toKey()] ?? null;
+        $configuredThreshold = $configuredThresholds[$identity->channel->code] ?? null;
 
         $subject = self::subjectForIdentity($identity, $measuredFindings, $repositoryRecord);
         $annotation = $subject !== null
-            ? self::annotationFor($identity->channel, $thresholdOverridesByFile, $subject)
+            ? $this->annotationFor($identity->channel, $thresholdOverridesByFile, $subject)
             : null;
 
         return new EffectiveBoundary($identity, $baselineSource, $configuredThreshold, $annotation);
@@ -310,17 +321,23 @@ final readonly class BoundaryExplanationService
     /**
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile
      */
-    private static function annotationFor(
+    private function annotationFor(
         FindingChannel $channel,
         array $thresholdOverridesByFile,
         MetricSubject $subject,
     ): ?ThresholdOverride {
+        $producer = $this->channels->producerOf($channel->code);
+
+        if ($producer === null) {
+            return null;
+        }
+
         $matches = [];
         foreach ($thresholdOverridesByFile as $overrides) {
             $matches = [...$matches, ...array_values(array_filter(
                 $overrides,
                 static fn(ThresholdOverride $override): bool => $override->subject->toCanonical() === $subject->toCanonical()
-                    && $override->matches($channel->ruleName),
+                    && $override->matches($producer),
             ))];
         }
 

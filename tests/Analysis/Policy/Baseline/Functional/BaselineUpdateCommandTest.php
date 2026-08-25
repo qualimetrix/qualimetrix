@@ -44,8 +44,8 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(BaselineUpdateCommand::class)]
 final class BaselineUpdateCommandTest extends TestCase
 {
-    private const string LOWER_CHANNEL = 'maintainability.index#maintainability.index.class';
-    private const string HIGHER_CHANNEL = 'duplication.code-duplication#duplication.code-duplication';
+    private const string LOWER_CHANNEL = 'maintainability.index.class';
+    private const string HIGHER_CHANNEL = 'duplication.code-duplication';
 
     private string $tempDir;
     private string $baselinePath;
@@ -251,13 +251,13 @@ final class BaselineUpdateCommandTest extends TestCase
             MetricSubject::declaration(
                 DeclarationPath::of($symbol, RelativePath::fromString('src/Legacy.php'), DeclarationOrdinal::fromRank(0)),
             )->toCanonical(),
-            FindingChannel::fromKey($channelKey),
+            new FindingChannel($channelKey),
         );
     }
 
     private static function finding(string $channelKey, float $magnitude): Finding
     {
-        $channel = FindingChannel::fromKey($channelKey);
+        $channel = new FindingChannel($channelKey);
         $path = RelativePath::fromString('src/Legacy.php');
         $symbol = SymbolPath::forClass('App', 'Legacy');
 
@@ -265,7 +265,7 @@ final class BaselineUpdateCommandTest extends TestCase
             location: new Location($path, 7),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
-            ruleName: $channel->ruleName,
+            ruleName: $channel->code,
             code: $channel->code,
             message: 'finding',
             severity: Severity::Warning,

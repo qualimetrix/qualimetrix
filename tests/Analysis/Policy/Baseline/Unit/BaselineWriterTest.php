@@ -78,7 +78,7 @@ final class BaselineWriterTest extends TestCase
 
         self::assertArrayHasKey('callable:App\Foo::bar', $data['entries']);
         self::assertSame(
-            'complexity.cyclomatic#complexity.cyclomatic.callable',
+            'complexity.cyclomatic.callable',
             $data['entries']['callable:App\Foo::bar'][0]['channel'],
         );
     }
@@ -122,14 +122,14 @@ final class BaselineWriterTest extends TestCase
 
         $duplication = $reloaded->findByIdentity(new BaselineIdentity(
             'file:src/Legacy/dup.php',
-            new FindingChannel('duplication.code-duplication', 'duplication.code-duplication'),
+            new FindingChannel('duplication.code-duplication'),
         ));
         self::assertNotNull($duplication);
         self::assertSame([40.0, 100.0], $duplication->magnitudes);
 
         $edge = $reloaded->findByIdentity(new BaselineIdentity(
             'class:App\Web\Controller',
-            new FindingChannel('architecture.layer-violation', 'architecture.layer-violation'),
+            new FindingChannel('architecture.layer-violation'),
             null,
             new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
         ));
@@ -412,8 +412,8 @@ final class BaselineWriterTest extends TestCase
     #[Test]
     public function itWritesAsManyEntriesUnderASymbolAsItRead(): void
     {
-        $undeclared = ['channel' => 'nobody.declares#this.channel', 'count' => 1];
-        $duplicated = 'complexity.cyclomatic#complexity.cyclomatic.callable';
+        $undeclared = ['channel' => 'this.channel', 'count' => 1];
+        $duplicated = 'complexity.cyclomatic.callable';
 
         $path = $this->tempDir . '/hand-written.json';
         file_put_contents($path, json_encode([
@@ -461,7 +461,7 @@ final class BaselineWriterTest extends TestCase
     #[Test]
     public function itRefusesToWriteTwoIdentitiesThatCollapseOnRelativization(): void
     {
-        $channel = new FindingChannel('code-smell.goto', 'code-smell.goto');
+        $channel = new FindingChannel('code-smell.goto');
 
         $baseline = new Baseline(
             generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
@@ -494,9 +494,9 @@ final class BaselineWriterTest extends TestCase
             'scope' => ['src'],
             'entries' => [
                 'class:App\Foo' => [
-                    ['channel' => 'zzz.undeclared#zzz.undeclared', 'count' => 1],
-                    ['channel' => 'aaa.undeclared#aaa.undeclared', 'count' => 1],
-                    ['channel' => 'maintainability.index#maintainability.index.class', 'magnitudes' => [42]],
+                    ['channel' => 'zzz.undeclared', 'count' => 1],
+                    ['channel' => 'aaa.undeclared', 'count' => 1],
+                    ['channel' => 'maintainability.index.class', 'magnitudes' => [42]],
                 ],
             ],
         ], \JSON_THROW_ON_ERROR));
@@ -508,9 +508,9 @@ final class BaselineWriterTest extends TestCase
 
         self::assertSame(
             [
-                'aaa.undeclared#aaa.undeclared',
-                'maintainability.index#maintainability.index.class',
-                'zzz.undeclared#zzz.undeclared',
+                'aaa.undeclared',
+                'maintainability.index.class',
+                'zzz.undeclared',
             ],
             array_column($rewritten['entries']['class:App\Foo'], 'channel'),
         );
@@ -546,7 +546,7 @@ final class BaselineWriterTest extends TestCase
     #[Test]
     public function itPreservesInertEntriesVerbatim(): void
     {
-        $raw = ['channel' => 'nobody.declares#this.channel', 'count' => 4];
+        $raw = ['channel' => 'this.channel', 'count' => 4];
 
         $path = $this->write(new Baseline(
             generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
@@ -554,7 +554,7 @@ final class BaselineWriterTest extends TestCase
             entries: [],
             inertEntries: [new InertBaselineEntry(
                 subjectKey: 'callable:App\Foo::bar',
-                channelKey: 'nobody.declares#this.channel',
+                channelKey: 'this.channel',
                 identity: null,
                 selector: EntrySelector::forKey('x'),
                 reason: InertEntryReason::UndeclaredChannel,
@@ -578,7 +578,7 @@ final class BaselineWriterTest extends TestCase
             entries: [new BaselineEntry(
                 new BaselineIdentity(
                     'file:' . $this->tempDir . '/src/Foo.php',
-                    new FindingChannel('code-smell.goto', 'code-smell.goto'),
+                    new FindingChannel('code-smell.goto'),
                 ),
                 null,
                 1,
@@ -695,7 +695,7 @@ final class BaselineWriterTest extends TestCase
             new BaselineEntry(
                 new BaselineIdentity(
                     'callable:App\Foo::bar',
-                    new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
+                    new FindingChannel('complexity.cyclomatic.callable'),
                 ),
                 [25],
                 1,
@@ -703,7 +703,7 @@ final class BaselineWriterTest extends TestCase
             new BaselineEntry(
                 new BaselineIdentity(
                     'file:src/Legacy/dup.php',
-                    new FindingChannel('duplication.code-duplication', 'duplication.code-duplication'),
+                    new FindingChannel('duplication.code-duplication'),
                 ),
                 [100, 40],
                 2,
@@ -711,7 +711,7 @@ final class BaselineWriterTest extends TestCase
             new BaselineEntry(
                 new BaselineIdentity(
                     'class:App\Web\Controller',
-                    new FindingChannel('architecture.layer-violation', 'architecture.layer-violation'),
+                    new FindingChannel('architecture.layer-violation'),
                     null,
                     new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
                 ),
@@ -735,7 +735,7 @@ final class BaselineWriterTest extends TestCase
             entries: [new BaselineEntry(
                 new BaselineIdentity(
                     'callable:App\Foo::bar',
-                    new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
+                    new FindingChannel('complexity.cyclomatic.callable'),
                 ),
                 [0.1, 1.2345678, 40.0, 1234.5678912],
                 4,

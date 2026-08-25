@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
@@ -40,10 +39,9 @@ final readonly class DirectiveAddressability
     }
 
     /**
-     * A suppression addresses a **channel**. Four spellings are legitimate:
-     * the absence of a rule filter, an exact channel name, the explicit
-     * `ruleName#violationCode` pair, and `X.*` for the channels below `X`.
-     * Everything else names nothing.
+     * A suppression addresses a **channel**. Three spellings are legitimate:
+     * the absence of a rule filter, an exact channel name, and `X.*` for the
+     * channels below `X`. Everything else names nothing.
      */
     public function problemWithSuppression(Suppression $suppression): ?string
     {
@@ -63,15 +61,20 @@ final readonly class DirectiveAddressability
             );
         }
 
-        if ($target->looksLikeChannelPair()) {
-            return $this->problemWithChannelPair($target->exactChannel(), $raw);
+        if ($target->usesRetiredChannelPair()) {
+            return \sprintf(
+                'Suppression "%s" is written in the retired channel-pair form. %s A reason goes after "%s".',
+                $raw,
+                FindingChannel::retiredPairAdvice($raw),
+                Suppression::REASON_SEPARATOR,
+            );
         }
 
-        $selector = NameSelector::tryParse($raw);
+        $selector = $target->selector();
         if ($selector === null) {
             return \sprintf(
                 'Suppression "%s" is not a channel selector. Write an exact channel name,'
-                . ' "ruleName#violationCode", or "X.*" for the channels below X.'
+                . ' or "X.*" for the channels below X.'
                 . ' A reason goes after "%s".',
                 $raw,
                 Suppression::REASON_SEPARATOR,
@@ -91,33 +94,6 @@ final readonly class DirectiveAddressability
     }
 
     /**
-     * The explicit pair resolves against the channel universe directly: both
-     * halves are exact, so there is nothing to expand.
-     */
-    private function problemWithChannelPair(?FindingChannel $pair, string $raw): ?string
-    {
-        if ($pair === null) {
-            return \sprintf(
-                'Suppression "%s" is not a channel selector. The "ruleName#violationCode" form takes exactly'
-                . ' two exact halves and no "*" in either of them.',
-                $raw,
-            );
-        }
-
-        foreach ($this->identity->channels() as $channel) {
-            if ($channel->equals($pair)) {
-                return null;
-            }
-        }
-
-        return \sprintf(
-            'Suppression "%s" addresses no channel. %s',
-            $raw,
-            $this->hints->forChannelPair($pair->ruleName, $pair->code),
-        );
-    }
-
-    /**
      * A threshold addresses a **rule**, by its exact name. The name resolving
      * to nothing is one mistake; it resolving to a rule that cannot be
      * retuned is a different one, so the caller is told which.
@@ -125,6 +101,15 @@ final readonly class DirectiveAddressability
     public function problemWithThreshold(ThresholdOverride $override): ?DirectiveRejection
     {
         $name = $override->rulePattern;
+
+        if (FindingChannel::isRetiredPairSpelling($name)) {
+            return new DirectiveRejection(false, \sprintf(
+                '@qmx-threshold "%s" is written in the retired channel-pair form. %s A threshold addresses the'
+                . ' producing rule by its own name.',
+                $name,
+                FindingChannel::retiredPairAdvice($name),
+            ));
+        }
 
         if (!$this->identity->hasRule($name)) {
             return new DirectiveRejection(

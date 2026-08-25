@@ -415,7 +415,9 @@ final class ChannelPublicationConsistencyTest extends TestCase
                 continue;
             }
 
-            $configErrors[] = substr($line, 0, (int) strpos($line, '#'));
+            $fields = preg_split('/\s+/', $line);
+            self::assertNotFalse($fields, \sprintf('Malformed fixture line: "%s".', $line));
+            $configErrors[] = $fields[0];
         }
 
         $layerPolicy = [];
@@ -428,8 +430,8 @@ final class ChannelPublicationConsistencyTest extends TestCase
             ...array_keys(LayerDeclarationValidator::channelDeclarations()),
         ];
 
-        foreach ($layerPolicyKeys as $channelKey) {
-            $layerPolicy[] = substr($channelKey, 0, (int) strpos($channelKey, '#'));
+        foreach ($layerPolicyKeys as $channelName) {
+            $layerPolicy[] = $channelName;
         }
 
         $annotationChannels = [];
@@ -439,8 +441,8 @@ final class ChannelPublicationConsistencyTest extends TestCase
             ...array_keys(InlineDirectiveValidator::channelDeclarations()),
         ];
 
-        foreach ($annotationKeys as $channelKey) {
-            $annotationChannels[] = substr($channelKey, 0, (int) strpos($channelKey, '#'));
+        foreach ($annotationKeys as $channelName) {
+            $annotationChannels[] = $channelName;
         }
 
         $sets = [

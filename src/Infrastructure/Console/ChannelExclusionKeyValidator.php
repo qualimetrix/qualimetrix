@@ -6,18 +6,17 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 
 /**
  * Whether one `exclude_namespace_channels` key addresses a channel the rule it
  * is written under produces.
  *
- * The key reads the full selector grammar, the explicit
- * `ruleName#violationCode` pair included. This option is the one whose *key is
- * a channel*, so refusing it the full spelling of a channel would have made it
- * the odd surface out in a grammar whose point is being one grammar.
+ * The key reads the one selector grammar there is: an exact channel name, or
+ * `X.*` for the channels below it. The retired `ruleName#violationCode`
+ * spelling is refused by name rather than left to fall through as an unknown
+ * name — this option is the one whose *key is a channel*, so it is where a
+ * stale spelling is most likely to have been written down.
  *
  * Addressing a channel is necessary and not sufficient. The map is applied to
  * the findings of the rule it is configured under, so a key naming a channel
@@ -33,21 +32,17 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
  */
 final readonly class ChannelExclusionKeyValidator
 {
-    private ChannelExclusionKeyHints $hints;
-
     public function __construct(
         private ChannelUniverseInterface $channels,
-    ) {
-        $this->hints = new ChannelExclusionKeyHints($channels);
-    }
+    ) {}
 
     /** @throws InvalidArgumentException when the key can never exclude anything */
     public function assertAddressesAProducedChannel(string $ruleName, string $key): void
     {
-        $parsed = ChannelSelector::tryParse($key)
-            ?? throw new InvalidArgumentException($this->hints->notASelector($ruleName, $key));
+        $parsed = NameSelector::tryParse($key)
+            ?? throw new InvalidArgumentException(ChannelExclusionKeyHints::notASelector($ruleName, $key));
 
-        $addressed = $this->addressedChannels($parsed);
+        $addressed = $this->channels->expand($parsed);
         $produced = $this->channels->channelsProducedBy($ruleName);
 
         foreach ($addressed as $channel) {
@@ -58,25 +53,6 @@ final readonly class ChannelExclusionKeyValidator
             }
         }
 
-        throw new InvalidArgumentException($this->hints->refusal($ruleName, $parsed, $addressed, $produced));
-    }
-
-    /**
-     * What the key addresses in the whole universe, before asking who produces
-     * it — so the refusal can tell "no such channel" from "not this rule's".
-     *
-     * @return list<FindingChannel>
-     */
-    private function addressedChannels(ChannelSelector $parsed): array
-    {
-        $target = $parsed->target();
-        if ($target instanceof NameSelector) {
-            return $this->channels->expand($target);
-        }
-
-        return array_values(array_filter(
-            $this->channels->channels(),
-            static fn(FindingChannel $channel): bool => $channel->equals($target),
-        ));
+        throw new InvalidArgumentException(ChannelExclusionKeyHints::refusal($ruleName, $parsed, $addressed, $produced));
     }
 }

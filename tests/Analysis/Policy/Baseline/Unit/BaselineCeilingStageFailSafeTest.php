@@ -223,7 +223,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
                 BaselineIdentity::forFinding($finding),
                 $reason,
                 'the file said something this build does not read',
-                ['channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable'],
+                ['channel' => 'complexity.cyclomatic.callable'],
             ),
         ]));
 
@@ -280,7 +280,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     {
         $finding = FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')));
         $declarations = StubChannelDeclarationRegistry::withDefaults();
-        $declarations->declare('code-smell.goto#code-smell.goto', ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable));
+        $declarations->declare('code-smell.goto', ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable));
 
         // The stored entry was captured while the channel was `occurrence`.
         $stage = self::stageOver(self::baselineOf([self::occurrenceEntry($finding, 1)]), $declarations);

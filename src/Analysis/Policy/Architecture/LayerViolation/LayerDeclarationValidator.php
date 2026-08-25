@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 
@@ -91,7 +90,7 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
 
         $declarations = [];
         foreach ($keys as $name) {
-            $declarations[(new FindingChannel($name, $name))->toKey()] = ChannelDeclaration::occurrence(SymbolLevel::Project);
+            $declarations[$name] = ChannelDeclaration::occurrence(SymbolLevel::Project);
         }
 
         return $declarations;

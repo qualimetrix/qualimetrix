@@ -38,13 +38,12 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * estimate ({@see RuleRemediationMinutesReader}), and its declared
  * {@see ChannelShape} ({@see RuleShapeReader}).
  *
- * `$minutesByRule` additionally inherits an entry for every channel's own
- * `ruleName` half, not
- * only the producer's — the architecture and annotation diagnostics are
- * emitted under their own identity (`architecture.coverage`,
- * `annotation.unused-directive`, …), distinct from the rule class's own
- * `NAME`, and there is no separate class for
- * {@see RuleRemediationMinutesReader} to read a constant off. Mirrors
+ * `$minutesByRule` additionally inherits an entry for every declared channel
+ * name, not only for the producers' — the architecture and annotation
+ * diagnostics are emitted under their own identity (`architecture.coverage`,
+ * `annotation.unused-directive`, …), which is published as the finding's `rule`
+ * and is distinct from the rule class's own `NAME`, and there is no separate
+ * class for {@see RuleRemediationMinutesReader} to read a constant off. Mirrors
  * {@see RuleRegistryCompilerPass}, which walks the same `qmx.rule`-tagged
  * services and likewise hands the container a finished map.
  *
@@ -54,7 +53,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * be absent from the universe as a rule.
  *
  * Each rule's `channelDeclarations()` already returns full channel keys
- * (`ruleName#violationCode`, per {@see ChannelDeclarationReader}), so this pass
+ * (the channel's own name, per {@see ChannelDeclarationReader}), so this pass
  * does no pairing of its own. It enforces two integrity properties instead:
  * no key declared twice, and no finding code declared by two different
  * producers. The second is what makes the reverse lookup
@@ -256,22 +255,23 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 
             $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shapeByRule[$producerRuleName], $declaration);
 
-            $channel = FindingChannel::fromKey($key);
+            $channel = new FindingChannel($key);
             $code = $channel->code;
 
-            // A channel's own ruleName half does not always equal its producer's
+            // A finding's published `rule` does not always equal its producer's
             // NAME: the architecture and annotation diagnostics are emitted under
-            // their own identity (e.g. "architecture.coverage") by a producer whose
-            // own name is different ("architecture.layer-violation"). Every such
-            // identity a Finding can carry must resolve to a remediation
-            // estimate, so it inherits the declaring rule's minutes here rather
-            // than needing its own constant on a class that does not exist.
-            $minutesByRule[$channel->ruleName] ??= $minutesByRule[$producerRuleName];
+            // their own identity (e.g. "architecture.coverage") by a producer
+            // whose own name is different ("architecture.layer-violation"), and
+            // that identity is the channel's name. Every name a Finding can carry
+            // as its `rule` must resolve to a remediation estimate, so the
+            // channel name inherits the declaring rule's minutes here rather than
+            // needing its own constant on a class that does not exist.
+            $minutesByRule[$code] ??= $minutesByRule[$producerRuleName];
 
             if (isset($producerByCode[$code])) {
                 throw new LogicException(\sprintf(
-                    'Violation code "%s" is declared by two producers ("%s" and "%s"). A code names exactly one'
-                    . ' channel, so that a diagnostic can answer which rule produces it.',
+                    'Channel "%s" is declared by two producers ("%s" and "%s"). A channel name is its identity,'
+                    . ' so that a diagnostic can answer which rule produces it.',
                     $code,
                     $producerByCode[$code],
                     $producerRuleName,
@@ -364,8 +364,8 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
             $this->assertUnclaimed($key, $class, $declarations, $producerByCode, $producerRuleName);
             $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shape, $declaration);
 
-            $channel = FindingChannel::fromKey($key);
-            $minutesByRule[$channel->ruleName] ??= $minutesByRule[$producerRuleName];
+            $channel = new FindingChannel($key);
+            $minutesByRule[$channel->code] ??= $minutesByRule[$producerRuleName];
             $producerByCode[$channel->code] = $producerRuleName;
             $declarations[$key] = $declaration->asConfigurationError();
             $channelKeysByProducer[$producerRuleName][] = $key;
@@ -423,12 +423,12 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
             ));
         }
 
-        $code = FindingChannel::fromKey($key)->code;
+        $code = new FindingChannel($key)->code;
 
         if (isset($producerByCode[$code])) {
             throw new LogicException(\sprintf(
-                'Violation code "%s" is declared by two producers ("%s" and "%s"). A code names exactly one'
-                . ' channel, so that a diagnostic can answer which rule produces it.',
+                'Channel "%s" is declared by two producers ("%s" and "%s"). A channel name is its identity,'
+                . ' so that a diagnostic can answer which rule produces it.',
                 $code,
                 $producerByCode[$code],
                 $producerRuleName,

@@ -130,8 +130,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public static function channelDeclarations(): array
     {
         return [
-            FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
-            FindingChannel::leveled(self::NAME, SymbolLevel::Namespace_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
+            FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            FindingChannel::leveled(self::NAME, SymbolLevel::Namespace_)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
         ];
     }
 

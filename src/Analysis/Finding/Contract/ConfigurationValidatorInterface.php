@@ -51,9 +51,9 @@ interface ConfigurationValidatorInterface
     public static function shape(): ChannelShape;
 
     /**
-     * The diagnostic channels this validator emits, keyed by
-     * {@see FindingChannel::toKey()}. Every one of them is registered as a
-     * configuration error by that fact alone.
+     * The diagnostic channels this validator emits, keyed by channel name.
+     * Every one of them is registered as a configuration error by that fact
+     * alone.
      *
      * @return array<string, ChannelDeclaration>
      */

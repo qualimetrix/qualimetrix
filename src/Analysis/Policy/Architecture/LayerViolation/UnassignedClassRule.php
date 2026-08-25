@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -99,7 +98,7 @@ final class UnassignedClassRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new FindingChannel(self::NAME, self::NAME))->toKey() => UnassignedClassSummary::unassignedClassChannel(),
+            self::NAME => UnassignedClassSummary::unassignedClassChannel(),
         ];
     }
 

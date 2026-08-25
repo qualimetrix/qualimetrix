@@ -13,7 +13,7 @@
         "--rule-opt=coupling.distance:max_distance_error=2"
     ],
     "channels": [
-        "code-smell.eval#code-smell.eval@callable"
+        "code-smell.eval@callable"
     ],
     "explainSubjects": [
         "declaration:callable:Corpus\\ExcludedPath\\Reported::run@src/Reported.php"

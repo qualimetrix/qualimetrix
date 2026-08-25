@@ -12,7 +12,7 @@
         "--rule-opt=coupling.distance:max_distance_error=2"
     ],
     "channels": [
-        "duplication.code-duplication#duplication.code-duplication@project"
+        "duplication.code-duplication@project"
     ],
     "explainSubjects": [
         "project:"

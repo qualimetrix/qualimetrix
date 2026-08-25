@@ -376,11 +376,11 @@ final class BaselineUpdaterTest extends TestCase
 
     private static function duplicationChannel(): FindingChannel
     {
-        return new FindingChannel('duplication.code-duplication', 'duplication.code-duplication');
+        return new FindingChannel('duplication.code-duplication');
     }
 
     private static function gotoChannel(): FindingChannel
     {
-        return new FindingChannel('code-smell.goto', 'code-smell.goto');
+        return new FindingChannel('code-smell.goto');
     }
 }

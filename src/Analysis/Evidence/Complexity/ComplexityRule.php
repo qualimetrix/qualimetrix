@@ -150,8 +150,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     public static function channelDeclarations(): array
     {
         return [
-            FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
-            FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
+            FindingChannel::leveled(self::NAME, SymbolLevel::Class_)->code => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
         ];
     }
 

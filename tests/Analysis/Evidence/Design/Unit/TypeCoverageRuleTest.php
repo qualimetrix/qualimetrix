@@ -125,7 +125,7 @@ final class TypeCoverageRuleTest extends TestCase
         );
         self::assertSame(TypeCoverageOptions::class, $ruleClass::getOptionsClass());
         self::assertSame(
-            [$dimension['name'] . '#' . $dimension['name']],
+            [$dimension['name']],
             array_keys($ruleClass::channelDeclarations()),
         );
     }

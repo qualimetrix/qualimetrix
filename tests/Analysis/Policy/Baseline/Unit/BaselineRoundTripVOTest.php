@@ -102,14 +102,14 @@ final class BaselineRoundTripVOTest extends TestCase
             scope: ['src'],
             entries: [
                 new BaselineEntry(
-                    new BaselineIdentity($symbol, new FindingChannel('code-smell.goto', 'code-smell.goto')),
+                    new BaselineIdentity($symbol, new FindingChannel('code-smell.goto')),
                     null,
                     1,
                 ),
                 new BaselineEntry(
                     new BaselineIdentity(
                         $symbol,
-                        new FindingChannel('duplication.code-duplication', 'duplication.code-duplication'),
+                        new FindingChannel('duplication.code-duplication'),
                     ),
                     [12.0],
                     1,
@@ -151,7 +151,7 @@ final class BaselineRoundTripVOTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'callable:App\Foo::bar',
-                        new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
+                        new FindingChannel('complexity.cyclomatic.callable'),
                     ),
                     [25],
                     1,
@@ -159,7 +159,7 @@ final class BaselineRoundTripVOTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'callable:App\Foo::bar',
-                        new FindingChannel('complexity.cognitive', 'complexity.cognitive.callable'),
+                        new FindingChannel('complexity.cognitive.callable'),
                     ),
                     [18],
                     1,
@@ -167,7 +167,7 @@ final class BaselineRoundTripVOTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'class:App\Legacy\Report',
-                        new FindingChannel('code-smell.goto', 'code-smell.goto'),
+                        new FindingChannel('code-smell.goto'),
                     ),
                     null,
                     2,
@@ -181,7 +181,7 @@ final class BaselineRoundTripVOTest extends TestCase
         $entries = [];
         foreach ($symbolKeys as $symbolKey) {
             $entries[] = new BaselineEntry(
-                new BaselineIdentity($symbolKey, new FindingChannel('code-smell.goto', 'code-smell.goto')),
+                new BaselineIdentity($symbolKey, new FindingChannel('code-smell.goto')),
                 null,
                 1,
             );

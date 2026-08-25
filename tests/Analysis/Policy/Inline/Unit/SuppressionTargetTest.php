@@ -13,13 +13,6 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 final class SuppressionTargetTest extends TestCase
 {
     /**
-     * The rule half of a channel, for the spellings that do not read it: a
-     * one-part selector filters on the finding code alone, so any producer
-     * name proves the same thing.
-     */
-    private const string ANY_RULE = 'any.producer';
-
-    /**
      * `@qmx-ignore *` and a bare `@qmx-ignore-file` are documented, tested
      * spellings that must keep working after the wildcard stops being a
      * selector — because they never selected anything: they declare that the
@@ -31,8 +24,8 @@ final class SuppressionTargetTest extends TestCase
         $target = SuppressionTarget::fromAnnotation(SuppressionTarget::NO_RULE_FILTER);
 
         self::assertTrue($target->appliesToEveryChannel());
-        self::assertTrue($target->matches(self::ANY_RULE, 'complexity.cyclomatic.callable'));
-        self::assertTrue($target->matches(self::ANY_RULE, 'anything.at.all'));
+        self::assertTrue($target->matches('complexity.cyclomatic.callable'));
+        self::assertTrue($target->matches('anything.at.all'));
         self::assertSame('*', (string) $target);
     }
 
@@ -42,9 +35,9 @@ final class SuppressionTargetTest extends TestCase
         $target = SuppressionTarget::fromAnnotation('coupling.instability.class');
 
         self::assertFalse($target->appliesToEveryChannel());
-        self::assertTrue($target->matches(self::ANY_RULE, 'coupling.instability.class'));
-        self::assertFalse($target->matches(self::ANY_RULE, 'coupling.instability'));
-        self::assertFalse($target->matches(self::ANY_RULE, 'coupling.instability.namespace'));
+        self::assertTrue($target->matches('coupling.instability.class'));
+        self::assertFalse($target->matches('coupling.instability'));
+        self::assertFalse($target->matches('coupling.instability.namespace'));
     }
 
     #[Test]
@@ -52,42 +45,31 @@ final class SuppressionTargetTest extends TestCase
     {
         $target = SuppressionTarget::fromAnnotation('coupling.instability.*');
 
-        self::assertTrue($target->matches(self::ANY_RULE, 'coupling.instability.class'));
-        self::assertTrue($target->matches(self::ANY_RULE, 'coupling.instability.namespace'));
-        self::assertFalse($target->matches(self::ANY_RULE, 'coupling.instability'));
+        self::assertTrue($target->matches('coupling.instability.class'));
+        self::assertTrue($target->matches('coupling.instability.namespace'));
+        self::assertFalse($target->matches('coupling.instability'));
     }
 
+    /**
+     * The retired pair spelling filters nothing, and says so as a state of its
+     * own rather than as "did not parse": the difference is what the author is
+     * told about it.
+     */
     #[Test]
-    public function itFiltersOnAnExplicitChannelPair(): void
+    public function itFiltersNothingAndNamesTheRetiredPairSpelling(): void
     {
         $target = SuppressionTarget::fromAnnotation('coupling.instability#coupling.instability.class');
 
+        self::assertTrue($target->usesRetiredChannelPair());
+        self::assertNull($target->selector());
         self::assertFalse($target->appliesToEveryChannel());
-        self::assertTrue($target->matches('coupling.instability', 'coupling.instability.class'));
-        // The rule half is exact too: the same code under another rule is a
-        // different channel, which is the whole reason this form exists.
-        self::assertFalse($target->matches('coupling.cbo', 'coupling.instability.class'));
-        self::assertFalse($target->matches('coupling.instability', 'coupling.instability.namespace'));
-    }
-
-    /** No group is admitted inside the pair — the one-part form already says that. */
-    #[Test]
-    public function itRefusesAWildcardInsideTheExplicitPair(): void
-    {
-        $target = SuppressionTarget::fromAnnotation('coupling.instability#coupling.instability.*');
-
-        self::assertNull($target->exactChannel());
-        self::assertTrue($target->looksLikeChannelPair());
-        self::assertFalse($target->matches('coupling.instability', 'coupling.instability.class'));
+        self::assertFalse($target->matches('coupling.instability.class'));
     }
 
     #[Test]
-    public function itRefusesAPairWithMoreThanTwoHalves(): void
+    public function itDoesNotMistakeAPlainNameForTheRetiredPairSpelling(): void
     {
-        $target = SuppressionTarget::fromAnnotation('a#b#c');
-
-        self::assertNull($target->exactChannel());
-        self::assertFalse($target->matches('a', 'b#c'));
+        self::assertFalse(SuppressionTarget::fromAnnotation('coupling.instability.class')->usesRetiredChannelPair());
     }
 
     #[Test]
@@ -96,7 +78,7 @@ final class SuppressionTargetTest extends TestCase
         $target = SuppressionTarget::fromAnnotation('coupling.*.class');
 
         self::assertFalse($target->appliesToEveryChannel());
-        self::assertFalse($target->matches(self::ANY_RULE, 'coupling.instability.class'));
+        self::assertFalse($target->matches('coupling.instability.class'));
         self::assertSame('coupling.*.class', (string) $target);
     }
 }

@@ -461,7 +461,6 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader'
-        - 'Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface'

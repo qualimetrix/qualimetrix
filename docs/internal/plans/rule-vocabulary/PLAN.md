@@ -2692,6 +2692,20 @@ test-inventory. Лечится не тремя точками, а требова
   ниже: папка `Design/TypeCoverage/` уводит каталог с 24 файлов на 17.
 - `coupling.distance` у `ns:…Evidence\Measurement`, `0.502369` (Ш4b). Про рёбра,
   а не про размер; папкой не закрывается, снимается отдельно.
+- **`BoundaryExplanationService`: `complexity.wmc` 52 -> 54 и
+  `coupling.instability.class` 0.888889 -> 0.894737 (Ш5b).** Единственное
+  ослабление ратчета за Ш5b, и оно от **правильной** зависимости: сервис получил
+  `ChannelIdentityInterface`, потому что раньше сопоставлял поле `rule` с отставной
+  левой половиной ключа. Альтернатива — восстанавливать половину, отрезая
+  последний сегмент, — отвергнута и отвергнута верно: она заставила бы
+  `@qmx-threshold design` совпадать с `design.noc`. Отменяет **расщепление самого
+  класса по названному шву**: 11 методов и 376 строк делают две работы —
+  разрешение субъекта (`repositoryIndex`, `recordFor`, `repositoryRecord`,
+  `subjectForIdentity`, `relevantIdentities`) и построение объяснения (`explain`,
+  `explainIdentity`, `statusFor`, `baselineSourceFor`, `annotationFor`). Это тот же
+  шов, по которому Ш3 разрезал `OutsideLayerSummary`, и там он сработал. Сдвиг
+  измерен семантически: ни одна запись не добавлена и не исчезла, других величин не
+  сдвинулось.
 - `coupling.instability.namespace` у `ns:…Infrastructure\DependencyInjection\CompilerPass`,
   `0.903226` (Ш4c). Узел структурно исходящий — компилятор-пасс есть адаптер
   композиции, и малый Ca у него по определению. Отменяет **названный в докблоке

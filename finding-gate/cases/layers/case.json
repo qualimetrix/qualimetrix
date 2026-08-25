@@ -13,13 +13,13 @@
         "--rule-opt=architecture.unassigned-class:mode=error"
     ],
     "channels": [
-        "architecture.coverage#architecture.coverage@project",
-        "architecture.empty-template#architecture.empty-template@project",
-        "architecture.layer-violation#architecture.layer-violation@class",
-        "architecture.pending-layer-matched#architecture.pending-layer-matched@project",
-        "architecture.potential-shadow#architecture.potential-shadow@project",
-        "architecture.unassigned-class#architecture.unassigned-class@project",
-        "architecture.unreachable-layer#architecture.unreachable-layer@project"
+        "architecture.coverage@project",
+        "architecture.empty-template@project",
+        "architecture.layer-violation@class",
+        "architecture.pending-layer-matched@project",
+        "architecture.potential-shadow@project",
+        "architecture.unassigned-class@project",
+        "architecture.unreachable-layer@project"
     ],
     "explainSubjects": [
         "project:",

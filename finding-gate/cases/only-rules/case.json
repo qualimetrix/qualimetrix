@@ -7,7 +7,7 @@
     ],
     "config": "qmx.yaml",
     "channels": [
-        "code-smell.eval#code-smell.eval@callable"
+        "code-smell.eval@callable"
     ],
     "explainSubjects": [
         "declaration:callable:Corpus\\OnlyRules\\Statements::run@src/Statements.php"

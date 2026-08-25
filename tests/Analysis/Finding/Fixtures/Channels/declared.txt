@@ -2,7 +2,7 @@
 # emission point against the channel declaration registry.
 #
 # Format (one channel per line, sorted, blank lines and '#' comments ignored):
-#   <ruleName>#<violationCode> <direction> <levels> [<acceptability>]
+#   <channel> <direction> <levels> [<acceptability>]
 #     direction     := higher | lower | -   ('-' means the channel carries
 #                      none, i.e. its producer's declared ChannelShape is
 #                      `occurrence`; see ADR 0031 -- shape itself is a
@@ -53,60 +53,60 @@
 # Do not add a line here without reading that channel's own emission point
 # first — never by analogy with a neighbouring line.
 
-annotation.invalid-threshold#annotation.invalid-threshold - file config-error
-annotation.unresolved-directive#annotation.unresolved-directive - file config-error
-annotation.unsupported-threshold#annotation.unsupported-threshold - file config-error
-annotation.unused-directive#annotation.unused-directive - file
-architecture.circular-dependency#architecture.circular-dependency higher project
-architecture.coverage#architecture.coverage - project config-error
-architecture.empty-template#architecture.empty-template - project config-error
-architecture.layer-violation#architecture.layer-violation - class
-architecture.pending-layer-matched#architecture.pending-layer-matched - project config-error
-architecture.potential-shadow#architecture.potential-shadow - project config-error
-architecture.unassigned-class#architecture.unassigned-class higher project
-architecture.unreachable-layer#architecture.unreachable-layer - project config-error
-code-smell.boolean-argument#code-smell.boolean-argument - callable
-code-smell.constructor-overinjection#code-smell.constructor-overinjection higher callable
-code-smell.count-in-loop#code-smell.count-in-loop - callable
-code-smell.debug-code#code-smell.debug-code - callable
-code-smell.empty-catch#code-smell.empty-catch - callable
-code-smell.error-suppression#code-smell.error-suppression - callable
-code-smell.eval#code-smell.eval - callable
-code-smell.exit#code-smell.exit - callable
-code-smell.goto#code-smell.goto - callable
-code-smell.identical-subexpression#code-smell.identical-subexpression - callable
-code-smell.long-parameter-list#code-smell.long-parameter-list higher callable
-code-smell.superglobals#code-smell.superglobals - callable
-code-smell.unreachable-code#code-smell.unreachable-code higher callable
-code-smell.unused-private#code-smell.unused-private higher class
-cohesion.lcom#cohesion.lcom higher class
-complexity.cognitive#complexity.cognitive.callable higher callable
-complexity.cognitive#complexity.cognitive.class higher class
-complexity.cyclomatic#complexity.cyclomatic.callable higher callable
-complexity.cyclomatic#complexity.cyclomatic.class higher class
-complexity.npath#complexity.npath.callable higher callable
-complexity.npath#complexity.npath.class higher class
-complexity.wmc#complexity.wmc higher class
-coupling.cbo#coupling.cbo.class higher class
-coupling.cbo#coupling.cbo.namespace higher namespace
-coupling.class-rank#coupling.class-rank - class
-coupling.distance#coupling.distance higher namespace
-coupling.instability#coupling.instability.class higher class
-coupling.instability#coupling.instability.namespace higher namespace
-design.data-class#design.data-class lower class
-design.god-class#design.god-class higher class
-design.inheritance#design.inheritance higher class
-design.noc#design.noc higher class
-design.param-type-coverage#design.param-type-coverage lower class
-design.property-type-coverage#design.property-type-coverage lower class
-design.return-type-coverage#design.return-type-coverage lower class
-duplication.code-duplication#duplication.code-duplication higher project
-maintainability.index#maintainability.index lower callable
-security.command-injection#security.command-injection - callable
-security.hardcoded-credentials#security.hardcoded-credentials - class
-security.sensitive-parameter#security.sensitive-parameter - callable
-security.sql-injection#security.sql-injection - callable
-security.xss#security.xss - callable
-size.class-count#size.class-count higher namespace
-size.method-count#size.method-count higher class
-size.property-count#size.property-count higher class
+annotation.invalid-threshold - file config-error
+annotation.unresolved-directive - file config-error
+annotation.unsupported-threshold - file config-error
+annotation.unused-directive - file
+architecture.circular-dependency higher project
+architecture.coverage - project config-error
+architecture.empty-template - project config-error
+architecture.layer-violation - class
+architecture.pending-layer-matched - project config-error
+architecture.potential-shadow - project config-error
+architecture.unassigned-class higher project
+architecture.unreachable-layer - project config-error
+code-smell.boolean-argument - callable
+code-smell.constructor-overinjection higher callable
+code-smell.count-in-loop - callable
+code-smell.debug-code - callable
+code-smell.empty-catch - callable
+code-smell.error-suppression - callable
+code-smell.eval - callable
+code-smell.exit - callable
+code-smell.goto - callable
+code-smell.identical-subexpression - callable
+code-smell.long-parameter-list higher callable
+code-smell.superglobals - callable
+code-smell.unreachable-code higher callable
+code-smell.unused-private higher class
+cohesion.lcom higher class
+complexity.cognitive.callable higher callable
+complexity.cognitive.class higher class
+complexity.cyclomatic.callable higher callable
+complexity.cyclomatic.class higher class
+complexity.npath.callable higher callable
+complexity.npath.class higher class
+complexity.wmc higher class
+coupling.cbo.class higher class
+coupling.cbo.namespace higher namespace
+coupling.class-rank - class
+coupling.distance higher namespace
+coupling.instability.class higher class
+coupling.instability.namespace higher namespace
+design.data-class lower class
+design.god-class higher class
+design.inheritance higher class
+design.noc higher class
+design.param-type-coverage lower class
+design.property-type-coverage lower class
+design.return-type-coverage lower class
+duplication.code-duplication higher project
+maintainability.index lower callable
+security.command-injection - callable
+security.hardcoded-credentials - class
+security.sensitive-parameter - callable
+security.sql-injection - callable
+security.xss - callable
+size.class-count higher namespace
+size.method-count higher class
+size.property-count higher class

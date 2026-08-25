@@ -22,7 +22,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
 final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistryInterface
 {
     /**
-     * @param array<string, ChannelDeclaration> $declarations keyed by {@see FindingChannel::toKey()}
+     * @param array<string, ChannelDeclaration> $declarations keyed by channel name
      * @param ?ChannelDeclaration $default answer for a channel absent from $declarations — for a test
      *                                     that needs every channel to resolve to the same shape rather
      *                                     than stating each one, see {@see alwaysHigherMagnitude()}
@@ -40,11 +40,11 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
     public static function withDefaults(): self
     {
         return new self([
-            'complexity.cyclomatic#complexity.cyclomatic.callable' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
-            'duplication.code-duplication#duplication.code-duplication' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
-            'maintainability.index#maintainability.index.class' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
-            'code-smell.goto#code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::Callable),
-            'architecture.layer-violation#architecture.layer-violation' => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+            'complexity.cyclomatic.callable' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
+            'duplication.code-duplication' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
+            'maintainability.index.class' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
+            'code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            'architecture.layer-violation' => ChannelDeclaration::occurrence(SymbolLevel::Class_),
         ]);
     }
 
@@ -68,7 +68,7 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
 
     public function declarationFor(FindingChannel $channel): ?ChannelDeclaration
     {
-        return $this->declarations[$channel->toKey()] ?? $this->default;
+        return $this->declarations[$channel->code] ?? $this->default;
     }
 
     public function staticDeclarations(): array

@@ -103,7 +103,7 @@ final class Controls
     {
         return Control::red(
             'rename-no-map',
-            'a channel renamed in product code with finding-gate/maps/channels.tsv left empty',
+            'a channel renamed in product code with no finding-gate/maps/channels.tsv row naming it',
             self::lcomChannelMutation(),
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity')],
             [
@@ -202,6 +202,15 @@ final class Controls
             [
                 new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus'),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:smells'),
+            ],
+            [
+                // Since the step declares a row per channel, removing the only
+                // fixture that fires one makes that row translate nothing — a
+                // real staleness, not noise, so it is tolerated at the row
+                // rather than suppressed. Pinned to the row: a different row
+                // going idle would be a side effect this mutation does not
+                // explain.
+                new Expectation(FailureClass::MAP_STALE, 'code-smell.unreachable-code'),
             ],
         );
     }
@@ -444,9 +453,9 @@ final class Controls
                     // stops short of it: a control coupled to the level
                     // vocabulary would go stale every time that vocabulary
                     // moves, which is exactly what Ш5 does to it. Matching the
-                    // pair's channel half keeps "exactly one occurrence" sharp
-                    // without asserting anything about levels.
-                    '"cohesion.lcom#cohesion.lcom' => '"cohesion.lcom4#cohesion.lcom4',
+                    // channel name up to the level separator keeps "exactly one
+                    // occurrence" sharp without asserting anything about levels.
+                    '"cohesion.lcom@' => '"cohesion.lcom4@',
                 ],
                 'the case addresses the new name',
             ))->and(Mutation::edit(
@@ -489,7 +498,7 @@ final class Controls
     {
         return Control::red(
             'fingerprint-no-map',
-            'the fingerprinted identity moves with finding-gate/maps/channels.tsv left empty',
+            'the fingerprinted identity moves with no finding-gate/maps/channels.tsv row naming it',
             self::lcomChannelMutation(),
             [
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity|format:gitlab'),
@@ -571,34 +580,51 @@ final class Controls
             Mutation::edit(
                 'src/Analysis/Evidence/Complexity/ComplexityRule.php',
                 [
-                    'FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->toKey()'
-                        => "(new FindingChannel(self::NAME, 'complexity.cyclomatic.callable2'))->toKey()",
-                    'FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->code'
-                        => "'complexity.cyclomatic.callable2'",
+                    // Two spellings, each made unique by its context rather than
+                    // by relaxing edit()'s exactly-one rule: that rule is the
+                    // guard that catches a moved product, and this control has
+                    // already been caught by it once.
+                    'FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->code => ChannelDeclaration::magnitude'
+                        => "'complexity.cyclomatic.callable2' => ChannelDeclaration::magnitude",
+                    'code: FindingChannel::leveled(self::NAME, SymbolLevel::Callable)->code,'
+                        => "code: 'complexity.cyclomatic.callable2',",
                 ],
                 'the callable-level channel of complexity.cyclomatic is renamed',
             )->and(Mutation::edit(
                 'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
                 [
-                    'complexity.cyclomatic#complexity.cyclomatic.callable higher callable'
-                        => 'complexity.cyclomatic#complexity.cyclomatic.callable2 higher callable',
+                    'complexity.cyclomatic.callable higher callable'
+                        => 'complexity.cyclomatic.callable2 higher callable',
                 ],
                 'the tracked declaration fixture names the new channel',
             ))->and(Mutation::edit(
                 'finding-gate/cases/complexity/case.json',
                 [
-                    '"complexity.cyclomatic#complexity.cyclomatic.callable@callable"'
-                        => '"complexity.cyclomatic#complexity.cyclomatic.callable2@callable"',
+                    '"complexity.cyclomatic.callable@callable"'
+                        => '"complexity.cyclomatic.callable2@callable"',
                 ],
                 'the case claims the new channel',
-            ))->and(Mutation::replace(
+            ))->and(Mutation::edit(
+                'finding-gate/maps/channels.tsv',
                 [
-                    'finding-gate/maps/channels.tsv' => "old\tnew\treason\n"
-                        . "complexity.cyclomatic#complexity.cyclomatic.callable\t"
-                        . "complexity.cyclomatic#complexity.cyclomatic.callable2\t"
-                        . "the control's own rename, declared so the moved fingerprints are explained\n",
+                    // The step's own tracked row for this channel is repointed
+                    // rather than the whole file replaced: replacing it would
+                    // withdraw the other 63 declarations of the same step, and
+                    // the control would then be judged against 63 undeclared
+                    // renames instead of against fingerprints.
+                    // Two rows, because the step's row translates the whole key
+                    // only: the rule survives as its own published field, so a
+                    // code rename needs its own row. The control renames the
+                    // code, so without the second row the bare spelling on the
+                    // ten text-shaped surfaces is undeclared and the control
+                    // fails for a reason that has nothing to do with
+                    // fingerprints — measured, not predicted.
+                    "complexity.cyclomatic#complexity.cyclomatic.callable\tcomplexity.cyclomatic.callable\t"
+                        => "complexity.cyclomatic#complexity.cyclomatic.callable\tcomplexity.cyclomatic.callable2\t"
+                            . "the control renames the channel's code\n"
+                            . "complexity.cyclomatic.callable\tcomplexity.cyclomatic.callable2\t",
                 ],
-                'one channels.tsv row declares it',
+                "the step's own row for that channel declares the control's rename instead",
             )),
         );
     }
@@ -619,10 +645,10 @@ final class Controls
         return Mutation::edit(
             'src/Analysis/Evidence/Cohesion/LcomRule.php',
             [
-                '(new FindingChannel(self::NAME, self::NAME))' => "(new FindingChannel(self::NAME, 'cohesion.lcom4'))",
+                'self::NAME => ChannelDeclaration::magnitude(' => "'cohesion.lcom4' => ChannelDeclaration::magnitude(",
                 'code: self::NAME,' => "code: 'cohesion.lcom4',",
             ],
-            'channel cohesion.lcom#cohesion.lcom -> cohesion.lcom#cohesion.lcom4',
+            'channel cohesion.lcom -> cohesion.lcom4, the producing rule name left alone',
         );
     }
 

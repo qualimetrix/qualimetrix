@@ -37,10 +37,18 @@ final readonly class ThresholdOverrideExtractor
 {
     /**
      * Pattern matches: `@qmx-threshold <rule-pattern> [<rest-of-line>]`
-     * Capture group 1: rule pattern (alphanumeric, dots, asterisks, hyphens)
+     * Capture group 1: rule pattern (alphanumeric, dots, asterisks, hyphens,
+     *                  and the retired channel-pair separator)
      * Capture group 2: threshold values (rest of line)
+     *
+     * `#` is admitted so that the retired `rule#code` spelling is *captured*
+     * and then refused by name
+     * ({@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability::problemWithThreshold()}).
+     * Without it the pattern stops at the separator and silently retunes the
+     * left half, which is the one outcome worse than either a match or a
+     * refusal.
      */
-    private const PATTERN = '/@qmx-threshold\s+([\w.*-]+)(?:[ \t]+([^\n\r]*))?/';
+    private const PATTERN = '/@qmx-threshold\s+([\w.*#-]+)(?:[ \t]+([^\n\r]*))?/';
 
     /**
      * @param array<string, OverrideValidatorInterface> $validators rule name => validator strategy

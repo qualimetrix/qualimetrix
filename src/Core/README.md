@@ -381,31 +381,17 @@ selector matches nothing.
 - `name(): string` — the `X` half
 - `selectsDescendantsOnly(): bool` — whether this is the `X.*` form
 
-### ChannelSelector
+There is no second, channel-specific grammar. A channel is one name, so every
+surface that addresses one reads `NameSelector` directly: the three inline
+suppression directives, the `exclude_namespace_channels` keys, and rule selection
+(`only_rules` / `disabled_rules` / `--only-rule` / `--disable-rule`), which also
+matches a producer name. `@qmx-threshold` addresses a rule rather than a channel
+and reads the same grammar for rule names.
 
-`NameSelector` plus the one thing a name alone cannot say: which rule the channel
-belongs to. Every surface that reads the pair form reads this grammar — the three
-inline suppression directives, the `exclude_namespace_channels` keys, and rule
-selection (`only_rules` / `disabled_rules` / `--only-rule` / `--disable-rule`),
-whose one-part branch is its own because selection deliberately matches a producer
-name too. `@qmx-threshold` is absent on purpose: it addresses a rule, not a channel.
-
-**Forms:**
-- a one-part `NameSelector`, read against the channel's finding code
-- `ruleName#violationCode` — both halves exact, no `*` in either. It is what
-  distinguishes `a#x` from `b#x`, and the only way to address a channel whose
-  `ruleName` half is not the rule that produces it
-
-**Methods:**
-- `tryParse(string $raw): ?self` — either form, or `null`
-- `looksLikePair(string $raw): bool` — whether the text used the separator at all,
-  so a parse failure can be explained rather than merely reported
-- `matches(FindingChannel $channel): bool`
-- `matchesNames(string $ruleName, string $code): bool` — the same question for
-  callers holding the halves as strings, so the inline suppression filter does not build a
-  channel per finding
-- `exactChannel(): ?FindingChannel` — the pair form's channel
-- `target(): NameSelector|FindingChannel` — the two forms as one total answer
+The retired `ruleName#violationCode` spelling is refused rather than left to
+parse into a name nothing carries: `FindingChannel::isRetiredPairSpelling()` and
+`FindingChannel::retiredPairAdvice()` are what each of those surfaces uses to say
+what to write instead.
 
 ### RuleSelector
 
@@ -413,10 +399,9 @@ The single selection policy used by rule execution, expensive prerequisite phase
 selector validation. It distinguishes a registered **producer rule** from the full
 `FindingChannel` values that producer emits; their names need not share a prefix.
 
-A one-part selector (`X` or `X.*`) can address the producer name, a channel's
-`ruleName`, or its `code`. The explicit `ruleName#violationCode` form
-addresses both channel components, and both halves are exact. `--only-rule=computed.health` therefore selects every channel produced by
-that rule, while `--only-rule=health.complexity` selects only that computed channel and
+A selector (`X` or `X.*`) can address the producer name or a channel's own name.
+`--only-rule=computed.health` therefore selects every channel produced by that
+rule, while `--only-rule=health.complexity` selects only that computed channel and
 still starts its `computed.health` producer.
 
 `RuleChannelRegistryInterface::channelsProducedBy()` — one view of the channel universe — supplies the producer relationship.
@@ -543,19 +528,21 @@ serialization are integration consumers, not owners of this contract.
 
 ### FindingChannel
 
-The address of a *kind* of finding: a `(ruleName, code)` pair that can appear on an emitted `Finding`.
+The address of a *kind* of finding: one name that can appear on an emitted `Finding` as its `code`. The rule that produces it is a separate published field (`Finding::$ruleName`) and an edge of the registry (`ChannelIdentityInterface::producerOf()`), not a half of the identity.
 
-Channels are **not** in bijection with rule classes, which is why nothing downstream may key on a rule class or on a rule name alone:
+Channels are **not** in bijection with rule classes, which is why nothing downstream may key on a rule class:
 
 - one rule class can emit several channels, some under rule names no class declares as its own (`LayerViolationRule` emits `architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`, `architecture.empty-template` besides its own name);
 - one rule class can emit one channel per configured definition (`ComputedMetricRule`, one per `health.*` / `computed.*` metric), each with its own thresholds and inversion;
 - one rule class can emit one channel whose boundaries depend on the symbol (`LongParameterListRule`).
 
-**Fields:** `ruleName: string`, `code: string` (both non-empty).
+**Fields:** `code: string` (non-empty, free of the retired `#` separator).
 
 **Methods:**
+- `leveled(string $ruleName, SymbolLevel $level): self` — the channel a producer emits for one level of its own name
 - `equals(self $other): bool`
-- `toKey(): string` — stable string form, suitable as an array key
+- `isRetiredPairSpelling(string $raw): bool` / `retiredPairAdvice(string $raw): string` — how a surface refuses the retired `ruleName#violationCode` spelling by name instead of letting it address nothing
+- `__toString(): string` — the name, so it is usable as an array key directly via `$channel->code`
 
 Read the channel of an emitted finding via `Finding::channel()`. There is deliberately no `FindingChannel::fromFinding()` factory — the pair would form a dependency cycle (caught by `architecture.circular-dependency` during dogfooding), and the direction that survives is the one where the richer type knows the primitive.
 
@@ -716,7 +703,7 @@ Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore 
 
 **Methods:**
 - `matches(string $code): bool` — checks if suppression applies to a finding code
-- `target(): SuppressionTarget` — what the directive filters on: a `ChannelSelector`, or the
+- `target(): SuppressionTarget` — what the directive filters on: a `NameSelector`, or the
   explicit "no rule filter" state that `@qmx-ignore *` and a bare `@qmx-ignore-file` carry
 
 ### SuppressionType (Enum)

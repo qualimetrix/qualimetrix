@@ -86,7 +86,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
 
         $baselinePath = $this->writeBaseline([
             SymbolPath::forFile(RelativePath::fromString('src/Legacy/bootstrap.php'))->toCanonical() => [
-                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 5],
+                ['channel' => 'code-smell.goto', 'count' => 5],
             ],
         ]);
 
@@ -121,7 +121,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
 
         $baselinePath = $this->writeBaseline([
             $symbolKey => [
-                ['channel' => 'retired.channel#retired.channel', 'count' => 1],
+                ['channel' => 'retired.channel', 'count' => 1],
             ],
         ]);
 
@@ -138,7 +138,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
 
         self::assertStringContainsString('1 baseline entries could not be applied', $display);
         self::assertStringContainsString($symbolKey, $display);
-        self::assertStringContainsString('retired.channel#retired.channel', $display);
+        self::assertStringContainsString('retired.channel', $display);
         self::assertStringContainsString('channel is not declared by any rule', $display);
         self::assertMatchesRegularExpression('/\[[0-9a-f]{12}\]/', $display, 'The selector must be printed so a user can copy it.');
         self::assertSame([], $result->findings, 'An inapplicable entry must not suppress anything, but it also has no finding to report here.');

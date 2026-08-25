@@ -27,7 +27,7 @@ final class ChannelDeclarationReaderTest extends TestCase
         // static channelDeclarations() succeeding at all — let alone without
         // an exception — is the proof that no instance was ever built.
         $declarations = ChannelDeclarationReader::read(FixtureRuleThatThrowsIfConstructed::class);
-        $key = (new FindingChannel('fixture.rule', 'fixture.occurrence-channel'))->toKey();
+        $key = (new FindingChannel('fixture.occurrence-channel'))->code;
 
         self::assertSame([$key], array_keys($declarations));
         self::assertEquals(ChannelDeclaration::occurrence(SymbolLevel::Class_), $declarations[$key]);
@@ -46,7 +46,7 @@ final class ChannelDeclarationReaderTest extends TestCase
     public function itReadsARealRulesDeclarationsCorrectly(): void
     {
         $declarations = ChannelDeclarationReader::read(GotoRule::class);
-        $key = (new FindingChannel(GotoRule::NAME, GotoRule::NAME))->toKey();
+        $key = GotoRule::NAME;
 
         self::assertSame([$key], array_keys($declarations));
         self::assertEquals(ChannelDeclaration::occurrence(SymbolLevel::Callable), $declarations[$key]);
@@ -83,36 +83,23 @@ final class ChannelDeclarationReaderTest extends TestCase
     public function itRejectsAnEntryKeyedByAnEmptyString(): void
     {
         self::expectException(LogicException::class);
-        self::expectExceptionMessage('must be keyed by a non-empty channel key string');
+        self::expectExceptionMessage('must be keyed by a non-empty channel name');
 
         ChannelDeclarationReader::read(FixtureRuleWithEmptyKey::class);
     }
 
+    /**
+     * A declaration left in the retired `rule#code` spelling is refused rather
+     * than registered under a name no finding can carry — the whole point of
+     * the separator staying known to {@see FindingChannel}.
+     */
     #[Test]
-    public function itRejectsAnEntryKeyedByAStringWithNoSeparator(): void
+    public function itRejectsAnEntryKeyedByTheRetiredChannelPairSpelling(): void
     {
         self::expectException(LogicException::class);
-        self::expectExceptionMessage('is not a valid channel key');
+        self::expectExceptionMessage('is not a valid channel name');
 
-        ChannelDeclarationReader::read(FixtureRuleWithKeyMissingSeparator::class);
-    }
-
-    #[Test]
-    public function itRejectsAnEntryKeyedByAKeyWithAnEmptyRuleNameHalf(): void
-    {
-        self::expectException(LogicException::class);
-        self::expectExceptionMessage('ruleName must not be empty');
-
-        ChannelDeclarationReader::read(FixtureRuleWithEmptyRuleNameHalf::class);
-    }
-
-    #[Test]
-    public function itRejectsAnEntryKeyedByAKeyWithAnEmptyCodeHalf(): void
-    {
-        self::expectException(LogicException::class);
-        self::expectExceptionMessage('code must not be empty');
-
-        ChannelDeclarationReader::read(FixtureRuleWithEmptyCodeHalf::class);
+        ChannelDeclarationReader::read(FixtureRuleWithRetiredPairKey::class);
     }
 
     #[Test]
@@ -157,25 +144,25 @@ final class ChannelDeclarationReaderTest extends TestCase
      * Reading the declaration directly off the abstract base — reflection
      * has no notion of "this class is never meant to be read directly" —
      * makes `static::NAME` resolve to `''`, and `channelDeclarations()`
-     * builds `new FindingChannel('', '')`, which throws
+     * builds `new FindingChannel('')`, which throws
      * InvalidArgumentException from inside the invoked method. This must
      * surface as the documented LogicException, not the VO's own exception
      * type.
      */
     #[Test]
-    public function itThrowsALogicExceptionRatherThanTheVosOwnExceptionWhenReadingAbstractCodeSmellRuleDirectly(): void
+    public function itRefusesTheEmptyKeyAnAbstractCodeSmellRuleDeclaresWhenReadDirectly(): void
     {
         self::expectException(LogicException::class);
-        self::expectExceptionMessage('threw while being invoked');
+        self::expectExceptionMessage('must be keyed by a non-empty channel name');
 
         ChannelDeclarationReader::read(AbstractCodeSmellRule::class);
     }
 
     #[Test]
-    public function itThrowsALogicExceptionRatherThanTheVosOwnExceptionWhenReadingAbstractSecurityPatternRuleDirectly(): void
+    public function itRefusesTheEmptyKeyAnAbstractSecurityPatternRuleDeclaresWhenReadDirectly(): void
     {
         self::expectException(LogicException::class);
-        self::expectExceptionMessage('threw while being invoked');
+        self::expectExceptionMessage('must be keyed by a non-empty channel name');
 
         ChannelDeclarationReader::read(AbstractSecurityPatternRule::class);
     }
@@ -196,7 +183,7 @@ final class FixtureRuleThatThrowsIfConstructed
      */
     public static function channelDeclarations(): array
     {
-        return [(new FindingChannel('fixture.rule', 'fixture.occurrence-channel'))->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
+        return [(new FindingChannel('fixture.occurrence-channel'))->code => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
     }
 }
 
@@ -263,42 +250,14 @@ final class FixtureRuleWithEmptyKey
 /**
  * @internal
  */
-final class FixtureRuleWithKeyMissingSeparator
+final class FixtureRuleWithRetiredPairKey
 {
     /**
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
-        return ['fixture.no-separator' => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
-    }
-}
-
-/**
- * @internal
- */
-final class FixtureRuleWithEmptyRuleNameHalf
-{
-    /**
-     * @return array<string, ChannelDeclaration>
-     */
-    public static function channelDeclarations(): array
-    {
-        return ['#fixture.violation-code' => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
-    }
-}
-
-/**
- * @internal
- */
-final class FixtureRuleWithEmptyCodeHalf
-{
-    /**
-     * @return array<string, ChannelDeclaration>
-     */
-    public static function channelDeclarations(): array
-    {
-        return ['fixture.rule-name#' => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
+        return ['fixture.rule#fixture.channel' => ChannelDeclaration::occurrence(SymbolLevel::Class_)];
     }
 }
 
@@ -312,7 +271,7 @@ final class FixtureRuleWithWrongValueType
      */
     public static function channelDeclarations(): array
     {
-        return ['fixture.rule#fixture.bad-value' => 'not a ChannelDeclaration'];
+        return ['fixture.bad-value' => 'not a ChannelDeclaration'];
     }
 }
 

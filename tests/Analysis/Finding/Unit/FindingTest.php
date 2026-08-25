@@ -40,7 +40,7 @@ final class FindingTest extends TestCase
         );
 
         self::assertSame(
-            'cyclomatic-complexity#cyclomatic-complexity:file:src/test.php',
+            'cyclomatic-complexity:file:src/test.php',
             $finding->getFingerprint(),
         );
     }
@@ -59,7 +59,7 @@ final class FindingTest extends TestCase
         );
 
         self::assertSame(
-            'class-size#class-size:file:src/test.php',
+            'class-size:file:src/test.php',
             $finding->getFingerprint(),
         );
     }
@@ -79,7 +79,7 @@ final class FindingTest extends TestCase
         );
 
         self::assertSame(
-            'namespace-size#namespace-size:file:src/test.php',
+            'namespace-size:file:src/test.php',
             $finding->getFingerprint(),
         );
     }
@@ -98,7 +98,7 @@ final class FindingTest extends TestCase
         );
 
         self::assertSame(
-            'file-length#file-length:file:src/test.php',
+            'file-length:file:src/test.php',
             $finding->getFingerprint(),
         );
     }
@@ -117,7 +117,7 @@ final class FindingTest extends TestCase
         );
 
         self::assertSame(
-            'cyclomatic-complexity#cyclomatic-complexity:file:src/test.php',
+            'cyclomatic-complexity:file:src/test.php',
             $finding->getFingerprint(),
         );
     }
@@ -217,7 +217,7 @@ final class FindingTest extends TestCase
 
         self::assertTrue(
             $finding->channel()->equals(
-                new FindingChannel('architecture.layer-violation', 'architecture.coverage'),
+                new FindingChannel('architecture.coverage'),
             ),
         );
     }
@@ -261,7 +261,7 @@ final class FindingTest extends TestCase
         );
 
         self::assertSame(
-            'architecture.layer-violation#architecture.layer-violation:'
+            'architecture.layer-violation:'
             . $subject->toCanonical() . ':' . $occurrence->value . ':new:class:Vendor\\Api',
             $finding->getFingerprint(),
         );
@@ -272,7 +272,7 @@ final class FindingTest extends TestCase
     {
         $target = SymbolPath::forClass('App', 'Alpha');
         $occurrence = OccurrenceKey::semantic('dependency', ['id' => 1]);
-        $prefix = 'rule#code:' . self::subject()->toCanonical() . ':' . $occurrence->value;
+        $prefix = 'code:' . self::subject()->toCanonical() . ':' . $occurrence->value;
 
         $noEdge = self::fingerprintFinding(null, null, $occurrence);
         $typeWithoutTarget = self::fingerprintFinding(null, DependencyType::New_, $occurrence);

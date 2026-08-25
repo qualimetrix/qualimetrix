@@ -14,7 +14,7 @@
         "--disable-rule=code-smell.eval"
     ],
     "channels": [
-        "code-smell.goto#code-smell.goto@callable"
+        "code-smell.goto@callable"
     ],
     "explainSubjects": [
         "declaration:callable:Corpus\\DisabledRule\\Statements::run@src/Statements.php"

@@ -192,7 +192,7 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto#code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
             [],
             [],
         );
@@ -203,16 +203,17 @@ final class InlineDirectivePolicyTest extends TestCase
     }
 
     /**
-     * A pair addressing no channel is already reported as a configuration
+     * A target addressing no channel is already reported as a configuration
      * error, so counting it here too would say the same directive is both
-     * broken and merely stale.
+     * broken and merely stale. The retired `rule#code` spelling is the sharpest
+     * case: it is a target that no longer parses at all.
      */
     #[Test]
-    public function itDoesNotAlsoCallAnUnaddressablePairStale(): void
+    public function itDoesNotAlsoCallAnUnaddressableTargetStale(): void
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('complexity.cyclomatic#code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto#code-smell.goto', null, 1, SuppressionType::File)]],
             [],
             [],
         );
@@ -271,12 +272,12 @@ final class InlineDirectivePolicyTest extends TestCase
 
     private static function policy(?RuleOptionsRegistry $configuration = null): InlineDirectivePolicy
     {
-        $channel = new FindingChannel('code-smell.goto', 'code-smell.goto');
+        $channel = new FindingChannel('code-smell.goto');
 
         return new InlineDirectivePolicy(
             new ChannelUniverse(
-                [$channel->toKey() => ChannelDeclaration::occurrence(SymbolLevel::Class_)],
-                ['code-smell.goto' => [$channel->toKey()]],
+                [$channel->code => ChannelDeclaration::occurrence(SymbolLevel::Class_)],
+                ['code-smell.goto' => [$channel->code]],
                 ['code-smell.goto' => false],
                 'computed.health',
                 new ResolvedComputedMetricDefinitions([]),

@@ -100,6 +100,33 @@ final class CheckCommandInputValidationTest extends TestCase
         self::assertStringContainsString('does not match any registered', $tester->getErrorOutput());
     }
 
+    /**
+     * A selection selector left in the retired `rule#code` spelling is refused
+     * **by name**, with the name to write instead. Falling through to "matches
+     * nothing" would be true and useless: the text names a channel that used to
+     * exist under that exact spelling.
+     */
+    #[Test]
+    public function itRejectsASelectionSelectorInTheRetiredChannelPairForm(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                '--only-rule' => ['complexity.cyclomatic#complexity.cyclomatic.callable'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString(
+            'Write "complexity.cyclomatic.callable"',
+            $tester->getErrorOutput(),
+        );
+    }
+
     #[Test]
     public function itRejectsAChannelAsRuleOptionOwner(): void
     {
@@ -159,7 +186,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
         $tester = $this->tester();
         try {
-            foreach (['computed.health', 'health.complexity', 'computed.health#health.complexity', 'computed.a'] as $selector) {
+            foreach (['computed.health', 'health.complexity', 'health.complexity', 'computed.a'] as $selector) {
                 $tester->execute([
                     'paths' => ['tests/Fixtures/Ast/empty_file.php'],
                     '--format' => 'json',

@@ -86,13 +86,13 @@ final readonly class BaselineEntryParser
         $channel = self::readRequiredNonEmptyString(
             $raw,
             'channel',
-            '"channel" must be a non-empty string in the "ruleName#violationCode" form',
+            '"channel" must be a non-empty channel name',
         );
 
         try {
             return new BaselineIdentity(
                 $subjectKey,
-                FindingChannel::fromKey($channel),
+                new FindingChannel($channel),
                 self::readOptionalNonEmptyString(
                     $raw,
                     'occurrence',
@@ -169,7 +169,7 @@ final readonly class BaselineEntryParser
         if ($declaration === null) {
             throw new BaselineEntryRejection(
                 InertEntryReason::UndeclaredChannel,
-                \sprintf('no rule declares the channel "%s"', $identity->channel->toKey()),
+                \sprintf('no rule declares the channel "%s"', $identity->channel->code),
             );
         }
 
@@ -184,7 +184,7 @@ final readonly class BaselineEntryParser
                 InertEntryReason::ConfigurationErrorChannel,
                 \sprintf(
                     'the channel "%s" reports a configuration error, which cannot be accepted as debt',
-                    $identity->channel->toKey(),
+                    $identity->channel->code,
                 ),
             );
         }

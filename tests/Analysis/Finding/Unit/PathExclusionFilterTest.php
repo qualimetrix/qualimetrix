@@ -169,7 +169,7 @@ final class PathExclusionFilterTest extends TestCase
         $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
 
         foreach (self::declaredProjectScopedChannelKeys() as $key) {
-            $channel = FindingChannel::fromKey($key);
+            $channel = new FindingChannel($key);
 
             self::assertTrue(
                 $filter->shouldInclude($this->createChannelFinding('src/Entity/User.php', $channel)),
@@ -182,7 +182,7 @@ final class PathExclusionFilterTest extends TestCase
     public function itFiltersAChannelNoCapabilityDeclaredProjectScoped(): void
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
-        $undeclared = new FindingChannel('architecture.layer-violation', 'architecture.layer-violation.invented');
+        $undeclared = new FindingChannel('architecture.layer-violation.invented');
 
         self::assertFalse(
             $filter->shouldInclude($this->createChannelFinding('src/Entity/User.php', $undeclared)),
@@ -196,7 +196,7 @@ final class PathExclusionFilterTest extends TestCase
             location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass('App\\Entity', 'User'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Entity', 'User'), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))),
-            ruleName: $channel->ruleName,
+            ruleName: $channel->code,
             code: $channel->code,
             message: 'Test',
             severity: Severity::Warning,

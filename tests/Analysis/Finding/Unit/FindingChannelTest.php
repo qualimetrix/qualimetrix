@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -22,21 +23,12 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class FindingChannelTest extends TestCase
 {
     #[Test]
-    public function itRejectsAnEmptyRuleName(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('ruleName must not be empty');
-
-        new FindingChannel('', 'code');
-    }
-
-    #[Test]
     public function itRejectsAnEmptyCode(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('code must not be empty');
 
-        new FindingChannel('rule', '');
+        new FindingChannel('');
     }
 
     /**
@@ -59,91 +51,85 @@ final class FindingChannelTest extends TestCase
 
         $channel = $finding->channel();
 
-        self::assertSame('architecture.unreachable-layer', $channel->ruleName);
         self::assertSame('architecture.unreachable-layer', $channel->code);
         self::assertTrue(
             $channel->equals(
-                new FindingChannel('architecture.unreachable-layer', 'architecture.unreachable-layer'),
+                new FindingChannel('architecture.unreachable-layer'),
             ),
         );
     }
 
     /**
-     * One rule name can carry several codes, so the code is part of the
-     * address, not a detail hanging off it.
+     * One rule can produce several channels, so the whole name is the address
+     * and the rule that produces it is not part of it.
      */
     #[Test]
-    public function itDistinguishesTwoCodesUnderOneRuleName(): void
+    public function itDistinguishesTwoChannelsOfOneRule(): void
     {
-        $method = new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
-        $class = new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.class');
+        $method = new FindingChannel('complexity.cyclomatic.callable');
+        $class = new FindingChannel('complexity.cyclomatic.class');
 
         self::assertFalse($method->equals($class));
-        self::assertNotSame($method->toKey(), $class->toKey());
+        self::assertNotSame($method->code, $class->code);
     }
 
     #[Test]
     public function itIsEqualToAnIdenticallyAddressedChannel(): void
     {
-        $a = new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
-        $b = new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $a = new FindingChannel('complexity.cyclomatic.callable');
+        $b = new FindingChannel('complexity.cyclomatic.callable');
 
         self::assertTrue($a->equals($b));
-        self::assertSame($a->toKey(), $b->toKey());
+        self::assertSame($a->code, $b->code);
     }
 
     #[Test]
-    public function itRendersAsItsKey(): void
+    public function itRendersAsItsName(): void
     {
-        $channel = new FindingChannel('rules.a', 'rules.a.callable');
+        $channel = new FindingChannel('rules.a.callable');
 
-        self::assertSame('rules.a#rules.a.callable', $channel->toKey());
-        self::assertSame($channel->toKey(), (string) $channel);
+        self::assertSame('rules.a.callable', $channel->code);
+        self::assertSame($channel->code, (string) $channel);
     }
 
     #[Test]
-    public function itParsesAKeyBackIntoTheSameChannel(): void
+    public function itBuildsALeveledNameFromARuleNameAndALevel(): void
     {
-        $original = new FindingChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
-
-        $parsed = FindingChannel::fromKey($original->toKey());
-
-        self::assertTrue($original->equals($parsed));
+        self::assertSame(
+            'complexity.cyclomatic.callable',
+            FindingChannel::leveled('complexity.cyclomatic', SymbolLevel::Callable)->code,
+        );
     }
 
+    /**
+     * The retired spelling has to be refused rather than accepted as a name
+     * nothing can carry: a channel whose name contains the separator would
+     * silently match no finding, which is exactly the outcome the collapse of
+     * the pair exists to remove.
+     */
     #[Test]
-    public function itParsesAKeyWhoseRuleNameDiffersFromItsCode(): void
-    {
-        $channel = FindingChannel::fromKey('architecture.layer-violation#architecture.coverage');
-
-        self::assertSame('architecture.layer-violation', $channel->ruleName);
-        self::assertSame('architecture.coverage', $channel->code);
-    }
-
-    #[Test]
-    public function itRejectsAKeyWithNoSeparator(): void
+    public function itRefusesTheRetiredChannelPairSpelling(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('not a valid channel key');
+        $this->expectExceptionMessage('Write "architecture.coverage"');
 
-        FindingChannel::fromKey('no-separator-here');
+        new FindingChannel('architecture.layer-violation#architecture.coverage');
     }
 
     #[Test]
-    public function itRejectsAKeyWithAnEmptyRuleNameHalf(): void
+    public function itRecognisesTheRetiredChannelPairSpelling(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('ruleName must not be empty');
-
-        FindingChannel::fromKey('#violation-code');
+        self::assertTrue(FindingChannel::isRetiredPairSpelling('a#b'));
+        self::assertFalse(FindingChannel::isRetiredPairSpelling('a.b'));
     }
 
+    /** The advice names the half that is now the whole name, not the whole text. */
     #[Test]
-    public function itRejectsAKeyWithAnEmptyCodeHalf(): void
+    public function itAdvisesTheNameToWriteInsteadOfTheRetiredPair(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('code must not be empty');
-
-        FindingChannel::fromKey('rule-name#');
+        self::assertStringContainsString(
+            'Write "complexity.cyclomatic.callable"',
+            FindingChannel::retiredPairAdvice('complexity.cyclomatic#complexity.cyclomatic.callable'),
+        );
     }
 }

@@ -57,12 +57,12 @@ final class BaselineLoaderTest extends TestCase
                 "entries": {
                     "callable:App\\OrderService::calculate": [
                         {
-                            "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
+                            "channel": "complexity.cyclomatic.callable",
                             "magnitudes": [25]
                         }
                     ],
                     "file:src/Legacy/bootstrap.php": [
-                        { "channel": "code-smell.goto#code-smell.goto", "count": 3 }
+                        { "channel": "code-smell.goto", "count": 3 }
                     ]
                 }
             }
@@ -248,14 +248,14 @@ final class BaselineLoaderTest extends TestCase
             'entries' => [
                 // The separator inside the symbol key itself.
                 "class:App\u{1F}Foo" => [
-                    ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 1],
+                    ['channel' => 'code-smell.goto', 'count' => 1],
                 ],
                 'class:App\\Bar' => [
                     // Inside the channel.
-                    ['channel' => "code-smell.goto#code-smell\u{1F}.goto", 'count' => 1],
+                    ['channel' => "code-smell\u{1F}.goto", 'count' => 1],
                     // Inside the edge target.
                     [
-                        'channel' => 'architecture.layer-violation#architecture.layer-violation',
+                        'channel' => 'architecture.layer-violation',
                         'edge' => ['target' => "class:App\u{1F}Db"],
                         'count' => 1,
                     ],
@@ -288,7 +288,7 @@ final class BaselineLoaderTest extends TestCase
                 "entries": {
                     "class:App\\Web\\Controller": [
                         {
-                            "channel": "architecture.layer-violation#architecture.layer-violation",
+                            "channel": "architecture.layer-violation",
                             "edge": { "target": "class:App\\Db\\Connection", "type": "new" },
                             "count": 1
                         }
@@ -333,13 +333,13 @@ final class BaselineLoaderTest extends TestCase
                 "entries": {
                     "callable:App\\Good::method": [
                         {
-                            "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
+                            "channel": "complexity.cyclomatic.callable",
                             "magnitudes": [25]
                         }
                     ],
                     "callable:App\\Bad::method": [
-                        { "channel": "nobody.declares#this.channel", "count": 1 },
-                        { "channel": "code-smell.goto#code-smell.goto", "count": 1, "mode": "whatever" }
+                        { "channel": "this.channel", "count": 1 },
+                        { "channel": "code-smell.goto", "count": 1, "mode": "whatever" }
                     ]
                 }
             }
@@ -361,7 +361,7 @@ final class BaselineLoaderTest extends TestCase
                 "version": 13,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
-                "entries": { "callable:App\\Foo::bar": { "channel": "code-smell.goto#code-smell.goto" } }
+                "entries": { "callable:App\\Foo::bar": { "channel": "code-smell.goto" } }
             }
             JSON);
 
@@ -384,8 +384,8 @@ final class BaselineLoaderTest extends TestCase
                 "scope": ["src"],
                 "entries": {
                     "callable:App\\Foo::bar": [
-                        { "channel": "code-smell.goto#code-smell.goto", "count": 1 },
-                        { "channel": "code-smell.goto#code-smell.goto", "count": 5 }
+                        { "channel": "code-smell.goto", "count": 1 },
+                        { "channel": "code-smell.goto", "count": 5 }
                     ]
                 }
             }
@@ -411,8 +411,8 @@ final class BaselineLoaderTest extends TestCase
                 "scope": ["src"],
                 "entries": {
                     "callable:App\\Foo::bar": [
-                        { "channel": "code-smell.goto#code-smell.goto", "count": 1 },
-                        { "channel": "code-smell.goto#code-smell.goto", "magnitudes": [5] }
+                        { "channel": "code-smell.goto", "count": 1 },
+                        { "channel": "code-smell.goto", "magnitudes": [5] }
                     ]
                 }
             }
@@ -440,12 +440,12 @@ final class BaselineLoaderTest extends TestCase
                 "entries": {
                     "class:App\\Web\\Controller": [
                         {
-                            "channel": "architecture.layer-violation#architecture.layer-violation",
+                            "channel": "architecture.layer-violation",
                             "edge": { "target": "class:App\\Db\\Connection", "type": "new" },
                             "count": 1
                         },
                         {
-                            "channel": "architecture.layer-violation#architecture.layer-violation",
+                            "channel": "architecture.layer-violation",
                             "edge": { "target": "class:App\\Db\\Statement", "type": "new" },
                             "count": 1
                         }
@@ -619,7 +619,7 @@ final class BaselineLoaderTest extends TestCase
     #[Test]
     public function itDeclinesARepeatedSubjectKeyTheWholeDocumentPathWouldCollapse(): void
     {
-        $entry = '{"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[%d]}';
+        $entry = '{"channel":"complexity.cyclomatic.callable","magnitudes":[%d]}';
 
         $repeated = "{\n"
             . "  \"version\": 13,\n"
@@ -712,7 +712,7 @@ final class BaselineLoaderTest extends TestCase
         // Tabs are legal JSON whitespace, so this one stays a valid document
         // and is declined purely for not being the layout.
         yield 'entry indented with tabs' => [str_replace("      {\"channel\":\"complexity.wmc", "\t\t\t\t\t\t{\"channel\":\"complexity.wmc", $canonical)];
-        yield 'entry line that is not JSON' => [str_replace('{"channel":"complexity.wmc#complexity.wmc","magnitudes":[70]}', '{"channel": unquoted}', $canonical)];
+        yield 'entry line that is not JSON' => [str_replace('{"channel":"complexity.wmc","magnitudes":[70]}', '{"channel": unquoted}', $canonical)];
         yield 'entries object never closed' => [str_replace("  }\n}\n", "}\n", $canonical)];
         yield 'last line without its newline' => [rtrim($canonical, "\n")];
     }
@@ -748,7 +748,7 @@ final class BaselineLoaderTest extends TestCase
             . "  \"scope\": [\"src\"],\n"
             . "  \"entries\": {\n"
             . "    \"class:App\\\\Deep\": [\n"
-            . "      {\"channel\":\"complexity.wmc#complexity.wmc\",\"magnitudes\":" . $magnitudes . "}\n"
+            . "      {\"channel\":\"complexity.wmc\",\"magnitudes\":" . $magnitudes . "}\n"
             . "    ]\n"
             . "  }\n"
             . "}\n";
@@ -773,12 +773,12 @@ final class BaselineLoaderTest extends TestCase
             . "  \"scope\": [\"src\",\"tests\"],\n"
             . "  \"entries\": {\n"
             . "    \"callable:App\\\\OrderService::calculate\": [\n"
-            . "      {\"channel\":\"complexity.cognitive#complexity.cognitive.callable\",\"magnitudes\":[18]},\n"
-            . "      {\"channel\":\"complexity.cyclomatic#complexity.cyclomatic.callable\",\"magnitudes\":[25]},\n"
-            . "      {\"channel\":\"nonsense.not-a-channel#nonsense.not-a-channel\",\"count\":1}\n"
+            . "      {\"channel\":\"complexity.cognitive.callable\",\"magnitudes\":[18]},\n"
+            . "      {\"channel\":\"complexity.cyclomatic.callable\",\"magnitudes\":[25]},\n"
+            . "      {\"channel\":\"nonsense.not-a-channel\",\"count\":1}\n"
             . "    ],\n"
             . "    \"class:App\\\\Legacy\\\\Report\": [\n"
-            . "      {\"channel\":\"complexity.wmc#complexity.wmc\",\"magnitudes\":[70]}\n"
+            . "      {\"channel\":\"complexity.wmc\",\"magnitudes\":[70]}\n"
             . "    ]\n"
             . "  }\n"
             . "}\n";

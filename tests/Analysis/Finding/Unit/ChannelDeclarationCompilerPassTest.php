@@ -61,21 +61,21 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $declarations = $definition->getArgument('$staticDeclarations');
 
         self::assertSame(
-            ['code-smell.goto#code-smell.goto', 'maintainability.index#maintainability.index'],
+            ['code-smell.goto', 'maintainability.index'],
             array_keys($declarations),
         );
         self::assertEquals(
             ChannelDeclaration::occurrence(SymbolLevel::Callable),
-            $declarations['code-smell.goto#code-smell.goto'],
+            $declarations['code-smell.goto'],
         );
         self::assertEquals(
             ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
-            $declarations['maintainability.index#maintainability.index'],
+            $declarations['maintainability.index'],
         );
         self::assertSame(
             [
-                'code-smell.goto' => ['code-smell.goto#code-smell.goto'],
-                'maintainability.index' => ['maintainability.index#maintainability.index'],
+                'code-smell.goto' => ['code-smell.goto'],
+                'maintainability.index' => ['maintainability.index'],
             ],
             $container->getDefinition(ChannelUniverse::class)
                 ->getArgument('$staticChannelKeysByProducer'),
@@ -96,7 +96,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $declarations = $container->getDefinition(ChannelUniverse::class)
             ->getArgument('$staticDeclarations');
 
-        self::assertArrayHasKey('complexity.cyclomatic#complexity.cyclomatic.callable', $declarations);
+        self::assertArrayHasKey('complexity.cyclomatic.callable', $declarations);
     }
 
     #[Test]
@@ -117,7 +117,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ->getArgument('$staticChannelKeysByProducer');
 
         self::assertContains(
-            'architecture.coverage#architecture.coverage',
+            'architecture.coverage',
             $channelsByProducer[LayerViolationRule::NAME],
         );
     }
@@ -198,7 +198,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ->addTag(RuleRegistryCompilerPass::TAG);
 
         self::expectException(LogicException::class);
-        self::expectExceptionMessage('Duplicate channel declaration for "code-smell.goto#code-smell.goto"');
+        self::expectExceptionMessage('Duplicate channel declaration for "code-smell.goto"');
 
         (new ChannelDeclarationCompilerPass())->process($container);
     }
@@ -441,7 +441,7 @@ final class FixtureRuleWithShapeMismatch implements RuleInterface
      */
     public static function channelDeclarations(): array
     {
-        return [self::NAME . '#' . self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+        return [self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)];
     }
 }
 
@@ -509,7 +509,7 @@ final class FixtureRuleForShapeAgreement implements RuleInterface
      */
     public static function channelDeclarations(): array
     {
-        return [self::NAME . '#' . self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+        return [self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)];
     }
 }
 
@@ -532,7 +532,7 @@ final class FixtureValidatorWithDisagreeingShape implements ConfigurationValidat
     public static function channelDeclarations(): array
     {
         return [
-            'fixture.shape-agreement#fixture.diagnostic' => ChannelDeclaration::magnitude(
+            'fixture.diagnostic' => ChannelDeclaration::magnitude(
                 WorseDirection::Higher,
                 SymbolLevel::Project,
             ),

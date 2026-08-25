@@ -187,7 +187,7 @@ final class NamespaceExclusionFilterTest extends TestCase
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
         foreach (self::declaredProjectScopedChannelKeys() as $key) {
-            $channel = FindingChannel::fromKey($key);
+            $channel = new FindingChannel($key);
 
             self::assertTrue(
                 $filter->shouldInclude($this->createChannelFinding($channel)),
@@ -200,7 +200,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     public function itFiltersAChannelNoCapabilityDeclaredProjectScoped(): void
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
-        $undeclared = new FindingChannel('architecture.layer-violation', 'architecture.layer-violation.invented');
+        $undeclared = new FindingChannel('architecture.layer-violation.invented');
 
         self::assertFalse(
             $filter->shouldInclude($this->createChannelFinding($undeclared)),
@@ -214,7 +214,7 @@ final class NamespaceExclusionFilterTest extends TestCase
             location: new Location(RelativePath::fromString('src/Entity/User.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Entity', 'User'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Entity', 'User'), RelativePath::fromString('src/Entity/User.php'), DeclarationOrdinal::fromRank(0))),
-            ruleName: $channel->ruleName,
+            ruleName: $channel->code,
             code: $channel->code,
             message: 'Test',
             severity: Severity::Warning,

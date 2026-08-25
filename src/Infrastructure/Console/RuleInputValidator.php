@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
@@ -64,6 +65,9 @@ final readonly class RuleInputValidator
      * `only_rules` / `disabled_rules` and their CLI twins: each addresses a
      * producer or one of its channels, and nothing else.
      *
+     * The retired `rule#code` spelling is refused before the lookup, so a stale
+     * selector is told what to write instead of being told it matches nothing.
+     *
      * @param list<string> $selectors
      * @param list<string> $producers
      */
@@ -73,6 +77,14 @@ final readonly class RuleInputValidator
         RuleChannelRegistryInterface $channels,
     ): void {
         foreach ($selectors as $selector) {
+            if (FindingChannel::isRetiredPairSpelling($selector)) {
+                throw new InvalidArgumentException(\sprintf(
+                    'Rule selector "%s" is written in the retired channel-pair form. %s',
+                    $selector,
+                    FindingChannel::retiredPairAdvice($selector),
+                ));
+            }
+
             if ($selector === '' || !$this->ruleSelector->matchesKnownIn($selector, $producers, $channels)) {
                 throw new InvalidArgumentException(\sprintf(
                     'Rule selector "%s" does not match any registered producer, group, or channel.',
@@ -108,7 +120,7 @@ final readonly class RuleInputValidator
         }
 
         foreach (array_unique($owners) as $owner) {
-            if ($owner === '' || str_contains($owner, '#') || !$this->ruleSelector->matchesKnownProducer($owner, $producers)) {
+            if ($owner === '' || FindingChannel::isRetiredPairSpelling($owner) || !$this->ruleSelector->matchesKnownProducer($owner, $producers)) {
                 throw new InvalidArgumentException(\sprintf(
                     'Rule option owner "%s" does not match any registered producer rule.',
                     $owner,

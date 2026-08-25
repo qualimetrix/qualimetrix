@@ -93,7 +93,7 @@ final readonly class Finding
      */
     public function channel(): FindingChannel
     {
-        return new FindingChannel($this->ruleName, $this->code);
+        return new FindingChannel($this->code);
     }
 
     /**
@@ -110,7 +110,7 @@ final readonly class Finding
      */
     public function getFingerprint(): string
     {
-        $parts = [$this->channel()->toKey(), $this->subject->toCanonical()];
+        $parts = [$this->channel()->code, $this->subject->toCanonical()];
 
         if ($this->occurrenceKey !== null) {
             $parts[] = $this->occurrenceKey->value;

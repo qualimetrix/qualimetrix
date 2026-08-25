@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -312,33 +311,13 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
     }
 
     /**
-     * The finding codes a target addresses, whichever spelling it used.
-     *
-     * The explicit `ruleName#violationCode` pair needs no expansion — it
-     * already names one channel — while the one-part form has to be resolved
-     * against the universe before its producers can be consulted.
+     * The finding codes a target addresses.
      *
      * @return list<string>
      */
     private function addressedCodes(Suppression $suppression): array
     {
-        $target = $suppression->target();
-        $pair = $target->exactChannel();
-        if ($pair !== null) {
-            foreach ($this->identity->channels() as $channel) {
-                if ($channel->equals($pair)) {
-                    return [$channel->code];
-                }
-            }
-
-            return [];
-        }
-
-        if ($target->looksLikeChannelPair()) {
-            return [];
-        }
-
-        $selector = NameSelector::tryParse((string) $target);
+        $selector = $suppression->target()->selector();
         if ($selector === null) {
             return [];
         }

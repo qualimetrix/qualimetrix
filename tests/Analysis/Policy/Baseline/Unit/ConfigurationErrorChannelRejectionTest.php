@@ -66,7 +66,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
         $parser = new BaselineEntryParser(self::registry());
 
         $inert = $parser->parse('project:', [
-            'channel' => self::RULE_NAME . '#' . self::RULE_NAME,
+            'channel' => self::RULE_NAME,
             'count' => 1,
         ]);
 
@@ -87,7 +87,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
         $parser = new BaselineEntryParser(self::registry());
 
         $inert = $parser->parse('project:', [
-            'channel' => self::RULE_NAME . '#' . self::RULE_NAME,
+            'channel' => self::RULE_NAME,
             'count' => 1,
             'mode' => BaselineEntryMode::Suppress->value,
         ]);
@@ -182,7 +182,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     {
         $registry = StubChannelDeclarationRegistry::withDefaults();
         $registry->declare(
-            self::RULE_NAME . '#' . self::RULE_NAME,
+            self::RULE_NAME,
             ChannelDeclaration::occurrence(SymbolLevel::Class_)->asConfigurationError(),
         );
 

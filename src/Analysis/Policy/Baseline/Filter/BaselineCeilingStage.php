@@ -163,7 +163,7 @@ final readonly class BaselineCeilingStage implements FindingFilterStageInterface
                 InertEntryReason::ConfigurationErrorChannel,
                 \sprintf(
                     'the channel "%s" reports a configuration error, which cannot be accepted as debt',
-                    $entry->identity->channel->toKey(),
+                    $entry->identity->channel->code,
                 ),
                 raw: null,
             );

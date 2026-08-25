@@ -50,17 +50,17 @@ final class SelectorCompatibilityOracleTest extends TestCase
         // difference.
         yield 'exact producer name selects every channel of that producer' => [
             'demo.rule',
-            ['demo.rule#demo.rule', 'demo.rule#demo.rule.leaf', 'demo.rule#demo.rule.leaf.deep'],
+            ['demo.rule', 'demo.rule.leaf', 'demo.rule.leaf.deep'],
         ];
 
         yield 'group selector selects strict descendants and not the parent' => [
             'demo.rule.*',
-            ['demo.rule#demo.rule.leaf', 'demo.rule#demo.rule.leaf.deep'],
+            ['demo.rule.leaf', 'demo.rule.leaf.deep'],
         ];
 
         yield 'exact descendant does not swallow its own descendant' => [
             'demo.rule.leaf',
-            ['demo.rule#demo.rule.leaf'],
+            ['demo.rule.leaf'],
         ];
 
         yield 'bare prefix without a star selects nothing' => [
@@ -84,8 +84,8 @@ final class SelectorCompatibilityOracleTest extends TestCase
         ];
 
         yield 'explicit two-part form addresses both halves exactly' => [
-            'demo.rule#demo.rule.leaf',
-            ['demo.rule#demo.rule.leaf'],
+            'demo.rule.leaf',
+            ['demo.rule.leaf'],
         ];
 
         yield 'explicit two-part form takes no wildcard' => [
@@ -106,7 +106,7 @@ final class SelectorCompatibilityOracleTest extends TestCase
         $selected = [];
         foreach (self::channels() as $channel) {
             if ($rules->isChannelEnabled(self::PRODUCER, $channel, [$selector], [])) {
-                $selected[] = $channel->toKey();
+                $selected[] = $channel->code;
             }
         }
 
@@ -128,7 +128,7 @@ final class SelectorCompatibilityOracleTest extends TestCase
         $removed = [];
         foreach (self::channels() as $channel) {
             if (!$rules->isChannelEnabled(self::PRODUCER, $channel, [], [$selector])) {
-                $removed[] = $channel->toKey();
+                $removed[] = $channel->code;
             }
         }
 
@@ -174,9 +174,9 @@ final class SelectorCompatibilityOracleTest extends TestCase
     private static function channels(): array
     {
         return [
-            new FindingChannel(self::PRODUCER, 'demo.rule'),
-            new FindingChannel(self::PRODUCER, 'demo.rule.leaf'),
-            new FindingChannel(self::PRODUCER, 'demo.rule.leaf.deep'),
+            new FindingChannel('demo.rule'),
+            new FindingChannel('demo.rule.leaf'),
+            new FindingChannel('demo.rule.leaf.deep'),
         ];
     }
 
@@ -184,7 +184,7 @@ final class SelectorCompatibilityOracleTest extends TestCase
     {
         return new InMemoryRuleChannelRegistry([
             self::PRODUCER => self::channels(),
-            self::SIBLING_PRODUCER => [new FindingChannel(self::SIBLING_PRODUCER, self::SIBLING_PRODUCER)],
+            self::SIBLING_PRODUCER => [new FindingChannel(self::SIBLING_PRODUCER)],
         ]);
     }
 }

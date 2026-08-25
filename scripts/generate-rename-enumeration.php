@@ -95,9 +95,12 @@ function surfaces(): array
 }
 
 /**
- * @return array<string, string> channel key ("ruleName#violationCode") => the
- *                               violationCode half, which is the string a
- *                               consumer actually writes (selectors, `@qmx-ignore` targets, docs, fixtures)
+ * @return array<string, string> channel key => the string a consumer actually
+ *                               writes (selectors, `@qmx-ignore` targets, docs,
+ *                               fixtures). Since Ш5b the two are the same
+ *                               string: a channel is named by one name, and the
+ *                               producing rule is a field beside it rather than
+ *                               a half of the key.
  */
 function channelIdentities(ContainerFactory $factory): array
 {
@@ -108,13 +111,14 @@ function channelIdentities(ContainerFactory $factory): array
     $identities = [];
 
     foreach (array_keys($registry->staticDeclarations()) as $key) {
-        $separatorPosition = strpos($key, '#');
-
-        if ($separatorPosition === false) {
-            throw new RuntimeException(sprintf('Channel key "%s" is missing the "#" separator.', $key));
+        if (str_contains($key, '#')) {
+            throw new RuntimeException(sprintf(
+                'Channel key "%s" still carries the retired "#" separator; a channel is one name.',
+                $key,
+            ));
         }
 
-        $identities[$key] = substr($key, $separatorPosition + 1);
+        $identities[$key] = $key;
     }
 
     return $identities;
@@ -641,6 +645,12 @@ function retireExecutedRows(array $existingNew, array $measuredRows, array $alre
  * was never a measurable identity, so a row that names one could not have
  * retired automatically in the first place.
  *
+ * A `channel` target recorded as a `rule#code` pair is held against the channel
+ * half. History is left in the vocabulary it was recorded in — rewriting a
+ * settled row would restate the measurement instead of preserving it — and since
+ * Ш5b a channel is identified by that half alone, so this is the same identity
+ * spelled the way it was spelled then.
+ *
  * @param list<array{old: string, kind: string, new: string, step: string}> $executed
  * @param array<string, true> $measuredKeys
  * @param array<string, array<string, true>> $identitiesByKind
@@ -667,7 +677,11 @@ function assertExecutedRowsStillHold(array $executed, array $measuredKeys, array
                 continue;
             }
 
-            if (!isset($identitiesByKind[$row['kind']][$target])) {
+            $measurable = $row['kind'] === 'channel' && str_contains($target, '#')
+                ? substr($target, (int) strpos($target, '#') + 1)
+                : $target;
+
+            if (!isset($identitiesByKind[$row['kind']][$measurable])) {
                 $problems[] = sprintf(
                     '%s (%s), recorded as executed by %s, promised %s — but %s is not measured any more',
                     $row['old'],

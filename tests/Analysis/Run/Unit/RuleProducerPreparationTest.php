@@ -160,7 +160,7 @@ final class RuleProducerPreparationTest extends TestCase
             public function channelsProducedBy(string $producerRuleName): array
             {
                 return $producerRuleName === LayerPolicyPreparationInterface::PRODUCER_RULE_NAME
-                    ? [new FindingChannel('architecture.coverage', 'architecture.coverage')]
+                    ? [new FindingChannel('architecture.coverage')]
                     : [];
             }
         };

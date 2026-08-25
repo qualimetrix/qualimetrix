@@ -150,7 +150,7 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($pipeline, [$ignored], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $ignored->subject->toCanonical() => [
-                    ['channel' => $ignored->channel()->toKey(), 'magnitudes' => [25]],
+                    ['channel' => $ignored->channel()->code, 'magnitudes' => [25]],
                 ],
             ]),
         ));
@@ -181,7 +181,7 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($pipeline, [$finding], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
-                    ['channel' => $finding->channel()->toKey(), 'magnitudes' => [25]],
+                    ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
                 ],
             ]),
         ));
@@ -245,7 +245,7 @@ final class FindingProjectorTest extends TestCase
 
         $baselinePath = $this->writeBaselineFile([
             $finding->subject->toCanonical() => [
-                ['channel' => $finding->channel()->toKey(), 'magnitudes' => [25]],
+                ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
             ],
         ]);
 
@@ -271,7 +271,7 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
-                    ['channel' => $finding->channel()->toKey(), 'magnitudes' => [25]],
+                    ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
                 ],
             ]),
         ));
@@ -306,7 +306,7 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($this->createPipeline(), [$first, $second], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $first->subject->toCanonical() => [
-                    ['channel' => $first->channel()->toKey(), 'count' => 1],
+                    ['channel' => $first->channel()->code, 'count' => 1],
                 ],
             ]),
         ));
@@ -341,7 +341,7 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
-                    ['channel' => $finding->channel()->toKey(), 'magnitudes' => [1]],
+                    ['channel' => $finding->channel()->code, 'magnitudes' => [1]],
                 ],
             ]),
         ));
@@ -390,7 +390,7 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $subjectKey => [
-                    ['channel' => 'nonexistent.channel#nonexistent.channel', 'count' => 1],
+                    ['channel' => 'nonexistent.channel', 'count' => 1],
                 ],
             ]),
         ));
@@ -448,10 +448,10 @@ final class FindingProjectorTest extends TestCase
 
         $baselinePath = $this->writeBaselineFile([
             $finding->subject->toCanonical() => [
-                ['channel' => $finding->channel()->toKey(), 'magnitudes' => [25]],
+                ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
             ],
             $otherSubjectKey => [
-                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 3],
+                ['channel' => 'code-smell.goto', 'count' => 3],
             ],
         ]);
 
@@ -481,8 +481,8 @@ final class FindingProjectorTest extends TestCase
 
         $baselinePath = $this->writeBaselineFile([
             $stillFiring->subject->toCanonical() => [
-                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
-                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
+                ['channel' => $stillFiring->channel()->code, 'magnitudes' => [25]],
+                ['channel' => 'code-smell.goto', 'count' => 2],
             ],
         ]);
 
@@ -491,7 +491,7 @@ final class FindingProjectorTest extends TestCase
         self::assertSame([], $result->findings, 'The surviving entry must still suppress its finding.');
         self::assertSame(1, $result->removedCountBy(FindingFilterStage::Baseline));
         self::assertSame(1, $result->staleEntryCount());
-        self::assertStringContainsString('code-smell.goto', $result->staleEntries[0]->identity->channel->toKey());
+        self::assertStringContainsString('code-smell.goto', $result->staleEntries[0]->identity->channel->code);
     }
 
     // -- Suppression --
@@ -536,7 +536,7 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($pipeline, [$measured, $annotated], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $measured->subject->toCanonical() => [
-                    ['channel' => $measured->channel()->toKey(), 'count' => 1],
+                    ['channel' => $measured->channel()->code, 'count' => 1],
                 ],
             ]),
             annotationSuppressionDisabled: true,
@@ -565,7 +565,7 @@ final class FindingProjectorTest extends TestCase
 
         $baselinePath = $this->writeBaselineFile([
             $measured->subject->toCanonical() => [
-                ['channel' => $measured->channel()->toKey(), 'count' => 1],
+                ['channel' => $measured->channel()->code, 'count' => 1],
             ],
         ]);
 

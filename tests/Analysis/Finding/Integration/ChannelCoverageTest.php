@@ -444,7 +444,7 @@ final class ChannelCoverageTest extends TestCase
     {
         self::assertNotNull(
             self::registry()->declarationFor($channel),
-            \sprintf('Channel "%s" was emitted but the registry has no declaration for it.', $channel->toKey()),
+            \sprintf('Channel "%s" was emitted but the registry has no declaration for it.', $channel->code),
         );
     }
 

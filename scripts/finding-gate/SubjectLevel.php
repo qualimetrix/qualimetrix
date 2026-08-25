@@ -7,8 +7,8 @@ namespace QmxFindingGate;
 /**
  * The aggregation level of a finding, read out of the `subject` field.
  *
- * A case's `channels` claim is a claim about pairs, not names, and the level of
- * the pair is not published as a field of its own: it is carried by `subject`,
+ * A case's `channels` claim is a claim about (channel, level) pairs, not about
+ * channels alone, and the level of the pair is not published as a field of its own: it is carried by `subject`,
  * in the tag its canonical form starts with. That is the same fact the plan
  * stands on when it allows a channel map to collapse two level channels into
  * one — the findings stay distinguishable because `subject` still separates
@@ -100,9 +100,15 @@ final class SubjectLevel
     /**
      * Refuses a claim entry that is not a pair.
      *
-     * A bare channel name is the shape the claim used to have, and it is refused
+     * A levelless entry is the shape the claim used to have, and it is refused
      * rather than read as "any level": a half-migrated `case.json` would
      * otherwise keep passing while claiming less than it looks like it claims.
+     *
+     * The channel half is checked for being non-empty and for **not** carrying
+     * the retired `rule#code` separator. A channel is one name now, so a claim
+     * still written as a pair would name a channel nothing can fire — and the
+     * check has to say so, because "claims a channel that never fires" is
+     * exactly what a stale claim looks like from the coverage side.
      */
     public static function assertClaim(string $entry, string $file): void
     {
@@ -110,10 +116,11 @@ final class SubjectLevel
         $channel = $separator === false ? $entry : substr($entry, 0, $separator);
         $level = $separator === false ? '' : substr($entry, $separator + 1);
 
-        if (!\in_array($level, self::levels(), true) || !str_contains($channel, '#')) {
+        if (!\in_array($level, self::levels(), true) || $channel === '' || str_contains($channel, '#')) {
             throw new GateError(\sprintf(
-                '%s claims "%s", which is not a "rule#code%slevel" pair. The unit of a claim is the pair, because a'
-                . ' channel firing at two levels in one case has to lose one of them visibly. Levels: %s.',
+                '%s claims "%s", which is not a "channel%slevel" pair of a channel named by its own name. The unit'
+                . ' of a claim is the pair, because a channel firing at two levels in one case has to lose one of'
+                . ' them visibly. Levels: %s.',
                 $file,
                 $entry,
                 self::SEPARATOR,

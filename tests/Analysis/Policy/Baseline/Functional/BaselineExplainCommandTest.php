@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -58,9 +59,9 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(BaselineConfiguredThresholds::class)]
 final class BaselineExplainCommandTest extends TestCase
 {
-    private const string CCN_CHANNEL = 'complexity.cyclomatic#complexity.cyclomatic.callable';
-    private const string CBO_CHANNEL = 'coupling.cbo#coupling.cbo.class';
-    private const string LONG_PARAMETER_LIST_CHANNEL = 'code-smell.long-parameter-list#code-smell.long-parameter-list';
+    private const string CCN_CHANNEL = 'complexity.cyclomatic.callable';
+    private const string CBO_CHANNEL = 'coupling.cbo.class';
+    private const string LONG_PARAMETER_LIST_CHANNEL = 'code-smell.long-parameter-list';
     private const string SYMBOL_FILE = 'src/OrderService.php';
 
     private string $tempDir;
@@ -210,12 +211,12 @@ final class BaselineExplainCommandTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsAChannelThatIsNotAChannelKey(): void
+    public function itRejectsAChannelWrittenInTheRetiredPairForm(): void
     {
-        $tester = $this->execute([], ['--channel' => 'complexity.cyclomatic']);
+        $tester = $this->execute([], ['--channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable']);
 
         self::assertSame(Command::INVALID, $tester->getStatusCode());
-        self::assertStringContainsString('is not a valid channel key', $tester->getDisplay());
+        self::assertStringContainsString('Write "complexity.cyclomatic.callable"', $tester->getDisplay());
     }
 
     #[Test]
@@ -321,7 +322,7 @@ final class BaselineExplainCommandTest extends TestCase
                 metrics: $metrics,
             ),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(),
+            new BoundaryExplanationService(self::producerEdge()),
             new BaselineConfiguredThresholds(
                 self::ruleRegistry($ruleClasses ?? ($registerRules ? [ComplexityRule::class] : [])),
                 new RuleOptionsFactory($registry),
@@ -352,7 +353,7 @@ final class BaselineExplainCommandTest extends TestCase
         $command = new BaselineExplainCommand(
             new StubBaselineRun($measured, ['src'], AbsolutePath::fromString($this->tempDir)),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(),
+            new BoundaryExplanationService(self::producerEdge()),
             new BaselineConfiguredThresholds(self::ruleRegistry([]), new RuleOptionsFactory(new RuleOptionsRegistry())),
         );
 
@@ -403,18 +404,18 @@ final class BaselineExplainCommandTest extends TestCase
 
     private static function identity(SymbolPath $symbol, string $channelKey): BaselineIdentity
     {
-        return new BaselineIdentity(self::subject($symbol)->toCanonical(), FindingChannel::fromKey($channelKey));
+        return new BaselineIdentity(self::subject($symbol)->toCanonical(), new FindingChannel($channelKey));
     }
 
     private static function finding(SymbolPath $symbol, string $channelKey, float $magnitude): Finding
     {
-        $channel = FindingChannel::fromKey($channelKey);
+        $channel = new FindingChannel($channelKey);
 
         return new Finding(
             location: new Location(RelativePath::fromString(self::SYMBOL_FILE), 12),
             subject: self::subject($symbol),
             symbolPath: $symbol,
-            ruleName: $channel->ruleName,
+            ruleName: $channel->code,
             code: $channel->code,
             message: 'finding',
             severity: Severity::Warning,
@@ -427,5 +428,26 @@ final class BaselineExplainCommandTest extends TestCase
         return MetricSubject::declaration(
             DeclarationPath::of($symbol, RelativePath::fromString(self::SYMBOL_FILE), DeclarationOrdinal::fromRank(0)),
         );
+    }
+
+    /**
+     * A channel-to-producer edge for the fixtures below: the channel's own name,
+     * minus a trailing level segment where it carries one. That is exactly the
+     * relation the retired left half of a channel key encoded, so a fixture
+     * naming `complexity.cyclomatic.callable` still resolves to the rule a
+     * `@qmx-threshold complexity.cyclomatic` addresses.
+     */
+    private static function producerEdge(): ChannelIdentityInterface
+    {
+        $identity = self::createStub(ChannelIdentityInterface::class);
+        $identity->method('producerOf')->willReturnCallback(static function (string $code): string {
+            $lastDot = strrpos($code, '.');
+
+            return $lastDot !== false && SymbolLevel::tryFrom(substr($code, $lastDot + 1)) !== null
+                ? substr($code, 0, $lastDot)
+                : $code;
+        });
+
+        return $identity;
     }
 }

@@ -562,8 +562,8 @@ final class RuleExecutorTest extends TestCase
             $provider,
             new RuleSelector(new InMemoryRuleChannelRegistry([
                 'complexity' => [
-                    new FindingChannel('complexity', 'complexity.callable'),
-                    new FindingChannel('complexity', 'complexity.class'),
+                    new FindingChannel('complexity.callable'),
+                    new FindingChannel('complexity.class'),
                 ],
             ])),
         );
@@ -1103,8 +1103,8 @@ final class RuleExecutorTest extends TestCase
                 }
 
                 return [
-                    new FindingChannel('computed.health', 'health.complexity'),
-                    new FindingChannel('computed.health', 'health.cohesion'),
+                    new FindingChannel('health.complexity'),
+                    new FindingChannel('health.cohesion'),
                 ];
             }
         });

@@ -8,7 +8,8 @@ namespace QmxFindingGate;
  * What a declared rename splits, and the machine check that keeps a split from
  * retiring a compared field.
  *
- * A channel row translates the whole `rule#code` key and each differing half.
+ * A channel row translates the whole channel key and each differing half (a key
+ * was a `rule#code` pair before the pair collapsed into one name).
  * When several rows disagree about one half — `design.type-coverage` becoming
  * three different rule names — no textual translation of that half is correct,
  * so RenameMaps stops substituting it. That alone would be a hole: `rule` and
@@ -96,7 +97,13 @@ final class ChannelSplit
                 continue;
             }
 
-            $key = self::string($finding, 'rule') . '#' . self::string($finding, 'code');
+            // Two eras of key, and which one the reference speaks is a fact
+            // about the reference rather than a choice: before the pair
+            // collapsed, a channel row named `rule#code`; after it, the channel
+            // is one name. A row exists for at most one of the two, so trying
+            // both is unambiguous.
+            $pairKey = self::string($finding, 'rule') . '#' . self::string($finding, 'code');
+            $key = isset($this->channelKeys[$pairKey]) ? $pairKey : self::string($finding, 'code');
             $declared = $this->channelKeys[$key] ?? null;
 
             if ($declared === null) {
@@ -111,12 +118,21 @@ final class ChannelSplit
                 continue;
             }
 
-            [$expectedRule, $expectedCode] = array_pad(explode('#', $declared, 2), 2, '');
+            // A row whose target is a single name says nothing about `rule`:
+            // the rule survives a collapse as its own published field, so
+            // constraining it here would demand a move no row declared.
+            $halves = explode('#', $declared, 2);
+            $expectedRule = \count($halves) === 2 ? $halves[0] : null;
+            $expectedCode = $halves[\count($halves) - 1];
             $identity = self::identity($finding);
             $match = null;
 
             foreach ($candidateByIdentity[$identity] ?? [] as $candidate) {
-                if (self::string($candidate, 'rule') === $expectedRule && self::string($candidate, 'code') === $expectedCode) {
+                if ($expectedRule !== null && self::string($candidate, 'rule') !== $expectedRule) {
+                    continue;
+                }
+
+                if (self::string($candidate, 'code') === $expectedCode) {
                     $match = $candidate;
 
                     break;

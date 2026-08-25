@@ -23,12 +23,12 @@ final class RuleSelectorTest extends TestCase
             {
                 return match ($producerRuleName) {
                     'computed.health' => [
-                        new FindingChannel('computed.health', 'health.complexity'),
-                        new FindingChannel('computed.health', 'health.cohesion'),
+                        new FindingChannel('health.complexity'),
+                        new FindingChannel('health.cohesion'),
                     ],
                     'architecture.layer-violation' => [
-                        new FindingChannel('architecture.layer-violation', 'architecture.layer-violation'),
-                        new FindingChannel('architecture.coverage', 'architecture.coverage'),
+                        new FindingChannel('architecture.layer-violation'),
+                        new FindingChannel('architecture.coverage'),
                     ],
                     default => [],
                 };
@@ -44,7 +44,7 @@ final class RuleSelectorTest extends TestCase
         self::assertTrue($this->selector->isProducerEnabled('computed.health', ['computed.health'], []));
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
-            new FindingChannel('computed.health', 'health.complexity'),
+            new FindingChannel('health.complexity'),
             ['computed.health'],
             [],
         ));
@@ -56,13 +56,13 @@ final class RuleSelectorTest extends TestCase
         self::assertTrue($this->selector->isProducerEnabled('computed.health', ['health.complexity'], []));
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
-            new FindingChannel('computed.health', 'health.complexity'),
+            new FindingChannel('health.complexity'),
             ['health.complexity'],
             [],
         ));
         self::assertFalse($this->selector->isChannelEnabled(
             'computed.health',
-            new FindingChannel('computed.health', 'health.cohesion'),
+            new FindingChannel('health.cohesion'),
             ['health.complexity'],
             [],
         ));
@@ -78,7 +78,7 @@ final class RuleSelectorTest extends TestCase
         ));
         self::assertTrue($this->selector->isChannelEnabled(
             'architecture.layer-violation',
-            new FindingChannel('architecture.coverage', 'architecture.coverage'),
+            new FindingChannel('architecture.coverage'),
             ['architecture.coverage'],
             [],
         ));
@@ -87,18 +87,18 @@ final class RuleSelectorTest extends TestCase
     #[Test]
     public function itSupportsAnExplicitFullChannelSelector(): void
     {
-        $fullSelector = 'computed.health#health.complexity';
+        $fullSelector = 'health.complexity';
 
         self::assertTrue($this->selector->isProducerEnabled('computed.health', [$fullSelector], []));
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
-            new FindingChannel('computed.health', 'health.complexity'),
+            new FindingChannel('health.complexity'),
             [$fullSelector],
             [],
         ));
         self::assertFalse($this->selector->isChannelEnabled(
             'computed.health',
-            new FindingChannel('computed.health', 'health.cohesion'),
+            new FindingChannel('health.cohesion'),
             [$fullSelector],
             [],
         ));
@@ -124,13 +124,13 @@ final class RuleSelectorTest extends TestCase
         ));
         self::assertFalse($this->selector->isChannelEnabled(
             'computed.health',
-            new FindingChannel('computed.health', 'health.complexity'),
+            new FindingChannel('health.complexity'),
             [],
             ['health.complexity'],
         ));
         self::assertTrue($this->selector->isChannelEnabled(
             'computed.health',
-            new FindingChannel('computed.health', 'health.cohesion'),
+            new FindingChannel('health.cohesion'),
             [],
             ['health.complexity'],
         ));
@@ -143,7 +143,7 @@ final class RuleSelectorTest extends TestCase
 
         self::assertTrue($this->selector->matchesKnown('health.complexity', $producers));
         self::assertTrue($this->selector->matchesKnown('architecture.coverage', $producers));
-        self::assertTrue($this->selector->matchesKnown('computed.health#health.complexity', $producers));
+        self::assertTrue($this->selector->matchesKnown('health.complexity', $producers));
         self::assertFalse($this->selector->matchesKnownProducer('health.complexity', $producers));
     }
 
@@ -151,14 +151,14 @@ final class RuleSelectorTest extends TestCase
     public function itValidatesAgainstAnExplicitSnapshotAndResetsRunChannels(): void
     {
         $static = self::registry([]);
-        $snapshotA = self::registry(['computed.health#health.complexity']);
-        $snapshotB = self::registry(['computed.health#health.cohesion']);
+        $snapshotA = self::registry(['health.complexity']);
+        $snapshotB = self::registry(['health.cohesion']);
         $selector = new RuleSelector($static);
         $producers = ['computed.health'];
 
         self::assertTrue($selector->matchesKnownIn('computed.health', $producers, $snapshotA));
         self::assertTrue($selector->matchesKnownIn('health.complexity', $producers, $snapshotA));
-        self::assertTrue($selector->matchesKnownIn('computed.health#health.complexity', $producers, $snapshotA));
+        self::assertTrue($selector->matchesKnownIn('health.complexity', $producers, $snapshotA));
         self::assertFalse($selector->matchesKnownIn('health.unknown', $producers, $snapshotA));
 
         $selector->replaceChannels($snapshotA);
@@ -179,7 +179,7 @@ final class RuleSelectorTest extends TestCase
 
             public function channelsProducedBy(string $producerRuleName): array
             {
-                return array_map(FindingChannel::fromKey(...), $this->channelKeys);
+                return array_map(static fn(string $code): FindingChannel => new FindingChannel($code), $this->channelKeys);
             }
         };
     }

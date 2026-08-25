@@ -47,7 +47,7 @@ final class ChannelPresentationCoverageTest extends TestCase
 
         $missing = [];
         foreach ($channelKeys as $key) {
-            $code = FindingChannel::fromKey($key)->code;
+            $code = new FindingChannel($key)->code;
             $answer = $presentation->presentationFor($code);
 
             if ($answer === null) {

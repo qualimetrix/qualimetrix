@@ -38,16 +38,16 @@ interface LayerPolicyPreparationInterface
      * than inferred from the `architecture.` spelling — see
      * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope}.
      *
-     * @var list<string> {@see \Qualimetrix\Analysis\Finding\Contract\FindingChannel::toKey()} form
+     * @var list<string> channel names
      */
     public const array PROJECT_SCOPED_CHANNELS = [
-        self::PRODUCER_RULE_NAME . '#' . self::PRODUCER_RULE_NAME,
-        self::COVERAGE_DIAGNOSTIC_NAME . '#' . self::COVERAGE_DIAGNOSTIC_NAME,
-        self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME . '#' . self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
-        self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME . '#' . self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-        self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME . '#' . self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-        self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME . '#' . self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
-        self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME . '#' . self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
+        self::PRODUCER_RULE_NAME,
+        self::COVERAGE_DIAGNOSTIC_NAME,
+        self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
+        self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+        self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+        self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+        self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
     ];
 
     /**

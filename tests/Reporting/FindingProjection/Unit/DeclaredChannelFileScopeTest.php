@@ -31,7 +31,7 @@ final class DeclaredChannelFileScopeTest extends TestCase
 
         foreach (self::declaredKeys() as $key) {
             self::assertFalse(
-                $scope->isFileScoped(FindingChannel::fromKey($key)),
+                $scope->isFileScoped(new FindingChannel($key)),
                 \sprintf('%s is declared project-scoped but the assembled scope does not say so', $key),
             );
         }
@@ -42,12 +42,11 @@ final class DeclaredChannelFileScopeTest extends TestCase
     {
         $scope = DeclaredChannelFileScope::create();
 
-        self::assertTrue($scope->isFileScoped(new FindingChannel('computed.health', 'health.cohesion')));
-        self::assertTrue($scope->isFileScoped(new FindingChannel('coupling.cbo', 'coupling.cbo.class')));
+        self::assertTrue($scope->isFileScoped(new FindingChannel('health.cohesion')));
+        self::assertTrue($scope->isFileScoped(new FindingChannel('coupling.cbo.class')));
         // A dotted descendant of a declared channel is a different channel and
         // inherits nothing.
         self::assertTrue($scope->isFileScoped(new FindingChannel(
-            LayerPolicyPreparationInterface::PRODUCER_RULE_NAME,
             LayerPolicyPreparationInterface::PRODUCER_RULE_NAME . '.invented',
         )));
     }

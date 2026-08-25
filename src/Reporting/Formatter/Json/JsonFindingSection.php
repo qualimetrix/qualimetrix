@@ -80,7 +80,7 @@ final class JsonFindingSection
             'line' => $finding->location->line,
             'subject' => $finding->subject->toCanonical(),
             'symbol' => $finding->symbolPath->toString(),
-            'channel' => $finding->channel()->toKey(),
+            'channel' => $finding->channel()->code,
             'occurrence' => $finding->occurrenceKey?->value,
             'edge' => self::formatEdge($finding),
             'namespace' => $ns !== '' ? $ns : null,
@@ -149,7 +149,7 @@ final class JsonFindingSection
         $edge = self::formatEdge($finding);
 
         return [
-            $finding->channel()->toKey(),
+            $finding->channel()->code,
             $finding->subject->toCanonical(),
             $finding->occurrenceKey === null ? '' : $finding->occurrenceKey->value,
             $edge === null ? 0 : 1,

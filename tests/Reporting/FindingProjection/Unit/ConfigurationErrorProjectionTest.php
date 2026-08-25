@@ -176,7 +176,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
         $result = $this->project([$configurationError], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $configurationError->subject->toCanonical() => [
-                    ['channel' => $configurationError->channel()->toKey(), 'count' => 1],
+                    ['channel' => $configurationError->channel()->code, 'count' => 1],
                 ],
             ]),
         ));
@@ -253,7 +253,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
-            self::CONFIG_ERROR_CHANNEL . '#' . self::CONFIG_ERROR_CHANNEL,
+            self::CONFIG_ERROR_CHANNEL,
             ChannelDeclaration::occurrence(SymbolLevel::Class_)->asConfigurationError(),
         );
 

@@ -10,7 +10,6 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
@@ -87,73 +86,53 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
     /**
      * Structural invariant, independent of {@see ChannelEmissionStaticGuardTest}:
-     * the `code` half of a declared key must either be the
-     * `ruleName` half verbatim, or that same string with a `.suffix`
-     * appended. This is what {@see FindingChannel::fromKey()}'s own
-     * "full key, not a bare code" design implies but does not itself
-     * enforce, and it is exactly the shape a hand-typed declaration line
-     * can violate silently — a `ruleName` half misspelled relative to its
-     * own `code` half would otherwise pass the drift guard above
-     * (which only compares declarations against the fixture, not against
-     * this shape) as long as the fixture line matches the wrong
-     * declaration.
+     * a declared channel name is either an emitting name verbatim, or such a
+     * name with one `.suffix` appended.
+     *
+     * An "emitting name" is a real rule's `NAME` constant, one of
+     * {@see LayerViolationRule}'s five `*_DIAGNOSTIC_NAME` constants, or one of
+     * the four inline-directive diagnostic names — the layer policy and the
+     * directive rule both emit under names other than their own `NAME`. A
+     * declared name that is neither addresses a channel no producer can ever
+     * emit, and the drift guard above cannot see it: that one only compares
+     * declarations against the fixture, so a typo consistent between the two
+     * passes it.
+     *
+     * This used to be two guards, because a key carried two halves and each
+     * needed its own check: the code had to be prefixed by the rule half, and
+     * the rule half had to name something real. A channel is one name now, so
+     * the two collapse into one — and the failure mode they were split over,
+     * "the two halves of one key disagree", stops existing rather than stops
+     * being checked.
      */
     #[Test]
-    public function everyDeclaredCodeEqualsOrIsPrefixedByItsRuleName(): void
-    {
-        $findings = [];
-
-        foreach (self::realStaticDeclarations() as $key => $declaration) {
-            $channel = FindingChannel::fromKey($key);
-
-            $matches = $channel->code === $channel->ruleName
-                || str_starts_with($channel->code, $channel->ruleName . '.');
-
-            if (!$matches) {
-                $findings[] = $key;
-            }
-        }
-
-        self::assertSame(
-            [],
-            $findings,
-            \sprintf(
-                'Declared key(s) whose violationCode is neither equal to nor prefixed by "<ruleName>.": %s',
-                implode(', ', $findings),
-            ),
-        );
-    }
-
-    /**
-     * Structural invariant: the `ruleName` half of every declared key must
-     * name something that actually emits under that name — either a real
-     * rule's `NAME` constant, or one of {@see LayerViolationRule}'s five
-     * `*_DIAGNOSTIC_NAME` constants (it emits those under names other than
-     * its own `NAME`). A `ruleName` half that matches neither would mean
-     * the declaration addresses a channel no rule class can ever produce —
-     * a typo this guard, unlike the drift guard above, can catch even when
-     * the typo is consistent between the fixture and the declaration.
-     */
-    #[Test]
-    public function everyDeclaredRuleNameHalfNamesARealRuleOrALayerViolationDiagnostic(): void
+    public function everyDeclaredChannelNameIsAnEmittingNameOrOneSuffixBelowIt(): void
     {
         $knownRuleNames = self::allRuleNames();
         $findings = [];
 
-        foreach (self::realStaticDeclarations() as $key => $declaration) {
-            $channel = FindingChannel::fromKey($key);
+        foreach (array_keys(self::realStaticDeclarations()) as $key) {
+            $lastDot = strrpos($key, '.');
+            $parent = $lastDot === false ? null : substr($key, 0, $lastDot);
 
-            if (!\in_array($channel->ruleName, $knownRuleNames, true)) {
-                $findings[] = $key;
+            if (\in_array($key, $knownRuleNames, true)) {
+                continue;
             }
+
+            if ($parent !== null && \in_array($parent, $knownRuleNames, true)) {
+                continue;
+            }
+
+            $findings[] = $key;
         }
 
         self::assertSame(
             [],
             $findings,
             \sprintf(
-                'Declared key(s) whose ruleName half names neither a real rule\'s NAME nor a'
-                . ' LayerViolationRule diagnostic constant: %s',
+                'Declared channel name(s) that name neither an emitting name (a rule\'s NAME, a'
+                . ' LayerViolationRule diagnostic constant, an inline-directive diagnostic) nor one'
+                . ' ".suffix" below such a name: %s',
                 implode(', ', $findings),
             ),
         );
@@ -189,27 +168,27 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
         self::assertSame(
             [
-                'annotation.invalid-threshold#annotation.invalid-threshold',
-                'annotation.unresolved-directive#annotation.unresolved-directive',
-                'annotation.unsupported-threshold#annotation.unsupported-threshold',
-                'architecture.coverage#architecture.coverage',
-                'architecture.empty-template#architecture.empty-template',
-                'architecture.pending-layer-matched#architecture.pending-layer-matched',
-                'architecture.potential-shadow#architecture.potential-shadow',
-                'architecture.unreachable-layer#architecture.unreachable-layer',
+                'annotation.invalid-threshold',
+                'annotation.unresolved-directive',
+                'annotation.unsupported-threshold',
+                'architecture.coverage',
+                'architecture.empty-template',
+                'architecture.pending-layer-matched',
+                'architecture.potential-shadow',
+                'architecture.unreachable-layer',
             ],
             $configurationErrors,
         );
 
         self::assertNotContains(
-            'architecture.layer-violation#architecture.layer-violation',
+            'architecture.layer-violation',
             $configurationErrors,
             'architecture.layer-violation reports a forbidden dependency edge — real code debt a project may'
             . ' ratchet down. It is not a configuration error and must stay baselineable.',
         );
 
         self::assertNotContains(
-            'annotation.unused-directive#annotation.unused-directive',
+            'annotation.unused-directive',
             $configurationErrors,
             'annotation.unused-directive reports a suppression that stopped firing — normal debt cleanup, not a'
             . ' mistake. Classifying it as a configuration error would fail every project that fixed a violation'

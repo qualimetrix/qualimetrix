@@ -212,7 +212,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
             $firstInput,
             new BufferedOutput(),
         );
-        self::assertContains('computed.health#computed.first', $this->computedChannels($runtimeConfigurator));
+        self::assertContains('computed.first', $this->computedChannels($runtimeConfigurator));
 
         $second = $this->document([
             'computedMetrics' => ['computed.second' => ['formula' => '1', 'levels' => ['class']]],
@@ -228,8 +228,8 @@ final class RuntimeConfigurationIsolationTest extends TestCase
             $secondInput,
             new BufferedOutput(),
         );
-        self::assertContains('computed.health#computed.second', $this->computedChannels($runtimeConfigurator));
-        self::assertNotContains('computed.health#computed.first', $this->computedChannels($runtimeConfigurator));
+        self::assertContains('computed.second', $this->computedChannels($runtimeConfigurator));
+        self::assertNotContains('computed.first', $this->computedChannels($runtimeConfigurator));
 
         $invalid = $this->document([
             'computedMetrics' => ['computed.invalid' => ['formula' => '(', 'levels' => ['class']]],
@@ -247,9 +247,9 @@ final class RuntimeConfigurationIsolationTest extends TestCase
                 new BufferedOutput(),
             );
         } finally {
-            self::assertContains('computed.health#computed.second', $this->computedChannels($runtimeConfigurator));
-            self::assertNotContains('computed.health#computed.invalid', $this->computedChannels($runtimeConfigurator));
-            self::assertNotContains('computed.health#computed.first', $this->computedChannels($runtimeConfigurator));
+            self::assertContains('computed.second', $this->computedChannels($runtimeConfigurator));
+            self::assertNotContains('computed.invalid', $this->computedChannels($runtimeConfigurator));
+            self::assertNotContains('computed.first', $this->computedChannels($runtimeConfigurator));
             $this->assertDefaultOwnerState($runtimeConfigurator);
         }
     }
@@ -359,7 +359,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $channels = (new ReflectionProperty(RuleSelector::class, 'channels'))->getValue($selector);
 
         return array_values(array_map(
-            static fn($channel): string => $channel->toKey(),
+            static fn($channel): string => $channel->code,
             $channels->channelsProducedBy('computed.health'),
         ));
     }

@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -156,7 +155,7 @@ final class MaintainabilityRule extends AbstractRule
      * `$value < $this->warning` comparisons (strict `<`, intentionally: the
      * threshold is the first acceptable value for the better category).
      *
-     * Keyed by the full channel key (`ruleName#violationCode`) — both halves
+     * Keyed by the channel's own name — the whole name
      * equal `self::NAME` here.
      *
      * @return array<string, ChannelDeclaration>
@@ -164,7 +163,7 @@ final class MaintainabilityRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new FindingChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
         ];
     }
 

@@ -41,7 +41,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(BaselineCleanupCommand::class)]
 final class BaselineMeasuredSetSeamTest extends TestCase
 {
-    private const string COMPUTED_CHANNEL = 'computed.health#health.complexity';
+    private const string COMPUTED_CHANNEL = 'health.complexity';
 
     /**
      * Complex enough that `health.complexity` scores well below the threshold
@@ -80,7 +80,7 @@ final class BaselineMeasuredSetSeamTest extends TestCase
             error: 5
         YAML;
 
-    private const string EVAL_CHANNEL = 'code-smell.eval#code-smell.eval';
+    private const string EVAL_CHANNEL = 'code-smell.eval';
 
     private string $tempDir;
     private string $configPath;
@@ -194,7 +194,10 @@ final class BaselineMeasuredSetSeamTest extends TestCase
     {
         $this->runGenerate();
         $subject = self::capturedSubject($this->baselinePath, self::COMPUTED_CHANNEL);
-        $selectors = ['computed.health', 'health.complexity', self::COMPUTED_CHANNEL];
+        // Three distinct spellings, because the output path is a hash of the
+        // selector: the producing rule, the channel itself, and the group above
+        // it. The pair form used to be the third and is gone.
+        $selectors = ['computed.health', self::COMPUTED_CHANNEL, 'health.*'];
 
         foreach ([
             BaselineGenerateCommand::class,

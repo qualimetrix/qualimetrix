@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Finding\Exclusion;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
@@ -62,9 +62,9 @@ final class RuleNamespaceExclusionProvider
     /**
      * Stores namespace-aggregate exclusions scoped to one channel selector.
      *
-     * The selector is a {@see ChannelSelector}: an exact finding code, `X.*`
-     * for its strict descendants, or the `ruleName#violationCode` pair. A bare
-     * prefix such as `health` no longer stands for a group — write `health.*`.
+     * The selector is a {@see NameSelector}: an exact channel name, or `X.*`
+     * for its strict descendants. A bare prefix such as `health` no longer
+     * stands for a group — write `health.*`.
      *
      * @param list<string> $patterns Namespace patterns (prefixes or globs)
      */
@@ -182,17 +182,15 @@ final class RuleNamespaceExclusionProvider
     }
 
     /**
-     * The whole channel is taken, not just its code, because the two-part
-     * selector is meaningless without the rule name — reading only the code
-     * would make `a#x` and `b#x` the same key. The rule name it compares
-     * against is the channel's own, which is not always `$ruleName`: that one
-     * is the rule the option is configured under, and the layer policy emits
-     * four channels under rule names no class declares as its own.
+     * The channel is taken whole rather than as a bare string so that the
+     * caller cannot pass the *producer's* name by accident: `$ruleName` is the
+     * rule the option is configured under, and the layer policy emits four
+     * channels whose names no class declares as its own.
      */
     public function isChannelExcluded(string $ruleName, FindingChannel $channel, string $namespace): bool
     {
         foreach ($this->channelMatchers[$ruleName] ?? [] as $selector => $matcher) {
-            if (ChannelSelector::tryParse($selector)?->matches($channel) === true && $matcher->matches($namespace)) {
+            if (NameSelector::tryParse($selector)?->matches($channel->code) === true && $matcher->matches($namespace)) {
                 return true;
             }
         }
