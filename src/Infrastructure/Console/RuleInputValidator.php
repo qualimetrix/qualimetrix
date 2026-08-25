@@ -55,6 +55,11 @@ final readonly class RuleInputValidator
             $this->ruleRegistry->getClasses(),
         );
 
+        // The run's own universe, not the container's: a computed-metric
+        // channel declares its levels only once configuration has resolved, and
+        // this is the instance the run then reports through.
+        $this->ruleSelector->useDeclaredLevels($channels);
+
         $selection = $configuration->selection;
         $this->validateSelectionSelectors([...$selection->only, ...$selection->disabled], $producers, $channels);
         $this->validateOptionOwners($configuration, $input, $producers);
@@ -72,8 +77,10 @@ final readonly class RuleInputValidator
      * {@see ChannelLevelAddressing} — the one place that judgement is made,
      * shared with the inline directives.
      *
-     * The retired `rule#code` spelling is refused before the lookup, so a stale
-     * selector is told what to write instead of being told it matches nothing.
+     * The retired `rule#code` spelling is refused **first**, before the pair is
+     * judged at all: its `#` half is not a name, so the pair question would
+     * report that half as unparseable and never reach the spelling that was
+     * retired. Every seam reading this grammar refuses the two in that order.
      *
      * @param list<string> $selectors
      * @param list<string> $producers
@@ -86,18 +93,21 @@ final readonly class RuleInputValidator
         $levels = new ChannelLevelAddressing($channels);
 
         foreach ($selectors as $selector) {
-            $pairProblem = $levels->problemWith($selector);
-
-            if ($pairProblem !== null) {
-                throw new InvalidArgumentException(\sprintf('Rule selector %s', $pairProblem));
-            }
-
             if (FindingChannel::isRetiredPairSpelling($selector)) {
                 throw new InvalidArgumentException(\sprintf(
                     'Rule selector "%s" is written in the retired channel-pair form. %s',
                     $selector,
                     FindingChannel::retiredPairAdvice($selector),
                 ));
+            }
+
+            // The subject goes into the seam rather than in front of its answer:
+            // prefixing one sentence with another's subject is the defect
+            // r11-claude-07 named on the suppression seam, and it survived here.
+            $pairProblem = $levels->problemWith($selector, \sprintf('Rule selector "%s"', $selector));
+
+            if ($pairProblem !== null) {
+                throw new InvalidArgumentException($pairProblem);
             }
 
             if ($selector === '' || !$this->ruleSelector->matchesKnownIn($selector, $producers, $channels)) {

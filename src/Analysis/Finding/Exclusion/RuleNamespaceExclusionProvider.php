@@ -188,6 +188,13 @@ final class RuleNamespaceExclusionProvider
      * caller cannot pass the *producer's* name by accident: `$ruleName` is the
      * rule the option is configured under, and the layer policy emits four
      * channels whose names no class declares as its own.
+     *
+     * The level a key is matched at is `namespace` and is not read from the
+     * key: this option is offered namespace aggregates and nothing else, so a
+     * key narrowed to any other level would describe a filter that can never
+     * fire. Such a key is refused by name — before the run starts, by
+     * {@see \Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator} —
+     * rather than judged a second time here, so one mistake keeps one answer.
      */
     public function isChannelExcluded(string $ruleName, FindingChannel $channel, string $namespace): bool
     {

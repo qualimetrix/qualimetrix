@@ -517,8 +517,8 @@ Available formats: `json`, `chrome-tracing`.
 Disable a producer rule, an entire group, or a finding channel. A selector is either an
 **exact** name (a producer rule, a group like `complexity`, or a channel), or `X.*` for
 strictly the **descendants** of `X` — `X` itself is not included. A bare prefix without the
-star is an error, and channel selectors also accept the explicit `ruleName#violationCode`
-form, same as `--only-rule`. Disabling one channel keeps its producer active so that other
+star is an error. A channel selector can be narrowed to one level of the aggregation tree with
+`:level`, same as `--only-rule`. Disabling one channel keeps its producer active so that other
 channels can still be reported. Can be repeated:
 
 ```bash
@@ -536,14 +536,15 @@ bin/qmx check src/ --disable-rule=health.complexity
 ```
 
 !!! tip "Memory optimization"
-    Disabling the `duplication.code-duplication` rule also skips the memory-intensive duplication detection phase entirely. On large codebases (500+ files), this can significantly reduce memory usage. Use `--disable-rule=duplication.code-duplication` if you encounter out-of-memory errors.
+    Disabling the `duplication.code-duplication` rule also skips the memory-intensive duplication detection phase entirely. On large codebases (500+ files), this can significantly reduce memory usage. Use `--disable-rule=duplication.code-duplication` if you encounter out-of-memory errors. The level-narrowed spelling `--disable-rule=duplication.code-duplication:project` skips it too: the channel reports at that one level, so silencing the level silences the rule. A producer stops as soon as the disable selectors together cover every level of every channel it emits — one level of a two-level channel leaves it running, since the other level still has findings to report.
 
 ### `--only-rule`
 
 Run only matching producer rules or finding channels. A selector is either an **exact** name
-(a producer rule, a group like `complexity`, a channel `ruleName`, or `violationCode`), or
-`X.*` for strictly its **descendants**. Use `ruleName#violationCode` for an explicit full
-channel — both halves must be exact, no star inside it. Can be repeated:
+(a producer rule, a group like `complexity`, or a channel), or `X.*` for strictly its
+**descendants**, either optionally narrowed to one level of the aggregation tree with `:level`.
+A selector carrying a level keeps its producer running, since a producer filtered out would
+never emit the level that was asked for. Can be repeated:
 
 ```bash
 # Run only complexity rules
@@ -585,7 +586,9 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 `exclude_namespace_channels` is configured in YAML, not through `--rule-opt`: each selector
 requires a non-empty list of namespace patterns, while `--rule-opt` carries scalar values. Its
 keys are channel selectors and follow the same exact-or-`X.*` rule as `@qmx-ignore` — a bare
-prefix like `health` is now an error, not a shorthand for `health.*`.
+prefix like `health` is now an error, not a shorthand for `health.*`. A key may add `:namespace`
+and no other level: the option is offered namespace aggregates only, so any other level would
+name a filter that can never fire.
 
 <!-- llms:skip-begin -->
 ### Rule-specific shortcut flags

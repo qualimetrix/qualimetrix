@@ -133,19 +133,13 @@ final class RuleInputValidatorTest extends TestCase
         $rules = self::createStub(RuleRegistryInterface::class);
         $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
         $validator = $this->validator($rules);
-        $definitions = new ResolvedComputedMetricDefinitions([
-            new ComputedMetricDefinition(
-                name: 'health.complexity',
-                formulas: ['class' => 'ccn__avg'],
-                description: 'Complexity health',
-                levels: [SymbolType::Class_],
-                inverted: true,
-            ),
-        ]);
+        $definitions = self::healthComplexityDefinitions(SymbolType::Class_, SymbolType::Namespace_);
 
         $accepted = new FindingConfiguration(
             new RuleOptionsDocument([
-                'computed.health' => ['exclude_namespace_channels' => ['health.complexity:class' => ['App\\Legacy']]],
+                'computed.health' => [
+                    'exclude_namespace_channels' => ['health.complexity:namespace' => ['App\\Legacy']],
+                ],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -161,8 +155,50 @@ final class RuleInputValidatorTest extends TestCase
         );
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('none of them reports at level "file"');
+        $this->expectExceptionMessage('it does not report at level "file"');
         $validator->validate(new ArrayInput([], new InputDefinition()), $rejected, $definitions);
+    }
+
+    /**
+     * The option only ever removes namespace aggregates, so a key narrowed to a
+     * level the channel *does* report at is still a filter that can never fire.
+     */
+    #[Test]
+    public function itRejectsAChannelExclusionKeyNarrowedToALevelTheOptionNeverAsksAbout(): void
+    {
+        $validator = $this->validatorForComputedHealth();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('removes namespace aggregates only');
+        $validator->validate(
+            new ArrayInput([], new InputDefinition()),
+            self::channelExclusion('health.complexity:class'),
+            self::healthComplexityDefinitions(),
+        );
+    }
+
+    /**
+     * A selector carrying both the retired `#` pair and a level is answered
+     * about the pair: the level question can only report the `#` half as
+     * unparseable, which says nothing about the spelling that was retired.
+     */
+    #[Test]
+    public function itRefusesTheRetiredPairBeforeJudgingTheLevel(): void
+    {
+        $validator = $this->validatorForComputedHealth();
+        $configuration = new FindingConfiguration(
+            new RuleOptionsDocument([]),
+            new FindingCliOverrides([]),
+            new RuleSelection(disabled: ['health.complexity#health.complexity:class']),
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('is written in the retired channel-pair form');
+        $validator->validate(
+            new ArrayInput([], new InputDefinition()),
+            $configuration,
+            self::healthComplexityDefinitions(),
+        );
     }
 
     /**
@@ -263,6 +299,36 @@ final class RuleInputValidatorTest extends TestCase
         );
     }
 
+    /**
+     * A producer whose every channel is silenced at every level it declares
+     * stops, instead of running its collection phase so that all of its output
+     * can be filtered away. The levels are only knowable from the run's own
+     * universe, so this is asserted through the preflight that resolves it.
+     */
+    #[Test]
+    public function itStopsAProducerWhoseEveryDeclaredLevelTheRunDisabled(): void
+    {
+        $rules = self::createStub(RuleRegistryInterface::class);
+        $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
+        $static = new ChannelUniverse([], [], [], ComputedMetricRule::NAME, new ResolvedComputedMetricDefinitions([]));
+        $selector = new RuleSelector($static);
+        $validator = new RuleInputValidator($rules, $selector, new FindingConfigurationResolver(), $static);
+        $disabled = ['health.complexity:class'];
+
+        $snapshot = $validator->validate(
+            new ArrayInput([], new InputDefinition()),
+            new FindingConfiguration(
+                new RuleOptionsDocument([]),
+                new FindingCliOverrides([]),
+                new RuleSelection(disabled: $disabled),
+            ),
+            self::healthComplexityDefinitions(),
+        );
+        $validator->replaceChannels($snapshot);
+
+        self::assertFalse($selector->isProducerEnabled(ComputedMetricRule::NAME, [], $disabled));
+    }
+
     private function validatorForComputedHealth(): RuleInputValidator
     {
         $rules = self::createStub(RuleRegistryInterface::class);
@@ -271,14 +337,16 @@ final class RuleInputValidatorTest extends TestCase
         return $this->validator($rules);
     }
 
-    private static function healthComplexityDefinitions(): ResolvedComputedMetricDefinitions
-    {
+    private static function healthComplexityDefinitions(
+        SymbolType $level = SymbolType::Class_,
+        SymbolType ...$moreLevels,
+    ): ResolvedComputedMetricDefinitions {
         return new ResolvedComputedMetricDefinitions([
             new ComputedMetricDefinition(
                 name: 'health.complexity',
                 formulas: ['class' => 'ccn__avg'],
                 description: 'Complexity health',
-                levels: [SymbolType::Class_],
+                levels: array_values([$level, ...$moreLevels]),
                 inverted: true,
             ),
         ]);

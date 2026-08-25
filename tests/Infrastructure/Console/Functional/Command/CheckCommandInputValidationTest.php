@@ -150,7 +150,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
         self::assertSame(3, $tester->getStatusCode());
         self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('none of them reports at level "file"', $tester->getErrorOutput());
+        self::assertStringContainsString('it does not report at level "file"', $tester->getErrorOutput());
     }
 
     /** A level a channel does declare is accepted, so the refusal above is not refusing every pair. */
