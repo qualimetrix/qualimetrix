@@ -1,0 +1,68 @@
+# Every runtime channel the single `computed.health` producer carries today, as
+# a (producer, code) pair. Ш5b retired the `producer#code` key form and
+# `FindingChannel` now throws on `#`, so this table names the two fields
+# separately rather than spelling a key no run can emit — the first redaction of
+# this file used the retired form and claimed a run could emit it, which is a
+# claim about the product that stopped being true.
+# `ChannelDeclarationRegistryInterface::staticDeclarations()` sees none
+# of these — it enumerates only channels a rule class declares at compile time
+# — so this list is the input Ш5d needs and the generated inventories under
+# docs/internal/generated/modular-architecture/ do not carry.
+#
+# Re-derived fresh for Ш5d on 2026-08-25 by two independent reference channels.
+# A prior snapshot of the same question already lives at
+# enumeration-runtime-channels.tsv (php scripts/generate-rename-enumeration.php
+# --runtime-channels); this file is an independent re-derivation, not a copy —
+# see CROSS-CHECK below for how the two compare.
+#
+# CHANNEL A — builtin (closed, 6 rows). Obtained by:
+#   1. sed -n '1,25p' src/Analysis/Evidence/ComputedMetrics/Contract/Definition/HealthDimension.php
+#      (the enum: Complexity, Cohesion, Coupling, Typing, Maintainability, Overall)
+#   2. grep -n "HealthDimension::" src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php
+#      (getDefaults() keys every entry by ->value, one per enum case, no filtering)
+#   3. sed -n '36,90p' src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php
+#      (resolve(): step 1 is `$definitions = ComputedMetricDefaults::getDefaults()`, and a
+#      `health.*`-named user override that is NOT already a key throws
+#      ComputedMetricConfigurationException, line ~80-85 — the set is fail-closed, not just
+#      undocumented convention)
+#   What this channel does NOT see: whether a dimension actually FIRES in a given run.
+#   `enabled: false` or an out-of-range threshold removes it from a run's findings without
+#   removing it from this closed set — this list is the declared universe, not a coverage
+#   claim. It also cannot see a hypothetical seventh dimension added after this snapshot;
+#   command 2 must be rerun after any change to ComputedMetricDefaults.
+#
+# CHANNEL B — corpus-observed (open by construction, narrowed to what the finding-gate
+# corpus actually writes). Obtained by:
+#   for f in finding-gate/cases/*/qmx.yaml; do grep -n "computed_metrics" -A8 "$f"; done
+#   (run 2026-08-25 over all 14 case files; finding-gate-controls/** excluded per task scope
+#   and because it is not corpus — it is the harness that runs the gate)
+#   Then: subtract CHANNEL A's six keys from every key seen. Only
+#   `finding-gate/cases/health/qmx.yaml` declares a name outside the builtin six:
+#   `computed.branch_load`.
+#   What this channel does NOT see: any computed metric name defined in a qmx.yaml outside
+#   this corpus (a real consumer's own project). That set is unbounded by construction — a
+#   user can name a `computed.*` metric anything — so CHANNEL B is an observation over one
+#   fixed corpus snapshot, never a closure. It also cannot see a name that a case declares
+#   but immediately disables (`enabled: false`) without ever running.
+#
+# CROSS-CHECK (third, independent confirmation): the tracked generator was re-run —
+#   php scripts/generate-rename-enumeration.php --runtime-channels
+#   diff'd byte-for-byte against the pre-run copy of enumeration-runtime-channels.tsv
+#   (2026-08-25) — output was IDENTICAL, so the script's own derivation (reflection over
+#   ComputedMetricDefaults::getDefaults() + glob over finding-gate/cases/*/qmx.yaml) landed
+#   on the same 6+1 rows found by channels A and B above, independently walked by hand.
+#   No `--preset=*` YAML and the project's own root qmx.yaml declare a `computed_metrics`
+#   section at all (grep -rl computed_metrics --include="*.yaml" . minus finding-gate*),
+#   so presets and self-dogfooding config are not a third source of runtime keys.
+#
+# GRAND TOTAL: 7 rows (6 builtin + 1 corpus-observed). This is NOT the full set of runtime
+# keys any real-world user could ever produce — see CHANNEL B's blind spot above — it is
+# the full set this repository's evidence can currently name.
+producer	code	family	source
+computed.health	health.complexity	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Complexity
+computed.health	health.cohesion	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Cohesion
+computed.health	health.coupling	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Coupling
+computed.health	health.typing	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Typing
+computed.health	health.maintainability	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Maintainability
+computed.health	health.overall	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php via HealthDimension::Overall
+computed.health	computed.branch_load	corpus-observed	finding-gate/cases/health/qmx.yaml
