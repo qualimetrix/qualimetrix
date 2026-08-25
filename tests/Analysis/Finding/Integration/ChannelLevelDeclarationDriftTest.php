@@ -77,6 +77,27 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
      */
     private static ?array $runtime = null;
 
+    /**
+     * Every subject form {@see levelOf()} distinguishes, in the order its own
+     * `match` lists them. The self-test below requires this list to equal
+     * what a corpus run actually reaches, so removing a form here without
+     * removing its arm — or the reverse — is itself a red run, not a silent
+     * gap.
+     *
+     * @var list<string>
+     */
+    private const array RECOGNISED_FORMS = ['declaration:callable', 'declaration:class', 'ns', 'file', 'project'];
+
+    /**
+     * Which of {@see RECOGNISED_FORMS} a call to {@see levelOf()} has
+     * actually matched so far, keyed by form. Populated only inside
+     * {@see levelOf()}'s own arms, so a form loses its entry if — and only
+     * if — its arm stops being the one that returns.
+     *
+     * @var array<string, true>
+     */
+    private static array $recognisedForms = [];
+
     #[Test]
     public function theCorpusStillReportsEveryChannelAtTheLevelItWasMeasuredAt(): void
     {
@@ -163,6 +184,37 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
                 ),
             );
         }
+    }
+
+    /**
+     * `levelOf()` is a hand-written parser kept deliberately independent of
+     * the product's own subject-to-level derivation (rejected as
+     * `r10-claude-04`, see Ш5c′ PLAN.md): a parser built from the same code
+     * as what it checks would agree with it by construction and stop being a
+     * witness. Independence has no guard of its own otherwise, so this test
+     * is that guard — not a test of a finding, but of the oracle's fitness to
+     * report one. It fails if the corpus stops reaching a form `levelOf()`
+     * recognises: that is exactly the condition under which deleting the
+     * arm for that form would go unnoticed.
+     */
+    #[Test]
+    public function itRecognisesEveryFindingSubjectFormTheCorpusReaches(): void
+    {
+        self::observe();
+
+        $reached = array_keys(self::$recognisedForms);
+        sort($reached);
+        $expected = self::RECOGNISED_FORMS;
+        sort($expected);
+
+        self::assertSame(
+            $expected,
+            $reached,
+            'The corpus no longer exercises every subject form levelOf() recognises (or recognises one it no'
+            . ' longer reaches). Either the corpus lost the fixture reaching a form, or a form was added to or'
+            . ' removed from levelOf() without updating RECOGNISED_FORMS — this guard cannot tell which from the'
+            . ' failure alone.',
+        );
     }
 
     /**
@@ -317,6 +369,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         $observed = [];
         $declared = [];
         self::$runtime = [];
+        self::$recognisedForms = [];
 
         foreach (self::cases() as $directory => $case) {
             $channelsInCase = [];
@@ -398,6 +451,16 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
      * The level a finding reports at, read from its subject — the same place
      * every formatter reads it from, and the only place 53 of the 63
      * channels carry it at all.
+     *
+     * Deliberately its own parser rather than a call into the product's
+     * subject-to-level derivation: a derivation sharing code with what it
+     * checks would agree with the product by construction, not by
+     * observation, and stop being a witness. There is also no such product
+     * path to call — `SymbolLevelProjection` maps a `SymbolType`, not this
+     * text — so sharing it would mean writing one to serve this test. See
+     * Ш5c′ in `docs/internal/plans/rule-vocabulary/PLAN.md` for the rejected
+     * alternative (`r10-claude-04`) and {@see RECOGNISED_FORMS} for this
+     * parser's own completeness guard.
      */
     private static function levelOf(string $subject): string
     {
@@ -409,15 +472,27 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
 
         return match ($head) {
             'declaration' => match (explode(':', $subject)[1] ?? '') {
-                'callable' => 'callable',
-                'class' => 'class',
+                'callable' => self::recognise('declaration:callable', 'callable'),
+                'class' => self::recognise('declaration:class', 'class'),
                 default => $unrecognised(),
             },
-            'ns' => 'namespace',
-            'file' => 'file',
-            'project' => 'project',
+            'ns' => self::recognise('ns', 'namespace'),
+            'file' => self::recognise('file', 'file'),
+            'project' => self::recognise('project', 'project'),
             default => $unrecognised(),
         };
+    }
+
+    /**
+     * Records that the arm returning {@see $level} for {@see $form} fired,
+     * for {@see itRecognisesEveryFindingSubjectFormTheCorpusReaches()} to
+     * check against {@see RECOGNISED_FORMS}.
+     */
+    private static function recognise(string $form, string $level): string
+    {
+        self::$recognisedForms[$form] = true;
+
+        return $level;
     }
 
     /**

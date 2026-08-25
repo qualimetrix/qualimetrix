@@ -21,7 +21,20 @@ use Throwable;
 
 /**
  * The `qmx.yaml` half of what `baseline:explain` prints: the warning boundary
- * each channel is configured with, keyed by channel name.
+ * each channel is configured with, keyed by channel name and then by the level
+ * the number applies at.
+ *
+ * **Why this class reads what levels a channel declares.** A channel reports at
+ * every level its declaration names, and the boundaries of two levels of one
+ * hierarchical rule are separate numbers, so a map keyed by the channel alone
+ * would have to pick one level and print the choice as a fact. The levels are
+ * therefore taken from the declaration — the authority on them — and every
+ * declared level gets its own row. Reading them here decides nothing about
+ * authored text: this class enumerates configuration, and the one place that
+ * rules on an authored `channel:level` pair is
+ * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing}.
+ * `ChannelLevelRefusalTopologyTest` holds that boundary, and pins this class as
+ * a reader that refuses nothing.
  *
  * **Why it lives here and not in `Baseline`.** `qmx.yaml`'s own architecture
  * section allows the `Baseline` layer to depend on `Core` and nothing else,
@@ -41,11 +54,13 @@ use Throwable;
  * configured `0`. Two shapes are read, and both are conventions the codebase
  * actually holds rather than assumptions about it:
  *
- * - a hierarchical rule's channel **declares** exactly one level, so the
- *   level's own options object is asked. The level is read from the
+ * - a hierarchical rule's options hold one object per level, so the object of
+ *   the level being resolved is asked. The level always comes from the
  *   declaration, never parsed back out of the channel code: the code spells
  *   the level today and will not always, and a reader of the name fails by
- *   printing nothing rather than by failing;
+ *   printing nothing rather than by failing. A level the declaration names and
+ *   the options do not support yields no row, which is a mismatch worth one
+ *   missing line and not a failure;
  * - a multi-axis rule's channel names its axis, so a property named after that
  *   axis is preferred. No channel names an axis since ADR 0030 gave each
  *   type-coverage dimension its own rule — the branch is kept because what
