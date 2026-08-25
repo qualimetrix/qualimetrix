@@ -92,6 +92,22 @@ final readonly class ChannelLevelSelector implements Stringable
         return self::split($raw)[0];
     }
 
+    /**
+     * The text after the separator, whether or not it is a level, or `null`
+     * when there is no separator.
+     *
+     * Kept here rather than left to each refusal because a caller writing its
+     * own `substr` picks its own separator occurrence: the two halves have to
+     * come from the same split, or a refusal can quote a channel half and a
+     * level half that do not add up to the text the author wrote.
+     */
+    public static function levelHalfText(string $raw): ?string
+    {
+        $separator = strrpos($raw, self::LEVEL_SEPARATOR);
+
+        return $separator === false ? null : substr($raw, $separator + 1);
+    }
+
     /** The channel half: an exact channel name, or `X.*` for its strict descendants. */
     public function channel(): NameSelector
     {

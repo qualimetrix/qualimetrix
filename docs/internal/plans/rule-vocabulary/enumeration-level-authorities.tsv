@@ -1,0 +1,33 @@
+# Кто в продукте отвечает на вопрос об уровне канала.
+#
+# Чем получено: по одному grep на канал ссылки (скрипт в теле записи Ш5c' в
+# PLAN.md): вызовы `->levelsOf(`; чтения `->levels` и `declarationFor(`;
+# литералы `SymbolLevel::` в src; `SymbolLevelProjection`; грамматика пары
+# (`ChannelLevelSelector::`, `levelHalf(`, `channelHalf(`,
+# `carriesLevelSeparator(`); `ChannelLevelAddressing`; разбор субъекта
+# (`SubjectLevel::`, `function levelOf(`); выбрасывание уровня
+# (`expand(...->channel())`). Всего 410 вхождений, из них решающих об
+# уровне КАНАЛА — восемь швов ниже; остальное либо конструирование, либо
+# уровень МЕТРИКИ (Measurement/Aggregation, другой предмет), либо тесты.
+#
+# Чего этот способ не видит — назвать обязательно, потому что именно этот
+# случай и породил находку r11-claude-05: шов, который решает, ИГНОРИРУЯ
+# уровень, не оставляет текстового следа вообще. Отсутствие не грепается.
+# Поэтому страж единственности не может быть отрицательным («никто больше не
+# вызывает levelsOf») — он обязан быть положительным: перечисляется множество
+# «кто принимает текст селектора», и каждый его элемент обязан дойти до
+# грамматики пары. Второе слепое пятно: DI-алиасы и строковые идентификаторы
+# уровня в конфигурации (`--rule-opt rule:level.option`, вложенные ключи) — они
+# ходят как строки и в это перечисление попадают только через грамматику.
+#
+seam	file	line	role	verdict	finding
+ChannelLevelAddressing	src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php	42-112	authority	intended	-
+RuleSelector::matchesChannel	src/Analysis/Finding/Contract/Rule/RuleSelector.php	210-227	matching	level-aware, correct	-
+RuleSelector::isProducerEnabled	src/Analysis/Finding/Contract/Rule/RuleSelector.php	59-73	gating	decides by ignoring the level; a selector covering every declared level cannot stop the producer	r11-claude-05
+RuleNamespaceExclusionProvider::isChannelExcluded	src/Analysis/Finding/Exclusion/RuleNamespaceExclusionProvider.php	191-202	matching	decides with a hardcoded SymbolLevel::Namespace_ while the key validator accepts any level	r11-claude-01 / r11-orch-01
+SuppressionTarget::selector	src/Analysis/Policy/Inline/Contract/Suppression/SuppressionTarget.php	59	parsing	parses the pair, decides nothing	-
+DirectiveAddressability::problemWithSuppression	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	88-112	refusal	asks the authority, then drops the level for the hint	r11-claude-07 (text)
+DirectiveAddressability::problemWithThreshold	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	135-151	refusal	decides itself on carriesLevelSeparator; never asks the authority	r11-claude-03
+InlineDirectivePolicy::addressedCodes	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php	318-332	accountability	drops the level, so an impossible pair is also reported as unused	r11-claude-02
+ChannelExclusionKeyValidator	src/Infrastructure/Console/ChannelExclusionKeyValidator.php	49-76	refusal	asks the authority, then runs its own producer existential; the two witnesses need not be one channel	r11-codex-01
+RuleInputValidator::validateSelectionSelectors	src/Infrastructure/Console/RuleInputValidator.php	81-110	refusal	asks the authority	r11-claude-06 (order)

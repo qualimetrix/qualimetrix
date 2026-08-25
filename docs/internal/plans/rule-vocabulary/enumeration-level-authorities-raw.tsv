@@ -1,0 +1,411 @@
+channel	file	line	text
+levelsOf	src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php	92	$levels = $this->identity->levelsOf($candidate->code);
+levelsOf	tests/Analysis/Finding/Integration/ChannelLevelRefusalTopologyTest.php	99	if (str_contains($contents, '->levelsOf(')) {
+levelsOf	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	170	$universe->levelsOf(CboRule  NAME),
+levelsOf	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	172	self  assertSame([], $universe->levelsOf('coupling.cbo.class'));
+declarationRead	src/Reporting/FindingProjection/FindingProjector.php	178	return $this->declarations->declarationFor($finding->channel())?->isConfigurationError() === true;
+declarationRead	src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php	33	* read from {@see ChannelDeclarationRegistryInterface  declarationFor()} —
+declarationRead	src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php	134	$isLowerWorse = $this->declarations->declarationFor($finding->channel())?->isLowerWorse();
+declarationRead	src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	73	return array_map(SymbolLevelProjection  ofDeclaration(...), $this->levels);
+declarationRead	src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	78	return \in_array($level, $this->levels, true);
+declarationRead	src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	54	foreach ($definition->levels as $level) {
+declarationRead	src/Analysis/Evidence/ComputedMetrics/Health/Configuration/HealthFormulaExcluder.php	184	levels  $overall->levels,
+declarationRead	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	92	foreach ($definition->levels as $level) {
+declarationRead	src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	60	foreach ($definition->levels as $level) {
+declarationRead	src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	93	foreach ($definition->levels as $level) {
+declarationRead	src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php	176	$levels = $base->levels;
+declarationRead	src/Analysis/Finding/Contract/ChannelDeclarationRegistryInterface.php	32	* A channel absent from both is not an error here  {@see declarationFor()}
+declarationRead	src/Analysis/Finding/Contract/ChannelDeclarationRegistryInterface.php	54	public function declarationFor(FindingChannel $channel)  ?ChannelDeclaration;
+declarationRead	src/Analysis/Finding/Contract/ChannelDeclarationRegistryInterface.php	63	* this map, never against {@see declarationFor()}'s run-time-widened
+declarationRead	src/Analysis/Finding/Contract/ChannelDeclaration.php	72	$this->levels = self  canonicalLevels($levels);
+declarationRead	src/Analysis/Finding/Contract/ChannelDeclaration.php	120	return new self($this->direction, true, $this->levels);
+declarationRead	src/Analysis/Policy/Baseline/BaselineUpdater.php	142	$declaration = $this->declarations->declarationFor($entry->identity->channel);
+declarationRead	src/Analysis/Policy/Baseline/BaselineCleaner.php	69	$declaration = $declarations->declarationFor($entry->identity->channel);
+declarationRead	src/Analysis/Policy/Baseline/BaselineEntryParser.php	168	$declaration = $this->declarations->declarationFor($identity->channel);
+declarationRead	src/Analysis/Policy/Baseline/BaselineGenerator.php	107	$declaration = $this->declarations->declarationFor($identity->channel);
+declarationRead	src/Analysis/Policy/Baseline/Filter/BaselineCeilingStage.php	155	$declaration = $this->declarations->declarationFor($entry->identity->channel);
+declarationRead	src/Analysis/Policy/Baseline/Filter/BaselineCeilingStage.php	221	$declaration = $this->declarations->declarationFor($identity->channel);
+declarationRead	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	48	$this->levels = new ChannelLevelAddressing($identity);
+declarationRead	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	88	$pairProblem = $this->levels->problemWith($raw);
+declarationRead	src/Infrastructure/Rule/ChannelUniverse.php	78	public function declarationFor(FindingChannel $channel)  ?ChannelDeclaration
+declarationRead	src/Infrastructure/Rule/ChannelUniverse.php	194	$declaration = $this->declarationFor(new FindingChannel($code));
+declarationRead	src/Infrastructure/Rule/ChannelUniverse.php	196	return $declaration === null ? []   $declaration->levels;
+declarationRead	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php	113	foreach ($declaration->levels as $level) {
+declarationRead	src/Infrastructure/Console/ExitCodeResolver.php	121	$declaration = $this->declarations->declarationFor($finding->channel());
+declarationRead	tests/Analysis/Evidence/Prioritization/Unit/Debt/RemediationTimeRegistryTest.php	290	* {@see ChannelDeclarationRegistryInterface  declarationFor()} returns
+declarationRead	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsConfigResolverTest.php	254	self  assertContains(SymbolType  Class_, $custom->levels);
+declarationRead	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsConfigResolverTest.php	255	self  assertContains(SymbolType  Namespace_, $custom->levels);
+declarationRead	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsConfigResolverTest.php	256	self  assertNotContains(SymbolType  Project, $custom->levels);
+declarationRead	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsConfigResolverTest.php	410	self  assertSame([SymbolType  Class_], $complexity->levels);
+declarationRead	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsConfigResolverTest.php	425	self  assertContains(SymbolType  Namespace_, $custom->levels);
+declarationRead	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsConfigResolverTest.php	426	self  assertContains(SymbolType  Project, $custom->levels);
+declarationRead	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsConfigResolverTest.php	427	self  assertNotContains(SymbolType  Class_, $custom->levels);
+declarationRead	tests/Analysis/Finding/Unit/ChannelDeclarationTest.php	157	ChannelDeclaration  occurrence(SymbolLevel  Project, SymbolLevel  Class_, SymbolLevel  Namespace_)->levels,
+declarationRead	tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php	34	* never to {@see ChannelDeclarationRegistryInterface  declarationFor()}  with
+declarationRead	tests/Analysis/Finding/Integration/ChannelCoverageTest.php	446	self  registry()->declarationFor($channel),
+declarationRead	tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php	385	$declaration = $registry->declarationFor(new FindingChannel($channel));
+declarationRead	tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php	391	$declarations[$channel] = array_map(static fn(SymbolLevel $level)  string => $level->value, $declaration->levels);
+declarationRead	tests/Analysis/Finding/Integration/ChannelEmissionStaticGuardTest.php	142	if ($registry->declarationFor($channel) === null && !\in_array($key, $excludedKeys, true)) {
+declarationRead	tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php	69	public function declarationFor(FindingChannel $channel)  ?ChannelDeclaration
+declarationRead	tests/Analysis/Policy/Baseline/Unit/BaselineGeneratorTest.php	87	public function declarationFor(FindingChannel $channel)  ?ChannelDeclaration
+declarationRead	tests/Analysis/Policy/Baseline/Unit/BaselineGeneratorTest.php	91	return $this->delegate->declarationFor($channel);
+declarationRead	tests/Infrastructure/Unit/ChannelUniverseTest.php	47	self  assertSame($declaration, $universe->declarationFor($channel));
+declarationRead	tests/Infrastructure/Unit/ChannelUniverseTest.php	53	$result = $this->universe()->declarationFor(new FindingChannel('code-smell.eval'));
+declarationRead	tests/Infrastructure/Unit/ChannelUniverseTest.php	74	$declaration = $this->universe()->declarationFor(
+declarationRead	tests/Infrastructure/Unit/ChannelUniverseTest.php	92	$declaration = $this->universe()->declarationFor(
+declarationRead	tests/Infrastructure/Unit/ChannelUniverseTest.php	109	self  assertNull($this->universe()->declarationFor($channel));
+declarationRead	tests/Infrastructure/Unit/ChannelUniverseTest.php	291	$declaration = $this->universe()->declarationFor(
+declarationRead	tests/Infrastructure/Unit/ChannelUniverseTest.php	298	$declaration->levels,
+declarationRead	tests/Infrastructure/Unit/ChannelUniverseTest.php	312	self  assertNull($this->universe()->declarationFor(
+declarationRead	scripts/finding-gate/probe-channels.php	66	$staticChannels[$channel] = $values($declaration->levels);
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoverageCollector.php	129	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoverageCollector.php	132	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoverageCollector.php	140	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoverageCollector.php	145	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoverageCollector.php	150	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoverageCollector.php	155	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoverageCollector.php	160	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoverageCollector.php	165	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoverageCollector.php	170	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoverageCollector.php	175	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoverageCollector.php	180	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/InheritanceRule.php	152	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Design/NocCollector.php	62	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/NocCollector.php	64	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Design/NocCollector.php	69	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php	69	$name => ChannelDeclaration  magnitude(WorseDirection  Lower, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Design/InheritanceDepthCollector.php	219	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/InheritanceDepthCollector.php	221	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Design/InheritanceDepthCollector.php	226	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Design/NocRule.php	146	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Design/DataClassRule.php	187	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Lower, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Design/TypeCoveragePercentCollector.php	75	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Design/GodClassRule.php	211	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/ClassToNamespaceAggregator.php	25	static fn(MetricDefinition $d)  bool => $d->hasAggregationsForLevel(SymbolLevel  Namespace_),
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/ClassToNamespaceAggregator.php	52	SymbolLevel  Namespace_,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/ClassToNamespaceAggregator.php	58	SymbolLevel  Namespace_,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/NamespaceMetricContributions.php	154	if ($definition->collectedAt !== SymbolLevel  File || isset($namespaceProvided[$definition->name])) {
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/NamespaceMetricContributions.php	181	if ($targetLevel !== SymbolLevel  Namespace_) {
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/NamespaceMetricContributions.php	195	if ($definition->collectedAt === SymbolLevel  File
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/NamespaceToProjectAggregator.php	31	static fn(MetricDefinition $d)  bool => $d->hasAggregationsForLevel(SymbolLevel  Project),
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/NamespaceToProjectAggregator.php	61	SymbolLevel  Project,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/NamespaceToProjectAggregator.php	67	SymbolLevel  Project,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/NamespaceToProjectAggregator.php	73	static fn(MetricDefinition $d)  bool => $d->collectedAt === SymbolLevel  Namespace_,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/NamespaceToProjectAggregator.php	102	SymbolLevel  Project,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/CallableToClassAggregator.php	29	static fn(MetricDefinition $d)  bool => $d->collectedAt === SymbolLevel  Callable
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/CallableToClassAggregator.php	30	&& $d->hasAggregationsForLevel(SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/CallableToClassAggregator.php	54	$classBag = AggregationHelper  applyAggregations($metricValues, $callableDefinitions, SymbolLevel  Class_);
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/CallableToClassAggregator.php	64	$methodBag = AggregationHelper  applyAggregations($methodValues, $callableDefinitions, SymbolLevel  Class_);
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/TreeAwareNamespaceAggregator.php	39	static fn(MetricDefinition $d)  bool => $d->hasAggregationsForLevel(SymbolLevel  Namespace_),
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/TreeAwareNamespaceAggregator.php	87	SymbolLevel  Namespace_,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/TreeAwareNamespaceAggregator.php	93	SymbolLevel  Namespace_,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Aggregation/MetricAggregator.php	29	if ($def->collectedAt === SymbolLevel  Callable && $def->hasAggregationsForLevel(SymbolLevel  Class_)) {
+symbolLevelLit	src/Analysis/Evidence/Measurement/Contract/SymbolLevelProjection.php	25	SymbolType  Method, SymbolType  Function_ => SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Contract/SymbolLevelProjection.php	26	SymbolType  Class_ => SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Contract/SymbolLevelProjection.php	27	SymbolType  File => SymbolLevel  File,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Contract/SymbolLevelProjection.php	28	SymbolType  Namespace_ => SymbolLevel  Namespace_,
+symbolLevelLit	src/Analysis/Evidence/Measurement/Contract/SymbolLevelProjection.php	29	SymbolType  Project => SymbolLevel  Project,
+symbolLevelLit	src/Analysis/Evidence/Measurement/FileMeasurement/DerivedCollectorRunner.php	81	$names = $this->metricNamesFor([$collector], SymbolLevel  Callable);
+symbolLevelLit	src/Analysis/Evidence/Measurement/FileMeasurement/DerivedCollectorRunner.php	107	$names = $this->metricNamesFor([$collector], SymbolLevel  Class_);
+symbolLevelLit	src/Analysis/Evidence/Measurement/FileMeasurement/DerivedMetricExtractor.php	46	$callableMetricNames = $this->derivedMetricNamesAt(SymbolLevel  Callable);
+symbolLevelLit	src/Analysis/Evidence/Measurement/FileMeasurement/DerivedMetricExtractor.php	66	$classMetricNames = $this->derivedMetricNamesAt(SymbolLevel  Class_);
+symbolLevelLit	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php	158	self  NAME => ChannelDeclaration  occurrence(SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php	116	static  NAME => ChannelDeclaration  occurrence(SymbolLevel  Callable),
+symbolLevelLit	src/Analysis/Evidence/Security/SensitiveParameterRule.php	138	self  NAME => ChannelDeclaration  occurrence(SymbolLevel  Callable),
+symbolLevelLit	src/Analysis/Evidence/Cohesion/LcomCollector.php	132	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Cohesion/LcomCollector.php	134	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Cohesion/LcomCollector.php	139	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Cohesion/TccLccCollector.php	154	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Cohesion/TccLccCollector.php	156	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Cohesion/TccLccCollector.php	160	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Cohesion/TccLccCollector.php	168	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Cohesion/TccLccCollector.php	170	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Cohesion/TccLccCollector.php	174	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Cohesion/TccLccCollector.php	182	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Cohesion/LcomRule.php	166	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	92	SymbolLevel  Callable => $this->callable,
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	93	SymbolLevel  Class_ => $this->class,
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	103	SymbolLevel  Callable => $this->callable->isEnabled(),
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	104	SymbolLevel  Class_ => $this->class->isEnabled(),
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	114	return [SymbolLevel  Callable, SymbolLevel  Class_];
+symbolLevelLit	src/Analysis/Evidence/Complexity/ComplexityOptions.php	92	SymbolLevel  Callable => $this->callable,
+symbolLevelLit	src/Analysis/Evidence/Complexity/ComplexityOptions.php	93	SymbolLevel  Class_ => $this->class,
+symbolLevelLit	src/Analysis/Evidence/Complexity/ComplexityOptions.php	103	SymbolLevel  Callable => $this->callable->isEnabled(),
+symbolLevelLit	src/Analysis/Evidence/Complexity/ComplexityOptions.php	104	SymbolLevel  Class_ => $this->class->isEnabled(),
+symbolLevelLit	src/Analysis/Evidence/Complexity/ComplexityOptions.php	114	return [SymbolLevel  Callable, SymbolLevel  Class_];
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	74	return [SymbolLevel  Callable, SymbolLevel  Class_];
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	92	SymbolLevel  Callable => $this->analyzeMethodLevel($context),
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	93	SymbolLevel  Class_ => $this->analyzeClassLevel($context),
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	141	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Callable, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Complexity/WmcRule.php	190	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	76	return [SymbolLevel  Callable, SymbolLevel  Class_];
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	94	SymbolLevel  Callable => $this->analyzeMethodLevel($context),
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	95	SymbolLevel  Class_ => $this->analyzeClassLevel($context),
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	142	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Callable, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php	83	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php	85	SymbolLevel  Class_->value => [
+symbolLevelLit	src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php	90	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php	96	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityCollector.php	88	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityCollector.php	90	SymbolLevel  Class_->value => [
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityCollector.php	95	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Complexity/CognitiveComplexityCollector.php	101	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	92	SymbolLevel  Callable => $this->callable,
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	93	SymbolLevel  Class_ => $this->class,
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	103	SymbolLevel  Callable => $this->callable->isEnabled(),
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	104	SymbolLevel  Class_ => $this->class->isEnabled(),
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	114	return [SymbolLevel  Callable, SymbolLevel  Class_];
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityCollector.php	86	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityCollector.php	88	SymbolLevel  Class_->value => [
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityCollector.php	92	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Complexity/NpathComplexityCollector.php	97	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Complexity/ComplexityRule.php	82	return [SymbolLevel  Callable, SymbolLevel  Class_];
+symbolLevelLit	src/Analysis/Evidence/Complexity/ComplexityRule.php	100	SymbolLevel  Callable => $this->analyzeMethodLevel($context),
+symbolLevelLit	src/Analysis/Evidence/Complexity/ComplexityRule.php	101	SymbolLevel  Class_ => $this->analyzeClassLevel($context),
+symbolLevelLit	src/Analysis/Evidence/Complexity/ComplexityRule.php	149	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Callable, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php	166	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Lower, SymbolLevel  Callable),
+symbolLevelLit	src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php	94	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php	96	SymbolLevel  Class_->value => [
+symbolLevelLit	src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php	100	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php	105	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	142	SymbolLevel  Class_->value => [
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	146	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	151	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	161	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	166	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	171	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	176	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	178	SymbolLevel  Class_->value => [
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	182	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	186	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	193	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	195	SymbolLevel  Class_->value => [
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	199	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	203	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php	197	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Project),
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php	163	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	95	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Callable),
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php	81	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Callable),
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/ParameterCountCollector.php	90	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/ParameterCountCollector.php	92	SymbolLevel  Class_->value => [
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/ParameterCountCollector.php	96	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/ParameterCountCollector.php	101	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/ParameterCountCollector.php	111	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php	83	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Callable),
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php	117	static  NAME => ChannelDeclaration  occurrence(SymbolLevel  Callable),
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/UnreachableCodeCollector.php	87	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/UnreachableCodeCollector.php	89	SymbolLevel  Class_->value => [
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/UnreachableCodeCollector.php	92	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/UnreachableCodeCollector.php	95	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/UnreachableCodeCollector.php	102	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php	142	self  NAME => ChannelDeclaration  occurrence(SymbolLevel  Callable),
+symbolLevelLit	src/Analysis/Evidence/Coupling/CboOptions.php	132	SymbolLevel  Class_ => $this->class,
+symbolLevelLit	src/Analysis/Evidence/Coupling/CboOptions.php	133	SymbolLevel  Namespace_ => $this->namespace,
+symbolLevelLit	src/Analysis/Evidence/Coupling/CboOptions.php	143	SymbolLevel  Class_ => $this->class->isEnabled(),
+symbolLevelLit	src/Analysis/Evidence/Coupling/CboOptions.php	144	SymbolLevel  Namespace_ => $this->namespace->isEnabled(),
+symbolLevelLit	src/Analysis/Evidence/Coupling/CboOptions.php	154	return [SymbolLevel  Class_, SymbolLevel  Namespace_];
+symbolLevelLit	src/Analysis/Evidence/Coupling/CboRule.php	77	return [SymbolLevel  Class_, SymbolLevel  Namespace_];
+symbolLevelLit	src/Analysis/Evidence/Coupling/CboRule.php	92	SymbolLevel  Class_ => $this->options->class->isEnabled() ? $this->analyzeClassLevel($context)   [],
+symbolLevelLit	src/Analysis/Evidence/Coupling/CboRule.php	93	SymbolLevel  Namespace_ => $this->options->namespace->isEnabled() ? $this->analyzeNamespaceLevel($context)   [],
+symbolLevelLit	src/Analysis/Evidence/Coupling/CboRule.php	132	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Class_, SymbolLevel  Namespace_),
+symbolLevelLit	src/Analysis/Evidence/Coupling/InstabilityRule.php	78	return [SymbolLevel  Class_, SymbolLevel  Namespace_];
+symbolLevelLit	src/Analysis/Evidence/Coupling/InstabilityRule.php	98	SymbolLevel  Class_ => $this->analyzeClassLevel($context),
+symbolLevelLit	src/Analysis/Evidence/Coupling/InstabilityRule.php	99	SymbolLevel  Namespace_ => $this->analyzeNamespaceLevel($context),
+symbolLevelLit	src/Analysis/Evidence/Coupling/InstabilityRule.php	144	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Class_, SymbolLevel  Namespace_),
+symbolLevelLit	src/Analysis/Evidence/Coupling/DistanceRule.php	246	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Namespace_),
+symbolLevelLit	src/Analysis/Evidence/Coupling/InstabilityOptions.php	108	SymbolLevel  Class_ => $this->class,
+symbolLevelLit	src/Analysis/Evidence/Coupling/InstabilityOptions.php	109	SymbolLevel  Namespace_ => $this->namespace,
+symbolLevelLit	src/Analysis/Evidence/Coupling/InstabilityOptions.php	119	SymbolLevel  Class_ => $this->class->isEnabled(),
+symbolLevelLit	src/Analysis/Evidence/Coupling/InstabilityOptions.php	120	SymbolLevel  Namespace_ => $this->namespace->isEnabled(),
+symbolLevelLit	src/Analysis/Evidence/Coupling/InstabilityOptions.php	130	return [SymbolLevel  Class_, SymbolLevel  Namespace_];
+symbolLevelLit	src/Analysis/Evidence/Coupling/ClassRankCollector.php	55	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/ClassRankCollector.php	57	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/ClassRankCollector.php	62	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/RfcCollector.php	126	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/RfcCollector.php	132	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/RfcCollector.php	143	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/RfcCollector.php	148	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/RfcCollector.php	153	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/DistanceCollector.php	53	collectedAt  SymbolLevel  Namespace_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/DistanceCollector.php	55	SymbolLevel  Project->value => [AggregationStrategy  Average],
+symbolLevelLit	src/Analysis/Evidence/Coupling/ClassRankRule.php	206	self  NAME => ChannelDeclaration  occurrence(SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	64	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	66	SymbolLevel  Namespace_->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	71	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	73	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	79	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	89	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	91	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	97	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	107	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	109	SymbolLevel  Namespace_->value => [AggregationStrategy  Average],
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	114	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	116	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	121	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	130	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	132	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	138	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	148	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	150	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/CouplingCollector.php	155	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	68	collectedAt  SymbolLevel  Namespace_,
+symbolLevelLit	src/Analysis/Evidence/Size/PropertyCountRule.php	84	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Size/LocCollector.php	294	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Size/LocCollector.php	298	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Size/LocCollector.php	307	collectedAt  SymbolLevel  File,
+symbolLevelLit	src/Analysis/Evidence/Size/LocCollector.php	312	collectedAt  SymbolLevel  File,
+symbolLevelLit	src/Analysis/Evidence/Size/LocCollector.php	317	collectedAt  SymbolLevel  File,
+symbolLevelLit	src/Analysis/Evidence/Size/LocCollector.php	322	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/LocCollector.php	324	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Size/LocCollector.php	330	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Size/ClassCountCollector.php	114	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Size/ClassCountCollector.php	117	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Size/ClassCountCollector.php	125	collectedAt  SymbolLevel  File,
+symbolLevelLit	src/Analysis/Evidence/Size/ClassCountCollector.php	130	collectedAt  SymbolLevel  File,
+symbolLevelLit	src/Analysis/Evidence/Size/ClassCountCollector.php	135	collectedAt  SymbolLevel  File,
+symbolLevelLit	src/Analysis/Evidence/Size/ClassCountCollector.php	140	collectedAt  SymbolLevel  File,
+symbolLevelLit	src/Analysis/Evidence/Size/ClassCountCollector.php	145	collectedAt  SymbolLevel  File,
+symbolLevelLit	src/Analysis/Evidence/Size/ClassCountCollector.php	150	collectedAt  SymbolLevel  File,
+symbolLevelLit	src/Analysis/Evidence/Size/ClassCountCollector.php	155	collectedAt  SymbolLevel  File,
+symbolLevelLit	src/Analysis/Evidence/Size/ClassCountRule.php	82	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Namespace_),
+symbolLevelLit	src/Analysis/Evidence/Size/MethodStatementCountCollector.php	79	collectedAt  SymbolLevel  Callable,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodStatementCountCollector.php	81	SymbolLevel  Class_->value => $aggregations,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodStatementCountCollector.php	82	SymbolLevel  Namespace_->value => $aggregations,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodStatementCountCollector.php	83	SymbolLevel  Project->value => $aggregations,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	190	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	196	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	207	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	212	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	217	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	222	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	227	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	232	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	237	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	242	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	247	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	252	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	257	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	262	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	269	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	271	SymbolLevel  Namespace_->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	272	SymbolLevel  Project->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	277	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	279	SymbolLevel  Namespace_->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	280	SymbolLevel  Project->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	285	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	287	SymbolLevel  Namespace_->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	288	SymbolLevel  Project->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	293	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	295	SymbolLevel  Namespace_->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	296	SymbolLevel  Project->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	301	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	303	SymbolLevel  Namespace_->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	304	SymbolLevel  Project->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	309	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	311	SymbolLevel  Namespace_->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	312	SymbolLevel  Project->value => [AggregationStrategy  Sum],
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	317	collectedAt  SymbolLevel  Class_,
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	319	SymbolLevel  Namespace_->value => [
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountCollector.php	324	SymbolLevel  Project->value => [
+symbolLevelLit	src/Analysis/Evidence/Size/MethodCountRule.php	83	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Class_),
+symbolLevelLit	src/Analysis/Evidence/Duplication/CodeDuplicationRule.php	102	self  NAME => ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Project),
+symbolLevelLit	src/Analysis/Finding/Contract/Rule/ChannelLevelSelector.php	140	return [substr($raw, 0, $separator), SymbolLevel  tryFrom(substr($raw, $separator + 1))];
+symbolLevelLit	src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php	125	SymbolLevel  cases(),
+symbolLevelLit	src/Analysis/Finding/Contract/ChannelDeclaration.php	138	foreach (SymbolLevel  cases() as $case) {
+symbolLevelLit	src/Analysis/Finding/Exclusion/RuleNamespaceExclusionProvider.php	196	ChannelLevelSelector  tryParse($selector)?->matches($channel->code, SymbolLevel  Namespace_) === true
+symbolLevelLit	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	107	self  UNRESOLVED_CHANNEL => ChannelDeclaration  occurrence(SymbolLevel  File),
+symbolLevelLit	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	108	self  UNSUPPORTED_CHANNEL => ChannelDeclaration  occurrence(SymbolLevel  File),
+symbolLevelLit	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	109	self  INVALID_CHANNEL => ChannelDeclaration  occurrence(SymbolLevel  File),
+symbolLevelLit	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php	97	return [$name => ChannelDeclaration  occurrence(SymbolLevel  File)];
+symbolLevelLit	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassSummary.php	55	return ChannelDeclaration  magnitude(WorseDirection  Higher, SymbolLevel  Project);
+symbolLevelLit	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php	93	$declarations[$name] = ChannelDeclaration  occurrence(SymbolLevel  Project);
+symbolLevelLit	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	115	self  NAME => ChannelDeclaration  occurrence(SymbolLevel  Class_),
+projection	src/Analysis/Evidence/Measurement/Aggregation/NamespaceMetricContributions.php	12	use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
+projection	src/Analysis/Evidence/Measurement/Aggregation/NamespaceMetricContributions.php	131	$sourceLevel = SymbolLevelProjection  ofDeclaration($declarationType);
+projection	src/Analysis/Evidence/Measurement/Contract/SymbolLevel.php	13	* @qmx-threshold coupling.cbo 85 -- The project's one level vocabulary, with zero outbound dependencies  every edge counted here is inbound, and the only way to lower it is to spell the level in more than one enum again, which is the defect this hub replaced. Raw CBO 84 gets one-edge headroom. It was 79 until Ш5c took the level out of channel names  a level is a coordinate beside the name now, so the selector grammar, the finding itself, rule selection, the namespace-channel exclusions and the two suppression types read this vocabulary instead of parsing a name suffix. It was 77 before that, when the two configuration validators became declaring producers of their own  a producer that declares a channel must name the levels it reports at, so each one costs this hub exactly one inbound edge. That is the price of a single level vocabulary, measured rather than estimated, and paying it here is the point. The projection onto SymbolType is deliberately not here — SymbolLevelProjection owns it, which is what keeps this enum's outbound count at zero.
+projection	src/Analysis/Evidence/Measurement/Contract/SymbolLevelProjection.php	20	final class SymbolLevelProjection
+projection	src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	9	use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
+projection	src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	73	return array_map(SymbolLevelProjection  ofDeclaration(...), $this->levels);
+projection	src/Analysis/Finding/Contract/Finding.php	9	use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
+projection	src/Analysis/Finding/Contract/Finding.php	115	return SymbolLevelProjection  ofDeclaration($this->subject->toSymbolPath()->getType());
+projection	src/Analysis/Policy/Baseline/BoundaryExplanationService.php	9	use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
+projection	src/Analysis/Policy/Baseline/BoundaryExplanationService.php	238	return $byLevel[SymbolLevelProjection  ofDeclaration($subject->toSymbolPath()->getType())->value] ?? null;
+projection	tests/Analysis/Evidence/Measurement/Unit/Contract/SymbolLevelProjectionTest.php	12	use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
+projection	tests/Analysis/Evidence/Measurement/Unit/Contract/SymbolLevelProjectionTest.php	15	#[CoversClass(SymbolLevelProjection  class)]
+projection	tests/Analysis/Evidence/Measurement/Unit/Contract/SymbolLevelProjectionTest.php	16	final class SymbolLevelProjectionTest extends TestCase
+projection	tests/Analysis/Evidence/Measurement/Unit/Contract/SymbolLevelProjectionTest.php	22	self  assertSame($expected, SymbolLevelProjection  ofDeclaration($type));
+selectorGrammar	src/Analysis/Finding/Contract/Rule/RuleSelector.php	219	$parsed = ChannelLevelSelector  tryParse($selector);
+selectorGrammar	src/Analysis/Finding/Contract/Rule/ChannelLevelSelector.php	62	if ($level === null && self  carriesLevelSeparator($raw)) {
+selectorGrammar	src/Analysis/Finding/Contract/Rule/ChannelLevelSelector.php	72	public static function carriesLevelSeparator(string $raw)  bool
+selectorGrammar	src/Analysis/Finding/Contract/Rule/ChannelLevelSelector.php	84	public static function levelHalf(string $raw)  ?SymbolLevel
+selectorGrammar	src/Analysis/Finding/Contract/Rule/ChannelLevelSelector.php	90	public static function channelHalf(string $raw)  string
+selectorGrammar	src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php	54	if (!ChannelLevelSelector  carriesLevelSeparator($raw)) {
+selectorGrammar	src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php	58	$channelHalf = ChannelLevelSelector  channelHalf($raw);
+selectorGrammar	src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php	59	$level = ChannelLevelSelector  levelHalf($raw);
+selectorGrammar	src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php	65	ChannelLevelSelector  LEVEL_SEPARATOR,
+selectorGrammar	src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php	78	ChannelLevelSelector  LEVEL_SEPARATOR,
+selectorGrammar	src/Analysis/Finding/Exclusion/RuleNamespaceExclusionProvider.php	196	ChannelLevelSelector  tryParse($selector)?->matches($channel->code, SymbolLevel  Namespace_) === true
+selectorGrammar	src/Analysis/Policy/Inline/Contract/Suppression/SuppressionTarget.php	59	return new self($rule, ChannelLevelSelector  tryParse($rule), false);
+selectorGrammar	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	100	ChannelLevelSelector  LEVEL_SEPARATOR,
+selectorGrammar	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	138	if (ChannelLevelSelector  carriesLevelSeparator($name)) {
+selectorGrammar	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	139	$rule = ChannelLevelSelector  channelHalf($name);
+selectorGrammar	src/Infrastructure/Console/RuleInputValidator.php	107	ChannelLevelSelector  carriesLevelSeparator($selector) ? ' at that level'   '',
+selectorGrammar	src/Infrastructure/Console/ChannelExclusionKeyValidator.php	60	$parsed = ChannelLevelSelector  tryParse($key)
+selectorGrammar	tests/Analysis/Finding/Unit/ChannelLevelSelectorTest.php	22	#[CoversClass(ChannelLevelSelector  class)]
+selectorGrammar	tests/Analysis/Finding/Unit/ChannelLevelSelectorTest.php	28	$selector = ChannelLevelSelector  tryParse('coupling.cbo');
+selectorGrammar	tests/Analysis/Finding/Unit/ChannelLevelSelectorTest.php	40	$selector = ChannelLevelSelector  tryParse('coupling.cbo namespace');
+selectorGrammar	tests/Analysis/Finding/Unit/ChannelLevelSelectorTest.php	53	$selector = ChannelLevelSelector  tryParse('coupling.* namespace');
+selectorGrammar	tests/Analysis/Finding/Unit/ChannelLevelSelectorTest.php	70	$selector = ChannelLevelSelector  tryParse('demo.rule ' . $level->value);
+selectorGrammar	tests/Analysis/Finding/Unit/ChannelLevelSelectorTest.php	84	self  assertNull(ChannelLevelSelector  tryParse($raw));
+selectorGrammar	tests/Analysis/Finding/Unit/ChannelLevelSelectorTest.php	105	self  assertTrue(ChannelLevelSelector  carriesLevelSeparator('coupling.cbo klass'));
+selectorGrammar	tests/Analysis/Finding/Unit/ChannelLevelSelectorTest.php	106	self  assertFalse(ChannelLevelSelector  carriesLevelSeparator('coupling.cbo'));
+selectorGrammar	tests/Analysis/Finding/Unit/ChannelLevelSelectorTest.php	107	self  assertSame('coupling.cbo', ChannelLevelSelector  channelHalf('coupling.cbo klass'));
+selectorGrammar	tests/Analysis/Finding/Unit/ChannelLevelSelectorTest.php	108	self  assertNull(ChannelLevelSelector  levelHalf('coupling.cbo klass'));
+selectorGrammar	tests/Analysis/Finding/Unit/ChannelLevelSelectorTest.php	109	self  assertSame(SymbolLevel  Class_, ChannelLevelSelector  levelHalf('coupling.cbo class'));
+selectorGrammar	tests/Analysis/Finding/Unit/FindingChannelTest.php	108	new FindingChannel('coupling.cbo' . ChannelLevelSelector  LEVEL_SEPARATOR . SymbolLevel  Class_->value);
+selectorGrammar	tests/Analysis/Finding/Unit/RuleSelectorTest.php	124	$pair = 'health.complexity' . ChannelLevelSelector  LEVEL_SEPARATOR . SymbolLevel  Class_->value;
+selectorGrammar	tests/Analysis/Finding/Unit/RuleSelectorTest.php	157	$pair = 'health.complexity' . ChannelLevelSelector  LEVEL_SEPARATOR . SymbolLevel  Class_->value;
+selectorGrammar	tests/Analysis/Finding/Integration/ChannelLevelAssemblyTopologyTest.php	94	if (self  levelSegmentOf($key) !== null || str_contains($key, ChannelLevelSelector  LEVEL_SEPARATOR)) {
+addressing	src/Analysis/Finding/Contract/Rule/ChannelLevelSelector.php	36	* universe in exactly one place  {@see ChannelLevelAddressing}.
+addressing	src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php	42	final readonly class ChannelLevelAddressing
+addressing	src/Analysis/Finding/Contract/ChannelIdentityInterface.php	92	* it, {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing},
+addressing	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	9	use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
+addressing	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	42	private ChannelLevelAddressing $levels;
+addressing	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	48	$this->levels = new ChannelLevelAddressing($identity);
+addressing	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	57	* An impossible pair is refused by {@see ChannelLevelAddressing} and by
+addressing	src/Infrastructure/Console/RuleInputValidator.php	15	use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
+addressing	src/Infrastructure/Console/RuleInputValidator.php	72	* {@see ChannelLevelAddressing} — the one place that judgement is made,
+addressing	src/Infrastructure/Console/RuleInputValidator.php	86	$levels = new ChannelLevelAddressing($channels);
+addressing	src/Infrastructure/Console/ChannelExclusionKeyValidator.php	9	use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
+addressing	src/Infrastructure/Console/ChannelExclusionKeyValidator.php	25	* {@see ChannelLevelAddressing}, the same object the inline directives ask, so
+addressing	src/Infrastructure/Console/ChannelExclusionKeyValidator.php	50	$pairProblem = (new ChannelLevelAddressing($this->channels))->problemWith($key);
+addressing	tests/Analysis/Finding/Integration/ChannelLevelRefusalTopologyTest.php	12	use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
+addressing	tests/Analysis/Finding/Integration/ChannelLevelRefusalTopologyTest.php	32	* only {@see ChannelLevelAddressing} asks the universe which levels a channel
+addressing	tests/Analysis/Finding/Integration/ChannelLevelRefusalTopologyTest.php	41	#[CoversClass(ChannelLevelAddressing  class)]
+addressing	tests/Analysis/Finding/Integration/ChannelLevelRefusalTopologyTest.php	50	private const string SOLE_CALLER = 'src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php';
+addressing	tests/Analysis/Finding/Integration/ChannelLevelRefusalTopologyTest.php	67	. ' ChannelLevelAddressing, so that one mistake cannot get two answers.',
+addressing	tests/Infrastructure/Console/Functional/Command/CheckCommandInputValidationTest.php	132	* impossible `channel level` pair, {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing}.
+subjectParse	src/Analysis/Policy/Baseline/Filter/BaselineCeilingStage.php	342	private static function levelOf(BaselineEntry $entry)  AcceptedLevel
+subjectParse	tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php	402	private static function levelOf(string $subject)  string
+subjectParse	scripts/finding-gate/ChannelCoverage.php	71	SubjectLevel  SEPARATOR,
+subjectParse	scripts/finding-gate/ChannelCoverage.php	86	SubjectLevel  SEPARATOR,
+subjectParse	scripts/finding-gate/ChannelCoverage.php	108	SubjectLevel  SEPARATOR,
+subjectParse	scripts/finding-gate/ChannelCoverage.php	135	return self  unique(array_map(SubjectLevel  channelOf(...), $pairs));
+subjectParse	scripts/finding-gate/Gate.php	1240	$claim = SubjectLevel  claim($finding['channel'], SubjectLevel  of($finding['subject']));
+subjectParse	scripts/finding-gate/Gate.php	1266	$channel = SubjectLevel  channelOf($claim);
+subjectParse	scripts/finding-gate/ChannelWitness.php	146	$gate = SubjectLevel  levels();
+subjectParse	scripts/finding-gate/ChannelWitness.php	175	$pairs[SubjectLevel  claim($channel, $level)] = true;
+subjectParse	scripts/finding-gate/ChannelWitness.php	238	SubjectLevel  SEPARATOR,
+subjectParse	scripts/finding-gate/SelfTest.php	319	$this->same($level, SubjectLevel  of($subject), 'the level of "' . $subject . '"');
+subjectParse	scripts/finding-gate/SelfTest.php	323	self  throws(static fn()  mixed => SubjectLevel  of('member Corpus\\A  $b')),
+subjectParse	scripts/finding-gate/SelfTest.php	328	SubjectLevel  claim('a.rule#a.code', 'class'),
+subjectParse	scripts/finding-gate/SelfTest.php	333	SubjectLevel  channelOf('a.rule#a.code@class'),
+subjectParse	scripts/finding-gate/SelfTest.php	338	SubjectLevel  assertClaim('a.rule#a.code', 'case.json');
+subjectParse	scripts/finding-gate/SelfTest.php	344	SubjectLevel  assertClaim('a.rule#a.code@klass', 'case.json');
+subjectParse	scripts/finding-gate/SelfTest.php	358	SubjectLevel  assertClaim($entry, 'case ' . $case->id);
+subjectParse	scripts/finding-gate/SelfTest.php	391	$names = static fn(array $pairs)  array => array_values(array_unique(array_map(SubjectLevel  channelOf(...), $pairs)));
+subjectParse	scripts/finding-gate/CaseDefinition.php	94	SubjectLevel  assertClaim($entry, $file);
+subjectParse	scripts/finding-gate/CaseDefinition.php	102	SubjectLevel  SEPARATOR,
+dropsLevel	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	105	if ($this->identity->expand($selector->channel()) !== []) {
+dropsLevel	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php	326	foreach ($this->identity->expand($selector->channel()) as $channel) {
+dropsLevel	src/Infrastructure/Console/ChannelExclusionKeyValidator.php	63	$addressed = $this->channels->expand($parsed->channel());

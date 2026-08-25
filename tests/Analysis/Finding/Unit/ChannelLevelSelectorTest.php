@@ -108,4 +108,18 @@ final class ChannelLevelSelectorTest extends TestCase
         self::assertNull(ChannelLevelSelector::levelHalf('coupling.cbo:klass'));
         self::assertSame(SymbolLevel::Class_, ChannelLevelSelector::levelHalf('coupling.cbo:class'));
     }
+
+    /**
+     * The quotable half and the level come from the same split, so a refusal
+     * cannot quote two halves that do not add up to the authored text.
+     */
+    #[Test]
+    public function itReadsTheTextAfterTheSeparatorWhetherOrNotItIsALevel(): void
+    {
+        self::assertSame('klass', ChannelLevelSelector::levelHalfText('coupling.cbo:klass'));
+        self::assertSame('b', ChannelLevelSelector::levelHalfText('coupling.cbo:a:b'));
+        self::assertSame('coupling.cbo:a', ChannelLevelSelector::channelHalf('coupling.cbo:a:b'));
+        self::assertSame('', ChannelLevelSelector::levelHalfText('coupling.cbo:'));
+        self::assertNull(ChannelLevelSelector::levelHalfText('coupling.cbo'));
+    }
 }
