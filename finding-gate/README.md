@@ -508,14 +508,26 @@ knowing before adding one:
   its code half has to move together with the published `rule` field — after the
   level left the channel names, no static channel's code differs from its rule
   field, so the only rename a whole-name row can make green is one that moves
-  both. The new name is also the **same length** as the old one, which is a
-  constraint on any rename of a rule name rather than a quirk of this control:
-  `qmx rules` and the per-rule debt breakdown in `--format=text-verbose` print
-  that name in a `%-40s` column, so a name a character longer moves the text
-  beside it by one space, and a row translates a name and not the padding after
-  it. A step renaming a rule name to a different length has to declare a delta
-  on those two surfaces; a step renaming only a channel is untouched by this,
-  because neither column prints a channel.
+  both. The new name is also the **same length** as the old one, and that is a
+  constraint on renames in general rather than a quirk of this control: a name
+  printed in a padded column takes its own length into the surface, and a map row
+  translates a name and not the padding beside it. Three surfaces align on a name,
+  and they do not behave alike — measured by enumerating every padding site in
+  `src/`, not by naming the ones a failing control happened to point at:
+
+  - `tree|rules` (`RulesCommand`) and the per-rule debt breakdown of
+    `--format=text-verbose` (`DebtBreakdownRenderer`) print a **rule** name in a
+    fixed `%-40s`, so a length change moves that one line;
+  - `--format=health` (`HealthTextFormatter`) and `--format=summary`
+    (`HealthBarRenderer`) print a **health dimension's short name** — the part of
+    a `health.*` channel after the dot — in a width computed as the **maximum**
+    over the six of them, floored at 9 and 10. Renaming the longest one to a
+    different length moves every row of the table and its rule, not one line.
+
+  So a step renaming a rule name to a different length declares a delta on the
+  first two; a step renaming a `health.*` channel declares one on the last two.
+  "Only channels moved, so no column moved" is the reasoning to distrust: it is
+  true of the first two surfaces and false of the other two.
 - **An expectation may not be pinned to the exact surface a declaration covers.**
   Such a surface is compared against the declared diff and never for equality, so
   a `surface-mismatch` cannot arise there and a control asking for one is
