@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-25T04:23:49+00:00",
+  "generated": "2026-08-25T14:40:11+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -27,14 +27,6 @@
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityVisitor::calculateSequenceNpath@src/Analysis/Evidence/Complexity/NpathComplexityVisitor.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"663673a3f4683ab9","count":1}
-    ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver::createDefinition@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php": [
-      {"channel":"complexity.cyclomatic","magnitudes":[12]}
-    ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver::mergeDefinition@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php": [
-      {"channel":"complexity.cognitive","magnitudes":[17]},
-      {"channel":"complexity.cyclomatic","magnitudes":[14]},
-      {"channel":"complexity.npath","magnitudes":[360]}
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver::resolve@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php": [
       {"channel":"complexity.cognitive","magnitudes":[16]},
@@ -379,9 +371,6 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathExpressionCalculator@src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php": [
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php": [
-      {"channel":"complexity.wmc","magnitudes":[60]}
-    ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition@src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php": [
       {"channel":"health.cohesion","magnitudes":[48.9]}
     ],
@@ -559,10 +548,10 @@
       {"channel":"coupling.cbo","magnitudes":[16]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement": [
-      {"channel":"coupling.distance","magnitudes":[0.508168]}
+      {"channel":"coupling.distance","magnitudes":[0.510391]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract": [
-      {"channel":"coupling.cbo","magnitudes":[47]}
+      {"channel":"coupling.cbo","magnitudes":[48]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor": [
       {"channel":"coupling.instability","magnitudes":[0.92]}

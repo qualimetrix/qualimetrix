@@ -1305,6 +1305,14 @@
       "closure_package": "P5",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricOverrideReader.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricDependencyGraphCalculator": {
       "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricDependencyGraphCalculator.php",
       "kind": "class",
@@ -4871,6 +4879,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader",
+          "closes_in": null
+        },
+        {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\AbstractnessCollector",
           "closes_in": null
@@ -5113,6 +5126,11 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
           "closes_in": null
         },
         {
@@ -7693,6 +7711,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
+          "closes_in": null
+        },
+        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
           "closes_in": null
@@ -7703,6 +7726,14 @@
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\ChannelLevelRefusalWording": {
+      "path": "src/Analysis/Finding/Contract/Rule/ChannelLevelRefusalWording.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\ChannelLevelSelector": {
       "path": "src/Analysis/Finding/Contract/Rule/ChannelLevelSelector.php",
@@ -8523,6 +8554,11 @@
         {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader",
           "closes_in": null
         },
         {
@@ -10228,6 +10264,11 @@
       "closure_package": "P6-A",
       "consumers": [
         {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader",
+          "closes_in": null
+        },
+        {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryParser",
           "closes_in": null
@@ -10260,6 +10301,11 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyHints",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
           "closes_in": null
         },
         {
@@ -14813,7 +14859,7 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader",
           "closes_in": null
         },
         {

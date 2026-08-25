@@ -65,7 +65,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics	Analysis
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface	Analysis.Evidence.Measurement	3	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface	Analysis.Evidence.Measurement	2	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface	Analysis.Evidence.Measurement	21	8
-Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel	Analysis.Evidence.Measurement	72	14
+Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel	Analysis.Evidence.Measurement	74	15
 Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection	Analysis.Evidence.Measurement	3	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope	Analysis.Evidence.Measurement	5	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait	Analysis.Evidence.Measurement	12	5
@@ -96,7 +96,7 @@ Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.F
 Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	56	17
-Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	12	5
+Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	14	6
 Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	37	14
 Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	8	5
 Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	8	5
@@ -106,7 +106,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\AdditionalOptionKeysInterface	Analysi
 Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	37	14
 Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	26	9
 Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader	Analysis.Finding	2	2
-Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing	Analysis.Finding	3	2
+Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing	Analysis.Finding	4	2
 Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector	Analysis.Finding	4	2
 Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface	Analysis.Finding	5	2
@@ -122,7 +122,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory	Analysis.Finding	33	13
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface	Analysis.Finding	3	2
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader	Analysis.Finding	7	4
-Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	Analysis.Finding	47	14
+Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	Analysis.Finding	48	14
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	39	15
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector	Analysis.Finding	8	4

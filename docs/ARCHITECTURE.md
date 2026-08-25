@@ -76,7 +76,7 @@ an uncovered project class fail even when it has no dependency edges.
 Every test, support file, and fixture directory is governed by the same
 manifest; `test-topology.tsv` in the generated directory reports how many of
 each. Self-analysis runs against the versioned v13 root baseline, whose
-240 groups across 181 subjects are checked against the file itself by
+235 groups across 178 subjects are checked against the file itself by
 `DocumentationConsistencyTest`, and the current dogfood result is zero findings.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
@@ -114,10 +114,10 @@ Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
 
 ### 3. Collector/Rule Separation
 
-| Component     | State             | Task                            |
-| ------------- | ----------------- | ------------------------------- |
-| **Collector** | Stateful per-file | AST traversal -> MetricBag      |
-| **Rule**      | Stateless         | MetricRepository -> Finding[]   |
+| Component     | State             | Task                          |
+| ------------- | ----------------- | ----------------------------- |
+| **Collector** | Stateful per-file | AST traversal -> MetricBag    |
+| **Rule**      | Stateless         | MetricRepository -> Finding[] |
 
 **Collectors** gather metrics (one metric = one AST pass).
 **Rules** analyze pre-computed metrics (do NOT perform AST traversal).
