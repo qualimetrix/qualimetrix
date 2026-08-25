@@ -130,7 +130,7 @@ final class UnusedDirectiveRuleTest extends TestCase
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
             $findings[0]->code,
         );
-        self::assertStringContainsString('none of them reports at level "file"', $findings[0]->message);
+        self::assertStringContainsString('it does not report at level "file"', $findings[0]->message);
     }
 
     /** A level outside the vocabulary is refused by the same one point. */
@@ -253,7 +253,7 @@ final class UnusedDirectiveRuleTest extends TestCase
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
             $findings[0]->code,
         );
-        self::assertStringContainsString('addresses a channel at a level', $findings[0]->message);
+        self::assertStringContainsString('addresses a rule at a level', $findings[0]->message);
     }
 
     /** A threshold is never group-shaped, so neither spelling is accepted. */

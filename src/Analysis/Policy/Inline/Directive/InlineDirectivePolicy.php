@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -52,11 +53,20 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      */
     private ?Severity $usageReportingSeverity = null;
 
+    /**
+     * The shared refusal for a `channel:level` pair. Built here rather than
+     * injected, mirroring {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability}:
+     * a pure function of the same universe, with no lifecycle of its own.
+     */
+    private readonly ChannelLevelAddressing $levels;
+
     public function __construct(
         private readonly ChannelIdentityInterface $identity,
         private readonly RuleSelector $ruleSelector,
         private readonly RuleConfigurationInterface $ruleConfiguration,
-    ) {}
+    ) {
+        $this->levels = new ChannelLevelAddressing($identity);
+    }
 
     public function prepare(array $suppressions, array $thresholdOverrides, array $thresholdDiagnostics): void
     {
@@ -283,6 +293,13 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      * consulted, and reporting it stale would mean reporting the file's
      * cleanliness as a defect.
      *
+     * Nor does accounting start for a directive whose pair
+     * {@see ChannelLevelAddressing} already refused: `coupling.cbo:project`,
+     * naming a level `coupling.cbo` never reports at, can never be silenced
+     * by any finding, so calling it stale on top of the
+     * `annotation.unresolved-directive` {@see DirectiveAddressability} already
+     * raised would answer one mistake twice.
+     *
      * @param list<string> $only
      * @param list<string> $disabled
      */
@@ -290,6 +307,10 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
     {
         $target = $suppression->target();
         if ($target->appliesToEveryChannel()) {
+            return false;
+        }
+
+        if ($this->levels->problemWith((string) $target) !== null) {
             return false;
         }
 

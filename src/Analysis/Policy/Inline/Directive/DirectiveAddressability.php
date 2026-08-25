@@ -85,9 +85,9 @@ final readonly class DirectiveAddressability
             );
         }
 
-        $pairProblem = $this->levels->problemWith($raw);
+        $pairProblem = $this->levels->problemWith($raw, \sprintf('Suppression "%s"', $raw));
         if ($pairProblem !== null) {
-            return \sprintf('Suppression %s A reason goes after "%s".', $pairProblem, Suppression::REASON_SEPARATOR);
+            return \sprintf('%s A reason goes after "%s".', $pairProblem, Suppression::REASON_SEPARATOR);
         }
 
         $selector = $target->selector();
@@ -132,22 +132,13 @@ final readonly class DirectiveAddressability
             ));
         }
 
-        // Captured by the grammar so that it can be refused here. Truncating
-        // the pair to its left half would silently retune the whole rule,
-        // which is the one outcome worse than either a match or a refusal.
-        if (ChannelLevelSelector::carriesLevelSeparator($name)) {
-            $rule = ChannelLevelSelector::channelHalf($name);
-            $level = substr($name, \strlen($rule) + 1);
-
-            return new DirectiveRejection(false, \sprintf(
-                '@qmx-threshold "%s" addresses a channel at a level. A threshold addresses the producing rule by its'
-                . ' own name and does not distinguish levels (ADR 0024). Write "@qmx-threshold %s <values>" for the'
-                . ' whole rule, or set the level alone with --rule-opt %s:%s.<option>=<value>.',
-                $name,
-                $rule,
-                $rule,
-                $level,
-            ));
+        // Routed through the shared pair grammar so the checking order — is the
+        // right half a level at all, then is the left half a rule, then the
+        // porous case where both are but a threshold still cannot use either —
+        // lives in one place and cannot drift from the suppression family's.
+        $pairProblem = $this->levels->problemWithRulePair($name, \sprintf('@qmx-threshold "%s"', $name));
+        if ($pairProblem !== null) {
+            return new DirectiveRejection(false, $pairProblem);
         }
 
         if (!$this->identity->hasRule($name)) {

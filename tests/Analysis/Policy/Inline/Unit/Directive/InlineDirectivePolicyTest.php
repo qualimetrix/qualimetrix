@@ -237,6 +237,29 @@ final class InlineDirectivePolicyTest extends TestCase
         self::assertSame([], $policy->auditDirectiveUsage([]));
     }
 
+    /**
+     * A directive whose pair is impossible — the channel is real but never
+     * reports at the named level — must never be counted stale. Before this
+     * fix, `isAccountable()` read only the channel half of the target and let
+     * the impossible pair through: the same directive would then earn both
+     * `annotation.unresolved-directive` from {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability}
+     * and a spurious `annotation.unused-directive` from here — one mistake,
+     * reported twice.
+     */
+    #[Test]
+    public function itNeverCallsAnImpossiblePairStale(): void
+    {
+        $policy = self::policy();
+        $policy->prepare(
+            [self::FILE => [new Suppression('code-smell.goto:project', null, 1, SuppressionType::File)]],
+            [],
+            [],
+        );
+        $policy->enableUsageReporting(Severity::Info);
+
+        self::assertSame([], $policy->auditDirectiveUsage([]));
+    }
+
     /** "Everything here" has no channel to check, so it is never stale. */
     #[Test]
     public function itNeverReportsTheNoRuleFilterForm(): void
