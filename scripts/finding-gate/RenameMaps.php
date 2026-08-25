@@ -276,7 +276,7 @@ final class RenameMaps
 
     /**
      * Credits the row that declares this channel key with having explained a
-     * record.
+     * record that moved.
      *
      * The key is the unit of attribution rather than the row text, because the
      * caller holding the explanation is holding a key. Attribution is what keeps
@@ -286,9 +286,18 @@ final class RenameMaps
      * this the only fact reaching staleness would be that the split as a whole
      * had translated something.
      *
-     * An undeclared key is refused rather than ignored. A credit nothing
-     * declared would keep a row alive by a name that is not in it, which is the
-     * failure this whole check exists to report.
+     * Whether a record moved is the caller's judgement, because only the caller
+     * holds the record — see {@see ChannelSplit::unexplained()}, which credits a
+     * row only where its declared target differs from what the record it names
+     * already publishes.
+     *
+     * A key no row declares is refused. Stated precisely, because the previous
+     * spelling read as a guard on a path that does not exist: `ChannelSplit`
+     * passes a key it has just read out of {@see channelKeys()}, so the refusal
+     * is a contract on this public method rather than a branch the gate can take
+     * today. It is worth stating as one because credit travels by NAME — a
+     * caller naming a key nothing declares would keep some row alive by a name
+     * that is not in it, and staleness would then report nothing at all.
      */
     public function creditExplanation(string $oldChannelKey): void
     {

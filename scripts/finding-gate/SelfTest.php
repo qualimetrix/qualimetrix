@@ -742,8 +742,8 @@ final class SelfTest
         ]);
         $cohesionRow = 'channels.tsv: "computed.health#health.cohesion" -> "health.cohesion#health.cohesion"';
         $reference = [
-            ['subject' => 'namespace:App', 'rule' => 'computed.health', 'code' => 'health.complexity', 'channel' => 'computed.health#health.complexity'],
-            ['subject' => 'namespace:App', 'rule' => 'computed.health', 'code' => 'health.cohesion', 'channel' => 'computed.health#health.cohesion'],
+            ['subject' => 'namespace:App', 'rule' => 'computed.health', 'code' => 'health.complexity', 'channel' => 'health.complexity'],
+            ['subject' => 'namespace:App', 'rule' => 'computed.health', 'code' => 'health.cohesion', 'channel' => 'health.cohesion'],
         ];
         $candidate = [
             ['subject' => 'namespace:App', 'rule' => 'health.complexity', 'code' => 'health.complexity', 'channel' => 'health.complexity'],
@@ -793,6 +793,46 @@ final class SelfTest
             [$cohesionRow],
             $halfPresent->staleRows(),
             'the sibling of an explaining row is stale on its own account',
+        );
+
+        // Credit is for a movement, not for a match. A row reading
+        // `rule#code -> code` collapses the pair into one name and constrains
+        // the code only — the rule survives as its own published field — so
+        // where that code is what the record already publishes, the row claims
+        // nothing and a candidate record matches it without anything having
+        // moved. Crediting the match kept such a row out of `map-stale`, which
+        // is the state it was in before the credit existed.
+        $typingRow = 'channels.tsv: "computed.health#health.typing" -> "health.typing"';
+        $withStandstill = RenameMaps::fromPairs([
+            ['old' => 'computed.health#health.complexity', 'new' => 'health.complexity#health.complexity', 'source' => 'channels.tsv'],
+            ['old' => 'computed.health#health.cohesion', 'new' => 'health.cohesion#health.cohesion', 'source' => 'channels.tsv'],
+            ['old' => 'computed.health#health.typing', 'new' => 'health.typing', 'source' => 'channels.tsv'],
+        ]);
+        $standstill = ['subject' => 'namespace:App', 'rule' => 'computed.health', 'code' => 'health.typing', 'channel' => 'health.typing'];
+        $this->same(
+            [],
+            ChannelSplit::of($withStandstill)->unexplained(
+                [...$reference, $standstill],
+                [...$candidate, $standstill],
+            ),
+            'a record whose declared target it already publishes is explained all the same',
+        );
+        $this->same(
+            [$typingRow],
+            $withStandstill->staleRows(),
+            'but its row is credited with nothing: what earns the credit is a movement, not a match',
+        );
+
+        // Credit travels by name, so a name nothing declares is refused rather
+        // than quietly keeping some row alive. `ChannelSplit` passes a key it
+        // has just read out of the declared ones, so this is a contract on the
+        // method and not a branch the gate takes — asserted here because that
+        // is the only place it can be.
+        $this->assert(
+            self::throws(static function () use ($rows): void {
+                $rows()->creditExplanation('computed.health#health.never-declared');
+            }),
+            'a credit named by no declared row is refused',
         );
     }
 

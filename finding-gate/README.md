@@ -296,17 +296,27 @@ declaration to these properties:
   fire, though: the corpus is external, so a renamed product symbol reaches no
   compared artifact and `symbols.tsv` can legitimately stay empty.
 
-  *Explaining* counts beside *translating* for one shape, and only for it: a row
-  that moves a producer and leaves the code alone
-  (`computed.health#health.complexity -> health.complexity#health.complexity`)
-  has nothing to substitute anywhere. Its rule half is one side of the split such
-  rows derive and is deliberately left untranslated, its code half is the same
-  string on both sides, and no surface prints the whole `rule#code` key the row
-  is written as. Judged by substitution alone it would be idle, which would make
-  the only shape a producer move can be declared in unwritable. The credit is
-  granted per row and per matched record, so a row of a live split that explained
-  no record of *its own* key is still `map-stale`: "a sibling of mine fired" is
-  not a claim about this row.
+  *Explaining* counts beside *translating*, and the rule is: a channel row is
+  credited by a record it named whose published identity its target actually
+  **moved**. Not by a match — a row is compared against what the record it names
+  already publishes, in the fields that row constrains: a `rule#code -> rule#code`
+  row against the record's own pair, a `rule#code -> name` row against the
+  record's own code, since such a row says nothing about `rule`. A row whose
+  target is what the record already publishes has claimed nothing, and matching
+  it leaves the row exactly as stale as it was.
+
+  The shape this exists for is the producer move
+  (`computed.health#health.complexity -> health.complexity#health.complexity`),
+  which has nothing to substitute anywhere: its rule half is one side of the
+  split such rows derive and is deliberately left untranslated, its code half is
+  the same string on both sides, and no surface prints the whole `rule#code` key
+  the row is written as. Judged by substitution alone it would be idle, which
+  would make the only shape a producer move can be declared in unwritable. The
+  credit is not restricted to that shape, though — any row that moved a record it
+  named earns it — so what keeps the relaxation honest is the movement test above
+  and the fact that credit is granted per row and per matched record: a row of a
+  live split that moved no record of *its own* key is still `map-stale`, because
+  "a sibling of mine fired" is not a claim about this row.
 
 ### Direction is declared, and it follows from injectivity
 
@@ -400,8 +410,13 @@ rename can be stated once. Two ways the halves stop being a function:
   reference finding carrying that half must have its `(rule, code)` pair named by
   a declared row, and the candidate must publish the pair that row computes on
   the same subject. An occurrence nothing accounts for is `split-unmapped`. A
-  record a row did explain credits that row against `map-stale`, by key, so the
-  credit reaches the one row that named it and not the split it belongs to.
+  record a row explained *and moved* credits that row against `map-stale`, by
+  key, so the credit reaches the one row that named it and not the split it
+  belongs to. Only a row written as a pair can name a record at all: a row whose
+  old side is one name declares no channel key, so a split declared in the
+  post-collapse vocabulary has nothing to explain its records with and every
+  occurrence of its half is `split-unmapped` — a debt of the tool, and the step
+  that first needs that shape has to give it one.
   `rule` and `code` are fields the equivalence tuple compares, so this is the
   same rule normalization is held to; a declared delta gets no waiver here. What
   the matched records produce is a set of `(from, to)` moves per field, and that
@@ -570,12 +585,21 @@ knowing before adding one:
   boundary of the staleness credit — a relaxation granted per split rather than
   per row would make this control green. Its measured cost is that a split half
   is untranslatable, so the `smells` case's surfaces and the `qmx rules` listing
-  differ, and both are tolerated. `split-no-row` perturbs no product code at all:
-  it declares a split of the same channel into two codes the product never emits,
-  so the twelve findings that *do* carry the split half have no declared row
-  naming their key, and `split-unmapped` is required on that case. That class
-  carries the whole delta of the `rule` field whenever a producer moves, and no
-  control had watched it fire before.
+  differ, and both are tolerated — that pair of tolerations is drawn as an
+  outline, `case:smells` and `tree|rules`, rather than enumerated artifact by
+  artifact the way the delta controls enumerate theirs. `split-no-row` perturbs no
+  product code at all: it declares a split of the same channel into two codes the
+  product never emits, so the twelve findings that *do* carry the split half have
+  no declared row naming their key, and `split-unmapped` is required on that
+  case. That class carries the whole delta of the `rule` field whenever a
+  producer moves, and no control had watched it fire before.
+
+  What the pair does **not** prove is worth knowing before trusting it: they
+  establish that the credit is per row, and nothing more. Move the credit call
+  above the "candidate published no such record" check, or grant it without the
+  movement test, and both controls still PASS — a corpus run cannot see the
+  difference, because the records in it move. Those two properties are held by
+  self-test cases (`producerMoves()`) and by them alone.
 - `lost-level-fixture` is the control on a lost level. Its mutation takes the
   `class` level away from the `health` case's user-defined computed metric, which
   is the only way this corpus can lose one level of a multi-level channel:

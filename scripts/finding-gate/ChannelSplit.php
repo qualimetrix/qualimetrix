@@ -29,11 +29,14 @@ namespace QmxFindingGate;
  * making a move the split performed and no other.
  *
  * A matched record also credits the row that named its key, through
- * {@see RenameMaps::creditExplanation()}. A row that moves a producer and
+ * {@see RenameMaps::creditExplanation()}, and only where that row declared a
+ * MOVEMENT the record did not already have. A row that moves a producer and
  * nothing else substitutes nothing anywhere, so explaining records is the only
  * work it can be seen doing; without the credit `map-stale` would refuse the
- * only shape such a declaration has. The credit travels by key, so it reaches
- * the one row that named it rather than the split it belongs to.
+ * only shape such a declaration has. A row whose target is what the record
+ * already publishes declares no movement and keeps none of that credit. The
+ * credit travels by key, so it reaches the one row that named it rather than
+ * the split it belongs to.
  */
 final class ChannelSplit
 {
@@ -105,14 +108,18 @@ final class ChannelSplit
                 continue;
             }
 
-            // Two eras of key, and which one the reference speaks is a fact
-            // about the reference rather than a choice: before the pair
-            // collapsed, a channel row named `rule#code`; after it, the channel
-            // is one name. A row exists for at most one of the two, so trying
-            // both is unambiguous.
+            // A record is named by its `rule#code` pair and by nothing else.
+            // Only a row written as a pair reaches this lookup at all — a row
+            // whose old side is one name declares no channel key
+            // ({@see RenameMaps::channelKeys()}) — and a second lookup on the
+            // bare code was tried here and could never hit. The debt that
+            // leaves is named rather than hidden: a split declared in the
+            // post-collapse vocabulary, where the old side is one name, has no
+            // way to explain a record, so every occurrence of its half is
+            // `split-unmapped` and the step that first needs that shape has to
+            // give it one.
             $pairKey = self::string($finding, 'rule') . '#' . self::string($finding, 'code');
-            $key = isset($this->channelKeys[$pairKey]) ? $pairKey : self::string($finding, 'code');
-            $declared = $this->channelKeys[$key] ?? null;
+            $declared = $this->channelKeys[$pairKey] ?? null;
 
             if ($declared === null) {
                 $unexplained[] = \sprintf(
@@ -120,7 +127,7 @@ final class ChannelSplit
                     . ' names that key. A half a map cannot translate must be explained record by record.',
                     $index,
                     $half,
-                    $key,
+                    $pairKey,
                 );
 
                 continue;
@@ -161,13 +168,26 @@ final class ChannelSplit
 
             $this->allowMove($finding, $match);
 
-            // The row that named this key is what explained the record, and the
-            // maps are told so: a row of this shape substitutes nothing
-            // anywhere, so explaining is the only work it can be seen doing and
-            // staleness would otherwise report it as a rename that never
-            // happened. Per key, and only on a match — a record the candidate
-            // did not publish is reported above and credits nobody.
-            $this->maps->creditExplanation($key);
+            // Credit is for a MOVEMENT the row declared, not for a match. A row
+            // is compared against what the record it names already publishes,
+            // in the fields that row constrains: a pair-to-pair row against the
+            // record's own pair, a row collapsing the pair into one name
+            // against the record's own code, because such a row says nothing
+            // about `rule`. `computed.health#health.complexity ->
+            // health.complexity#health.complexity` moves the rule and is
+            // credited; `a.rule#a.code -> a.code` claims a code the record
+            // already publishes, so matching it proves nothing about the row
+            // and it stays as stale as it was before this credit existed.
+            //
+            // Only on a match, too: a record the candidate did not publish is
+            // reported above and credits nobody. The record is still explained
+            // either way — an uncredited row is a statement about staleness,
+            // not about `split-unmapped`.
+            $ownKey = $expectedRule === null ? self::string($finding, 'code') : $pairKey;
+
+            if ($declared !== $ownKey) {
+                $this->maps->creditExplanation($pairKey);
+            }
         }
 
         return $unexplained;
