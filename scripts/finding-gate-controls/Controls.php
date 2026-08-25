@@ -643,9 +643,9 @@ final class Controls
      * The claim and the tracked declaration fixture move with the rename because
      * they are declarations of the channel, not evidence about it: leaving them
      * stale would make this control fail on two other mechanisms and say nothing
-     * about fingerprints. The map row is **inserted** rather than re-pointed —
-     * the step's own ten rows say nothing about this channel, and withdrawing
-     * any of them would judge the control against undeclared renames instead.
+     * about fingerprints. The map is written **whole**, holding this control's one
+     * row: a step that renames nothing tracks an empty map, so there is neither a
+     * row to anchor an insertion on nor a declaration to withdraw.
      */
     private static function fingerprintDeclaredRename(): Control
     {
@@ -671,25 +671,23 @@ final class Controls
                             => '"code-smell.unused-privat2@class"',
                     ],
                     'the case claims the new channel',
-                ))->and(Mutation::edit(
-                    'finding-gate/maps/channels.tsv',
+                ))->and(Mutation::replace(
                     [
-                        // Inserted between the header and the step's first row,
-                        // which is the only anchor an insertion can use here.
-                        // Anchoring on the header alone was the defect a run caught:
-                        // the fragment searched for is a *prefix* of the fragment
-                        // written, so the file still contained it afterwards and
-                        // Mutation refused the write as unapplied. Naming the first
-                        // row's start makes the two fragments disjoint, keeps
-                        // "exactly one occurrence" sharp, and leaves the step's own
-                        // rows standing.
-                        "old\tnew\treason\ncomplexity.cognitive.callable\t"
-                            => "old\tnew\treason\n"
-                                . "code-smell.unused-private\tcode-smell.unused-privat2\t"
-                                . "the control renames the channel's code\n"
-                                . "complexity.cognitive.callable\t",
+                        // Written whole rather than inserted at an anchor. An
+                        // insertion needs a row to anchor on, and the repair that
+                        // follows Ш5c renames nothing, so its tracked map is a
+                        // header and nothing else — anchoring on the header alone
+                        // is the prefix trap a run already caught here: the
+                        // fragment searched for would still be present afterwards
+                        // and Mutation would refuse the write as unapplied.
+                        // Whole-file content states the one declaration this
+                        // control makes and withdraws none, because there are
+                        // none to withdraw.
+                        'finding-gate/maps/channels.tsv' => "old\tnew\treason\n"
+                            . "code-smell.unused-private\tcode-smell.unused-privat2\t"
+                            . "the control renames the channel's code\n",
                     ],
-                    "the control's rename is declared as one inserted row",
+                    "the control's rename is the map's one declared row",
                 )),
         );
     }

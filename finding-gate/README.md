@@ -511,8 +511,8 @@ knowing before adding one:
   both. The new name is also the **same length** as the old one, and that is a
   constraint on renames in general rather than a quirk of this control: a name
   printed in a padded column takes its own length into the surface, and a map row
-  translates a name and not the padding beside it. Three surfaces align on a name,
-  and they do not behave alike — measured by enumerating every padding site in
+  translates a name and not the padding beside it. Four surfaces align on a name,
+  in two pairs that do not behave alike — measured by enumerating every padding site in
   `src/`, not by naming the ones a failing control happened to point at:
 
   - `tree|rules` (`RulesCommand`) and the per-rule debt breakdown of
@@ -528,6 +528,17 @@ knowing before adding one:
   first two; a step renaming a `health.*` channel declares one on the last two.
   "Only channels moved, so no column moved" is the reasoning to distrust: it is
   true of the first two surfaces and false of the other two.
+
+  A fifth padding site exists and sits outside this rule for two independent
+  reasons, not one: `src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php:334`
+  pads `%-{$maxLayerNameWidth}s` by a **layer name** the project's own `qmx.yaml`
+  layer policy declares, not by any channel, rule, or health-dimension name the
+  gate's maps ever touch, so a rename this repository declares cannot move that
+  column at all. And even a hypothetical rename of a layer name could not surface
+  here regardless: `debug:layer-assignment` is a diagnostic console command, and
+  it is not among the gate's compared surfaces — the eleven `check` formats, the
+  exit code, the suppression report, the baseline file, `baseline:explain`, and
+  the `bin/qmx rules` snapshot (see "Surfaces" above).
 - **An expectation may not be pinned to the exact surface a declaration covers.**
   Such a surface is compared against the declared diff and never for equality, so
   a `surface-mismatch` cannot arise there and a control asking for one is

@@ -1,11 +1,1 @@
 old	new	reason
-complexity.cognitive.callable	complexity.cognitive	the level leaves the channel name; the subject already carries it, and the channel now declares both levels
-complexity.cognitive.class	complexity.cognitive	the level leaves the channel name; the subject already carries it, and the channel now declares both levels
-complexity.cyclomatic.callable	complexity.cyclomatic	the level leaves the channel name; the subject already carries it, and the channel now declares both levels
-complexity.cyclomatic.class	complexity.cyclomatic	the level leaves the channel name; the subject already carries it, and the channel now declares both levels
-complexity.npath.callable	complexity.npath	the level leaves the channel name; the subject already carries it, and the channel now declares both levels
-complexity.npath.class	complexity.npath	the level leaves the channel name; the subject already carries it, and the channel now declares both levels
-coupling.cbo.class	coupling.cbo	the level leaves the channel name; the subject already carries it, and the channel now declares both levels
-coupling.cbo.namespace	coupling.cbo	the level leaves the channel name; the subject already carries it, and the channel now declares both levels
-coupling.instability.class	coupling.instability	the level leaves the channel name; the subject already carries it, and the channel now declares both levels
-coupling.instability.namespace	coupling.instability	the level leaves the channel name; the subject already carries it, and the channel now declares both levels

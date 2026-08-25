@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/disabled-rule-duplication",
+    "description": "Corpus case: auxiliary -- an expensive producer's project-level channel disabled by its level-qualified selector",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\DisabledRuleDuplication\\": "src/"
+        }
+    }
+}
