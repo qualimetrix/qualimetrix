@@ -34,6 +34,19 @@ final class Harness
 {
     private const DECLARED_DELTA_INDEX = 'finding-gate/declared-delta.tsv';
 
+    /**
+     * Every control in flight is a whole gate run: two passes over the corpus,
+     * each spawning `bin/qmx --workers=0`. Fourteen at once would not make the
+     * run fourteen times shorter — it would make every control slower and the
+     * machine unusable, and a control whose gate is starved is a red that says
+     * nothing about the mechanism it tests. The ceiling is here so `--jobs`
+     * cannot ask for that either.
+     */
+    private const JOB_CEILING = 8;
+
+    /** How long a run may print nothing before it says what it is waiting for. */
+    private const LIVENESS_INTERVAL_SECONDS = 30.0;
+
     private function __construct(
         private readonly string $repository,
         private readonly string $reference,
@@ -49,6 +62,7 @@ final class Harness
         $forced = [];
         $reportDirectory = null;
         $watchLauncher = true;
+        $jobs = null;
 
         foreach (\array_slice($argv, 1) as $argument) {
             $value = substr($argument, (int) strpos($argument, '=') + 1);
@@ -65,6 +79,14 @@ final class Harness
                 $only = self::list($value);
             } elseif ($argument === '--detached') {
                 $watchLauncher = false;
+            } elseif (str_starts_with($argument, '--jobs=')) {
+                $jobs = (int) $value;
+
+                if ($jobs < 1 || $jobs > self::JOB_CEILING) {
+                    fwrite(\STDERR, \sprintf("--jobs must be between 1 and %d.\n", self::JOB_CEILING));
+
+                    return 3;
+                }
             } elseif (str_starts_with($argument, '--report-dir=')) {
                 $reportDirectory = $value;
             } elseif (str_starts_with($argument, '--force-expect=')) {
@@ -115,7 +137,7 @@ final class Harness
         }
 
         try {
-            return (new self($repository, $reference, $reportDirectory))->run(Controls::all($forced), $only);
+            return (new self($repository, $reference, $reportDirectory))->run(Controls::all($forced), $only, $jobs);
         } catch (Throwable $error) {
             fwrite(\STDERR, 'finding-gate-controls: ' . $error->getMessage() . "\n");
 
@@ -141,6 +163,10 @@ final class Harness
 
               --reference=<git-ref>       Passed to the gate as the tree to compare against. Required.
               --only=<a,b>                Run these controls only. Default: all.
+              --jobs=<n>                  How many controls run at a time. Default: a quarter of the machine's
+                                          processors, at least 2 and at most 8. One control is one gate,
+                                          and one gate is one `bin/qmx --workers=0` at a time, so a quarter of
+                                          the cores leaves the machine usable and the clones room to copy.
               --report-dir=<path>         Keep each control's gate report as <path>/<control>.json, which is
                                           where the failure detail lives when a control misbehaves.
               --force-expect=<id>:<class> Replace a control's declared failure class, to show that a
@@ -161,7 +187,7 @@ final class Harness
      * @param list<Control> $controls
      * @param list<string> $only
      */
-    private function run(array $controls, array $only): int
+    private function run(array $controls, array $only, ?int $jobs): int
     {
         $selected = array_values(array_filter(
             $controls,
@@ -184,17 +210,15 @@ final class Harness
         $targets = self::mutationTargets($selected);
         $before = $this->workingTreeState();
         $beforeTargets = $this->targetDigests($targets);
-        printf("finding-gate controls — reference=%s, %d control(s)\n\n", $this->reference, \count($selected));
+        $width = min($jobs ?? $this->defaultJobs(), \count($selected));
+        printf(
+            "finding-gate controls — reference=%s, %d control(s), %d at a time\n\n",
+            $this->reference,
+            \count($selected),
+            $width,
+        );
 
-        $outcomes = [];
-
-        foreach ($selected as $index => $control) {
-            Shell::stopIfRequested();
-            printf("  [%d/%d] %s … ", $index + 1, \count($selected), $control->id);
-            $outcome = $this->execute($control);
-            $outcomes[] = $outcome;
-            printf("%s\n", $outcome->asDeclared ? 'as declared' : 'NOT AS DECLARED');
-        }
+        $outcomes = $this->runPool($selected, $width);
 
         echo "\n" . self::table($outcomes);
         $after = $this->workingTreeState();
@@ -216,14 +240,89 @@ final class Harness
         return $failed === [] ? 0 : 1;
     }
 
-    private function execute(Control $control): Outcome
+    /**
+     * Runs the selected controls with at most `$width` in flight, and returns
+     * their outcomes in the order the controls were declared.
+     *
+     * Order is restored rather than observed: the summary table, the failure
+     * list and the verdict must read the same as they did when the controls ran
+     * one after another, or a run cannot be compared with the last one. What
+     * arrives out of order is the progress lines, and each one carries its
+     * control's declared position.
+     *
+     * @param list<Control> $controls
+     *
+     * @return list<Outcome>
+     */
+    private function runPool(array $controls, int $width): array
+    {
+        $total = \count($controls);
+        $outcomes = [];
+        $inFlight = [];
+        $next = 0;
+        $spokeAt = microtime(true);
+
+        while ($next < $total || $inFlight !== []) {
+            Shell::stopIfRequested();
+
+            while ($next < $total && \count($inFlight) < $width) {
+                $control = $controls[$next];
+                printf("  [%d/%d] %s … started\n", $next + 1, $total, $control->id);
+
+                try {
+                    $inFlight[$next] = $this->launch($control);
+                } catch (Throwable $error) {
+                    $outcomes[$next] = Outcome::crashed($control, $error->getMessage());
+                    self::announce($next, $total, $outcomes[$next], 0.0);
+                }
+
+                $spokeAt = microtime(true);
+                ++$next;
+            }
+
+            Shell::poll();
+
+            foreach ($inFlight as $index => $attempt) {
+                if (!$attempt['child']->settled()) {
+                    continue;
+                }
+
+                $elapsed = $attempt['child']->age();
+                unset($inFlight[$index]);
+                $outcomes[$index] = $this->settle($attempt);
+                self::announce($index, $total, $outcomes[$index], $elapsed);
+                $spokeAt = microtime(true);
+            }
+
+            if ($inFlight !== [] && microtime(true) - $spokeAt >= self::LIVENESS_INTERVAL_SECONDS) {
+                printf("      in flight  %s\n", self::liveness($inFlight, $total));
+                $spokeAt = microtime(true);
+            }
+        }
+
+        ksort($outcomes);
+
+        return array_values($outcomes);
+    }
+
+    /**
+     * Clones, plants the breakage and starts that clone's own gate, without
+     * waiting for it.
+     *
+     * The clone blocks the pool for its ten seconds, which is why the children
+     * already running are drained by {@see Shell::poll()} from inside every
+     * blocking call rather than by a loop of their own.
+     *
+     * @return array{control: Control, scratch: Scratch, child: Child, report: string}
+     */
+    private function launch(Control $control): array
     {
         $scratch = Scratch::cloneOf($this->repository);
 
         try {
             $control->mutation->apply($scratch, $this->repository);
             $report = \dirname($scratch->tree) . '/report.json';
-            $run = Shell::run(
+            $child = Shell::start(
                 [
                     \PHP_BINARY,
                     $scratch->path('scripts/finding-gate.php'),
@@ -233,21 +332,106 @@ final class Harness
                 ],
                 $scratch->tree,
             );
+        } catch (Throwable $error) {
+            $scratch->remove();
 
-            $this->keepReport($control, $report);
+            throw $error;
+        }
+
+        return ['control' => $control, 'scratch' => $scratch, 'child' => $child, 'report' => $report];
+    }
+
+    /** @param array{control: Control, scratch: Scratch, child: Child, report: string} $attempt */
+    private function settle(array $attempt): Outcome
+    {
+        try {
+            $run = $attempt['child']->result();
+            $this->keepReport($attempt['control'], $attempt['report']);
 
             return Outcome::of(
-                $control,
+                $attempt['control'],
                 $run,
-                $report,
+                $attempt['report'],
                 $this->declaredSurfaces(),
-                self::replacesDeclaration($control),
+                self::replacesDeclaration($attempt['control']),
             );
         } catch (Throwable $error) {
-            return Outcome::crashed($control, $error->getMessage());
+            return Outcome::crashed($attempt['control'], $error->getMessage());
         } finally {
-            $scratch->remove();
+            $attempt['scratch']->remove();
         }
+    }
+
+    private static function announce(int $index, int $total, Outcome $outcome, float $elapsed): void
+    {
+        printf(
+            "  [%d/%d] %s … %s (%s)\n",
+            $index + 1,
+            $total,
+            $outcome->control->id,
+            $outcome->asDeclared ? 'as declared' : 'NOT AS DECLARED',
+            self::duration($elapsed),
+        );
+    }
+
+    /**
+     * What the run is waiting for, per child rather than per stream: a quiet
+     * control is invisible in a merged output stream, and with a pool the
+     * merged stream is the only thing an onlooker would otherwise see.
+     *
+     * @param array<int, array{control: Control, scratch: Scratch, child: Child, report: string}> $inFlight
+     */
+    private static function liveness(array $inFlight, int $total): string
+    {
+        $parts = [];
+
+        foreach ($inFlight as $index => $attempt) {
+            $parts[] = \sprintf(
+                '[%d/%d] %s %s, quiet %s, %d KiB',
+                $index + 1,
+                $total,
+                $attempt['control']->id,
+                self::duration($attempt['child']->age()),
+                self::duration($attempt['child']->outputAge()),
+                intdiv($attempt['child']->bytes(), 1024),
+            );
+        }
+
+        return implode('; ', $parts);
+    }
+
+    private static function duration(float $seconds): string
+    {
+        return $seconds >= 60.0
+            ? \sprintf('%dm%02ds', (int) ($seconds / 60), (int) $seconds % 60)
+            : \sprintf('%.1fs', $seconds);
+    }
+
+    /**
+     * A quarter of the machine's processors, floored at two.
+     *
+     * One control in flight is one gate, and a gate runs `bin/qmx --workers=0`
+     * — one busy core plus git and filesystem work. A quarter leaves room for
+     * the clone bursts, for the machine to stay usable, and for the fact that
+     * this is a developer's laptop and not a runner.
+     */
+    private function defaultJobs(): int
+    {
+        return max(2, min(self::JOB_CEILING, intdiv($this->processorCount(), 4)));
+    }
+
+    private function processorCount(): int
+    {
+        foreach ([['getconf', '_NPROCESSORS_ONLN'], ['sysctl', '-n', 'hw.ncpu']] as $command) {
+            $result = Shell::run($command, $this->repository);
+            $count = (int) trim($result['stdout']);
+
+            if ($result['exit'] === 0 && $count > 0) {
+                return $count;
+            }
+        }
+
+        return 4;
     }
 
     /** Whether this control plants a declaration of its own over the repository's. */

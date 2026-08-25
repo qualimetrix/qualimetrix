@@ -23,11 +23,17 @@ use RuntimeException;
  * The loop drains both pipes with `stream_select` rather than reading stdout to
  * EOF first: the gate writes enough to stderr to fill a pipe buffer, and a
  * blocking read of the other pipe would deadlock instead of finishing.
+ *
+ * Draining is global, not per child: {@see poll()} selects over every live
+ * child at once. That is what lets several controls run side by side, and it is
+ * also required by the blocking calls that happen *while* they run — a clone's
+ * `cp -Rl` takes ten seconds, and a gate whose 64K pipe buffer fills makes no
+ * progress until somebody reads it.
  */
 final class Shell
 {
-    /** @var array<int, resource> pid => process handle */
-    private static array $live = [];
+    /** @var array<int, Child> pid => unsettled child */
+    private static array $children = [];
 
     private static ?string $stopReason = null;
 
@@ -58,6 +64,23 @@ final class Shell
      */
     public static function run(array $command, string $workingDirectory): array
     {
+        $child = self::start($command, $workingDirectory);
+
+        while (!$child->settled()) {
+            self::poll();
+        }
+
+        return $child->result();
+    }
+
+    /**
+     * Starts a child and returns it unsupervised; the caller keeps it and calls
+     * {@see poll()} until it is settled.
+     *
+     * @param list<string> $command
+     */
+    public static function start(array $command, string $workingDirectory): Child
+    {
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $handle = proc_open($command, $descriptors, $pipes, $workingDirectory, [
             'PATH' => (string) getenv('PATH'),
@@ -73,66 +96,44 @@ final class Shell
         }
 
         $pid = proc_get_status($handle)['pid'];
-        self::$live[$pid] = $handle;
+        $child = new Child($handle, $pid, $pipes);
+        self::$children[$pid] = $child;
 
-        try {
-            return self::supervise($handle, $pipes);
-        } finally {
-            unset(self::$live[$pid]);
-            proc_close($handle);
-        }
+        return $child;
     }
 
     /**
-     * @param resource $handle
-     * @param array<int, resource> $pipes
-     *
-     * @return array{stdout: string, stderr: string, exit: int}
+     * Reads whatever every live child has produced, once, and reaps the settled
+     * ones. This is also where a requested stop is acted on, so a caller that
+     * polls is interruptible whether its own child is talking or not.
      */
-    private static function supervise($handle, array $pipes): array
+    public static function poll(int $timeoutMicroseconds = 200_000): void
     {
-        $open = [1 => $pipes[1], 2 => $pipes[2]];
-        $buffers = [1 => '', 2 => ''];
-        $exit = null;
+        $read = [];
 
-        foreach ($open as $stream) {
-            stream_set_blocking($stream, false);
-        }
-
-        while ($open !== [] || $exit === null) {
-            if ($open !== []) {
-                $read = array_values($open);
-                $write = $except = [];
-                @stream_select($read, $write, $except, 0, 200_000);
-
-                foreach ($open as $key => $stream) {
-                    $chunk = fread($stream, 65_536);
-
-                    if (\is_string($chunk) && $chunk !== '') {
-                        $buffers[$key] .= $chunk;
-                    }
-
-                    if (feof($stream)) {
-                        fclose($stream);
-                        unset($open[$key]);
-                    }
-                }
-            } else {
-                usleep(100_000);
-            }
-
-            self::stopIfRequested();
-
-            if ($exit === null) {
-                $status = proc_get_status($handle);
-
-                if ($status['running'] === false) {
-                    $exit = $status['exitcode'];
-                }
+        foreach (self::$children as $child) {
+            foreach ($child->openStreams() as $stream) {
+                $read[] = $stream;
             }
         }
 
-        return ['stdout' => $buffers[1], 'stderr' => $buffers[2], 'exit' => $exit];
+        if ($read === []) {
+            usleep($timeoutMicroseconds);
+        } else {
+            $write = $except = [];
+            @stream_select($read, $write, $except, 0, $timeoutMicroseconds);
+        }
+
+        foreach (self::$children as $pid => $child) {
+            $child->drain();
+
+            if ($child->settled()) {
+                $child->reap();
+                unset(self::$children[$pid]);
+            }
+        }
+
+        self::stopIfRequested();
     }
 
     /**
@@ -179,26 +180,31 @@ final class Shell
     public static function terminateAll(): void
     {
         if (!\function_exists('posix_kill')) {
-            self::$live = [];
+            self::$children = [];
 
             return;
         }
 
-        foreach (array_keys(self::$live) as $pid) {
-            $tree = [$pid, ...self::descendants($pid)];
+        // Every tree is collected and signalled as one set: with a pool there
+        // are several of them, and a per-tree grace period would let the last
+        // child keep working for as long as the earlier ones took to die.
+        $trees = [];
 
-            foreach ($tree as $target) {
-                @posix_kill($target, \defined('SIGTERM') ? \SIGTERM : 15);
-            }
-
-            usleep(300_000);
-
-            foreach ($tree as $target) {
-                @posix_kill($target, \defined('SIGKILL') ? \SIGKILL : 9);
-            }
+        foreach (array_keys(self::$children) as $pid) {
+            $trees = [...$trees, $pid, ...self::descendants($pid)];
         }
 
-        self::$live = [];
+        foreach ($trees as $target) {
+            @posix_kill($target, \defined('SIGTERM') ? \SIGTERM : 15);
+        }
+
+        usleep(300_000);
+
+        foreach ($trees as $target) {
+            @posix_kill($target, \defined('SIGKILL') ? \SIGKILL : 9);
+        }
+
+        self::$children = [];
     }
 
     /** @return list<int> */
@@ -305,5 +311,126 @@ final class Shell
         }
 
         return $path;
+    }
+}
+
+/**
+ * One started process, drained by {@see Shell::poll()} rather than by a loop of
+ * its own.
+ *
+ * It exists so several controls can be in flight at once: a supervision loop
+ * that owns one child cannot read another's pipes, and an unread pipe stops the
+ * child that fills it. Liveness is therefore recorded per child — `outputAge()`
+ * on the child that has gone quiet, not on a stream where fourteen gates'
+ * output would be indistinguishable.
+ */
+final class Child
+{
+    /** @var array<int, resource> */
+    private array $open;
+
+    /** @var array<int, string> */
+    private array $buffers = [1 => '', 2 => ''];
+
+    private ?int $exit = null;
+
+    private int $bytes = 0;
+
+    private float $startedAt;
+
+    private float $lastOutputAt;
+
+    /**
+     * @param resource $handle
+     * @param array<int, resource> $pipes
+     */
+    public function __construct(
+        private $handle,
+        public readonly int $pid,
+        array $pipes,
+    ) {
+        $this->open = [1 => $pipes[1], 2 => $pipes[2]];
+        $this->startedAt = microtime(true);
+        $this->lastOutputAt = $this->startedAt;
+
+        foreach ($this->open as $stream) {
+            stream_set_blocking($stream, false);
+        }
+    }
+
+    /** @return list<resource> */
+    public function openStreams(): array
+    {
+        return array_values($this->open);
+    }
+
+    /** Reads whatever is already available and refreshes the exit status. */
+    public function drain(): void
+    {
+        foreach ($this->open as $key => $stream) {
+            $chunk = fread($stream, 65_536);
+
+            if (\is_string($chunk) && $chunk !== '') {
+                $this->buffers[$key] .= $chunk;
+                $this->bytes += \strlen($chunk);
+                $this->lastOutputAt = microtime(true);
+            }
+
+            if (feof($stream)) {
+                fclose($stream);
+                unset($this->open[$key]);
+            }
+        }
+
+        if ($this->exit === null && \is_resource($this->handle)) {
+            $status = proc_get_status($this->handle);
+
+            if ($status['running'] === false) {
+                $this->exit = $status['exitcode'];
+            }
+        }
+    }
+
+    /** Both pipes at EOF and the exit code known: nothing more will arrive. */
+    public function settled(): bool
+    {
+        return $this->open === [] && $this->exit !== null;
+    }
+
+    /**
+     * Closes the process handle. The exit code was taken from
+     * `proc_get_status()` before this, because `proc_close()` on an already
+     * reaped process reports -1.
+     */
+    public function reap(): void
+    {
+        if (\is_resource($this->handle)) {
+            proc_close($this->handle);
+        }
+    }
+
+    /** @return array{stdout: string, stderr: string, exit: int} */
+    public function result(): array
+    {
+        if ($this->exit === null) {
+            throw new RuntimeException(\sprintf('Process %d has not exited yet.', $this->pid));
+        }
+
+        return ['stdout' => $this->buffers[1], 'stderr' => $this->buffers[2], 'exit' => $this->exit];
+    }
+
+    public function age(): float
+    {
+        return microtime(true) - $this->startedAt;
+    }
+
+    public function outputAge(): float
+    {
+        return microtime(true) - $this->lastOutputAt;
+    }
+
+    public function bytes(): int
+    {
+        return $this->bytes;
     }
 }
