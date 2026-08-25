@@ -290,11 +290,23 @@ declaration to these properties:
   row's source, if two rows rename the same whole name, or if a row's two sides
   are equal. Substitution is a single pass over the original text, so rows cannot
   cascade into an identity no row states.
-- **No idle rows.** A declared row that translated nothing anywhere in the run
-  fails as `map-stale`, exactly as a normalization rule that redacted nothing
-  fails as `normalization-stale`. Not every map has to fire, though: the corpus
-  is external, so a renamed product symbol reaches no compared artifact and
-  `symbols.tsv` can legitimately stay empty.
+- **No idle rows.** A declared row that neither translated nor explained
+  anything anywhere in the run fails as `map-stale`, exactly as a normalization
+  rule that redacted nothing fails as `normalization-stale`. Not every map has to
+  fire, though: the corpus is external, so a renamed product symbol reaches no
+  compared artifact and `symbols.tsv` can legitimately stay empty.
+
+  *Explaining* counts beside *translating* for one shape, and only for it: a row
+  that moves a producer and leaves the code alone
+  (`computed.health#health.complexity -> health.complexity#health.complexity`)
+  has nothing to substitute anywhere. Its rule half is one side of the split such
+  rows derive and is deliberately left untranslated, its code half is the same
+  string on both sides, and no surface prints the whole `rule#code` key the row
+  is written as. Judged by substitution alone it would be idle, which would make
+  the only shape a producer move can be declared in unwritable. The credit is
+  granted per row and per matched record, so a row of a live split that explained
+  no record of *its own* key is still `map-stale`: "a sibling of mine fired" is
+  not a claim about this row.
 
 ### Direction is declared, and it follows from injectivity
 
@@ -387,7 +399,9 @@ rename can be stated once. Two ways the halves stop being a function:
   because no translation of it is right. Its protection is not lost — every
   reference finding carrying that half must have its `(rule, code)` pair named by
   a declared row, and the candidate must publish the pair that row computes on
-  the same subject. An occurrence nothing accounts for is `split-unmapped`.
+  the same subject. An occurrence nothing accounts for is `split-unmapped`. A
+  record a row did explain credits that row against `map-stale`, by key, so the
+  credit reaches the one row that named it and not the split it belongs to.
   `rule` and `code` are fields the equivalence tuple compares, so this is the
   same rule normalization is held to; a declared delta gets no waiver here. What
   the matched records produce is a set of `(from, to)` moves per field, and that
@@ -484,8 +498,8 @@ while the channel fires.
 
 ## The controls
 
-`composer gate:controls` runs fourteen controls, each on its own hardlink clone:
-twelve planted breakages, each required to produce a named failure class at a
+`composer gate:controls` runs sixteen controls, each on its own hardlink clone:
+fourteen planted breakages, each required to produce a named failure class at a
 named surface, and two green ones. Three properties of the declaration are worth
 knowing before adding one:
 
@@ -548,6 +562,20 @@ knowing before adding one:
   the control off its own subject. A broader pin that merely spans a declared
   surface is fine: the other ten formats and the baseline file are still compared
   for equality, and the declared one among them is absorbed as declaration noise.
+- `split-row-idle` and `split-no-row` are the controls on the split mechanism,
+  and they watch the two failures a split can hide. `split-row-idle` declares the
+  `code-smell.unused-private` rename as a split whose second row names a code the
+  product never emits: the first row explains every record and is therefore not
+  idle, the second explains none and must fail as `map-stale`. That is the
+  boundary of the staleness credit — a relaxation granted per split rather than
+  per row would make this control green. Its measured cost is that a split half
+  is untranslatable, so the `smells` case's surfaces and the `qmx rules` listing
+  differ, and both are tolerated. `split-no-row` perturbs no product code at all:
+  it declares a split of the same channel into two codes the product never emits,
+  so the twelve findings that *do* carry the split half have no declared row
+  naming their key, and `split-unmapped` is required on that case. That class
+  carries the whole delta of the `rule` field whenever a producer moves, and no
+  control had watched it fire before.
 - `lost-level-fixture` is the control on a lost level. Its mutation takes the
   `class` level away from the `health` case's user-defined computed metric, which
   is the only way this corpus can lose one level of a multi-level channel:

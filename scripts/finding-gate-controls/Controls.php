@@ -9,13 +9,14 @@ use QmxFindingGate\FailureClass;
 /**
  * The controls, as a list.
  *
- * Twelve negative controls — the four the Ш1 DoD names, the four Ш4a adds for
+ * Fourteen negative controls — the four the Ш1 DoD names, the four Ш4a adds for
  * the declared delta and the reference's vocabulary, the one Ш4b adds for
- * `delta-too-large`, the one P5.0 adds for a lost level of a multi-level channel
- * and the two Ш5b0 adds for the fingerprint mechanism — plus two green ones: the
- * positive control, without which twelve reds could all be reds for an
- * environmental reason, and Ш5b0's declared rename, which asserts that a change
- * the maps declare is absorbed by the declaration and by nothing else.
+ * `delta-too-large`, the one P5.0 adds for a lost level of a multi-level channel,
+ * the two Ш5b0 adds for the fingerprint mechanism and the two Ш5d0 adds for the
+ * split mechanism — plus two green ones: the positive control, without which
+ * fourteen reds could all be reds for an environmental reason, and Ш5b0's
+ * declared rename, which asserts that a change the maps declare is absorbed by
+ * the declaration and by nothing else.
  *
  * `delta-too-large` was the one class of the five that no control had ever seen
  * red. Ш4a named the gap in its own record; Ш4b rewrote the code that computes
@@ -59,6 +60,8 @@ final class Controls
             self::fingerprintUnexplained(),
             self::fingerprintSelfDisagreement(),
             self::fingerprintDeclaredRename(),
+            self::splitRowIdle(),
+            self::splitWithoutRow(),
         ];
 
         return array_map(
@@ -657,21 +660,8 @@ final class Controls
             // two declarations, opposite verdicts — anything else and the pair
             // would be comparing two different changes.
             self::unusedPrivateChannelMutation()
-                ->and(Mutation::edit(
-                    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
-                    [
-                        'code-smell.unused-private higher class'
-                            => 'code-smell.unused-privat2 higher class',
-                    ],
-                    'the tracked declaration fixture names the new channel',
-                ))->and(Mutation::edit(
-                    'finding-gate/cases/smells/case.json',
-                    [
-                        '"code-smell.unused-private@class"'
-                            => '"code-smell.unused-privat2@class"',
-                    ],
-                    'the case claims the new channel',
-                ))->and(Mutation::replace(
+                ->and(self::unusedPrivateRenameDeclarations())
+                ->and(Mutation::replace(
                     [
                         // Written whole rather than inserted at an anchor. An
                         // insertion needs a row to anchor on, and the repair that
@@ -692,6 +682,105 @@ final class Controls
         );
     }
 
+    /**
+     * A row of a declared split that explains nothing, beside one that does.
+     *
+     * The relaxation this watches: a channel row is credited by the records it
+     * explained as well as by the text it substituted, because a row that moves
+     * a producer and leaves the code alone has nothing to substitute anywhere —
+     * its rule half is one side of the split and is deliberately left
+     * untranslated, its code half is the same string on both sides, and no
+     * surface prints the whole `rule#code` key. Without the credit `map-stale`
+     * would refuse the only shape such a declaration has.
+     *
+     * The boundary is the point. Credit travels per row and per matched record,
+     * so a second row of the same split — declared over a code the product never
+     * emits — is idle and must fail, even though the split it belongs to is
+     * live. A relaxation granted per split rather than per row would make this
+     * control green, which is why it is required rather than derived from the
+     * self-test: {@see \QmxFindingGate\SelfTest} proves the accounting on
+     * synthetic pairs, and this proves the gate carries it through a real run.
+     *
+     * The product change is {@see unusedPrivateChannelMutation()}, the one the
+     * fingerprint pair already measured, so the only thing this control varies
+     * is the declaration. The map declares the rename as a **split**, which is
+     * what makes the rule half untranslatable: with no substitution left, the
+     * `smells` case's surfaces and the `qmx rules` listing differ, and those two
+     * are the mutation's whole measured radius here — the claim and the tracked
+     * declaration fixture move with the rename, exactly as the green twin moves
+     * them, so neither the claim check nor the witness has anything to say.
+     */
+    private static function splitRowIdle(): Control
+    {
+        return Control::red(
+            'split-row-idle',
+            'a row of a declared split that explained nothing, beside one that explained every record',
+            self::unusedPrivateChannelMutation()
+                ->and(self::unusedPrivateRenameDeclarations())
+                ->and(Mutation::replace(
+                    [
+                        'finding-gate/maps/channels.tsv' => "old\tnew\treason\n"
+                            . "code-smell.unused-private#code-smell.unused-private\t"
+                            . "code-smell.unused-privat2#code-smell.unused-privat2\t"
+                            . "the producer and its code move together, and this row explains every record of them\n"
+                            . "code-smell.unused-private#code-smell.never-emitted\t"
+                            . "code-smell.unused-privat3#code-smell.unused-privat3\t"
+                            . "a second half of the same split, over a code the product never emits\n",
+                    ],
+                    'the rename is declared as a split, one of whose two rows can explain nothing',
+                )),
+            [new Expectation(FailureClass::MAP_STALE, 'code-smell.never-emitted')],
+            [
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'tree|rules'),
+            ],
+        );
+    }
+
+    /**
+     * A finding carrying a split half that no declared row names.
+     *
+     * `split-unmapped` is the class the whole delta of the `rule` field passes
+     * through — a split stops the map from translating the half, and what stands
+     * in for the translation is a per-record explanation — and no control had
+     * ever watched it fire.
+     *
+     * No product code is perturbed, and that is the sharpest form available: the
+     * two trees agree on every surface, so the only thing that can fail is the
+     * explanation. The map declares a split of `code-smell.unused-private` into
+     * two halves whose *codes* the product never emits, so the twelve findings
+     * the `smells` case reports on that channel carry a split half for which no
+     * declared row names their key. That is the same state a real step reaches
+     * by dropping one row of its map while the finding it accounted for stays,
+     * with none of the blast radius a product rename brings.
+     *
+     * Both rows are `map-stale` too, and tolerated rather than required: they
+     * substitute nothing and explain nothing, which is the accounting the idle-row
+     * control is about. Requiring it here as well would let this control pass on
+     * a run where staleness fired and the explanation did not.
+     */
+    private static function splitWithoutRow(): Control
+    {
+        return Control::red(
+            'split-no-row',
+            'a finding whose rule is a declared split half, with no declared row naming its key',
+            Mutation::replace(
+                [
+                    'finding-gate/maps/channels.tsv' => "old\tnew\treason\n"
+                        . "code-smell.unused-private#code-smell.never-emitted\t"
+                        . "code-smell.split-one#code-smell.split-one\t"
+                        . "one half of a declared split, over a code the product never emits\n"
+                        . "code-smell.unused-private#code-smell.never-emitted-either\t"
+                        . "code-smell.split-two#code-smell.split-two\t"
+                        . "the other half, so the producer is split and its own key is declared by neither\n",
+                ],
+                'a split declared over codes the product never emits, leaving the emitted one unaccounted',
+            ),
+            [new Expectation(FailureClass::SPLIT_UNMAPPED, 'case:smells')],
+            [new Expectation(FailureClass::MAP_STALE, 'channels.tsv')],
+        );
+    }
+
     /** The ceiling perturbation, shared by the control that measured it and the delta control. */
     private static function ceilingMutation(): Mutation
     {
@@ -700,6 +789,29 @@ final class Controls
             ['metricValue: $total,' => 'metricValue: $total + 1,'],
             'the unused-private count each finding records is one higher',
         );
+    }
+
+    /**
+     * What has to be re-declared when {@see unusedPrivateChannelMutation()}
+     * renames the channel: the case's claim and the tracked declaration fixture.
+     *
+     * Neither is evidence about the channel — both are declarations of it — so a
+     * control that left them stale would fail on the claim check and the witness
+     * and say nothing about the mechanism it is for. Shared by every control
+     * built on that rename so the three cannot drift apart over which
+     * declaration they carry.
+     */
+    private static function unusedPrivateRenameDeclarations(): Mutation
+    {
+        return Mutation::edit(
+            'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+            ['code-smell.unused-private higher class' => 'code-smell.unused-privat2 higher class'],
+            'the tracked declaration fixture names the new channel',
+        )->and(Mutation::edit(
+            'finding-gate/cases/smells/case.json',
+            ['"code-smell.unused-private@class"' => '"code-smell.unused-privat2@class"'],
+            'the case claims the new channel',
+        ));
     }
 
     /**

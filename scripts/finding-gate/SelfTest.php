@@ -29,6 +29,7 @@ final class SelfTest
         $this->coverage();
         $this->levelVocabulary();
         $this->ambiguities();
+        $this->producerMoves();
         $this->declaredDelta();
         $this->normalization();
         $this->deriver();
@@ -48,22 +49,20 @@ final class SelfTest
         $this->same('code-smell.eval', $empty->forward('code-smell.eval'), 'identity forward');
         $this->same('code-smell.eval', $empty->reverse('code-smell.eval'), 'identity reverse');
 
-        // What the tracked declaration of THIS step is, asserted rather than
-        // assumed: loading already refuses chains, duplicate sources and
-        // duplicate targets, so what is left to check is that the step's own
-        // shape survived the load — it declares something, and none of its rows
-        // derives a split.
+        // The tracked declaration is loaded, and what is asserted about it is
+        // what holds however many rows it has: loading already refuses chains,
+        // duplicate sources and duplicate targets, and no tracked row derives a
+        // split.
         //
-        // No concrete row is named here. The previous spelling asserted one of
-        // Ш5b's rows (`code-smell.eval#code-smell.eval` -> `code-smell.eval`)
-        // against the tracked map, which is a fact about the step that wrote the
-        // file rather than a property of the machinery, and it went red the
-        // moment the next step declared different rows. The mechanism it meant
-        // to prove — a collapse maps several sources onto one target and derives
-        // no split — is proved on synthetic pairs in {@see ambiguities()}, where
-        // the input cannot go stale.
+        // Nothing here asserts that the file declares anything. Two spellings
+        // tried to and both went red on a later step rather than on a defect:
+        // first a named Ш5b row, then "the tracked maps are not the identity",
+        // which the repair after Ш5c falsified by renaming nothing and tracking
+        // four header-only files. How many rows a step declares is a fact about
+        // that step; the machinery under test here is the same with none. The
+        // shapes a row can have are proved on synthetic pairs below and in
+        // {@see ambiguities()}, where the input cannot go stale.
         $maps = RenameMaps::load($this->candidateRoot . '/finding-gate/maps');
-        $this->assert(!$maps->isIdentity(), 'this step declares renames, so the tracked maps are not the identity');
         $this->same(
             [],
             array_keys($maps->splits()),
@@ -713,6 +712,87 @@ final class SelfTest
             1,
             \count(ChannelSplit::of($split)->unexplained($undeclaredHalf, $explained)),
             'the third code of a split rule, left undeclared, is split-unmapped rather than absorbed',
+        );
+    }
+
+    /**
+     * A row that moves a producer and nothing else: it substitutes nothing, and
+     * what keeps it honest is the record it explains.
+     *
+     * `computed.health#health.complexity -> health.complexity#health.complexity`
+     * moves the `rule` field and leaves the `code` field alone. Its halves
+     * therefore give it nothing to substitute — the rule half is one side of a
+     * split and is left untranslated on purpose, the code half is the same
+     * string on both sides and expands into no pair at all — and no surface
+     * prints the whole `rule#code` key the row is written as. Judged by
+     * substitution alone such a row is idle, and `map-stale` would refuse the
+     * only shape a producer move can be declared in.
+     *
+     * So a row is credited by what it explained as well as by what it
+     * substituted, and the credit is per row rather than per split: a row is
+     * live because a record of ITS key was explained, never because a sibling
+     * of its split was. The two cases below that keep a row stale are what says
+     * the relaxation did not become "any row of a live split is live".
+     */
+    private function producerMoves(): void
+    {
+        $rows = static fn(): RenameMaps => RenameMaps::fromPairs([
+            ['old' => 'computed.health#health.complexity', 'new' => 'health.complexity#health.complexity', 'source' => 'channels.tsv'],
+            ['old' => 'computed.health#health.cohesion', 'new' => 'health.cohesion#health.cohesion', 'source' => 'channels.tsv'],
+        ]);
+        $cohesionRow = 'channels.tsv: "computed.health#health.cohesion" -> "health.cohesion#health.cohesion"';
+        $reference = [
+            ['subject' => 'namespace:App', 'rule' => 'computed.health', 'code' => 'health.complexity', 'channel' => 'computed.health#health.complexity'],
+            ['subject' => 'namespace:App', 'rule' => 'computed.health', 'code' => 'health.cohesion', 'channel' => 'computed.health#health.cohesion'],
+        ];
+        $candidate = [
+            ['subject' => 'namespace:App', 'rule' => 'health.complexity', 'code' => 'health.complexity', 'channel' => 'health.complexity'],
+            ['subject' => 'namespace:App', 'rule' => 'health.cohesion', 'code' => 'health.cohesion', 'channel' => 'health.cohesion'],
+        ];
+
+        $explaining = $rows();
+        $this->same([], ChannelSplit::of($explaining)->unexplained($reference, $candidate), 'a producer move is explained record by record');
+        $this->same(
+            [],
+            $explaining->staleRows(),
+            'a row that substituted nothing and explained a record is not idle',
+        );
+
+        // Fail-closed, stated as its own case: the relaxation credits explaining,
+        // not declaring. With the same two rows and nothing for them to explain,
+        // both are as stale as they were before the relaxation existed.
+        $idle = $rows();
+        ChannelSplit::of($idle)->unexplained($reference, []);
+        $this->same(
+            2,
+            \count($idle->staleRows()),
+            'a row that substituted nothing and explained nothing is still stale',
+        );
+
+        // The candidate publishes one of the two pairs, so one record is
+        // explained and the other is not. Credit follows the record, so the row
+        // whose record went unmatched stays stale even though its split partner
+        // is live.
+        $halfMatched = $rows();
+        $this->same(
+            1,
+            \count(ChannelSplit::of($halfMatched)->unexplained($reference, [$candidate[0]])),
+            'the pair the candidate never published is split-unmapped',
+        );
+        $this->same(
+            [$cohesionRow],
+            $halfMatched->staleRows(),
+            'and its row is stale: a declared row is credited by a record it matched, not by being declared',
+        );
+
+        // The reference carries one of the two pairs at all, which is the shape
+        // the DoD names: two rows of one split, one of them explaining.
+        $halfPresent = $rows();
+        ChannelSplit::of($halfPresent)->unexplained([$reference[0]], $candidate);
+        $this->same(
+            [$cohesionRow],
+            $halfPresent->staleRows(),
+            'the sibling of an explaining row is stale on its own account',
         );
     }
 

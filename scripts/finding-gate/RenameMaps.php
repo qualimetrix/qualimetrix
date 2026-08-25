@@ -126,6 +126,16 @@ final class RenameMaps
     /** @var array<string, string> old whole channel key => new whole channel key */
     private array $channelKeys = [];
 
+    /** @var array<string, string> old whole channel key => the declared row that names it */
+    private array $channelKeyRows = [];
+
+    /**
+     * Declared rows that explained a record, whatever they substituted.
+     *
+     * @var array<string, true>
+     */
+    private array $explainedRows = [];
+
     /** @param list<array{old: string, new: string, source: string, row?: string}> $pairs */
     private function __construct(array $pairs)
     {
@@ -182,6 +192,18 @@ final class RenameMaps
      * the same way. Accounted per declared row, not per expanded pair: a channel
      * row that reaches the artifacts only through its halves did its job.
      *
+     * "Fired" means substituted **or** explained, and the second half exists for
+     * one shape: a row that moves a producer and nothing else
+     * (`computed.health#health.complexity -> health.complexity#health.complexity`)
+     * has nothing to substitute anywhere. Its rule half is one side of a split
+     * and is deliberately left untranslated, its code half is the same string on
+     * both sides and expands into no pair, and no surface prints the whole
+     * `rule#code` key the row is written as. Judged by substitution alone it is
+     * idle, which would make the only shape a producer move can be declared in
+     * unwritable. The credit is granted by {@see creditExplanation()} per row and
+     * per matched record, so a row of a live split that explained nothing itself
+     * stays stale.
+     *
      * A multivalued row is the deliberate exception, and this is the place where
      * a guard turns into a rubber stamp if the decision is taken by default.
      * Such a row is not one rename but one per image, so **every** image has to
@@ -223,7 +245,7 @@ final class RenameMaps
                 continue;
             }
 
-            if (!isset($fired[$row])) {
+            if (!isset($fired[$row]) && !isset($this->explainedRows[$row])) {
                 $rows[] = $row;
             }
         }
@@ -250,6 +272,32 @@ final class RenameMaps
     public function channelKeys(): array
     {
         return $this->channelKeys;
+    }
+
+    /**
+     * Credits the row that declares this channel key with having explained a
+     * record.
+     *
+     * The key is the unit of attribution rather than the row text, because the
+     * caller holding the explanation is holding a key. Attribution is what keeps
+     * the relaxation from becoming "any row of a live split is live": the pairs
+     * a split makes ambiguous are dropped from the substitution list with the
+     * rest reindexed, and the hit counter is keyed by pair index, so without
+     * this the only fact reaching staleness would be that the split as a whole
+     * had translated something.
+     *
+     * An undeclared key is refused rather than ignored. A credit nothing
+     * declared would keep a row alive by a name that is not in it, which is the
+     * failure this whole check exists to report.
+     */
+    public function creditExplanation(string $oldChannelKey): void
+    {
+        $row = $this->channelKeyRows[$oldChannelKey] ?? throw new GateError(\sprintf(
+            'No declared row names the channel key "%s", so nothing can be credited with explaining a record of it.',
+            $oldChannelKey,
+        ));
+
+        $this->explainedRows[$row] = true;
     }
 
     /** Reference output, restated in the candidate's vocabulary. */
@@ -671,6 +719,7 @@ final class RenameMaps
         foreach ($this->pairs as $pair) {
             if ($pair['source'] === self::CHANNELS && str_contains($pair['old'], '#')) {
                 $this->channelKeys[$pair['old']] = $pair['new'];
+                $this->channelKeyRows[$pair['old']] = $pair['row'];
             }
         }
     }

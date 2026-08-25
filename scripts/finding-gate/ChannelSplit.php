@@ -27,6 +27,13 @@ namespace QmxFindingGate;
  * a declared delta to cover, and nothing wider — {@see allowsMove()} stores the
  * *pairs* those matched records produced, so a delta may show a compared field
  * making a move the split performed and no other.
+ *
+ * A matched record also credits the row that named its key, through
+ * {@see RenameMaps::creditExplanation()}. A row that moves a producer and
+ * nothing else substitutes nothing anywhere, so explaining records is the only
+ * work it can be seen doing; without the credit `map-stale` would refuse the
+ * only shape such a declaration has. The credit travels by key, so it reaches
+ * the one row that named it rather than the split it belongs to.
  */
 final class ChannelSplit
 {
@@ -41,13 +48,14 @@ final class ChannelSplit
      * @param array<string, string> $channelKeys old whole key => new whole key
      */
     private function __construct(
+        private readonly RenameMaps $maps,
         private readonly array $splits,
         private readonly array $channelKeys,
     ) {}
 
     public static function of(RenameMaps $maps): self
     {
-        return new self($maps->splits(), $maps->channelKeys());
+        return new self($maps, $maps->splits(), $maps->channelKeys());
     }
 
     public function isEmpty(): bool
@@ -152,6 +160,14 @@ final class ChannelSplit
             }
 
             $this->allowMove($finding, $match);
+
+            // The row that named this key is what explained the record, and the
+            // maps are told so: a row of this shape substitutes nothing
+            // anywhere, so explaining is the only work it can be seen doing and
+            // staleness would otherwise report it as a rename that never
+            // happened. Per key, and only on a match — a record the candidate
+            // did not publish is reported above and credits nobody.
+            $this->maps->creditExplanation($key);
         }
 
         return $unexplained;
