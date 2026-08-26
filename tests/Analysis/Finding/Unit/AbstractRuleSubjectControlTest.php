@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -57,11 +56,6 @@ final class SubjectControlHarness extends AbstractRule
     public function getDescription(): string
     {
         return 'Test harness';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Complexity;
     }
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;

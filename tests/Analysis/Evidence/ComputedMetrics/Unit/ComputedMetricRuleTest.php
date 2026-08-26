@@ -20,7 +20,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -49,14 +48,6 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([]);
 
         self::assertSame('Checks user-defined computed metrics against their thresholds', $rule->getDescription());
-    }
-
-    #[Test]
-    public function itReturnsComputedCategory(): void
-    {
-        $rule = $this->createRuleWithDefinitions([]);
-
-        self::assertSame(RuleCategory::Computed, $rule->getCategory());
     }
 
     #[Test]

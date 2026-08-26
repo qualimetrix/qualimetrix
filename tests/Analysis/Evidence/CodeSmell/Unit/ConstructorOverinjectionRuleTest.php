@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -42,14 +41,6 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
 
         self::assertSame('Checks number of constructor parameters (dependencies)', $rule->getDescription());
-    }
-
-    #[Test]
-    public function itGetCategory(): void
-    {
-        $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
-
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
     #[Test]

@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -41,14 +40,6 @@ final class InheritanceRuleTest extends TestCase
             'Checks Depth of Inheritance Tree (deep hierarchies increase complexity)',
             $rule->getDescription(),
         );
-    }
-
-    #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new InheritanceRule(new InheritanceOptions());
-
-        self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
     #[Test]

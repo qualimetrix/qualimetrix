@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 
 /**
  * Every fact the rest of the system reads off "the class named by this
@@ -127,18 +126,6 @@ final class ComputedMetricChannelFamily
         return \in_array($definitionName, self::HEALTH_PRODUCER_RULE_NAMES, true)
             ? $definitionName
             : self::OPEN_PRODUCER_RULE_NAME;
-    }
-
-    /**
-     * `Health` for the six, `Computed` for the open half. The categories exist
-     * because inferring a group from the name's first segment would have put
-     * seven producers under a category that names none of them.
-     */
-    public static function categoryOf(string $producerRuleName): RuleCategory
-    {
-        return $producerRuleName === self::OPEN_PRODUCER_RULE_NAME
-            ? RuleCategory::Computed
-            : RuleCategory::Health;
     }
 
     /**

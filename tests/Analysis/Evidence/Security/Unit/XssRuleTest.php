@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Security\XssRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -29,7 +28,6 @@ final class XssRuleTest extends TestCase
         $rule = new XssRule(new SecurityPatternOptions());
 
         self::assertSame('security.xss', $rule->getName());
-        self::assertSame(RuleCategory::Security, $rule->getCategory());
         self::assertSame('Detects potential XSS vulnerabilities', $rule->getDescription());
     }
 

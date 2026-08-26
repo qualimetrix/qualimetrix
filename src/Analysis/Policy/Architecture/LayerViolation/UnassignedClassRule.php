@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 
@@ -65,11 +64,6 @@ final class UnassignedClassRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Counts analysed class-like declarations that no declared layer claims.';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Architecture;
     }
 
     /**

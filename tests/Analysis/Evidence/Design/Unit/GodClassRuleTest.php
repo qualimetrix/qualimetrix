@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -36,14 +35,6 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         self::assertSame('Detects God Classes (overly complex, large, low cohesion)', $rule->getDescription());
-    }
-
-    #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new GodClassRule(new GodClassOptions());
-
-        self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
     #[Test]

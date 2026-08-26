@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
@@ -225,6 +225,28 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
     }
 
     /**
+     * The display family is derived from a producer's name rather than
+     * declared beside it, so a name with no first segment would reach
+     * `qmx rules` as an empty group heading. Refused at container build
+     * instead — the listing has no way to ask about a producer it is already
+     * printing.
+     */
+    #[Test]
+    public function itThrowsWhenAProducerNameYieldsNoFamily(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleWithoutAFamily::class)
+            ->setClass(FixtureRuleWithoutAFamily::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Producer ".orphan" has no family');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    /**
      * A validator borrows its producer rule's name (ADR 0030); ADR 0031 adds
      * that the two must also agree on what their shared producer's findings
      * mean for baseline purposes.
@@ -337,11 +359,6 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
         return 'Fixture rule with no channelDeclarations() method, for the compiler pass "declares nothing" case.';
     }
 
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::CodeSmell;
-    }
-
     public static function shape(): ChannelShape
     {
         return ChannelShape::Occurrence;
@@ -396,11 +413,6 @@ final class FixtureRuleWithShapeMismatch implements RuleInterface
     public function getDescription(): string
     {
         return 'Fixture rule whose declared shape disagrees with its channel.';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::CodeSmell;
     }
 
     public static function shape(): ChannelShape
@@ -468,11 +480,6 @@ final class FixtureRuleForShapeAgreement implements RuleInterface
     public function getDescription(): string
     {
         return 'Fixture rule half of a mismatched producer pair.';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::CodeSmell;
     }
 
     public static function shape(): ChannelShape
@@ -570,5 +577,61 @@ final class FixtureOptionsWithNoChannelDeclarations implements RuleOptionsInterf
     public function getSeverity(int|float $value): ?Severity
     {
         return null;
+    }
+}
+
+/**
+ * @internal
+ *
+ * A name whose first dot-separated segment is empty — the one shape
+ * {@see RuleFamily} cannot answer for, and therefore the shape
+ * {@see ChannelDeclarationCompilerPassTest::itThrowsWhenAProducerNameYieldsNoFamily()}
+ * requires the container build to refuse.
+ */
+final class FixtureRuleWithoutAFamily implements RuleInterface
+{
+    public const string NAME = '.orphan';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 15;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule whose name has no non-empty first segment.';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
     }
 }

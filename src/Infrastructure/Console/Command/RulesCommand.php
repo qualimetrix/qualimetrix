@@ -49,7 +49,7 @@ final class RulesCommand extends Command
         $rules = [];
         foreach ($this->ruleExecution->allRules() as $rule) {
             $name = $rule->name;
-            $group = $rule->category->value;
+            $group = $rule->family;
 
             if ($groupFilter !== null && $group !== $groupFilter) {
                 continue;

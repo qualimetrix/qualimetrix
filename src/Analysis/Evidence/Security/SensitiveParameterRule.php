@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 
@@ -40,11 +39,6 @@ final class SensitiveParameterRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Detects sensitive parameters missing #[\\SensitiveParameter] attribute';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Security;
     }
 
     /**

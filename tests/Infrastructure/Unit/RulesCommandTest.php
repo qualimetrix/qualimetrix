@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
@@ -61,7 +60,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itDisplaysNoRulesMessageForAnUnknownGroup(): void
     {
-        $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
+        $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
 
         $tester = new CommandTester($this->createCommand([$rule]));
         $tester->execute(['--group' => 'nonexistent']);
@@ -73,8 +72,8 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itListsRulesUnderGroupHeaders(): void
     {
-        $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
-        $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
+        $ruleA = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $ruleB = $this->createRuleMock('size.class-count', 'Class count');
 
         $tester = new CommandTester($this->createCommand([$ruleA, $ruleB]));
         $tester->execute([]);
@@ -93,8 +92,8 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itFiltersRulesByGroup(): void
     {
-        $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
-        $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
+        $ruleA = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $ruleB = $this->createRuleMock('size.class-count', 'Class count');
 
         $tester = new CommandTester($this->createCommand([$ruleA, $ruleB]));
         $tester->execute(['--group' => 'complexity']);
@@ -149,7 +148,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itDisplaysUsageHints(): void
     {
-        $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
+        $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
 
         $tester = new CommandTester($this->createCommand([$rule]));
         $tester->execute([]);
@@ -162,12 +161,10 @@ final class RulesCommandTest extends TestCase
 
     private function createRuleMock(
         string $name,
-        RuleCategory $category,
         string $description,
     ): RuleInterface {
         $rule = self::createStub(RuleInterface::class);
         $rule->method('getName')->willReturn($name);
-        $rule->method('getCategory')->willReturn($category);
         $rule->method('getDescription')->willReturn($description);
 
         return $rule;
@@ -180,7 +177,6 @@ final class RulesCommandTest extends TestCase
             static fn(RuleInterface $rule): RuleMetadata => new RuleMetadata(
                 name: $rule->getName(),
                 optionsClass: StubRuleOptions::class,
-                category: $rule->getCategory(),
                 description: $rule->getDescription(),
                 aliases: CliAliasReader::read($rule::class),
                 active: true,
@@ -236,11 +232,6 @@ final class FixtureRuleWithCyclomaticAlias implements RuleInterface
     public function getDescription(): string
     {
         return 'Cyclomatic complexity';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Complexity;
     }
 
     public static function shape(): ChannelShape

@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Finding\Rule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 
 interface RuleInterface extends RuleDefinitionInterface
@@ -37,11 +36,6 @@ interface RuleInterface extends RuleDefinitionInterface
      * Returns human-readable description.
      */
     public function getDescription(): string;
-
-    /**
-     * Returns rule category for grouping.
-     */
-    public function getCategory(): RuleCategory;
 
     /**
      * Returns list of metric names this rule requires.

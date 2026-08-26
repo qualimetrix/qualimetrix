@@ -233,7 +233,6 @@ final class RuleExecution implements RuleExecutionInterface
             $producers[] = new RuleMetadata(
                 name: $rule->getName(),
                 optionsClass: $rule::getOptionsClass(),
-                category: $rule->getCategory(),
                 description: $rule->getDescription(),
                 aliases: CliAliasReader::read($rule::class),
                 active: $this->isEnabled($rule->getName(), $selection),
@@ -244,7 +243,6 @@ final class RuleExecution implements RuleExecutionInterface
             $producers[] = new RuleMetadata(
                 name: $producer->name,
                 optionsClass: $producer->optionsClass,
-                category: $producer->category,
                 description: $producer->description,
                 aliases: $producer->aliases,
                 active: $this->isEnabled($producer->name, $selection),

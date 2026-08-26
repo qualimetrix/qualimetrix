@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
@@ -139,6 +140,8 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
             $shapeByRule,
         );
 
+        self::refuseFamilylessProducers(array_keys($thresholdOverrideSupport));
+
         /** @var array<string, ChannelDeclaration> $declarations */
         $declarations = [];
         /** @var array<string, list<string>> $channelKeysByProducer */
@@ -177,6 +180,27 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         if ($container->hasDefinition(RemediationTimeRegistry::class)) {
             $container->getDefinition(RemediationTimeRegistry::class)
                 ->setArgument('$minutesByRule', $minutesByRule);
+        }
+    }
+
+    /**
+     * Refuses, at container build, a producer whose name yields no family.
+     *
+     * The family is the heading `qmx rules` lists a producer under
+     * ({@see RuleFamily}), and since it is derived rather than declared, a
+     * name that yields none would otherwise reach the listing as an empty
+     * heading — a producer displayed under nothing at all. Checked here
+     * because this is the one place both halves of "every registered
+     * producer" are in hand: `$thresholdOverrideSupport` is keyed by every
+     * rule class's name and by every classless producer's, which is also why
+     * {@see KnownRuleNamesAdapter} is handed its keys.
+     *
+     * @param list<string> $producerRuleNames
+     */
+    private static function refuseFamilylessProducers(array $producerRuleNames): void
+    {
+        foreach ($producerRuleNames as $producerRuleName) {
+            RuleFamily::of($producerRuleName);
         }
     }
 
@@ -321,7 +345,6 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                 name: $producerRuleName,
                 hostRuleName: ComputedMetricChannelFamily::OPEN_PRODUCER_RULE_NAME,
                 optionsClass: $optionsClass,
-                category: ComputedMetricChannelFamily::categoryOf($producerRuleName),
                 description: ComputedMetricChannelFamily::descriptionOf($producerRuleName),
                 aliases: ComputedMetricChannelFamily::CLI_ALIASES,
             );

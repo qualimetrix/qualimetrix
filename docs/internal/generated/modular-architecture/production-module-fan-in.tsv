@@ -119,9 +119,9 @@ Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator	An
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait	Analysis.Finding	23	7
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory	Analysis.Finding	34	13
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface	Analysis.Finding	3	2
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader	Analysis.Finding	1	1
+Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader	Analysis.Finding	6	4
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	Analysis.Finding	48	14
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	39	15

@@ -22,7 +22,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
@@ -56,14 +55,6 @@ final class CboRuleTest extends TestCase
             'Checks CBO (Coupling Between Objects) at class and namespace levels',
             $rule->getDescription(),
         );
-    }
-
-    #[Test]
-    public function itReturnsCouplingCategory(): void
-    {
-        $rule = new CboRule(new CboOptions());
-
-        self::assertSame(RuleCategory::Coupling, $rule->getCategory());
     }
 
     #[Test]

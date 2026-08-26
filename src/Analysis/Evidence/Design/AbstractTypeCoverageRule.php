@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -39,19 +38,12 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * from {@see channelName()} by late static binding, which is how
  * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader}
  * already reads an inherited declaration.
- *
- * @qmx-ignore health.cohesion -- One judgement plus the four hooks that name the dimension it judges; the hooks are abstract protocol, and protocol shares no field with the walk that calls it.
  */
 abstract class AbstractTypeCoverageRule extends AbstractRule
 {
     public function getName(): string
     {
         return static::channelName();
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Design;
     }
 
     /**

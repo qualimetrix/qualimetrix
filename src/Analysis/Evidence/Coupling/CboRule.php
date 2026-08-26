@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -54,11 +53,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public function getDescription(): string
     {
         return 'Checks CBO (Coupling Between Objects) at class and namespace levels';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Coupling;
     }
 
     /**

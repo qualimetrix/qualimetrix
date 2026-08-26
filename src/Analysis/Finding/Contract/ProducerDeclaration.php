@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 
 /**
@@ -38,7 +37,6 @@ final readonly class ProducerDeclaration
         public string $name,
         public string $hostRuleName,
         public string $optionsClass,
-        public RuleCategory $category,
         public string $description,
         public array $aliases = [],
     ) {}

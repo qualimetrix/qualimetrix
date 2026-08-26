@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
@@ -41,14 +40,6 @@ final class ClassRankRuleTest extends TestCase
         $rule = new ClassRankRule(new ClassRankOptions());
 
         self::assertNotEmpty($rule->getDescription());
-    }
-
-    #[Test]
-    public function getCategory_returnsCoupling(): void
-    {
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        self::assertSame(RuleCategory::Coupling, $rule->getCategory());
     }
 
     #[Test]

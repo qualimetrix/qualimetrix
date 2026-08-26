@@ -17,7 +17,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -45,14 +44,6 @@ final class ComplexityRuleTest extends TestCase
             'Checks cyclomatic complexity at method and class levels',
             $rule->getDescription(),
         );
-    }
-
-    #[Test]
-    public function itGetCategory(): void
-    {
-        $rule = new ComplexityRule(new ComplexityOptions());
-
-        self::assertSame(RuleCategory::Complexity, $rule->getCategory());
     }
 
     #[Test]

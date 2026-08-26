@@ -17,7 +17,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
@@ -45,14 +44,6 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
         self::assertSame('Checks number of parameters per method', $rule->getDescription());
-    }
-
-    #[Test]
-    public function itGetCategory(): void
-    {
-        $rule = new LongParameterListRule(new LongParameterListOptions());
-
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
     #[Test]

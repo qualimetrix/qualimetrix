@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 
@@ -57,11 +56,6 @@ final class IdenticalSubExpressionRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Detects identical sub-expressions indicating copy-paste errors or logic bugs';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::CodeSmell;
     }
 
     /**

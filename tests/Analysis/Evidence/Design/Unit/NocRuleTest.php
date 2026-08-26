@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
@@ -43,14 +42,6 @@ final class NocRuleTest extends TestCase
             'Checks Number of Children (many direct subclasses indicate wide impact)',
             $rule->getDescription(),
         );
-    }
-
-    #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new NocRule(new NocOptions());
-
-        self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
     #[Test]

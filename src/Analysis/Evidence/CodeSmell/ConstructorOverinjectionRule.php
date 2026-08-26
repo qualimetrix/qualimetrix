@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -43,11 +42,6 @@ final class ConstructorOverinjectionRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks number of constructor parameters (dependencies)';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::CodeSmell;
     }
 
     /**

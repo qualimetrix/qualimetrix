@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterOptions;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -29,7 +28,6 @@ final class SensitiveParameterRuleTest extends TestCase
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
         self::assertSame('security.sensitive-parameter', $rule->getName());
-        self::assertSame(RuleCategory::Security, $rule->getCategory());
         self::assertStringContainsString('SensitiveParameter', $rule->getDescription());
     }
 

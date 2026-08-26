@@ -250,7 +250,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itKeepsCycleIdentityStableWhenMemberOrderChanges
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itLabelsCategoryAsLargeForBigCycles
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itRespectsMaxCycleSize
- - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itReturnsArchitectureCategory
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itReturnsCorrectName
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itReturnsDescriptionContainingCircular
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itReturnsEmptyWhenDisabled
@@ -463,7 +462,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ConstructorOverinjectionRuleTest::itAtWarningThreshold
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ConstructorOverinjectionRuleTest::itBelowWarningThreshold
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ConstructorOverinjectionRuleTest::itConstructorRejectsWrongOptionsType
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ConstructorOverinjectionRuleTest::itGetCategory
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ConstructorOverinjectionRuleTest::itGetCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ConstructorOverinjectionRuleTest::itGetDescription
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ConstructorOverinjectionRuleTest::itGetName
@@ -548,7 +546,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\GotoRuleTest::smellDetectedProducesFinding
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itAnalyzeDisabledReturnsEmpty
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itGetCategory
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itGetDescription
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itGetName
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itGetOptionsClass
@@ -649,7 +646,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\LongParameterListRuleTest::itBindsTheFindingAndThresholdControlToTheExactCallableDeclaration
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\LongParameterListRuleTest::itConstructorRejectsWrongOptionsType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\LongParameterListRuleTest::itCustomThresholds
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\LongParameterListRuleTest::itGetCategory
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\LongParameterListRuleTest::itGetCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\LongParameterListRuleTest::itGetCliAliasesIncludesVoOptions
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\LongParameterListRuleTest::itGetDescription
@@ -816,7 +812,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itCustomThresholds
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itDefaultThresholdsWarningSingleUnreachable
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itFallsBackToTheFirstLineWhenCallableMetadataHasNoLine
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itGetCategory
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itGetCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itGetDescription
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnreachableCodeRuleTest::itGetName
@@ -955,7 +950,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itGeneratesWarning
- - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itGetsCategory
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itGetsDescription
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itGetsName
@@ -1071,7 +1065,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itCognitiveComplexityOptionsFromHierarchicalArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itCognitiveComplexityOptionsFromLegacyArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itCognitiveComplexityOptionsIsLevelEnabled
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itGetCategory
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itGetDescription
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itGetName
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityRuleTest::itGetOptionsClass
@@ -1164,7 +1157,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itComplexityOptionsFromHierarchicalArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itComplexityOptionsFromLegacyArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itComplexityOptionsIsLevelEnabled
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itGetCategory
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itGetDescription
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itGetName
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itGetOptionsClass
@@ -1289,7 +1281,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itClassOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itClassOptionsFromArrayWithCamelCase
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itClassOptionsFromEmptyArray
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itGetCategory
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itGetDescription
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itGetName
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityRuleTest::itGetOptionsClass
@@ -1378,7 +1369,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\WmcRuleTest::itDoesNotSkipDataClassesWhenExcludeDataClassesDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\WmcRuleTest::itGeneratesErrorAboveErrorThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\WmcRuleTest::itGeneratesWarningAboveWarningThreshold
- - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\WmcRuleTest::itGetsCategory
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\WmcRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\WmcRuleTest::itGetsDescription
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\WmcRuleTest::itGetsName
@@ -1618,7 +1608,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itProcessesMultipleLevels
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarationsInEitherMergeOrder
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRequiresNothing
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsComputedCategory
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsCorrectName
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsCorrectOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsNoFindingsWhenDisabled
@@ -1745,7 +1734,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itReturnsCorrectName
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itReturnsCorrectOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itReturnsCorrectOptionsForLevel
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itReturnsCouplingCategory
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itReturnsEmptyForTheUnsupportedCallableDispatchWithoutReadingMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itReturnsEmptyWhenClassLevelDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboRuleTest::itReturnsEmptyWhenNamespaceLevelDisabled
@@ -1791,7 +1779,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::computeScaleFactor_at1600Classes_returnsFour
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::computeScaleFactor_at25Classes_returnsHalf
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::computeScaleFactor_atZeroClasses_returnsOne
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::getCategory_returnsCoupling
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::getDescription_returnsNonEmptyString
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::getName_returnsCorrectName
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::getOptionsClass_returnsClassRankOptions
@@ -1900,7 +1887,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itReturnsCorrectDescription
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itReturnsCorrectName
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itReturnsCorrectOptionsClass
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itReturnsCouplingCategory
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itReturnsEmptyWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itReturnsEmptyWhenNoNamespaces
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itReturnsSeverityForGivenDistance
@@ -1954,7 +1940,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itReturnsCorrectName
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itReturnsCorrectOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itReturnsCorrectOptionsForLevel
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itReturnsCouplingCategory
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itReturnsEmptyWhenClassLevelDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itReturnsEmptyWhenNamespaceLevelDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itReturnsEmptyWhenNoClasses
@@ -2158,7 +2143,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotSkipReadonlyWhenOptionFalse
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itFiltersOnMinMembers
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itFlagsAClassMadeOfNothingButAccessors
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itGetsCategory
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itGetsDescription
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itGetsName
@@ -2194,7 +2178,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itDoesNotFlagWhenTccAndLcomAreMissing
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itDoesNotVetoLcomWhenTccIsBelowVetoThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itFiltersOnMinMethods
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itGetsCategory
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itGetsDescription
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itGetsName
@@ -2243,7 +2226,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGeneratesWarning
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGetsCategory
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGetsDescription
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGetsName
@@ -2278,7 +2260,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGeneratesWarning
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGetsCategory
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGetsDescription
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGetsName
@@ -2539,7 +2520,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itDisablesWhenLoadedFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itGeneratesErrorForVeryLowMi
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itGeneratesWarningForBorderlineMi
- - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itGetsCategory
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itGetsDescription
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itGetsName
@@ -3395,7 +3375,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGeneratesWarning
- - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGetsCategory
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGetsDescription
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGetsName
@@ -3479,7 +3458,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itGeneratesWarning
- - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itGetsCategory
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itGetsDescription
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itGetsName
@@ -3509,7 +3487,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itExcludesReadonlyClassByDefault
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itGeneratesErrorAboveErrorThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itGeneratesWarningAboveWarningThreshold
- - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itGetsCategory
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itGetsName
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itProducesFindingsWhenBothFiltersDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\PropertyCountRuleTest::itProducesNoFindingBelowThreshold
@@ -3606,6 +3583,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyDeclaredDocsPageCarriesTheRulesOwnAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyRegisteredRuleDeclaresItsOwnDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::theTwoNonPrefixPagesAreDeclaredExplicitly
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::everyAllowedFileStillEarnsItsAllowance
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::noHandSpelledCodeInAFixtureOrDocPageNamesANonexistentRuleOrChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::noProductionFileOutsideARuleOrChannelsOwningCapabilityHoldsItsLiteral
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesErrorViaDedicatedCliFlagWithoutFalseWarning
@@ -3650,6 +3628,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itRecordsEveryTaggedRuleNameEvenWhenItDeclaresNoChannel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsOnAChannelDeclaredByTwoDifferentRuleServices
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsOnATaggedServiceWithNoClass
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsWhenAProducerNameYieldsNoFamily
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsWhenAProducersDeclaredShapeDisagreesWithItsChannelDirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsWhenTwoClassesUnderOneProducerNameDeclareDifferentShapes
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itReadsARealRulesDeclarationsCorrectly
@@ -3846,6 +3825,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itPathExclusionIncrementsStatsPerRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itPublishesRuleMetadataWithExactAliasMappingWithoutConcreteRuleInstances
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itRunsTheComputedProducerWhenOnlyItsCodeIsSelected
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleFamilyTest::itReadsTheFamilyOffTheProducerName"dotless name is its own family"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleFamilyTest::itReadsTheFamilyOffTheProducerName"hyphenated family"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleFamilyTest::itReadsTheFamilyOffTheProducerName"three segments"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleFamilyTest::itReadsTheFamilyOffTheProducerName"two segments"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleFamilyTest::itRefusesANameWithNoFirstSegment"empty name"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleFamilyTest::itRefusesANameWithNoFirstSegment"leading separator"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itReadsTheNameConstantWithoutInstantiation
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsAClassThatCannotBeLoaded
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsANonStringNameConstant
@@ -6104,6 +6089,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterResetFailure
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itFiltersByGroupAgainstTheRealRuleSet
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itListsEveryRegisteredRule
+ - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itStaysSilentAndSuccessfulForAGroupNoProducerHas
  - Qualimetrix\Tests\Infrastructure\Integration\SharedRuleOptionsContainerTest::itCreatesIndependentlyConfiguredOptionsForEverySharedOptionsProducer
  - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itFormatsContext
  - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itHandlesEmptyContext

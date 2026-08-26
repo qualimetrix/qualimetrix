@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -43,11 +42,6 @@ final class ClassCountRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks number of classes per namespace';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Size;
     }
 
     /**

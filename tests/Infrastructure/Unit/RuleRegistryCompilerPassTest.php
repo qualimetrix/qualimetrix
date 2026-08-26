@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
@@ -135,11 +134,6 @@ final class FixtureNamelessRule implements RuleInterface
     public function getDescription(): string
     {
         return 'Rule fixture without a NAME constant';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Complexity;
     }
 
     public static function shape(): ChannelShape

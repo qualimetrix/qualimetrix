@@ -22,7 +22,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Size\MethodStatementCountCollector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -48,14 +47,6 @@ final class MaintainabilityRuleTest extends TestCase
             'Checks Maintainability Index (lower values indicate harder to maintain code)',
             $rule->getDescription(),
         );
-    }
-
-    #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new MaintainabilityRule(new MaintainabilityOptions());
-
-        self::assertSame(RuleCategory::Maintainability, $rule->getCategory());
     }
 
     #[Test]

@@ -22,7 +22,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -49,14 +48,6 @@ final class DistanceRuleTest extends TestCase
             'Checks distance from main sequence at namespace level',
             $rule->getDescription(),
         );
-    }
-
-    #[Test]
-    public function itReturnsCouplingCategory(): void
-    {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
-
-        self::assertSame(RuleCategory::Coupling, $rule->getCategory());
     }
 
     #[Test]

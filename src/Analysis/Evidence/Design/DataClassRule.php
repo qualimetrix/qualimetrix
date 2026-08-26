@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -51,11 +50,6 @@ final class DataClassRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Detects classes whose public interface is mostly data access rather than behavior (Data Classes)';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Design;
     }
 
     /**

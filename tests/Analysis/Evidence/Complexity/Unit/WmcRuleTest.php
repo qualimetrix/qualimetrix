@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
@@ -44,14 +43,6 @@ final class WmcRuleTest extends TestCase
             'Checks Weighted Methods per Class (sum of method complexities)',
             $rule->getDescription(),
         );
-    }
-
-    #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new WmcRule(new WmcOptions());
-
-        self::assertSame(RuleCategory::Complexity, $rule->getCategory());
     }
 
     #[Test]

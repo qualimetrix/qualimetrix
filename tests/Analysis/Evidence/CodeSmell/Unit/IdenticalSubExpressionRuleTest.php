@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -35,13 +34,6 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
         self::assertNotEmpty($rule->getDescription());
-    }
-
-    #[Test]
-    public function itGetCategory(): void
-    {
-        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
     #[Test]

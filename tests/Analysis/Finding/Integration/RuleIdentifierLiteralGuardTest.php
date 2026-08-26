@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -65,17 +66,19 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * an oversight in six months — see
      * `dvizh-vr-workflow:agent-instructions` on decisions without reasons.
      *
+     * **An argument is not enough on its own: the entry must still be
+     * earned.** This list once held `RuleCategory.php`, whose argument said
+     * deriving a display group from a producer name would make the name
+     * space's spelling a behavioural contract again. The enum was retired and
+     * the group became derived ({@see RuleFamily}); an allowance for a file
+     * that no longer exists would have sat here arguing against a decision
+     * already taken, and nothing would have failed. So
+     * {@see everyAllowedFileStillEarnsItsAllowance()} re-runs the check the
+     * entry suppresses and fails when it finds nothing left to suppress.
+     *
      * @var array<string, string>
      */
     private const array ALLOWED_FILES = [
-        'src/Analysis/Finding/Contract/Rule/RuleCategory.php' =>
-            'Not a copy of a producer name — a coincidence between two vocabularies. The enum\'s backing'
-            . ' values are the display groups `qmx rules --group` accepts, and one of them ("computed")'
-            . ' happens to be spelled like the open producer of the computed-metric family, because both'
-            . ' name the same idea from different sides. A category is deliberately not addressable (see'
-            . ' the enum\'s own docblock), so nothing resolves this literal as a rule name, and deriving'
-            . ' the group label from a producer name would make the name space\'s spelling a behavioural'
-            . ' contract again — the exact thing that docblock records having removed.',
         'src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php' =>
             'Declared, audited hand-kept copy of each rule\'s ThresholdParser::parse()'
             . ' key spelling. Its own docblock argues why it cannot be derived at'
@@ -167,29 +170,113 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
                 continue;
             }
 
-            $fileOwner = self::capabilityRootFromRelativePath($relative);
-
-            foreach (self::stringLiterals($absolutePath) as $literal) {
-                if (!isset($ownerByLiteral[$literal])) {
-                    continue;
-                }
-
-                $literalOwner = $ownerByLiteral[$literal];
-
-                if ($literalOwner === $fileOwner) {
-                    continue;
-                }
-
-                $findings[] = \sprintf(
-                    '%s holds literal "%s", which belongs to %s.',
-                    $relative,
-                    $literal,
-                    $literalOwner,
-                );
-            }
+            $findings = [...$findings, ...self::foreignLiterals($absolutePath, $relative, $ownerByLiteral)];
         }
 
         self::assertSame([], $findings, "\n" . implode("\n", $findings));
+    }
+
+    /**
+     * Every allowance must still suppress something.
+     *
+     * A stale entry is invisible by construction — the guard skips the file it
+     * names, so an allowance for a deleted file, or for one that no longer
+     * holds a foreign literal, silently protects nothing while reading as a
+     * live argument. That is the seam this project has now walked into twice:
+     * a package retires a subject and leaves the guard asserting about it.
+     */
+    #[Test]
+    public function everyAllowedFileStillEarnsItsAllowance(): void
+    {
+        $container = (new ContainerFactory())->create();
+        $ownerByLiteral = self::ownerByLiteral($container);
+        $root = self::projectRoot();
+        $stale = [];
+
+        foreach (array_keys(self::ALLOWED_FILES) as $relative) {
+            $absolutePath = $root . '/' . $relative;
+
+            if (!is_file($absolutePath)) {
+                $stale[] = \sprintf('%s is allowed but no longer exists.', $relative);
+
+                continue;
+            }
+
+            if (self::foreignLiterals($absolutePath, $relative, $ownerByLiteral) === []) {
+                $stale[] = \sprintf('%s is allowed but holds no literal owned by another capability.', $relative);
+            }
+        }
+
+        self::assertSame([], $stale, "\n" . implode("\n", $stale));
+    }
+
+    /**
+     * The rule-name and channel-code literals in one file that belong to a
+     * capability other than the file's own, phrased as findings.
+     *
+     * @param array<string, string> $ownerByLiteral
+     *
+     * @return list<string>
+     */
+    private static function foreignLiterals(string $absolutePath, string $relative, array $ownerByLiteral): array
+    {
+        $fileOwner = self::capabilityRootFromRelativePath($relative);
+        $findings = [];
+
+        foreach (self::stringLiterals($absolutePath) as $literal) {
+            if (!isset($ownerByLiteral[$literal])) {
+                continue;
+            }
+
+            $literalOwner = $ownerByLiteral[$literal];
+
+            if ($literalOwner === $fileOwner) {
+                continue;
+            }
+
+            $findings[] = \sprintf(
+                '%s holds literal "%s", which belongs to %s.',
+                $relative,
+                $literal,
+                $literalOwner,
+            );
+        }
+
+        return $findings;
+    }
+
+    /**
+     * Rule names and channel codes alike, each mapped to the capability that
+     * owns it. The main test builds the same map inline, where it also
+     * asserts the two enumerations of "every registered rule" agree; here
+     * only the mapping is needed.
+     *
+     * @return array<string, string>
+     */
+    private static function ownerByLiteral(ContainerBuilder $container): array
+    {
+        $ownerByRuleName = self::ownerByRuleName($container);
+
+        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producerRuleName) {
+            $ownerByRuleName[$producerRuleName] ??= self::COMPUTED_METRICS_CAPABILITY_ROOT;
+        }
+
+        $universe = $container->get(ChannelUniverseInterface::class);
+        \assert($universe instanceof ChannelUniverseInterface);
+
+        $ownerByLiteral = $ownerByRuleName;
+
+        foreach ($universe->channels() as $channel) {
+            $producer = $universe->producerOf($channel->code);
+
+            if ($producer === null || !isset($ownerByRuleName[$producer])) {
+                continue;
+            }
+
+            $ownerByLiteral[$channel->code] ??= $ownerByRuleName[$producer];
+        }
+
+        return $ownerByLiteral;
     }
 
     #[Test]

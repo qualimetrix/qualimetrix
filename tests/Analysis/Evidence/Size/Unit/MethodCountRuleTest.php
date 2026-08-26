@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -38,14 +37,6 @@ final class MethodCountRuleTest extends TestCase
         $rule = new MethodCountRule(new MethodCountOptions());
 
         self::assertSame('Checks number of methods per class', $rule->getDescription());
-    }
-
-    #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new MethodCountRule(new MethodCountOptions());
-
-        self::assertSame(RuleCategory::Size, $rule->getCategory());
     }
 
     #[Test]

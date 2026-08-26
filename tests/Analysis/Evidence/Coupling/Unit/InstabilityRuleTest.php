@@ -18,7 +18,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -46,14 +45,6 @@ final class InstabilityRuleTest extends TestCase
             'Checks instability at class and namespace levels',
             $rule->getDescription(),
         );
-    }
-
-    #[Test]
-    public function itReturnsCouplingCategory(): void
-    {
-        $rule = new InstabilityRule(new InstabilityOptions());
-
-        self::assertSame(RuleCategory::Coupling, $rule->getCategory());
     }
 
     #[Test]

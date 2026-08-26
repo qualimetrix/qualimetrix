@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -56,11 +55,6 @@ final class ComputedMetricRule extends AbstractRule
     public function getDescription(): string
     {
         return ComputedMetricChannelFamily::descriptionOf(self::NAME);
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return ComputedMetricChannelFamily::categoryOf(self::NAME);
     }
 
     /**

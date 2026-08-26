@@ -10,7 +10,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\ChannelPresentationView;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
@@ -118,7 +117,6 @@ final class ChannelPresentationViewTest extends TestCase
         return new RuleMetadata(
             name: $name,
             optionsClass: FixtureChannelPresentationRuleOptions::class,
-            category: RuleCategory::CodeSmell,
             description: $description,
             aliases: [],
             active: true,

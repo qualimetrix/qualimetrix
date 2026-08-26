@@ -20,7 +20,6 @@ use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
@@ -75,7 +74,6 @@ final class LayerViolationRuleTest extends TestCase
         $rule = new LayerViolationRule($options, new LayerEvidenceCollector($options, new UnassignedClassOptions(), $this->processor));
 
         self::assertSame('architecture.layer-violation', $rule->getName());
-        self::assertSame(RuleCategory::Architecture, $rule->getCategory());
         self::assertSame([], $rule->requires());
         self::assertSame(LayerViolationOptions::class, LayerViolationRule::getOptionsClass());
         // Two aliases, not three: the unassigned-class gate went with the

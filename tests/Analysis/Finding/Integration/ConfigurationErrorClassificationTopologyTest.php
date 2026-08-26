@@ -19,7 +19,6 @@ use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
@@ -330,11 +329,6 @@ final class StampRule implements RuleInterface
     public function getDescription(): string
     {
         return 'Fixture rule.';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Architecture;
     }
 
     public static function shape(): ChannelShape

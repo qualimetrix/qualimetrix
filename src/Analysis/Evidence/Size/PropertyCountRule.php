@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -46,11 +45,6 @@ final class PropertyCountRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks if classes have too many properties';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Size;
     }
 
     /**

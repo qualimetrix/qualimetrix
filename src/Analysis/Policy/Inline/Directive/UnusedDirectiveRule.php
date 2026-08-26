@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 
 /**
@@ -55,11 +54,6 @@ final class UnusedDirectiveRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Annotation;
     }
 
     /** @return list<string> */

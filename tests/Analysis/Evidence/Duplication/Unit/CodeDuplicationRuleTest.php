@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -42,7 +41,6 @@ final class CodeDuplicationRuleTest extends TestCase
 
         self::assertSame('duplication.code-duplication', $rule->getName());
         self::assertSame('Detects duplicated code blocks', $rule->getDescription());
-        self::assertSame(RuleCategory::Duplication, $rule->getCategory());
     }
 
     #[Test]

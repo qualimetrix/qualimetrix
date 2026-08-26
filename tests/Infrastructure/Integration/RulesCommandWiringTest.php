@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
@@ -70,6 +71,15 @@ final class RulesCommandWiringTest extends TestCase
         }
     }
 
+    /**
+     * `--group` and the group headings must name the same set, producer by
+     * producer, on every family the real container registers.
+     *
+     * Filtering and heading now read one derived value, so a test naming two
+     * rules would pass on any pair of readings that happen to agree there.
+     * The finding-equivalence gate cannot stand in for this: it runs
+     * `rules --no-ansi` and never passes `--group` at all.
+     */
     #[Test]
     public function itFiltersByGroupAgainstTheRealRuleSet(): void
     {
@@ -78,13 +88,61 @@ final class RulesCommandWiringTest extends TestCase
         $command = $container->get(RulesCommand::class);
         \assert($command instanceof RulesCommand);
 
-        $tester = new CommandTester($command);
-        $tester->execute(['--group' => 'architecture']);
+        $execution = $container->get(RuleExecutionInterface::class);
+        \assert($execution instanceof RuleExecutionInterface);
 
-        $display = $tester->getDisplay();
+        /** @var array<string, list<string>> $expectedByFamily */
+        $expectedByFamily = [];
 
-        self::assertSame(0, $tester->getStatusCode());
-        self::assertStringContainsString('architecture.layer-violation', $display);
-        self::assertStringNotContainsString('complexity.cyclomatic', $display);
+        foreach ($execution->allRules() as $rule) {
+            $expectedByFamily[RuleFamily::of($rule->name)][] = $rule->name;
+        }
+
+        self::assertNotSame([], $expectedByFamily, 'The production container must register producers.');
+
+        foreach ($expectedByFamily as $family => $expected) {
+            $tester = new CommandTester($command);
+            $tester->execute(['--group' => $family]);
+
+            self::assertSame(0, $tester->getStatusCode(), \sprintf('--group=%s failed.', $family));
+
+            $display = $tester->getDisplay();
+
+            self::assertStringContainsString(
+                \sprintf('%d rules available', \count($expected)),
+                $display,
+                \sprintf('--group=%s listed a different number of producers.', $family),
+            );
+
+            foreach ($expected as $producerName) {
+                self::assertStringContainsString(
+                    $producerName,
+                    $display,
+                    \sprintf('--group=%s omitted "%s".', $family, $producerName),
+                );
+            }
+        }
+    }
+
+    /**
+     * The debt Ш5e2 deliberately does not take: an unknown group, and a known
+     * group in the wrong case, stay fail-open — an empty listing and exit 0.
+     * Pinned so the next step changes it on purpose rather than in passing.
+     */
+    #[Test]
+    public function itStaysSilentAndSuccessfulForAGroupNoProducerHas(): void
+    {
+        $container = (new ContainerFactory())->create();
+
+        $command = $container->get(RulesCommand::class);
+        \assert($command instanceof RulesCommand);
+
+        foreach (['nonexistent', 'Complexity'] as $group) {
+            $tester = new CommandTester($command);
+            $tester->execute(['--group' => $group]);
+
+            self::assertSame(0, $tester->getStatusCode());
+            self::assertStringContainsString(\sprintf('No rules found in group "%s"', $group), $tester->getDisplay());
+        }
     }
 }

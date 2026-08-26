@@ -441,31 +441,26 @@ Its Infrastructure implementation combines compiler-collected static declaration
 the run-time computed metric definitions. `InMemoryRuleChannelRegistry` provides the
 same explicit contract where a composition root already owns the complete declaration map.
 
-### RuleCategory (Enum)
+### RuleFamily
 
-Located in `Analysis\Finding\Contract\Rule`, not Core. How a rule is grouped
-for **display** — `qmx rules --group` and report headings — and nothing else.
-A category is not addressable: no directive or selector matches on it, and it
-carries no methods. `qmx rules --group` is its sole consumer, reading
-`RuleMetadata::$category->value` directly.
+Located in `Analysis\Finding\Contract\Rule`, not Core. The family a producer
+belongs to — the first dot-separated segment of its name, and the heading
+`qmx rules` prints it under. A dotless name is its own family, which is how the
+open computed-metric producer (`computed`) is registered.
 
-| Value             | Description                                            |
-| ----------------- | ------------------------------------------------------ |
-| `Complexity`      | CCN, NPath, Cognitive, WMC                             |
-| `Size`            | MethodCount, ClassCount, PropertyCount                 |
-| `Design`          | NOC, Inheritance, Type Coverage, Data Class, God Class |
-| `Cohesion`        | LCOM                                                   |
-| `Maintainability` | Maintainability Index                                  |
-| `Coupling`        | Instability, CBO, Distance                             |
-| `Architecture`    | Layer Policy Violations, Circular Dependencies         |
-| `CodeSmell`       | Boolean Arguments, Debug Code, etc.                    |
-| `Security`        | Hardcoded Credentials, Sensitive Parameter             |
-| `Duplication`     | Code Duplication                                       |
-| `Health`          | The six built-in health dimensions                     |
-| `Computed`        | User-defined computed metrics                          |
+It replaced a `RuleCategory` enum each rule declared beside its name. The two
+never disagreed on any registered producer, so the declaration carried no fact
+the name did not already hold; deriving it keeps that agreement true by
+construction. The derivation happens once — `RuleMetadata::$family`, read by
+`qmx rules` for both the heading and the `--group` filter — and a producer whose
+name yields no family is refused when the container is built, rather than listed
+under an empty heading.
 
-The value happening to equal the first segment of a rule name — or, for
-`Computed`, the whole of one — is a harmless correlation nothing reads. Behavioural exemptions such as "always let
+A family is a **label, not an address**: nothing selects, suppresses or excludes
+on it. Group addressing is written `complexity.*` and is parsed by
+`NameSelector`, which reads a whole name rather than a first segment. That is
+the difference from the retired group *matcher*, whose derived membership
+decided what a directive applied to; behavioural exemptions such as "always let
 architecture findings through an `exclude_paths`/`exclude_namespaces` filter"
 are declared per channel instead, see `ChannelFileScope` below.
 
@@ -853,7 +848,7 @@ Determines whether a namespace belongs to the project (not an external dependenc
 ### Steps
 
 1. [x] Severity enum
-2. [x] RuleCategory enum
+2. [x] RuleFamily (derived; replaced the RuleCategory enum)
 3. [x] Location VO
 4. [x] SymbolPath VO
 5. [x] Finding VO

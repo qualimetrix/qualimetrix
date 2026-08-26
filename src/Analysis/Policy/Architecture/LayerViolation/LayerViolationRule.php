@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 
@@ -75,11 +74,6 @@ final class LayerViolationRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Detects dependencies between layers that are not explicitly allowed by the architecture policy.';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Architecture;
     }
 
     /**

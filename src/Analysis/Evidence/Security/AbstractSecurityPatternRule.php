@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
@@ -72,11 +71,6 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
     public function getDescription(): string
     {
         return static::DESCRIPTION;
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Security;
     }
 
     /**

@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Cycle;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -43,14 +42,6 @@ final class CircularDependencyRuleTest extends TestCase
         $rule = $this->rule(new CircularDependencyOptions());
 
         self::assertStringContainsString('circular', strtolower($rule->getDescription()));
-    }
-
-    #[Test]
-    public function itReturnsArchitectureCategory(): void
-    {
-        $rule = $this->rule(new CircularDependencyOptions());
-
-        self::assertSame(RuleCategory::Architecture, $rule->getCategory());
     }
 
     #[Test]

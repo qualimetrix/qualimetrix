@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -72,14 +71,6 @@ final class DataClassRuleTest extends TestCase
             'Detects classes whose public interface is mostly data access rather than behavior (Data Classes)',
             $rule->getDescription(),
         );
-    }
-
-    #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new DataClassRule(new DataClassOptions());
-
-        self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
     #[Test]

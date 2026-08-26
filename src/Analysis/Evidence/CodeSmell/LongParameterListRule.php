@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -27,7 +26,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * Too many parameters indicate a method may need a parameter object
  * or the method is doing too much.
  *
- * @qmx-ignore health.cohesion -- Interface metadata methods getCategory() and requires() return external enum/metric constants beside one cohesive analysis/projection component; LCOM4 cannot merge those stateless protocol methods.
+ * @qmx-ignore health.cohesion -- Interface metadata methods such as requires() return external metric constants beside one cohesive analysis/projection component; LCOM4 cannot merge those stateless protocol methods.
  */
 #[CliAlias('long-parameter-list-warning', 'warning')]
 #[CliAlias('long-parameter-list-error', 'error')]
@@ -49,11 +48,6 @@ final class LongParameterListRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks number of parameters per method';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::CodeSmell;
     }
 
     /**

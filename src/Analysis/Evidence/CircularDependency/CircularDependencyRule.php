@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -53,11 +52,6 @@ final class CircularDependencyRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Detects circular dependencies between classes';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Architecture;
     }
 
     /**

@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Evidence\Size\ClassCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -38,14 +37,6 @@ final class ClassCountRuleTest extends TestCase
         $rule = new ClassCountRule(new ClassCountOptions());
 
         self::assertSame('Checks number of classes per namespace', $rule->getDescription());
-    }
-
-    #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new ClassCountRule(new ClassCountOptions());
-
-        self::assertSame(RuleCategory::Size, $rule->getCategory());
     }
 
     #[Test]

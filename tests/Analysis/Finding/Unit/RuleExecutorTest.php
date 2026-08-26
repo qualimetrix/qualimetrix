@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
@@ -72,7 +71,6 @@ final class RuleExecutorTest extends TestCase
             new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(
                 name: 'fixture.metadata',
                 optionsClass: RuleExecutionFixtureOptions::class,
-                category: RuleCategory::Complexity,
                 description: 'Metadata fixture',
                 aliases: ['fixture-threshold' => 'warning'],
                 active: true,
@@ -893,14 +891,13 @@ final class RuleExecutorTest extends TestCase
     /**
      * @param list<Finding> $findings
      */
-    private function createRule(string $name, array $findings, RuleCategory $category = RuleCategory::Complexity): RuleInterface
+    private function createRule(string $name, array $findings): RuleInterface
     {
-        return new class ($name, $findings, $category) implements RuleInterface {
+        return new class ($name, $findings) implements RuleInterface {
             /** @param list<Finding> $findings */
             public function __construct(
                 private readonly string $name,
                 private readonly array $findings,
-                private readonly RuleCategory $category,
             ) {}
 
             public function getName(): string
@@ -910,10 +907,6 @@ final class RuleExecutorTest extends TestCase
             public function getDescription(): string
             {
                 return $this->name;
-            }
-            public function getCategory(): RuleCategory
-            {
-                return $this->category;
             }
             public static function shape(): ChannelShape
             {
@@ -950,13 +943,12 @@ final class RuleExecutorTest extends TestCase
         string $name,
         array $supportedLevels,
         array $findingsByLevel,
-        RuleCategory $category = RuleCategory::Complexity,
     ): RuleInterface {
         // RuleExecution now calls analyze() for all rules uniformly.
         // Flatten all level findings into a single list for analyze().
         $allFindings = array_merge(...array_values($findingsByLevel));
 
-        return $this->createRule($name, $allFindings, $category);
+        return $this->createRule($name, $allFindings);
     }
 
     private function createFinding(string $ruleName, ?string $code = null): Finding
@@ -1158,10 +1150,6 @@ final readonly class RuleMetadataFixtureRule implements RuleInterface
     public function getDescription(): string
     {
         return 'Metadata fixture';
-    }
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Complexity;
     }
     public static function shape(): ChannelShape
     {

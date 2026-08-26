@@ -66,8 +66,6 @@ abstract class AbstractRule implements RuleInterface
 
     abstract public function getDescription(): string;
 
-    abstract public function getCategory(): RuleCategory;
-
     /**
      * Returns options with `@qmx-threshold` overrides applied for a specific symbol.
      *

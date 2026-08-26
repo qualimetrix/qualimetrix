@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -29,7 +28,6 @@ final class SqlInjectionRuleTest extends TestCase
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
         self::assertSame('security.sql-injection', $rule->getName());
-        self::assertSame(RuleCategory::Security, $rule->getCategory());
         self::assertSame('Detects potential SQL injection vulnerabilities', $rule->getDescription());
     }
 

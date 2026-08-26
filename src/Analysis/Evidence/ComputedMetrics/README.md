@@ -90,7 +90,7 @@ when no files or definitions exist.
   projection consumers.
 - `ComputedMetricChannelFamily` — declares the family's seven producer names
   and every class-keyed fact about them (shape, remediation minutes, docs
-  page, threshold-override support, category) for the channel declaration
+  page, threshold-override support) for the channel declaration
   compiler pass, and arbitrates which producer owns a given definition.
 - `HealthFormulaExclusionInterface` and `ComputedMetricDefinition` — Health's
   exclusion implementation.

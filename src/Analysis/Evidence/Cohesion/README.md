@@ -39,8 +39,10 @@ Cohesion/
 They retain their collector names, metric keys, class-level aggregation
 definitions, visitor reset semantics, and anonymous-class exclusion.
 
-`cohesion.lcom` is the stable rule ID and carries the Cohesion category (renamed
-from Design, see ADR), warning/error defaults of 3/5, readonly and
+`cohesion.lcom` is the stable rule ID — its `cohesion` family, and so the
+heading `qmx rules` lists it under, is now read off that name rather than
+declared beside it (renamed from Design, see ADR). It carries warning/error
+defaults of 3/5, readonly and
 minimum-method eligibility checks, CLI aliases, and threshold-override
 behaviour. `LcomOptions::excludeMethods`
 continues to configure the LCOM graph. Finding resolves the effective rule

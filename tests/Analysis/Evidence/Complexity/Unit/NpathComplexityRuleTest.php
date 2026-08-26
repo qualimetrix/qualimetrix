@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -44,14 +43,6 @@ final class NpathComplexityRuleTest extends TestCase
             'Checks NPath complexity at method and class levels',
             $rule->getDescription(),
         );
-    }
-
-    #[Test]
-    public function itGetCategory(): void
-    {
-        $rule = new NpathComplexityRule(new NpathComplexityOptions());
-
-        self::assertSame(RuleCategory::Complexity, $rule->getCategory());
     }
 
     #[Test]

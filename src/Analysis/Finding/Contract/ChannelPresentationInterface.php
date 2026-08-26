@@ -11,7 +11,7 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  * See `docs/internal/plans/sarif-channel-descriptions.md` ("Decision") for why
  * this join needs its own contract rather than a fourth view bolted onto
  * {@see ChannelUniverseInterface}: rule *instances* — the only place
- * `getDescription()` and `getCategory()` can be read from — do not exist when
+ * `getDescription()` can be read from — do not exist when
  * the universe is assembled, so a composing service reads them at run time
  * instead. It consumes {@see ChannelIdentityInterface::producerOf()} for the
  * producing rule, that rule's own {@see RuleMetadata} for its description,

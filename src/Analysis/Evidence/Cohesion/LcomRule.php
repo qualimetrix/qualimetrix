@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -49,11 +48,6 @@ final class LcomRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks Lack of Cohesion of Methods (high values indicate class should be split)';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Cohesion;
     }
 
     /**

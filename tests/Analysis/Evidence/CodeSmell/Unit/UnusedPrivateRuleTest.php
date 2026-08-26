@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -33,7 +32,6 @@ final class UnusedPrivateRuleTest extends TestCase
 
         self::assertSame('code-smell.unused-private', $rule->getName());
         self::assertSame('Detects unused private methods, properties, and constants', $rule->getDescription());
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
     #[Test]

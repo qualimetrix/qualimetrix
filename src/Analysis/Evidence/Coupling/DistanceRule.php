@@ -17,7 +17,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
@@ -72,11 +71,6 @@ final class DistanceRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks distance from main sequence at namespace level';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Coupling;
     }
 
     /**

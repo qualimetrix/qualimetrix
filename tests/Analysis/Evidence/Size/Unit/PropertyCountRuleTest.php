@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Size\PropertyCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\PropertyCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
@@ -28,13 +27,6 @@ final class PropertyCountRuleTest extends TestCase
     {
         $rule = new PropertyCountRule(new PropertyCountOptions());
         self::assertSame('size.property-count', $rule->getName());
-    }
-
-    #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new PropertyCountRule(new PropertyCountOptions());
-        self::assertSame(RuleCategory::Size, $rule->getCategory());
     }
 
     #[Test]

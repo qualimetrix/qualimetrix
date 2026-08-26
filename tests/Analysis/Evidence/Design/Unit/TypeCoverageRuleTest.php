@@ -19,7 +19,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -108,7 +107,6 @@ final class TypeCoverageRuleTest extends TestCase
 
         self::assertSame($dimension['name'], $rule->getName());
         self::assertSame($dimension['description'], $rule->getDescription());
-        self::assertSame(RuleCategory::Design, $rule->getCategory());
         self::assertSame([$dimension['coverage']], $rule->requires());
         // The literals above are the second witness; this is where they are tied
         // back to the constants, so a renamed constant fails here rather than
