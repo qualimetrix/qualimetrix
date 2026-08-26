@@ -33,7 +33,7 @@ complexity.wmc	channel	?		11	13	2	2	11	27	0	4
 coupling.cbo	channel	?		50	226	2	4	8	92	0	6
 coupling.class-rank	channel	?		18	56	0	2	1	26	0	25
 coupling.distance	channel	?		8	29	2	2	3	30	0	27
-coupling.instability	channel	?		12	29	2	3	9	46	0	8
+coupling.instability	channel	?		12	29	2	3	8	46	0	8
 design.data-class	channel	?		13	13	1	2	10	32	0	3
 design.god-class	channel	?		13	16	1	2	2	35	0	7
 design.inheritance	channel	?		6	9	2	2	0	20	0	3
@@ -149,7 +149,7 @@ computed	producer	?		81	81	0	1	0	23	0	46
 coupling.cbo	producer	?		50	226	2	4	8	92	0	6
 coupling.class-rank	producer	?		18	56	0	2	1	26	0	25
 coupling.distance	producer	?		8	29	2	2	3	30	0	27
-coupling.instability	producer	?		12	29	2	3	9	46	0	8
+coupling.instability	producer	?		12	29	2	3	8	46	0	8
 design.data-class	producer	?		13	13	1	2	10	32	0	3
 design.god-class	producer	?		13	16	1	2	2	35	0	7
 design.inheritance	producer	?		6	9	2	2	0	20	0	3
@@ -158,7 +158,7 @@ design.param-type-coverage	producer	?		5	25	2	1	1	24	0	4
 design.property-type-coverage	producer	?		5	7	2	1	1	22	0	5
 design.return-type-coverage	producer	?		5	10	2	1	0	22	0	5
 duplication.code-duplication	producer	?		14	53	0	2	12	35	0	4
-health.cohesion	producer	?		37	113	0	2	31	34	0	40
+health.cohesion	producer	?		37	113	0	2	30	34	0	40
 health.complexity	producer	?		48	173	0	1	0	20	0	48
 health.coupling	producer	?		37	37	0	0	0	11	0	37
 health.maintainability	producer	?		15	27	0	0	0	12	0	48
