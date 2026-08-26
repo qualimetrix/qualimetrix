@@ -1,0 +1,253 @@
+# Enumeration for the upcoming step "level as a type": ComputedMetricDefinition::$levels moves from
+# list<SymbolType> to list<SymbolLevel>, and MetricRepositoryInterface::all(SymbolType) moves to
+# accepting SymbolLevel. Snapshot at HEAD 1ce47801, branch rule-vocabulary-channel-levels, 2026-08-26.
+# Freshly enumerated from code; the tables under docs/internal/plans/rule-vocabulary/*.tsv were NOT read
+# (different question, would reproduce their own gaps).
+#
+# Method: two enumeration passes of different nature, cross-checked against each other.
+#   (a) MCP Serena LSP references -- mcp__serena__find_referencing_symbols on
+#       MetricRepositoryInterface::all, ComputedMetricDefinition::hasLevel, ::reportingLevels,
+#       ::getFormulaForLevel (7 calls total: 1 failed lookup on the promoted property's synthetic
+#       name path, 6 successful) and mcp__serena__find_implementations on MetricRepositoryInterface
+#       (1 call). LSP resolves method-call targets through variables and dynamic arguments (e.g. it
+#       found MetricsJsonFormatter's ->all($type) and HealthSummaryBuilder's ->all($symbolType) the
+#       same way as literal ->all(SymbolType::Class_)), and it is immune to the property/property-name
+#       collision described below. It does NOT resolve promoted-constructor-property reads/writes as
+#       a symbol (the direct "ComputedMetricDefinition/levels" and "/__construct/levels" name-path
+#       queries both failed), so property-level read/write enumeration fell entirely to grep.
+#   (b) git grep -P (never -E: -E silently drops \b and \s in this git version) for ->all(, for
+#       SymbolType::Method / ::Function_ co-occurrence, for ->levels / levels: writes, for mapLevel,
+#       and for SymbolType usage across src/Reporting. Grep is textual: it caught two classes Serena's
+#       targeted queries would have missed by construction -- the YAML-heredoc "levels: [namespace]"
+#       fixture lines (not a PHP symbol at all) and the false-positive collision between
+#       ComputedMetricDefinition::$levels (list<SymbolType>) and the unrelated, already-SymbolLevel-typed
+#       ChannelDeclaration::$levels / ChannelLevelAddressing::$levels / InlineDirectivePolicy::$levels,
+#       which share the property name "levels" and were manually disambiguated below by owning class
+#       (import + receiver-variable naming: "$declaration->levels" is always ChannelDeclaration in this
+#       codebase; "$definition->levels" / "$this->levels" inside ComputedMetricDefinition or its
+#       readers is always the target property). Cross-check: Serena's 36-file ->all(SymbolType) call-site
+#       set and grep's SymbolType::-literal + 4 known-dynamic-var set agree exactly (59 real call sites
+#       after subtracting 4 docblock-comment lines that quote the call in prose, not code).
+#
+# Channels this method does NOT see (named per CLAUDE.md instruction, not silently assumed covered):
+#   - string-identifier / YAML-key references: covered for the one channel that matters here (mapLevel's
+#     'levels' YAML key, and its 'class'/'namespace'/'project' formula-key sibling), not swept generally.
+#   - reflection (ReflectionProperty/ReflectionClass) reads of ->levels or ->all: NOT covered -- neither
+#     pass detects reflection-mediated access; none is known to exist for these two members, but that is
+#     an absence of evidence, not evidence of absence.
+#   - PHPDoc-only generics (@param list<SymbolType> in a signature with no runtime SymbolType symbol):
+#     covered only where grep's SymbolType text pattern also matched the docblock line; a generic typed
+#     purely via a phpstan-only alias with no literal "SymbolType" token would be missed. None found.
+#   - DI/YAML container configuration referencing these classes by string service id: NOT swept; neither
+#     class is autowired by a role scan per CLAUDE.md Rule 7, so this is believed low-risk, not verified.
+#   - dynamic ->all($var) / ->{$prop} calls where $var's origin could not be traced to a literal or a
+#     grep-matched pattern: the 4 dynamic call sites found (HealthSummaryBuilder, BoundaryExplanationService,
+#     MetricsJsonFormatter, AnalysisPipelineIntegrationTest) were traced by hand to their SymbolType-typed
+#     origin; a fifth dynamic site reachable only through a deeper call chain would not surface from a
+#     single-hop grep and was not searched for beyond Serena's reference graph.
+#   - test doubles / mocks built with PHPUnit's createMock() or fixture factories that never mention
+#     "SymbolType" or "levels" as literal tokens (e.g. a stub returning a pre-baked array): NOT covered
+#     by text search; Serena's find_implementations (LSP-based, not text-based) is exhaustive for actual
+#     `implements MetricRepositoryInterface` declarations and found the 2 listed under kind=implementation.
+#   - external/out-of-repo consumers (no external users per CLAUDE.md Backward Compatibility Policy):
+#     out of scope, matches project policy.
+#
+# Columns per kind are documented at each section's first row via the header immediately above it.
+#
+# kind=all-call -- every call site reaching MetricRepositoryInterface::all(SymbolType). 59 call sites,
+# 55 literal SymbolType::X argument + 4 dynamic-variable argument (all 4 traced to a SymbolType-typed
+# origin). 4 additional textual matches were prose inside docblocks quoting the call, not code, and are
+# excluded from the count (LayerEvidenceCollector.php:181,208,277 and LayerViolationRuleTest.php:1552).
+# Columns: kind, file, line, argument, argument_class(literal-SymbolType|dynamic|other), area(src|tests), note
+kind	file	line	argument	argument_class	area	note
+all-call	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php	143	SymbolType::File	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php	101	SymbolType::File	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	309	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/HealthScoreDrillDown.php	98	SymbolType::Namespace_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/HealthScoreDrillDown.php	145	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/HealthScoreDrillDown.php	191	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/WorstClassDrillDown.php	72	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	96	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	227	$symbolType	dynamic	src	$symbolType is a HealthDimension-driven parameter (health drill-down worst-offenders), traced to SymbolType::Class_ at all call sites found
+all-call	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	79	SymbolType::Namespace_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Coupling/CboRule.php	193	SymbolType::Namespace_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Coupling/ClassRankRule.php	72	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Coupling/DistanceCollector.php	66	SymbolType::Namespace_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Coupling/DistanceRule.php	104	SymbolType::Namespace_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Coupling/InstabilityRule.php	234	SymbolType::Namespace_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Design/DitGlobalCollector.php	68	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Design/NocCollector.php	102	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Measurement/Aggregation/NamespaceMetricContributions.php	96	SymbolType::File	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Measurement/Aggregation/NamespaceToProjectAggregator.php	52	SymbolType::File	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Prioritization/Impact/ClassRankResolver.php	42	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php	140	SymbolType::File	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php	78	SymbolType::File	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Security/SensitiveParameterRule.php	78	SymbolType::File	literal-SymbolType	src	
+all-call	src/Analysis/Evidence/Size/ClassCountRule.php	97	SymbolType::Namespace_	literal-SymbolType	src	
+all-call	src/Analysis/Policy/Architecture/LayerViolation/LayerEvidenceCollector.php	235	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Analysis/Policy/Baseline/BoundaryExplanationService.php	313	$type	dynamic	src	iterates SymbolType::cases() (all 6, incl. Method/Function_ separately) to build a canonical exact-declaration index; a SymbolLevel-typed all() has only 5 cases and Callable must yield both -- this loop's shape is a direct consumer of the type-vs-level cardinality gap
+all-call	src/Analysis/Run/Pipeline/AnalysisPipeline.php	327	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Infrastructure/Console/LayerAssignmentResolver.php	115	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Reporting/Formatter/Html/HtmlTreeBuilder.php	127	SymbolType::Class_	literal-SymbolType	src	
+all-call	src/Reporting/Formatter/Html/HtmlTreeBuilder.php	231	SymbolType::File	literal-SymbolType	src	
+all-call	src/Reporting/Formatter/MetricsJsonFormatter.php	40	$type	dynamic	src	loop var $type from a 6-entry [File,Project,Namespace_,Class_,Method,Function_] array; see kind=type-leak
+all-call	tests/Analysis/Evidence/Complexity/Integration/WmcIntegrationTest.php	111	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Coupling/Unit/ClassRankCollectorTest.php	86	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Design/Unit/NocCollectorTest.php	277	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Integration/Aggregation/MetricInvariantTest.php	189	SymbolType::File	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Integration/Aggregation/MetricInvariantTest.php	216	SymbolType::File	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Integration/Aggregation/MetricInvariantTest.php	425	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Aggregation/GlobalFunctionAggregationTest.php	63	SymbolType::Method	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Aggregation/GlobalFunctionAggregationTest.php	67	SymbolType::Function_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Aggregation/GlobalFunctionAggregationTest.php	275	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Aggregation/NamespaceMetricContributionsTest.php	44	SymbolType::File	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Aggregation/NamespaceMetricContributionsTest.php	129	SymbolType::File	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	109	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	134	SymbolType::Method	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	152	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	174	SymbolType::Namespace_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	343	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	361	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	383	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	658	SymbolType::File	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	669	SymbolType::Namespace_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	678	SymbolType::Project	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	698	SymbolType::File	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	699	SymbolType::Namespace_	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	700	SymbolType::Project	literal-SymbolType	tests	
+all-call	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	759	SymbolType::Namespace_	literal-SymbolType	tests	
+all-call	tests/Analysis/Policy/Architecture/Support/ProcessorBuilder.php	80	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Run/Integration/Pipeline/AnalysisPipelineIntegrationTest.php	659	SymbolType::Class_	literal-SymbolType	tests	
+all-call	tests/Analysis/Run/Integration/Pipeline/AnalysisPipelineIntegrationTest.php	714	$type	dynamic	tests	$type iterates [SymbolType::Class_, SymbolType::Namespace_] fixture array, test-only
+#
+# kind=all-call-other -- ->all() call sites on an object OTHER than MetricRepositoryInterface (never
+# takes a SymbolType argument), one row per file naming the receiver type and why it is out of scope.
+kind	file	receiver_type	reason_excluded
+all-call-other	scripts/finding-gate/probe-channels.php	list<ComputedMetricDefinition> (from ComputedMetricsConfigResolver)	iterates the resolved definition list, not the metric repository
+all-call-other	src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php	CircularDependencyAnalysis	unrelated evidence collection, no SymbolType parameter exists
+all-call-other	src/Analysis/Evidence/ComputedMetrics/ComputedMetricAnalysis.php	internal definitions array	wraps the definition catalog, not the repository
+all-call-other	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	definitionCatalog (DefinitionCatalogInterface)	iterates computed-metric definitions, no argument
+all-call-other	src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	definitionCatalog / MetricBag (repo->get(...)->all())	two of the four ->all() hits here are definitionCatalog->all() and MetricBag::all(); the SymbolType-argument hit is separately listed under kind=all-call
+all-call-other	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	definitionCatalog	one of two ->all() hits here (line 405) is definitionCatalog->all(); the other (line 227, dynamic $symbolType) is listed under kind=all-call
+all-call-other	src/Analysis/Evidence/Duplication/CodeDuplicationRule.php	resultProvider (DuplicationResultProviderInterface)	duplication block list, unrelated contract
+all-call-other	src/Analysis/Evidence/Duplication/DuplicationDetector.php	ruleConfiguration (RuleOptionsInterface-like)	rule option bag, no SymbolType
+all-call-other	src/Analysis/Evidence/Measurement/Contract/MetricBag.php	DataBag ($this->data)	MetricBag's own storage, not the repository
+all-call-other	src/Analysis/Evidence/Measurement/FileMeasurement/DerivedCollectorRunner.php	MetricBag (->calculate()->all(), $derived->all())	per-file derived metric bag, not the repository
+all-call-other	src/Analysis/Evidence/Measurement/FileMeasurement/DerivedMetricExtractor.php	MetricBag ($derivedBag->all())	per-declaration derived metric bag, not the repository
+all-call-other	src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php	self ($this->all())	registry's own accessor, unrelated contract
+all-call-other	src/Analysis/Run/Collection/CollectionOrchestrator.php	MetricBag ($namespaceData['metrics']->all())	per-namespace metric bag, not the repository
+all-call-other	src/Infrastructure/Rule/ChannelUniverse.php	definitionCatalog (3 sites)	iterates computed-metric definitions to build the channel universe, no SymbolType argument
+all-call-other	src/Reporting/Formatter/Html/HtmlTreeBuilder.php	MetricBag (projectBag/classBag/nsBag->all()) and definitionCatalog	3 of 5 ->all() hits here are MetricBag; the 2 SymbolType-argument hits are listed under kind=all-call
+all-call-other	src/Reporting/Formatter/MetricsJsonFormatter.php	MetricBag ($bag->all() at line 44)	one of two ->all() hits here; the repository hit (line 40, dynamic $type) is listed under kind=all-call
+all-call-other	tests/Analysis/Evidence/CircularDependency/Unit/CircularDependencyAnalysisTest.php	CircularDependencyAnalysis	same as the src/ CircularDependencyRule case
+all-call-other	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricAnalysisTest.php	ComputedMetricAnalysis / definitionCatalog	asserts on the definition list, not the repository
+all-call-other	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricContributionReaderTest.php	ComputedMetricAnalysis	same
+all-call-other	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricEvaluatorTest.php	MetricBag ($repo->get(...)->all())	asserts an empty MetricBag, not a repository query
+all-call-other	tests/Analysis/Evidence/Duplication/Unit/DuplicationDetectorTest.php	resultProvider stub	same as src/ CodeDuplicationRule case
+all-call-other	tests/Analysis/Evidence/Design/Unit/TypeCoverageCollectorTest.php	MetricBag	asserts an empty MetricBag
+all-call-other	tests/Analysis/Evidence/Measurement/Unit/Aggregation/MetricAggregatorTest.php	MetricBag (projectMetrics/classMetrics)	aggregation result bags
+all-call-other	tests/Analysis/Evidence/Measurement/Unit/DataBagTest.php	DataBag	direct DataBag unit test
+all-call-other	tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/CompositeCollectorTest.php	MetricBag	collector result bag
+all-call-other	tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/DerivedCollectorRunnerTest.php	MetricBag	derived collector result
+all-call-other	tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/DerivedCollectorSortTest.php	MetricBag	derived collector result
+all-call-other	tests/Analysis/Evidence/Measurement/Unit/MetricBagTest.php	MetricBag	direct MetricBag unit test
+all-call-other	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	MetricBag (repository->get(...)->all(), lines 656/666/677/695/725/755)	6 of many ->all() hits here are MetricBag reads; the SymbolType-argument hits are listed under kind=all-call
+all-call-other	tests/Analysis/Evidence/Measurement/Unit/Aggregation/GlobalFunctionAggregationTest.php	MetricBag ($repository->get($classPath)->all(), line 88)	one of several hits; the SymbolType-argument hits are listed under kind=all-call
+all-call-other	tests/Analysis/Evidence/Size/Unit/ClassCountCollectorTest.php	MetricBag (namespaces[0]->metrics->all())	namespace metric bag
+all-call-other	tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php	definitionCatalog / list<ComputedMetricDefinition>	iterates resolved definitions, not the repository
+all-call-other	tests/Infrastructure/Console/Integration/RuntimeConfigurationIsolationTest.php	ruleConfiguration	rule option bag
+all-call-other	tests/Infrastructure/Console/Unit/RuntimeConfiguratorTest.php	rules (RuleOptionsRegistry-like)	rule option bag, 4 hits
+all-call-other	tests/Integration/DependencyInjection/ContainerFactoryTest.php	resultProvider	duplication result provider, 4 hits
+#
+# kind=method-function-split -- places that distinguish SymbolType::Method from SymbolType::Function_
+# specifically THROUGH all() (i.e. either two separate ->all(SymbolType::Method)/->all(SymbolType::Function_)
+# calls, or an array of SymbolType values fed to all() in a loop that includes both and tags output by
+# the query value). The claim under test: "all such places are tests, no product call requires the split"
+# -- REFUTED. One production call site (MetricsJsonFormatter) requires it: see note.
+kind	file	line	area	claim
+method-function-split	tests/Analysis/Evidence/Measurement/Unit/Aggregation/GlobalFunctionAggregationTest.php	63,67	tests	asserts ->all(SymbolType::Method) excludes a global function and ->all(SymbolType::Function_) includes it -- proves today's split is observable, does not itself require the split for a downstream consumer
+method-function-split	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	134	tests	calls ->all(SymbolType::Method) only (itIteratesOverMethods); no Function_ counterpart in the same file -- confirms the claim for this file alone, does not contradict it
+method-function-split	src/Reporting/Formatter/MetricsJsonFormatter.php	30-40,60	src	REFUTES the claim: $symbolTypes lists SymbolType::Method and SymbolType::Function_ as two separate array entries, the loop calls ->all($type) once per entry, and line 60 writes the published JSON field 'type' => $type->value from that same loop variable -- so today's JSON metrics export emits 'type':'method' and 'type':'function' as two distinct symbol rows for the identical SymbolLevel::Callable projection. If all()'s argument becomes SymbolLevel, this call site collapses to one iteration and the printed 'type' value can no longer distinguish method from function from the query argument alone (see kind=type-leak).
+method-function-split	src/Analysis/Policy/Baseline/BoundaryExplanationService.php	311-314	src	iterates SymbolType::cases() (includes Method and Function_ as two of six iterations) but does not tag or branch on the value beyond using it as the all() argument -- treats the split uniformly rather than distinguishing behavior; listed here for completeness since it does call all(Method) and all(Function_) as separate iterations, not because it depends on the difference
+#
+# kind=levels-read -- every read of ComputedMetricDefinition::$levels (property access, not the unrelated
+# ChannelDeclaration::$levels / ChannelLevelAddressing::$levels / InlineDirectivePolicy::$levels, which
+# share the property name but hold list<SymbolLevel> already and are a different class -- see header note).
+kind	file	line	area	context
+levels-read	src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	60	src	foreach ($definition->levels as $level) inside validateFormulaSyntax()
+levels-read	src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	93	src	foreach ($definition->levels as $level) inside validateFormulaCoverage()
+levels-read	src/Analysis/Evidence/ComputedMetrics/ComputedMetricOverrideReader.php	44	src	$base->levels read as the override-merge default, immediately re-written via levels: self::levels(...) -- read+write pair
+levels-read	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	99	src	foreach ($definition->levels as $level) driving per-level finding emission
+levels-read	src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	90	src	reportingLevels(): array_map(SymbolLevelProjection::ofDeclaration(...), $this->levels) -- the one place that projects the stored SymbolType list to SymbolLevel today
+levels-read	src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	95	src	hasLevel(): in_array($level, $this->levels, true)
+levels-read	src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	114	src	validateLevels(): array_map(fn($level) => $level->value, $this->levels) to check for duplicates
+levels-read	src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	54	src	foreach ($definition->levels as $level) driving per-level evaluation
+levels-read	src/Analysis/Evidence/ComputedMetrics/Health/Configuration/HealthFormulaExcluder.php	184	src	$overall->levels read to copy unchanged into a new ComputedMetricDefinition -- read+write pair, see kind=levels-write same line
+levels-read	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsConfigResolverTest.php	256-258,486,535,550-552	tests	direct property assertions: assertContains/assertNotContains/assertSame against $custom->levels / $complexity->levels
+#
+# kind=levels-write -- every construction of ComputedMetricDefinition via the named `levels:` constructor
+# argument. 83 call sites (85 textual matches of the `levels:` YAML-style line minus 2 that are YAML
+# heredoc fixture content inside CheckCommandConfigErrorExitCodeTest.php, not a PHP constructor argument --
+# see kind=level-input for those two). Grouped one row per file with the line list, since the great
+# majority are one-off test fixtures repeating the same [SymbolType::Class_] literal; rows that differ in
+# kind (dynamic value, empty array, indirection) get their own row with a note.
+kind	file	lines	area	note
+levels-write	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	33,48,77,94,112,127	src	
+levels-write	src/Analysis/Evidence/ComputedMetrics/ComputedMetricOverrideReader.php	44,70	src	L44: levels: self::levels($overrides, $base->levels) -- computed via the private levels() helper wrapping mapLevel(), see kind=level-input; L70: levels: self::levels($config, [SymbolType::Namespace_, SymbolType::Project]) -- default for a brand-new user-defined metric
+levels-write	src/Analysis/Evidence/ComputedMetrics/Health/Configuration/HealthFormulaExcluder.php	184	src	L184: levels: $overall->levels -- pass-through copy, paired levels-read
+levels-write	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricDefinitionTest.php	24,37,50,66,80,94,108,122,138,155,171,184,197,210,226,245	tests	
+levels-write	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricEvaluatorTest.php	49,72,78,100,120,144,164,185,206,533,560,588,609,615,710	tests	
+levels-write	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricFindingBuilderTest.php	37,64,95,123,151,179,213,241,268,296,324,357,386,431	tests	
+levels-write	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleTest.php	104,131,151,159,193,231,257,283,311,339,367	tests	
+levels-write	tests/Analysis/Evidence/ComputedMetrics/Unit/HealthFormulaExcluderTest.php	213,219,265,282	tests	
+levels-write	tests/Analysis/Policy/Baseline/Functional/BaselineRunBeforeLoadTest.php	292	tests	
+levels-write	tests/Analysis/Policy/Inline/Integration/UnusedDirectiveRuleTest.php	375,395	tests	
+levels-write	tests/Infrastructure/Console/Integration/ClasslessProducerOptionOwnerTest.php	274	tests	
+levels-write	tests/Infrastructure/Console/Integration/RuleExclusionStatsWiringTest.php	247	tests	
+levels-write	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	60,99,350	tests	L350: levels: array_values([$level, ...$moreLevels]) -- dynamic, data-provider driven
+levels-write	tests/Infrastructure/Rule/Unit/ComputedMetricChannelPresentationTest.php	51,81	tests	L51: levels: [] -- empty-levels edge case; L81: levels: [] -- empty-levels edge case
+levels-write	tests/Infrastructure/Unit/ChannelUniverseTest.php	450,464	tests	L464: levels: $levels -- dynamic, parameterized helper definitionWithLevels()-adjacent factory
+levels-write	tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php	587,594	tests	
+#
+# kind=level-input -- how a level string from YAML config becomes a ComputedMetricDefinition level today.
+kind	file	line	description
+level-input	src/Analysis/Evidence/ComputedMetrics/ComputedMetricOverrideReader.php	117-124	private static levels(array $config, array $defaults): reads $config['levels'] (a list<string> from YAML), array_map's each entry through mapLevel(...); falls back to $defaults (a list<SymbolType>) when the key is absent or not an array
+level-input	src/Analysis/Evidence/ComputedMetrics/ComputedMetricOverrideReader.php	181-195	private static mapLevel(string $level): SymbolType -- the actual domain gate. Accepts a string, parses it via SymbolLevel::tryFrom($level) FIRST (so the accepted string domain is exactly SymbolLevel's 5 case values: callable/class/file/namespace/project), throws ComputedMetricConfigurationException('Invalid computed metric level: "%s"') for anything else (typos, unknown words). Of the 5 SymbolLevel values, only Class_/Namespace_/Project map to a SymbolType and are accepted; Callable and File are recognised as real level words but explicitly rejected with 'is not supported; computed metrics report at "class", "namespace" or "project" only' -- a narrower, capability-specific domain layered on top of the shared vocabulary, not a second copy of it
+level-input	tests/Infrastructure/Console/Functional/Command/CheckCommandConfigErrorExitCodeTest.php	42,62	YAML fixture content 'levels: [namespace]' inside a heredoc computed_metrics.computed.bad section -- exercises the mapLevel() acceptance path end to end via a real qmx.yaml run, not a PHP constructor call (excluded from kind=levels-write for that reason)
+# Domain duplication check: the ONLY other place that spells a subset of {class, namespace, project} as bare
+# strings for this same capability is the sibling 'formula'/'formulas' key reader (ComputedMetricOverrideReader.php
+# lines 92 and 102: foreach (['class','namespace','project'] as $levelKey)) and ComputedMetricDefinition::getFormulaForLevel's
+# match($level) keyed by SymbolType::Class_/Namespace_/Project (lines 56-59). That is a DIFFERENT domain (formula-map
+# keys, string-keyed by design since $formulas is array<string,string>) that happens to enumerate the same three
+# levels for a different reason (which levels get a formula at all) -- not a duplicate of mapLevel()'s acceptance
+# gate, but a second place that would need to change in lockstep if a 4th level (e.g. file) were ever added to
+# computed metrics, and a second place a level-as-type refactor must keep synchronized with mapLevel()'s domain.
+#
+# kind=type-leak -- every place a SymbolType value (not a SymbolLevel value) reaches a published artifact:
+# formatter output, baseline file, CLI output, profiler, HTML payload. Checked by grepping SymbolType usage
+# under src/Reporting/ (6 files) and src/Analysis/Policy/Baseline/ (baseline file writer), then reading each
+# hit to see whether the raw SymbolType/its ->value is ever assigned to an output field.
+kind	file	line	verdict	evidence
+type-leak	src/Reporting/Formatter/MetricsJsonFormatter.php	60	LEAKS	'type' => $type->value, where $type is the LOOP VARIABLE from the $symbolTypes array (the query argument to all($type) on the previous line), NOT read off the symbol itself (no $symbolInfo->symbolPath->getType() call exists in this method). Confirmed by reading the full format() method: $symbolTypes = [File,Project,Namespace_,Class_,Method,Function_], foreach($symbolTypes as $type){ foreach($report->metrics->all($type) as $symbolInfo){ ... 'type'=>$type->value ... } }. If all()'s parameter becomes SymbolLevel, this loop's $type is a SymbolLevel and the published JSON 'type' field prints SymbolLevel values instead ('callable' merges what were two distinct 'method'/'function' rows) -- a genuine output-shape change for every consumer of `qmx check --format=metrics-json`, not just an internal rename
+type-leak	src/Reporting/Formatter/Html/HtmlTreeBuilder.php / HtmlTreeNode.php	99,141,185,215 (HtmlTreeBuilder); 41,54 (HtmlTreeNode)	NO LEAK	HtmlTreeNode's published 'type' field is set from a hardcoded string literal per call site ('project'/'class'/'namespace'), never from SymbolType::value -- a third, independent ad-hoc vocabulary, not sourced from SymbolType at all. Unaffected by the all() signature change, but worth flagging as a THIRD place a level-shaped string is spelled by hand outside SymbolLevel
+type-leak	src/Reporting/Filter/FindingFilter.php	43,77	NO LEAK	SymbolType used only in an internal === comparison ($v->symbolPath->getType() === SymbolType::Project) to decide inclusion/exclusion; the value itself is never written to output
+type-leak	src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	42,50	NO LEAK	SymbolType used only in a match()/=== branch to choose a tree node path string; the SymbolType value itself is never published
+type-leak	src/Reporting/Formatter/Summary/TopIssuesRenderer.php	113,121	NO LEAK	SymbolType used only in === comparisons to choose rendering branches; not published
+type-leak	src/Reporting/Formatter/TextFormatter.php	164	NO LEAK	SymbolType used only in an === comparison to decide namespace-level text formatting; not published
+type-leak	src/Analysis/Policy/Baseline/BoundaryExplanationService.php	312-313	NO LEAK	SymbolType::cases() drives which all() calls to make while building an internal lookup index used by baseline-explain diagnostics; the SymbolType value itself is not written into the explain-command's published record (see kind=all-call note on this same line for the cardinality-gap concern)
+# Formats not searched individually beyond the src/Reporting/ sweep above: CheckstyleFormatter, SarifFormatter,
+# GitLabCodeQualityFormatter, HealthFormatter, the profiler, and the baseline file writer proper (Analysis/Policy/Baseline
+# outside BoundaryExplanationService) do not import SymbolType at all per `git grep -l SymbolType -- src/Reporting/`
+# and a separate check of Baseline/*.php (only BoundaryExplanationService.php matched) -- so no further reading was
+# needed for those formats; they carry SymbolLevel or channel/rule identity, never a raw SymbolType, by construction.
+#
+# kind=implementation -- every implementation of MetricRepositoryInterface (Serena find_implementations,
+# LSP-based, exhaustive for `implements` declarations; cross-checked by grep for the same interface name).
+kind	file	class	area	note
+implementation	src/Analysis/Evidence/Measurement/Repository/InMemoryMetricRepository.php	InMemoryMetricRepository	src	the only production implementation. all(SymbolType $type) at line 57 filters by EXACT type equality ($info->symbolPath->getType() === $type), then separately yields unseenLogicalClasses() when $type===Class_ or callablesOfType($type) when $type is Method/Function_ -- i.e. Method and Function_ are two disjoint result sets today, not a shared Callable bucket. A SymbolLevel-typed all(Callable) would need this method to union both, which is a behavior change, not just a signature rename.
+implementation	tests/Analysis/Policy/Baseline/Unit/BoundaryExplanationServiceTest.php	CountingBoundaryRepository	tests	test double (lines 596-708) implementing the full interface to count/instrument repository calls for BoundaryExplanationServiceTest; its all() implementation should be checked for the same exact-type-vs-level assumption when this step lands
+#
+accessor-consumer	src/Infrastructure/Rule/ChannelUniverse.php	89	src	$levels = $definition->reportingLevels(); the result becomes ChannelDeclaration::$levels, i.e. what the registry ACCEPTS. Added after plan review: the kind=levels-read rows enumerate reads of the PROPERTY, so consumers of the public accessors were structurally invisible to that schema. Translation is identity here; listed so the gap is named rather than implied.
+accessor-consumer	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricDefaultsTest.php	52,56,60	tests	hasLevel(SymbolType::Class_/Namespace_/Project) -- argument type changes with the step
+accessor-consumer	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricDefinitionTest.php	213-216	tests	hasLevel(...) including hasLevel(SymbolType::Method), which has no SymbolLevel counterpart: the case becomes hasLevel(SymbolLevel::Callable) and must keep asserting false
+#

@@ -1,0 +1,350 @@
+# Enumeration: hand-written level-word literals in src/
+#
+# Scope: every place in src/ where one of the five SymbolLevel words
+# (callable, class, file, namespace, project) is spelled as a string
+# literal (single- or double-quoted) AND is used to MEAN the aggregation
+# level, classified line by line. SymbolType (declaration kind: class,
+# file, namespace, project — no "callable") is a distinct, legitimate
+# vocabulary per AGENTS.md's framing and is marked verdict=declaration-kind,
+# not counted as a level defect.
+#
+# METHOD (two passes of different nature, per the task brief):
+#   Pass 1 — git grep -nP -e "'(callable|class|file|namespace|project)'" -- src
+#            and the double-quoted variant, over the whole src/ tree.
+#            NOTE: this repo's git grep -E silently does not support \b/\s
+#            (only -P does) — confirmed empirically before relying on -P.
+#            276 single-quoted + 50 double-quoted = 326 raw hits, 60 files.
+#   Pass 2 — mcp__serena__find_referencing_symbols on SymbolLevel (87 files)
+#            and on SymbolType (61 files), 2 Serena calls total, to see
+#            which files already read the vocabulary correctly elsewhere
+#            (cross-check: every "mixed" file called out in the task brief
+#            — Complexity/Coupling Options, the three ComputedMetrics
+#            match-arm files, HtmlTreeBuilder, MetricDefinition — appears
+#            on one or both Serena lists, confirming they already import
+#            SymbolLevel/SymbolType and the flagged lines are genuine
+#            hand-written duplicates sitting next to correct usage, not
+#            files unaware of the enum).
+#
+# WHAT THIS DOES NOT SEE (named per channel, each marked covered/not covered):
+#   - String constants built by concatenation/interpolation instead of a
+#     literal ('na' . 'mespace', sprintf('%s', ...)) — NOT COVERED. grep -P
+#     only matches quoted literals; no interpolation-building of a level
+#     word was found by eye during file reads, but this is a blind spot.
+#   - Level words inside YAML (qmx.yaml, preset files under config/) —
+#     NOT COVERED. Grep was scoped to src/ only, per the task; preset YAML
+#     and qmx.yaml live outside src/ and use their own (config-schema)
+#     reading path, not enumerated here.
+#   - HTML/JS templates in src/Reporting/Template/ — PARTIALLY COVERED.
+#     src/*.js and tests/*.js are enumerated line-by-line below (104 level
+#     rows + 19 unrelated CSS-'class'-attribute rows in martin-diagram.js).
+#     dist/*.min.js (generated build bundles) and dev.html (a static
+#     local-dev fixture, not part of the shipped dist/ bundle) are each
+#     given ONE summary row and NOT exploded per literal — a judgment call,
+#     see "спорные" below.
+#   - Reflection / dynamic property or method names built from a level
+#     word (e.g. "get{$level}Options") — NOT COVERED; none observed by eye,
+#     but grep -P cannot rule this out since it only matches whole-word
+#     quoted literals.
+#
+# SUMMARY (326 raw hits total; every hit classified into exactly one row):
+#   verdict=level            192 rows (individually listed)
+#   verdict=declaration-kind  28 rows (individually listed — SymbolType /
+#                                      MetricSubject "subject kind" wire
+#                                      vocabulary; NOT a level defect)
+#   verdict=unrelated        106 lines, given as 28 one-row-per-file
+#                                      summaries (per task instruction)
+#
+#   level roles:   array-key 26, config-key-read 23, config-key-write 3,
+#                  docblock 12, match-arm 29, other 95, published 4
+#   level replaceable:  yes 62, no-widens 1, no-other 129
+#
+# СПОРНЫЕ (решил сам, см. вопрос ниже):
+#   1. CLI option names ('namespace'/'class' in CheckCommandDefinition,
+#      GraphExportCommand, FormatterContextFactory) — classified as
+#      verdict=level (they select by level) but replaceable=no-other: a
+#      Symfony Console option name is a public CLI surface string that
+#      should NOT be coupled to the internal SymbolLevel spelling (renaming
+#      an enum case would otherwise silently break the CLI contract).
+#   2. GroupBy.php (Reporting) — a legitimate distinct backed enum mixing
+#      level cases (File/ClassName/NamespaceName) with non-level report
+#      cases (None/Rule/Severity); classified as verdict=level/no-other
+#      rather than declaration-kind or unrelated, since 3 of its cases do
+#      mean the aggregation level, but PHP backed-enum values must be
+#      literal constant expressions and it only needs 3 of 5 SymbolLevel
+#      cases, so it cannot cleanly delegate to SymbolLevel wholesale.
+#   3. HtmlTreeBuilder.php:90 'project' — the ['project' => $project, ...]
+#      top-level JSON SECTION key (project metadata block), NOT a tree-node
+#      $type value; classified unrelated, unlike the four HtmlTreeNode
+#      constructor-argument sites a few lines below which ARE level=yes.
+#   4. src/Reporting/Template/dev.html (41 hits) and dist/*.min.js (2 hits)
+#      — given one summary row each instead of exploded per literal. dev.html
+#      is a static hardcoded sample-JSON fixture for `npm run dev` local
+#      preview, not part of the built `dist/` bundle asked for by
+#      `composer build:js`; dist/*.min.js are generated bundle output. Both
+#      excluded from per-line enumeration as out of the "hand-written
+#      duplicate in product logic" scope this measurement serves — flagged
+#      here rather than silently dropped.
+#   5. ComputedMetricOverrideReader.php:92 (explicitly flagged by the task
+#      brief) — classified replaceable=no-widens: it is a WRITE-broadcast
+#      set for the 'formula' shorthand, not a read domain, and must stay at
+#      exactly 3 of SymbolLevel's 5 cases (mapLevel() a few lines below
+#      throws for Callable/File). The natural-looking migration —
+#      SymbolLevel::cases() — would silently widen acceptance; only a
+#      3-named-case substitution is correct.
+#   6. FindingExclusionLedger.php:114 and SymbolType.php/MetricSubjectCodec.php
+#      as a whole — classified declaration-kind, not level, even though
+#      SymbolType's 4 cases spell identically to 4 of SymbolLevel's 5 cases.
+#      Per the task's own framing, SymbolType is a distinct, legitimate
+#      concept that "stays"; these rows document where its spelling
+#      coincides with the level vocabulary without being it.
+#
+# Columns: file, line, literal, verdict, role, replaceable, evidence
+file	line	literal	verdict	role	replaceable	evidence
+src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php	-	(1 lines)	unrelated	-	-	PHP ::class magic-constant name check (excluding it from tracked user constants), not a level
+src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	57	'callable'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	58	'callable'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	60	'class'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	61	'class'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Complexity/ComplexityOptions.php	57	'callable'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Complexity/ComplexityOptions.php	58	'callable'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Complexity/ComplexityOptions.php	60	'class'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Complexity/ComplexityOptions.php	61	'class'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	57	'callable'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	58	'callable'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	60	'class'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	61	'class'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	25	'class'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	28	'namespace'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	30	'project'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	44	'class'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	45	'namespace'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	59	'class'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	69	'namespace'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	74	'project'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	85	'class'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	91	'namespace'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	104	'class'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	107	'namespace'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	109	'project'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	123	'class'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	124	'namespace'	level	array-key	yes	default per-level formula array key; only the 3 SymbolType/SymbolLevel cases ComputedMetrics reports at (class/namespace/project) are used, named explicitly rather than iterated, so substituting SymbolLevel::Class_->value etc. does not widen the set
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	268	'class'	level	match-arm	yes	match(SymbolType) -> level string; SymbolType::Class_->value is already 'class', so the literal is redundant with the existing default => $level->value fallback
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	269	'namespace'	level	match-arm	yes	match(SymbolType) -> level string, redundant with $level->value fallback
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	270	'project'	level	match-arm	yes	match(SymbolType) -> level string, redundant with $level->value fallback
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricOverrideReader.php	92	['class', 'namespace', 'project']	level	other	no-widens	WRITE-broadcast set for the singular 'formula' shorthand, not a read domain: it must stay exactly the 3 levels ComputedMetrics reports at. mapLevel() a few lines below explicitly THROWS for SymbolLevel::Callable/File, so a naive migration via SymbolLevel::cases() iteration would silently widen acceptance to 5 levels and contradict that guard; correct replacement must name the three cases explicitly (SymbolLevel::Class_->value, ::Namespace_->value, ::Project->value), not enumerate the whole backing enum
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricOverrideReader.php	191	"class", "namespace" or "project"	level	other	yes	user-facing exception message enumerating the 3 levels computed metrics support; can be built from the three named SymbolLevel cases without widening
+src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	16	'class', 'namespace', 'project'	level	docblock	no-other	prose inside a comment/docblock, not executable code; nothing to functionally replace
+src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	56	'class'	level	match-arm	yes	match(SymbolType) -> formula-array key, same redundant-with-default pattern as ComputedMetricFormulaValidator::levelToString()
+src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	57	'namespace'	level	match-arm	yes	match(SymbolType) -> formula-array key
+src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	58	'project'	level	match-arm	yes	match(SymbolType) -> formula-array key
+src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	72	'project'	level	match-arm	yes	compares the derived key against the level literal to implement project-inherits-from-namespace fallback
+src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	73	'namespace'	level	array-key	yes	reads the namespace-level formula as the fallback for project
+src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	209	'class'	level	match-arm	yes	match(SymbolType) -> level string, same levelKeyFor() pattern, redundant with $level->value fallback
+src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	210	'namespace'	level	match-arm	yes	match(SymbolType) -> level string
+src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	211	'project'	level	match-arm	yes	match(SymbolType) -> level string
+src/Analysis/Evidence/Coupling/CboOptions.php	85	'class'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Coupling/CboOptions.php	86	'class'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Coupling/CboOptions.php	88	'namespace'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Coupling/CboOptions.php	89	'namespace'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Coupling/InstabilityOptions.php	74	'class'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Coupling/InstabilityOptions.php	75	'class'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Coupling/InstabilityOptions.php	77	'namespace'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/Coupling/InstabilityOptions.php	78	'namespace'	level	config-key-read	yes	reads exactly 2 of SymbolLevel's 5 cases (this Options class has no callable/file/project dimension); naming SymbolLevel::Class_->value etc for these specific keys keeps the same accepted set
+src/Analysis/Evidence/DependencyModel/Extraction/Handler/TypeDependencyHelper.php	-	(1 lines)	unrelated	-	-	PHP pseudo-type name in a builtin-type denylist (array/object/callable/iterable/...), not an aggregation level
+src/Analysis/Evidence/Design/TypeCoverageVisitor.php	-	(3 lines)	unrelated	-	-	array key coincides with a level word but holds a file-path/namespace-name VALUE, not the level itself | structural array key describing parser/visitor scope identity (holds a namespace/class name value), not the aggregation level
+src/Analysis/Evidence/Measurement/Contract/MetricDefinition.php	28	'class' => [...], 'namespace' => [...]	level	docblock	no-other	prose inside a comment/docblock, not executable code; nothing to functionally replace
+src/Analysis/Evidence/Measurement/Contract/SymbolLevel.php	19	'callable'	level	other	no-other	this IS the canonical enum case declaration — the single source of truth, not a hand-written duplicate; nothing to replace
+src/Analysis/Evidence/Measurement/Contract/SymbolLevel.php	22	'class'	level	other	no-other	this IS the canonical enum case declaration — the single source of truth, not a hand-written duplicate; nothing to replace
+src/Analysis/Evidence/Measurement/Contract/SymbolLevel.php	25	'file'	level	other	no-other	this IS the canonical enum case declaration — the single source of truth, not a hand-written duplicate; nothing to replace
+src/Analysis/Evidence/Measurement/Contract/SymbolLevel.php	28	'namespace'	level	other	no-other	this IS the canonical enum case declaration — the single source of truth, not a hand-written duplicate; nothing to replace
+src/Analysis/Evidence/Measurement/Contract/SymbolLevel.php	31	'project'	level	other	no-other	this IS the canonical enum case declaration — the single source of truth, not a hand-written duplicate; nothing to replace
+src/Analysis/Evidence/Measurement/Visitor/FileEntrySubjectRegistry.php	24	'file'	declaration-kind			names the synthetic 'file' subject id, mirroring MetricSubjectCodec's subjectKind='file' wire vocabulary (declaration/subject kind), not the aggregation level
+src/Analysis/Evidence/Measurement/Visitor/VisitorLexicalScope.php	-	(2 lines)	unrelated	-	-	structural array key describing parser/visitor scope identity (holds a namespace/class name value), not the aggregation level
+src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	-	(3 lines)	unrelated	-	-	structural array key describing parser/visitor scope identity (holds a namespace/class name value), not the aggregation level
+src/Analysis/Evidence/Security/SensitiveNameMatcher.php	-	(1 lines)	unrelated	-	-	substring in a sensitive-parameter-name denylist ('path','url','file','storage',...), unrelated to aggregation level
+src/Analysis/Evidence/Size/LocCollector.php	-	(1 lines)	unrelated	-	-	array key coincides with a level word but holds a file-path/namespace-name VALUE, not the level itself
+src/Analysis/Evidence/Size/LocVisitor.php	-	(1 lines)	unrelated	-	-	structural array key describing parser/visitor scope identity (holds a namespace/class name value), not the aggregation level
+src/Analysis/Finding/FindingExclusionLedger.php	114	'namespace'	declaration-kind			compares $finding->symbolPath->getType()->value (a SymbolType, declaration kind) to the literal, used as a proxy for 'this finding targets a namespace-shaped symbol'; SymbolType, not SymbolLevel, so not a level-vocabulary duplicate, though the two enums share this case's spelling
+src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdModeResolver.php	76	`'class'`, `'namespace'`, ...	level	docblock	no-other	prose inside a comment/docblock, not executable code; nothing to functionally replace
+src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	72	'callable.warning'	level	docblock	no-other	prose inside a comment/docblock, not executable code; nothing to functionally replace
+src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	290	'callable.warning'	level	docblock	no-other	prose inside a comment/docblock, not executable code; nothing to functionally replace
+src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php	518	`'class'`, ...	level	docblock	no-other	prose inside a comment/docblock, not executable code; nothing to functionally replace
+src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	142	'callable'	level	array-key	yes	array key selects the hierarchical rule-option nesting path ('', 'callable', 'class', 'namespace'), consumed by RuleOptionThresholdModeResolver's $path parameter; only 3 of 5 SymbolLevel cases are ever nested this way (no file/project), named explicitly here
+src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	143	'class'	level	array-key	yes	array key selects the hierarchical rule-option nesting path ('', 'callable', 'class', 'namespace'), consumed by RuleOptionThresholdModeResolver's $path parameter; only 3 of 5 SymbolLevel cases are ever nested this way (no file/project), named explicitly here
+src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	147	'callable'	level	array-key	yes	array key selects the hierarchical rule-option nesting path ('', 'callable', 'class', 'namespace'), consumed by RuleOptionThresholdModeResolver's $path parameter; only 3 of 5 SymbolLevel cases are ever nested this way (no file/project), named explicitly here
+src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	148	'class'	level	array-key	yes	array key selects the hierarchical rule-option nesting path ('', 'callable', 'class', 'namespace'), consumed by RuleOptionThresholdModeResolver's $path parameter; only 3 of 5 SymbolLevel cases are ever nested this way (no file/project), named explicitly here
+src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	152	'callable'	level	array-key	yes	array key selects the hierarchical rule-option nesting path ('', 'callable', 'class', 'namespace'), consumed by RuleOptionThresholdModeResolver's $path parameter; only 3 of 5 SymbolLevel cases are ever nested this way (no file/project), named explicitly here
+src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	153	'class'	level	array-key	yes	array key selects the hierarchical rule-option nesting path ('', 'callable', 'class', 'namespace'), consumed by RuleOptionThresholdModeResolver's $path parameter; only 3 of 5 SymbolLevel cases are ever nested this way (no file/project), named explicitly here
+src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	165	'class'	level	array-key	yes	array key selects the hierarchical rule-option nesting path ('', 'callable', 'class', 'namespace'), consumed by RuleOptionThresholdModeResolver's $path parameter; only 3 of 5 SymbolLevel cases are ever nested this way (no file/project), named explicitly here
+src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	166	'namespace'	level	array-key	yes	array key selects the hierarchical rule-option nesting path ('', 'callable', 'class', 'namespace'), consumed by RuleOptionThresholdModeResolver's $path parameter; only 3 of 5 SymbolLevel cases are ever nested this way (no file/project), named explicitly here
+src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	175	'class'	level	array-key	yes	array key selects the hierarchical rule-option nesting path ('', 'callable', 'class', 'namespace'), consumed by RuleOptionThresholdModeResolver's $path parameter; only 3 of 5 SymbolLevel cases are ever nested this way (no file/project), named explicitly here
+src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	176	'namespace'	level	array-key	yes	array key selects the hierarchical rule-option nesting path ('', 'callable', 'class', 'namespace'), consumed by RuleOptionThresholdModeResolver's $path parameter; only 3 of 5 SymbolLevel cases are ever nested this way (no file/project), named explicitly here
+src/Analysis/Policy/Inline/Contract/Suppression/SuppressionType.php	-	(1 lines)	unrelated	-	-	SuppressionType is a distinct enum (symbol / next-line / file scope of an @qmx-ignore tag); its 'file' case means 'suppress everywhere in this file', not the aggregation level. Different domain, coincidental spelling
+src/Analysis/Policy/Inline/Extraction/DeclarationControlBindings.php	29	'class'	declaration-kind			CLASS_SUBJECT_TYPES: the set of MetricSubject 'subject kind' words this binder treats as class-like — declaration-kind vocabulary, not level
+src/Analysis/Policy/Inline/Extraction/DeclarationControlBindings.php	33	'class'	declaration-kind			maps an AST node type (Stmt_Class/Interface/Trait/Enum) to the declaration-kind word 'class' used by the control-binding source-type map
+src/Analysis/Policy/Inline/Extraction/DeclarationControlBindings.php	34	'class'	declaration-kind			maps an AST node type (Stmt_Class/Interface/Trait/Enum) to the declaration-kind word 'class' used by the control-binding source-type map
+src/Analysis/Policy/Inline/Extraction/DeclarationControlBindings.php	35	'class'	declaration-kind			maps an AST node type (Stmt_Class/Interface/Trait/Enum) to the declaration-kind word 'class' used by the control-binding source-type map
+src/Analysis/Policy/Inline/Extraction/DeclarationControlBindings.php	36	'class'	declaration-kind			maps an AST node type (Stmt_Class/Interface/Trait/Enum) to the declaration-kind word 'class' used by the control-binding source-type map
+src/Analysis/Run/Collection/CollectionOrchestrator.php	-	(1 lines)	unrelated	-	-	PSR-3 log context key holding the failed file's path, not a level
+src/Core/README.md	278	'class'	level	docblock	no-other	README code example illustrating MetricDefinition's $aggregations map; documentation prose, not executable code
+src/Core/README.md	279	'namespace'	level	docblock	no-other	README code example illustrating MetricDefinition's $aggregations map; documentation prose, not executable code
+src/Core/README.md	280	'project'	level	docblock	no-other	README code example illustrating MetricDefinition's $aggregations map; documentation prose, not executable code
+src/Core/Symbol/ClassType.php	-	(1 lines)	unrelated	-	-	ClassType is a distinct enum describing the PHP class-like construct kind (class/interface/trait/enum), not the aggregation level; different domain, coincidental spelling with SymbolLevel::Class_
+src/Core/Symbol/MetricSubjectCodec.php	22	'namespace'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	23	'class'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	31	'file'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	37	'class'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	44	'class'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	51	n/a (function)	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	76	'file'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	88	'class'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	89	'class'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	90	'class'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	93	'class'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	94	'class'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	97	'namespace'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	98	'namespace'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	109	'namespace'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	117	'class'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/MetricSubjectCodec.php	120	'class'	declaration-kind			MetricSubject wire-grammar component (subjectKind/logicalKind/component key), the declaration-kind vocabulary that identifies WHAT a subject is (file/class/method/function), distinct from and with different membership than SymbolLevel (no method/function level; no callable/namespace/project subject kind)
+src/Core/Symbol/SymbolType.php	11	'class'	declaration-kind			canonical SymbolType case declaration — the declaration-kind vocabulary's own source of truth, a distinct enum from SymbolLevel per this task's own framing; nothing to replace
+src/Core/Symbol/SymbolType.php	12	'file'	declaration-kind			canonical SymbolType case declaration — the declaration-kind vocabulary's own source of truth, a distinct enum from SymbolLevel per this task's own framing; nothing to replace
+src/Core/Symbol/SymbolType.php	13	'namespace'	declaration-kind			canonical SymbolType case declaration — the declaration-kind vocabulary's own source of truth, a distinct enum from SymbolLevel per this task's own framing; nothing to replace
+src/Core/Symbol/SymbolType.php	14	'project'	declaration-kind			canonical SymbolType case declaration — the declaration-kind vocabulary's own source of truth, a distinct enum from SymbolLevel per this task's own framing; nothing to replace
+src/Infrastructure/Ast/PhpFileParser.php	-	(7 lines)	unrelated	-	-	parse-result array key holding the parsed file's path, not a level
+src/Infrastructure/Console/CheckCommandDefinition.php	129	'namespace'	level	config-key-write	no-other	CLI option/flag name string required verbatim by Symfony Console's addOption()/getOption() API; a public CLI surface string, independently spelled from the internal aggregation vocabulary rather than derived from it
+src/Infrastructure/Console/CheckCommandDefinition.php	135	'class'	level	config-key-write	no-other	CLI option/flag name string required verbatim by Symfony Console's addOption()/getOption() API; a public CLI surface string, independently spelled from the internal aggregation vocabulary rather than derived from it
+src/Infrastructure/Console/Command/GraphExportCommand.php	76	'namespace'	level	config-key-write	no-other	CLI option/flag name string required verbatim by Symfony Console's addOption()/getOption() API; a public CLI surface string, independently spelled from the internal aggregation vocabulary rather than derived from it
+src/Infrastructure/Console/Command/GraphExportCommand.php	135	'namespace'	level	config-key-read	no-other	CLI option/flag name string required verbatim by Symfony Console's addOption()/getOption() API; a public CLI surface string, independently spelled from the internal aggregation vocabulary rather than derived from it
+src/Infrastructure/Console/FormatterContextFactory.php	77	'namespace'	level	config-key-read	no-other	CLI option/flag name string required verbatim by Symfony Console's addOption()/getOption() API; a public CLI surface string, independently spelled from the internal aggregation vocabulary rather than derived from it
+src/Infrastructure/Console/FormatterContextFactory.php	79	'class'	level	config-key-read	no-other	CLI option/flag name string required verbatim by Symfony Console's addOption()/getOption() API; a public CLI surface string, independently spelled from the internal aggregation vocabulary rather than derived from it
+src/Infrastructure/DependencyInjection/CompilerPass/FileSetInspectionParticipantCompilerPass.php	-	(2 lines)	unrelated	-	-	DI compiler-pass array key holding a class-string value, not a level
+src/Infrastructure/Logging/README.md	-	(2 lines)	unrelated	-	-	sample log-line/JSON-context examples with a "file" key holding a path, documentation prose
+src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php	-	(3 lines)	unrelated	-	-	parallel worker item/queue array key holding a SplFileInfo/path, not a level
+src/Reporting/Formatter/CheckstyleFormatter.php	-	(2 lines)	unrelated	-	-	fixed Checkstyle XML schema element name (<file>), an external format contract, not our level vocabulary | fixed Checkstyle XML schema element name (<file>)
+src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	-	(1 lines)	unrelated	-	-	array key coincides with a level word but holds a file-path/namespace-name VALUE, not the level itself
+src/Reporting/Formatter/Html/HtmlTreeBuilder.php	-	(1 lines)	unrelated	-	-	JSON payload SECTION key (['project' => $project, 'tree' => ..., 'summary' => ...]) naming the project-metadata block, not a tree-node level marker
+src/Reporting/Formatter/Html/HtmlTreeBuilder.php	99	'project'	level	published	yes	HtmlTreeNode $type constructor argument for the tree root; published verbatim into the HTML report's JSON payload consumed by src/detail.js et al.
+src/Reporting/Formatter/Html/HtmlTreeBuilder.php	141	'class'	level	published	yes	HtmlTreeNode $type constructor argument for a class node; published into the report JSON
+src/Reporting/Formatter/Html/HtmlTreeBuilder.php	185	'namespace'	level	published	yes	HtmlTreeNode $type constructor argument for a namespace node; published into the report JSON
+src/Reporting/Formatter/Html/HtmlTreeBuilder.php	215	'namespace'	level	published	yes	HtmlTreeNode $type for the synthetic '(no namespace)' node; published into the report JSON
+src/Reporting/Formatter/Html/HtmlTreeBuilder.php	308	'class'	level	match-arm	yes	compares HtmlTreeNode::$type against the published level literal to count classes in the summary
+src/Reporting/Formatter/Html/HtmlTreeNode.php	21	"project", "namespace", or "class"	level	docblock	no-other	docblock describing the $type property's domain; the property itself is populated with published level literals (see HtmlTreeBuilder rows)
+src/Reporting/Formatter/Json/JsonFindingSection.php	-	(2 lines)	unrelated	-	-	array key coincides with a level word but holds a file-path/namespace-name VALUE, not the level itself
+src/Reporting/Formatter/Json/JsonFormatter.php	-	(1 lines)	unrelated	-	-	array key coincides with a level word but holds a file-path/namespace-name VALUE, not the level itself
+src/Reporting/Formatter/Json/JsonOffenderSection.php	-	(2 lines)	unrelated	-	-	array key coincides with a level word but holds a file-path/namespace-name VALUE, not the level itself
+src/Reporting/Formatter/MetricsJsonFormatter.php	-	(1 lines)	unrelated	-	-	array key coincides with a level word but holds a file-path/namespace-name VALUE, not the level itself
+src/Reporting/GraphProjection/JsonGraphExporter.php	-	(1 lines)	unrelated	-	-	array key coincides with a level word but holds a file-path/namespace-name VALUE, not the level itself
+src/Reporting/GroupBy.php	10	'file'	level	other	no-other	GroupBy is a legitimate, distinct backed enum for CLI --group-by (mixing level cases File/ClassName/NamespaceName with non-level cases None/Rule/Severity in one type); PHP backed-enum case values must be constant literal expressions, and only 3 of SymbolLevel's 5 cases apply here (no Callable/Project group-by) — this cannot be wholesale-delegated to SymbolLevel without either duplicating literals or restructuring GroupBy to stop being a single flat string enum
+src/Reporting/GroupBy.php	13	'class'	level	other	no-other	GroupBy is a legitimate, distinct backed enum for CLI --group-by (mixing level cases File/ClassName/NamespaceName with non-level cases None/Rule/Severity in one type); PHP backed-enum case values must be constant literal expressions, and only 3 of SymbolLevel's 5 cases apply here (no Callable/Project group-by) — this cannot be wholesale-delegated to SymbolLevel without either duplicating literals or restructuring GroupBy to stop being a single flat string enum
+src/Reporting/GroupBy.php	14	'namespace'	level	other	no-other	GroupBy is a legitimate, distinct backed enum for CLI --group-by (mixing level cases File/ClassName/NamespaceName with non-level cases None/Rule/Severity in one type); PHP backed-enum case values must be constant literal expressions, and only 3 of SymbolLevel's 5 cases apply here (no Callable/Project group-by) — this cannot be wholesale-delegated to SymbolLevel without either duplicating literals or restructuring GroupBy to stop being a single flat string enum
+src/Reporting/README.md	-	(3 lines)	unrelated	-	-	JSON example payload: "file" holds a path, "namespace" holds an actual namespace name value — documentation prose, not the level vocabulary (see separate row for line 185, which does quote GroupBy's level-bearing case)
+src/Reporting/README.md	185	case File = 'file';	level	docblock	no-other	README quoting GroupBy's own enum source as documentation
+src/Reporting/Template/dev.html	-	(41 lines)	unrelated	-	-	static local-dev preview fixture (hardcoded sample report JSON for `npm run dev`); not reachable from any production code path, not part of the built `dist/` bundle — judgment call, see "спорные" in report header
+src/Reporting/Template/dist/d3.min.js	-	(1 line)	unrelated	-	-	generated/vendored build bundle (minified d3), not hand-written source
+src/Reporting/Template/dist/report.min.js	-	(1 line)	unrelated	-	-	generated build bundle (webpack/esbuild output of src/*.js), not hand-written source
+src/Reporting/Template/src/detail.js	54	'project'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/detail.js	128	'namespace'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/detail.js	129	'class'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/detail.js	158	'class'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/detail.js	210	'class'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/detail.js	265	'namespace'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/hash.js	18	'namespace', 'class'	level	docblock	no-other	JSDoc comment describing the type union; prose, not executable code
+src/Reporting/Template/src/hash.js	41	'namespace'	level	other	no-other	constructs/returns a level literal for the JS-side node/segment shape, mirroring HtmlTreeNode's published 'type'; cross-language, no PHP enum access
+src/Reporting/Template/src/hash.js	51	'namespace', 'class'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/hash.js	78	'project'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/hash.js	83	'class'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/main.js	86	'namespace'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/main.js	288	'class'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/main.js	327	'class'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/main.js	443	'class'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/main.js	471	'project'	level	other	no-other	constructs/returns a level literal for the JS-side node/segment shape, mirroring HtmlTreeNode's published 'type'; cross-language, no PHP enum access
+src/Reporting/Template/src/main.js	485	'namespace'	level	other	no-other	constructs/returns a level literal for the JS-side node/segment shape, mirroring HtmlTreeNode's published 'type'; cross-language, no PHP enum access
+src/Reporting/Template/src/main.js	508	'class'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/martin-diagram.js	-	(various)	unrelated	-	-	19 lines reviewed: SVG/DOM '.attr(\'class\', ...)' assignments (CSS class attribute), coincidental spelling, unrelated to aggregation level
+src/Reporting/Template/src/martin-diagram.js	39	'namespace'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/martin-diagram.js	144	'namespace'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/subtree.js	86	'namespace'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/src/tree.js	59	'class'	level	match-arm	no-other	JS mirrors HtmlTreeNode's published 'type' field across the PHP/JS boundary; genuinely a level check, but JS cannot reference the PHP SymbolLevel enum at build or run time
+src/Reporting/Template/tests/hash.test.js	7	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/hash.test.js	12	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/hash.test.js	17	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/hash.test.js	51	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/hash.test.js	57	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/hash.test.js	62	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/hash.test.js	67	'project'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/hash.test.js	72	'project'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	13	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	14	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	30	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	31	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	43	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	53	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	63	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	79	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	88	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	97	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	111	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	114	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	126	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/martin-diagram.test.js	129	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/search.test.js	9	'project'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/search.test.js	14	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/search.test.js	16	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/search.test.js	32	'project'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/search.test.js	45	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/search.test.js	46	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/search.test.js	47	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/search.test.js	48	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/search.test.js	77	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	8	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	23	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	26	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	27	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	42	'project'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	47	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	50	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	53	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	56	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	84	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	87	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	88	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	102	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	105	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	106	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	119	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	122	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	123	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	138	'project'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	140	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	141	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	142	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	156	'project'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	158	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	159	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	160	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	171	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	178	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	180	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	181	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	193	'project'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	195	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/subtree.test.js	196	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	8	'project'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	13	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	18	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	20	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	41	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	51	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	58	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	60	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	63	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	65	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	79	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	81	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	82	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	83	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	84	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	98	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	100	'namespace'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
+src/Reporting/Template/tests/tree.test.js	101	'class'	level	other	no-other	test mock data hardcoding the expected 'type' value of the report tree shape; cross-language test fixture, not reachable from the PHP enum
