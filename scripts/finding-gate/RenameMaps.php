@@ -40,6 +40,52 @@ namespace QmxFindingGate;
  * no row makes the reference run fail loudly on an unknown name, which is what
  * Gate's `reference-input-untranslated` reports.
  *
+ * `metric-keys.tsv` is forward-only too, and the two reasons are the same two,
+ * measured 2026-08-26. Nothing on the reference's input is spelled as a metric
+ * key: no case argument carries one, and the corpus' only user-defined formula
+ * reads no metric at all, so there is nothing for a backwards direction to
+ * translate. And an inverted key map would rewrite arguments the step never
+ * touched — after the vocabulary rename the new key names are textually the rule
+ * names the corpus writes into its own `--rule-opt` tokens (`coupling.class-rank`
+ * in all fourteen cases, `size.class-count` and its two siblings in `design`,
+ * `complexity.cognitive` and `complexity.npath` in two more), and a reverse pass
+ * would hand the reference `classRank` and `classCount` as rules it does not
+ * have. A metric key that ever does need translating on the input says so with
+ * an `inputs.tsv` row, exactly as a channel does.
+ *
+ * A metric key is published bare AND once per aggregation strategy declared for
+ * it, so a `metric-keys.tsv` row also translates its own `<key>.<strategy>`
+ * spellings. The strategies are a closed list read from both trees
+ * ({@see AggregationSuffixes}), the suffix is matched only at the end of the
+ * name, and the expansion is granted to that one map: measured, 212 of the
+ * corpus' 295 published spellings are `base.<strategy>` against 83 base keys, so
+ * a row per spelling is a list no step can keep complete, while a row per key
+ * with an open suffix would be the substring rewrite the whole-name rule
+ * refuses. The suffixed spellings are spellings of the SAME row — like the
+ * `qmx.` prefix below — so they count towards that row's staleness and are never
+ * a second declaration.
+ *
+ * One name may hold two roles: `computed.branch_load` is a channel identity and
+ * a token the corpus writes into its own configuration, so the step that renames
+ * it declares the same pair in `channels.tsv` and in `inputs.tsv`. Two rows
+ * naming one name are otherwise refused as undecidable, and rightly — but two
+ * rows stating the SAME translation decide nothing differently. Such a pair is
+ * therefore ONE declaration carrying both roles: it is applied in the union of
+ * their directions, held to the shape rules of each, and credited once. Each
+ * role's own spellings still travel only in the directions that role is applied
+ * in — a forward-only role does not get a backwards pass because a sibling role
+ * has one.
+ *
+ * Crediting it once is a decision with a stated reach. Roles that apply in the
+ * same direction substitute the same string in the same artifacts, so which of
+ * them an occurrence belonged to is not a measurable question. What is NOT
+ * claimed is per-direction accounting: like every row here, a declaration is
+ * live once it fired anywhere, so a two-role declaration whose forward side
+ * never appeared in an artifact is not distinguished from one that did. That is
+ * the same latitude a symbols row has had all along — it may fire on artifacts
+ * and never on input — and narrowing it for merged rows alone would be a rule
+ * about bookkeeping rather than about renames.
+ *
  * Two properties make a map a proof of what a step renamed rather than a blanket
  * rewrite, and both are enforced here rather than promised in prose.
  *
@@ -73,7 +119,7 @@ final class RenameMaps
     private const FILES = [
         self::CHANNELS => false,
         self::SYMBOLS => true,
-        self::METRIC_KEYS => true,
+        self::METRIC_KEYS => false,
         self::INPUTS => true,
     ];
 
@@ -104,7 +150,7 @@ final class RenameMaps
      */
     public const IMAGE_SEPARATOR = '|';
 
-    /** @var list<array{old: string, new: string, source: string, row: string, reversible: bool, ambiguous: bool, multivalued: bool}> */
+    /** @var list<array{old: string, new: string, sources: list<string>, row: string, reversible: bool, ambiguous: bool, multivalued: bool}> */
     private array $pairs;
 
     /** @var array<int, int> */
@@ -136,19 +182,34 @@ final class RenameMaps
      */
     private array $explainedRows = [];
 
-    /** @param list<array{old: string, new: string, source: string, row?: string}> $pairs */
-    private function __construct(array $pairs)
+    /**
+     * @param list<array{old: string, new: string, source: string, row?: string}> $pairs
+     */
+    private function __construct(array $pairs, private readonly MetricVocabulary $vocabulary)
     {
         $this->pairs = self::normalize($pairs);
         $this->splits = $this->collectSplits();
+        $dropped = array_values(array_filter(
+            $this->pairs,
+            fn(array $pair): bool => isset($this->splits[$pair['old']]) && $pair['ambiguous'],
+        ));
         $this->pairs = array_values(array_filter(
             $this->pairs,
             fn(array $pair): bool => !isset($this->splits[$pair['old']]) || !$pair['ambiguous'],
         ));
-        $this->validate();
+        $this->validate($dropped);
+
+        // Both directions are built here rather than on first use. The guard
+        // against two declarations reaching one spelling lives in that build, and
+        // a guard that fires only once some caller happens to substitute in that
+        // direction is a guard whose moment is decided by the run — the reverse
+        // direction is not built at all on a run whose reference needs no input
+        // translated.
+        $this->buildSubstitutions('old', 'new', reversibleOnly: false);
+        $this->buildSubstitutions('new', 'old', reversibleOnly: true);
     }
 
-    public static function load(string $mapsDirectory): self
+    public static function load(string $mapsDirectory, MetricVocabulary $vocabulary): self
     {
         $pairs = [];
 
@@ -160,13 +221,22 @@ final class RenameMaps
             }
         }
 
-        return new self($pairs);
+        return new self($pairs, $vocabulary);
     }
 
-    /** @param list<array{old: string, new: string, source: string, row?: string}> $pairs */
-    public static function fromPairs(array $pairs): self
+    /**
+     * Synthetic rows, for the self-test.
+     *
+     * The vocabulary defaults to none rather than to the product's: a shape
+     * proved on synthetic rows must not depend on what the product happens to
+     * declare today, and the cases that are about the suffix expansion carry
+     * their own.
+     *
+     * @param list<array{old: string, new: string, source: string, row?: string}> $pairs
+     */
+    public static function fromPairs(array $pairs, ?MetricVocabulary $vocabulary = null): self
     {
-        return new self($pairs);
+        return new self($pairs, $vocabulary ?? MetricVocabulary::none());
     }
 
     public function isIdentity(): bool
@@ -419,6 +489,7 @@ final class RenameMaps
     {
         $substitutions = [];
         $refused = [];
+        $claimed = [];
 
         foreach ($this->pairs as $index => $pair) {
             if ($reversibleOnly && !$pair['reversible']) {
@@ -445,9 +516,28 @@ final class RenameMaps
                 $spellings[] = [$prefix . $from, $prefix . $to];
             }
 
+            // The aggregated spellings of a metric key. Only the suffix moves
+            // with the key, and only at the end of the name: the strategy list
+            // is closed, so `ccn.avg` is translated and `ccn.average` is not,
+            // and neither is `ccn.avg.avg` — a doubled suffix is a spelling the
+            // product does not publish, and inventing a translation for it
+            // would be the substring rewrite the whole-name rule refuses.
+            //
+            // A spelling belongs to the ROLE that publishes it, so it travels
+            // only in the directions that role is applied in. A declaration in
+            // two roles is reversible if either of them is, and without this a
+            // forward-only role's own spellings would ride the other role's
+            // backwards direction — substituting, on the input, a spelling only
+            // an artifact ever carries.
+            if (self::applies(self::METRIC_KEYS, $pair['sources'], $forward)) {
+                foreach ($this->vocabulary->suffixes as $suffix) {
+                    $spellings[] = [$from . '.' . $suffix, $to . '.' . $suffix];
+                }
+            }
+
             $titled = [self::titleCase($from), self::titleCase($to)];
 
-            if ($pair['source'] === self::CHANNELS
+            if (self::applies(self::CHANNELS, $pair['sources'], $forward)
                 && !str_contains($pair['old'] . $pair['new'], '#')
                 && $titled !== [$from, $to]
             ) {
@@ -455,6 +545,26 @@ final class RenameMaps
             }
 
             foreach ($spellings as [$spelledFrom, $spelledTo]) {
+                // One spelling, one row. Substitution is a single pass driven by
+                // a lookup keyed by the matched text, so two declarations
+                // claiming one spelling would leave one of them silently
+                // unapplied — and, because staleness is counted per matched
+                // pair, reported stale as well. Whichever of the two the
+                // ordering happened to drop, the run would be measuring a
+                // translation nobody declared.
+                $conflict = $claimed[$spelledFrom] ?? null;
+
+                if ($conflict !== null && $conflict !== $index) {
+                    throw new GateError(\sprintf(
+                        '%s and %s both reach the spelling "%s", so which of the two translates it is decided by the'
+                        . ' order they were loaded in. Declare one row for that spelling.',
+                        $this->pairs[$conflict]['row'],
+                        $pair['row'],
+                        $spelledFrom,
+                    ));
+                }
+
+                $claimed[$spelledFrom] = $index;
                 $substitutions[] = [$spelledFrom, $spelledTo, $index, $refusal];
             }
         }
@@ -466,6 +576,19 @@ final class RenameMaps
         usort($substitutions, static fn(array $a, array $b): int => \strlen($b[0]) <=> \strlen($a[0]));
 
         return $substitutions;
+    }
+
+    /**
+     * Whether a role's own spellings travel in this direction.
+     *
+     * Forward, every declared role applies. Backwards, only a role whose map is
+     * reversible does — see the docblock above {@see buildSubstitutions()}.
+     *
+     * @param list<string> $sources
+     */
+    private static function applies(string $source, array $sources, bool $forward): bool
+    {
+        return \in_array($source, $sources, true) && ($forward || self::FILES[$source]);
     }
 
     /**
@@ -515,13 +638,24 @@ final class RenameMaps
      * Halves are marked ambiguous because several rows may legitimately disagree
      * about one half — that is a split, not a contradiction.
      *
+     * The same pair declared in two maps is grouped FIRST, before anything is
+     * checked or expanded, because it is one declaration in two roles and every
+     * later rule is about declarations: the shape rules of both roles apply to
+     * it, its directions are the union of theirs, and staleness credits it once.
+     * Grouping by (old, new) rather than by (old, new, file) is what makes that
+     * true — keyed by file, the two entries would be two rows renaming one name,
+     * which is refused, and the only way to declare a name that is both a
+     * channel identity and a configuration token would be not to declare one of
+     * them.
+     *
      * @param list<array{old: string, new: string, source: string, row?: string}> $pairs
      *
-     * @return list<array{old: string, new: string, source: string, row: string, reversible: bool, ambiguous: bool, multivalued: bool}>
+     * @return list<array{old: string, new: string, sources: list<string>, row: string, reversible: bool, ambiguous: bool, multivalued: bool}>
      */
     private static function normalize(array $pairs): array
     {
-        $unique = [];
+        /** @var array<string, array{old: string, new: string, sources: list<string>, row: string|null}> $declared */
+        $declared = [];
 
         foreach ($pairs as $pair) {
             $source = $pair['source'];
@@ -530,29 +664,76 @@ final class RenameMaps
                 throw new GateError(\sprintf('"%s" is not one of the declared maps.', $source));
             }
 
-            $row = $pair['row'] ?? \sprintf('%s: "%s" -> "%s"', $source, $pair['old'], $pair['new']);
-            $images = self::images($pair['old'], $pair['new'], $source, $row);
+            $key = $pair['old'] . "\0" . $pair['new'];
+            $declaration = $declared[$key] ?? ['old' => $pair['old'], 'new' => $pair['new'], 'sources' => [], 'row' => null];
 
-            if ($source === self::INPUTS) {
-                self::assertWholeInputToken($pair['old'], $row);
+            if (!\in_array($source, $declaration['sources'], true)) {
+                $declaration['sources'][] = $source;
+            }
+
+            $declaration['row'] ??= $pair['row'] ?? null;
+            $declared[$key] = $declaration;
+        }
+
+        $unique = [];
+
+        foreach ($declared as $declaration) {
+            $old = $declaration['old'];
+            $new = $declaration['new'];
+            $sources = $declaration['sources'];
+
+            $row = $declaration['row'] ?? \sprintf('%s: "%s" -> "%s"', implode('+', $sources), $old, $new);
+            $images = self::images($old, $new, $sources, $row);
+
+            if (\in_array(self::INPUTS, $sources, true)) {
+                self::assertWholeInputToken($old, $row);
 
                 foreach ($images as $image) {
                     self::assertWholeInputToken($image, $row);
                 }
             }
 
-            $expanded = $source === self::CHANNELS
-                ? self::expandChannelRow($pair['old'], $pair['new'], $source)
-                : array_map(static fn(string $image): array => [$pair['old'], $image, false], $images);
-            $multivalued = \count($images) > 1;
+            if (\in_array(self::METRIC_KEYS, $sources, true)) {
+                self::assertPlainMetricKey($old, $row);
 
-            foreach ($expanded as [$old, $new, $ambiguous]) {
-                $unique[$old . "\0" . $new . "\0" . $source] = [
-                    'old' => $old,
-                    'new' => $new,
-                    'source' => $source,
+                foreach ($images as $image) {
+                    self::assertPlainMetricKey($image, $row);
+                }
+            }
+
+            $expanded = \in_array(self::CHANNELS, $sources, true)
+                ? self::expandChannelRow($old, $new, self::CHANNELS)
+                : array_map(static fn(string $image): array => [$old, $image, false], $images);
+            $multivalued = \count($images) > 1;
+            $reversible = array_reduce(
+                $sources,
+                static fn(bool $carry, string $source): bool => $carry || self::FILES[$source],
+                false,
+            );
+
+            foreach ($expanded as [$expandedOld, $expandedNew, $ambiguous]) {
+                // A half is a channel spelling and nothing else. It exists only
+                // for a `rule#code` row, and such a row cannot carry another
+                // role: `#` is refused by both the input-token shape and the
+                // metric-key shape, so the restriction below is a theorem about
+                // the checks above rather than a precaution.
+                //
+                // Halves are keyed apart from declared pairs, and that is not
+                // tidiness. Merging by (old, new) is what lets one declaration
+                // hold two roles — but a half is not a declaration, so a half
+                // that coincides with some other map's row would take that row's
+                // slot or lose its own to it: one of the two would keep neither
+                // its roles nor its credit, and would be reported stale for a
+                // spelling the other one translated. Kept apart, the two reach
+                // one spelling and the guard in buildSubstitutions() says so out
+                // loud.
+                $slot = $expandedOld . "\0" . $expandedNew . "\0" . ($ambiguous ? 'half' : 'declared');
+                $unique[$slot] = [
+                    'old' => $expandedOld,
+                    'new' => $expandedNew,
+                    'sources' => $ambiguous ? [self::CHANNELS] : $sources,
                     'row' => $row,
-                    'reversible' => self::FILES[$source],
+                    'reversible' => $ambiguous ? self::FILES[self::CHANNELS] : $reversible,
                     'ambiguous' => $ambiguous,
                     'multivalued' => $multivalued,
                 ];
@@ -573,15 +754,17 @@ final class RenameMaps
      * supported. A channels row expresses the same collapse without needing it,
      * because it is applied forwards only.
      *
+     * @param list<string> $sources
+     *
      * @return list<string>
      */
-    private static function images(string $old, string $new, string $source, string $row): array
+    private static function images(string $old, string $new, array $sources, string $row): array
     {
         if (!str_contains($old . $new, self::IMAGE_SEPARATOR)) {
             return [$new];
         }
 
-        if ($source !== self::INPUTS) {
+        if ($sources !== [self::INPUTS]) {
             throw new GateError(\sprintf(
                 '%s: only an %s row may name several tokens with "%s". A channel map is applied forwards only, so a'
                 . ' collapse is already two ordinary rows and a split is derived from them.',
@@ -610,6 +793,30 @@ final class RenameMaps
         }
 
         return $images;
+    }
+
+    /**
+     * A `metric-keys.tsv` row names a plain metric key.
+     *
+     * `#` and `:` are refused because the row is expanded over the aggregation
+     * suffixes: `<key>.<strategy>` is a spelling the product publishes, while
+     * `rule#code.avg` and `rule:option.avg` are spellings nothing publishes, and
+     * a substitution nothing can match is the rubber stamp these rules refuse
+     * everywhere else. It is also what makes a half a channel spelling and
+     * nothing else — see {@see normalize()}.
+     */
+    private static function assertPlainMetricKey(string $key, string $row): void
+    {
+        if (preg_match('~^[A-Za-z0-9][A-Za-z0-9_.-]*$~', $key) === 1) {
+            return;
+        }
+
+        throw new GateError(\sprintf(
+            '%s: "%s" is not a plain metric key. A metric-keys row is expanded over the aggregation suffixes, and'
+            . ' "<that>.<strategy>" is a spelling no surface carries.',
+            $row,
+            $key,
+        ));
     }
 
     /**
@@ -674,7 +881,11 @@ final class RenameMaps
         return $splits;
     }
 
-    private function validate(): void
+    /**
+     * @param list<array{old: string, new: string, sources: list<string>, row: string, reversible: bool, ambiguous: bool, multivalued: bool}> $dropped
+     *                                                                                                                                                 the split halves the constructor removed from substitution
+     */
+    private function validate(array $dropped): void
     {
         $targets = [];
         $sources = [];
@@ -726,9 +937,86 @@ final class RenameMaps
         }
 
         foreach ($this->pairs as $pair) {
-            if ($pair['source'] === self::CHANNELS && str_contains($pair['old'], '#')) {
+            if (\in_array(self::CHANNELS, $pair['sources'], true) && str_contains($pair['old'], '#')) {
                 $this->channelKeys[$pair['old']] = $pair['new'];
                 $this->channelKeyRows[$pair['old']] = $pair['row'];
+            }
+        }
+
+        $this->assertNoSuffixOverlap($dropped);
+    }
+
+    /**
+     * Nothing else already carries the aggregated spelling of a declared metric
+     * key.
+     *
+     * The expansion is what makes this checkable rather than hopeful. If some key
+     * `A` is declared and `A.sum` is a name in its own right, then one spelling
+     * has two meanings and which of them applies is decided by nothing. Three
+     * populations can carry it, and all three are looked at:
+     *
+     * - **another declared name**, on either side of any row;
+     * - **a half the split dropped.** Those halves are deliberately left
+     *   untranslated so the records under them can be explained instead
+     *   ({@see ChannelSplit}), and they are removed from the pair list before
+     *   this check — so without naming them here, an expansion would translate
+     *   exactly the spelling the split says is undecidable. Measured on synthetic
+     *   rows: it did;
+     * - **a base key the product declares.** That population is partial and the
+     *   docblock of {@see MetricVocabulary} says how: `MetricName`'s constants
+     *   are 71 of the 82 published keys, and the other eleven are collector-owned
+     *   literals no single file declares.
+     *
+     * What this cannot see is therefore worth stating: a key that only the
+     * REFERENCE publishes, shaped like an aggregation of a declared one, and moved
+     * by the step without a row of its own. Every other arrangement of that shape
+     * ends in a surface diff rather than in silence — the candidate publishes
+     * something the translated reference does not — so what is left is the one
+     * case where the step's undeclared rename happens to be exactly the
+     * translation a declared row produces. Measured 2026-08-26 across all 83
+     * published base keys: no key of either tree has the shape at all.
+     *
+     * @param list<array{old: string, new: string, sources: list<string>, row: string, reversible: bool, ambiguous: bool, multivalued: bool}> $dropped
+     */
+    private function assertNoSuffixOverlap(array $dropped): void
+    {
+        $declaredBy = [];
+
+        foreach ($this->vocabulary->baseKeys as $key) {
+            $declaredBy[$key] = 'the product\'s own metric-key declaration';
+        }
+
+        foreach ($dropped as $pair) {
+            $declaredBy[$pair['old']] = \sprintf('%s, as a half the split leaves untranslated', $pair['row']);
+        }
+
+        foreach ($this->pairs as $pair) {
+            $declaredBy[$pair['old']] ??= $pair['row'];
+            $declaredBy[$pair['new']] ??= $pair['row'];
+        }
+
+        foreach ($this->pairs as $pair) {
+            if (!\in_array(self::METRIC_KEYS, $pair['sources'], true)) {
+                continue;
+            }
+
+            foreach ([$pair['old'], $pair['new']] as $key) {
+                foreach ($this->vocabulary->suffixes as $suffix) {
+                    $aggregated = $key . '.' . $suffix;
+                    $other = $declaredBy[$aggregated] ?? null;
+
+                    if ($other !== null) {
+                        throw new GateError(\sprintf(
+                            '%s names the metric key "%s", whose aggregated spelling "%s" is already a name in its own'
+                            . ' right — %s. A key row translates its own "<key>.<strategy>" spellings, so the two'
+                            . ' reach one name and neither of them decides it.',
+                            $pair['row'],
+                            $key,
+                            $aggregated,
+                            $other,
+                        ));
+                    }
+                }
             }
         }
     }

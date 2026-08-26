@@ -26,6 +26,7 @@ foreach (
         'Tsv',
         'Process',
         'Surfaces',
+        'MetricVocabulary',
         'SubjectLevel',
         'Diff',
         'ExactDiff',

@@ -18,6 +18,14 @@ namespace QmxFindingGate;
  *
  * The dependency set itself must be identical, or nothing the two trees output
  * is comparable; that check is fail-loud and has its own failure class.
+ *
+ * The aggregation vocabulary is compared here too, and here rather than in the
+ * gate's own sequence on purpose: forward translation expands a metric-keys row
+ * over the strategies of the tree it is applied to, which is THIS one, and a
+ * strategy the step removed would otherwise fall out of every row while the
+ * reference is still publishing it. Making it a step the gate has to remember
+ * would make it a step one refactoring can drop; making it a condition of
+ * obtaining a reference tree at all cannot be dropped without noticing.
  */
 final class ReferenceTree
 {
@@ -42,6 +50,15 @@ final class ReferenceTree
         }
 
         $tree = new self($root, $candidateRoot, $temporaryDirectory);
+
+        try {
+            MetricVocabulary::ofTree($candidateRoot)->assertSuffixesAgreeWith(MetricVocabulary::ofTree($root));
+        } catch (GateError $error) {
+            $tree->remove();
+
+            throw $error;
+        }
+
         $tree->installVendor();
 
         return $tree;

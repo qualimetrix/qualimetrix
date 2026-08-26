@@ -27,7 +27,8 @@ finding-gate/
 ├── maps/                  # what a step declares it renamed; empty = renames nothing
 │   ├── channels.tsv       # old channel key -> new channel key; forward only
 │   ├── symbols.tsv        # old FQN or path -> new (generated from git diff --find-renames)
-│   ├── metric-keys.tsv    # old metric key -> new metric key
+│   ├── metric-keys.tsv    # old metric key -> new metric key; forward only, and a
+│   │                      # row covers each `<key>.<strategy>` spelling too
 │   └── inputs.tsv         # option keys, flag aliases, names inside selectors
 ├── declared-delta.tsv     # surfaces that changed structurally, not by rename;
 ├── declared-delta/        # with one exact unified diff each. Both appear only
@@ -327,7 +328,7 @@ directions**, and that is checked when it loads rather than promised.
 | ----------------- | ------------ | ----------------------------------------------------------------------------------------------- |
 | `channels.tsv`    | forward only | reference artifacts: the whole `rule#code` key and each unambiguous half                        |
 | `symbols.tsv`     | both ways    | reference artifacts; and input — `baseline:explain` subjects, configuration text                |
-| `metric-keys.tsv` | both ways    | reference artifacts; and input — `computed_metrics` formulas in a case's configuration          |
+| `metric-keys.tsv` | forward only | reference artifacts: the key, and each `<key>.<strategy>` spelling of it                        |
 | `inputs.tsv`      | both ways    | option keys, flag aliases, names in selectors: they live on the input and in the rules snapshot |
 
 Forward means the *reference's* output restated in the candidate's vocabulary.
@@ -339,6 +340,79 @@ gives two rows one target and a split gives one old half several, so neither is
 invertible. And after a collapse the target is textually the same string as the
 unchanged **producer** name the corpus writes into its own arguments, so an
 inverted channel map would rewrite a legitimate input the step never touched.
+
+`metric-keys.tsv` is forward only for the same two reasons, measured 2026-08-26.
+Nothing on the reference's input is spelled as a metric key: no case argument
+carries one, and the corpus' only user-defined formula reads no metric at all —
+deliberately, because a formula addresses a key in a *grammar*, and a grammar is
+not a name a row can translate. And an inverted key map would rewrite arguments
+the step never touched: after the vocabulary rename the new key names are
+textually the rule names the corpus writes into its own `--rule-opt` tokens
+(`coupling.class-rank` in all fourteen cases, `size.class-count` and its two
+siblings in `design`, `complexity.cognitive` and `complexity.npath` in two more),
+so a reverse pass would hand the reference `classRank` and `classCount` as rules
+it does not have. What a formula *does* still prove is the six built-in health
+dimensions, whose bodies live in product source and whose values the gate
+compares at three levels on both sides.
+
+### A key row covers its aggregated spellings
+
+A metric is published bare and once per aggregation strategy declared for it,
+spelled `<key>.<strategy>`. A `metric-keys.tsv` row therefore translates those
+spellings as well as the bare one, and the reasons it may are the reasons it is
+not a substring rewrite:
+
+- the strategy list is **closed**, read out of the product's own
+  `AggregationStrategy` rather than written here, and the suffix matches only at
+  the end of the name. `ccn.avg` is translated, `ccn.average` is not, and neither
+  is `ccn.avg.avg` — a doubled suffix is a spelling nothing publishes;
+- the list is read from **both** trees and they have to agree. Forward
+  translation runs over the reference's artifacts, so a strategy the step removed
+  would stop being expanded while the reference still publishes it, and the
+  divergence is refused with both lists named;
+- the expansion is granted to that one map. Measured over the 14-case corpus: 212
+  of 295 published spellings are `base.<strategy>` against 83 base keys, so a row
+  per spelling is a list no step can keep complete;
+- nothing else may already carry the aggregated spelling of a declared key. Three
+  populations can: another declared name, a half the split deliberately leaves
+  untranslated, and a base key the product itself declares (read from
+  `MetricName`'s constants, which are 71 of the 82 published keys — the other
+  eleven are collector-owned literals no single file declares). One spelling with
+  two meanings is decided by nothing, so the load refuses it. Measured over all
+  83 base keys, no such pair exists today. What the check cannot see is one case:
+  a key only the *reference* publishes, shaped like an aggregation of a declared
+  one, and moved by the step without a row — every other arrangement of that
+  shape ends in a surface diff rather than in silence;
+- the aggregated spellings are spellings of the **same** row, exactly as the
+  `qmx.` prefix is, so they count towards that row's staleness and are never a
+  second declaration.
+
+Two limits of this are worth stating, because both look like escape hatches and
+only one is:
+
+- **A key that needs translating on the input** says so with an `inputs.tsv` row
+  — *if it has a whole-token shape*. A dotted key does; a bare `ccn` does not, and
+  is refused, because "the option key without its rule" would translate the same
+  word everywhere. So for the pre-rename undotted keys there is no input row to
+  write, which is sound only as long as no case addresses a metric key on the
+  input: measured, none does.
+- **A step that changes the strategy vocabulary itself** — renaming `avg`, or
+  removing a strategy — moves the published spelling of every aggregated metric
+  at once, and there is no row shape that states that. The gate refuses to run
+  rather than translating what it cannot state; such a step needs a mechanism of
+  its own, and this is where it will have to be added.
+
+### One name, two roles
+
+A name can be a channel identity *and* a token the corpus writes into its own
+configuration: `computed.branch_load` is both. The step that renames it declares
+the same pair in `channels.tsv` and in `inputs.tsv`, and that is **one
+declaration in two roles**, not two rows renaming one name. It is applied in the
+union of its roles' directions, held to the shape rules of each, and credited
+once. Two maps *disagreeing* about a name stays refused — that decides nothing —
+and crediting the declaration once is a decision with its reason: the roles
+substitute the same string in the same artifacts, so which role a given
+occurrence belonged to is not a measurable question.
 
 An input that does need translating says so with an `inputs.tsv` row. One that
 needs it and has no row makes the reference refuse its input with exit 3, which
@@ -513,10 +587,16 @@ while the channel fires.
 
 ## The controls
 
-`composer gate:controls` runs sixteen controls, each on its own hardlink clone:
-fourteen planted breakages, each required to produce a named failure class at a
-named surface, and two green ones. Three properties of the declaration are worth
-knowing before adding one:
+`composer gate:controls` runs seventeen controls, each on its own hardlink clone:
+fifteen planted breakages, each required to produce a named failure class at a
+named surface, and two green ones. The newest of them,
+`moved-aggregated-spelling`, is the control on the suffix expansion: the metrics
+surface publishes `<key>.pct95` where the product computed `<key>.p95`, the base
+keys stay exactly where they are, and the gate has to be red rather than absorbing
+a movement in the suffix that no row states. It mutates the *formatter* on
+purpose — measured, moving the separator inside `MetricName::agg()` takes the
+product down instead, and a control that kills the product proves the corpse
+differs. Three properties of the declaration are worth knowing before adding one:
 
 - A **toleration** — a further failure the mutation cannot avoid producing — pins
   the surface it lands on, and it also has to *land*. A toleration nothing matched

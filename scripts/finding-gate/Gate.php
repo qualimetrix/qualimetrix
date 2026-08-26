@@ -20,6 +20,9 @@ final class Gate
 
     private readonly RenameMaps $maps;
 
+    /** What the candidate's own source says a metric name may be. */
+    private readonly MetricVocabulary $vocabulary;
+
     private readonly Corpus $corpus;
 
     private readonly ChannelWitness $witness;
@@ -59,7 +62,8 @@ final class Gate
     ) {
         $root = $this->options->candidateRoot . '/finding-gate';
         $this->normalization = Normalization::load($root . '/normalization.tsv');
-        $this->maps = RenameMaps::load($root . '/maps');
+        $this->vocabulary = MetricVocabulary::ofTree($this->options->candidateRoot);
+        $this->maps = RenameMaps::load($root . '/maps', $this->vocabulary);
         $this->declaredDelta = DeclaredDelta::load($root);
         $this->split = ChannelSplit::of($this->maps);
         $this->corpus = Corpus::load($this->options->candidateRoot, $this->options->cases);
@@ -79,6 +83,7 @@ final class Gate
         ));
         $this->report->fact('maps', $this->maps->isIdentity() ? 'empty (identity)' : 'declared');
         $this->report->fact('map rows', \count($this->maps->declaredRows()));
+        $this->report->fact('aggregation suffixes', $this->vocabulary->suffixes);
         $this->report->fact('split halves', $this->split->halves());
 
         // Loud on purpose. A declared delta is the one declaration that lets a
