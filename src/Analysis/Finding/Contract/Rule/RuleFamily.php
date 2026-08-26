@@ -18,11 +18,19 @@ use LogicException;
  * convention; deriving it at each consumer would spread the same split across
  * the code the way a level suffix once was.
  *
- * A family is a **label**, not an address. Nothing selects, suppresses or
- * excludes on it: group addressing is written `complexity.*` and is parsed by
+ * A family is a **label**, not an address, in one exact sense: it decides
+ * nothing about findings. No directive resolves against it, no rule selector
+ * matches it, no channel exclusion consults it, and no finding is added or
+ * removed by it — group addressing is written `complexity.*` and is parsed by
  * {@see NameSelector}, which reads the whole name and not a first segment.
  * That is the difference from the group matcher this project removed, whose
  * derived membership decided what a directive applied to.
+ *
+ * What does read it is `qmx rules`, and only for display: the `--group`
+ * filter narrows the listing to one family, and it compares against the very
+ * value the heading is printed from, so the two can never name different
+ * sets. The comparison is exact and case-sensitive; a `--group` no producer
+ * has lists nothing and exits 0.
  */
 final class RuleFamily
 {

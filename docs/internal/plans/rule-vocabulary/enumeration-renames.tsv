@@ -145,7 +145,7 @@ complexity.cognitive	producer	?		10	26	2	2	32	46	0	8
 complexity.cyclomatic	producer	?		37	618	2	2	56	120	0	9
 complexity.npath	producer	?		9	9	2	2	12	38	0	7
 complexity.wmc	producer	?		11	13	2	2	11	27	0	4
-computed	producer	?		80	83	0	1	0	23	0	7
+computed	producer	?		80	84	0	1	0	23	0	7
 coupling.cbo	producer	?		50	226	2	4	8	92	0	6
 coupling.class-rank	producer	?		18	56	0	2	1	26	0	25
 coupling.distance	producer	?		8	29	2	2	3	30	0	27

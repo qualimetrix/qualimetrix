@@ -456,13 +456,21 @@ construction. The derivation happens once — `RuleMetadata::$family`, read by
 name yields no family is refused when the container is built, rather than listed
 under an empty heading.
 
-A family is a **label, not an address**: nothing selects, suppresses or excludes
-on it. Group addressing is written `complexity.*` and is parsed by
-`NameSelector`, which reads a whole name rather than a first segment. That is
-the difference from the retired group *matcher*, whose derived membership
-decided what a directive applied to; behavioural exemptions such as "always let
-architecture findings through an `exclude_paths`/`exclude_namespaces` filter"
-are declared per channel instead, see `ChannelFileScope` below.
+A family is a **label, not an address**, in one exact sense: it decides nothing
+about findings. No inline directive resolves against it, no rule selector
+matches it, no channel exclusion consults it, and the set of findings a run
+reports does not depend on it. Group addressing is written `complexity.*` and is
+parsed by `NameSelector`, which reads a whole name rather than a first segment.
+That is the difference from the retired group *matcher*, whose derived
+membership decided what a directive applied to; behavioural exemptions such as
+"always let architecture findings through an `exclude_paths`/`exclude_namespaces`
+filter" are declared per channel instead, see `ChannelFileScope` below.
+
+One consumer does read it, and only to display: `qmx rules --group=<family>`
+narrows the listing, comparing against the same derived value the group heading
+is printed from — one reading, so the filter and the headings cannot name
+different sets. The match is exact and case-sensitive, and a family no producer
+has lists nothing and exits 0.
 
 ---
 

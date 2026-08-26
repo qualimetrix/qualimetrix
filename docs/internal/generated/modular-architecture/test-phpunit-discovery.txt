@@ -3583,7 +3583,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyDeclaredDocsPageCarriesTheRulesOwnAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyRegisteredRuleDeclaresItsOwnDocsPage
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::theTwoNonPrefixPagesAreDeclaredExplicitly
- - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::everyAllowedFileStillEarnsItsAllowance
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::everyNamedFileStillEarnsItsEntry
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::noHandSpelledCodeInAFixtureOrDocPageNamesANonexistentRuleOrChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleIdentifierLiteralGuardTest::noProductionFileOutsideARuleOrChannelsOwningCapabilityHoldsItsLiteral
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesErrorViaDedicatedCliFlagWithoutFalseWarning

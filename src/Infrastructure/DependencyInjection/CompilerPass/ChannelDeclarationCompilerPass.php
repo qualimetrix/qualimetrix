@@ -195,6 +195,18 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
      * rule class's name and by every classless producer's, which is also why
      * {@see KnownRuleNamesAdapter} is handed its keys.
      *
+     * **This refuses one shape of bad name, not a name grammar.** Rejected:
+     * an empty name and one starting with the separator — exactly the two
+     * that yield no family at all. Accepted, and reaching the listing as a
+     * heading of its own: a trailing separator (`foo.`), an upper-case
+     * segment (`Complexity.Foo`, which `--group=complexity` then does not
+     * find, the filter being case-sensitive), a doubled separator
+     * (`complexity..foo`), a segment with a space in it, and a first segment
+     * that is a typo of an existing family. Not widened here on purpose: the
+     * corpus already registers `computed.branch_load`, a legal name today
+     * that a strict pattern would refuse. The producer-name grammar is the
+     * next substep's subject.
+     *
      * @param list<string> $producerRuleNames
      */
     private static function refuseFamilylessProducers(array $producerRuleNames): void

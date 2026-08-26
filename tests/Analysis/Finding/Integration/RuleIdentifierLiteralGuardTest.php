@@ -73,7 +73,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * the group became derived ({@see RuleFamily}); an allowance for a file
      * that no longer exists would have sat here arguing against a decision
      * already taken, and nothing would have failed. So
-     * {@see everyAllowedFileStillEarnsItsAllowance()} re-runs the check the
+     * {@see everyNamedFileStillEarnsItsEntry()} re-runs the check the
      * entry suppresses and fails when it finds nothing left to suppress.
      *
      * @var array<string, string>
@@ -103,6 +103,11 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * package P6). Nothing stopped it from coming back the same way, so this
      * checks existence rather than ownership for exactly the files P6 swept.
      *
+     * An entry here has to keep carrying such a code:
+     * {@see everyNamedFileStillEarnsItsEntry()} fails on a file the regexes
+     * read nothing out of, which otherwise passes this check by having
+     * nothing to check.
+     *
      * @var list<string>
      */
     private const array EXISTENCE_CHECKED_FILES = [
@@ -116,7 +121,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     {
         $container = (new ContainerFactory())->create();
 
-        $ownerByRuleName = self::ownerByRuleName($container);
+        $ownerByProducer = self::ownerByProducer($container);
 
         $ruleExecution = $container->get(RuleExecutionInterface::class);
         \assert($ruleExecution instanceof RuleExecutionInterface);
@@ -127,38 +132,20 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         // classless producer means the two enumerations of "every registered
         // rule" have drifted; a classless producer that names no capability
         // owner would leave its literal unguarded everywhere.
-        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producerRuleName) {
-            $ownerByRuleName[$producerRuleName] ??= self::COMPUTED_METRICS_CAPABILITY_ROOT;
-        }
-
         self::assertSame(
             [],
-            array_values(array_diff($registeredNames, array_keys($ownerByRuleName))),
+            array_values(array_diff($registeredNames, array_keys($ownerByProducer))),
             'RuleExecutionInterface::allRules() names a producer that is neither a registered rule class nor a'
             . ' declared classless producer of the computed-metric family.',
         );
 
         self::assertSame(
             [],
-            array_values(array_diff(array_keys($ownerByRuleName), $registeredNames)),
+            array_values(array_diff(array_keys($ownerByProducer), $registeredNames)),
             'A rule class or a declared classless producer is missing from RuleExecutionInterface::allRules().',
         );
 
-        $universe = $container->get(ChannelUniverseInterface::class);
-        \assert($universe instanceof ChannelUniverseInterface);
-
-        $ownerByLiteral = $ownerByRuleName;
-
-        foreach ($universe->channels() as $channel) {
-            $producer = $universe->producerOf($channel->code);
-            self::assertNotNull($producer, \sprintf('Channel "%s" names no producer.', $channel->code));
-            self::assertArrayHasKey(
-                $producer,
-                $ownerByRuleName,
-                \sprintf('Channel "%s" is produced by "%s", which names no registered rule.', $channel->code, $producer),
-            );
-            $ownerByLiteral[$channel->code] ??= $ownerByRuleName[$producer];
-        }
+        $ownerByLiteral = self::ownerByLiteral($container);
 
         $root = self::projectRoot();
         $findings = [];
@@ -177,16 +164,22 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     }
 
     /**
-     * Every allowance must still suppress something.
+     * Every file this guard names by hand must still be the file it was named
+     * for — on both lists, and for the same reason.
      *
-     * A stale entry is invisible by construction — the guard skips the file it
-     * names, so an allowance for a deleted file, or for one that no longer
-     * holds a foreign literal, silently protects nothing while reading as a
-     * live argument. That is the seam this project has now walked into twice:
-     * a package retires a subject and leaves the guard asserting about it.
+     * A stale entry is invisible by construction. An allowance makes the guard
+     * skip its file, so an allowance for a deleted file, or for one that no
+     * longer holds a foreign literal, silently protects nothing while reading
+     * as a live argument. An existence-checked entry is the mirror image: the
+     * regexes read one shape of hand-spelled code, and a file that stopped
+     * carrying that shape — renamed, rewritten, or never carrying it at all —
+     * is checked against an empty set of literals and passes whatever it says.
+     * Adding `CHANGELOG.md` to that list is green without this check. That is
+     * the seam this project has now walked into twice: a package retires a
+     * subject and leaves the guard asserting about it.
      */
     #[Test]
-    public function everyAllowedFileStillEarnsItsAllowance(): void
+    public function everyNamedFileStillEarnsItsEntry(): void
     {
         $container = (new ContainerFactory())->create();
         $ownerByLiteral = self::ownerByLiteral($container);
@@ -204,6 +197,23 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
 
             if (self::foreignLiterals($absolutePath, $relative, $ownerByLiteral) === []) {
                 $stale[] = \sprintf('%s is allowed but holds no literal owned by another capability.', $relative);
+            }
+        }
+
+        foreach (self::EXISTENCE_CHECKED_FILES as $relative) {
+            $absolutePath = $root . '/' . $relative;
+
+            if (!is_file($absolutePath)) {
+                $stale[] = \sprintf('%s is existence-checked but no longer exists.', $relative);
+
+                continue;
+            }
+
+            if (self::handSpelledIdentifierLiterals($absolutePath) === []) {
+                $stale[] = \sprintf(
+                    '%s is existence-checked but spells no rule name or finding code the check can read.',
+                    $relative,
+                );
             }
         }
 
@@ -247,36 +257,52 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
 
     /**
      * Rule names and channel codes alike, each mapped to the capability that
-     * owns it. The main test builds the same map inline, where it also
-     * asserts the two enumerations of "every registered rule" agree; here
-     * only the mapping is needed.
+     * owns it — the one place this map is built.
+     *
+     * Built once because two builds are two sets of literals: a guard judging
+     * by one and a liveness check judging by the other would disagree exactly
+     * where it matters, and the disagreement would read as a passing build.
      *
      * @return array<string, string>
      */
     private static function ownerByLiteral(ContainerBuilder $container): array
     {
-        $ownerByRuleName = self::ownerByRuleName($container);
-
-        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producerRuleName) {
-            $ownerByRuleName[$producerRuleName] ??= self::COMPUTED_METRICS_CAPABILITY_ROOT;
-        }
+        $ownerByProducer = self::ownerByProducer($container);
 
         $universe = $container->get(ChannelUniverseInterface::class);
         \assert($universe instanceof ChannelUniverseInterface);
 
-        $ownerByLiteral = $ownerByRuleName;
+        $ownerByLiteral = $ownerByProducer;
 
         foreach ($universe->channels() as $channel) {
             $producer = $universe->producerOf($channel->code);
-
-            if ($producer === null || !isset($ownerByRuleName[$producer])) {
-                continue;
-            }
-
-            $ownerByLiteral[$channel->code] ??= $ownerByRuleName[$producer];
+            self::assertNotNull($producer, \sprintf('Channel "%s" names no producer.', $channel->code));
+            self::assertArrayHasKey(
+                $producer,
+                $ownerByProducer,
+                \sprintf('Channel "%s" is produced by "%s", which names no registered rule.', $channel->code, $producer),
+            );
+            $ownerByLiteral[$channel->code] ??= $ownerByProducer[$producer];
         }
 
         return $ownerByLiteral;
+    }
+
+    /**
+     * Every registered producer — rule classes and the computed-metric
+     * family's classless names alike — mapped to its owning capability root.
+     *
+     * @return array<string, string>
+     */
+    private static function ownerByProducer(ContainerBuilder $container): array
+    {
+        $owners = self::ownerByRuleName($container);
+
+        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producerRuleName) {
+            $owners[$producerRuleName] ??= self::COMPUTED_METRICS_CAPABILITY_ROOT;
+        }
+
+        return $owners;
     }
 
     #[Test]
@@ -284,13 +310,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     {
         $container = (new ContainerFactory())->create();
 
-        $knownNames = [...array_keys(self::ownerByRuleName($container)), ...ComputedMetricChannelFamily::PRODUCER_RULE_NAMES];
-
-        $universe = $container->get(ChannelUniverseInterface::class);
-        \assert($universe instanceof ChannelUniverseInterface);
-        $knownCodes = array_map(static fn($channel) => $channel->code, $universe->channels());
-
-        $known = array_flip([...$knownNames, ...$knownCodes]);
+        $known = array_flip(array_keys(self::ownerByLiteral($container)));
 
         $root = self::projectRoot();
         $findings = [];

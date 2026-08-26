@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
@@ -72,13 +71,47 @@ final class RulesCommandWiringTest extends TestCase
     }
 
     /**
-     * `--group` and the group headings must name the same set, producer by
-     * producer, on every family the real container registers.
+     * Every family the real container registers, spelled out.
+     *
+     * The point of the list is that it is **not** derived: an expectation
+     * built by calling {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily}
+     * moves with the derivation it checks — "the family is the whole name"
+     * kept such a test green while it grouped 51 producers into 51 groups of
+     * one. It is also the review barrier the retired `RuleCategory` enum used
+     * to be: a new family, or a producer whose first segment is a typo of an
+     * existing one (`complexty.cyclomatic`), is a visible edit here or a red
+     * build, where nothing else in the product validates the spelling.
+     *
+     * @var list<string>
+     */
+    private const array EXPECTED_FAMILIES = [
+        'annotation',
+        'architecture',
+        'code-smell',
+        'cohesion',
+        'complexity',
+        'computed',
+        'coupling',
+        'design',
+        'duplication',
+        'health',
+        'maintainability',
+        'security',
+        'size',
+    ];
+
+    /**
+     * `--group`, the group headings and the declared family list must name the
+     * same set, producer by producer, on every family the real container
+     * registers.
      *
      * Filtering and heading now read one derived value, so a test naming two
      * rules would pass on any pair of readings that happen to agree there.
      * The finding-equivalence gate cannot stand in for this: it runs
      * `rules --no-ansi` and never passes `--group` at all.
+     *
+     * Membership is decided here by whole-name equality or a `family.` prefix,
+     * which is a different reading of the name from the one under test.
      */
     #[Test]
     public function itFiltersByGroupAgainstTheRealRuleSet(): void
@@ -91,16 +124,52 @@ final class RulesCommandWiringTest extends TestCase
         $execution = $container->get(RuleExecutionInterface::class);
         \assert($execution instanceof RuleExecutionInterface);
 
+        $producerNames = array_map(static fn(RuleMetadata $rule): string => $rule->name, $execution->allRules());
+        self::assertNotSame([], $producerNames, 'The production container must register producers.');
+
         /** @var array<string, list<string>> $expectedByFamily */
         $expectedByFamily = [];
+        $unclaimed = [];
 
-        foreach ($execution->allRules() as $rule) {
-            $expectedByFamily[RuleFamily::of($rule->name)][] = $rule->name;
+        foreach ($producerNames as $producerName) {
+            $families = array_values(array_filter(
+                self::EXPECTED_FAMILIES,
+                static fn(string $family): bool
+                    => $producerName === $family || str_starts_with($producerName, $family . '.'),
+            ));
+
+            if (\count($families) !== 1) {
+                $unclaimed[] = \sprintf('"%s" is claimed by %d of the declared families.', $producerName, \count($families));
+
+                continue;
+            }
+
+            $expectedByFamily[$families[0]][] = $producerName;
         }
 
-        self::assertNotSame([], $expectedByFamily, 'The production container must register producers.');
+        self::assertSame([], $unclaimed, "\n" . implode("\n", $unclaimed));
+
+        $registeredFamilies = array_keys($expectedByFamily);
+        sort($registeredFamilies);
+
+        self::assertSame(
+            self::EXPECTED_FAMILIES,
+            $registeredFamilies,
+            'The declared family list and the registered producers name different families.',
+        );
+
+        $fullListing = new CommandTester($command);
+        $fullListing->execute([]);
+        self::assertSame(0, $fullListing->getStatusCode());
+        $fullDisplay = $fullListing->getDisplay();
 
         foreach ($expectedByFamily as $family => $expected) {
+            self::assertMatchesRegularExpression(
+                '/^' . preg_quote(ucfirst($family), '/') . '$/m',
+                $fullDisplay,
+                \sprintf('The full listing prints no heading for family "%s".', $family),
+            );
+
             $tester = new CommandTester($command);
             $tester->execute(['--group' => $family]);
 

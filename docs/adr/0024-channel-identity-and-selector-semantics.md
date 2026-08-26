@@ -1,7 +1,7 @@
 # 0024. Channel Identity and Selector Semantics
 
 **Date:** 2026-08-19
-**Status:** Accepted
+**Status:** Accepted. [ADR 0033](0033-display-family-is-derived-from-the-producer-name.md) supersedes one point of Decision 4 — "the category is *not* deleted"; `RuleCategory` is now deleted and the display family is derived from the producer's name. Every other decision here, including the rest of Decision 4, remains in force.
 **Related:** [ADR 0013](0013-threshold-override-validators.md) (threshold override validators), [ADR 0017](0017-baseline-ceiling.md) (baseline ceiling and channel declarations), [ADR 0006](0006-architecture-rules-declaration-order.md) (the layer-policy diagnostics reclassified here)
 
 ## Context
