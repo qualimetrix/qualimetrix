@@ -30,9 +30,9 @@ complexity.cognitive	channel	?		10	26	2	2	32	46	0	8
 complexity.cyclomatic	channel	?		37	618	2	2	56	120	0	9
 complexity.npath	channel	?		9	9	2	2	12	38	0	7
 complexity.wmc	channel	?		11	13	2	2	11	27	0	4
-coupling.cbo	channel	?		50	226	2	4	8	92	0	6
-coupling.class-rank	channel	?		18	56	0	2	1	26	0	25
-coupling.distance	channel	?		8	29	2	2	3	30	0	27
+coupling.cbo	channel	?		49	226	2	5	8	92	0	6
+coupling.class-rank	channel	?		17	56	0	2	1	26	0	25
+coupling.distance	channel	?		8	29	2	2	2	30	0	27
 coupling.instability	channel	?		12	29	2	3	8	46	0	8
 design.data-class	channel	?		13	13	1	2	10	32	0	3
 design.god-class	channel	?		13	16	1	2	2	35	0	7
@@ -146,9 +146,9 @@ complexity.cyclomatic	producer	?		37	618	2	2	56	120	0	9
 complexity.npath	producer	?		9	9	2	2	12	38	0	7
 complexity.wmc	producer	?		11	13	2	2	11	27	0	4
 computed	producer	?		80	84	0	1	0	23	0	7
-coupling.cbo	producer	?		50	226	2	4	8	92	0	6
-coupling.class-rank	producer	?		18	56	0	2	1	26	0	25
-coupling.distance	producer	?		8	29	2	2	3	30	0	27
+coupling.cbo	producer	?		49	226	2	5	8	92	0	6
+coupling.class-rank	producer	?		17	56	0	2	1	26	0	25
+coupling.distance	producer	?		8	29	2	2	2	30	0	27
 coupling.instability	producer	?		12	29	2	3	8	46	0	8
 design.data-class	producer	?		13	13	1	2	10	32	0	3
 design.god-class	producer	?		13	16	1	2	2	35	0	7

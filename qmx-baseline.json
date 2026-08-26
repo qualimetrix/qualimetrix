@@ -544,11 +544,8 @@
     "ns:Qualimetrix\\Analysis\\Evidence\\Maintainability": [
       {"channel":"coupling.cbo","magnitudes":[16]}
     ],
-    "ns:Qualimetrix\\Analysis\\Evidence\\Measurement": [
-      {"channel":"coupling.distance","magnitudes":[0.515725]}
-    ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract": [
-      {"channel":"coupling.cbo","magnitudes":[50]}
+      {"channel":"coupling.cbo","magnitudes":[38]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor": [
       {"channel":"coupling.instability","magnitudes":[0.92]}
