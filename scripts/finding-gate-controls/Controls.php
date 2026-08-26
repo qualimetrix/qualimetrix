@@ -11,14 +11,15 @@ use RuntimeException;
 /**
  * The controls, as a list.
  *
- * Fourteen negative controls — the four the Ш1 DoD names, the four Ш4a adds for
+ * Fifteen negative controls — the four the Ш1 DoD names, the four Ш4a adds for
  * the declared delta and the reference's vocabulary, the one Ш4b adds for
  * `delta-too-large`, the one P5.0 adds for a lost level of a multi-level channel,
- * the two Ш5b0 adds for the fingerprint mechanism and the two Ш5d0 adds for the
- * split mechanism — plus two green ones: the positive control, without which
- * fourteen reds could all be reds for an environmental reason, and Ш5b0's
- * declared rename, which asserts that a change the maps declare is absorbed by
- * the declaration and by nothing else.
+ * the two Ш5b0 adds for the fingerprint mechanism, the two Ш5d0 adds for the
+ * split mechanism and the one Ш5e3-0 adds for a moved aggregated spelling —
+ * plus two green ones: the positive control, without which fifteen reds could
+ * all be reds for an environmental reason, and Ш5b0's declared rename, which
+ * asserts that a change the maps declare is absorbed by the declaration and by
+ * nothing else.
  *
  * `delta-too-large` was the one class of the five that no control had ever seen
  * red. Ш4a named the gap in its own record; Ш4b rewrote the code that computes
@@ -64,6 +65,7 @@ final class Controls
             self::fingerprintDeclaredRename(),
             self::splitRowIdle(),
             self::splitWithoutRow(),
+            self::movedAggregatedSpelling(),
         ];
 
         return array_map(
@@ -784,6 +786,61 @@ final class Controls
             ),
             [new Expectation(FailureClass::SPLIT_UNMAPPED, 'case:smells')],
             [new Expectation(FailureClass::MAP_STALE, 'channels.tsv')],
+        );
+    }
+
+    /**
+     * A published aggregated spelling moves, and the base key stays exactly
+     * where it is.
+     *
+     * The control on the suffix expansion. A `metric-keys.tsv` row translates
+     * `<key>.<strategy>` as well as `<key>`, which is what makes 212 published
+     * spellings declarable in 83 rows — and also what could make the expansion a
+     * rubber stamp, absorbing a movement in the suffix that no row states. Only
+     * the suffix moves here, and it moves for every key that carries it: `cbo`,
+     * `ccn` and `cbo_app` stay exactly as they are on every surface, while
+     * `cbo.p95` is published as `cbo.pct95`. No row declares that, so it has to
+     * be red.
+     *
+     * The mutation moves the spelling where it is PUBLISHED, and that is the
+     * point rather than a convenience. Measured 2026-08-26: changing the
+     * separator in `MetricName::agg()` instead — the composition every writer and
+     * every reader shares — takes the product down altogether (`run-failed` on
+     * all fourteen cases, "the JSON surface carries no findings section", zero
+     * observed channels), because the aggregated name is also how the
+     * aggregation reads its own weights back. A control that kills the product
+     * proves the corpse differs, not that the gate compares metric keys.
+     *
+     * The dot is kept, and that is the difference between this control and a
+     * sloppier one: dropping it (`cbopct95`) would move the boundary as well as
+     * the suffix, and then the control would no longer be about a suffix at all.
+     * It read `cbopct95` when this control was first written, and two reviewers
+     * found it before a run did.
+     *
+     * `p95` is the strategy moved, and no value changes with it: the built-in
+     * health formulas read `cbo__p95` and `cognitive__p95` out of the metric bag,
+     * not out of this formatter, so the findings, the counts, the claims and the
+     * baselines are all identical on both sides. What differs is one published
+     * name on one surface — which is exactly the difference the suffix expansion
+     * could otherwise absorb.
+     */
+    private static function movedAggregatedSpelling(): Control
+    {
+        return Control::red(
+            'moved-aggregated-spelling',
+            'a published aggregated spelling moves while its base key stays put',
+            Mutation::edit(
+                'src/Reporting/Formatter/MetricsJsonFormatter.php',
+                [
+                    "'metrics' => \$metricsArray," => "'metrics' => array_combine(array_map("
+                        . "static fn(string \$key): string => str_ends_with(\$key, '.p95')"
+                        . " ? substr(\$key, 0, -4) . '.pct95' : \$key,"
+                        . " array_keys(\$metricsArray)), \$metricsArray),",
+                ],
+                'the metrics surface publishes "<key>.pct95" where the product computed "<key>.p95"',
+            ),
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity|format:metrics')],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'format:metrics')],
         );
     }
 
