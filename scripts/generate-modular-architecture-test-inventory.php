@@ -331,6 +331,7 @@ if ($projectRoot === false) {
     fail('Cannot resolve the project root.');
 }
 assertPathLiteralsResolve($projectRoot);
+assertSuiteClassifierAgreesWithPhpunit($projectRoot);
 $p6CBaselinePaths = p6CBaselinePaths($projectRoot);
 if (hash('sha256', implode("\n", $p6CBaselinePaths) . "\n") !== P6_C_BASELINE_PATHS_SHA256) {
     fail('P6-C Baseline test artifact set differs from the reviewed finite path digest.');
@@ -1022,6 +1023,9 @@ function currentSuite(string $path): string
         str_starts_with($path, 'tests/Analysis/Run/Unit/'),
         str_starts_with($path, 'tests/Reporting/GraphProjection/Unit/'),
         str_starts_with($path, 'tests/Reporting/FindingProjection/Unit/'),
+        str_starts_with($path, 'tests/Core/Path/Unit/'),
+        str_starts_with($path, 'tests/Core/Symbol/Unit/'),
+        str_starts_with($path, 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/'),
         str_starts_with($path, 'tests/Unit/') => 'Unit',
         str_starts_with($path, 'tests/Architecture/Integration/'),
         str_starts_with($path, 'tests/Analysis/Policy/Architecture/Integration/'),
@@ -1032,11 +1036,45 @@ function currentSuite(string $path): string
         str_starts_with($path, 'tests/Analysis/Evidence/Measurement/Integration/'),
         str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/Integration/'),
         str_starts_with($path, 'tests/Analysis/Run/Integration/'),
+        str_starts_with($path, 'tests/Analysis/Evidence/Design/Integration/'),
+        str_starts_with($path, 'tests/Reporting/Formatter/Sarif/Integration/'),
+        str_starts_with($path, 'tests/System/DocumentationConsistency/Integration/'),
         str_starts_with($path, 'tests/Integration/') => 'Integration',
         str_starts_with($path, 'tests/Functional/'), str_starts_with($path, 'tests/Analysis/Policy/Baseline/Functional/'), str_starts_with($path, 'tests/Infrastructure/Console/Functional/') => 'Functional',
         str_starts_with($path, 'tests/Infrastructure/') => 'Infrastructure',
         default => 'none',
     };
+}
+
+/**
+ * A test published as belonging to no suite while PHPUnit runs it is a lie this
+ * artifact cannot detect on its own: `currentSuite()` classifies an arbitrary
+ * input path, so nothing ties its literals to the suite map they mirror. Six
+ * directories had drifted apart from it before this check existed.
+ */
+function assertSuiteClassifierAgreesWithPhpunit(string $projectRoot): void
+{
+    $configuration = $projectRoot . '/phpunit.xml.dist';
+    $document = @simplexml_load_file($configuration);
+    if ($document === false) {
+        fail('Cannot read the PHPUnit suite map: ' . $configuration);
+    }
+
+    $mismatches = [];
+    foreach ($document->testsuites->testsuite as $suite) {
+        $name = (string) $suite['name'];
+        foreach ($suite->directory as $directory) {
+            $declared = rtrim(trim((string) $directory), '/');
+            $classified = currentSuite($declared . '/probe/ProbeTest.php');
+            if ($classified !== $name) {
+                $mismatches[] = sprintf('%s is suite %s in %s, %s in currentSuite()', $declared, $name, basename($configuration), $classified);
+            }
+        }
+    }
+
+    if ($mismatches !== []) {
+        fail("Suite classifier disagrees with the PHPUnit suite map:\n  " . implode("\n  ", $mismatches));
+    }
 }
 
 function dispositionFor(string $path, string $kind): string
