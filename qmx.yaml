@@ -1276,7 +1276,10 @@ rules:
       # narrowing this to point thresholds instead: four classes here exceed the
       # class CBO threshold (SymbolPath 72, MetricSubject 46, SymbolType 35,
       # SymbolInfo 33), the namespace union exceeds its own (55), and two classes
-      # exceed ClassRank. Owner question, not settled here.
+      # exceed ClassRank. Decided 2026-08-26 not to narrow: a point threshold
+      # inside an excluded namespace still decides detection, so narrowing would
+      # redistribute the silencing rather than add measurement — and the namespace
+      # union it leaves behind is not addressable by a point threshold at all.
       - Qualimetrix\Core\Metric
       - Qualimetrix\Analysis\Finding\Rule
       - Qualimetrix\Core\Path

@@ -165,6 +165,43 @@ artifact, and Ш3 carries a zero delta by decision. It is what makes the
 validator extraction safe, so it is recorded rather than relied on silently.
 Measured 2026-08-23.
 
+## Found while moving the level vocabulary (Ш5e2b), out of scope here
+
+**Nothing about a suppressed finding is machine-readable, and that is why a
+delta on that surface cannot be caught by a test.** `--show-suppressed` changes
+only the text renderer: `bin/qmx check src/ --format=json` and the same command
+with `--show-suppressed` produce byte-identical JSON, 234 violations either way.
+`RuleExclusionStats` counts what was silenced and `FindingFilterOrchestrator`
+prints it, and that is the whole published surface — a line of prose plus a
+count.
+
+The consequence measured in Ш5e2b: removing a point threshold inside a
+namespace whose channel is excluded moved the suppression count from 55 to 56
+and added a hub to that list, and no test, no format and no exit code could see
+it. Three separate probes missed it because all three read the published
+report; an external reviewer found it by reading the text output by hand.
+
+**`annotation.unused-directive` does not audit `@qmx-threshold` at all.**
+`InlineDirectivePolicy::auditDirectiveUsage()` walks `$this->suppressions` only;
+`$this->thresholdOverrides` is never read there, although
+`UnusedDirectiveRule`'s own docblock promises "a suppression **or override**
+that addressed something real and simply did not fire". So a threshold that has
+outlived its reason is silent by construction — the exact failure mode the
+channel exists to catch, and the sibling case (`@qmx-ignore health.cohesion`
+outliving its reason) is what the channel did catch in Ш5e2.
+
+The two belong to one step, not two: auditing a threshold means asking "would
+removing this directive change any decision?", and answering that for a channel
+excluded by namespace requires knowing what was suppressed — which is exactly
+the surface that does not exist. Five of the 136 `@qmx-threshold` directives in
+`src` sit inside such a namespace today (`SymbolLevel` ×2, `RelativePath` ×2,
+`ThresholdOverride`), and none of them is dead.
+
+Not fixed here: both add published output, so they carry a declared delta and a
+corpus fixture, and Ш5e3 renames 82 metric keys — a new observable channel in
+between would be compared against maps written for the rename. Scheduled after
+Ш5e3. Measured 2026-08-26.
+
 ## Consumers that read the level from the channel NAME
 
 Found in round 1 of the plan review, verified against the code. Not defects of
