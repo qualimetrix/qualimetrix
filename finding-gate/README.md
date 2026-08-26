@@ -47,8 +47,8 @@ finding-gate/
   "paths": ["src"],                    // relative to the case directory
   "config": "qmx.yaml",                // relative to the case directory
   "args": ["--rule-opt=complexity.wmc:threshold=0"],   // extra CLI arguments; optional, defaults to []
-  "channels": ["code-smell.eval#code-smell.eval@class"],  // channel AND level pairs this case owns
-  "explainSubjects": ["declaration:Corpus\\Smells\\Eval_"]  // subjects for baseline:explain
+  "channels": ["code-smell.eval@callable"],             // channel AND level pairs this case owns
+  "explainSubjects": ["declaration:callable:Corpus\\Smells\\Smells::report@src/Smells.php"]  // subjects for baseline:explain
 }
 ```
 
@@ -60,7 +60,9 @@ fixture, so the control that deletes one would pass while proving nothing.
 
 ### A claim is a `channel@level` pair
 
-The unit of a claim is `rule#code@level`, and the level is read out of the
+The unit of a claim is `channel@level` — one name and one level, since Ш5b left a
+channel with a single name; a claim still written as the old `rule#code` pair is
+refused, because no channel carries that name. The level is read out of the
 `subject` field, which carries it in its tag (`declaration:callable:…`,
 `declaration:class:…`, `file:`, `ns:`, `project:`). The spelling is the product's
 own level vocabulary (`SymbolLevel`), not the subject's tag for it, so the claim,
