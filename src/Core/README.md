@@ -245,38 +245,6 @@ Defines how metrics are aggregated when transitioning to a higher level.
 | `Count`        | Number of elements      |
 | `Percentile95` | 95th percentile (`p95`) |
 
-### SymbolLevel (Enum)
-
-Hierarchy level of a symbol in the aggregation tree.
-
-| Value        | Description                       |
-| ------------ | --------------------------------- |
-| `Callable`   | Callable (PHP method or function) |
-| `Class_`     | Class, interface, trait, enum     |
-| `File`       | File                              |
-| `Namespace_` | Namespace                         |
-| `Project`    | Project (root)                    |
-
-The level is a coordinate of a symbol, which is why it is owned here rather than
-by the capability that walks the aggregation tree: it is declared by rules, read
-off the symbol in `Finding::level()`, spelled right of the colon in an inline
-directive and in a selector, and filtered on by namespace-channel exclusions.
-`Analysis\Evidence\Measurement` owns the traversal, not the vocabulary
-(rule-vocabulary plan Ш5e2b).
-
-### SymbolLevelProjection
-
-The one projection of "what kind of declaration is this?" (`SymbolType`) onto
-"what level of the aggregation tree does it measure at?" (`SymbolLevel`).
-
-**Methods:**
-- `ofDeclaration(SymbolType $type): SymbolLevel` — collapses `Method` and
-  `Function_` into `Callable`; every other kind maps to its own level
-
-The collapse is stated here once. Do not re-derive it at a call site, and do not
-project a level back onto a declaration kind — a consumer that needs the kind
-reads it off the symbol it was handed.
-
 ### MetricDefinition
 
 Value Object — describes a metric and its aggregation strategies.
@@ -524,6 +492,38 @@ Stable symbol identifier for baseline. Does not depend on line number. Located i
 - `file:src/Service/UserService.php` — file
 - `App\Service` — namespace
 - `::globalFunction` — global function
+
+### SymbolLevel (Enum)
+
+Hierarchy level of a symbol in the aggregation tree.
+
+| Value        | Description                       |
+| ------------ | --------------------------------- |
+| `Callable`   | Callable (PHP method or function) |
+| `Class_`     | Class, interface, trait, enum     |
+| `File`       | File                              |
+| `Namespace_` | Namespace                         |
+| `Project`    | Project (root)                    |
+
+The level is a coordinate of a symbol, which is why it is owned here rather than
+by the capability that walks the aggregation tree: it is declared by rules, read
+off the symbol in `Finding::level()`, spelled right of the colon in an inline
+directive and in a selector, and filtered on by namespace-channel exclusions.
+`Analysis\Evidence\Measurement` owns the traversal, not the vocabulary
+(rule-vocabulary plan Ш5e2b).
+
+### SymbolLevelProjection
+
+The one projection of "what kind of declaration is this?" (`SymbolType`) onto
+"what level of the aggregation tree does it measure at?" (`SymbolLevel`).
+
+**Methods:**
+- `ofDeclaration(SymbolType $type): SymbolLevel` — collapses `Method` and
+  `Function_` into `Callable`; every other kind maps to its own level
+
+The collapse is stated here once. Do not re-derive it at a call site, and do not
+project a level back onto a declaration kind — a consumer that needs the kind
+reads it off the symbol it was handed.
 
 ### MetricSubjectCodec
 

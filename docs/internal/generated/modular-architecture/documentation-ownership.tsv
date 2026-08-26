@@ -38,6 +38,7 @@ docs/adr/0030-one-rule-per-type-coverage-dimension.md	Analysis.Evidence.Design	P
 docs/adr/0031-channel-shape-is-a-producer-property.md	Analysis.Finding	P6-A	"Move or update atomically with the named migration package."
 docs/adr/0032-computed-metric-producer-split.md	Analysis.Evidence.ComputedMetrics	P5	"Move or update atomically with the named migration package."
 docs/adr/0033-display-family-is-derived-from-the-producer-name.md	Analysis.Finding	P6-A	"Move or update atomically with the named migration package."
+docs/adr/0034-the-level-is-a-coordinate-of-a-symbol.md	Core.Symbol	P8	"Move or update atomically with the named migration package."
 docs/adr/README.md	Architecture.Governance	P0-D	"P0 governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."

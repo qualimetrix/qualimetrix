@@ -86,7 +86,7 @@ explicit shared-governance disposition.
 | ------------------------------ | --------------------------------------------------------------: | --------------------------------------------------------------------------------------------------- |
 | Exact owner graph              | 37 owner layers, 0 seams                                        | qmx enforces only semantic-owner topology; no declaration is split into a synthetic layer.          |
 | Permanent composition bindings | 64 exact rows → 13 coarse qmx pairs                             | the manifest authorizes exact composition imports; qmx retains the corresponding coarse pair edges. |
-| Generated qmx projection       | final `external`, 227 declared allow edges                      | uncovered declarations and coarse owner cycles fail closed.                                         |
+| Generated qmx projection       | final `external`; allow-edge count in the generated summary     | uncovered declarations and coarse owner cycles fail closed.                                         |
 | Self-analysis                  | 787 files, active baseline 232 groups / 175 subjects, dogfood 0 | current repository analysis has no new accepted-warning delta.                                      |
 
 Composition bindings are permanent policy, not migration exceptions. They are

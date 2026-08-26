@@ -2445,6 +2445,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0031-channel-shape-is-a-producer-property.md' => ['Analysis.Finding', 'P6-A'],
         'docs/adr/0032-computed-metric-producer-split.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
         'docs/adr/0033-display-family-is-derived-from-the-producer-name.md' => ['Analysis.Finding', 'P6-A'],
+        'docs/adr/0034-the-level-is-a-coordinate-of-a-symbol.md' => ['Core.Symbol', 'P8'],
         'docs/internal/plans/modular-architecture.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture/decisions-and-target.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture/p0-governance.md' => ['Architecture.Governance', 'P2'],
