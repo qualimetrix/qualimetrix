@@ -17,7 +17,7 @@ code-smell.count-in-loop	channel	?		1	5	0	0	0	12	0	1
 code-smell.debug-code	channel	?		1	30	0	0	0	13	0	1
 code-smell.empty-catch	channel	?		4	6	0	0	0	12	0	1
 code-smell.error-suppression	channel	?		1	10	1	2	2	17	0	1
-code-smell.eval	channel	?		1	23	0	0	0	16	0	9
+code-smell.eval	channel	?		1	23	0	0	0	16	0	8
 code-smell.exit	channel	?		1	7	0	0	0	16	0	1
 code-smell.goto	channel	?		2	114	0	0	0	12	0	3
 code-smell.identical-subexpression	channel	?		2	5	0	0	0	13	0	1
@@ -26,12 +26,12 @@ code-smell.superglobals	channel	?		1	5	1	0	0	12	0	1
 code-smell.unreachable-code	channel	?		6	6	0	1	0	23	0	1
 code-smell.unused-private	channel	?		2	6	0	0	0	15	0	3
 cohesion.lcom	channel	?		19	37	2	2	0	27	0	4
-complexity.cognitive	channel	?		10	26	2	2	32	46	0	8
+complexity.cognitive	channel	?		10	26	2	2	32	46	0	9
 complexity.cyclomatic	channel	?		37	618	2	2	56	120	0	9
-complexity.npath	channel	?		9	9	2	2	12	38	0	7
+complexity.npath	channel	?		9	9	2	2	12	38	0	8
 complexity.wmc	channel	?		11	13	2	2	11	27	0	4
 coupling.cbo	channel	?		50	226	2	4	8	92	0	6
-coupling.class-rank	channel	?		18	56	0	2	1	26	0	25
+coupling.class-rank	channel	?		18	56	0	2	1	26	0	26
 coupling.distance	channel	?		8	29	2	2	2	30	0	27
 coupling.instability	channel	?		12	29	2	3	8	46	0	8
 design.data-class	channel	?		13	13	1	2	10	32	0	3
@@ -48,7 +48,7 @@ security.hardcoded-credentials	channel	?		4	9	0	0	0	15	0	1
 security.sensitive-parameter	channel	?		3	5	0	0	0	13	0	1
 security.sql-injection	channel	?		3	6	0	0	0	13	0	1
 security.xss	channel	?		4	17	0	0	0	13	0	1
-size.class-count	channel	?		9	27	2	1	5	24	0	3
+size.class-count	channel	?		9	27	2	1	5	24	0	4
 size.method-count	channel	?		9	60	2	2	0	46	0	3
 size.property-count	channel	?		9	7	2	2	0	22	0	3
 abstractClassCount	metric-key	?		14	11	0	0	0	0	0	0
@@ -56,13 +56,13 @@ abstractness	metric-key	?		60	61	0	1	0	9	0	0
 ca	metric-key	?		42	78	0	0	0	2	0	0
 cbo	metric-key	?		48	74	0	0	0	10	0	0
 cbo_app	metric-key	?		8	13	0	0	0	13	0	0
-ccn	metric-key	?		50	321	0	0	0	3	0	0
+ccn	metric-key	?		50	321	0	0	0	3	0	1
 ce	metric-key	?		50	99	0	0	0	11	0	0
 ce_framework	metric-key	?		7	12	0	0	0	7	0	0
 ce_packages	metric-key	?		8	14	0	0	0	6	0	0
-classCount	metric-key	?		75	116	0	0	0	6	0	0
+classCount	metric-key	?		75	116	0	0	0	6	0	1
 classLoc	metric-key	?		14	45	0	0	0	0	0	0
-classRank	metric-key	?		44	64	0	0	0	1	0	0
+classRank	metric-key	?		44	64	0	0	0	1	0	1
 cloc	metric-key	?		11	21	0	0	0	0	0	0
 cognitive	metric-key	?		47	72	0	0	0	20	0	0
 distance	metric-key	?		76	66	0	6	0	8	0	2
@@ -132,7 +132,7 @@ code-smell.count-in-loop	producer	?		1	5	0	0	0	12	0	1
 code-smell.debug-code	producer	?		1	30	0	0	0	13	0	1
 code-smell.empty-catch	producer	?		4	6	0	0	0	12	0	1
 code-smell.error-suppression	producer	?		1	10	1	2	2	17	0	1
-code-smell.eval	producer	?		1	23	0	0	0	16	0	9
+code-smell.eval	producer	?		1	23	0	0	0	16	0	8
 code-smell.exit	producer	?		1	7	0	0	0	16	0	1
 code-smell.goto	producer	?		2	114	0	0	0	12	0	3
 code-smell.identical-subexpression	producer	?		2	5	0	0	0	13	0	1
@@ -141,13 +141,13 @@ code-smell.superglobals	producer	?		1	5	1	0	0	12	0	1
 code-smell.unreachable-code	producer	?		6	6	0	1	0	23	0	1
 code-smell.unused-private	producer	?		2	6	0	0	0	15	0	3
 cohesion.lcom	producer	?		19	37	2	2	0	27	0	4
-complexity.cognitive	producer	?		10	26	2	2	32	46	0	8
+complexity.cognitive	producer	?		10	26	2	2	32	46	0	9
 complexity.cyclomatic	producer	?		37	618	2	2	56	120	0	9
-complexity.npath	producer	?		9	9	2	2	12	38	0	7
+complexity.npath	producer	?		9	9	2	2	12	38	0	8
 complexity.wmc	producer	?		11	13	2	2	11	27	0	4
-computed	producer	?		80	84	0	1	0	23	0	7
+computed	producer	?		80	84	0	1	0	23	0	9
 coupling.cbo	producer	?		50	226	2	4	8	92	0	6
-coupling.class-rank	producer	?		18	56	0	2	1	26	0	25
+coupling.class-rank	producer	?		18	56	0	2	1	26	0	26
 coupling.distance	producer	?		8	29	2	2	2	30	0	27
 coupling.instability	producer	?		12	29	2	3	8	46	0	8
 design.data-class	producer	?		13	13	1	2	10	32	0	3
@@ -170,7 +170,7 @@ security.hardcoded-credentials	producer	?		4	9	0	0	0	15	0	1
 security.sensitive-parameter	producer	?		3	5	0	0	0	13	0	1
 security.sql-injection	producer	?		3	6	0	0	0	13	0	1
 security.xss	producer	?		4	17	0	0	0	13	0	1
-size.class-count	producer	?		9	27	2	1	5	24	0	3
+size.class-count	producer	?		9	27	2	1	5	24	0	4
 size.method-count	producer	?		9	60	2	2	0	46	0	3
 size.property-count	producer	?		9	7	2	2	0	22	0	3
 #
