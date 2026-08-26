@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
-use Qualimetrix\Core\Symbol\SymbolType;
 use WeakMap;
 
 /**
@@ -39,7 +39,7 @@ use WeakMap;
  * throws, because memoising its emptiness would silence both verdicts for the
  * whole run.
  *
- * @qmx-threshold coupling.instability warning=0.82 -- Ca=2, raw Ce=8 (I=0.80): AnalysisContext, ArchitecturePolicy, ArchitectureConfiguration, LayerMatch, LayerShadowing, SymbolType, WeakMap and the LayerEvidence it constructs are each read to answer one of the two verdicts this collector shares between them; none can be dropped without duplicating the walk it exists to share. Raw Ce=8 gets one-edge headroom: at Ce=9, I=0.818, still under 0.82; at Ce=10, I=0.833, over it.
+ * @qmx-threshold coupling.instability warning=0.82 -- Ca=2, raw Ce=8 (I=0.80): AnalysisContext, ArchitecturePolicy, ArchitectureConfiguration, LayerMatch, LayerShadowing, SymbolLevel, WeakMap and the LayerEvidence it constructs are each read to answer one of the two verdicts this collector shares between them; none can be dropped without duplicating the walk it exists to share. Raw Ce=8 gets one-edge headroom: at Ce=9, I=0.818, still under 0.82; at Ce=10, I=0.833, over it.
  */
 final class LayerEvidenceCollector
 {
@@ -178,7 +178,7 @@ final class LayerEvidenceCollector
     }
 
     /**
-     * Walks `metrics->all(SymbolType::Class_)` once and collects four local
+     * Walks `metrics->all(SymbolLevel::Class_)` once and collects four local
      * structures:
      *
      * 1. `assignedHits` — per-layer count of classes that ended up in that
@@ -205,7 +205,7 @@ final class LayerEvidenceCollector
      *    saw, the denominator `architecture.unassigned-class` reports its
      *    percentage against.
      *
-     * `metrics->all(SymbolType::Class_)` enumerates what the collectors
+     * `metrics->all(SymbolLevel::Class_)` enumerates what the collectors
      * recorded, and class scope opens on every `ClassLike` — interfaces,
      * traits and enums included. The blind spot is therefore a declaration no
      * collector recorded any class-level metric for: it is absent here and
@@ -232,7 +232,7 @@ final class LayerEvidenceCollector
         $uncoveredClasses = [];
         $analysedDeclarations = 0;
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classSymbol) {
+        foreach ($context->metrics->all(SymbolLevel::Class_) as $classSymbol) {
             $analysedDeclarations++;
             $matches = $registry->resolveAll($classSymbol->symbolPath);
             if ($matches === []) {
@@ -274,7 +274,7 @@ final class LayerEvidenceCollector
      * either end of an edge.
      *
      * The hit map exists because {@see collectClassEvidence()} only walks
-     * `metrics->all(SymbolType::Class_)` — classes in the analysed path set.
+     * `metrics->all(SymbolLevel::Class_)` — classes in the analysed path set.
      * A layer that matches exclusively outside that set (e.g. a vendor
      * namespace such as `ClickHouseDB\**`, reachable only as a dependency
      * TARGET) would otherwise always show zero hits and be reported

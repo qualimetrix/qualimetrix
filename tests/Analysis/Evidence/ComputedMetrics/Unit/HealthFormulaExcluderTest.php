@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 
 #[CoversClass(HealthFormulaExcluder::class)]
 final class HealthFormulaExcluderTest extends TestCase
@@ -210,13 +210,13 @@ final class HealthFormulaExcluderTest extends TestCase
                 name: 'health.a',
                 formulas: ['class' => 'clamp(100, 0, 100)'],
                 description: 'a',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
             ),
             new ComputedMetricDefinition(
                 name: 'health.overall',
                 formulas: ['class' => 'min(health__a, 50)'], // non-canonical
                 description: 'overall',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
                 inverted: true,
                 warningThreshold: 50.0,
                 errorThreshold: 30.0,
@@ -262,7 +262,7 @@ final class HealthFormulaExcluderTest extends TestCase
                 name: $name,
                 formulas: ['class' => 'clamp(100, 0, 100)'],
                 description: $name . ' description',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
                 inverted: true,
             );
         }
@@ -279,7 +279,7 @@ final class HealthFormulaExcluderTest extends TestCase
             name: 'health.overall',
             formulas: ['class' => $overallFormula],
             description: 'Overall health score (0-100, higher is better)',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 30.0,

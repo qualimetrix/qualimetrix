@@ -1,8 +1,1 @@
 old	new	reason
-computed.health#health.complexity	health.complexity#health.complexity	Ш5d gave the built-in dimension its own producer
-computed.health#health.cohesion	health.cohesion#health.cohesion	Ш5d gave the built-in dimension its own producer
-computed.health#health.coupling	health.coupling#health.coupling	Ш5d gave the built-in dimension its own producer
-computed.health#health.typing	health.typing#health.typing	Ш5d gave the built-in dimension its own producer
-computed.health#health.maintainability	health.maintainability#health.maintainability	Ш5d gave the built-in dimension its own producer
-computed.health#health.overall	health.overall#health.overall	Ш5d gave the built-in dimension its own producer
-computed.health#computed.branch_load	computed#computed.branch_load	Ш5d moved the open user-defined family onto the producer "computed"

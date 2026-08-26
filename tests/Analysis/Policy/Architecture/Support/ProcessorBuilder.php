@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
@@ -17,7 +18,6 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 /**
@@ -77,7 +77,7 @@ final class ProcessorBuilder
 
         /** @var list<SymbolPath> $paths */
         $paths = [];
-        foreach ($repository->all(SymbolType::Class_) as $symbol) {
+        foreach ($repository->all(SymbolLevel::Class_) as $symbol) {
             $paths[] = $symbol->symbolPath;
         }
 

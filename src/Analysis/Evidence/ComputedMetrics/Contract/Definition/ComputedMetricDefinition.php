@@ -7,14 +7,12 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 final readonly class ComputedMetricDefinition
 {
     /**
      * @param array<string, string> $formulas Keys: 'class', 'namespace', 'project'
-     * @param list<SymbolType> $levels
+     * @param list<SymbolLevel> $levels
      */
     public function __construct(
         public string $name,
@@ -50,12 +48,12 @@ final readonly class ComputedMetricDefinition
      * Project inherits from namespace if not explicitly set.
      * Class must have explicit formula.
      */
-    public function getFormulaForLevel(SymbolType $level): ?string
+    public function getFormulaForLevel(SymbolLevel $level): ?string
     {
+        // A formula key is the level word itself; the levels this capability
+        // has no formula for are the ones it does not report at.
         $key = match ($level) {
-            SymbolType::Class_ => 'class',
-            SymbolType::Namespace_ => 'namespace',
-            SymbolType::Project => 'project',
+            SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project => $level->value,
             default => null,
         };
 
@@ -69,8 +67,8 @@ final readonly class ComputedMetricDefinition
         }
 
         // Project inherits from namespace
-        if ($key === 'project' && isset($this->formulas['namespace'])) {
-            return $this->formulas['namespace'];
+        if ($level === SymbolLevel::Project && isset($this->formulas[SymbolLevel::Namespace_->value])) {
+            return $this->formulas[SymbolLevel::Namespace_->value];
         }
 
         return null;
@@ -79,18 +77,18 @@ final readonly class ComputedMetricDefinition
     /**
      * The levels this metric reports at.
      *
-     * `$levels` names the declaration kinds the rule enumerates subjects
-     * over; a consumer asking what the metric *reports* at should not have
-     * to know that and re-derive the projection itself.
+     * Kept as an operation rather than left to the property so that the
+     * question a consumer asks — what does this metric report at? — has one
+     * answer regardless of how the definition happens to store it.
      *
      * @return list<SymbolLevel>
      */
     public function reportingLevels(): array
     {
-        return array_map(SymbolLevelProjection::ofDeclaration(...), $this->levels);
+        return $this->levels;
     }
 
-    public function hasLevel(SymbolType $level): bool
+    public function hasLevel(SymbolLevel $level): bool
     {
         return \in_array($level, $this->levels, true);
     }
@@ -111,7 +109,7 @@ final readonly class ComputedMetricDefinition
      */
     private function validateLevels(): void
     {
-        $values = array_map(static fn(SymbolType $level): string => $level->value, $this->levels);
+        $values = array_map(static fn(SymbolLevel $level): string => $level->value, $this->levels);
 
         if (\count(array_unique($values)) !== \count($values)) {
             throw new InvalidArgumentException(

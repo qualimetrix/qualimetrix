@@ -93,7 +93,7 @@ final class NamespaceMetricContributions
     ): array {
         $map = [];
 
-        foreach ($repository->all(SymbolType::File) as $fileInfo) {
+        foreach ($repository->all(SymbolLevel::File) as $fileInfo) {
             if ($fileInfo->file === null) {
                 continue;
             }

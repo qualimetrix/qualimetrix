@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 final class NamespaceToProjectAggregator implements AggregationPhaseInterface
 {
@@ -49,7 +48,7 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
             return;
         }
 
-        $allFileSymbols = array_values(iterator_to_array($repository->all(SymbolType::File)));
+        $allFileSymbols = array_values(iterator_to_array($repository->all(SymbolLevel::File)));
         $profiler->stop('aggregation.to_project.collect_symbols');
 
         $profiler->start('aggregation.to_project.process', 'aggregation');

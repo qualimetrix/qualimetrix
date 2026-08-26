@@ -1,6 +1,6 @@
 {
     "id": "complexity",
-    "description": "Branch-heavy methods and a class with disjoint method groups, with complexity, WMC, maintainability and cohesion thresholds floored.",
+    "description": "Branch-heavy methods, a branch-heavy global function and a class with disjoint method groups, with complexity, WMC, maintainability and cohesion thresholds floored.",
     "paths": [
         "src"
     ],

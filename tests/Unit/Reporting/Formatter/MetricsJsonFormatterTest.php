@@ -9,10 +9,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Formatter\MetricsJsonFormatter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -76,11 +76,11 @@ final class MetricsJsonFormatterTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(static function (SymbolType $type) use ($classPath, $methodPath): array {
-                if ($type === SymbolType::Class_) {
+            ->willReturnCallback(static function (SymbolLevel $level) use ($classPath, $methodPath): array {
+                if ($level === SymbolLevel::Class_) {
                     return [new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 10)];
                 }
-                if ($type === SymbolType::Method) {
+                if ($level === SymbolLevel::Callable) {
                     return [new SymbolInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 42)];
                 }
 
@@ -130,6 +130,72 @@ final class MetricsJsonFormatterTest extends TestCase
         self::assertSame(3, $methodSymbol['metrics']['parameterCount']);
     }
 
+    /**
+     * Losing this: the export publishes the level word instead of the
+     * declaration kind, or lets the repository's callable order decide where
+     * a global function lands among the methods.
+     */
+    #[Test]
+    public function itPublishesTheDeclarationKindAndKeepsTheBucketOrder(): void
+    {
+        $filePath = SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php'));
+        $projectPath = SymbolPath::forProject();
+        $namespacePath = SymbolPath::forNamespace('App\\Service');
+        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+        $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'calculate');
+        $functionPath = SymbolPath::forGlobalFunction('App\\Service', 'helper');
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(static function (SymbolLevel $level) use (
+                $filePath,
+                $projectPath,
+                $namespacePath,
+                $classPath,
+                $methodPath,
+                $functionPath,
+            ): array {
+                $file = RelativePath::fromString('src/Service/UserService.php');
+
+                return match ($level) {
+                    SymbolLevel::File => [new SymbolInfo($filePath, $file, 1)],
+                    SymbolLevel::Project => [new SymbolInfo($projectPath, null, null)],
+                    SymbolLevel::Namespace_ => [new SymbolInfo($namespacePath, null, null)],
+                    SymbolLevel::Class_ => [new SymbolInfo($classPath, $file, 10)],
+                    // The function first: one enumeration holds both kinds, and
+                    // the published order must not follow this one.
+                    SymbolLevel::Callable => [
+                        new SymbolInfo($functionPath, $file, 80),
+                        new SymbolInfo($methodPath, $file, 42),
+                    ],
+                };
+            });
+
+        // Every symbol must carry a metric: one with an empty bag is skipped
+        // outright, so a fixture without metrics passes under any ordering.
+        $repository->method('get')->willReturn(MetricBag::fromArray(['ccn' => 1]));
+
+        $report = new Report(
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.1,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $repository,
+        );
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(
+            ['file', 'project', 'namespace', 'class', 'method', 'function'],
+            array_column($data['symbols'], 'type'),
+        );
+        self::assertSame('App\\Service\\UserService::calculate', $data['symbols'][4]['name']);
+        self::assertSame('App\\Service\\helper', $data['symbols'][5]['name']);
+    }
+
     #[Test]
     public function itSkipsEmptyMetrics(): void
     {
@@ -137,8 +203,8 @@ final class MetricsJsonFormatterTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(static function (SymbolType $type) use ($classPath): array {
-                if ($type === SymbolType::Class_) {
+            ->willReturnCallback(static function (SymbolLevel $level) use ($classPath): array {
+                if ($level === SymbolLevel::Class_) {
                     return [new SymbolInfo($classPath, RelativePath::fromString('src/Empty.php'), 1)];
                 }
 
@@ -171,8 +237,8 @@ final class MetricsJsonFormatterTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(static function (SymbolType $type) use ($classPath): array {
-                if ($type === SymbolType::Class_) {
+            ->willReturnCallback(static function (SymbolLevel $level) use ($classPath): array {
+                if ($level === SymbolLevel::Class_) {
                     return [new SymbolInfo($classPath, RelativePath::fromString('src/Test.php'), 1)];
                 }
 
@@ -221,8 +287,8 @@ final class MetricsJsonFormatterTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(static function (SymbolType $type) use ($filePath): array {
-                if ($type === SymbolType::File) {
+            ->willReturnCallback(static function (SymbolLevel $level) use ($filePath): array {
+                if ($level === SymbolLevel::File) {
                     return [new SymbolInfo($filePath, RelativePath::fromString('src/Service/UserService.php'), 1)];
                 }
 

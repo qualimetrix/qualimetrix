@@ -54,11 +54,13 @@ final readonly class ComplexityOptions implements HierarchicalRuleOptionsInterfa
         }
 
         // Handle hierarchical format: {callable: {...}, class: {...}}
-        $callableConfig = isset($config['callable']) && \is_array($config['callable'])
-            ? $config['callable']
+        $callableKey = SymbolLevel::Callable->value;
+        $classKey = SymbolLevel::Class_->value;
+        $callableConfig = isset($config[$callableKey]) && \is_array($config[$callableKey])
+            ? $config[$callableKey]
             : [];
-        $classConfig = isset($config['class']) && \is_array($config['class'])
-            ? $config['class']
+        $classConfig = isset($config[$classKey]) && \is_array($config[$classKey])
+            ? $config[$classKey]
             : [];
 
         return new self(

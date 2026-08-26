@@ -17,7 +17,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolInfo;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Detects hardcoded credentials in PHP code.
@@ -75,7 +74,7 @@ final class HardcodedCredentialsRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
+        foreach ($context->metrics->all(SymbolLevel::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
             $entries = $metrics->entries(MetricName::SECURITY_HARDCODED_CREDENTIALS);
 

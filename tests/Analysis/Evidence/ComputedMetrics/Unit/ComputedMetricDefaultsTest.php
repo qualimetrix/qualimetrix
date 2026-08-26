@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 
 #[CoversClass(ComputedMetricDefaults::class)]
 final class ComputedMetricDefaultsTest extends TestCase
@@ -49,15 +49,15 @@ final class ComputedMetricDefaultsTest extends TestCase
 
         foreach ($defaults as $name => $definition) {
             self::assertTrue(
-                $definition->hasLevel(SymbolType::Class_),
+                $definition->hasLevel(SymbolLevel::Class_),
                 \sprintf('Expected "%s" to have Class_ level', $name),
             );
             self::assertTrue(
-                $definition->hasLevel(SymbolType::Namespace_),
+                $definition->hasLevel(SymbolLevel::Namespace_),
                 \sprintf('Expected "%s" to have Namespace_ level', $name),
             );
             self::assertTrue(
-                $definition->hasLevel(SymbolType::Project),
+                $definition->hasLevel(SymbolLevel::Project),
                 \sprintf('Expected "%s" to have Project level', $name),
             );
         }
@@ -70,11 +70,11 @@ final class ComputedMetricDefaultsTest extends TestCase
 
         foreach ($defaults as $name => $definition) {
             self::assertNotNull(
-                $definition->getFormulaForLevel(SymbolType::Class_),
+                $definition->getFormulaForLevel(SymbolLevel::Class_),
                 \sprintf('Expected "%s" to have a class formula', $name),
             );
             self::assertNotNull(
-                $definition->getFormulaForLevel(SymbolType::Namespace_),
+                $definition->getFormulaForLevel(SymbolLevel::Namespace_),
                 \sprintf('Expected "%s" to have a namespace formula', $name),
             );
         }
@@ -91,8 +91,8 @@ final class ComputedMetricDefaultsTest extends TestCase
         foreach ($inheriting as $name) {
             $definition = $defaults[$name];
             self::assertSame(
-                $definition->getFormulaForLevel(SymbolType::Namespace_),
-                $definition->getFormulaForLevel(SymbolType::Project),
+                $definition->getFormulaForLevel(SymbolLevel::Namespace_),
+                $definition->getFormulaForLevel(SymbolLevel::Project),
                 \sprintf('Expected "%s" project formula to inherit from namespace', $name),
             );
         }
@@ -109,8 +109,8 @@ final class ComputedMetricDefaultsTest extends TestCase
         foreach ($explicit as $name) {
             $definition = $defaults[$name];
             self::assertNotSame(
-                $definition->getFormulaForLevel(SymbolType::Namespace_),
-                $definition->getFormulaForLevel(SymbolType::Project),
+                $definition->getFormulaForLevel(SymbolLevel::Namespace_),
+                $definition->getFormulaForLevel(SymbolLevel::Project),
                 \sprintf('Expected "%s" to have an explicit project formula different from namespace', $name),
             );
         }

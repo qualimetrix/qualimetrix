@@ -1052,7 +1052,7 @@ final class SummaryFormatterTest extends TestCase
                 : new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(),
         );
         $metrics->method('all')->willReturnCallback(
-            static fn(\Qualimetrix\Core\Symbol\SymbolType $type): array => $type === \Qualimetrix\Core\Symbol\SymbolType::Namespace_
+            static fn(\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $type): array => $type === \Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel::Namespace_
                 ? [new \Qualimetrix\Core\Symbol\SymbolInfo($nsPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service'), 0)]
                 : [],
         );
@@ -1110,7 +1110,7 @@ final class SummaryFormatterTest extends TestCase
             },
         );
         $metrics->method('all')->willReturnCallback(
-            static fn(\Qualimetrix\Core\Symbol\SymbolType $type): array => $type === \Qualimetrix\Core\Symbol\SymbolType::Class_
+            static fn(\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $type): array => $type === \Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel::Class_
                 ? [new \Qualimetrix\Core\Symbol\SymbolInfo($classPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), 1)]
                 : [],
         );

@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
@@ -18,7 +19,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode;
 use Qualimetrix\Reporting\FormatterContext;
@@ -584,14 +584,14 @@ final class HtmlTreeBuilderTest extends TestCase
                 name: 'health.overall',
                 formulas: ['class' => '100'],
                 description: 'Overall health score',
-                levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
+                levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
                 inverted: false,
             ),
             new ComputedMetricDefinition(
                 name: 'computed.custom',
                 formulas: ['class' => '50'],
                 description: 'Custom metric',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
             ),
         ];
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+
 /**
  * Explicit, hand-maintained catalog of `threshold` vs. `warning`/`error` key
  * groups for every rule that uses {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser}.
@@ -139,18 +141,18 @@ final class RuleThresholdKeyGroupRegistry
         // it at all and fall through as unknown options.
         'complexity.cyclomatic' => [
             '' => [self::LEGACY_FLAT_ALIAS_PAIR],
-            'callable' => [self::BARE_PAIR],
-            'class' => [self::MAX_PREFIXED_PAIR],
+            SymbolLevel::Callable->value => [self::BARE_PAIR],
+            SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
         ],
         'complexity.cognitive' => [
             '' => [self::LEGACY_FLAT_ALIAS_PAIR],
-            'callable' => [self::BARE_PAIR],
-            'class' => [self::MAX_PREFIXED_PAIR],
+            SymbolLevel::Callable->value => [self::BARE_PAIR],
+            SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
         ],
         'complexity.npath' => [
             '' => [self::LEGACY_FLAT_ALIAS_PAIR],
-            'callable' => [self::BARE_PAIR],
-            'class' => [self::MAX_PREFIXED_PAIR],
+            SymbolLevel::Callable->value => [self::BARE_PAIR],
+            SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
         ],
 
         // coupling.cbo (CboOptions: hierarchical class/namespace, bare keys).
@@ -162,8 +164,8 @@ final class RuleThresholdKeyGroupRegistry
         // branch, this one does NOT disable a level).
         'coupling.cbo' => [
             '' => [self::BARE_PAIR],
-            'class' => [self::BARE_PAIR],
-            'namespace' => [self::BARE_PAIR],
+            SymbolLevel::Class_->value => [self::BARE_PAIR],
+            SymbolLevel::Namespace_->value => [self::BARE_PAIR],
         ],
 
         // coupling.instability (InstabilityOptions: hierarchical
@@ -172,8 +174,8 @@ final class RuleThresholdKeyGroupRegistry
         // uniformly to both levels.
         'coupling.instability' => [
             '' => [self::MAX_PREFIXED_PAIR],
-            'class' => [self::MAX_PREFIXED_PAIR],
-            'namespace' => [self::MAX_PREFIXED_PAIR],
+            SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
+            SymbolLevel::Namespace_->value => [self::MAX_PREFIXED_PAIR],
         ],
 
         // coupling.distance (DistanceOptions) — flat, max_distance_* graduated

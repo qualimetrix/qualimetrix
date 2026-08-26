@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
@@ -17,8 +18,8 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(InMemoryMetricRepository::class)]
 final class InMemoryMetricRepositoryTest extends TestCase
@@ -106,7 +107,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         // Graph-phase merge with no file context (CouplingCollector pattern).
         $repository->add($symbol, (new MetricBag())->with('cbo', 3), null, 0);
 
-        $symbols = iterator_to_array($repository->all(SymbolType::Class_), false);
+        $symbols = iterator_to_array($repository->all(SymbolLevel::Class_), false);
 
         self::assertCount(1, $symbols);
         self::assertNotNull($symbols[0]->file);
@@ -119,7 +120,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
     }
 
     #[Test]
-    public function itIteratesOverMethods(): void
+    public function itIteratesOverCallables(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -131,9 +132,41 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $this->addCallable($repository, $method2, new MetricBag(), RelativePath::fromString('test.php'), 200);
         $repository->add($class, new MetricBag(), RelativePath::fromString('test.php'), 1);
 
-        $methods = iterator_to_array($repository->all(SymbolType::Method), false);
+        $callables = iterator_to_array($repository->all(SymbolLevel::Callable), false);
 
-        self::assertCount(2, $methods);
+        self::assertCount(2, $callables);
+    }
+
+    /**
+     * Losing this: the callable level query and `allCallables()` become two
+     * spellings of one enumeration that are free to drift apart.
+     */
+    #[Test]
+    public function itAnswersTheCallableLevelWithExactlyTheCallableEnumeration(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        $method = SymbolPath::forMethod('App', 'Service', 'method');
+        $function = SymbolPath::forGlobalFunction('App', 'helper');
+        $class = SymbolPath::forClass('App', 'Service');
+        $namespace = SymbolPath::forNamespace('App');
+
+        $this->addCallable($repository, $method, new MetricBag(), RelativePath::fromString('test.php'), 100);
+        $this->addCallable($repository, $function, new MetricBag(), RelativePath::fromString('helpers.php'), 10);
+        $repository->add($class, new MetricBag(), RelativePath::fromString('test.php'), 1);
+        $repository->add($namespace, new MetricBag(), RelativePath::fromString('test.php'), 0);
+
+        $byLevel = array_map(
+            static fn(SymbolInfo $info): string => $info->symbolPath->toCanonical(),
+            iterator_to_array($repository->all(SymbolLevel::Callable), false),
+        );
+        $byAccessor = array_map(
+            static fn(SymbolInfo $info): string => $info->symbolPath->toCanonical(),
+            iterator_to_array($repository->allCallables(), false),
+        );
+
+        self::assertSame($byAccessor, $byLevel);
+        self::assertCount(2, $byLevel);
     }
 
     #[Test]
@@ -149,7 +182,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $repository->add($class1, new MetricBag(), RelativePath::fromString('test.php'), 1);
         $repository->add($class2, new MetricBag(), RelativePath::fromString('test2.php'), 1);
 
-        $classes = iterator_to_array($repository->all(SymbolType::Class_), false);
+        $classes = iterator_to_array($repository->all(SymbolLevel::Class_), false);
 
         self::assertCount(2, $classes);
     }
@@ -171,7 +204,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
 
         $repository->add($class, new MetricBag(), RelativePath::fromString('test.php'), 1);
 
-        $namespaces = iterator_to_array($repository->all(SymbolType::Namespace_), false);
+        $namespaces = iterator_to_array($repository->all(SymbolLevel::Namespace_), false);
 
         self::assertCount(2, $namespaces);
     }
@@ -340,7 +373,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         // Second add with real line number
         $repository->add($symbol, (new MetricBag())->with('loc', 100), RelativePath::fromString('src/Service/UserService.php'), 42);
 
-        $infos = iterator_to_array($repository->all(SymbolType::Class_), false);
+        $infos = iterator_to_array($repository->all(SymbolLevel::Class_), false);
         $info = $infos[0];
 
         self::assertSame(42, $info->line);
@@ -358,7 +391,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         // Second add with line=0 should NOT overwrite
         $repository->add($symbol, (new MetricBag())->with('wmc', 10), RelativePath::fromString('src/Service/UserService.php'), 0);
 
-        $infos = iterator_to_array($repository->all(SymbolType::Class_), false);
+        $infos = iterator_to_array($repository->all(SymbolLevel::Class_), false);
         $info = $infos[0];
 
         self::assertSame(42, $info->line);
@@ -380,7 +413,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
 
         $merged = $repo1->mergeWith($repo2);
 
-        $infos = iterator_to_array($merged->all(SymbolType::Class_), false);
+        $infos = iterator_to_array($merged->all(SymbolLevel::Class_), false);
         $info = $infos[0];
 
         self::assertSame(42, $info->line);
@@ -655,7 +688,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         self::assertSame(20, $fileMetrics->get('loc'));
         self::assertSame($fileMetrics->all(), $repository->getSubject($fileSubject)->all());
         self::assertSame($fileMetrics->entries('source'), $repository->getSubject($fileSubject)->entries('source'));
-        self::assertCount(1, iterator_to_array($repository->all(SymbolType::File), false));
+        self::assertCount(1, iterator_to_array($repository->all(SymbolLevel::File), false));
 
         $namespacePath = SymbolPath::forNamespace('App');
         $namespaceSubject = MetricSubject::aggregate($namespacePath);
@@ -666,7 +699,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         self::assertSame($repository->get($namespacePath)->all(), $repository->getSubject($namespaceSubject)->all());
         self::assertSame(['App'], $repository->getNamespaces());
         self::assertCount(1, $repository->forNamespace('App'));
-        self::assertCount(1, iterator_to_array($repository->all(SymbolType::Namespace_), false));
+        self::assertCount(1, iterator_to_array($repository->all(SymbolLevel::Namespace_), false));
 
         $projectPath = SymbolPath::forProject();
         $projectSubject = MetricSubject::aggregate($projectPath);
@@ -675,7 +708,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         self::assertTrue($repository->has($projectPath));
         self::assertSame(20, $repository->get($projectPath)->get('loc.sum'));
         self::assertSame($repository->get($projectPath)->all(), $repository->getSubject($projectSubject)->all());
-        self::assertCount(1, iterator_to_array($repository->all(SymbolType::Project), false));
+        self::assertCount(1, iterator_to_array($repository->all(SymbolLevel::Project), false));
     }
 
     #[Test]
@@ -695,9 +728,9 @@ final class InMemoryMetricRepositoryTest extends TestCase
             self::assertSame($repository->get($path)->all(), $repository->getSubject($subject)->all());
         }
 
-        self::assertCount(1, iterator_to_array($repository->all(SymbolType::File), false));
-        self::assertCount(1, iterator_to_array($repository->all(SymbolType::Namespace_), false));
-        self::assertCount(1, iterator_to_array($repository->all(SymbolType::Project), false));
+        self::assertCount(1, iterator_to_array($repository->all(SymbolLevel::File), false));
+        self::assertCount(1, iterator_to_array($repository->all(SymbolLevel::Namespace_), false));
+        self::assertCount(1, iterator_to_array($repository->all(SymbolLevel::Project), false));
         self::assertSame(['App'], $repository->getNamespaces());
         self::assertCount(1, $repository->forNamespace('App'));
     }
@@ -756,7 +789,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             self::assertSame($entries, $public->entries('source'));
             self::assertSame($public->entries('source'), $typedMetrics->entries('source'));
             self::assertCount(1, $repository->forNamespace('App'));
-            self::assertCount(1, iterator_to_array($repository->all(SymbolType::Namespace_), false));
+            self::assertCount(1, iterator_to_array($repository->all(SymbolLevel::Namespace_), false));
             self::assertSame($expectedFile, $repository->forNamespace('App')[0]->file);
             self::assertSame(13, $repository->forNamespace('App')[0]->line);
         }

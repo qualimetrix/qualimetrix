@@ -22,7 +22,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(InstabilityRule::class)]
 #[CoversClass(InstabilityOptions::class)]
@@ -608,9 +607,9 @@ final class InstabilityRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => match ($type) {
-                SymbolType::Class_ => [$classInfo],
-                SymbolType::Namespace_ => [$nsInfo],
+            ->willReturnCallback(fn(SymbolLevel $level) => match ($level) {
+                SymbolLevel::Class_ => [$classInfo],
+                SymbolLevel::Namespace_ => [$nsInfo],
                 default => [],
             });
         $repository->method('allDeclarations')->willReturn([$classInfo]);

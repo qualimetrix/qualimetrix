@@ -190,7 +190,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         }
         $findings = [];
 
-        foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
+        foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
             $finding = $this->namespaceFinding($nsInfo, $context, $this->options->namespace);
             if ($finding !== null) {
                 $findings[] = $finding;

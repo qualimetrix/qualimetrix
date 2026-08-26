@@ -34,7 +34,6 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
@@ -289,7 +288,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
             name: self::METRIC,
             formulas: ['class' => '1'],
             description: 'debt ratio',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
         );

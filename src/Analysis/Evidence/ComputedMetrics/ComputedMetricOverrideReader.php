@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * One entry of the `computed_metrics` YAML section, read into a definition.
@@ -28,6 +27,22 @@ use Qualimetrix\Core\Symbol\SymbolType;
  */
 final class ComputedMetricOverrideReader
 {
+    /**
+     * The levels a computed metric reports at, named once for both readers of
+     * the fact: the `formula:` shorthand writes one key per level here, and
+     * {@see mapLevel()} refuses every other level word against the same list.
+     *
+     * Three named cases rather than {@see SymbolLevel::cases()}: the set is a
+     * fact about this capability — {@see ComputedMetricDefinition}'s
+     * `formulas` and {@see ComputedMetricDefaults} have no `callable` or
+     * `file` entry — and iterating the vocabulary would silently widen both
+     * the accepted `levels:` domain and the keys the shorthand writes from
+     * three to five.
+     *
+     * @var list<SymbolLevel>
+     */
+    private const array REPORTING_LEVELS = [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project];
+
     /**
      * Merges user overrides into an existing definition.
      *
@@ -67,7 +82,7 @@ final class ComputedMetricOverrideReader
             name: $name,
             formulas: self::formulas($config, []),
             description: self::description($config, ''),
-            levels: self::levels($config, [SymbolType::Namespace_, SymbolType::Project]),
+            levels: self::levels($config, [SymbolLevel::Namespace_, SymbolLevel::Project]),
             inverted: self::inverted($config) ?? false,
             warningThreshold: $thresholds['warningThreshold'],
             errorThreshold: $thresholds['errorThreshold'],
@@ -89,8 +104,8 @@ final class ComputedMetricOverrideReader
         // like health.coupling's project formula). If the user wants to override
         // only specific levels, they should use 'formulas' (plural) instead.
         if (isset($config['formula']) && \is_string($config['formula'])) {
-            foreach (['class', 'namespace', 'project'] as $levelKey) {
-                $formulas[$levelKey] = $config['formula'];
+            foreach (self::REPORTING_LEVELS as $level) {
+                $formulas[$level->value] = $config['formula'];
             }
         }
 
@@ -110,9 +125,9 @@ final class ComputedMetricOverrideReader
 
     /**
      * @param array<string, mixed> $config
-     * @param list<SymbolType> $defaults
+     * @param list<SymbolLevel> $defaults
      *
-     * @return list<SymbolType>
+     * @return list<SymbolLevel>
      */
     private static function levels(array $config, array $defaults): array
     {
@@ -170,28 +185,37 @@ final class ComputedMetricOverrideReader
     /**
      * `computed_metrics.*.levels` entries are spelled from the same level
      * vocabulary as everywhere else ({@see SymbolLevel}), not from a private
-     * word list of this capability's own. A computed metric reports at
-     * class/namespace/project only — {@see ComputedMetricDefinition}'s
-     * `formulas` keys and {@see ComputedMetricDefaults} have no `callable` or
-     * `file` entry — so `callable` and `file` are recognised as real level
-     * words and refused here for being levels this capability does not
-     * report at, rather than falling through to the generic "not a level at
-     * all" message a stray word gets.
+     * word list of this capability's own. `callable` and `file` are therefore
+     * recognised as real level words and refused here for being outside
+     * {@see REPORTING_LEVELS}, rather than falling through to the generic
+     * "not a level at all" message a stray word gets.
      */
-    private static function mapLevel(string $level): SymbolType
+    private static function mapLevel(string $level): SymbolLevel
     {
         $symbolLevel = SymbolLevel::tryFrom($level)
             ?? throw new ComputedMetricConfigurationException(\sprintf('Invalid computed metric level: "%s"', $level));
 
-        return match ($symbolLevel) {
-            SymbolLevel::Class_ => SymbolType::Class_,
-            SymbolLevel::Namespace_ => SymbolType::Namespace_,
-            SymbolLevel::Project => SymbolType::Project,
-            SymbolLevel::Callable, SymbolLevel::File => throw new ComputedMetricConfigurationException(\sprintf(
-                'Computed metric level "%s" is not supported; computed metrics report at "class", "namespace" or "project" only.',
+        if (!\in_array($symbolLevel, self::REPORTING_LEVELS, true)) {
+            throw new ComputedMetricConfigurationException(\sprintf(
+                'Computed metric level "%s" is not supported; computed metrics report at %s only.',
                 $level,
-            )),
-        };
+                self::reportingLevelWords(),
+            ));
+        }
+
+        return $symbolLevel;
+    }
+
+    /** Renders {@see REPORTING_LEVELS} the way the refusal message names them. */
+    private static function reportingLevelWords(): string
+    {
+        $words = array_map(
+            static fn(SymbolLevel $level): string => \sprintf('"%s"', $level->value),
+            self::REPORTING_LEVELS,
+        );
+        $last = array_pop($words);
+
+        return implode(', ', $words) . ' or ' . $last;
     }
 
     /**

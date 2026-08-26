@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Prioritization\Impact;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -39,7 +40,7 @@ final readonly class ClassRankResolver
 
         $tree = $tree ?? new NamespaceTree($metrics->getNamespaces());
 
-        foreach ($metrics->all(SymbolType::Class_) as $symbolInfo) {
+        foreach ($metrics->all(SymbolLevel::Class_) as $symbolInfo) {
             if ($symbolInfo->symbolPath->type === null) {
                 continue;
             }

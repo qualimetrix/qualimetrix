@@ -21,7 +21,6 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(NamespaceMetricContributions::class)]
 final class NamespaceMetricContributionsTest extends TestCase
@@ -41,7 +40,7 @@ final class NamespaceMetricContributionsTest extends TestCase
             SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
             SymbolLevel::Project->value => [AggregationStrategy::Sum],
         ]);
-        $fileSymbols = array_values(iterator_to_array($repository->all(SymbolType::File)));
+        $fileSymbols = array_values(iterator_to_array($repository->all(SymbolLevel::File)));
         $namespaceSymbols = $repository->forNamespace('One');
 
         self::assertSame(
@@ -126,7 +125,7 @@ final class NamespaceMetricContributionsTest extends TestCase
         ], NamespaceMetricContributions::collectValues(
             $repository,
             $repository->forNamespace('One'),
-            array_values(iterator_to_array($repository->all(SymbolType::File))),
+            array_values(iterator_to_array($repository->all(SymbolLevel::File))),
             $definitions,
             SymbolLevel::Namespace_,
         ));

@@ -11,9 +11,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
@@ -96,7 +96,7 @@ final class HtmlTreeBuilder
 
     private function buildTree(Report $report, ?string $projectName = null): HtmlTreeNode
     {
-        $root = new HtmlTreeNode($projectName ?? '<project>', '', 'project');
+        $root = new HtmlTreeNode($projectName ?? '<project>', '', SymbolLevel::Project->value);
 
         if ($report->metrics === null) {
             return $root;
@@ -124,7 +124,7 @@ final class HtmlTreeBuilder
         $fileLoc = $this->buildFileLocIndex($metrics);
 
         // Add classes
-        foreach ($metrics->all(SymbolType::Class_) as $symbolInfo) {
+        foreach ($metrics->all(SymbolLevel::Class_) as $symbolInfo) {
             $symbolPath = $symbolInfo->symbolPath;
             $namespace = $symbolPath->namespace ?? '';
             $className = $symbolPath->type ?? '';
@@ -138,7 +138,7 @@ final class HtmlTreeBuilder
                 ? ($nodesByPath[$namespace] ?? $this->ensureNamespaceChain($root, $namespace, $nodesByPath, $metrics))
                 : $this->getNoNamespaceNode($root, $nodesByPath);
 
-            $classNode = new HtmlTreeNode($className, $symbolPath->toString(), 'class');
+            $classNode = new HtmlTreeNode($className, $symbolPath->toString(), SymbolLevel::Class_->value);
             $classBag = $metrics->get($symbolPath);
             $classNode->metrics = $this->filterMetrics($classBag->all());
 
@@ -182,7 +182,7 @@ final class HtmlTreeBuilder
             $currentPath = $currentPath === '' ? $part : $currentPath . '\\' . $part;
 
             if (!isset($nodesByPath[$currentPath])) {
-                $node = new HtmlTreeNode($part, $currentPath, 'namespace');
+                $node = new HtmlTreeNode($part, $currentPath, SymbolLevel::Namespace_->value);
 
                 // Attach namespace metrics if available
                 $nsPath = SymbolPath::forNamespace($currentPath);
@@ -212,7 +212,7 @@ final class HtmlTreeBuilder
             return $nodesByPath[self::NO_NAMESPACE_LABEL];
         }
 
-        $node = new HtmlTreeNode(self::NO_NAMESPACE_LABEL, self::NO_NAMESPACE_LABEL, 'namespace');
+        $node = new HtmlTreeNode(self::NO_NAMESPACE_LABEL, self::NO_NAMESPACE_LABEL, SymbolLevel::Namespace_->value);
         $root->children[] = $node;
         $nodesByPath[self::NO_NAMESPACE_LABEL] = $node;
 
@@ -228,7 +228,7 @@ final class HtmlTreeBuilder
     {
         $index = [];
 
-        foreach ($metrics->all(SymbolType::File) as $symbolInfo) {
+        foreach ($metrics->all(SymbolLevel::File) as $symbolInfo) {
             if ($symbolInfo->file === null) {
                 continue;
             }
@@ -305,7 +305,7 @@ final class HtmlTreeBuilder
     {
         $classCount = 0;
         foreach ($nodesByPath as $node) {
-            if ($node->type === 'class') {
+            if ($node->type === SymbolLevel::Class_->value) {
                 $classCount++;
             }
         }

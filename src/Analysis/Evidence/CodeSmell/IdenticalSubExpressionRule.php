@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Detects identical sub-expressions that indicate copy-paste errors or logic bugs.
@@ -98,7 +97,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
+        foreach ($context->metrics->all(SymbolLevel::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
 
             foreach (self::FINDING_TYPES as $type => $message) {

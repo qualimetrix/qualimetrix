@@ -23,7 +23,6 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
@@ -101,7 +100,7 @@ final class DistanceRule extends AbstractRule
         $totalNamespaces = 0;
         $analyzedNamespaces = 0;
 
-        foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
+        foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
             $result = $this->namespaceResult($nsInfo, $context);
             $totalNamespaces += (int) $result['present'];
             $analyzedNamespaces += (int) $result['projectMatched'];

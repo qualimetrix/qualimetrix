@@ -13,13 +13,13 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -57,7 +57,7 @@ final class RuleInputValidatorTest extends TestCase
                 name: 'health.complexity',
                 formulas: ['class' => 'ccn__avg'],
                 description: 'Complexity health',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
                 inverted: true,
             ),
         ]);
@@ -96,7 +96,7 @@ final class RuleInputValidatorTest extends TestCase
                 name: 'health.complexity',
                 formulas: ['class' => 'ccn__avg'],
                 description: 'Complexity health',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
                 inverted: true,
             ),
         ]);
@@ -134,7 +134,7 @@ final class RuleInputValidatorTest extends TestCase
         $rules = self::createStub(RuleRegistryInterface::class);
         $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
         $validator = $this->validator($rules);
-        $definitions = self::healthComplexityDefinitions(SymbolType::Class_, SymbolType::Namespace_);
+        $definitions = self::healthComplexityDefinitions(SymbolLevel::Class_, SymbolLevel::Namespace_);
 
         $accepted = new FindingConfiguration(
             new RuleOptionsDocument([
@@ -339,8 +339,8 @@ final class RuleInputValidatorTest extends TestCase
     }
 
     private static function healthComplexityDefinitions(
-        SymbolType $level = SymbolType::Class_,
-        SymbolType ...$moreLevels,
+        SymbolLevel $level = SymbolLevel::Class_,
+        SymbolLevel ...$moreLevels,
     ): ResolvedComputedMetricDefinitions {
         return new ResolvedComputedMetricDefinitions([
             new ComputedMetricDefinition(

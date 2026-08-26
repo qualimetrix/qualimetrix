@@ -69,7 +69,7 @@ final class ClassRankRule extends AbstractRule
         }
 
         // Collect all classes first — we need the count for threshold scaling
-        $classes = iterator_to_array($context->metrics->all(SymbolType::Class_), false);
+        $classes = iterator_to_array($context->metrics->all(SymbolLevel::Class_), false);
         $classCount = \count($classes);
 
         if ($classCount === 0) {

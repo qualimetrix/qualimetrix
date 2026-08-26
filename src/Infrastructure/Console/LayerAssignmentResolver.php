@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
@@ -15,7 +16,6 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use SplFileInfo;
 
 /** Resolves a debug layer assignment from the same collected project state as analysis. */
@@ -112,7 +112,7 @@ final readonly class LayerAssignmentResolver
     private function classPaths(MetricRepositoryInterface $repository): array
     {
         $classPaths = [];
-        foreach ($repository->all(SymbolType::Class_) as $classSymbol) {
+        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
             $classPaths[] = $classSymbol->symbolPath;
         }
 

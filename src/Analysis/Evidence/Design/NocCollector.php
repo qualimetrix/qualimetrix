@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Computes Number of Children (NOC) metric from dependency graph.
@@ -99,7 +98,7 @@ final class NocCollector implements GlobalContextCollectorInterface
 
         // Step 3: Ensure all classes have NOC (even if 0)
         // Iterate all classes from repository and set NOC=0 if not set
-        foreach ($repository->all(SymbolType::Class_) as $classSymbol) {
+        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
             if (!$repository->has($classSymbol->symbolPath)) {
                 continue;
             }

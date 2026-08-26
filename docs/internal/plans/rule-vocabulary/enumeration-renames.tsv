@@ -56,7 +56,7 @@ abstractness	metric-key	?		60	61	0	1	0	9	0	0
 ca	metric-key	?		42	78	0	0	0	2	0	0
 cbo	metric-key	?		48	74	0	0	0	10	0	0
 cbo_app	metric-key	?		8	13	0	0	0	13	0	0
-ccn	metric-key	?		50	320	0	0	0	3	0	0
+ccn	metric-key	?		50	321	0	0	0	3	0	0
 ce	metric-key	?		50	99	0	0	0	11	0	0
 ce_framework	metric-key	?		7	12	0	0	0	7	0	0
 ce_packages	metric-key	?		8	14	0	0	0	6	0	0
@@ -145,7 +145,7 @@ complexity.cognitive	producer	?		10	26	2	2	32	46	0	8
 complexity.cyclomatic	producer	?		37	618	2	2	56	120	0	9
 complexity.npath	producer	?		9	9	2	2	12	38	0	7
 complexity.wmc	producer	?		11	13	2	2	11	27	0	4
-computed	producer	?		81	81	0	1	0	23	0	46
+computed	producer	?		81	82	0	1	0	23	0	7
 coupling.cbo	producer	?		50	226	2	4	8	92	0	6
 coupling.class-rank	producer	?		18	56	0	2	1	26	0	25
 coupling.distance	producer	?		8	29	2	2	3	30	0	27
@@ -158,12 +158,12 @@ design.param-type-coverage	producer	?		5	25	2	1	1	24	0	4
 design.property-type-coverage	producer	?		5	7	2	1	1	22	0	5
 design.return-type-coverage	producer	?		5	10	2	1	0	22	0	5
 duplication.code-duplication	producer	?		14	53	0	2	12	35	0	4
-health.cohesion	producer	?		37	113	0	2	30	34	0	40
-health.complexity	producer	?		48	173	0	1	0	20	0	48
-health.coupling	producer	?		37	37	0	0	0	11	0	37
-health.maintainability	producer	?		15	27	0	0	0	12	0	48
-health.overall	producer	?		108	137	0	0	0	20	0	50
-health.typing	producer	?		19	49	0	1	1	15	0	50
+health.cohesion	producer	?		37	113	0	2	30	34	0	17
+health.complexity	producer	?		48	173	0	1	0	20	0	20
+health.coupling	producer	?		37	37	0	0	0	11	0	17
+health.maintainability	producer	?		15	27	0	0	0	12	0	17
+health.overall	producer	?		108	137	0	0	0	20	0	17
+health.typing	producer	?		19	49	0	1	1	15	0	17
 maintainability.index	producer	?		11	45	2	2	0	27	0	3
 security.command-injection	producer	?		3	5	0	0	0	13	0	1
 security.hardcoded-credentials	producer	?		4	9	0	0	0	15	0	1

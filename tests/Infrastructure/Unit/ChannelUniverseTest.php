@@ -19,7 +19,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Core\Observation\WorseDirection;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 
 /**
@@ -304,7 +303,7 @@ final class ChannelUniverseTest extends TestCase
     {
         $this->definitions = [$this->definitionWithLevels(
             'health.overall',
-            [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
+            [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
         )];
 
         $declaration = $this->universe()->declarationFor(
@@ -346,7 +345,7 @@ final class ChannelUniverseTest extends TestCase
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('declares the same level more than once');
 
-        $this->definitionWithLevels('computed.repeated', [SymbolType::Class_, SymbolType::Class_]);
+        $this->definitionWithLevels('computed.repeated', [SymbolLevel::Class_, SymbolLevel::Class_]);
     }
 
     /**
@@ -447,13 +446,13 @@ final class ChannelUniverseTest extends TestCase
             name: $name,
             formulas: ['class' => 'ccn__avg'],
             description: 'Fixture definition',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: $inverted,
         );
     }
 
     /**
-     * @param list<SymbolType> $levels
+     * @param list<SymbolLevel> $levels
      */
     private function definitionWithLevels(string $name, array $levels): ComputedMetricDefinition
     {

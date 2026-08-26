@@ -187,7 +187,7 @@ typed APIs preserve declaration and logical-class identity without collapsing th
 
 **Methods:**
 - `get(SymbolPath $symbol): MetricBag` — metrics for any symbol
-- `all(SymbolType $type): iterable<SymbolInfo>` — iterator over symbols of a given type
+- `all(SymbolLevel $level): iterable<SymbolInfo>` — iterator over symbols measured at a given aggregation level; `SymbolLevel::Callable` is the same enumeration as `allCallables()`
 - `has(SymbolPath $symbol): bool` — check if metrics exist
 - `getSubject(MetricSubject $subject): MetricBag` / `hasSubject(...)` — typed lookup
 - `addSubject(...)` and `addCallable(CallableWithMetrics $callable)` — typed writes

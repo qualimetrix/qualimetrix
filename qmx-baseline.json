@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-26T03:20:57+00:00",
+  "generated": "2026-08-26T05:34:20+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -545,10 +545,10 @@
       {"channel":"coupling.cbo","magnitudes":[16]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement": [
-      {"channel":"coupling.distance","magnitudes":[0.510391]}
+      {"channel":"coupling.distance","magnitudes":[0.515725]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract": [
-      {"channel":"coupling.cbo","magnitudes":[48]}
+      {"channel":"coupling.cbo","magnitudes":[50]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor": [
       {"channel":"coupling.instability","magnitudes":[0.92]}

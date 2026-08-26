@@ -1,5 +1,1 @@
 surface	file	reason
-case:health|format:html	declared-delta/case-health-format-html.diff	Ш5d splits the single computed producer into seven, and the embedded payload publishes the producer of every record as ruleName
-case:health|format:json	declared-delta/case-health-format-json.diff	Ш5d splits the single computed producer into seven: the rule field of every computed record moves, and the violationsMeta.byRule key set becomes seven keys
-case:health|format:text-verbose	declared-delta/case-health-format-text-verbose.diff	The technical-debt breakdown groups by producer, so the one computed row becomes seven and its total is divided among them
-tree|rules	declared-delta/tree-rules.diff	Six built-in health dimensions and the open computed family are seven producers where one rule class stood, so the count moves and the listing gains the Health and Computed groups

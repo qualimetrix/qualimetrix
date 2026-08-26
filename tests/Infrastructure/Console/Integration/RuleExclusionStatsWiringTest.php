@@ -10,9 +10,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -244,7 +244,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
                 name: 'health.cohesion',
                 formulas: ['namespace' => 'lcom'],
                 description: 'Fixture dimension',
-                levels: [SymbolType::Namespace_],
+                levels: [SymbolLevel::Namespace_],
                 inverted: true,
             ),
         ]))->producerOf('health.cohesion');

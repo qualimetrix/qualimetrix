@@ -65,8 +65,8 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics	Analysis
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface	Analysis.Evidence.Measurement	3	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface	Analysis.Evidence.Measurement	2	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface	Analysis.Evidence.Measurement	21	8
-Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel	Analysis.Evidence.Measurement	74	15
-Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection	Analysis.Evidence.Measurement	3	3
+Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel	Analysis.Evidence.Measurement	90	20
+Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection	Analysis.Evidence.Measurement	2	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope	Analysis.Evidence.Measurement	5	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait	Analysis.Evidence.Measurement	12	5
 Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	7	1
@@ -215,7 +215,7 @@ Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	64	20
-Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	57	16
+Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	31	11
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
 Qualimetrix\Core\Util\NamespaceMatcher	Core.Neutral	9	5
 Qualimetrix\Core\Util\PathMatcher	Core.Neutral	3	2

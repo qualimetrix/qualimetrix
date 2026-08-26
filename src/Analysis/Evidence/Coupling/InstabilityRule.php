@@ -231,7 +231,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
 
         $findings = [];
 
-        foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
+        foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
             $subject = $nsInfo->subject ?? MetricSubject::aggregate($nsInfo->symbolPath);
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 

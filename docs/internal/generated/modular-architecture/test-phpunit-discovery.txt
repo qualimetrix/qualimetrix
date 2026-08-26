@@ -1650,7 +1650,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"namespace"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itRefusesEveryLevelWordAsTheLastSegment"project"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itResolveWithEmptyConfigReturns6Defaults
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itStillRefusesLevelsAComputedMetricCannotReportAt
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itStillRefusesLevelsAComputedMetricCannotReportAt"callable"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itStillRefusesLevelsAComputedMetricCannotReportAt"file"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itSupportsLevelsFullReplacement
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itThresholdNullFallsBackToDefaults
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itThresholdShorthandSetsBothValues
@@ -2669,9 +2670,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::functionCcnAggregatesToProjectLevel
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::functionCountedInSymbolMethodCount
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::globalFunctionDoesNotInterfereWithClassAggregation
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::globalFunctionIsNotIteratedByMethodQuery
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::globalFunctionWithoutNamespaceIsHandledCorrectly
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::itProjectsDuplicateClassDeclarationsToOneLogicalClassWithoutLosingExactFacts
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::itReachesAGlobalFunctionThroughTheCallableLevelAndKeepsItsDeclarationKind
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::methodToClassAggregatorSkipsGlobalFunctions
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::mixedClassAndFunctionNamespaceAggregation
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itHandlesEmptyCollectorList
@@ -2783,9 +2784,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itAddScalarDoesNotDuplicateDataBagEntries
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itAddScalarIgnoresNonExistentSymbol
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itAddScalarUpdatesExistingMetric
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itAnswersTheCallableLevelWithExactlyTheCallableEnumeration
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itChecksExistence
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itIteratesOverCallables
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itIteratesOverClasses
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itIteratesOverMethods
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itIteratesOverNamespaces
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itKeepsAggregateSubjectReadsOnCanonicalStorageAfterPublicMutations
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itKeepsCallableOnlyOwnerProjectionsLocationFreeWithoutDuplicateIndexesInEitherMergeOrder
@@ -7371,6 +7373,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itFormatsWithMetrics
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itFormatsWithNullMetrics
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itProducesValidJson
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itPublishesTheDeclarationKindAndKeepsTheBucketOrder
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itReturnsDefaultGroupByNone
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itReturnsMetricsName
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itSkipsEmptyMetrics

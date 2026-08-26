@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationMeta;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -186,7 +187,7 @@ final class MetricInvariantTest extends TestCase
         self::assertNotNull($projectLocSum, 'Project loc.sum must exist');
 
         $fileLocTotal = 0;
-        foreach (self::$repository->all(SymbolType::File) as $fileInfo) {
+        foreach (self::$repository->all(SymbolLevel::File) as $fileInfo) {
             $fileBag = self::$repository->get($fileInfo->symbolPath);
             $fileLoc = $fileBag->get('loc');
             if ($fileLoc !== null) {
@@ -213,7 +214,7 @@ final class MetricInvariantTest extends TestCase
         self::assertNotNull($projectClassCountSum, 'Project classCount.sum must exist');
 
         $fileClassCountTotal = 0;
-        foreach (self::$repository->all(SymbolType::File) as $fileInfo) {
+        foreach (self::$repository->all(SymbolLevel::File) as $fileInfo) {
             $fileBag = self::$repository->get($fileInfo->symbolPath);
             $fileClassCount = $fileBag->get('classCount');
             if ($fileClassCount !== null) {
@@ -422,7 +423,7 @@ final class MetricInvariantTest extends TestCase
 
         // Count actual Class_ symbols in the repository
         $actualClassCount = 0;
-        foreach (self::$repository->all(SymbolType::Class_) as $_) {
+        foreach (self::$repository->all(SymbolLevel::Class_) as $_) {
             $actualClassCount++;
         }
 

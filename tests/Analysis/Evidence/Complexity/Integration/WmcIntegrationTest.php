@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -19,7 +20,6 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Integration test for WMC metric.
@@ -108,7 +108,7 @@ final class WmcIntegrationTest extends TestCase
         $aggregator->aggregate($repository);
 
         // Verify class has no WMC metric (since no methods)
-        $classes = iterator_to_array($repository->all(SymbolType::Class_));
+        $classes = iterator_to_array($repository->all(SymbolLevel::Class_));
         self::assertCount(0, $classes, 'Class without methods should not be in repository');
     }
 

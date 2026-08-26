@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
@@ -33,7 +34,6 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 
@@ -372,7 +372,7 @@ final class UnusedDirectiveRuleTest extends TestCase
                 name: 'health.cohesion',
                 formulas: ['class' => '1'],
                 description: 'test',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
             ),
         ]));
 
@@ -392,7 +392,7 @@ final class UnusedDirectiveRuleTest extends TestCase
                 name: 'computed.team_score',
                 formulas: ['class' => '1'],
                 description: 'test',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
             ),
         ]));
         $withoutMetric = self::snapshotFactory()->snapshot(new ResolvedComputedMetricDefinitions([]));

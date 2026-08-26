@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
@@ -68,7 +67,7 @@ final class ComputedMetricFormulaValidator
                 try {
                     $this->expressionLanguage->parse($formula, $variables);
                 } catch (SyntaxError $e) {
-                    $levelKey = $this->levelToString($level);
+                    $levelKey = $level->value;
 
                     throw new ComputedMetricConfigurationException(\sprintf(
                         'Invalid formula syntax for computed metric "%s" at level "%s": %s (formula: %s)',
@@ -93,7 +92,7 @@ final class ComputedMetricFormulaValidator
             foreach ($definition->levels as $level) {
                 $formula = $definition->getFormulaForLevel($level);
                 if ($formula === null) {
-                    $levelKey = $this->levelToString($level);
+                    $levelKey = $level->value;
 
                     throw new ComputedMetricConfigurationException(\sprintf(
                         'Computed metric "%s" has no formula for level "%s"',
@@ -260,15 +259,5 @@ final class ComputedMetricFormulaValidator
             ),
             static fn(array $arguments, float $value, float $min, float $max): float => max($min, min($max, $value)),
         ));
-    }
-
-    private function levelToString(SymbolType $level): string
-    {
-        return match ($level) {
-            SymbolType::Class_ => 'class',
-            SymbolType::Namespace_ => 'namespace',
-            SymbolType::Project => 'project',
-            default => $level->value,
-        };
     }
 }

@@ -4893,7 +4893,42 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricDefaults",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricRule",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder",
           "closes_in": null
         },
         {
@@ -4963,6 +4998,11 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
           "closes_in": null
         },
@@ -5014,6 +5054,11 @@
         {
           "owner": "Analysis.Evidence.Maintainability",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Prioritization",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Prioritization\\Impact\\ClassRankResolver",
           "closes_in": null
         },
         {
@@ -5107,8 +5152,18 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleThresholdKeyGroupRegistry",
+          "closes_in": null
+        },
+        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerDeclarationValidator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector",
           "closes_in": null
         },
         {
@@ -5119,6 +5174,11 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnassignedClassSummary",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService",
           "closes_in": null
         },
         {
@@ -5142,6 +5202,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
+          "closes_in": null
+        },
+        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
           "closes_in": null
@@ -5149,6 +5214,21 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter",
           "closes_in": null
         }
       ]
@@ -5160,11 +5240,6 @@
       "visibility": "contract",
       "closure_package": "P3",
       "consumers": [
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition",
-          "closes_in": null
-        },
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Finding",
@@ -14440,6 +14515,11 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
           "closes_in": null
         },
@@ -14511,11 +14591,6 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
           "closes_in": null
         }
       ]
@@ -14858,16 +14933,6 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\AbstractCodeSmellRule",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\IdenticalSubExpressionRule",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule",
           "closes_in": null
         },
@@ -14908,52 +14973,7 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricDefaults",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricRule",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricOverrideReader",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\AbstractnessCollector",
           "closes_in": null
         },
         {
@@ -14964,16 +14984,6 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceCollector",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule",
           "closes_in": null
         },
         {
@@ -14993,11 +15003,6 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
           "closes_in": null
         },
@@ -15008,27 +15013,12 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocCollector",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\NamespaceMetricContributions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\NamespaceToProjectAggregator",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricRepositoryInterface",
           "closes_in": null
         },
         {
@@ -15057,26 +15047,6 @@
           "closes_in": null
         },
         {
-          "owner": "Analysis.Evidence.Security",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\AbstractSecurityPatternRule",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Security",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\HardcodedCredentialsRule",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Security",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterRule",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule",
-          "closes_in": null
-        },
-        {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule",
           "closes_in": null
@@ -15088,27 +15058,7 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerEvidenceCollector",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OwnedLayerTargets",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
           "closes_in": null
         },
         {
@@ -15119,11 +15069,6 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner",
-          "closes_in": null
-        },
-        {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder",
           "closes_in": null
         },
         {

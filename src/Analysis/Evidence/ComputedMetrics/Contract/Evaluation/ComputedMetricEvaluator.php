@@ -11,10 +11,10 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use RuntimeException;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Throwable;
@@ -69,7 +69,7 @@ class ComputedMetricEvaluator
     private function evaluateAtLevel(
         MetricRepositoryInterface $repo,
         ComputedMetricDefinition $definition,
-        SymbolType $level,
+        SymbolLevel $level,
         string $formula,
     ): void {
         $symbols = $this->getSymbolsForLevel($repo, $level);
@@ -131,7 +131,7 @@ class ComputedMetricEvaluator
     private function validateFormulaVariables(
         MetricRepositoryInterface $repo,
         ComputedMetricDefinition $definition,
-        SymbolType $level,
+        SymbolLevel $level,
         string $formula,
         array $symbols,
     ): void {
@@ -152,7 +152,7 @@ class ComputedMetricEvaluator
             throw new RuntimeException(\sprintf(
                 'Computed metric "%s" at level "%s" references unknown metrics: %s. Check the formula: %s',
                 $definition->name,
-                $this->levelKeyFor($level),
+                $level->value,
                 implode(', ', $unknownVars),
                 $formula,
             ));
@@ -201,16 +201,6 @@ class ComputedMetricEvaluator
         }
 
         return $unknownVars;
-    }
-
-    private function levelKeyFor(SymbolType $level): string
-    {
-        return match ($level) {
-            SymbolType::Class_ => 'class',
-            SymbolType::Namespace_ => 'namespace',
-            SymbolType::Project => 'project',
-            default => $level->value,
-        };
     }
 
     /**
@@ -296,19 +286,19 @@ class ComputedMetricEvaluator
     /**
      * @return list<array{SymbolPath, ?RelativePath, ?int}>
      */
-    private function getSymbolsForLevel(MetricRepositoryInterface $repo, SymbolType $level): array
+    private function getSymbolsForLevel(MetricRepositoryInterface $repo, SymbolLevel $level): array
     {
         return match ($level) {
-            SymbolType::Project => [[SymbolPath::forProject(), null, null]],
-            SymbolType::Namespace_ => array_map(
+            SymbolLevel::Project => [[SymbolPath::forProject(), null, null]],
+            SymbolLevel::Namespace_ => array_map(
                 static fn(string $ns) => [SymbolPath::forNamespace($ns), null, null],
                 $repo->getNamespaces(),
             ),
-            SymbolType::Class_ => array_map(
+            SymbolLevel::Class_ => array_map(
                 static fn($info) => [$info->symbolPath, $info->file, $info->line],
-                iterator_to_array($repo->all(SymbolType::Class_), false),
+                iterator_to_array($repo->all(SymbolLevel::Class_), false),
             ),
-            default => [],
+            SymbolLevel::Callable, SymbolLevel::File => [],
         };
     }
 

@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -1549,7 +1550,7 @@ final class LayerViolationRuleTest extends TestCase
 
     /**
      * Registers a class symbol in the metric repository so that
-     * `metrics->all(SymbolType::Class_)` yields it.
+     * `metrics->all(SymbolLevel::Class_)` yields it.
      */
     private function registerClass(
         InMemoryMetricRepository $repo,

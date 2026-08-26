@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use RuntimeException;
 
 #[CoversClass(ComputedMetricsConfigResolver::class)]
@@ -78,9 +78,9 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $complexity = $this->findByName($result, 'health.complexity');
         self::assertNotNull($complexity);
         // Singular formula applies to all levels
-        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolType::Class_));
-        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolType::Namespace_));
-        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolType::Project));
+        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolLevel::Class_));
+        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
+        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolLevel::Project));
     }
 
     #[Test]
@@ -97,9 +97,9 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $complexity = $this->findByName($result, 'health.complexity');
         self::assertNotNull($complexity);
         // Only class formula overridden
-        self::assertSame('100 - ccn * 5', $complexity->getFormulaForLevel(SymbolType::Class_));
+        self::assertSame('100 - ccn * 5', $complexity->getFormulaForLevel(SymbolLevel::Class_));
         // Namespace keeps default formula (uses per-method average via ccn__sum / symbolMethodCount)
-        self::assertStringContainsString('ccn__sum', (string) $complexity->getFormulaForLevel(SymbolType::Namespace_));
+        self::assertStringContainsString('ccn__sum', (string) $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
     }
 
     #[Test]
@@ -252,10 +252,10 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertTrue($custom->inverted);
         self::assertSame(80.0, $custom->warningThreshold);
         self::assertSame(40.0, $custom->errorThreshold);
-        self::assertSame('loc__avg * 2', $custom->getFormulaForLevel(SymbolType::Class_));
-        self::assertContains(SymbolType::Class_, $custom->levels);
-        self::assertContains(SymbolType::Namespace_, $custom->levels);
-        self::assertNotContains(SymbolType::Project, $custom->levels);
+        self::assertSame('loc__avg * 2', $custom->getFormulaForLevel(SymbolLevel::Class_));
+        self::assertContains(SymbolLevel::Class_, $custom->levels);
+        self::assertContains(SymbolLevel::Namespace_, $custom->levels);
+        self::assertNotContains(SymbolLevel::Project, $custom->levels);
     }
 
     /**
@@ -445,20 +445,20 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $complexity = $this->findByName($result, 'health.complexity');
         self::assertNotNull($complexity);
         // formulas per-level takes precedence over formula singular
-        self::assertSame('ccn * 5', $complexity->getFormulaForLevel(SymbolType::Class_));
+        self::assertSame('ccn * 5', $complexity->getFormulaForLevel(SymbolLevel::Class_));
         // Other levels get the singular formula
-        self::assertSame('ccn__avg * 10', $complexity->getFormulaForLevel(SymbolType::Namespace_));
+        self::assertSame('ccn__avg * 10', $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
     }
 
     /**
-     * @return array<string, array{string, SymbolType}>
+     * @return array<string, array{string, SymbolLevel}>
      */
     public static function provideLevelSpellingsAcceptedForAComputedMetric(): array
     {
         return [
-            'class' => ['class', SymbolType::Class_],
-            'namespace' => ['namespace', SymbolType::Namespace_],
-            'project' => ['project', SymbolType::Project],
+            'class' => ['class', SymbolLevel::Class_],
+            'namespace' => ['namespace', SymbolLevel::Namespace_],
+            'project' => ['project', SymbolLevel::Project],
         ];
     }
 
@@ -472,7 +472,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideLevelSpellingsAcceptedForAComputedMetric')]
-    public function itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted(string $spelling, SymbolType $expected): void
+    public function itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted(string $spelling, SymbolLevel $expected): void
     {
         $result = $this->resolver->resolve([
             'computed.spelling' => [
@@ -494,15 +494,32 @@ final class ComputedMetricsConfigResolverTest extends TestCase
      * word list and the vocabulary-backed replacement refuse them; this pins
      * that the replacement did not accidentally widen the accepted spellings.
      */
+    /** @return array<string, array{string}> */
+    public static function provideLevelWordsAComputedMetricCannotReportAt(): array
+    {
+        return [
+            // `callable` is pinned in its own right: the repository answers
+            // that level for real now, so losing this refusal would quietly
+            // switch on a level of reporting nobody decided to add.
+            'callable' => ['callable'],
+            'file' => ['file'],
+        ];
+    }
+
     #[Test]
-    public function itStillRefusesLevelsAComputedMetricCannotReportAt(): void
+    #[DataProvider('provideLevelWordsAComputedMetricCannotReportAt')]
+    public function itStillRefusesLevelsAComputedMetricCannotReportAt(string $spelling): void
     {
         self::expectException(ComputedMetricConfigurationException::class);
+        self::expectExceptionMessage(\sprintf(
+            'Computed metric level "%s" is not supported; computed metrics report at "class", "namespace" or "project" only.',
+            $spelling,
+        ));
 
         $this->resolver->resolve([
             'computed.unsupported' => [
                 'formula' => 'loc__avg',
-                'levels' => ['callable'],
+                'levels' => [$spelling],
             ],
         ]);
     }
@@ -532,7 +549,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $complexity = $this->findByName($result, 'health.complexity');
         self::assertNotNull($complexity);
-        self::assertSame([SymbolType::Class_], $complexity->levels);
+        self::assertSame([SymbolLevel::Class_], $complexity->levels);
     }
 
     #[Test]
@@ -547,9 +564,9 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $custom = $this->findByName($result, 'computed.simple');
         self::assertNotNull($custom);
         // Default levels for user-defined: namespace, project
-        self::assertContains(SymbolType::Namespace_, $custom->levels);
-        self::assertContains(SymbolType::Project, $custom->levels);
-        self::assertNotContains(SymbolType::Class_, $custom->levels);
+        self::assertContains(SymbolLevel::Namespace_, $custom->levels);
+        self::assertContains(SymbolLevel::Project, $custom->levels);
+        self::assertNotContains(SymbolLevel::Class_, $custom->levels);
     }
 
     #[Test]

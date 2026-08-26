@@ -31,7 +31,6 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
 
 #[CoversClass(CboRule::class)]
@@ -540,9 +539,9 @@ final class CboRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => match ($type) {
-                SymbolType::Class_ => [$classInfo],
-                SymbolType::Namespace_ => [$nsInfo],
+            ->willReturnCallback(fn(SymbolLevel $level) => match ($level) {
+                SymbolLevel::Class_ => [$classInfo],
+                SymbolLevel::Namespace_ => [$nsInfo],
                 default => [],
             });
         $repository->method('allDeclarations')->willReturn([$classInfo]);

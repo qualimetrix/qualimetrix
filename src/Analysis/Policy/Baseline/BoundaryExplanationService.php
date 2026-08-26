@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
@@ -15,7 +16,6 @@ use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Builds a {@see BoundaryExplanation} for `bin/qmx baseline:explain`, as
@@ -309,8 +309,8 @@ final readonly class BoundaryExplanationService
         }
 
         $projectedSources = [$repository->allLogicalClasses()];
-        foreach (SymbolType::cases() as $type) {
-            $projectedSources[] = $repository->all($type);
+        foreach (SymbolLevel::cases() as $level) {
+            $projectedSources[] = $repository->all($level);
         }
 
         foreach ($projectedSources as $symbols) {

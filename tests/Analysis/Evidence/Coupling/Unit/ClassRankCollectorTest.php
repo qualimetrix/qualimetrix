@@ -22,7 +22,6 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 #[CoversClass(ClassRankCollector::class)]
@@ -83,7 +82,7 @@ final class ClassRankCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        $classes = iterator_to_array($repository->all(SymbolType::Class_));
+        $classes = iterator_to_array($repository->all(SymbolLevel::Class_));
         self::assertSame([], $classes, 'Empty graph should produce no class-level metrics');
     }
 

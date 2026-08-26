@@ -9,9 +9,9 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use ReflectionClass;
 use ReflectionException;
 
@@ -65,7 +65,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
         /** @var array<string, int> $ditCache */
         $ditCache = [];
 
-        foreach ($repository->all(SymbolType::Class_) as $classSymbol) {
+        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
             $classFqn = $this->symbolPathToFqn($classSymbol->symbolPath);
             if ($classFqn === null) {
                 continue;

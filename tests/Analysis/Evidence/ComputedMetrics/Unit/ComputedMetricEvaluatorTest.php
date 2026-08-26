@@ -14,11 +14,11 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMe
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationMeta;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use RuntimeException;
 
 #[CoversClass(ComputedMetricEvaluator::class)]
@@ -46,7 +46,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'health.test',
             formulas: ['class' => 'ccn__avg * 10'],
             description: 'Test metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -69,13 +69,13 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'health.b',
             formulas: ['class' => 'health__a * 2'],
             description: 'Depends on A',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
         $defA = new ComputedMetricDefinition(
             name: 'health.a',
             formulas: ['class' => 'ccn__avg + 1'],
             description: 'Base metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         // Pass B before A — topological sort should fix the order
@@ -97,7 +97,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'health.test',
             formulas: ['class' => 'missing_var * 10'],
             description: 'Test metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         self::expectException(RuntimeException::class);
@@ -117,7 +117,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'health.test',
             formulas: ['class' => 'known + foo + bar'],
             description: 'Test metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         self::expectException(RuntimeException::class);
@@ -141,7 +141,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'health.test',
             formulas: ['class' => '(ccn ?? 0) * 10'],
             description: 'Test with partial data',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -161,7 +161,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'health.test',
             formulas: ['class' => '(missing_var ?? 42) * 2'],
             description: 'Test metric with fallback',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -182,7 +182,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'health.test',
             formulas: ['class' => 'sqrt(value)'],
             description: 'NaN test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -203,7 +203,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'health.test',
             formulas: ['class' => 'log(value)'],
             description: 'Infinity test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -530,7 +530,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
                 name: $name,
                 formulas: ['class' => $formula],
                 description: 'Math test',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
             );
         }
 
@@ -557,7 +557,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'health.simple',
             formulas: ['class' => 'ccn * 10'],
             description: 'Simple test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -585,7 +585,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'health.inherited',
             formulas: ['namespace' => 'value + 1'],
             description: 'Inherits namespace formula for project',
-            levels: [SymbolType::Namespace_, SymbolType::Project],
+            levels: [SymbolLevel::Namespace_, SymbolLevel::Project],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -606,13 +606,13 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'health.a',
             formulas: ['class' => '(health__b ?? 0) + x'],
             description: 'Circular A',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
         $defB = new ComputedMetricDefinition(
             name: 'health.b',
             formulas: ['class' => '(health__a ?? 0) + x'],
             description: 'Circular B',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         // Should not throw — falls back to original order with warning
@@ -707,7 +707,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'computed.test',
             formulas: ['project' => '1'],
             description: 'Test',
-            levels: [SymbolType::Project],
+            levels: [SymbolLevel::Project],
         );
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn([$definition]);

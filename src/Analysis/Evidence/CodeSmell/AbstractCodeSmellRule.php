@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Base class for code smell rules.
@@ -140,7 +139,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
         $findings = [];
         $type = static::SMELL_TYPE;
 
-        foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
+        foreach ($context->metrics->all(SymbolLevel::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
             $entries = $metrics->entries("codeSmell.{$type}");
 

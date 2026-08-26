@@ -86,7 +86,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
      *
      * @var list<string>
      */
-    private const array RECOGNISED_FORMS = ['declaration:callable', 'declaration:class', 'ns', 'file', 'project'];
+    private const array RECOGNISED_FORMS = ['declaration:callable', 'declaration:func', 'declaration:class', 'ns', 'file', 'project'];
 
     /**
      * Which of {@see RECOGNISED_FORMS} a call to {@see levelOf()} has
@@ -473,6 +473,10 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         return match ($head) {
             'declaration' => match (explode(':', $subject)[1] ?? '') {
                 'callable' => self::recognise('declaration:callable', 'callable'),
+                // A method and a global function are two declaration kinds
+                // that report at one level, and the subject text is where
+                // that shows: the corpus reaches both spellings.
+                'func' => self::recognise('declaration:func', 'callable'),
                 'class' => self::recognise('declaration:class', 'class'),
                 default => $unrecognised(),
             },

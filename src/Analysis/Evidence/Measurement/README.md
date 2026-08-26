@@ -36,11 +36,14 @@ Consumers must not import repository indexes, visitor state, aggregation helpers
 or collector implementations.
 
 `SymbolLevel` is the project's one level vocabulary: the rule layer, the
-finding, the channel declaration and the stored metric all name a level with
-it. `Core\Symbol\SymbolType` stays a separate question — what kind of
-declaration this is, a fact about PHP — and the two meet only in
-`SymbolLevelProjection::ofDeclaration()`, which collapses `method` and
-`function` into `callable`. Do not re-derive that collapse at a call site.
+finding, the channel declaration, the stored metric and the repository's own
+`all()` query all name a level with it. `Core\Symbol\SymbolType` stays a
+separate question — what kind of declaration this is, a fact about PHP — and
+the two meet only in `SymbolLevelProjection::ofDeclaration()`, which collapses
+`method` and `function` into `callable`. Do not re-derive that collapse at a
+call site, and do not project a level back onto a declaration kind: a consumer
+that needs the kind reads it off the symbol it was handed. `all(SymbolLevel::Callable)`
+is the same enumeration as `allCallables()`, and a test pins them equal.
 
 **Why the vocabulary lives here and not in `Core`.** Nearly every rule now
 imports it, and the fan-in is visible in this capability's own numbers — the

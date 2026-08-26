@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\DeclaredDelta;
 use QmxFindingGate\FailureClass;
 use RuntimeException;
 
@@ -549,12 +550,12 @@ final class Controls
      * reported value of the same rule; it touches another fragment of the file
      * and each control runs in its own clone.
      *
-     * `tree|rules` is tolerated because the mutation moves the producing rule's
-     * name and `qmx rules` publishes it: with no row to translate it, the two
-     * trees disagree about a listing that is not a finding at all. It is the
-     * mutation's measured radius, not a fingerprint statement — and it is the
-     * one toleration the green twin does not need, because there the row
-     * translates that listing too.
+     * `tree|rules` is the mutation's other measured reach — it renames a
+     * producer and `qmx rules` publishes producer names — and whether that
+     * reach is tolerated is not this control's to decide: it depends on what
+     * the step under test declares. {@see producerListingToleration()}. It is
+     * the one reach the green twin does not have to name, because there the
+     * row translates that listing too.
      */
     private static function fingerprintUnexplained(): Control
     {
@@ -573,6 +574,7 @@ final class Controls
                     FailureClass::WITNESS_DISAGREEMENT,
                     'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
                 ),
+                ...self::producerListingToleration(),
             ],
         );
     }
@@ -732,12 +734,13 @@ final class Controls
                 )),
             [new Expectation(FailureClass::MAP_STALE, 'code-smell.never-emitted')],
             // `tree|rules` moves here too — the mutation renames a producer and
-            // the listing prints producer names — but the step declares a delta
-            // for that surface, so what the run reports there is a delta class
-            // and {@see Outcome::isDeclarationNoise()} absorbs it. A
-            // `surface-mismatch` toleration would match nothing and fail this
-            // control for an unmeasured radius.
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells')],
+            // the listing prints producer names — and whether that shows up as
+            // a `surface-mismatch` depends on the step under test rather than on
+            // this control. {@see producerListingToleration()}.
+            [
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
+                ...self::producerListingToleration(),
+            ],
         );
     }
 
@@ -818,6 +821,53 @@ final class Controls
             [$path => rtrim($tracked, "\n") . "\n" . implode("\n", $rows) . "\n"],
             $description,
         );
+    }
+
+    /** The scope the `bin/qmx rules` listing is captured under. {@see \QmxFindingGate\TreeRun::rules()}. */
+    private const PRODUCER_LISTING_SURFACE = 'tree|rules';
+
+    /**
+     * The `qmx rules` toleration a control whose mutation renames a **producer**
+     * needs — and only such a control, because the listing prints producer
+     * names and nothing else: no channel code, no option value. Two controls
+     * qualify, both built on {@see unusedPrivateChannelMutation()}; every other
+     * mutation in this file either leaves the producing rule's name alone
+     * ({@see lcomChannelMutation()}, {@see referenceInputUntranslated()}) or
+     * touches no name at all.
+     *
+     * Whether the reach is a `surface-mismatch` is not a property of the
+     * mutation: it is a property of the step under test. A step that declares a
+     * delta for the listing has that surface compared against its exact diff and
+     * never for equality, so the run reports a delta class there and
+     * {@see Outcome::isDeclarationNoise()} absorbs it — and a toleration would
+     * then match nothing and fail the control as an unmeasured radius
+     * ({@see Outcome::idleTolerations()}). A step that declares nothing gets the
+     * plain surface diff, which without a toleration is an unexplained failure.
+     * Both readings were reached by measurement, one step apart: Ш5d declared
+     * the delta, Ш5e1 withdrew it, and a toleration pinned to either answer is
+     * wrong on the other step.
+     *
+     * So the answer is read from the step's own tracked declaration, the way
+     * {@see trackedChannelMapPlus()} reads its rows — through the gate's own
+     * loader, and from the repository rather than a scratch tree, exactly as
+     * {@see Harness::declaredSurfaces()} does. Membership is exact because that
+     * is the rule both the absorber and {@see Control::assertNotPinnedToDeclaredDelta()}
+     * apply, and because this pin names one whole surface rather than a prefix
+     * of several.
+     *
+     * @return list<Expectation>
+     */
+    private static function producerListingToleration(): array
+    {
+        $root = \dirname(__DIR__, 2) . '/finding-gate';
+
+        $declared = is_file($root . '/' . DeclaredDelta::INDEX)
+            ? DeclaredDelta::load($root)->surfaces()
+            : [];
+
+        return \in_array(self::PRODUCER_LISTING_SURFACE, $declared, true)
+            ? []
+            : [new Expectation(FailureClass::SURFACE_MISMATCH, self::PRODUCER_LISTING_SURFACE)];
     }
 
     /** The ceiling perturbation, shared by the control that measured it and the delta control. */

@@ -18,7 +18,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Rule that checks number of classes per namespace.
@@ -94,7 +93,7 @@ final class ClassCountRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->all(SymbolType::Namespace_) as $namespaceInfo) {
+        foreach ($context->metrics->all(SymbolLevel::Namespace_) as $namespaceInfo) {
             $subject = $namespaceInfo->subject
                 ?? MetricSubject::aggregate($namespaceInfo->symbolPath);
             // Skip parent namespaces — only analyze leaf namespaces

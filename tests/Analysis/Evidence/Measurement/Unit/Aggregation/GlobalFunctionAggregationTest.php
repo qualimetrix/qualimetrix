@@ -46,8 +46,12 @@ use Qualimetrix\Core\Symbol\SymbolType;
 #[CoversClass(AggregationHelper::class)]
 final class GlobalFunctionAggregationTest extends TestCase
 {
+    /**
+     * Losing this: the callable level stops reaching global functions, or
+     * stops carrying the declaration kind that tells one apart from a method.
+     */
     #[Test]
-    public function globalFunctionIsNotIteratedByMethodQuery(): void
+    public function itReachesAGlobalFunctionThroughTheCallableLevelAndKeepsItsDeclarationKind(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -59,13 +63,10 @@ final class GlobalFunctionAggregationTest extends TestCase
         // Verify it's registered as Function_, not Method
         self::assertSame(SymbolType::Function_, $functionPath->getType());
 
-        // all(SymbolType::Method) should NOT return functions
-        $methods = iterator_to_array($repository->all(SymbolType::Method));
-        self::assertCount(0, $methods);
+        $callables = iterator_to_array($repository->all(SymbolLevel::Callable), false);
 
-        // all(SymbolType::Function_) should return it
-        $functions = iterator_to_array($repository->all(SymbolType::Function_));
-        self::assertCount(1, $functions);
+        self::assertCount(1, $callables);
+        self::assertSame(SymbolType::Function_, $callables[0]->symbolPath->getType());
     }
 
     #[Test]
@@ -272,7 +273,7 @@ final class GlobalFunctionAggregationTest extends TestCase
         $logicalClasses = iterator_to_array($repository->allLogicalClasses(), false);
         self::assertCount(1, $logicalClasses);
         self::assertSame($class->toCanonical(), $logicalClasses[0]->symbolPath->toCanonical());
-        self::assertCount(1, iterator_to_array($repository->all(SymbolType::Class_), false));
+        self::assertCount(1, iterator_to_array($repository->all(SymbolLevel::Class_), false));
 
         $definitions = [
             new MetricDefinition('firstProviderMetric', SymbolLevel::Class_, [

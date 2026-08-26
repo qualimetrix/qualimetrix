@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingB
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
@@ -29,7 +30,6 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(ComputedMetricRule::class)]
 #[CoversClass(ComputedMetricRuleOptions::class)]
@@ -101,7 +101,7 @@ final class ComputedMetricRuleTest extends TestCase
             name: 'health.score',
             formulas: ['class' => 'mi * 0.5'],
             description: 'Health score',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 30.0,
@@ -128,7 +128,7 @@ final class ComputedMetricRuleTest extends TestCase
             name: 'health.info',
             formulas: ['class' => 'ccn'],
             description: 'Info only metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $rule = $this->createRuleWithDefinitions([$definition]);
@@ -148,7 +148,7 @@ final class ComputedMetricRuleTest extends TestCase
             name: 'health.alpha',
             formulas: ['class' => 'ccn'],
             description: 'Alpha',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
         );
@@ -156,7 +156,7 @@ final class ComputedMetricRuleTest extends TestCase
             name: 'health.beta',
             formulas: ['class' => 'loc'],
             description: 'Beta',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 100.0,
         );
@@ -190,7 +190,7 @@ final class ComputedMetricRuleTest extends TestCase
             name: 'health.multi',
             formulas: ['class' => 'ccn', 'namespace' => 'avg(ccn)'],
             description: 'Multi-level',
-            levels: [SymbolType::Class_, SymbolType::Namespace_],
+            levels: [SymbolLevel::Class_, SymbolLevel::Namespace_],
             inverted: false,
             warningThreshold: 10.0,
         );
@@ -228,7 +228,7 @@ final class ComputedMetricRuleTest extends TestCase
             name: 'health.project',
             formulas: ['project' => 'avg(ccn)'],
             description: 'Project metric',
-            levels: [SymbolType::Project],
+            levels: [SymbolLevel::Project],
             inverted: false,
             warningThreshold: 5.0,
         );
@@ -254,7 +254,7 @@ final class ComputedMetricRuleTest extends TestCase
             name: 'health.ns',
             formulas: ['namespace' => 'avg(ccn)'],
             description: 'NS metric',
-            levels: [SymbolType::Namespace_],
+            levels: [SymbolLevel::Namespace_],
             inverted: false,
             warningThreshold: 5.0,
         );
@@ -280,7 +280,7 @@ final class ComputedMetricRuleTest extends TestCase
             name: 'health.cls',
             formulas: ['class' => 'ccn'],
             description: 'Class metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 5.0,
         );
@@ -308,7 +308,7 @@ final class ComputedMetricRuleTest extends TestCase
             name: 'health.cls',
             formulas: ['class' => 'ccn'],
             description: 'Class metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 5.0,
         );
@@ -336,7 +336,7 @@ final class ComputedMetricRuleTest extends TestCase
             name: 'health.cls',
             formulas: ['class' => 'ccn'],
             description: 'Class metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 5.0,
         );
@@ -364,7 +364,7 @@ final class ComputedMetricRuleTest extends TestCase
             name: 'health.cls',
             formulas: ['class' => 'ccn'],
             description: 'Class metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 5.0,
         );

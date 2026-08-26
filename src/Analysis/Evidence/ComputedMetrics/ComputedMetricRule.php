@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -112,7 +113,7 @@ final class ComputedMetricRule extends AbstractRule
     private function checkLevel(
         AnalysisContext $context,
         ComputedMetricDefinition $definition,
-        SymbolType $level,
+        SymbolLevel $level,
         array &$findings,
     ): void {
         $symbols = $this->getSymbolsForLevel($context, $level);
@@ -142,16 +143,16 @@ final class ComputedMetricRule extends AbstractRule
     /**
      * @return list<array{MetricSubject, SymbolPath, Location}>
      */
-    private function getSymbolsForLevel(AnalysisContext $context, SymbolType $level): array
+    private function getSymbolsForLevel(AnalysisContext $context, SymbolLevel $level): array
     {
         return match ($level) {
-            SymbolType::Project => [[MetricSubject::aggregate(SymbolPath::forProject()), SymbolPath::forProject(), Location::none()]],
-            SymbolType::Namespace_ => array_map(
+            SymbolLevel::Project => [[MetricSubject::aggregate(SymbolPath::forProject()), SymbolPath::forProject(), Location::none()]],
+            SymbolLevel::Namespace_ => array_map(
                 static fn(string $ns) => [MetricSubject::aggregate(SymbolPath::forNamespace($ns)), SymbolPath::forNamespace($ns), Location::none()],
                 $context->metrics->getNamespaces(),
             ),
-            SymbolType::Class_ => $this->getClassSymbolsWithPresentationLocations($context),
-            default => [],
+            SymbolLevel::Class_ => $this->getClassSymbolsWithPresentationLocations($context),
+            SymbolLevel::Callable, SymbolLevel::File => [],
         };
     }
 

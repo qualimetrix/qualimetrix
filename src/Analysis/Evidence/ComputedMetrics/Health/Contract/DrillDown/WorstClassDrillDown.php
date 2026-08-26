@@ -10,9 +10,9 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\Worst
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolInfo;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Shared logic for namespace-level drill-down: health scores and worst classes.
@@ -69,7 +69,7 @@ final readonly class WorstClassDrillDown
      */
     private function snapshots(MetricRepositoryInterface $repository, array $notableMetricNames): iterable
     {
-        foreach ($repository->all(SymbolType::Class_) as $symbol) {
+        foreach ($repository->all(SymbolLevel::Class_) as $symbol) {
             $metrics = $repository->get($symbol->symbolPath);
             $overall = $metrics->get($this->dimensions->overallMetric());
             yield [

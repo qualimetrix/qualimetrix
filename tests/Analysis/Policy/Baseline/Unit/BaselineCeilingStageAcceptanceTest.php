@@ -26,7 +26,6 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\CeilingStageFixtures;
@@ -627,7 +626,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('all')
-            ->willReturnCallback(static fn(SymbolType $type): array => $type === SymbolType::Class_ ? [$classInfo] : []);
+            ->willReturnCallback(static fn(SymbolLevel $level): array => $level === SymbolLevel::Class_ ? [$classInfo] : []);
         $repository->method('get')->willReturn($metrics);
 
         $findings = (new GodClassRule(new GodClassOptions()))->analyze(new AnalysisContext($repository));

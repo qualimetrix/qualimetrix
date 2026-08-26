@@ -39,7 +39,6 @@ use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use ReflectionMethod;
 
 #[CoversClass(BoundaryExplanationService::class)]
@@ -477,7 +476,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             ],
             logicalClasses: [new SymbolInfo($logical, RelativePath::fromString('src/First.php'), null)],
             aggregates: [
-                SymbolType::Namespace_->value => [new SymbolInfo($namespace, null, null)],
+                SymbolLevel::Namespace_->value => [new SymbolInfo($namespace, null, null)],
             ],
         );
 
@@ -485,11 +484,19 @@ final class BoundaryExplanationServiceTest extends TestCase
         $index = $method->invoke(null, $repository);
 
         self::assertIsArray($index);
-        self::assertArrayHasKey($first->toCanonical(), $index);
-        self::assertArrayHasKey($second->toCanonical(), $index);
-        self::assertArrayHasKey($callable->toCanonical(), $index);
-        self::assertArrayHasKey($logical->toCanonical(), $index);
-        self::assertArrayHasKey($namespace->toCanonical(), $index);
+        // The index content, not the number of repository calls, is what the
+        // service promises: one aggregation level fewer than there are
+        // declaration kinds must still reach every row.
+        self::assertSame(
+            [
+                $first->toCanonical(),
+                $second->toCanonical(),
+                $callable->toCanonical(),
+                $logical->toCanonical(),
+                $namespace->toCanonical(),
+            ],
+            array_keys($index),
+        );
         self::assertSame($first, $index[$first->toCanonical()]['subject']);
         self::assertSame('src/First.php', $index[$first->toCanonical()]['location'][0]->value());
         self::assertNull($index[$namespace->toCanonical()]['subject']);
@@ -499,10 +506,10 @@ final class BoundaryExplanationServiceTest extends TestCase
         self::assertSame(2, $repository->iterations['allDeclarations']);
         self::assertSame(2, $repository->iterations['allCallables']);
         self::assertSame(1, $repository->iterations['allLogicalClasses']);
-        foreach (SymbolType::cases() as $type) {
-            self::assertSame(1, $repository->calls['all:' . $type->value]);
+        foreach (SymbolLevel::cases() as $level) {
+            self::assertSame(1, $repository->calls['all:' . $level->value]);
         }
-        self::assertSame(1, $repository->iterations['all:' . SymbolType::Namespace_->value]);
+        self::assertSame(1, $repository->iterations['all:' . SymbolLevel::Namespace_->value]);
     }
 
     #[Test]
@@ -626,12 +633,12 @@ final class CountingBoundaryRepository implements MetricRepositoryInterface
         return new MetricBag();
     }
 
-    public function all(SymbolType $type): iterable
+    public function all(SymbolLevel $level): iterable
     {
-        $source = 'all:' . $type->value;
+        $source = 'all:' . $level->value;
         $this->count($this->calls, $source);
 
-        return $this->iterate($source, $this->aggregates[$type->value] ?? []);
+        return $this->iterate($source, $this->aggregates[$level->value] ?? []);
     }
 
     public function has(SymbolPath $symbol): bool

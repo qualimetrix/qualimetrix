@@ -15,10 +15,10 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthSc
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
@@ -497,7 +497,7 @@ final class HealthBarRendererTest extends TestCase
 
         $metrics = $this->createMock(MetricRepositoryInterface::class);
         $metrics->method('all')
-            ->with(SymbolType::Namespace_)
+            ->with(SymbolLevel::Namespace_)
             ->willReturn([$nsInfo, $childInfo]);
         $metrics->method('get')
             ->willReturnCallback(static fn(SymbolPath $path): MetricBag => match ($path->toCanonical()) {

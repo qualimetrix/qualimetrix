@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensio
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ContributorRanker;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolInfo;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
@@ -95,7 +95,7 @@ final readonly class HealthScoreDrillDown
         $weightedSums = [];
         $dimensionWeights = [];
 
-        foreach ($metrics->all(SymbolType::Namespace_) as $namespaceInfo) {
+        foreach ($metrics->all(SymbolLevel::Namespace_) as $namespaceInfo) {
             $name = $namespaceInfo->symbolPath->namespace ?? $namespaceInfo->symbolPath->toCanonical();
             if (!NamespaceMatcher::matchesSingle($namespace, $name)) {
                 continue;
@@ -142,7 +142,7 @@ final readonly class HealthScoreDrillDown
     {
         // Find the class in the metrics repository
         $classPath = null;
-        foreach ($metrics->all(SymbolType::Class_) as $symbolInfo) {
+        foreach ($metrics->all(SymbolLevel::Class_) as $symbolInfo) {
             $ns = $symbolInfo->symbolPath->namespace ?? '';
             $type = $symbolInfo->symbolPath->type ?? '';
             $fqcn = $ns !== '' ? $ns . '\\' . $type : $type;
@@ -188,7 +188,7 @@ final readonly class HealthScoreDrillDown
      */
     private function filterClassesByNamespace(MetricRepositoryInterface $metrics, string $namespace): Generator
     {
-        foreach ($metrics->all(SymbolType::Class_) as $symbolInfo) {
+        foreach ($metrics->all(SymbolLevel::Class_) as $symbolInfo) {
             $classNs = $symbolInfo->symbolPath->namespace ?? '';
 
             if (NamespaceMatcher::matchesSingle($namespace, $classNs)) {

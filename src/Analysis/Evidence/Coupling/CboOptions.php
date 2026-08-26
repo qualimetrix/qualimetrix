@@ -82,11 +82,13 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface, Sho
         }
 
         // Handle hierarchical format: {class: {...}, namespace: {...}}
-        $classConfig = isset($config['class']) && \is_array($config['class'])
-            ? $config['class']
+        $classKey = SymbolLevel::Class_->value;
+        $namespaceKey = SymbolLevel::Namespace_->value;
+        $classConfig = isset($config[$classKey]) && \is_array($config[$classKey])
+            ? $config[$classKey]
             : [];
-        $namespaceConfig = isset($config['namespace']) && \is_array($config['namespace'])
-            ? $config['namespace']
+        $namespaceConfig = isset($config[$namespaceKey]) && \is_array($config[$namespaceKey])
+            ? $config[$namespaceKey]
             : [];
 
         // Allow scope to be set at top level and propagate to class config

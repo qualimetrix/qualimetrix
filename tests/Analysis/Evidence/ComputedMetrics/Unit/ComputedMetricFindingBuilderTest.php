@@ -17,12 +17,12 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetri
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(ComputedMetricFindingBuilder::class)]
 final class ComputedMetricFindingBuilderTest extends TestCase
@@ -34,7 +34,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.score',
             formulas: ['class' => 'mi * 0.5'],
             description: 'Health score',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 30.0,
@@ -61,7 +61,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.score',
             formulas: ['class' => 'mi * 0.5'],
             description: 'Health score',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 30.0,
@@ -92,7 +92,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.score',
             formulas: ['class' => 'mi * 0.5'],
             description: 'Health score',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 30.0,
@@ -120,7 +120,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.complexity',
             formulas: ['class' => 'ccn'],
             description: 'Complexity metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
             errorThreshold: 20.0,
@@ -148,7 +148,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.complexity',
             formulas: ['class' => 'ccn'],
             description: 'Complexity metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
             errorThreshold: 20.0,
@@ -176,7 +176,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.score',
             formulas: ['class' => 'mi'],
             description: 'Health score',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 30.0,
@@ -210,7 +210,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.custom',
             formulas: ['class' => 'ccn'],
             description: 'Custom metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
         );
@@ -238,7 +238,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.precise',
             formulas: ['class' => 'mi'],
             description: 'Precise metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
         );
@@ -265,7 +265,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.norm',
             formulas: ['class' => 'ccn'],
             description: 'Normal metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
         );
@@ -293,7 +293,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.inv',
             formulas: ['class' => 'mi'],
             description: 'Inverted metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
         );
@@ -321,7 +321,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.complexity',
             formulas: ['class' => 'ccn'],
             description: 'Complexity metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
             errorThreshold: 20.0,
@@ -354,7 +354,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.cohesion',
             formulas: ['class' => 'tcc'],
             description: 'Cohesion metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
         );
@@ -383,7 +383,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.complexity',
             formulas: ['class' => 'ccn'],
             description: 'Complexity',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
             errorThreshold: 20.0,
@@ -428,7 +428,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: $dimensionName,
             formulas: ['class' => 'ccn'],
             description: 'Test dimension',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
         );
