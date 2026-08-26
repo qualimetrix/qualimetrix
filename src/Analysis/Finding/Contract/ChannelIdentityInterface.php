@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * The identity half of the channel universe: which names exist, what each

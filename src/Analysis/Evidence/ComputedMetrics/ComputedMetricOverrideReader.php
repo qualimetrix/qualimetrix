@@ -6,9 +6,9 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * One entry of the `computed_metrics` YAML section, read into a definition.

@@ -10,11 +10,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use RuntimeException;
 
 #[CoversClass(ChannelDeclarationReader::class)]

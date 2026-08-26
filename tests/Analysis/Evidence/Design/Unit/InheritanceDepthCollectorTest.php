@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector;
 use Qualimetrix\Analysis\Evidence\Design\InheritanceDepthVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use RuntimeException;
 use SplFileInfo;
 

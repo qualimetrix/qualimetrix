@@ -38,6 +38,8 @@ Core/
 │   ├── MetricSubjectCodec.php             # Scalar wire codec for metric subjects
 │   ├── PhpBuiltinClassRegistry.php        # Single source of truth for PHP built-in classes
 │   ├── SymbolInfo.php
+│   ├── SymbolLevel.php                    # The project's one level vocabulary
+│   ├── SymbolLevelProjection.php          # The one projection of declaration kind onto level
 │   ├── SymbolPath.php                     # Stable symbol identifier
 │   └── SymbolType.php
 ├── Time/
@@ -254,6 +256,26 @@ Hierarchy level of a symbol in the aggregation tree.
 | `File`       | File                              |
 | `Namespace_` | Namespace                         |
 | `Project`    | Project (root)                    |
+
+The level is a coordinate of a symbol, which is why it is owned here rather than
+by the capability that walks the aggregation tree: it is declared by rules, read
+off the symbol in `Finding::level()`, spelled right of the colon in an inline
+directive and in a selector, and filtered on by namespace-channel exclusions.
+`Analysis\Evidence\Measurement` owns the traversal, not the vocabulary
+(rule-vocabulary plan Ш5e2b).
+
+### SymbolLevelProjection
+
+The one projection of "what kind of declaration is this?" (`SymbolType`) onto
+"what level of the aggregation tree does it measure at?" (`SymbolLevel`).
+
+**Methods:**
+- `ofDeclaration(SymbolType $type): SymbolLevel` — collapses `Method` and
+  `Function_` into `Callable`; every other kind maps to its own level
+
+The collapse is stated here once. Do not re-derive it at a call site, and do not
+project a level back onto a declaration kind — a consumer that needs the kind
+reads it off the symbol it was handed.
 
 ### MetricDefinition
 

@@ -349,8 +349,6 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface'
-        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel'
-        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevelProjection'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait'
         - 'Qualimetrix\Analysis\Evidence\Measurement\DataBag'
@@ -727,6 +725,8 @@ architecture:
         - 'Qualimetrix\Core\Symbol\MetricSubjectCodec'
         - 'Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry'
         - 'Qualimetrix\Core\Symbol\SymbolInfo'
+        - 'Qualimetrix\Core\Symbol\SymbolLevel'
+        - 'Qualimetrix\Core\Symbol\SymbolLevelProjection'
         - 'Qualimetrix\Core\Symbol\SymbolPath'
         - 'Qualimetrix\Core\Symbol\SymbolType'
     - name: infrastructure-ast
@@ -979,7 +979,6 @@ architecture:
       - external
     analysis-evidence-circulardependency:
       - analysis-evidence-dependencymodel
-      - analysis-evidence-measurement
       - analysis-finding
       - core-neutral
       - core-symbol
@@ -1042,7 +1041,6 @@ architecture:
       - core-symbol
       - external
     analysis-evidence-duplication:
-      - analysis-evidence-measurement
       - analysis-finding
       - analysis-run
       - core-neutral
@@ -1093,7 +1091,6 @@ architecture:
     analysis-policy-architecture:
       - analysis-configuration
       - analysis-evidence-dependencymodel
-      - analysis-evidence-measurement
       - analysis-finding
       - core-neutral
       - core-symbol
@@ -1268,6 +1265,14 @@ rules:
     exclude_namespaces:
       - Qualimetrix\Analysis\Finding\Contract
       - Qualimetrix\Core\Symbol
+      # Reconfirmed 2026-08-26 for a namespace that grew: SymbolLevel and its
+      # projection moved in here (rule-vocabulary plan Ш5e2b), and this line is
+      # what silences the level vocabulary's fan-in — its point CBO threshold of
+      # 105 became unreachable and was removed with the move. Measured cost of
+      # narrowing this to point thresholds instead: 5 classes here exceed the
+      # class CBO threshold (SymbolPath 72, MetricSubject 46, SymbolType 35,
+      # SymbolInfo 33, and the namespace union 55) and 2 exceed ClassRank.
+      # Owner question, not settled here.
       - Qualimetrix\Core\Metric
       - Qualimetrix\Analysis\Finding\Rule
       - Qualimetrix\Core\Path
@@ -1320,6 +1325,8 @@ rules:
     exclude_namespaces:
       - Qualimetrix\Analysis\Finding\Contract
       - Qualimetrix\Core\Symbol
+      # Same reconfirmation as for coupling.cbo above: the level vocabulary now
+      # lives here, so its ClassRank is unmeasured too (rule-vocabulary Ш5e2b).
       - Qualimetrix\Core\Metric
       - Qualimetrix\Analysis\Finding\Rule
       - Qualimetrix\Core\Dependency

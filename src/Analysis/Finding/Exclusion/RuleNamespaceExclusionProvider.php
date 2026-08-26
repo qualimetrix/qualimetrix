@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Exclusion;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**

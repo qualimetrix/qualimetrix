@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 #[CoversClass(TypeCoverageCollector::class)]

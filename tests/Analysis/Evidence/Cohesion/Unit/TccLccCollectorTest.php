@@ -14,8 +14,8 @@ use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 #[CoversClass(TccLccCollector::class)]

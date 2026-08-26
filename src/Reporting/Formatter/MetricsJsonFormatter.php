@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter;
 
 use LogicException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\FormatterContext;

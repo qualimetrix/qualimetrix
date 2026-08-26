@@ -7,8 +7,8 @@ namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 #[CoversClass(SuppressionTarget::class)]
 final class SuppressionTargetTest extends TestCase

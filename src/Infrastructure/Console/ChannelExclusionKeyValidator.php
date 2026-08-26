@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Whether one `exclude_namespace_channels` key addresses a channel the rule it

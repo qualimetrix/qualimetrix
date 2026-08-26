@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
-
-use Qualimetrix\Core\Symbol\SymbolType;
+namespace Qualimetrix\Core\Symbol;
 
 /**
  * The one projection from "what kind of declaration is this?"

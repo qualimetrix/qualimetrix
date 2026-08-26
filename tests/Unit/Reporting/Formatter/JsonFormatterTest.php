@@ -1061,7 +1061,7 @@ final class JsonFormatterTest extends TestCase
                 : new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(),
         );
         $metrics->method('all')->willReturnCallback(
-            static fn(\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level): array => $level === \Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel::Namespace_
+            static fn(\Qualimetrix\Core\Symbol\SymbolLevel $level): array => $level === \Qualimetrix\Core\Symbol\SymbolLevel::Namespace_
                 ? [new \Qualimetrix\Core\Symbol\SymbolInfo($nsPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service'), 0)]
                 : [],
         );
@@ -1122,7 +1122,7 @@ final class JsonFormatterTest extends TestCase
             },
         );
         $metrics->method('all')->willReturnCallback(
-            static fn(\Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel $level): array => $level === \Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel::Class_
+            static fn(\Qualimetrix\Core\Symbol\SymbolLevel $level): array => $level === \Qualimetrix\Core\Symbol\SymbolLevel::Class_
                 ? [new \Qualimetrix\Core\Symbol\SymbolInfo($classPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), 1)]
                 : [],
         );

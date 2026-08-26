@@ -8,7 +8,6 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
@@ -22,6 +21,7 @@ use Qualimetrix\Analysis\Policy\Baseline\V5Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\V5BaselineReader;
 use Qualimetrix\Analysis\Policy\Baseline\V5Entry;
 use Qualimetrix\Analysis\Policy\Baseline\V5UnreadableRecord;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * A v5 file carries only `(symbolKey, rule)` — no magnitude, no

@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCalculator
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 #[CoversClass(MaintainabilityIndexCollector::class)]
 #[CoversClass(MaintainabilityIndexCalculator::class)]

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
 
+use Qualimetrix\Core\Symbol\SymbolLevel;
+
 /**
  * Describes how a metric is collected and how it should be aggregated
  * when rolling up to higher symbol levels.

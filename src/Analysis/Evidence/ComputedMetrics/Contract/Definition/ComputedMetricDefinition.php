@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final readonly class ComputedMetricDefinition
 {

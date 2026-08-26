@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Rule that operates on multiple levels of code hierarchy.

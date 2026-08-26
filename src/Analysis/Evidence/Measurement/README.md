@@ -35,26 +35,26 @@ include `MetricRepositoryInterface`, `MetricRepositoryFactoryInterface`,
 Consumers must not import repository indexes, visitor state, aggregation helpers,
 or collector implementations.
 
-`SymbolLevel` is the project's one level vocabulary: the rule layer, the
-finding, the channel declaration, the stored metric and the repository's own
-`all()` query all name a level with it. `Core\Symbol\SymbolType` stays a
-separate question — what kind of declaration this is, a fact about PHP — and
-the two meet only in `SymbolLevelProjection::ofDeclaration()`, which collapses
-`method` and `function` into `callable`. Do not re-derive that collapse at a
-call site, and do not project a level back onto a declaration kind: a consumer
-that needs the kind reads it off the symbol it was handed. `all(SymbolLevel::Callable)`
-is the same enumeration as `allCallables()`, and a test pins them equal.
+`Core\Symbol\SymbolLevel` is the project's one level vocabulary: the rule
+layer, the finding, the channel declaration, the stored metric and this
+capability's own `all()` query all name a level with it. `Core\Symbol\SymbolType`
+stays a separate question — what kind of declaration this is, a fact about PHP —
+and the two meet only in `Core\Symbol\SymbolLevelProjection::ofDeclaration()`,
+which collapses `method` and `function` into `callable`. Do not re-derive that
+collapse at a call site, and do not project a level back onto a declaration
+kind: a consumer that needs the kind reads it off the symbol it was handed.
+`all(SymbolLevel::Callable)` is the same enumeration as `allCallables()`, and a
+test pins them equal.
 
-**Why the vocabulary lives here and not in `Core`.** Nearly every rule now
-imports it, and the fan-in is visible in this capability's own numbers — the
-enum's point CBO threshold and its point ClassRank threshold exist for that
-reason. Many imports are nonetheless not an argument for moving it: ADR 0022
-settles this exact case, and settles it against the move — "`Core` holds only
-neutral primitives without a natural leaf owner. Many imports do not make a
-type neutral." A level is the level of the *aggregation tree*, which is this
-capability's own model and not a neutral primitive; `Core\Symbol\SymbolType`
-is the neutral one and already lives there. Revisit only if the aggregation
-tree stops being owned here.
+**Why the vocabulary is not owned here.** This capability owns the *traversal*
+of the aggregation tree — `all()`, the aggregators, the indexes — while the
+vocabulary of steps is a coordinate of a symbol, and it moved to `Core\Symbol`
+next to `SymbolType`, `SymbolPath` and `MetricSubject` (rule-vocabulary plan
+Ш5e2b). What settled it is that no change to the level stayed inside this
+capability: the level is read by Finding, Policy/Inline, Reporting,
+Infrastructure and twelve evidence capabilities, and `Finding::level()` does not
+store it but computes it from the symbol. Reading the vocabulary is not owning
+it — this capability and Finding both read it, neither declares it.
 
 ## Declaration numbering
 
@@ -120,8 +120,8 @@ log between the first two spans.
 High fan-in of the public Measurement surface is governed by point thresholds,
 not a namespace-wide exclusion. Current CBO thresholds give one-edge headroom:
 `AbstractCollector` 27, `AggregationStrategy` 38, `MetricBag` 68,
-`MetricDefinition` 33, `MetricName` 63, `MetricRepositoryInterface` 46,
-`ResettableVisitorInterface` 23, and `SymbolLevel` 34. `MetricBag` and
+`MetricDefinition` 33, `MetricName` 63, `MetricRepositoryInterface` 46, and
+`ResettableVisitorInterface` 23. `MetricBag` and
 `MetricRepositoryInterface` also carry rounded point ClassRank warning/error
 thresholds of 0.035 and 0.020 respectively for their intentional contract-hub
 role.

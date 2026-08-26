@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use RuntimeException;
 
 #[CoversClass(ComputedMetricsConfigResolver::class)]
@@ -465,7 +465,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     /**
      * `mapLevel()` used to spell the level vocabulary as its own private
      * `match ('class', 'namespace', 'project')`, independent of
-     * {@see \Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel}.
+     * {@see \Qualimetrix\Core\Symbol\SymbolLevel}.
      * Routing it through `SymbolLevel` must not narrow the spellings a
      * `computed_metrics.*.levels` entry accepts — every spelling accepted
      * before this change is accepted after it too.
@@ -488,7 +488,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
     /**
      * `callable` and `file` are real words in the level vocabulary
-     * ({@see \Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel}) that a
+     * ({@see \Qualimetrix\Core\Symbol\SymbolLevel}) that a
      * computed metric cannot report at — {@see ComputedMetricDefinition}'s
      * `formulas` keys are class/namespace/project only. Both the old private
      * word list and the vocabulary-backed replacement refuse them; this pins
