@@ -57,13 +57,15 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
     }
 
     /**
-     * Callables are the one level this store keeps somewhere else: `add()`
-     * refuses a method or a function, so no callable ever reaches
-     * `$symbolInfos`, and the whole level lives in the subject index behind
-     * {@see allCallables()}. Answering the level query by calling that method
-     * keeps the two spellings of one enumeration from drifting apart; the
-     * remaining levels are matched by projecting each symbol's declaration
-     * kind onto its level, so nothing here maps a level back onto a kind.
+     * Two levels live outside `$symbolInfos`, each behind its own enumeration.
+     * `add()` is the only writer of `$symbolInfos`: it refuses a method or a
+     * function outright, and it hands a class to the subject index before it
+     * reaches the map — so neither a callable nor a logical class is ever
+     * stored there. Both are answered by delegating to the enumeration that
+     * owns them, which keeps the two spellings of one enumeration from
+     * drifting apart. The remaining levels are matched by projecting each
+     * symbol's declaration kind onto its level, so nothing here maps a level
+     * back onto a kind.
      */
     public function all(SymbolLevel $level): iterable
     {
@@ -73,16 +75,16 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
             return;
         }
 
-        $seen = [];
-        foreach ($this->symbolInfos as $canonical => $info) {
-            if (SymbolLevelProjection::ofDeclaration($info->symbolPath->getType()) === $level) {
-                $seen[$canonical] = true;
-                yield $info;
-            }
+        if ($level === SymbolLevel::Class_) {
+            yield from $this->allLogicalClasses();
+
+            return;
         }
 
-        if ($level === SymbolLevel::Class_) {
-            yield from $this->unseenLogicalClasses($seen);
+        foreach ($this->symbolInfos as $info) {
+            if (SymbolLevelProjection::ofDeclaration($info->symbolPath->getType()) === $level) {
+                yield $info;
+            }
         }
     }
 
@@ -270,20 +272,6 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
     {
         $info = $this->subjectIndex->addLogicalClass($symbol, $metrics, null, null);
         $this->namespaceIndex->add($info);
-    }
-
-    /**
-     * @param array<string, true> $seen
-     *
-     * @return iterable<SymbolInfo>
-     */
-    private function unseenLogicalClasses(array $seen): iterable
-    {
-        foreach ($this->allLogicalClasses() as $info) {
-            if (!isset($seen[$info->symbolPath->toCanonical()])) {
-                yield $info;
-            }
-        }
     }
 
 }

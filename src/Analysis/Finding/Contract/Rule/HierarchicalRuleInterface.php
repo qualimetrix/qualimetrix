@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 /**
  * Rule that operates on multiple levels of code hierarchy.
  *
- * Hierarchical rules can analyze code at method, class, and/or namespace levels,
+ * Hierarchical rules can analyze code at callable, class, and/or namespace levels,
  * with different thresholds and logic for each level.
  */
 interface HierarchicalRuleInterface extends RuleInterface

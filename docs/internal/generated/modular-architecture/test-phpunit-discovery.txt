@@ -7372,6 +7372,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itFiltersNonFiniteValues
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itFormatsWithMetrics
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itFormatsWithNullMetrics
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itGivesEveryDeclarationKindAPublicationPosition
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itProducesValidJson
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itPublishesTheDeclarationKindAndKeepsTheBucketOrder
  - Qualimetrix\Tests\Unit\Reporting\Formatter\MetricsJsonFormatterTest::itReturnsDefaultGroupByNone

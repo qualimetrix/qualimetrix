@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
  *
  * {@see RuleOptionThresholdModeResolver} consults this registry FIRST when
  * deciding which keys belong together for a given rule — and, for
- * hierarchical rules, a given nesting path (`method`, `class`, `namespace`,
+ * hierarchical rules, a given nesting path (`callable`, `class`, `namespace`,
  * or `''` for the rule's own top level). Each entry mirrors the literal
  * `$warningKey`/`$errorKey`/`$thresholdKey`/`$legacyKeys` arguments already
  * passed to `ThresholdParser::parse()` at that rule's `Options::fromArray()`
@@ -103,7 +103,7 @@ final class RuleThresholdKeyGroupRegistry
     /**
      * `warningThreshold`/`errorThreshold`/`threshold` — legacy top-level
      * ALIASES for warning/error on `complexity.cyclomatic`/`cognitive`/
-     * `npath`'s method dimension, not a `max_`-style rename. Kept as its own
+     * `npath`'s callable dimension, not a `max_`-style rename. Kept as its own
      * constant (rather than folded into {@see BARE_PAIR}) precisely because
      * a plain suffix heuristic would otherwise misclassify `warningThreshold`
      * as a `threshold` marker (it ends in "Threshold") instead of a

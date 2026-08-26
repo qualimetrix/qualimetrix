@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 /**
  * Options for ComplexityRule (hierarchical).
  *
- * Supports method and class levels with separate thresholds.
+ * Supports callable and class levels with separate thresholds.
  */
 final readonly class ComplexityOptions implements HierarchicalRuleOptionsInterface, ShorthandOptionKeysInterface
 {

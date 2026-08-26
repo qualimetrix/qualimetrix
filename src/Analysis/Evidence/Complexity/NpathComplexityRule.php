@@ -23,12 +23,12 @@ use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
- * Hierarchical rule that checks NPath complexity at method and class levels.
+ * Hierarchical rule that checks NPath complexity at callable and class levels.
  *
- * NPath Complexity counts the number of acyclic execution paths through a method.
+ * NPath Complexity counts the number of acyclic execution paths through a callable.
  * Unlike Cyclomatic Complexity (additive), NPath is multiplicative and grows exponentially.
  *
- * - Method level: checks individual method NPath
+ * - Callable level: checks the NPath of one method or global function
  * - Class level: checks maximum NPath among class methods
  */
 #[CliAlias('npath-warning', 'callable.warning')]

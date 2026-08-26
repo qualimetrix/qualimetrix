@@ -13,10 +13,12 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Formatter\MetricsJsonFormatter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
+use ReflectionClass;
 
 #[CoversClass(MetricsJsonFormatter::class)]
 final class MetricsJsonFormatterTest extends TestCase
@@ -347,5 +349,15 @@ final class MetricsJsonFormatterTest extends TestCase
         // Should not throw
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
         self::assertIsArray($data);
+    }
+
+    /** A declaration kind absent from the publication order is dropped from the export. */
+    #[Test]
+    public function itGivesEveryDeclarationKindAPublicationPosition(): void
+    {
+        $kinds = (new ReflectionClass(MetricsJsonFormatter::class))->getConstant('DECLARATION_KINDS');
+
+        self::assertIsArray($kinds);
+        self::assertEqualsCanonicalizing(SymbolType::cases(), $kinds);
     }
 }

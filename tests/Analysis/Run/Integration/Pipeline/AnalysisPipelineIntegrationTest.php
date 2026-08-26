@@ -710,8 +710,8 @@ PHP);
         $orchestrator->method('collect')->willReturnCallback(
             function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // Copy pre-populated symbols into the pipeline's repository
-                foreach ([SymbolLevel::Class_, SymbolLevel::Namespace_] as $type) {
-                    foreach ($existingRepository->all($type) as $info) {
+                foreach ([SymbolLevel::Class_, SymbolLevel::Namespace_] as $level) {
+                    foreach ($existingRepository->all($level) as $info) {
                         $bag = $existingRepository->get($info->symbolPath);
                         $repository->add($info->symbolPath, $bag, $info->file, $info->line);
                     }

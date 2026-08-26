@@ -9,7 +9,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  * when rolling up to higher symbol levels.
  *
  * Example for CCN (Cyclomatic Complexity):
- *   - Collected at: Method level
+ *   - Collected at: Callable level
  *   - Aggregations: Class→[Sum,Avg,Max], Namespace→[Sum,Avg,Max], Project→[Sum,Avg,Max]
  *
  * Example for classCount:

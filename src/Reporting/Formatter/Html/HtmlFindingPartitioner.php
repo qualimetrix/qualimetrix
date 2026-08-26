@@ -12,7 +12,7 @@ use Qualimetrix\Reporting\FormatterContext;
 /**
  * Partitions findings by tree node and attaches formatted finding data.
  *
- * Method-level findings are attached to the parent class node.
+ * Callable-level findings are attached to the parent class node.
  * Class-level findings are attached to the class node.
  * Namespace-level findings are attached to the namespace node.
  * File-level / unresolvable findings are skipped.

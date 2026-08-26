@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -141,6 +142,20 @@ final class MetricsJsonFormatter implements FormatterInterface
             foreach ($buckets[$kind->value] ?? [] as $symbolInfo) {
                 $ordered[] = $symbolInfo;
             }
+
+            unset($buckets[$kind->value]);
+        }
+
+        // A kind missing from the publication order would otherwise be
+        // dropped from the export without a trace, and the export would still
+        // look well-formed. Adding a SymbolType case must extend the order
+        // above, not silently shrink the document.
+        if ($buckets !== []) {
+            throw new LogicException(\sprintf(
+                'MetricsJsonFormatter has no publication position for declaration kind(s) %s; extend %s::DECLARATION_KINDS.',
+                implode(', ', array_keys($buckets)),
+                self::class,
+            ));
         }
 
         return $ordered;

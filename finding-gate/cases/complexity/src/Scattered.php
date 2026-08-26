@@ -2,6 +2,15 @@
 
 namespace Corpus\Complexity;
 
+function describeMode(int $mode): string
+{
+    return match ($mode) {
+        1 => 'strict',
+        2 => 'lenient',
+        default => 'unknown',
+    };
+}
+
 class Scattered
 {
     private int $counter = 0;

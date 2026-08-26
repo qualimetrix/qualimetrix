@@ -855,6 +855,20 @@ final class Controls
      * apply, and because this pin names one whole surface rather than a prefix
      * of several.
      *
+     * One gap is named rather than closed: the answer comes from the
+     * repository's tracked declaration, so it does not know about a control
+     * that plants a declaration of its own over that file — the exemption
+     * {@see Harness::replacesDeclaration()} computes and
+     * {@see Control::assertNotPinnedToDeclaredDelta()} honours. Neither
+     * control built on {@see unusedPrivateChannelMutation()} touches
+     * `declared-delta.tsv`, so today the two answers coincide. A control that
+     * combined this mutation with a planted declaration on the producer
+     * listing surface would be compared against the planted diff while this
+     * helper still read the tracked file: the toleration would match nothing
+     * and fail the control as an idle toleration. Such a control has to derive
+     * its expectation from what it plants, not from what the repository
+     * tracks.
+     *
      * @return list<Expectation>
      */
     private static function producerListingToleration(): array

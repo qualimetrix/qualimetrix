@@ -22,7 +22,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 
 /**
- * Rule that checks Maintainability Index at method level.
+ * Rule that checks Maintainability Index at callable level.
  *
  * MI thresholds (lower is worse):
  * - MI >= 40: good (no finding)

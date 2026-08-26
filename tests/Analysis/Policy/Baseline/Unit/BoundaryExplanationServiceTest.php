@@ -501,12 +501,21 @@ final class BoundaryExplanationServiceTest extends TestCase
         self::assertSame('src/First.php', $index[$first->toCanonical()]['location'][0]->value());
         self::assertNull($index[$namespace->toCanonical()]['subject']);
         self::assertSame(1, $repository->calls['allDeclarations']);
-        self::assertSame(1, $repository->calls['allCallables']);
         self::assertSame(1, $repository->calls['allLogicalClasses']);
         self::assertSame(2, $repository->iterations['allDeclarations']);
-        self::assertSame(2, $repository->iterations['allCallables']);
         self::assertSame(1, $repository->iterations['allLogicalClasses']);
+        // `all(Callable)` is the same enumeration as `allCallables()`, so the
+        // double delegates and the service's two callable reads land on one
+        // counter; a level counter of its own would mean the double had two
+        // sources for one enumeration, which the real repository does not.
+        self::assertSame(2, $repository->calls['allCallables']);
+        self::assertSame(4, $repository->iterations['allCallables']);
+        self::assertArrayNotHasKey('all:' . SymbolLevel::Callable->value, $repository->calls);
         foreach (SymbolLevel::cases() as $level) {
+            if ($level === SymbolLevel::Callable) {
+                continue;
+            }
+
             self::assertSame(1, $repository->calls['all:' . $level->value]);
         }
         self::assertSame(1, $repository->iterations['all:' . SymbolLevel::Namespace_->value]);
@@ -635,6 +644,13 @@ final class CountingBoundaryRepository implements MetricRepositoryInterface
 
     public function all(SymbolLevel $level): iterable
     {
+        // The contract makes `all(Callable)` and `allCallables()` one
+        // enumeration; a double that answered them from different maps would
+        // let a consumer pass here and fail against the real repository.
+        if ($level === SymbolLevel::Callable) {
+            return $this->allCallables();
+        }
+
         $source = 'all:' . $level->value;
         $this->count($this->calls, $source);
 
