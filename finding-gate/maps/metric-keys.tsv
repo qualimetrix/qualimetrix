@@ -56,8 +56,6 @@ pureMethodCount_cohesion	cohesion.pure-method-count	Ш5e3 renames this metric-ke
 rfc	coupling.rfc	Ш5e3 renames this metric-key
 rfc_external	coupling.rfc-external	Ш5e3 renames this metric-key
 rfc_own	coupling.rfc-own	Ш5e3 renames this metric-key
-security.hardcodedCredentials	security.hardcoded-credentials	Ш5e3 renames this metric-key
-security.sensitiveParameter	security.sensitive-parameter	Ш5e3 renames this metric-key
 setterCount	size.setter-count	Ш5e3 renames this metric-key
 symbolClassCount	size.symbol-class-count	Ш5e3 renames this metric-key
 symbolMethodCount	size.symbol-method-count	Ш5e3 renames this metric-key
@@ -75,9 +73,6 @@ typeCoverage.returnTotal	design.type-coverage.return.total	Ш5e3 renames this me
 typeCoverage.returnTyped	design.type-coverage.return.typed	Ш5e3 renames this metric-key
 unreachableCode	code-smell.unreachable-code	Ш5e3 renames this metric-key
 unreachableCode.firstLine	code-smell.unreachable-code.first-line	Ш5e3 renames this metric-key
-unusedPrivate.constant	code-smell.unused-private.constant	Ш5e3 renames this metric-key
-unusedPrivate.method	code-smell.unused-private.method	Ш5e3 renames this metric-key
-unusedPrivate.property	code-smell.unused-private.property	Ш5e3 renames this metric-key
 unusedPrivate.total	code-smell.unused-private.total	Ш5e3 renames this metric-key
 wmc	complexity.wmc	Ш5e3 renames this metric-key
 woc	design.woc	Ш5e3 renames this metric-key

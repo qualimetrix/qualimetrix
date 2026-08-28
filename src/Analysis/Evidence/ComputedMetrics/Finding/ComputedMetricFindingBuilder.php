@@ -65,11 +65,27 @@ final class ComputedMetricFindingBuilder
         return null;
     }
 
-    private function recommendation(string $dimensionName, float $value, float $threshold): string
+    /**
+     * The metric's leaf, read as words.
+     *
+     * A separator inside the leaf is a word break, not a character to print:
+     * `computed.branch-load` reads "Branch load". It used to print the leaf
+     * verbatim, so the separator the name happened to use leaked into a
+     * sentence — and Ш5e3, which changed that separator from `_` to `-`, would
+     * have moved a published recommendation without renaming anything a reader
+     * addresses.
+     */
+    private static function title(string $dimensionName): string
     {
         $lastDot = strrpos($dimensionName, '.');
-        $segment = $lastDot !== false ? substr($dimensionName, $lastDot + 1) : $dimensionName;
-        $header = \sprintf('%s health: %.1f (threshold: %.1f)', ucfirst($segment), $value, $threshold);
+        $leaf = $lastDot !== false ? substr($dimensionName, $lastDot + 1) : $dimensionName;
+
+        return ucfirst(str_replace(['-', '_'], ' ', $leaf));
+    }
+
+    private function recommendation(string $dimensionName, float $value, float $threshold): string
+    {
+        $header = \sprintf('%s health: %.1f (threshold: %.1f)', self::title($dimensionName), $value, $threshold);
         $advice = match (true) {
             str_contains($dimensionName, 'complexity') => 'Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.',
             str_contains($dimensionName, 'cohesion') => 'Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.',

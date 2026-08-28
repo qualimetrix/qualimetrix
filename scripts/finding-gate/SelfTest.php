@@ -732,6 +732,49 @@ final class SelfTest
 
         $this->aggregationVocabulary();
         $this->keysTravelOnlyWhereKeysArePublished();
+        $this->htmlIsComparedThroughItsPayload();
+    }
+
+    /**
+     * The HTML surface is its payload, and a report without one is loud.
+     *
+     * Three cases, because the narrowing is only safe if all three hold: the
+     * bundle may move without the surface moving, a metric key inside the
+     * payload may NOT move without it, and an artifact the payload cannot be
+     * read out of is a failure of its own rather than a surface that compares
+     * as nothing. The third is the one the narrowing could have bought
+     * silently — two unreadable reports reduce to two empty strings, which are
+     * equal.
+     */
+    private function htmlIsComparedThroughItsPayload(): void
+    {
+        $report = static fn(string $bundle, string $payload): string => '<html><head><style>a{}</style></head><body>'
+            . '<script>' . $bundle . '</script>'
+            . '<script type="application/json" id="report-data">' . $payload . '</script>'
+            . '</body></html>';
+
+        $payload = '{"project":{"metrics":{"complexity.ccn":5}}}';
+
+        $this->same(
+            ReportPayload::of($report('var A=1', $payload), 'case:x|format:html', 'candidate'),
+            ReportPayload::of($report('var B=2', $payload), 'case:x|format:html', 'reference'),
+            'a rebuilt bundle does not move the compared surface',
+        );
+
+        $this->assert(
+            ReportPayload::of($report('var A=1', $payload), 'case:x|format:html', 'candidate')
+            !== ReportPayload::of($report('var A=1', '{"project":{"metrics":{"ccn":5}}}'), 'case:x|format:html', 'reference'),
+            'a metric key inside the payload still moves it',
+        );
+
+        $this->assert(
+            self::throws(static fn(): string => ReportPayload::of('<html><body>no payload</body></html>', 'case:x|format:html', 'candidate')),
+            'a report with no payload is refused rather than compared as nothing',
+        );
+        $this->assert(
+            self::throws(static fn(): string => ReportPayload::of($report('var A=1', '{oops'), 'case:x|format:html', 'candidate')),
+            'a payload that is not JSON is refused too',
+        );
     }
 
     /**

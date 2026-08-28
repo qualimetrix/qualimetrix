@@ -295,7 +295,7 @@ final class HealthTextFormatter implements FormatterInterface
 
             foreach ($contributor->metricValues as $key => $value) {
                 $formattedValue = \is_float($value) ? \sprintf('%.1f', $value) : (string) $value;
-                $displayKey = strtoupper(self::displayKey($key));
+                $displayKey = self::displayKey($key);
                 $metricParts[] = \sprintf('%s=%s', $displayKey, $formattedValue);
             }
 
@@ -312,13 +312,19 @@ final class HealthTextFormatter implements FormatterInterface
      * and the family because the dimension heading above the line IS the
      * family — "Complexity … COMPLEXITY.CCN=15" says it twice. What is left is
      * the metric, which is what a reader scanning the column is looking for.
+     *
+     * What is left is rendered in constant case, underscores and all, because
+     * that is what an upper-cased identifier is written as. Upper-casing the
+     * key's own separator instead made the label carry a spelling decision —
+     * `CE_PACKAGES` became `CE-PACKAGES` when Ш5e3 moved the key to kebab.
      */
     private static function displayKey(string $key): string
     {
         $base = MetricName::base($key);
         $separatorAt = strpos($base, '.');
+        $metric = $separatorAt === false ? $base : substr($base, $separatorAt + 1);
 
-        return $separatorAt === false ? $base : substr($base, $separatorAt + 1);
+        return strtoupper(str_replace('-', '_', $metric));
     }
 
     private function colorizeScore(string $text, HealthScore $hs, AnsiColor $color): string

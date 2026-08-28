@@ -629,6 +629,21 @@ final class Gate
                 ),
             );
 
+            // The HTML report is compared through its payload; the shell and the
+            // report application's bundle are the tool ({@see ReportPayload}).
+            // Reduced last, so normalization still addresses the payload where it
+            // sits and a declared row still reaches the whole file.
+            if ($surface === 'format:html') {
+                try {
+                    $left = ReportPayload::of($left, $key, 'candidate');
+                    $right = ReportPayload::of($right, $key, 'reference');
+                } catch (GateError $error) {
+                    $this->report->fail(FailureClass::REPORT_PAYLOAD_UNREADABLE, $key, $error->getMessage());
+
+                    continue;
+                }
+            }
+
             if ($left === $right) {
                 continue;
             }

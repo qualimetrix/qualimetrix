@@ -43,6 +43,7 @@ foreach (
         'EquivalenceTuple',
         'FingerprintSubstitution',
         'Fingerprints',
+        'ReportPayload',
         'ChannelWitness',
         'ChannelCoverage',
         'TreeRun',
