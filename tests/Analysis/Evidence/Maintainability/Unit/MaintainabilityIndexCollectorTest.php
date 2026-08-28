@@ -33,7 +33,7 @@ final class MaintainabilityIndexCollectorTest extends TestCase
     #[Test]
     public function itProvides(): void
     {
-        self::assertSame(['mi'], $this->collector->provides());
+        self::assertSame(['maintainability.mi'], $this->collector->provides());
     }
 
     #[Test]
@@ -49,14 +49,14 @@ final class MaintainabilityIndexCollectorTest extends TestCase
     public function itCalculatesWithValidMetrics(): void
     {
         $sourceBag = (new MetricBag())
-            ->with('halstead.volume', 100.0)
-            ->with('ccn', 5)
-            ->with('methodStatementCount', 20);
+            ->with('maintainability.halstead.volume', 100.0)
+            ->with('complexity.ccn', 5)
+            ->with('size.method-statement-count', 20);
 
         $result = $this->collector->calculate($sourceBag);
 
-        self::assertTrue($result->has('mi'));
-        $mi = $result->get('mi');
+        self::assertTrue($result->has('maintainability.mi'));
+        $mi = $result->get('maintainability.mi');
         self::assertIsFloat($mi);
         self::assertGreaterThan(0, $mi);
         self::assertLessThanOrEqual(100, $mi);
@@ -66,14 +66,14 @@ final class MaintainabilityIndexCollectorTest extends TestCase
     public function itReturns100ForZeroVolume(): void
     {
         $sourceBag = (new MetricBag())
-            ->with('halstead.volume', 0.0)
-            ->with('ccn', 1)
-            ->with('methodStatementCount', 0);
+            ->with('maintainability.halstead.volume', 0.0)
+            ->with('complexity.ccn', 1)
+            ->with('size.method-statement-count', 0);
 
         $result = $this->collector->calculate($sourceBag);
 
         // Empty method should have perfect MI
-        self::assertSame(100.0, $result->get('mi'));
+        self::assertSame(100.0, $result->get('maintainability.mi'));
     }
 
     #[Test]
@@ -85,21 +85,21 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         $result = $this->collector->calculate($sourceBag);
 
         // Without Halstead volume, MI cannot be calculated (e.g. class-level FQN)
-        self::assertFalse($result->has('mi'));
+        self::assertFalse($result->has('maintainability.mi'));
     }
 
     #[Test]
     public function itYieldsLowerMiForHighComplexity(): void
     {
         $sourceBag = (new MetricBag())
-            ->with('halstead.volume', 500.0)
-            ->with('ccn', 20)
-            ->with('methodStatementCount', 40);
+            ->with('maintainability.halstead.volume', 500.0)
+            ->with('complexity.ccn', 20)
+            ->with('size.method-statement-count', 40);
 
         $result = $this->collector->calculate($sourceBag);
 
         // High complexity should result in lower MI
-        $mi = $result->get('mi');
+        $mi = $result->get('maintainability.mi');
         self::assertLessThan(80, $mi);
     }
 
@@ -113,14 +113,14 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         // MI_raw = 171 - 10.813 - 0.23 - 0 = 159.957
         // MI_normalized = 159.957 * 100 / 171 = 93.54
         $sourceBag = (new MetricBag())
-            ->with('halstead.volume', 8.0)
-            ->with('ccn', 1)
-            ->with('methodStatementCount', 1);
+            ->with('maintainability.halstead.volume', 8.0)
+            ->with('complexity.ccn', 1)
+            ->with('size.method-statement-count', 1);
 
         $result = $this->collector->calculate($sourceBag);
 
-        self::assertTrue($result->has('mi'));
-        self::assertEqualsWithDelta(93.54, $result->get('mi'), 0.1);
+        self::assertTrue($result->has('maintainability.mi'));
+        self::assertEqualsWithDelta(93.54, $result->get('maintainability.mi'), 0.1);
     }
 
     #[Test]
@@ -132,39 +132,39 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         // MI_raw = 171 - 23.947 - 1.15 - 48.531 = 97.372
         // MI_normalized = 97.372 * 100 / 171 = 56.94
         $sourceBag = (new MetricBag())
-            ->with('halstead.volume', 100.0)
-            ->with('ccn', 5)
-            ->with('methodStatementCount', 20);
+            ->with('maintainability.halstead.volume', 100.0)
+            ->with('complexity.ccn', 5)
+            ->with('size.method-statement-count', 20);
 
         $result = $this->collector->calculate($sourceBag);
 
-        self::assertTrue($result->has('mi'));
-        self::assertEqualsWithDelta(56.94, $result->get('mi'), 0.2);
+        self::assertTrue($result->has('maintainability.mi'));
+        self::assertEqualsWithDelta(56.94, $result->get('maintainability.mi'), 0.2);
     }
 
     #[Test]
     public function itSkipsCalculationWithoutStatementCount(): void
     {
         $sourceBag = (new MetricBag())
-            ->with('halstead.volume', 100.0)
-            ->with('ccn', 5);
+            ->with('maintainability.halstead.volume', 100.0)
+            ->with('complexity.ccn', 5);
 
-        self::assertFalse($this->collector->calculate($sourceBag)->has('mi'));
+        self::assertFalse($this->collector->calculate($sourceBag)->has('maintainability.mi'));
     }
 
     #[Test]
     public function itClampsOnlyTheLogarithmInputForAnEmptyMethod(): void
     {
         $empty = (new MetricBag())
-            ->with('halstead.volume', 8.0)
-            ->with('ccn', 1)
-            ->with('methodStatementCount', 0);
-        $oneStatement = $empty->with('methodStatementCount', 1);
+            ->with('maintainability.halstead.volume', 8.0)
+            ->with('complexity.ccn', 1)
+            ->with('size.method-statement-count', 0);
+        $oneStatement = $empty->with('size.method-statement-count', 1);
 
-        self::assertSame(0, $empty->get('methodStatementCount'));
+        self::assertSame(0, $empty->get('size.method-statement-count'));
         self::assertSame(
-            $this->collector->calculate($oneStatement)->get('mi'),
-            $this->collector->calculate($empty)->get('mi'),
+            $this->collector->calculate($oneStatement)->get('maintainability.mi'),
+            $this->collector->calculate($empty)->get('maintainability.mi'),
         );
     }
 
@@ -176,7 +176,7 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         self::assertCount(1, $definitions);
 
         $miDef = $definitions[0];
-        self::assertSame('mi', $miDef->name);
+        self::assertSame('maintainability.mi', $miDef->name);
         self::assertSame(SymbolLevel::Callable, $miDef->collectedAt);
 
         // Check aggregations

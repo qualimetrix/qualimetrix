@@ -43,18 +43,18 @@ final class MethodCountCollectorTest extends TestCase
     {
         $provides = $this->collector->provides();
 
-        self::assertContains('methodCount', $provides);
-        self::assertContains('methodCountTotal', $provides);
-        self::assertContains('methodCountPublic', $provides);
-        self::assertContains('methodCountProtected', $provides);
-        self::assertContains('methodCountPrivate', $provides);
-        self::assertContains('getterCount', $provides);
-        self::assertContains('setterCount', $provides);
-        self::assertContains('propertyCount', $provides);
-        self::assertContains('propertyCountPublic', $provides);
-        self::assertContains('propertyCountProtected', $provides);
-        self::assertContains('propertyCountPrivate', $provides);
-        self::assertContains('promotedPropertyCount', $provides);
+        self::assertContains('size.method-count', $provides);
+        self::assertContains('size.method-count.total', $provides);
+        self::assertContains('size.method-count.public', $provides);
+        self::assertContains('size.method-count.protected', $provides);
+        self::assertContains('size.method-count.private', $provides);
+        self::assertContains('size.getter-count', $provides);
+        self::assertContains('size.setter-count', $provides);
+        self::assertContains('size.property-count', $provides);
+        self::assertContains('size.property-count.public', $provides);
+        self::assertContains('size.property-count.protected', $provides);
+        self::assertContains('size.property-count.private', $provides);
+        self::assertContains('size.promoted-property-count', $provides);
     }
 
     #[Test]
@@ -72,13 +72,13 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('methodCount:App\EmptyClass'));
-        self::assertSame(0, $metrics->get('methodCountTotal:App\EmptyClass'));
-        self::assertSame(0, $metrics->get('methodCountPublic:App\EmptyClass'));
-        self::assertSame(0, $metrics->get('methodCountProtected:App\EmptyClass'));
-        self::assertSame(0, $metrics->get('methodCountPrivate:App\EmptyClass'));
-        self::assertSame(0, $metrics->get('getterCount:App\EmptyClass'));
-        self::assertSame(0, $metrics->get('setterCount:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('size.method-count:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('size.method-count.total:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('size.method-count.public:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('size.method-count.protected:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('size.method-count.private:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('size.getter-count:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('size.setter-count:App\EmptyClass'));
     }
 
     #[Test]
@@ -99,11 +99,11 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('methodCount:App\PublicClass'));
-        self::assertSame(3, $metrics->get('methodCountTotal:App\PublicClass'));
-        self::assertSame(3, $metrics->get('methodCountPublic:App\PublicClass'));
-        self::assertSame(0, $metrics->get('methodCountProtected:App\PublicClass'));
-        self::assertSame(0, $metrics->get('methodCountPrivate:App\PublicClass'));
+        self::assertSame(3, $metrics->get('size.method-count:App\PublicClass'));
+        self::assertSame(3, $metrics->get('size.method-count.total:App\PublicClass'));
+        self::assertSame(3, $metrics->get('size.method-count.public:App\PublicClass'));
+        self::assertSame(0, $metrics->get('size.method-count.protected:App\PublicClass'));
+        self::assertSame(0, $metrics->get('size.method-count.private:App\PublicClass'));
     }
 
     #[Test]
@@ -126,11 +126,11 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(5, $metrics->get('methodCount:App\MixedVisibility'));
-        self::assertSame(5, $metrics->get('methodCountTotal:App\MixedVisibility'));
-        self::assertSame(2, $metrics->get('methodCountPublic:App\MixedVisibility'));
-        self::assertSame(1, $metrics->get('methodCountProtected:App\MixedVisibility'));
-        self::assertSame(2, $metrics->get('methodCountPrivate:App\MixedVisibility'));
+        self::assertSame(5, $metrics->get('size.method-count:App\MixedVisibility'));
+        self::assertSame(5, $metrics->get('size.method-count.total:App\MixedVisibility'));
+        self::assertSame(2, $metrics->get('size.method-count.public:App\MixedVisibility'));
+        self::assertSame(1, $metrics->get('size.method-count.protected:App\MixedVisibility'));
+        self::assertSame(2, $metrics->get('size.method-count.private:App\MixedVisibility'));
     }
 
     #[Test]
@@ -152,10 +152,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(4, $metrics->get('getterCount:App\WithGetters'));
-        self::assertSame(0, $metrics->get('setterCount:App\WithGetters'));
-        self::assertSame(0, $metrics->get('methodCount:App\WithGetters')); // Excluded
-        self::assertSame(4, $metrics->get('methodCountTotal:App\WithGetters'));
+        self::assertSame(4, $metrics->get('size.getter-count:App\WithGetters'));
+        self::assertSame(0, $metrics->get('size.setter-count:App\WithGetters'));
+        self::assertSame(0, $metrics->get('size.method-count:App\WithGetters')); // Excluded
+        self::assertSame(4, $metrics->get('size.method-count.total:App\WithGetters'));
     }
 
     #[Test]
@@ -176,10 +176,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('getterCount:App\WithSetters'));
-        self::assertSame(3, $metrics->get('setterCount:App\WithSetters'));
-        self::assertSame(0, $metrics->get('methodCount:App\WithSetters')); // Excluded
-        self::assertSame(3, $metrics->get('methodCountTotal:App\WithSetters'));
+        self::assertSame(0, $metrics->get('size.getter-count:App\WithSetters'));
+        self::assertSame(3, $metrics->get('size.setter-count:App\WithSetters'));
+        self::assertSame(0, $metrics->get('size.method-count:App\WithSetters')); // Excluded
+        self::assertSame(3, $metrics->get('size.method-count.total:App\WithSetters'));
     }
 
     #[Test]
@@ -206,10 +206,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('getterCount:App\Entity'));
-        self::assertSame(3, $metrics->get('setterCount:App\Entity'));
-        self::assertSame(2, $metrics->get('methodCount:App\Entity')); // save, validate
-        self::assertSame(8, $metrics->get('methodCountTotal:App\Entity'));
+        self::assertSame(3, $metrics->get('size.getter-count:App\Entity'));
+        self::assertSame(3, $metrics->get('size.setter-count:App\Entity'));
+        self::assertSame(2, $metrics->get('size.method-count:App\Entity')); // save, validate
+        self::assertSame(8, $metrics->get('size.method-count.total:App\Entity'));
     }
 
     #[Test]
@@ -230,10 +230,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('methodCount:App\MyInterface'));
-        self::assertSame(3, $metrics->get('methodCountTotal:App\MyInterface'));
-        self::assertSame(1, $metrics->get('getterCount:App\MyInterface'));
-        self::assertSame(1, $metrics->get('setterCount:App\MyInterface'));
+        self::assertSame(1, $metrics->get('size.method-count:App\MyInterface'));
+        self::assertSame(3, $metrics->get('size.method-count.total:App\MyInterface'));
+        self::assertSame(1, $metrics->get('size.getter-count:App\MyInterface'));
+        self::assertSame(1, $metrics->get('size.setter-count:App\MyInterface'));
     }
 
     #[Test]
@@ -254,10 +254,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('methodCount:App\MyTrait'));
-        self::assertSame(3, $metrics->get('methodCountTotal:App\MyTrait'));
-        self::assertSame(1, $metrics->get('methodCountPublic:App\MyTrait'));
-        self::assertSame(1, $metrics->get('methodCountProtected:App\MyTrait'));
+        self::assertSame(2, $metrics->get('size.method-count:App\MyTrait'));
+        self::assertSame(3, $metrics->get('size.method-count.total:App\MyTrait'));
+        self::assertSame(1, $metrics->get('size.method-count.public:App\MyTrait'));
+        self::assertSame(1, $metrics->get('size.method-count.protected:App\MyTrait'));
     }
 
     #[Test]
@@ -290,9 +290,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('methodCount:App\Status'));
-        self::assertSame(2, $metrics->get('methodCountTotal:App\Status'));
-        self::assertSame(2, $metrics->get('getterCount:App\Status')); // getLabel, isActive
+        self::assertSame(0, $metrics->get('size.method-count:App\Status'));
+        self::assertSame(2, $metrics->get('size.method-count.total:App\Status'));
+        self::assertSame(2, $metrics->get('size.getter-count:App\Status')); // getLabel, isActive
     }
 
     #[Test]
@@ -319,12 +319,12 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('methodCount:App\First'));
-        self::assertSame(2, $metrics->get('methodCountPublic:App\First'));
+        self::assertSame(2, $metrics->get('size.method-count:App\First'));
+        self::assertSame(2, $metrics->get('size.method-count.public:App\First'));
 
-        self::assertSame(3, $metrics->get('methodCount:App\Second'));
-        self::assertSame(1, $metrics->get('methodCountPublic:App\Second'));
-        self::assertSame(2, $metrics->get('methodCountPrivate:App\Second'));
+        self::assertSame(3, $metrics->get('size.method-count:App\Second'));
+        self::assertSame(1, $metrics->get('size.method-count.public:App\Second'));
+        self::assertSame(2, $metrics->get('size.method-count.private:App\Second'));
     }
 
     #[Test]
@@ -348,9 +348,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('methodCount:App\Factory'));
+        self::assertSame(1, $metrics->get('size.method-count:App\Factory'));
         // Anonymous class should not appear in metrics
-        self::assertNull($metrics->get('methodCount:'));
+        self::assertNull($metrics->get('size.method-count:'));
     }
 
     #[Test]
@@ -368,9 +368,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('methodCount:GlobalClass'));
-        self::assertSame(2, $metrics->get('methodCountTotal:GlobalClass'));
-        self::assertSame(1, $metrics->get('getterCount:GlobalClass'));
+        self::assertSame(1, $metrics->get('size.method-count:GlobalClass'));
+        self::assertSame(2, $metrics->get('size.method-count.total:GlobalClass'));
+        self::assertSame(1, $metrics->get('size.getter-count:GlobalClass'));
     }
 
     #[Test]
@@ -408,8 +408,8 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         // Should only contain metrics from second file
-        self::assertNull($metrics->get('methodCount:App\First'));
-        self::assertSame(1, $metrics->get('methodCount:App\Second'));
+        self::assertNull($metrics->get('size.method-count:App\First'));
+        self::assertSame(1, $metrics->get('size.method-count:App\Second'));
     }
 
     #[Test]
@@ -420,25 +420,25 @@ PHP;
         self::assertCount(19, $definitions);
 
         $metricNames = array_map(fn($d) => $d->name, $definitions);
-        self::assertContains('methodCount', $metricNames);
-        self::assertContains('methodCountTotal', $metricNames);
-        self::assertContains('methodCountPublic', $metricNames);
-        self::assertContains('methodCountProtected', $metricNames);
-        self::assertContains('methodCountPrivate', $metricNames);
-        self::assertContains('getterCount', $metricNames);
-        self::assertContains('setterCount', $metricNames);
-        self::assertContains('propertyCount', $metricNames);
-        self::assertContains('propertyCountPublic', $metricNames);
-        self::assertContains('propertyCountProtected', $metricNames);
-        self::assertContains('propertyCountPrivate', $metricNames);
-        self::assertContains('promotedPropertyCount', $metricNames);
-        self::assertContains('isReadonly', $metricNames);
-        self::assertContains('isPromotedPropertiesOnly', $metricNames);
-        self::assertContains('isDataClass', $metricNames);
-        self::assertContains('isAbstract', $metricNames);
-        self::assertContains('isInterface', $metricNames);
-        self::assertContains('isException', $metricNames);
-        self::assertContains('woc', $metricNames);
+        self::assertContains('size.method-count', $metricNames);
+        self::assertContains('size.method-count.total', $metricNames);
+        self::assertContains('size.method-count.public', $metricNames);
+        self::assertContains('size.method-count.protected', $metricNames);
+        self::assertContains('size.method-count.private', $metricNames);
+        self::assertContains('size.getter-count', $metricNames);
+        self::assertContains('size.setter-count', $metricNames);
+        self::assertContains('size.property-count', $metricNames);
+        self::assertContains('size.property-count.public', $metricNames);
+        self::assertContains('size.property-count.protected', $metricNames);
+        self::assertContains('size.property-count.private', $metricNames);
+        self::assertContains('size.promoted-property-count', $metricNames);
+        self::assertContains('design.is-readonly', $metricNames);
+        self::assertContains('design.is-promoted-properties-only', $metricNames);
+        self::assertContains('design.is-data-class', $metricNames);
+        self::assertContains('design.is-abstract', $metricNames);
+        self::assertContains('design.is-interface', $metricNames);
+        self::assertContains('design.is-exception', $metricNames);
+        self::assertContains('design.woc', $metricNames);
 
         // Check collected at level
         foreach ($definitions as $def) {
@@ -479,9 +479,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // HAS_permission is NOT a getter: underscore after prefix, not uppercase letter
-        self::assertSame(3, $metrics->get('getterCount:App\CaseTest'));
-        self::assertSame(2, $metrics->get('setterCount:App\CaseTest'));
-        self::assertSame(1, $metrics->get('methodCount:App\CaseTest')); // HAS_permission
+        self::assertSame(3, $metrics->get('size.getter-count:App\CaseTest'));
+        self::assertSame(2, $metrics->get('size.setter-count:App\CaseTest'));
+        self::assertSame(1, $metrics->get('size.method-count:App\CaseTest')); // HAS_permission
     }
 
     #[Test]
@@ -502,9 +502,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('getterCount:App\WithConstructor'));
-        self::assertSame(0, $metrics->get('setterCount:App\WithConstructor'));
-        self::assertSame(3, $metrics->get('methodCount:App\WithConstructor'));
+        self::assertSame(0, $metrics->get('size.getter-count:App\WithConstructor'));
+        self::assertSame(0, $metrics->get('size.setter-count:App\WithConstructor'));
+        self::assertSame(3, $metrics->get('size.method-count:App\WithConstructor'));
     }
 
     #[Test]
@@ -526,9 +526,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('getterCount:App\ExactPrefixes')); // get, is, has
-        self::assertSame(1, $metrics->get('setterCount:App\ExactPrefixes')); // set
-        self::assertSame(0, $metrics->get('methodCount:App\ExactPrefixes'));
+        self::assertSame(3, $metrics->get('size.getter-count:App\ExactPrefixes')); // get, is, has
+        self::assertSame(1, $metrics->get('size.setter-count:App\ExactPrefixes')); // set
+        self::assertSame(0, $metrics->get('size.method-count:App\ExactPrefixes'));
     }
 
     #[Test]
@@ -555,9 +555,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('getterCount:App\FalsePositives'));
-        self::assertSame(0, $metrics->get('setterCount:App\FalsePositives'));
-        self::assertSame(9, $metrics->get('methodCount:App\FalsePositives'));
+        self::assertSame(0, $metrics->get('size.getter-count:App\FalsePositives'));
+        self::assertSame(0, $metrics->get('size.setter-count:App\FalsePositives'));
+        self::assertSame(9, $metrics->get('size.method-count:App\FalsePositives'));
     }
 
     #[Test]
@@ -578,10 +578,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('propertyCount:App\WithPublicProperties'));
-        self::assertSame(3, $metrics->get('propertyCountPublic:App\WithPublicProperties'));
-        self::assertSame(0, $metrics->get('propertyCountProtected:App\WithPublicProperties'));
-        self::assertSame(0, $metrics->get('propertyCountPrivate:App\WithPublicProperties'));
+        self::assertSame(3, $metrics->get('size.property-count:App\WithPublicProperties'));
+        self::assertSame(3, $metrics->get('size.property-count.public:App\WithPublicProperties'));
+        self::assertSame(0, $metrics->get('size.property-count.protected:App\WithPublicProperties'));
+        self::assertSame(0, $metrics->get('size.property-count.private:App\WithPublicProperties'));
     }
 
     #[Test]
@@ -601,10 +601,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('propertyCount:App\WithProtectedProperties'));
-        self::assertSame(0, $metrics->get('propertyCountPublic:App\WithProtectedProperties'));
-        self::assertSame(2, $metrics->get('propertyCountProtected:App\WithProtectedProperties'));
-        self::assertSame(0, $metrics->get('propertyCountPrivate:App\WithProtectedProperties'));
+        self::assertSame(2, $metrics->get('size.property-count:App\WithProtectedProperties'));
+        self::assertSame(0, $metrics->get('size.property-count.public:App\WithProtectedProperties'));
+        self::assertSame(2, $metrics->get('size.property-count.protected:App\WithProtectedProperties'));
+        self::assertSame(0, $metrics->get('size.property-count.private:App\WithProtectedProperties'));
     }
 
     #[Test]
@@ -626,10 +626,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(4, $metrics->get('propertyCount:App\WithPrivateProperties'));
-        self::assertSame(0, $metrics->get('propertyCountPublic:App\WithPrivateProperties'));
-        self::assertSame(0, $metrics->get('propertyCountProtected:App\WithPrivateProperties'));
-        self::assertSame(4, $metrics->get('propertyCountPrivate:App\WithPrivateProperties'));
+        self::assertSame(4, $metrics->get('size.property-count:App\WithPrivateProperties'));
+        self::assertSame(0, $metrics->get('size.property-count.public:App\WithPrivateProperties'));
+        self::assertSame(0, $metrics->get('size.property-count.protected:App\WithPrivateProperties'));
+        self::assertSame(4, $metrics->get('size.property-count.private:App\WithPrivateProperties'));
     }
 
     #[Test]
@@ -652,11 +652,11 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('propertyCount:App\WithPromotedProperties'));
-        self::assertSame(1, $metrics->get('propertyCountPublic:App\WithPromotedProperties'));
-        self::assertSame(1, $metrics->get('propertyCountProtected:App\WithPromotedProperties'));
-        self::assertSame(1, $metrics->get('propertyCountPrivate:App\WithPromotedProperties'));
-        self::assertSame(3, $metrics->get('promotedPropertyCount:App\WithPromotedProperties'));
+        self::assertSame(3, $metrics->get('size.property-count:App\WithPromotedProperties'));
+        self::assertSame(1, $metrics->get('size.property-count.public:App\WithPromotedProperties'));
+        self::assertSame(1, $metrics->get('size.property-count.protected:App\WithPromotedProperties'));
+        self::assertSame(1, $metrics->get('size.property-count.private:App\WithPromotedProperties'));
+        self::assertSame(3, $metrics->get('size.promoted-property-count:App\WithPromotedProperties'));
     }
 
     #[Test]
@@ -676,9 +676,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(5, $metrics->get('propertyCount:App\MultiDeclaration'));
-        self::assertSame(3, $metrics->get('propertyCountPublic:App\MultiDeclaration'));
-        self::assertSame(2, $metrics->get('propertyCountPrivate:App\MultiDeclaration'));
+        self::assertSame(5, $metrics->get('size.property-count:App\MultiDeclaration'));
+        self::assertSame(3, $metrics->get('size.property-count.public:App\MultiDeclaration'));
+        self::assertSame(2, $metrics->get('size.property-count.private:App\MultiDeclaration'));
     }
 
     #[Test]
@@ -699,10 +699,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('propertyCount:App\WithStaticProperties'));
-        self::assertSame(1, $metrics->get('propertyCountPublic:App\WithStaticProperties'));
-        self::assertSame(1, $metrics->get('propertyCountProtected:App\WithStaticProperties'));
-        self::assertSame(1, $metrics->get('propertyCountPrivate:App\WithStaticProperties'));
+        self::assertSame(3, $metrics->get('size.property-count:App\WithStaticProperties'));
+        self::assertSame(1, $metrics->get('size.property-count.public:App\WithStaticProperties'));
+        self::assertSame(1, $metrics->get('size.property-count.protected:App\WithStaticProperties'));
+        self::assertSame(1, $metrics->get('size.property-count.private:App\WithStaticProperties'));
     }
 
     #[Test]
@@ -724,7 +724,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(4, $metrics->get('propertyCount:App\TypedProperties'));
+        self::assertSame(4, $metrics->get('size.property-count:App\TypedProperties'));
     }
 
     #[Test]
@@ -744,9 +744,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('propertyCount:App\ReadonlyProperties'));
-        self::assertSame(1, $metrics->get('propertyCountPublic:App\ReadonlyProperties'));
-        self::assertSame(1, $metrics->get('propertyCountPrivate:App\ReadonlyProperties'));
+        self::assertSame(2, $metrics->get('size.property-count:App\ReadonlyProperties'));
+        self::assertSame(1, $metrics->get('size.property-count.public:App\ReadonlyProperties'));
+        self::assertSame(1, $metrics->get('size.property-count.private:App\ReadonlyProperties'));
     }
 
     #[Test]
@@ -765,9 +765,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('propertyCount:App\NoProperties'));
-        self::assertSame(0, $metrics->get('propertyCountPublic:App\NoProperties'));
-        self::assertSame(0, $metrics->get('promotedPropertyCount:App\NoProperties'));
+        self::assertSame(0, $metrics->get('size.property-count:App\NoProperties'));
+        self::assertSame(0, $metrics->get('size.property-count.public:App\NoProperties'));
+        self::assertSame(0, $metrics->get('size.promoted-property-count:App\NoProperties'));
     }
 
     #[Test]
@@ -791,10 +791,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('propertyCount:App\MixedProperties'));
-        self::assertSame(1, $metrics->get('propertyCountPublic:App\MixedProperties'));
-        self::assertSame(2, $metrics->get('propertyCountPrivate:App\MixedProperties'));
-        self::assertSame(2, $metrics->get('promotedPropertyCount:App\MixedProperties'));
+        self::assertSame(3, $metrics->get('size.property-count:App\MixedProperties'));
+        self::assertSame(1, $metrics->get('size.property-count.public:App\MixedProperties'));
+        self::assertSame(2, $metrics->get('size.property-count.private:App\MixedProperties'));
+        self::assertSame(2, $metrics->get('size.promoted-property-count:App\MixedProperties'));
     }
 
     #[Test]
@@ -821,7 +821,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(17, $metrics->get('woc:App\EntityWithAccessors'));
+        self::assertSame(17, $metrics->get('design.woc:App\EntityWithAccessors'));
     }
 
     #[Test]
@@ -843,7 +843,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('woc:App\PureDto'));
+        self::assertSame(0, $metrics->get('design.woc:App\PureDto'));
     }
 
     #[Test]
@@ -868,7 +868,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(25, $metrics->get('woc:App\OpenState'));
+        self::assertSame(25, $metrics->get('design.woc:App\OpenState'));
     }
 
     #[Test]
@@ -892,7 +892,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(100, $metrics->get('woc:App\Forwarder'));
+        self::assertSame(100, $metrics->get('design.woc:App\Forwarder'));
     }
 
     #[Test]
@@ -910,7 +910,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(100, $metrics->get('woc:App\EmptyWoc'));
+        self::assertSame(100, $metrics->get('design.woc:App\EmptyWoc'));
     }
 
     #[Test]
@@ -932,8 +932,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('methodCount:App\Profile'));
-        self::assertSame(0, $metrics->get('methodCountTotal:App\Profile'));
+        self::assertSame(0, $metrics->get('size.method-count:App\Profile'));
+        self::assertSame(0, $metrics->get('size.method-count.total:App\Profile'));
     }
 
     #[Test]
@@ -997,7 +997,7 @@ PHP;
             ['App\EmptyClass', 'App\ConstructorAccessors', 'App\MixedPromoted', 'App\SecondClass'],
             $classNames,
         );
-        self::assertSame(100, $classes[0]->metrics->get('woc'));
+        self::assertSame(100, $classes[0]->metrics->get('design.woc'));
 
         foreach ($classes as $index => $class) {
             foreach ($this->collector->provides() as $metricName) {

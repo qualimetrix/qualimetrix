@@ -51,7 +51,7 @@ final class LongParameterListRuleTest extends TestCase
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
-        self::assertSame(['parameterCount', 'isVoConstructor'], $rule->requires());
+        self::assertSame(['code-smell.parameter-count', 'code-smell.is-vo-constructor'], $rule->requires());
     }
 
     #[Test]
@@ -118,7 +118,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 3);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 3);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -138,7 +138,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 4);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 4);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -164,7 +164,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 6);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 6);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -187,7 +187,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 8);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 8);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -229,7 +229,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Test', 'TestClass', 'testMethod');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'test.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', $parameterCount);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', $parameterCount);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -375,8 +375,8 @@ final class LongParameterListRuleTest extends TestCase
 
         // 7 params in VO constructor — below vo-warning=8, but above regular warning=4
         $metricBag = (new MetricBag())
-            ->with('parameterCount', 7)
-            ->with('isVoConstructor', 1);
+            ->with('code-smell.parameter-count', 7)
+            ->with('code-smell.is-vo-constructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -402,8 +402,8 @@ final class LongParameterListRuleTest extends TestCase
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Dto/UserDto.php', 10);
 
         $metricBag = (new MetricBag())
-            ->with('parameterCount', 8)
-            ->with('isVoConstructor', 1);
+            ->with('code-smell.parameter-count', 8)
+            ->with('code-smell.is-vo-constructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -435,8 +435,8 @@ final class LongParameterListRuleTest extends TestCase
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Dto/UserDto.php', 10);
 
         $metricBag = (new MetricBag())
-            ->with('parameterCount', 13)
-            ->with('isVoConstructor', 1);
+            ->with('code-smell.parameter-count', 13)
+            ->with('code-smell.is-vo-constructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -468,7 +468,7 @@ final class LongParameterListRuleTest extends TestCase
 
         // 5 params in non-VO constructor — above warning=4, below error=6
         $metricBag = (new MetricBag())
-            ->with('parameterCount', 5);
+            ->with('code-smell.parameter-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -489,7 +489,7 @@ final class LongParameterListRuleTest extends TestCase
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
-        self::assertContains('isVoConstructor', $rule->requires());
+        self::assertContains('code-smell.is-vo-constructor', $rule->requires());
     }
 
     #[Test]
@@ -522,8 +522,8 @@ final class LongParameterListRuleTest extends TestCase
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'test.php', 10);
 
         $metricBag = (new MetricBag())
-            ->with('parameterCount', $parameterCount)
-            ->with('isVoConstructor', 1);
+            ->with('code-smell.parameter-count', $parameterCount)
+            ->with('code-smell.is-vo-constructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -659,8 +659,8 @@ final class LongParameterListRuleTest extends TestCase
         $repository->method('allCallables')->willReturn([$symbolInfo]);
         $repository->method('getSubject')->willReturn(
             (new MetricBag())
-                ->with('parameterCount', $parameterCount)
-                ->with('isVoConstructor', 1),
+                ->with('code-smell.parameter-count', $parameterCount)
+                ->with('code-smell.is-vo-constructor', 1),
         );
         $context = new AnalysisContext(
             metrics: $repository,
@@ -711,7 +711,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolInfo = $this->exactDeclarationInfo(SymbolPath::forMethod('App\\Service', 'UserService', 'create'), $file->value(), 10);
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$symbolInfo]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('parameterCount', 5));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('code-smell.parameter-count', 5));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -757,7 +757,7 @@ final class LongParameterListRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$controlled, $uncontrolled]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('parameterCount', 5));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('code-smell.parameter-count', 5));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -806,8 +806,8 @@ final class LongParameterListRuleTest extends TestCase
         $repository->method('allCallables')->willReturn([$regular, $vo]);
         $repository->method('getSubject')->willReturnCallback(
             static fn(MetricSubject $subject): MetricBag => $subject->toCanonical() === $regularSubject->toCanonical()
-                ? (new MetricBag())->with('parameterCount', 4)
-                : (new MetricBag())->with('parameterCount', 8)->with('isVoConstructor', 1),
+                ? (new MetricBag())->with('code-smell.parameter-count', 4)
+                : (new MetricBag())->with('code-smell.parameter-count', 8)->with('code-smell.is-vo-constructor', 1),
         );
 
         $findings = (new LongParameterListRule(new LongParameterListOptions()))

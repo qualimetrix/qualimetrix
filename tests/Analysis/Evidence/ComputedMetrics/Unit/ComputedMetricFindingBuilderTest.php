@@ -118,7 +118,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Complexity metric',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -146,7 +146,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Complexity metric',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -174,7 +174,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.score',
-            formulas: ['class' => 'mi'],
+            formulas: ['class' => 'maintainability.mi'],
             description: 'Health score',
             levels: [SymbolLevel::Class_],
             inverted: true,
@@ -208,7 +208,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.custom',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Custom metric',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -236,7 +236,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.precise',
-            formulas: ['class' => 'mi'],
+            formulas: ['class' => 'maintainability.mi'],
             description: 'Precise metric',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -263,7 +263,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.norm',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Normal metric',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -291,7 +291,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.inv',
-            formulas: ['class' => 'mi'],
+            formulas: ['class' => 'maintainability.mi'],
             description: 'Inverted metric',
             levels: [SymbolLevel::Class_],
             inverted: true,
@@ -319,7 +319,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Complexity metric',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -352,7 +352,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.cohesion',
-            formulas: ['class' => 'tcc'],
+            formulas: ['class' => 'cohesion.tcc'],
             description: 'Cohesion metric',
             levels: [SymbolLevel::Class_],
             inverted: true,
@@ -381,7 +381,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Complexity',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -426,7 +426,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: $dimensionName,
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Test dimension',
             levels: [SymbolLevel::Class_],
             inverted: false,

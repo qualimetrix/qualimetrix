@@ -76,8 +76,8 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(BaselineExplainCommand::class)]
 final class BaselineRunBeforeLoadTest extends TestCase
 {
-    private const string CHANNEL = 'computed.debtRatio';
-    private const string METRIC = 'computed.debtRatio';
+    private const string CHANNEL = 'computed.debt-ratio';
+    private const string METRIC = 'computed.debt-ratio';
     private const string SOURCE_FILE = 'src/OrderService.php';
 
     private string $tempDir;

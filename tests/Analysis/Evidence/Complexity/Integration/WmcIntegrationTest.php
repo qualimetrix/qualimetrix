@@ -56,7 +56,7 @@ final class WmcIntegrationTest extends TestCase
 
         // Verify class has WMC metric
         $classBag = $repository->get($classPath);
-        $wmc = $classBag->get('wmc');
+        $wmc = $classBag->get('complexity.wmc');
 
         self::assertNotNull($wmc, 'WMC metric should be available for class');
         self::assertSame(10, (int) $wmc, 'WMC should equal sum of method CCN values (5+3+2=10)');
@@ -83,8 +83,8 @@ final class WmcIntegrationTest extends TestCase
 
         // Verify WMC === ccn.sum
         $classBag = $repository->get($classPath);
-        $wmc = $classBag->get('wmc');
-        $ccnSum = $classBag->get('ccn.sum');
+        $wmc = $classBag->get('complexity.wmc');
+        $ccnSum = $classBag->get('complexity.ccn.sum');
 
         self::assertNotNull($wmc);
         self::assertNotNull($ccnSum);
@@ -127,7 +127,7 @@ final class WmcIntegrationTest extends TestCase
             null,
             null,
             new LogicalClassPath($class1Path),
-            (new MetricBag())->with('ccn', 10),
+            (new MetricBag())->with('complexity.ccn', 10),
         ));
 
         // Class 2
@@ -139,7 +139,7 @@ final class WmcIntegrationTest extends TestCase
             null,
             null,
             new LogicalClassPath($class2Path),
-            (new MetricBag())->with('ccn', 15),
+            (new MetricBag())->with('complexity.ccn', 15),
         ));
         $repository->addCallable(new CallableWithMetrics(
             DeclarationPath::of(SymbolPath::forMethod('App', 'Class2', 'methodB'), RelativePath::fromString('test2.php'), DeclarationOrdinal::fromRank(0)),
@@ -148,7 +148,7 @@ final class WmcIntegrationTest extends TestCase
             null,
             null,
             new LogicalClassPath($class2Path),
-            (new MetricBag())->with('ccn', 5),
+            (new MetricBag())->with('complexity.ccn', 5),
         ));
 
         // Aggregate
@@ -160,8 +160,8 @@ final class WmcIntegrationTest extends TestCase
         $class1Bag = $repository->get($class1Path);
         $class2Bag = $repository->get($class2Path);
 
-        self::assertSame(10, (int) $class1Bag->get('wmc'));
-        self::assertSame(20, (int) $class2Bag->get('wmc')); // 15 + 5 = 20
+        self::assertSame(10, (int) $class1Bag->get('complexity.wmc'));
+        self::assertSame(20, (int) $class2Bag->get('complexity.wmc')); // 15 + 5 = 20
     }
 
     private function addMethod(InMemoryMetricRepository $repository, SymbolPath $method, SymbolPath $class, int $ccn, int $startFilePos): void
@@ -173,7 +173,7 @@ final class WmcIntegrationTest extends TestCase
             null,
             null,
             new LogicalClassPath($class),
-            (new MetricBag())->with('ccn', $ccn),
+            (new MetricBag())->with('complexity.ccn', $ccn),
         ));
     }
 }

@@ -50,7 +50,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
-        self::assertSame(['cognitive'], $rule->requires());
+        self::assertSame(['complexity.cognitive'], $rule->requires());
     }
 
     #[Test]
@@ -113,7 +113,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('cognitive', 20);
+        $metricBag = (new MetricBag())->with('complexity.cognitive', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -143,7 +143,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('cognitive', 35);
+        $metricBag = (new MetricBag())->with('complexity.cognitive', 35);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -190,7 +190,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $metricBag = (new MetricBag())->with('cognitive.max', 35); // Above warning (30), below error (50)
+        $metricBag = (new MetricBag())->with('complexity.cognitive.max', 35); // Above warning (30), below error (50)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -219,7 +219,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $metricBag = (new MetricBag())->with('cognitive.max', 55); // Above error (50)
+        $metricBag = (new MetricBag())->with('complexity.cognitive.max', 55); // Above error (50)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -252,8 +252,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $methodBag = (new MetricBag())->with('cognitive', 20); // Warning
-        $classBag = (new MetricBag())->with('cognitive.max', 35); // Warning
+        $methodBag = (new MetricBag())->with('complexity.cognitive', 20); // Warning
+        $classBag = (new MetricBag())->with('complexity.cognitive.max', 35); // Warning
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -393,7 +393,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('cognitive', $cognitive);
+        $metricBag = (new MetricBag())->with('complexity.cognitive', $cognitive);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -459,7 +459,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('cognitive', 25)
+            ->with('complexity.cognitive', 25)
             ->withEntry('cognitive-complexity.increments', ['type' => 'if', 'line' => 12, 'points' => 5])
             ->withEntry('cognitive-complexity.increments', ['type' => 'foreach', 'line' => 15, 'points' => 4])
             ->withEntry('cognitive-complexity.increments', ['type' => '&&/||', 'line' => 22, 'points' => 1])
@@ -496,7 +496,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('cognitive', 20)
+            ->with('complexity.cognitive', 20)
             ->withEntry('cognitive-complexity.increments', ['type' => 'closure', 'line' => 15, 'points' => 3]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -525,7 +525,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('cognitive', 20);
+        $metricBag = (new MetricBag())->with('complexity.cognitive', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -552,7 +552,7 @@ final class CognitiveComplexityRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('cognitive.max', 35));
+        $repository->method('get')->willReturn((new MetricBag())->with('complexity.cognitive.max', 35));
 
         $findings = (new CognitiveComplexityRule(new CognitiveComplexityOptions()))
             ->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
@@ -575,7 +575,7 @@ final class CognitiveComplexityRuleTest extends TestCase
             self::subjectInfo($method, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($method, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('cognitive', 20));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('complexity.cognitive', 20));
 
         $findings = (new CognitiveComplexityRule(new CognitiveComplexityOptions()))
             ->analyzeLevel(SymbolLevel::Callable, new AnalysisContext($repository));

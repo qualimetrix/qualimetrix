@@ -19,7 +19,7 @@ final class ComputedMetricDefinitionTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test metric',
             levels: [SymbolLevel::Class_],
         );
@@ -31,13 +31,13 @@ final class ComputedMetricDefinitionTest extends TestCase
     public function itValidComputedName(): void
     {
         $definition = new ComputedMetricDefinition(
-            name: 'computed.myMetric',
-            formulas: ['class' => 'ccn__avg'],
+            name: 'computed.my-metric',
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test metric',
             levels: [SymbolLevel::Class_],
         );
 
-        self::assertSame('computed.myMetric', $definition->name);
+        self::assertSame('computed.my-metric', $definition->name);
     }
 
     #[Test]
@@ -45,7 +45,7 @@ final class ComputedMetricDefinitionTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity.sub1',
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test metric',
             levels: [SymbolLevel::Class_],
         );
@@ -57,11 +57,11 @@ final class ComputedMetricDefinitionTest extends TestCase
     public function itInvalidNameNoPrefix(): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('must start with "health." or "computed."');
+        self::expectExceptionMessage('must be "health.<name>" or "computed.<name>"');
 
         new ComputedMetricDefinition(
             name: 'custom.metric',
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test',
             levels: [SymbolLevel::Class_],
         );
@@ -71,11 +71,11 @@ final class ComputedMetricDefinitionTest extends TestCase
     public function itInvalidNameContainsDoubleUnderscore(): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('must not contain "__"');
+        self::expectExceptionMessage('lower-case kebab');
 
         new ComputedMetricDefinition(
             name: 'health.my__metric',
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test',
             levels: [SymbolLevel::Class_],
         );
@@ -85,11 +85,11 @@ final class ComputedMetricDefinitionTest extends TestCase
     public function itInvalidNameSegmentStartsWithDigit(): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('must match [a-zA-Z][a-zA-Z0-9_]*');
+        self::expectExceptionMessage('lower-case kebab');
 
         new ComputedMetricDefinition(
             name: 'health.1invalid',
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test',
             levels: [SymbolLevel::Class_],
         );
@@ -99,11 +99,11 @@ final class ComputedMetricDefinitionTest extends TestCase
     public function itInvalidNameSegmentWithSpecialChars(): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('must match [a-zA-Z][a-zA-Z0-9_]*');
+        self::expectExceptionMessage('lower-case kebab');
 
         new ComputedMetricDefinition(
-            name: 'health.inv-alid',
-            formulas: ['class' => 'ccn__avg'],
+            name: 'health.inv@lid',
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test',
             levels: [SymbolLevel::Class_],
         );

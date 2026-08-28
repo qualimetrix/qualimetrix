@@ -16,7 +16,7 @@ final class DecompositionItemTest extends TestCase
     public function itConstructs(): void
     {
         $item = new DecompositionItem(
-            metricKey: 'ccn.avg',
+            metricKey: 'complexity.ccn.avg',
             humanName: 'Cyclomatic (avg)',
             value: 3.5,
             goodValue: 'below 4',
@@ -24,7 +24,7 @@ final class DecompositionItemTest extends TestCase
             explanation: 'manageable branching',
         );
 
-        self::assertSame('ccn.avg', $item->metricKey);
+        self::assertSame('complexity.ccn.avg', $item->metricKey);
         self::assertSame('Cyclomatic (avg)', $item->humanName);
         self::assertSame(3.5, $item->value);
         self::assertSame('below 4', $item->goodValue);

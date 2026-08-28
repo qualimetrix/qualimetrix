@@ -257,8 +257,8 @@ final class TextVerboseFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('b.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
-                ruleName: 'lcom',
-                code: 'lcom',
+                ruleName: 'cohesion.lcom',
+                code: 'cohesion.lcom',
                 message: 'LCOM is 5',
                 severity: Severity::Warning,
             ))

@@ -232,7 +232,7 @@ PHP) ?? []);
         self::assertSame('func:App::duplicate', $callables[1]->declarationPath->logical->toCanonical());
         self::assertNotSame($callables[0]->declarationPath->ordinal->value, $callables[1]->declarationPath->ordinal->value);
         self::assertNotSame($callables[0]->declarationPath->toCanonical(), $callables[1]->declarationPath->toCanonical());
-        self::assertSame(1, $callables[0]->metrics->get('ccn'));
-        self::assertSame(2, $callables[1]->metrics->get('ccn'));
+        self::assertSame(1, $callables[0]->metrics->get('complexity.ccn'));
+        self::assertSame(2, $callables[1]->metrics->get('complexity.ccn'));
     }
 }

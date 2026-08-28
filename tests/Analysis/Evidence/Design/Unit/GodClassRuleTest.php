@@ -42,7 +42,7 @@ final class GodClassRuleTest extends TestCase
     {
         $rule = new GodClassRule(new GodClassOptions());
 
-        self::assertSame(['wmc', 'lcom', 'tcc', 'classLoc', 'methodCount', 'isReadonly'], $rule->requires());
+        self::assertSame(['complexity.wmc', 'cohesion.lcom', 'cohesion.tcc', 'size.class-loc', 'size.method-count', 'design.is-readonly'], $rule->requires());
     }
 
     #[Test]
@@ -90,12 +90,12 @@ final class GodClassRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('wmc', 50)
-            ->with('lcom', 4)
-            ->with('tcc', 0.1)
-            ->with('classLoc', 350)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 1);
+            ->with('complexity.wmc', 50)
+            ->with('cohesion.lcom', 4)
+            ->with('cohesion.tcc', 0.1)
+            ->with('size.class-loc', 350)
+            ->with('size.method-count', 10)
+            ->with('design.is-readonly', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -117,12 +117,12 @@ final class GodClassRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('wmc', 50)
-            ->with('lcom', 4)
-            ->with('tcc', 0.1)
-            ->with('classLoc', 350)
-            ->with('methodCount', 2)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', 50)
+            ->with('cohesion.lcom', 4)
+            ->with('cohesion.tcc', 0.1)
+            ->with('size.class-loc', 350)
+            ->with('size.method-count', 2)
+            ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -144,12 +144,12 @@ final class GodClassRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('wmc', 50)
-            ->with('lcom', 4)
-            ->with('tcc', 0.1)
-            ->with('classLoc', 350)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', 50)
+            ->with('cohesion.lcom', 4)
+            ->with('cohesion.tcc', 0.1)
+            ->with('size.class-loc', 350)
+            ->with('size.method-count', 10)
+            ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -178,12 +178,12 @@ final class GodClassRuleTest extends TestCase
         // TCC = 0.2 < 0.33, so TCC criterion matched; LCOM not vetoed (TCC < 0.5)
         // WMC matched, LCOM matched, TCC matched, LOC not matched → 3/4
         $metricBag = (new MetricBag())
-            ->with('wmc', 50)
-            ->with('lcom', 4)
-            ->with('tcc', 0.2)
-            ->with('classLoc', 100)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', 50)
+            ->with('cohesion.lcom', 4)
+            ->with('cohesion.tcc', 0.2)
+            ->with('size.class-loc', 100)
+            ->with('size.method-count', 10)
+            ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -209,12 +209,12 @@ final class GodClassRuleTest extends TestCase
 
         // TCC = 0.5 (not matched + vetoes LCOM), classLoc = 100 (not matched) → only WMC matched
         $metricBag = (new MetricBag())
-            ->with('wmc', 50)
-            ->with('lcom', 4)
-            ->with('tcc', 0.5)
-            ->with('classLoc', 100)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', 50)
+            ->with('cohesion.lcom', 4)
+            ->with('cohesion.tcc', 0.5)
+            ->with('size.class-loc', 100)
+            ->with('size.method-count', 10)
+            ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -238,12 +238,12 @@ final class GodClassRuleTest extends TestCase
         // WMC=400 (matched), LCOM=100 (vetoed — excluded from evaluable), TCC=0.8 (not matched), LOC=1500 (matched)
         // evaluableCount=3 (WMC + TCC + LOC), matchedCount=2 (WMC + LOC) → not a god class
         $metricBag = (new MetricBag())
-            ->with('wmc', 400)
-            ->with('lcom', 100)
-            ->with('tcc', 0.8)
-            ->with('classLoc', 1500)
-            ->with('methodCount', 50)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', 400)
+            ->with('cohesion.lcom', 100)
+            ->with('cohesion.tcc', 0.8)
+            ->with('size.class-loc', 1500)
+            ->with('size.method-count', 50)
+            ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -267,12 +267,12 @@ final class GodClassRuleTest extends TestCase
         // TCC = 0.5 exactly → vetoes LCOM (excluded from evaluable)
         // evaluableCount=3 (WMC + TCC + LOC), matchedCount=2 (WMC + LOC) → 2/3
         $metricBag = (new MetricBag())
-            ->with('wmc', 50)
-            ->with('lcom', 4)
-            ->with('tcc', 0.5)
-            ->with('classLoc', 350)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', 50)
+            ->with('cohesion.lcom', 4)
+            ->with('cohesion.tcc', 0.5)
+            ->with('size.class-loc', 350)
+            ->with('size.method-count', 10)
+            ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -296,12 +296,12 @@ final class GodClassRuleTest extends TestCase
         // TCC = 0.49 < 0.5 → does NOT veto LCOM
         // WMC matched, LCOM matched, TCC not matched (0.49 >= 0.33), LOC matched → 3/4
         $metricBag = (new MetricBag())
-            ->with('wmc', 50)
-            ->with('lcom', 4)
-            ->with('tcc', 0.49)
-            ->with('classLoc', 350)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', 50)
+            ->with('cohesion.lcom', 4)
+            ->with('cohesion.tcc', 0.49)
+            ->with('size.class-loc', 350)
+            ->with('size.method-count', 10)
+            ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -327,11 +327,11 @@ final class GodClassRuleTest extends TestCase
 
         // No TCC metric — 3 evaluable, all 3 matched → Error
         $metricBag = (new MetricBag())
-            ->with('wmc', 50)
-            ->with('lcom', 4)
-            ->with('classLoc', 350)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', 50)
+            ->with('cohesion.lcom', 4)
+            ->with('size.class-loc', 350)
+            ->with('size.method-count', 10)
+            ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -357,10 +357,10 @@ final class GodClassRuleTest extends TestCase
 
         // Only WMC and classLoc — 2 evaluable, minCriteria=3 → no finding
         $metricBag = (new MetricBag())
-            ->with('wmc', 50)
-            ->with('classLoc', 350)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', 50)
+            ->with('size.class-loc', 350)
+            ->with('size.method-count', 10)
+            ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -387,12 +387,12 @@ final class GodClassRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('wmc', 25)
-            ->with('lcom', 3)
-            ->with('tcc', 0.2)
-            ->with('classLoc', 150)
-            ->with('methodCount', 5)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', 25)
+            ->with('cohesion.lcom', 3)
+            ->with('cohesion.tcc', 0.2)
+            ->with('size.class-loc', 150)
+            ->with('size.method-count', 5)
+            ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -416,12 +416,12 @@ final class GodClassRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('wmc', 50)
-            ->with('lcom', 4)
-            ->with('tcc', 0.1)
-            ->with('classLoc', 350)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', 50)
+            ->with('cohesion.lcom', 4)
+            ->with('cohesion.tcc', 0.1)
+            ->with('size.class-loc', 350)
+            ->with('size.method-count', 10)
+            ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -518,12 +518,12 @@ final class GodClassRuleTest extends TestCase
         ]);
         $repository->method('get')->willReturn(
             (new MetricBag())
-                ->with('wmc', 50)
-                ->with('lcom', 4)
-                ->with('tcc', 0.1)
-                ->with('classLoc', 350)
-                ->with('methodCount', 10)
-                ->with('isReadonly', 0),
+                ->with('complexity.wmc', 50)
+                ->with('cohesion.lcom', 4)
+                ->with('cohesion.tcc', 0.1)
+                ->with('size.class-loc', 350)
+                ->with('size.method-count', 10)
+                ->with('design.is-readonly', 0),
         );
 
         $findings = (new GodClassRule(new GodClassOptions()))

@@ -24,11 +24,11 @@ final class HtmlMetricAggregatorTest extends TestCase
     public function itLeavesLeafNodeMetricsUnchanged(): void
     {
         $leaf = new HtmlTreeNode('Service', 'App\\Service', 'class');
-        $leaf->metrics = ['loc.sum' => 100, 'health.overall' => 85.0];
+        $leaf->metrics = ['size.loc.sum' => 100, 'health.overall' => 85.0];
 
         $this->aggregator->aggregateBottomUp($leaf);
 
-        self::assertSame(100, $leaf->metrics['loc.sum']);
+        self::assertSame(100, $leaf->metrics['size.loc.sum']);
         self::assertSame(85.0, $leaf->metrics['health.overall']);
     }
 
@@ -42,7 +42,7 @@ final class HtmlMetricAggregatorTest extends TestCase
 
         $this->aggregator->aggregateBottomUp($root);
 
-        self::assertArrayNotHasKey('loc.sum', $root->metrics);
+        self::assertArrayNotHasKey('size.loc.sum', $root->metrics);
         self::assertArrayNotHasKey('health.overall', $root->metrics);
     }
 
@@ -52,32 +52,32 @@ final class HtmlMetricAggregatorTest extends TestCase
         $root = new HtmlTreeNode('project', '<project>', 'project');
 
         $childA = new HtmlTreeNode('A', 'App\\A', 'class');
-        $childA->metrics = ['loc.sum' => 100];
+        $childA->metrics = ['size.loc.sum' => 100];
 
         $childB = new HtmlTreeNode('B', 'App\\B', 'class');
-        $childB->metrics = ['loc.sum' => 200];
+        $childB->metrics = ['size.loc.sum' => 200];
 
         $root->children = [$childA, $childB];
 
         $this->aggregator->aggregateBottomUp($root);
 
-        self::assertSame(300, $root->metrics['loc.sum']);
+        self::assertSame(300, $root->metrics['size.loc.sum']);
     }
 
     #[Test]
     public function itDoesNotOverwriteLocSumIfAlreadySet(): void
     {
         $root = new HtmlTreeNode('project', '<project>', 'project');
-        $root->metrics = ['loc.sum' => 999];
+        $root->metrics = ['size.loc.sum' => 999];
 
         $child = new HtmlTreeNode('A', 'App\\A', 'class');
-        $child->metrics = ['loc.sum' => 100];
+        $child->metrics = ['size.loc.sum' => 100];
         $root->children = [$child];
 
         $this->aggregator->aggregateBottomUp($root);
 
         // Existing value preserved
-        self::assertSame(999, $root->metrics['loc.sum']);
+        self::assertSame(999, $root->metrics['size.loc.sum']);
     }
 
     #[Test]
@@ -87,11 +87,11 @@ final class HtmlMetricAggregatorTest extends TestCase
 
         // Child A: 100 LOC, health.overall = 80
         $childA = new HtmlTreeNode('A', 'App\\A', 'class');
-        $childA->metrics = ['loc.sum' => 100, 'health.overall' => 80.0];
+        $childA->metrics = ['size.loc.sum' => 100, 'health.overall' => 80.0];
 
         // Child B: 300 LOC, health.overall = 90
         $childB = new HtmlTreeNode('B', 'App\\B', 'class');
-        $childB->metrics = ['loc.sum' => 300, 'health.overall' => 90.0];
+        $childB->metrics = ['size.loc.sum' => 300, 'health.overall' => 90.0];
 
         $root->children = [$childA, $childB];
 
@@ -128,7 +128,7 @@ final class HtmlMetricAggregatorTest extends TestCase
         $root->metrics = ['health.overall' => 50.0];
 
         $child = new HtmlTreeNode('A', 'App\\A', 'class');
-        $child->metrics = ['loc.sum' => 100, 'health.overall' => 90.0];
+        $child->metrics = ['size.loc.sum' => 100, 'health.overall' => 90.0];
         $root->children = [$child];
 
         $this->aggregator->aggregateBottomUp($root);
@@ -143,7 +143,7 @@ final class HtmlMetricAggregatorTest extends TestCase
 
         $child = new HtmlTreeNode('A', 'App\\A', 'class');
         $child->metrics = [
-            'loc.sum' => 100,
+            'size.loc.sum' => 100,
             'health.overall' => 80.0,
             'health.complexity' => 70.0,
             'health.cohesion' => 60.0,
@@ -173,10 +173,10 @@ final class HtmlMetricAggregatorTest extends TestCase
         $ns = new HtmlTreeNode('App', 'App', 'namespace');
 
         $classA = new HtmlTreeNode('ClassA', 'App\\ClassA', 'class');
-        $classA->metrics = ['loc.sum' => 100, 'health.overall' => 80.0];
+        $classA->metrics = ['size.loc.sum' => 100, 'health.overall' => 80.0];
 
         $classB = new HtmlTreeNode('ClassB', 'App\\ClassB', 'class');
-        $classB->metrics = ['loc.sum' => 100, 'health.overall' => 60.0];
+        $classB->metrics = ['size.loc.sum' => 100, 'health.overall' => 60.0];
 
         $ns->children = [$classA, $classB];
         $root->children = [$ns];
@@ -185,11 +185,11 @@ final class HtmlMetricAggregatorTest extends TestCase
 
         // NS: (80*100 + 60*100) / 200 = 70.0
         self::assertSame(70.0, $ns->metrics['health.overall']);
-        self::assertSame(200, $ns->metrics['loc.sum']);
+        self::assertSame(200, $ns->metrics['size.loc.sum']);
 
         // Root: only child = NS with loc=200, health=70 -> 70.0
         self::assertSame(70.0, $root->metrics['health.overall']);
-        self::assertSame(200, $root->metrics['loc.sum']);
+        self::assertSame(200, $root->metrics['size.loc.sum']);
     }
 
     #[Test]
@@ -198,11 +198,11 @@ final class HtmlMetricAggregatorTest extends TestCase
         $root = new HtmlTreeNode('project', '<project>', 'project');
 
         $childA = new HtmlTreeNode('A', 'App\\A', 'class');
-        $childA->metrics = ['loc.sum' => 100, 'health.overall' => 80.0];
+        $childA->metrics = ['size.loc.sum' => 100, 'health.overall' => 80.0];
 
         // Child B has no health.overall
         $childB = new HtmlTreeNode('B', 'App\\B', 'class');
-        $childB->metrics = ['loc.sum' => 200];
+        $childB->metrics = ['size.loc.sum' => 200];
 
         $root->children = [$childA, $childB];
 
@@ -211,6 +211,6 @@ final class HtmlMetricAggregatorTest extends TestCase
         // Only childA contributes: 80.0
         self::assertSame(80.0, $root->metrics['health.overall']);
         // loc.sum still includes both
-        self::assertSame(300, $root->metrics['loc.sum']);
+        self::assertSame(300, $root->metrics['size.loc.sum']);
     }
 }

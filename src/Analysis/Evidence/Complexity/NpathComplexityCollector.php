@@ -24,7 +24,7 @@ use SplFileInfo;
  * Unlike Cyclomatic Complexity (additive), NPath is multiplicative and grows exponentially.
  *
  * Metric format: npath:{FQN}
- * Example: npath:App\Service\UserService::calculate
+ * Example: complexity.npath:App\Service\UserService::calculate
  */
 final class NpathComplexityCollector extends AbstractCollector implements CallableMetricsProviderInterface
 {

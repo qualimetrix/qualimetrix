@@ -62,7 +62,7 @@ final class CboRuleTest extends TestCase
     {
         $rule = new CboRule(new CboOptions());
 
-        self::assertSame(['cbo', 'ca', 'ce', 'cbo_app', 'ce_framework'], $rule->requires());
+        self::assertSame(['coupling.cbo', 'coupling.ca', 'coupling.ce', 'coupling.cbo-app', 'coupling.ce-framework'], $rule->requires());
     }
 
     #[Test]
@@ -143,7 +143,7 @@ final class CboRuleTest extends TestCase
         $repository->expects(self::exactly(2))
             ->method('get')
             ->with($symbolPath)
-            ->willReturn((new MetricBag())->with('cbo', 18)->with('ca', 8)->with('ce', 10));
+            ->willReturn((new MetricBag())->with('coupling.cbo', 18)->with('coupling.ca', 8)->with('coupling.ce', 10));
 
         $findings = (new CboRule(new CboOptions()))
             ->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
@@ -198,9 +198,9 @@ final class CboRuleTest extends TestCase
 
         // CBO = 10, below warning threshold (14)
         $metricBag = (new MetricBag())
-            ->with('cbo', 10)
-            ->with('ca', 5)
-            ->with('ce', 5);
+            ->with('coupling.cbo', 10)
+            ->with('coupling.ca', 5)
+            ->with('coupling.ce', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -224,9 +224,9 @@ final class CboRuleTest extends TestCase
 
         // CBO = 18, above warning (14), below error (20)
         $metricBag = (new MetricBag())
-            ->with('cbo', 18)
-            ->with('ca', 8)
-            ->with('ce', 10);
+            ->with('coupling.cbo', 18)
+            ->with('coupling.ca', 8)
+            ->with('coupling.ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -255,9 +255,9 @@ final class CboRuleTest extends TestCase
 
         // CBO = 25, above error threshold (20)
         $metricBag = (new MetricBag())
-            ->with('cbo', 25)
-            ->with('ca', 10)
-            ->with('ce', 15);
+            ->with('coupling.cbo', 25)
+            ->with('coupling.ca', 10)
+            ->with('coupling.ce', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -291,9 +291,9 @@ final class CboRuleTest extends TestCase
 
         // CBO = 12, above custom warning (10), below custom error (15)
         $metricBag = (new MetricBag())
-            ->with('cbo', 12)
-            ->with('ca', 6)
-            ->with('ce', 6);
+            ->with('coupling.cbo', 12)
+            ->with('coupling.ca', 6)
+            ->with('coupling.ce', 6);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -321,9 +321,9 @@ final class CboRuleTest extends TestCase
 
         // Ca=44, Ce=1 — strongly afferent
         $metricBag = (new MetricBag())
-            ->with('cbo', 45)
-            ->with('ca', 44)
-            ->with('ce', 1);
+            ->with('coupling.cbo', 45)
+            ->with('coupling.ca', 44)
+            ->with('coupling.ce', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -350,9 +350,9 @@ final class CboRuleTest extends TestCase
 
         // Ca=3, Ce=22 — strongly efferent
         $metricBag = (new MetricBag())
-            ->with('cbo', 25)
-            ->with('ca', 3)
-            ->with('ce', 22);
+            ->with('coupling.cbo', 25)
+            ->with('coupling.ca', 3)
+            ->with('coupling.ce', 22);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -379,9 +379,9 @@ final class CboRuleTest extends TestCase
 
         // Ca=10, Ce=10 — balanced
         $metricBag = (new MetricBag())
-            ->with('cbo', 20)
-            ->with('ca', 10)
-            ->with('ce', 10);
+            ->with('coupling.cbo', 20)
+            ->with('coupling.ca', 10)
+            ->with('coupling.ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -427,10 +427,10 @@ final class CboRuleTest extends TestCase
 
         // CBO = 16
         $metricBag = (new MetricBag())
-            ->with('cbo', 16)
-            ->with('ca', 6)
-            ->with('ce', 10)
-            ->with('classCount.sum', 5);
+            ->with('coupling.cbo', 16)
+            ->with('coupling.ca', 6)
+            ->with('coupling.ce', 10)
+            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -457,10 +457,10 @@ final class CboRuleTest extends TestCase
 
         // CBO = 25
         $metricBag = (new MetricBag())
-            ->with('cbo', 25)
-            ->with('ca', 10)
-            ->with('ce', 15)
-            ->with('classCount.sum', 5);
+            ->with('coupling.cbo', 25)
+            ->with('coupling.ca', 10)
+            ->with('coupling.ce', 15)
+            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -488,10 +488,10 @@ final class CboRuleTest extends TestCase
 
         // classCount.sum = 1, below default minClassCount (3)
         $metricBag = (new MetricBag())
-            ->with('cbo', 50)
-            ->with('ca', 20)
-            ->with('ce', 30)
-            ->with('classCount.sum', 1);
+            ->with('coupling.cbo', 50)
+            ->with('coupling.ca', 20)
+            ->with('coupling.ce', 30)
+            ->with('size.class-count.sum', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -519,14 +519,14 @@ final class CboRuleTest extends TestCase
         $nsInfo = self::subjectInfo($nsPath, RelativePath::fromString('src/Service'), null);
 
         $classBag = (new MetricBag())
-            ->with('cbo', 18)
-            ->with('ca', 8)
-            ->with('ce', 10);
+            ->with('coupling.cbo', 18)
+            ->with('coupling.ca', 8)
+            ->with('coupling.ce', 10);
         $nsBag = (new MetricBag())
-            ->with('cbo', 16)
-            ->with('ca', 6)
-            ->with('ce', 10)
-            ->with('classCount.sum', 5);
+            ->with('coupling.cbo', 16)
+            ->with('coupling.ca', 6)
+            ->with('coupling.ce', 10)
+            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -692,9 +692,9 @@ final class CboRuleTest extends TestCase
 
         // CBO = 25, Ce = 22 — efferent dominant
         $metricBag = (new MetricBag())
-            ->with('cbo', 25)
-            ->with('ca', 3)
-            ->with('ce', 22);
+            ->with('coupling.cbo', 25)
+            ->with('coupling.ca', 3)
+            ->with('coupling.ce', 22);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -742,9 +742,9 @@ final class CboRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/HugeService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('cbo', 25)
-            ->with('ca', 3)
-            ->with('ce', 22);
+            ->with('coupling.cbo', 25)
+            ->with('coupling.ca', 3)
+            ->with('coupling.ce', 22);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -799,9 +799,9 @@ final class CboRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('cbo', 25)
-            ->with('ca', 10)
-            ->with('ce', 15);
+            ->with('coupling.cbo', 25)
+            ->with('coupling.ca', 10)
+            ->with('coupling.ce', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -828,9 +828,9 @@ final class CboRuleTest extends TestCase
 
         // CBO from afferent only
         $metricBag = (new MetricBag())
-            ->with('cbo', 25)
-            ->with('ca', 25)
-            ->with('ce', 0);
+            ->with('coupling.cbo', 25)
+            ->with('coupling.ca', 25)
+            ->with('coupling.ce', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -860,10 +860,10 @@ final class CboRuleTest extends TestCase
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         $metricBag = (new MetricBag())
-            ->with('cbo', 25)
-            ->with('ca', 10)
-            ->with('ce', 15)
-            ->with('classCount.sum', 5);
+            ->with('coupling.cbo', 25)
+            ->with('coupling.ca', 10)
+            ->with('coupling.ce', 15)
+            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -890,9 +890,9 @@ final class CboRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/MyService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('cbo', 20)
-            ->with('ca', 3)
-            ->with('ce', 17);
+            ->with('coupling.cbo', 20)
+            ->with('coupling.ca', 3)
+            ->with('coupling.ce', 17);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -940,9 +940,9 @@ final class CboRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
-            ->with('cbo', $cbo)
-            ->with('ca', 5)
-            ->with('ce', $cbo - 5);
+            ->with('coupling.cbo', $cbo)
+            ->with('coupling.ca', 5)
+            ->with('coupling.ce', $cbo - 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -995,11 +995,11 @@ final class CboRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
         $metricBag = (new MetricBag())
-            ->with('cbo', 30)
-            ->with('cbo_app', 7)
-            ->with('ca', 5)
-            ->with('ce', 25)
-            ->with('ce_framework', 23);
+            ->with('coupling.cbo', 30)
+            ->with('coupling.cbo-app', 7)
+            ->with('coupling.ca', 5)
+            ->with('coupling.ce', 25)
+            ->with('coupling.ce-framework', 23);
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
@@ -1032,10 +1032,10 @@ final class CboRuleTest extends TestCase
         // CBO = 15 (above error), CBO_APP = 3 (below warning)
         // With scope=application, should use CBO_APP → no finding
         $metricBag = (new MetricBag())
-            ->with('cbo', 15)
-            ->with('cbo_app', 3)
-            ->with('ca', 5)
-            ->with('ce', 10);
+            ->with('coupling.cbo', 15)
+            ->with('coupling.cbo-app', 3)
+            ->with('coupling.ca', 5)
+            ->with('coupling.ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -1067,11 +1067,11 @@ final class CboRuleTest extends TestCase
 
         // CBO = 30, CBO_APP = 7 (between warning=5 and error=10), CE_FRAMEWORK = 23
         $metricBag = (new MetricBag())
-            ->with('cbo', 30)
-            ->with('cbo_app', 7)
-            ->with('ca', 5)
-            ->with('ce', 25)
-            ->with('ce_framework', 23);
+            ->with('coupling.cbo', 30)
+            ->with('coupling.cbo-app', 7)
+            ->with('coupling.ca', 5)
+            ->with('coupling.ce', 25)
+            ->with('coupling.ce-framework', 23);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -1111,10 +1111,10 @@ final class CboRuleTest extends TestCase
         // CBO = 15 (above error), CBO_APP = 3 (below warning)
         // Default scope=all should use CBO → error
         $metricBag = (new MetricBag())
-            ->with('cbo', 15)
-            ->with('cbo_app', 3)
-            ->with('ca', 5)
-            ->with('ce', 10);
+            ->with('coupling.cbo', 15)
+            ->with('coupling.cbo-app', 3)
+            ->with('coupling.ca', 5)
+            ->with('coupling.ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -1193,7 +1193,7 @@ final class CboRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
         $repository->method('get')->willReturn(
-            (new MetricBag())->with('cbo', 18)->with('ca', 8)->with('ce', 10),
+            (new MetricBag())->with('coupling.cbo', 18)->with('coupling.ca', 8)->with('coupling.ce', 10),
         );
 
         $findings = (new CboRule(new CboOptions()))

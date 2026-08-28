@@ -41,7 +41,7 @@ final class HealthScoreDrillDownTest extends TestCase
                 'ns:App\\Other' => MetricBag::fromArray([
                     'health.complexity' => 80.0,
                     'health.overall' => 75.0,
-                    'classCount.sum' => 5,
+                    'size.class-count.sum' => 5,
                 ]),
             ],
         );
@@ -64,14 +64,14 @@ final class HealthScoreDrillDownTest extends TestCase
                 'ns:App\\Service' => MetricBag::fromArray([
                     'health.complexity' => 80.0,
                     'health.overall' => 75.0,
-                    'classCount.sum' => 3,
+                    'size.class-count.sum' => 3,
                 ]),
             ],
             classes: [new SymbolInfo($classPath, RelativePath::fromString('src/Service/Worker.php'), null)],
             classMetrics: [
                 $classPath->toCanonical() => MetricBag::fromArray([
-                    'ccn.sum' => 9,
-                    'cognitive.sum' => 6,
+                    'complexity.ccn.sum' => 9,
+                    'complexity.cognitive.sum' => 6,
                 ]),
             ],
         );
@@ -84,7 +84,7 @@ final class HealthScoreDrillDownTest extends TestCase
         self::assertEqualsWithDelta(75.0, $result['overall']->score, 0.01);
         self::assertCount(1, $result['complexity']->worstContributors);
         self::assertSame(
-            ['ccn.sum' => 9, 'cognitive.sum' => 6],
+            ['complexity.ccn.sum' => 9, 'complexity.cognitive.sum' => 6],
             $result['complexity']->worstContributors[0]->metricValues,
         );
     }
@@ -101,12 +101,12 @@ final class HealthScoreDrillDownTest extends TestCase
             namespaceMetrics: [
                 'ns:App\\Service' => MetricBag::fromArray([
                     'health.complexity' => 80.0,
-                    'classCount.sum' => 3,
+                    'size.class-count.sum' => 3,
                 ]),
             ],
             classes: [new SymbolInfo($classPath, RelativePath::fromString('src/Service/Worker.php'), null)],
             classMetrics: [
-                $classPath->toCanonical() => MetricBag::fromArray(['ccn.sum' => 9]),
+                $classPath->toCanonical() => MetricBag::fromArray(['complexity.ccn.sum' => 9]),
             ],
         );
 
@@ -127,7 +127,7 @@ final class HealthScoreDrillDownTest extends TestCase
             namespaceMetrics: [
                 'ns:App\\Service\\Payment' => MetricBag::fromArray([
                     'health.complexity' => 90.0,
-                    'classCount.sum' => 2,
+                    'size.class-count.sum' => 2,
                 ]),
             ],
         );
@@ -150,7 +150,7 @@ final class HealthScoreDrillDownTest extends TestCase
             namespaceMetrics: [
                 'ns:App\\ServiceManager' => MetricBag::fromArray([
                     'health.complexity' => 90.0,
-                    'classCount.sum' => 2,
+                    'size.class-count.sum' => 2,
                 ]),
             ],
         );
@@ -172,11 +172,11 @@ final class HealthScoreDrillDownTest extends TestCase
             namespaceMetrics: [
                 'ns:App\\Service' => MetricBag::fromArray([
                     'health.complexity' => 100.0,
-                    'classCount.sum' => 1,
+                    'size.class-count.sum' => 1,
                 ]),
                 'ns:App\\Service\\Sub' => MetricBag::fromArray([
                     'health.complexity' => 50.0,
-                    'classCount.sum' => 3,
+                    'size.class-count.sum' => 3,
                 ]),
             ],
         );
@@ -199,7 +199,7 @@ final class HealthScoreDrillDownTest extends TestCase
             namespaceMetrics: [
                 'ns:App\\Service' => MetricBag::fromArray([
                     'health.complexity' => 80.0,
-                    'classCount.sum' => 0, // zero class count -> treated as 1
+                    'size.class-count.sum' => 0, // zero class count -> treated as 1
                 ]),
             ],
         );

@@ -92,9 +92,9 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
         $this->namespaceMetrics = $this->calculateNamespaceMetrics($content);
 
         $bag = (new MetricBag())
-            ->with(MetricName::SIZE_LOC, $metrics['loc'])
-            ->with(MetricName::SIZE_LLOC, $metrics['lloc'])
-            ->with(MetricName::SIZE_CLOC, $metrics['cloc']);
+            ->with(MetricName::SIZE_LOC, $metrics['size.loc'])
+            ->with(MetricName::SIZE_LLOC, $metrics['size.lloc'])
+            ->with(MetricName::SIZE_CLOC, $metrics['size.cloc']);
 
         // Store class-level LOC with class FQN as key
         \assert($this->visitor instanceof LocVisitor);
@@ -143,13 +143,13 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
     }
 
     /**
-     * @return array{loc: int, lloc: int, cloc: int}
+     * @return array{'size.loc': int, 'size.lloc': int, 'size.cloc': int}
      */
     private function calculateMetrics(string $content, int $startLine = 1, ?int $endLine = null): array
     {
         // Handle empty content
         if ($content === '') {
-            return ['loc' => 0, 'lloc' => 0, 'cloc' => 0];
+            return ['size.loc' => 0, 'size.lloc' => 0, 'size.cloc' => 0];
         }
 
         $lines = explode("\n", $content);
@@ -225,9 +225,9 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
         $lloc = $loc - $emptyCount - $pureCommentLineCount;
 
         return [
-            'loc' => $loc,
-            'lloc' => max(0, $lloc),
-            'cloc' => $pureCommentLineCount,
+            'size.loc' => $loc,
+            'size.lloc' => max(0, $lloc),
+            'size.cloc' => $pureCommentLineCount,
         ];
     }
 
@@ -251,7 +251,7 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
 
         $result = [];
         foreach ($rangesByNamespace as $namespace => $ranges) {
-            $totals = ['loc' => 0, 'lloc' => 0, 'cloc' => 0];
+            $totals = ['size.loc' => 0, 'size.lloc' => 0, 'size.cloc' => 0];
             foreach ($ranges as $range) {
                 $metrics = $this->calculateMetrics($content, $range['startLine'], $range['endLine']);
                 foreach ($totals as $name => $value) {

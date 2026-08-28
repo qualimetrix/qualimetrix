@@ -242,7 +242,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
         $producer = $universe->snapshot(new ResolvedComputedMetricDefinitions([
             new ComputedMetricDefinition(
                 name: 'health.cohesion',
-                formulas: ['namespace' => 'lcom'],
+                formulas: ['namespace' => 'cohesion.lcom'],
                 description: 'Fixture dimension',
                 levels: [SymbolLevel::Namespace_],
                 inverted: true,

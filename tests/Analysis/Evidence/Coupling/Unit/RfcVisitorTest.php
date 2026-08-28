@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\RfcVisitor;
 final class RfcVisitorTest extends TestCase
 {
     /**
-     * @param array<string, array{rfc: int, own: int, external: int}> $expected
+     * @param array<string, array{'coupling.rfc': int, own: int, external: int}> $expected
      */
     #[Test]
     #[DataProvider('provideRfcCases')]
@@ -37,7 +37,7 @@ final class RfcVisitorTest extends TestCase
 
             $data = $classesData[$classFqn];
             self::assertSame(
-                $expectedData['rfc'],
+                $expectedData['coupling.rfc'],
                 $data->getRfc(),
                 "RFC mismatch for $classFqn",
             );
@@ -55,7 +55,7 @@ final class RfcVisitorTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{code: string, expected: array<string, array{rfc: int, own: int, external: int}>}>
+     * @return iterable<string, array{code: string, expected: array<string, array{'coupling.rfc': int, own: int, external: int}>}>
      */
     public static function provideRfcCases(): iterable
     {
@@ -66,7 +66,7 @@ final class RfcVisitorTest extends TestCase
 class EmptyClass {}
 PHP,
             'expected' => [
-                'EmptyClass' => ['rfc' => 0, 'own' => 0, 'external' => 0],
+                'EmptyClass' => ['coupling.rfc' => 0, 'own' => 0, 'external' => 0],
             ],
         ];
 
@@ -88,7 +88,7 @@ class Calculator
 }
 PHP,
             'expected' => [
-                'Calculator' => ['rfc' => 2, 'own' => 2, 'external' => 0],
+                'Calculator' => ['coupling.rfc' => 2, 'own' => 2, 'external' => 0],
             ],
         ];
 
@@ -112,7 +112,7 @@ class OrderService
 // M = 2, R = 3, RFC = 5
 PHP,
             'expected' => [
-                'OrderService' => ['rfc' => 5, 'own' => 2, 'external' => 3],
+                'OrderService' => ['coupling.rfc' => 5, 'own' => 2, 'external' => 3],
             ],
         ];
 
@@ -135,7 +135,7 @@ class Logger
 // M = 2, R = 1 (write counted once), RFC = 3
 PHP,
             'expected' => [
-                'Logger' => ['rfc' => 3, 'own' => 2, 'external' => 1],
+                'Logger' => ['coupling.rfc' => 3, 'own' => 2, 'external' => 1],
             ],
         ];
 
@@ -158,7 +158,7 @@ class InternalCalls
 // M = 2, R = 0, RFC = 2
 PHP,
             'expected' => [
-                'InternalCalls' => ['rfc' => 2, 'own' => 2, 'external' => 0],
+                'InternalCalls' => ['coupling.rfc' => 2, 'own' => 2, 'external' => 0],
             ],
         ];
 
@@ -177,7 +177,7 @@ class StaticCalls
 // M = 1, R = 2, RFC = 3
 PHP,
             'expected' => [
-                'StaticCalls' => ['rfc' => 3, 'own' => 1, 'external' => 2],
+                'StaticCalls' => ['coupling.rfc' => 3, 'own' => 1, 'external' => 2],
             ],
         ];
 
@@ -199,7 +199,7 @@ class InternalStatic
 // M = 3, R = 0, RFC = 3
 PHP,
             'expected' => [
-                'InternalStatic' => ['rfc' => 3, 'own' => 3, 'external' => 0],
+                'InternalStatic' => ['coupling.rfc' => 3, 'own' => 3, 'external' => 0],
             ],
         ];
 
@@ -219,7 +219,7 @@ class GlobalFunctions
 // M = 1, R = 2, RFC = 3
 PHP,
             'expected' => [
-                'GlobalFunctions' => ['rfc' => 3, 'own' => 1, 'external' => 2],
+                'GlobalFunctions' => ['coupling.rfc' => 3, 'own' => 1, 'external' => 2],
             ],
         ];
 
@@ -238,7 +238,7 @@ class Factory
 // M = 1, R = 2, RFC = 3
 PHP,
             'expected' => [
-                'Factory' => ['rfc' => 3, 'own' => 1, 'external' => 2],
+                'Factory' => ['coupling.rfc' => 3, 'own' => 1, 'external' => 2],
             ],
         ];
 
@@ -258,7 +258,7 @@ abstract class AbstractClass
 // M = 1 (only concrete), R = 1, RFC = 2
 PHP,
             'expected' => [
-                'AbstractClass' => ['rfc' => 2, 'own' => 1, 'external' => 1],
+                'AbstractClass' => ['coupling.rfc' => 2, 'own' => 1, 'external' => 1],
             ],
         ];
 
@@ -274,7 +274,7 @@ interface UserInterface
 // M = 2 (interface methods count as own), R = 0, RFC = 2
 PHP,
             'expected' => [
-                'UserInterface' => ['rfc' => 2, 'own' => 2, 'external' => 0],
+                'UserInterface' => ['coupling.rfc' => 2, 'own' => 2, 'external' => 0],
             ],
         ];
 
@@ -306,8 +306,8 @@ class Second
 }
 PHP,
             'expected' => [
-                'App\First' => ['rfc' => 2, 'own' => 1, 'external' => 1],
-                'App\Second' => ['rfc' => 4, 'own' => 2, 'external' => 2],
+                'App\First' => ['coupling.rfc' => 2, 'own' => 1, 'external' => 1],
+                'App\Second' => ['coupling.rfc' => 4, 'own' => 2, 'external' => 2],
             ],
         ];
 
@@ -327,7 +327,7 @@ class UserService
 }
 PHP,
             'expected' => [
-                'App\Service\UserService' => ['rfc' => 3, 'own' => 1, 'external' => 2],
+                'App\Service\UserService' => ['coupling.rfc' => 3, 'own' => 1, 'external' => 2],
             ],
         ];
 
@@ -357,7 +357,7 @@ class OuterClass
 // M = 2, R = 1 (only normalMethod's external call), RFC = 3
 PHP,
             'expected' => [
-                'OuterClass' => ['rfc' => 3, 'own' => 2, 'external' => 1],
+                'OuterClass' => ['coupling.rfc' => 3, 'own' => 2, 'external' => 1],
             ],
         ];
 
@@ -379,7 +379,7 @@ class WithClosure
 // M = 1, R = 3, RFC = 4
 PHP,
             'expected' => [
-                'WithClosure' => ['rfc' => 4, 'own' => 1, 'external' => 3],
+                'WithClosure' => ['coupling.rfc' => 4, 'own' => 1, 'external' => 3],
             ],
         ];
 
@@ -404,7 +404,7 @@ class WithAnonymousClass
 // M = 1, R = 2, RFC = 3
 PHP,
             'expected' => [
-                'WithAnonymousClass' => ['rfc' => 3, 'own' => 1, 'external' => 2],
+                'WithAnonymousClass' => ['coupling.rfc' => 3, 'own' => 1, 'external' => 2],
             ],
         ];
 
@@ -431,7 +431,7 @@ trait LoggerTrait
 // M = 2 (only concrete), R = 1, RFC = 3
 PHP,
             'expected' => [
-                'App\LoggerTrait' => ['rfc' => 3, 'own' => 2, 'external' => 1],
+                'App\LoggerTrait' => ['coupling.rfc' => 3, 'own' => 2, 'external' => 1],
             ],
         ];
 
@@ -459,7 +459,7 @@ enum Status: string
 // M = 2, R = 1, RFC = 3
 PHP,
             'expected' => [
-                'App\Status' => ['rfc' => 3, 'own' => 2, 'external' => 1],
+                'App\Status' => ['coupling.rfc' => 3, 'own' => 2, 'external' => 1],
             ],
         ];
 
@@ -479,7 +479,7 @@ class MultiRepo
 // M = 1, R = 3, RFC = 4
 PHP,
             'expected' => [
-                'MultiRepo' => ['rfc' => 4, 'own' => 1, 'external' => 3],
+                'MultiRepo' => ['coupling.rfc' => 4, 'own' => 1, 'external' => 3],
             ],
         ];
 
@@ -502,7 +502,7 @@ class CachedService
 // M = 2, R = 1, RFC = 3
 PHP,
             'expected' => [
-                'CachedService' => ['rfc' => 3, 'own' => 2, 'external' => 1],
+                'CachedService' => ['coupling.rfc' => 3, 'own' => 2, 'external' => 1],
             ],
         ];
 
@@ -530,7 +530,7 @@ class OrderProcessor
 // M = 1, R = 10, RFC = 11
 PHP,
             'expected' => [
-                'App\Service\OrderProcessor' => ['rfc' => 11, 'own' => 1, 'external' => 10],
+                'App\Service\OrderProcessor' => ['coupling.rfc' => 11, 'own' => 1, 'external' => 10],
             ],
         ];
     }

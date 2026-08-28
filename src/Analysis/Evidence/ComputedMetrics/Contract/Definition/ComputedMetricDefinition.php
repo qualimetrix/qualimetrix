@@ -10,6 +10,9 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final readonly class ComputedMetricDefinition
 {
+    /** `health.` or `computed.`, then one or more lower-case kebab segments. */
+    private const string NAME_TEMPLATE = '/^(?:health|computed)(?:\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$/';
+
     /**
      * @param array<string, string> $formulas Keys: 'class', 'namespace', 'project'
      * @param list<SymbolLevel> $levels
@@ -118,41 +121,31 @@ final readonly class ComputedMetricDefinition
         }
     }
 
+    /**
+     * The whole name is checked against one template, not the family alone.
+     *
+     * `_` is gone from the grammar with the encoding that required it: a name
+     * had to double as an Expression Language identifier, where a dot is
+     * illegal, so `a.b` travelled as `a__b` and the segment grammar had to
+     * admit `_`. A formula now addresses a metric by its published key, and
+     * that key is kebab like every other name the product publishes.
+     *
+     * Checking the template as a whole is what closes the Ш5e2 gap: a name
+     * whose family was right and whose leaf was not — `computed.Branch_Load` —
+     * used to pass and then fall out of its own group in the report.
+     */
     private function validateName(): void
     {
-        $name = $this->name;
-
-        // No double underscores (reserved for variable mapping)
-        if (str_contains($name, '__')) {
-            throw new InvalidArgumentException(
-                \sprintf('Computed metric name "%s" must not contain "__" (reserved for variable mapping)', $name),
-            );
+        if (preg_match(self::NAME_TEMPLATE, $this->name) === 1) {
+            return;
         }
 
-        // Must match health.* or computed.* prefix
-        if (!str_starts_with($name, 'health.') && !str_starts_with($name, 'computed.')) {
-            throw new InvalidArgumentException(
-                \sprintf('Computed metric name "%s" must start with "health." or "computed."', $name),
-            );
-        }
-
-        // Validate segment grammar: prefix.identifier(.identifier)*
-        // Each identifier: [a-zA-Z][a-zA-Z0-9_]*
-        $segments = explode('.', $name);
-        foreach ($segments as $i => $segment) {
-            if ($i === 0) {
-                // First segment is prefix -- already validated above
-                continue;
-            }
-            if (preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $segment) !== 1) {
-                throw new InvalidArgumentException(
-                    \sprintf(
-                        'Computed metric name segment "%s" in "%s" must match [a-zA-Z][a-zA-Z0-9_]*',
-                        $segment,
-                        $name,
-                    ),
-                );
-            }
-        }
+        throw new InvalidArgumentException(\sprintf(
+            'Computed metric name "%s" must be "health.<name>" or "computed.<name>",'
+            . ' where every segment is lower-case kebab (%s)',
+            $this->name,
+            self::NAME_TEMPLATE,
+        ));
     }
+
 }

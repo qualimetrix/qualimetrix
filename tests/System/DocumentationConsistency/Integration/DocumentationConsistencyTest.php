@@ -232,7 +232,7 @@ final class DocumentationConsistencyTest extends TestCase
         $actual = $this->collectAllRuleNames();
         // Catalog entries that are not real RuleInterface implementations
         // (tcc/lcc are inputs to other rules; computed.health is synthetic).
-        $catalogOnly = ['tcc', 'lcc'];
+        $catalogOnly = ['cohesion.tcc', 'cohesion.lcc'];
         $sourceOnly = ['computed.health'];
 
         $expected = array_values(array_diff($actual, $sourceOnly));

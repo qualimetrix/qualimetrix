@@ -250,10 +250,10 @@ final class YamlNormalizationCharacterizationTest extends TestCase
 
         yield 'computed_metrics → computedMetrics root; identifier preserved, options normalized' => [
             'computed_metrics — level 1 keys are user-defined metric names (preserve); level 2+ are typed options',
-            "computed_metrics:\n  computed.my_score:\n    formula: 'loc * 2'\n    warning_threshold: 80\n",
+            "computed_metrics:\n  computed.my-score:\n    formula: 'loc * 2'\n    warning_threshold: 80\n",
             [
                 'computedMetrics' => [
-                    'computed.my_score' => [
+                    'computed.my-score' => [
                         'formula' => 'loc * 2',
                         'warningThreshold' => 80,
                     ],

@@ -87,10 +87,10 @@ final class ChannelUniverseTest extends TestCase
     #[Test]
     public function itResolvesAUserDefinedComputedMetricAtRunTimeAsHigherIsWorseByDefault(): void
     {
-        $this->definitions = [$this->definition('computed.risk_score', inverted: false)];
+        $this->definitions = [$this->definition('computed.risk-score', inverted: false)];
 
         $declaration = $this->universe()->declarationFor(
-            new FindingChannel('computed.risk_score'),
+            new FindingChannel('computed.risk-score'),
         );
 
         self::assertNotNull($declaration);
@@ -104,7 +104,7 @@ final class ChannelUniverseTest extends TestCase
         $this->definitions = [$this->definition('health.overall', inverted: true)];
 
         // A stale entry for a definition the user has since removed from config.
-        $channel = new FindingChannel('computed.removed_metric');
+        $channel = new FindingChannel('computed.removed-metric');
 
         self::assertNull($this->universe()->declarationFor($channel));
     }
@@ -138,7 +138,7 @@ final class ChannelUniverseTest extends TestCase
     {
         $this->definitions = [
             $this->definition('health.complexity', inverted: true),
-            $this->definition('computed.branch_load', inverted: false),
+            $this->definition('computed.branch-load', inverted: false),
         ];
 
         $universe = $this->universe();
@@ -151,7 +151,7 @@ final class ChannelUniverseTest extends TestCase
             ),
         );
         self::assertSame(
-            ['computed.branch_load'],
+            ['computed.branch-load'],
             array_map(
                 static fn(FindingChannel $channel): string => $channel->code,
                 $universe->channelsProducedBy(ComputedMetricRule::NAME),
@@ -416,10 +416,10 @@ final class ChannelUniverseTest extends TestCase
         $universe = $this->universe(thresholdSupport: [ComputedMetricRule::NAME => false]);
 
         $snapshot = $universe->snapshot(new ResolvedComputedMetricDefinitions([
-            $this->definition('computed.branch_load', false),
+            $this->definition('computed.branch-load', false),
         ]));
 
-        self::assertSame(ComputedMetricRule::NAME, $snapshot->producerOf('computed.branch_load'));
+        self::assertSame(ComputedMetricRule::NAME, $snapshot->producerOf('computed.branch-load'));
     }
 
     /**
@@ -444,7 +444,7 @@ final class ChannelUniverseTest extends TestCase
     {
         return new ComputedMetricDefinition(
             name: $name,
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Fixture definition',
             levels: [SymbolLevel::Class_],
             inverted: $inverted,
@@ -458,7 +458,7 @@ final class ChannelUniverseTest extends TestCase
     {
         return new ComputedMetricDefinition(
             name: $name,
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Fixture definition',
             levels: $levels,
         );

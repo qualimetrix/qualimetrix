@@ -164,7 +164,7 @@ final class PropertyCountRuleTest extends TestCase
         self::assertNotNull($subject);
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('propertyCount', 12));
+        $repository->method('get')->willReturn((new MetricBag())->with('size.property-count', 12));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -302,14 +302,14 @@ final class PropertyCountRuleTest extends TestCase
         ?int $isPromotedOnly = null,
     ): AnalysisContext {
         $bag = (new MetricBag())
-            ->with('propertyCount', $propertyCount);
+            ->with('size.property-count', $propertyCount);
 
         if ($isReadonly !== null) {
-            $bag = $bag->with('isReadonly', $isReadonly);
+            $bag = $bag->with('design.is-readonly', $isReadonly);
         }
 
         if ($isPromotedOnly !== null) {
-            $bag = $bag->with('isPromotedPropertiesOnly', $isPromotedOnly);
+            $bag = $bag->with('design.is-promoted-properties-only', $isPromotedOnly);
         }
 
         $symbolPath = SymbolPath::forClass($namespace, $class);
@@ -338,9 +338,9 @@ final class PropertyCountRuleTest extends TestCase
         ]);
         $repository->method('get')->willReturn(
             (new MetricBag())
-                ->with('propertyCount', 12)
-                ->with('isReadonly', 0)
-                ->with('isPromotedPropertiesOnly', 0),
+                ->with('size.property-count', 12)
+                ->with('design.is-readonly', 0)
+                ->with('design.is-promoted-properties-only', 0),
         );
 
         $findings = (new PropertyCountRule(new PropertyCountOptions(warning: 10, error: 15)))

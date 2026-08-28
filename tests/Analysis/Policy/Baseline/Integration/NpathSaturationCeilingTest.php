@@ -86,7 +86,7 @@ final class NpathSaturationCeilingTest extends TestCase
         $traverser->traverse($ast);
 
         $collected = $collector->collect(new SplFileInfo(__FILE__), $ast);
-        $npath = $collected->get('npath:App\\Subject::explode');
+        $npath = $collected->get('complexity.npath:App\\Subject::explode');
         self::assertIsInt($npath);
 
         $symbol = SymbolPath::forMethod('App', 'Subject', 'explode');

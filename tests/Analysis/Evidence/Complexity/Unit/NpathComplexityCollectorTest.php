@@ -39,7 +39,7 @@ final class NpathComplexityCollectorTest extends TestCase
     #[Test]
     public function itProvides(): void
     {
-        self::assertSame(['npath'], $this->collector->provides());
+        self::assertSame(['complexity.npath'], $this->collector->provides());
     }
 
     #[Test]
@@ -48,7 +48,7 @@ final class NpathComplexityCollectorTest extends TestCase
         $definitions = $this->collector->getMetricDefinitions();
 
         self::assertCount(1, $definitions);
-        self::assertSame('npath', $definitions[0]->name);
+        self::assertSame('complexity.npath', $definitions[0]->name);
         self::assertSame(SymbolLevel::Callable, $definitions[0]->collectedAt);
         self::assertSame(
             [AggregationStrategy::Max, AggregationStrategy::Average],
@@ -74,7 +74,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('npath:App\Test::empty'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Test::empty'));
     }
 
     #[Test]
@@ -96,7 +96,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('npath:App\Service\Calculator::add'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Service\Calculator::add'));
     }
 
     #[Test]
@@ -140,11 +140,11 @@ PHP;
 
         // The expression calculator is zero-based: each ?-> adds one branch.
         // The enclosing return statement supplies its own base path.
-        self::assertSame(1, $metrics->get('npath:App\\Test::ordinary'));
-        self::assertSame(2, $metrics->get('npath:App\\Test::isolated'));
-        self::assertSame(2, $metrics->get('npath:App\\Test::expression'));
-        self::assertSame(3, $metrics->get('npath:App\\Test::chained'));
-        self::assertSame(2, $metrics->get('npath:App\\Test::ternary'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\\Test::ordinary'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::isolated'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::expression'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\\Test::chained'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::ternary'));
     }
 
     #[Test]
@@ -213,16 +213,16 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // One callable statement base plus one nullsafe hop.
-        self::assertSame(2, $metrics->get('npath:App\\Test::callWrapper'));
-        self::assertSame(2, $metrics->get('npath:App\\Test::assignmentWrapper'));
-        self::assertSame(2, $metrics->get('npath:App\\Test::propertyWrapper'));
-        self::assertSame(2, $metrics->get('npath:App\\Test::echoWrapper'));
-        self::assertSame(2, $metrics->get('npath:App\\Test::coalesceWrapper'));
-        self::assertSame(3, $metrics->get('npath:App\\Test::ternaryWrapper'));
-        self::assertSame(3, $metrics->get('npath:App\\Test::ternaryArgument'));
-        self::assertSame(2, $metrics->get('npath:App\\Test::coalesceArgument'));
-        self::assertSame(2, $metrics->get('npath:App\\Test::{closure#1}'));
-        self::assertSame(2, $metrics->get('npath:App\\Test::hooked::get'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::callWrapper'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::assignmentWrapper'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::propertyWrapper'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::echoWrapper'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::coalesceWrapper'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\\Test::ternaryWrapper'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\\Test::ternaryArgument'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::coalesceArgument'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::{closure#1}'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::hooked::get'));
     }
 
     #[Test]
@@ -251,8 +251,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('npath:App\\Test::ternaryArgument'));
-        self::assertSame(2, $metrics->get('npath:App\\Test::coalesceArgument'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\\Test::ternaryArgument'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::coalesceArgument'));
     }
 
     #[Test]
@@ -278,7 +278,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // NPath = cond(0) + then(1) + skip(1) = 2, then * return(1) = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::check'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     #[Test]
@@ -305,7 +305,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // NPath = cond(0) + then(1) + else(1) = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::check'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     #[Test]
@@ -335,7 +335,7 @@ PHP;
         // First if: NPath = cond(0) + then(1) + skip(1) = 2
         // Second if: NPath = cond(0) + then(1) + skip(1) = 2
         // Sequence: 2 × 2 = 4
-        self::assertSame(4, $metrics->get('npath:App\Test::check'));
+        self::assertSame(4, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     #[Test]
@@ -363,7 +363,7 @@ PHP;
 
         // Inner if: cond(0) + then(1) + skip(1) = 2
         // Outer if: cond(0) + then(2) + skip(1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::check'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     #[Test]
@@ -388,7 +388,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // NPath = cond(0) + body(1) + exit(1) = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::loop'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\Test::loop'));
     }
 
     #[Test]
@@ -413,7 +413,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Nejmeh 1988: NPath(for) = NPath(cond) + NPath(body) + 1 = 0 + 1 + 1 = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::loop'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\Test::loop'));
     }
 
     #[Test]
@@ -438,7 +438,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Foreach NPath = NPath(body) + 1 = 1 + 1 = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::iterate'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\Test::iterate'));
     }
 
     #[Test]
@@ -468,7 +468,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // NPath = cond(0) + case1_body(1) + case2_body(1) + default_body(1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::grade'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\Test::grade'));
     }
 
     #[Test]
@@ -495,7 +495,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // NPath = try(1) + catch(1) + 1 = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::risky'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\Test::risky'));
     }
 
     #[Test]
@@ -518,7 +518,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Nejmeh: NPath = cond(0) + true(0) + false(0) + 2 = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::conditional'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\Test::conditional'));
     }
 
     #[Test]
@@ -541,7 +541,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Nejmeh: NPath = left(0) + right(0) + 1 = 1; return max(1, 1) = 1
-        self::assertSame(1, $metrics->get('npath:App\Test::check'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     #[Test]
@@ -564,7 +564,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Nejmeh: NPath = left(0) + right(0) + 1 = 1; return max(1, 1) = 1
-        self::assertSame(1, $metrics->get('npath:App\Test::check'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     #[Test]
@@ -587,7 +587,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Nejmeh: NPath = left(0) + right(0) + 1 = 1; return max(1, 1) = 1
-        self::assertSame(1, $metrics->get('npath:App\Test::check'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     #[Test]
@@ -613,7 +613,7 @@ PHP;
 
         // ??= is a path-generating decision point, identical to ??:
         // NPath(if) = NPath(cond: $a ??= $b = 0+0+1=1) + NPath(then: 1) + NPath(skip: 1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::check'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     #[Test]
@@ -640,7 +640,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // NPath = subject(0) + max(1, arm1) + max(1, arm2) + max(1, default) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::grade'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\Test::grade'));
     }
 
     /**
@@ -672,7 +672,7 @@ PHP;
     {
         $metrics = $this->collectFunctionMetrics("<?php function f() { {$body} }");
 
-        self::assertSame($expected, $metrics->get('npath:f'));
+        self::assertSame($expected, $metrics->get('complexity.npath:f'));
     }
 
     #[Test]
@@ -687,8 +687,8 @@ PHP;
             . 'case 1: return "one"; case 2: return "two"; default: return "other"; } }',
         );
 
-        self::assertSame(3, $match->get('npath:f'));
-        self::assertSame($match->get('npath:f'), $switch->get('npath:f'));
+        self::assertSame(3, $match->get('complexity.npath:f'));
+        self::assertSame($match->get('complexity.npath:f'), $switch->get('complexity.npath:f'));
     }
 
     #[Test]
@@ -705,7 +705,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Should be capped at MAX_NPATH = 1_000_000_000
-        self::assertSame(1_000_000_000, $metrics->get('npath:Test::deep'));
+        self::assertSame(1_000_000_000, $metrics->get('complexity.npath:Test::deep'));
     }
 
     #[Test]
@@ -748,16 +748,16 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // simple: NPath = 1 (empty)
-        self::assertSame(1, $metrics->get('npath:App\Outer::simple'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Outer::simple'));
 
         // factory: NPath = 1 — anonymous class complexity should NOT leak
-        self::assertSame(1, $metrics->get('npath:App\Outer::factory'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Outer::factory'));
 
         // afterAnonymous: NPath = cond(0) + then(1) + skip(1) = 2
-        self::assertSame(2, $metrics->get('npath:App\Outer::afterAnonymous'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\Outer::afterAnonymous'));
 
         // Anonymous class methods should NOT appear in metrics
-        self::assertNull($metrics->get('npath:App\Outer::innerComplex'));
+        self::assertNull($metrics->get('complexity.npath:App\Outer::innerComplex'));
     }
 
     #[Test]
@@ -782,7 +782,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // NPath = cond(0+0+1=1) + body(1) + exit(1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::loop'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\Test::loop'));
     }
 
     #[Test]
@@ -808,7 +808,7 @@ PHP;
 
         // ($a || $b) has NPath=0+0+1=1, then (($a || $b) || $c) has NPath=1+0+1=2
         // NPath = cond(2) + body(1) + exit(1) = 4
-        self::assertSame(4, $metrics->get('npath:App\Test::loop'));
+        self::assertSame(4, $metrics->get('complexity.npath:App\Test::loop'));
     }
 
     #[Test]
@@ -833,7 +833,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // NPath = cond(0+0+1=1) + body(1) + exit(1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::loop'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\Test::loop'));
     }
 
     #[Test]
@@ -858,7 +858,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Nejmeh 1988: NPath(for) = NPath(cond: 0+0+1=1) + NPath(body: 1) + 1 = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::loop'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\Test::loop'));
     }
 
     #[Test]
@@ -883,7 +883,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Foreach NPath = NPath(body) + 1 = 1 + 1 = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::iterate'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\Test::iterate'));
     }
 
     #[Test]
@@ -909,7 +909,7 @@ PHP;
 
         // Ternary condition NPath = cond(0) + true(0) + false(0) + 2 = 2
         // NPath = cond(2) + body(1) + exit(1) = 4
-        self::assertSame(4, $metrics->get('npath:App\Test::loop'));
+        self::assertSame(4, $metrics->get('complexity.npath:App\Test::loop'));
     }
 
     /**
@@ -937,7 +937,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // NPath(if) = NPath(cond: $a && $b = 0+0+1=1) + NPath(then: 1) + NPath(skip: 1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::check'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     /**
@@ -969,7 +969,7 @@ PHP;
         // NPath(if) = NPath(cond1: $a && $b = 1) + NPath(then1: 1)
         //           + NPath(cond2: $c || $d = 1) + NPath(then2: 1)
         //           + NPath(skip: 1) = 5
-        self::assertSame(5, $metrics->get('npath:App\Test::check'));
+        self::assertSame(5, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     /**
@@ -995,10 +995,10 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Method itself: NPath = 1
-        self::assertSame(1, $metrics->get('npath:App\Test::getMapper'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Test::getMapper'));
 
         // Arrow function: NPath = ternary cond(0) + true(0) + false(0) + 2 = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::{closure#1}'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\Test::{closure#1}'));
     }
 
     /**
@@ -1024,7 +1024,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Arrow function with no branching: NPath = 1
-        self::assertSame(1, $metrics->get('npath:App\Test::{closure#1}'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Test::{closure#1}'));
     }
 
     /**
@@ -1042,7 +1042,7 @@ PHP;
 
         // $r = $x ? "a" : "b" -> Assign recurses into Ternary
         // Ternary NPath = cond(0) + true(0) + false(0) + 2 = 2; stmt max(1, 2) = 2
-        self::assertSame(2, $metrics->get('npath:f'));
+        self::assertSame(2, $metrics->get('complexity.npath:f'));
     }
 
     /**
@@ -1060,7 +1060,7 @@ PHP;
 
         // $r = $x ?? "b" -> Assign recurses into Coalesce
         // Coalesce NPath = left(0) + right(0) + 1 = 1; stmt max(1, 1) = 1
-        self::assertSame(1, $metrics->get('npath:f'));
+        self::assertSame(1, $metrics->get('complexity.npath:f'));
     }
 
     /**
@@ -1094,7 +1094,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // outerMethod: NPath = 1 — closure inside anonymous class is ignored
-        self::assertSame(1, $metrics->get('npath:App\Outer::outerMethod'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Outer::outerMethod'));
     }
 
     /**
@@ -1125,7 +1125,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // outerMethod: NPath = 1 — arrow function inside anonymous class is ignored
-        self::assertSame(1, $metrics->get('npath:App\Outer::outerMethod'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Outer::outerMethod'));
     }
 
     /**
@@ -1154,7 +1154,7 @@ PHP;
         // NPath(if) = NPath(cond: !($a && $b)) + NPath(then: 1) + NPath(skip: 1)
         // NPath(!expr) = NPath(expr) = NPath($a && $b) = 0+0+1 = 1
         // NPath(if) = 1 + 1 + 1 = 3, then * NPath(return 0) = 1 => total = 3
-        self::assertSame(3, $metrics->get('npath:App\Foo::bar'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\Foo::bar'));
     }
 
     /**
@@ -1194,7 +1194,7 @@ PHP;
         // NP(try-catch) = NP(try) + NP(catch) + 1 = 2 + 1 + 1 = 4
         // NP(finally body) = cond(0) + then(1) + skip(1) = 2
         // Total = NP(try-catch) * NP(finally) = 4 * 2 = 8
-        self::assertSame(8, $metrics->get('npath:App\Foo::bar'));
+        self::assertSame(8, $metrics->get('complexity.npath:App\Foo::bar'));
     }
 
     /**

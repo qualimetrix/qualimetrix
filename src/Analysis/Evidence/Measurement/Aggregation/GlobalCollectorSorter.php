@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 
 /**
@@ -176,7 +177,7 @@ final class GlobalCollectorSorter
         $required = [];
 
         foreach ($collector->requires() as $metric) {
-            // Handle dotted metric names (e.g., 'classCount.sum' → 'classCount')
+            // Handle dotted metric names (e.g., 'size.class-count.sum' → 'size.class-count')
             $baseMetric = $this->getBaseMetric($metric);
 
             if (isset($providers[$metric])) {
@@ -190,19 +191,26 @@ final class GlobalCollectorSorter
     }
 
     /**
-     * Extracts base metric name from a potentially dotted name.
+     * Strips the aggregation suffix a requirement may carry.
      *
-     * 'classCount.sum' → 'classCount'
-     * 'instability' → 'instability'
+     * 'size.class-count.sum' → 'size.class-count'
+     * 'coupling.instability' → 'coupling.instability'
+     *
+     * The suffix is recognised by the closed strategy list, not by the first
+     * dot: every metric key carries its family in front of the metric, so
+     * cutting at the first dot returns the family and matches no provider.
      */
     private function getBaseMetric(string $metric): string
     {
-        $dotPos = strpos($metric, '.');
-        if ($dotPos !== false) {
-            return substr($metric, 0, $dotPos);
+        $dotPos = strrpos($metric, '.');
+
+        if ($dotPos === false) {
+            return $metric;
         }
 
-        return $metric;
+        $suffix = substr($metric, $dotPos + 1);
+
+        return AggregationStrategy::tryFrom($suffix) === null ? $metric : substr($metric, 0, $dotPos);
     }
 
     /**

@@ -98,17 +98,17 @@ final class CompositeCollectorTest extends TestCase
     #[Test]
     public function itMergesMetricsFromAllCollectors(): void
     {
-        $metrics1 = (new MetricBag())->with('loc', 100);
-        $metrics2 = (new MetricBag())->with('ccn', 5);
+        $metrics1 = (new MetricBag())->with('size.loc', 100);
+        $metrics2 = (new MetricBag())->with('complexity.ccn', 5);
 
-        $collector1 = $this->createCollector('loc', $metrics1);
-        $collector2 = $this->createCollector('ccn', $metrics2);
+        $collector1 = $this->createCollector('size.loc', $metrics1);
+        $collector2 = $this->createCollector('complexity.ccn', $metrics2);
 
         $composite = new CompositeCollector([$collector1, $collector2], new DeclarationRegistrarFactory());
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
-        self::assertSame(100, $result->metrics->get('loc'));
-        self::assertSame(5, $result->metrics->get('ccn'));
+        self::assertSame(100, $result->metrics->get('size.loc'));
+        self::assertSame(5, $result->metrics->get('complexity.ccn'));
     }
 
     #[Test]
@@ -205,12 +205,12 @@ final class CompositeCollectorTest extends TestCase
     {
         // Base collector provides ccn:App\Service\UserService::method
         $baseMetrics = (new MetricBag())
-            ->with('ccn:App\Service\UserService::method', 5)
-            ->with('loc:App\Service\UserService::method', 100);
+            ->with('complexity.ccn:App\Service\UserService::method', 5)
+            ->with('size.loc:App\Service\UserService::method', 100);
 
         $callable = $this->callable('App\\Service', 'UserService', 'method', 100, (new MetricBag())
-            ->with('ccn', 5)
-            ->with('loc', 100));
+            ->with('complexity.ccn', 5)
+            ->with('size.loc', 100));
         $baseCollector = $this->createCallableCollector('base', $baseMetrics, [$callable]);
 
         // Derived collector that doubles the ccn value
@@ -225,7 +225,7 @@ final class CompositeCollectorTest extends TestCase
         // The derived collector receives a MetricBag with base metric names (without FQN)
         $derivedCollector->method('calculate')
             ->willReturnCallback(static function (MetricBag $sourceBag): MetricBag {
-                $ccn = $sourceBag->get('ccn');
+                $ccn = $sourceBag->get('complexity.ccn');
                 if ($ccn === null) {
                     return new MetricBag();
                 }
@@ -237,8 +237,8 @@ final class CompositeCollectorTest extends TestCase
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         // Should have both base and derived metrics
-        self::assertSame(5, $result->metrics->get('ccn:App\Service\UserService::method'));
-        self::assertSame(100, $result->metrics->get('loc:App\Service\UserService::method'));
+        self::assertSame(5, $result->metrics->get('complexity.ccn:App\Service\UserService::method'));
+        self::assertSame(100, $result->metrics->get('size.loc:App\Service\UserService::method'));
         self::assertSame(10, $result->metrics->get($this->derivedKey('derived_ccn', $callable)));
     }
 
@@ -398,13 +398,13 @@ final class CompositeCollectorTest extends TestCase
     {
         // Multiple symbols with metrics
         $baseMetrics = (new MetricBag())
-            ->with('ccn:App\Service\A::method1', 5)
-            ->with('ccn:App\Service\B::method2', 8)
-            ->with('loc:App\Service\A::method1', 100)
-            ->with('loc:App\Service\B::method2', 200);
+            ->with('complexity.ccn:App\Service\A::method1', 5)
+            ->with('complexity.ccn:App\Service\B::method2', 8)
+            ->with('size.loc:App\Service\A::method1', 100)
+            ->with('size.loc:App\Service\B::method2', 200);
 
-        $first = $this->callable('App\\Service', 'A', 'method1', 130, (new MetricBag())->with('ccn', 5)->with('loc', 100));
-        $second = $this->callable('App\\Service', 'B', 'method2', 140, (new MetricBag())->with('ccn', 8)->with('loc', 200));
+        $first = $this->callable('App\\Service', 'A', 'method1', 130, (new MetricBag())->with('complexity.ccn', 5)->with('size.loc', 100));
+        $second = $this->callable('App\\Service', 'B', 'method2', 140, (new MetricBag())->with('complexity.ccn', 8)->with('size.loc', 200));
         $baseCollector = $this->createCallableCollector('base', $baseMetrics, [$first, $second]);
 
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
@@ -416,8 +416,8 @@ final class CompositeCollectorTest extends TestCase
         ]);
         $derivedCollector->method('calculate')
             ->willReturnCallback(static function (MetricBag $sourceBag): MetricBag {
-                $ccn = $sourceBag->get('ccn');
-                $loc = $sourceBag->get('loc');
+                $ccn = $sourceBag->get('complexity.ccn');
+                $loc = $sourceBag->get('size.loc');
 
                 if ($ccn === null || $loc === null) {
                     return new MetricBag();
@@ -442,8 +442,8 @@ final class CompositeCollectorTest extends TestCase
             330,
             45,
             MetricBag::fromArray([
-                'typeCoverage.paramTyped' => 2,
-                'typeCoverage.paramTotal' => 2,
+                'design.type-coverage.param.typed' => 2,
+                'design.type-coverage.param.total' => 2,
             ]),
         );
         $baseCollector = $this->createClassCollector('type-coverage', new MetricBag(), [$class]);
@@ -451,14 +451,14 @@ final class CompositeCollectorTest extends TestCase
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('getName')->willReturn('type-coverage-pct');
         $derivedCollector->method('requires')->willReturn(['type-coverage']);
-        $derivedCollector->method('provides')->willReturn(['typeCoverage.pct']);
+        $derivedCollector->method('provides')->willReturn(['design.type-coverage.pct']);
         $derivedCollector->method('getMetricDefinitions')->willReturn([
-            new MetricDefinition('typeCoverage.pct', SymbolLevel::Class_),
+            new MetricDefinition('design.type-coverage.pct', SymbolLevel::Class_),
         ]);
         $derivedCollector->method('calculate')->willReturnCallback(
             static fn(MetricBag $metrics): MetricBag => (new MetricBag())->with(
-                'typeCoverage.pct',
-                ($metrics->get('typeCoverage.paramTyped') ?? 0) === ($metrics->get('typeCoverage.paramTotal') ?? 0)
+                'design.type-coverage.pct',
+                ($metrics->get('design.type-coverage.param.typed') ?? 0) === ($metrics->get('design.type-coverage.param.total') ?? 0)
                     ? 100.0
                     : 0.0,
             ),
@@ -470,8 +470,8 @@ final class CompositeCollectorTest extends TestCase
             RelativePath::fromString('CompositeCollectorTest.php'),
         );
 
-        self::assertSame(100.0, $result->metrics->get($this->derivedSubjectKey('typeCoverage.pct', $class->subject)));
-        self::assertFalse($result->metrics->has('typeCoverage.pct:callable:' . $class->declarationPath->toCanonical()));
+        self::assertSame(100.0, $result->metrics->get($this->derivedSubjectKey('design.type-coverage.pct', $class->subject)));
+        self::assertFalse($result->metrics->has('design.type-coverage.pct:callable:' . $class->declarationPath->toCanonical()));
     }
 
     #[Test]

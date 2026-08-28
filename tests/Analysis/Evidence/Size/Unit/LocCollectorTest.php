@@ -55,7 +55,7 @@ final class LocCollectorTest extends TestCase
     #[Test]
     public function itProvides(): void
     {
-        self::assertSame(['loc', 'lloc', 'cloc', 'classLoc'], $this->collector->provides());
+        self::assertSame(['size.loc', 'size.lloc', 'size.cloc', 'size.class-loc'], $this->collector->provides());
     }
 
     #[Test]
@@ -63,9 +63,9 @@ final class LocCollectorTest extends TestCase
     {
         $metrics = $this->collectMetrics('');
 
-        self::assertSame(0, $metrics->get('loc'));
-        self::assertSame(0, $metrics->get('lloc'));
-        self::assertSame(0, $metrics->get('cloc'));
+        self::assertSame(0, $metrics->get('size.loc'));
+        self::assertSame(0, $metrics->get('size.lloc'));
+        self::assertSame(0, $metrics->get('size.cloc'));
     }
 
     #[Test]
@@ -75,9 +75,9 @@ final class LocCollectorTest extends TestCase
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('loc'));
-        self::assertSame(1, $metrics->get('lloc'));
-        self::assertSame(0, $metrics->get('cloc'));
+        self::assertSame(1, $metrics->get('size.loc'));
+        self::assertSame(1, $metrics->get('size.lloc'));
+        self::assertSame(0, $metrics->get('size.cloc'));
     }
 
     #[Test]
@@ -99,11 +99,11 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 10 lines total (heredoc doesn't add trailing newline)
-        self::assertSame(10, $metrics->get('loc'));
+        self::assertSame(10, $metrics->get('size.loc'));
         // 2 empty lines (lines 2, 4)
         // LLOC = 10 - 2 - 0 = 8
-        self::assertSame(8, $metrics->get('lloc'));
-        self::assertSame(0, $metrics->get('cloc'));
+        self::assertSame(8, $metrics->get('size.lloc'));
+        self::assertSame(0, $metrics->get('size.cloc'));
     }
 
     #[Test]
@@ -119,12 +119,12 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 4 lines
-        self::assertSame(4, $metrics->get('loc'));
+        self::assertSame(4, $metrics->get('size.loc'));
         // 1 comment line
-        self::assertSame(1, $metrics->get('cloc'));
+        self::assertSame(1, $metrics->get('size.cloc'));
         // 1 empty line (line 2)
         // LLOC = 4 - 1 - 1 = 2
-        self::assertSame(2, $metrics->get('lloc'));
+        self::assertSame(2, $metrics->get('size.lloc'));
     }
 
     #[Test]
@@ -143,12 +143,12 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 7 lines
-        self::assertSame(7, $metrics->get('loc'));
+        self::assertSame(7, $metrics->get('size.loc'));
         // 4 comment lines (lines 3-6)
-        self::assertSame(4, $metrics->get('cloc'));
+        self::assertSame(4, $metrics->get('size.cloc'));
         // 1 empty line (line 2)
         // LLOC = 7 - 1 - 4 = 2
-        self::assertSame(2, $metrics->get('lloc'));
+        self::assertSame(2, $metrics->get('size.lloc'));
     }
 
     #[Test]
@@ -173,9 +173,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 13 lines
-        self::assertSame(13, $metrics->get('loc'));
+        self::assertSame(13, $metrics->get('size.loc'));
         // Doc blocks: lines 3-5 (3 lines) + lines 8-11 (4 lines) = 7
-        self::assertSame(7, $metrics->get('cloc'));
+        self::assertSame(7, $metrics->get('size.cloc'));
     }
 
     #[Test]
@@ -191,9 +191,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 4 lines
-        self::assertSame(4, $metrics->get('loc'));
+        self::assertSame(4, $metrics->get('size.loc'));
         // 1 comment line
-        self::assertSame(1, $metrics->get('cloc'));
+        self::assertSame(1, $metrics->get('size.cloc'));
     }
 
     #[Test]
@@ -208,11 +208,11 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 3 lines
-        self::assertSame(3, $metrics->get('loc'));
+        self::assertSame(3, $metrics->get('size.loc'));
         // Line 3 has code AND a comment — it's NOT a pure comment line
-        self::assertSame(0, $metrics->get('cloc'));
+        self::assertSame(0, $metrics->get('size.cloc'));
         // LLOC = 3 - 1 empty - 0 pure comments = 2
-        self::assertSame(2, $metrics->get('lloc'));
+        self::assertSame(2, $metrics->get('size.lloc'));
     }
 
     #[Test]
@@ -230,11 +230,11 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 6 lines
-        self::assertSame(6, $metrics->get('loc'));
+        self::assertSame(6, $metrics->get('size.loc'));
         // Only line 5 is a pure comment line (line 3 and 4 have code tokens too)
-        self::assertSame(1, $metrics->get('cloc'));
+        self::assertSame(1, $metrics->get('size.cloc'));
         // LLOC = 6 - 1 empty - 1 pure comment = 4
-        self::assertSame(4, $metrics->get('lloc'));
+        self::assertSame(4, $metrics->get('size.lloc'));
     }
 
     #[Test]
@@ -255,9 +255,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 9 lines
-        self::assertSame(9, $metrics->get('loc'));
+        self::assertSame(9, $metrics->get('size.loc'));
         // Comments: line 3 (//), line 4 (/**/), line 5 (#), lines 6-8 (docblock) = 6
-        self::assertSame(6, $metrics->get('cloc'));
+        self::assertSame(6, $metrics->get('size.cloc'));
     }
 
     #[Test]
@@ -268,10 +268,10 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 4 lines (3 newlines = 4 lines)
-        self::assertSame(4, $metrics->get('loc'));
+        self::assertSame(4, $metrics->get('size.loc'));
         // All empty
-        self::assertSame(0, $metrics->get('lloc'));
-        self::assertSame(0, $metrics->get('cloc'));
+        self::assertSame(0, $metrics->get('size.lloc'));
+        self::assertSame(0, $metrics->get('size.cloc'));
     }
 
     #[Test]
@@ -287,11 +287,11 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 4 lines
-        self::assertSame(4, $metrics->get('loc'));
+        self::assertSame(4, $metrics->get('size.loc'));
         // 3 comment lines
-        self::assertSame(3, $metrics->get('cloc'));
+        self::assertSame(3, $metrics->get('size.cloc'));
         // LLOC = 4 - 0 - 3 = 1 (just the <?php line)
-        self::assertSame(1, $metrics->get('lloc'));
+        self::assertSame(1, $metrics->get('size.lloc'));
     }
 
     #[Test]
@@ -333,9 +333,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 30 lines total
-        self::assertSame(30, $metrics->get('loc'));
+        self::assertSame(30, $metrics->get('size.loc'));
         // Comments: lines 7-11 (5), line 14 (1), lines 17-19 (3), line 27 (1) = 10
-        self::assertSame(10, $metrics->get('cloc'));
+        self::assertSame(10, $metrics->get('size.cloc'));
     }
 
     #[Test]
@@ -360,12 +360,12 @@ PHP;
             $byNamespace[$namespaceMetrics->namespace] = $namespaceMetrics->metrics;
         }
 
-        self::assertSame(10, $fileMetrics->get('loc'));
-        self::assertSame(4, $byNamespace['One']->get('loc'));
-        self::assertSame(1, $byNamespace['One']->get('cloc'));
-        self::assertSame(4, $byNamespace['Two']->get('loc'));
-        self::assertSame(3, $byNamespace['Two']->get('lloc'));
-        self::assertSame(1, $byNamespace['Empty']->get('loc'));
+        self::assertSame(10, $fileMetrics->get('size.loc'));
+        self::assertSame(4, $byNamespace['One']->get('size.loc'));
+        self::assertSame(1, $byNamespace['One']->get('size.cloc'));
+        self::assertSame(4, $byNamespace['Two']->get('size.loc'));
+        self::assertSame(3, $byNamespace['Two']->get('size.lloc'));
+        self::assertSame(1, $byNamespace['Empty']->get('size.loc'));
     }
 
     #[Test]
@@ -378,7 +378,7 @@ PHP;
         $code = '<?php class A {}';
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('loc'));
+        self::assertSame(1, $metrics->get('size.loc'));
     }
 
     #[Test]
@@ -389,11 +389,11 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 4 lines
-        self::assertSame(4, $metrics->get('loc'));
+        self::assertSame(4, $metrics->get('size.loc'));
         // 2 empty lines (whitespace only)
         // LLOC = 4 - 2 = 2
-        self::assertSame(2, $metrics->get('lloc'));
-        self::assertSame(0, $metrics->get('cloc'));
+        self::assertSame(2, $metrics->get('size.lloc'));
+        self::assertSame(0, $metrics->get('size.cloc'));
     }
 
     #[Test]
@@ -404,10 +404,10 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 3 lines (trailing newline creates empty line)
-        self::assertSame(3, $metrics->get('loc'));
+        self::assertSame(3, $metrics->get('size.loc'));
         // 1 empty line
         // LLOC = 3 - 1 = 2
-        self::assertSame(2, $metrics->get('lloc'));
+        self::assertSame(2, $metrics->get('size.lloc'));
     }
 
     #[Test]
@@ -418,10 +418,10 @@ PHP;
         self::assertCount(4, $definitions);
 
         $metricNames = array_map(fn($d) => $d->name, $definitions);
-        self::assertContains('loc', $metricNames);
-        self::assertContains('lloc', $metricNames);
-        self::assertContains('cloc', $metricNames);
-        self::assertContains('classLoc', $metricNames);
+        self::assertContains('size.loc', $metricNames);
+        self::assertContains('size.lloc', $metricNames);
+        self::assertContains('size.cloc', $metricNames);
+        self::assertContains('size.class-loc', $metricNames);
 
         // File-level metrics (loc, lloc, cloc)
         foreach (\array_slice($definitions, 0, 3) as $definition) {
@@ -473,7 +473,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Class spans lines 5-16 = 12 lines
-        self::assertSame(12, $metrics->get('classLoc:App\Service\UserService'));
+        self::assertSame(12, $metrics->get('size.class-loc:App\Service\UserService'));
     }
 
     #[Test]
@@ -495,8 +495,8 @@ class Baz
 PHP;
         $metrics = $this->collectMetrics($code);
 
-        self::assertNotNull($metrics->get('classLoc:App\Foo'));
-        self::assertNotNull($metrics->get('classLoc:App\Baz'));
+        self::assertNotNull($metrics->get('size.class-loc:App\Foo'));
+        self::assertNotNull($metrics->get('size.class-loc:App\Baz'));
     }
 
     #[Test]
@@ -511,7 +511,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // No classLoc keys for anonymous classes
-        self::assertNull($metrics->get('classLoc:'));
+        self::assertNull($metrics->get('size.class-loc:'));
     }
 
     #[Test]
@@ -526,7 +526,7 @@ class GlobalClass
 PHP;
         $metrics = $this->collectMetrics($code);
 
-        self::assertNotNull($metrics->get('classLoc:GlobalClass'));
+        self::assertNotNull($metrics->get('size.class-loc:GlobalClass'));
     }
 
     #[Test]
@@ -548,7 +548,7 @@ PHP;
         self::assertCount(1, $classes);
         self::assertSame('App\Model', $classes[0]->declarationPath->logical->namespace);
         self::assertSame('Order', $classes[0]->declarationPath->logical->type);
-        self::assertNotNull($classes[0]->metrics->get('classLoc'));
+        self::assertNotNull($classes[0]->metrics->get('size.class-loc'));
     }
 
     #[Test]

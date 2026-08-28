@@ -92,10 +92,10 @@ final class MetricsJsonFormatterTest extends TestCase
         $repository->method('get')
             ->willReturnCallback(static function (SymbolPath $path) use ($classPath): MetricBag {
                 if ($path === $classPath) {
-                    return MetricBag::fromArray(['methodCount' => 5, 'ccn.sum' => 25]);
+                    return MetricBag::fromArray(['size.method-count' => 5, 'complexity.ccn.sum' => 25]);
                 }
 
-                return MetricBag::fromArray(['ccn' => 12, 'parameterCount' => 3]);
+                return MetricBag::fromArray(['complexity.ccn' => 12, 'code-smell.parameter-count' => 3]);
             });
 
         $report = new Report(
@@ -119,8 +119,8 @@ final class MetricsJsonFormatterTest extends TestCase
         self::assertSame('App\\Service\\UserService', $classSymbol['name']);
         self::assertSame('src/Service/UserService.php', $classSymbol['file']);
         self::assertSame(10, $classSymbol['line']);
-        self::assertSame(5, $classSymbol['metrics']['methodCount']);
-        self::assertSame(25, $classSymbol['metrics']['ccn.sum']);
+        self::assertSame(5, $classSymbol['metrics']['size.method-count']);
+        self::assertSame(25, $classSymbol['metrics']['complexity.ccn.sum']);
 
         // Method symbol
         $methodSymbol = $data['symbols'][1];
@@ -128,8 +128,8 @@ final class MetricsJsonFormatterTest extends TestCase
         self::assertSame('App\\Service\\UserService::calculate', $methodSymbol['name']);
         self::assertSame('src/Service/UserService.php', $methodSymbol['file']);
         self::assertSame(42, $methodSymbol['line']);
-        self::assertSame(12, $methodSymbol['metrics']['ccn']);
-        self::assertSame(3, $methodSymbol['metrics']['parameterCount']);
+        self::assertSame(12, $methodSymbol['metrics']['complexity.ccn']);
+        self::assertSame(3, $methodSymbol['metrics']['code-smell.parameter-count']);
     }
 
     /**
@@ -175,7 +175,7 @@ final class MetricsJsonFormatterTest extends TestCase
 
         // Every symbol must carry a metric: one with an empty bag is skipped
         // outright, so a fixture without metrics passes under any ordering.
-        $repository->method('get')->willReturn(MetricBag::fromArray(['ccn' => 1]));
+        $repository->method('get')->willReturn(MetricBag::fromArray(['complexity.ccn' => 1]));
 
         $report = new Report(
             findings: [],
@@ -299,10 +299,10 @@ final class MetricsJsonFormatterTest extends TestCase
 
         $repository->method('get')
             ->willReturn(MetricBag::fromArray([
-                'loc' => 100,
-                'ccn' => 5,
-                'ccn:App\Service\UserService::calculate' => 12,
-                'npath:App\Service\UserService::process' => 42,
+                'size.loc' => 100,
+                'complexity.ccn' => 5,
+                'complexity.ccn:App\Service\UserService::calculate' => 12,
+                'complexity.npath:App\Service\UserService::process' => 42,
             ]));
 
         $report = new Report(
@@ -322,8 +322,8 @@ final class MetricsJsonFormatterTest extends TestCase
         $metrics = $data['symbols'][0]['metrics'];
 
         // Public metrics should be present
-        self::assertArrayHasKey('loc', $metrics);
-        self::assertArrayHasKey('ccn', $metrics);
+        self::assertArrayHasKey('size.loc', $metrics);
+        self::assertArrayHasKey('complexity.ccn', $metrics);
 
         // Internal derived-metric keys containing ':' should be filtered out
         \assert(\is_array($metrics));

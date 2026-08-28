@@ -21,7 +21,7 @@ use SplFileInfo;
  * Collects Cyclomatic Complexity metrics for methods and functions.
  *
  * Metric format: ccn:{FQN}
- * Example: ccn:App\Service\UserService::calculate
+ * Example: complexity.ccn:App\Service\UserService::calculate
  */
 final class CyclomaticComplexityCollector extends AbstractCollector implements CallableMetricsProviderInterface
 {

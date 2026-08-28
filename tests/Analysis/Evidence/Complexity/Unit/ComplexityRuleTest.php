@@ -51,7 +51,7 @@ final class ComplexityRuleTest extends TestCase
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
-        self::assertSame(['ccn', 'cognitive'], $rule->requires());
+        self::assertSame(['complexity.ccn', 'complexity.cognitive'], $rule->requires());
     }
 
     #[Test]
@@ -129,7 +129,7 @@ final class ComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 20);
+        $metricBag = (new MetricBag())->with('complexity.ccn', 15)->with('complexity.cognitive', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -162,7 +162,7 @@ final class ComplexityRuleTest extends TestCase
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // High CCN but low cognitive — typical switch/match pattern
-        $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 5);
+        $metricBag = (new MetricBag())->with('complexity.ccn', 15)->with('complexity.cognitive', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -194,7 +194,7 @@ final class ComplexityRuleTest extends TestCase
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // No cognitive metric available
-        $metricBag = (new MetricBag())->with('ccn', 15);
+        $metricBag = (new MetricBag())->with('complexity.ccn', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -222,7 +222,7 @@ final class ComplexityRuleTest extends TestCase
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // Cognitive exactly at threshold (15) — no divergence
-        $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 15);
+        $metricBag = (new MetricBag())->with('complexity.ccn', 15)->with('complexity.cognitive', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -249,7 +249,7 @@ final class ComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('ccn', 25)->with('cognitive', 30);
+        $metricBag = (new MetricBag())->with('complexity.ccn', 25)->with('complexity.cognitive', 30);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -296,7 +296,7 @@ final class ComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $metricBag = (new MetricBag())->with('ccn.max', 35); // Above warning (30), below error (50)
+        $metricBag = (new MetricBag())->with('complexity.ccn.max', 35); // Above warning (30), below error (50)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -325,7 +325,7 @@ final class ComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $metricBag = (new MetricBag())->with('ccn.max', 55); // Above error (50)
+        $metricBag = (new MetricBag())->with('complexity.ccn.max', 55); // Above error (50)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -358,8 +358,8 @@ final class ComplexityRuleTest extends TestCase
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $methodBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 20); // Warning
-        $classBag = (new MetricBag())->with('ccn.max', 35); // Warning
+        $methodBag = (new MetricBag())->with('complexity.ccn', 15)->with('complexity.cognitive', 20); // Warning
+        $classBag = (new MetricBag())->with('complexity.ccn.max', 35); // Warning
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -499,7 +499,7 @@ final class ComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('ccn', $ccn);
+        $metricBag = (new MetricBag())->with('complexity.ccn', $ccn);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -542,7 +542,7 @@ final class ComplexityRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('ccn.max', 35));
+        $repository->method('get')->willReturn((new MetricBag())->with('complexity.ccn.max', 35));
 
         $findings = (new ComplexityRule(new ComplexityOptions()))
             ->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
@@ -565,7 +565,7 @@ final class ComplexityRuleTest extends TestCase
             self::subjectInfo($method, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($method, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('ccn', 15));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('complexity.ccn', 15));
 
         $findings = (new ComplexityRule(new ComplexityOptions()))
             ->analyzeLevel(SymbolLevel::Callable, new AnalysisContext($repository));

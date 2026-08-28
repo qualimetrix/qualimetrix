@@ -47,7 +47,7 @@ final class InheritanceRuleTest extends TestCase
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
-        self::assertSame(['dit'], $rule->requires());
+        self::assertSame(['design.dit'], $rule->requires());
     }
 
     #[Test]
@@ -106,7 +106,7 @@ final class InheritanceRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/DeepClass.php'), 10);
 
         // DIT of 5 is at warning threshold (5) but below error (7)
-        $metricBag = (new MetricBag())->with('dit', 5);
+        $metricBag = (new MetricBag())->with('design.dit', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -135,7 +135,7 @@ final class InheritanceRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/VeryDeepClass.php'), 10);
 
         // DIT of 8 is above error threshold (7)
-        $metricBag = (new MetricBag())->with('dit', 8);
+        $metricBag = (new MetricBag())->with('design.dit', 8);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -160,7 +160,7 @@ final class InheritanceRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/ShallowClass.php'), 10);
 
         // DIT of 2 is normal (below warning threshold 5)
-        $metricBag = (new MetricBag())->with('dit', 2);
+        $metricBag = (new MetricBag())->with('design.dit', 2);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -182,7 +182,7 @@ final class InheritanceRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
-        // No 'dit' metric
+        // No 'design.dit' metric
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -249,7 +249,7 @@ final class InheritanceRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('dit', $dit);
+        $metricBag = (new MetricBag())->with('design.dit', $dit);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -300,7 +300,7 @@ final class InheritanceRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('dit', 5));
+        $repository->method('get')->willReturn((new MetricBag())->with('design.dit', 5));
 
         $findings = (new InheritanceRule(new InheritanceOptions()))
             ->analyze(new AnalysisContext($repository));

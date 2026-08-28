@@ -48,7 +48,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
 
-        self::assertSame(['parameterCount'], $rule->requires());
+        self::assertSame(['code-smell.parameter-count'], $rule->requires());
     }
 
     #[Test]
@@ -110,7 +110,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 10);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -130,7 +130,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $symbolPath = SymbolPath::forGlobalFunction('App\Helpers', '__construct');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Helpers/functions.php', 5);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 10);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -150,7 +150,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 7);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 7);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -170,7 +170,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 8);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 8);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -196,7 +196,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 12);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -219,7 +219,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 15);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -247,7 +247,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Test', 'TestClass', '__construct');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'test.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', $parameterCount);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', $parameterCount);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);

@@ -68,21 +68,21 @@ PHP;
         // All parameters are typed: 3/3
         self::assertSame(
             100.0,
-            $metrics->get('typeCoverage.param:App\Service\FullyTypedService'),
+            $metrics->get('design.type-coverage.param:App\Service\FullyTypedService'),
             'TypeCoverage.param uses percentages (100.0 for full coverage), not ratios (1.0)',
         );
 
         // All methods have return types: 3/3
         self::assertSame(
             100.0,
-            $metrics->get('typeCoverage.return:App\Service\FullyTypedService'),
+            $metrics->get('design.type-coverage.return:App\Service\FullyTypedService'),
             'TypeCoverage.return uses percentages (100.0 for full coverage), not ratios (1.0)',
         );
 
         // All properties are typed: 2/2
         self::assertSame(
             100.0,
-            $metrics->get('typeCoverage.property:App\Service\FullyTypedService'),
+            $metrics->get('design.type-coverage.property:App\Service\FullyTypedService'),
             'TypeCoverage.property uses percentages (100.0 for full coverage), not ratios (1.0)',
         );
     }
@@ -116,21 +116,21 @@ PHP;
         // 1 typed param out of 2 = 50%, not 0.5
         self::assertSame(
             50.0,
-            $metrics->get('typeCoverage.param:App\HalfTypedService'),
+            $metrics->get('design.type-coverage.param:App\HalfTypedService'),
             'Half-typed params should be 50.0 (percentage), not 0.5 (ratio)',
         );
 
         // 1 typed return out of 2 = 50%, not 0.5
         self::assertSame(
             50.0,
-            $metrics->get('typeCoverage.return:App\HalfTypedService'),
+            $metrics->get('design.type-coverage.return:App\HalfTypedService'),
             'Half-typed returns should be 50.0 (percentage), not 0.5 (ratio)',
         );
 
         // 1 typed property out of 2 = 50%, not 0.5
         self::assertSame(
             50.0,
-            $metrics->get('typeCoverage.property:App\HalfTypedService'),
+            $metrics->get('design.type-coverage.property:App\HalfTypedService'),
             'Half-typed properties should be 50.0 (percentage), not 0.5 (ratio)',
         );
     }
@@ -158,9 +158,9 @@ PHP;
 
         // 0 typed out of 1 = 0.0 (same for both ratio and percentage,
         // but included for completeness)
-        self::assertSame(0.0, $metrics->get('typeCoverage.param:App\UntypedService'));
-        self::assertSame(0.0, $metrics->get('typeCoverage.return:App\UntypedService'));
-        self::assertSame(0.0, $metrics->get('typeCoverage.property:App\UntypedService'));
+        self::assertSame(0.0, $metrics->get('design.type-coverage.param:App\UntypedService'));
+        self::assertSame(0.0, $metrics->get('design.type-coverage.return:App\UntypedService'));
+        self::assertSame(0.0, $metrics->get('design.type-coverage.property:App\UntypedService'));
     }
 
     #[Test]
@@ -184,12 +184,12 @@ PHP;
         // 2 typed out of 3 params = 66.67%, not 0.6667
         self::assertSame(
             66.67,
-            $metrics->get('typeCoverage.param:App\PartialService'),
+            $metrics->get('design.type-coverage.param:App\PartialService'),
             'Partial coverage should be 66.67 (percentage), not 0.6667 (ratio)',
         );
 
         // Verify it's clearly in the 0-100 range, not 0-1
-        $paramCoverage = $metrics->get('typeCoverage.param:App\PartialService');
+        $paramCoverage = $metrics->get('design.type-coverage.param:App\PartialService');
         self::assertGreaterThan(
             1.0,
             $paramCoverage,

@@ -21,7 +21,7 @@ use SplFileInfo;
  * Collects parameter count metrics for methods and functions.
  *
  * Metric format: parameterCount:{FQN}
- * Example: parameterCount:App\Service\UserService::calculate
+ * Example: code-smell.parameter-count:App\Service\UserService::calculate
  */
 final class ParameterCountCollector extends AbstractCollector implements CallableMetricsProviderInterface
 {

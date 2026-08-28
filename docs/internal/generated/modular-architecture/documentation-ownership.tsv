@@ -80,6 +80,7 @@ docs/internal/plans/modular-architecture/roadmap-p5-p8.md	Architecture.Governanc
 docs/internal/plans/phpdoc-dependencies.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/rule-vocabulary/AUDIT.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/rule-vocabulary/FACTS.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/rule-vocabulary/PLAN.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/sarif-channel-descriptions.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 src/Analysis/Configuration/README.md	Analysis.Configuration	P3	"Move or update atomically with the named migration package."

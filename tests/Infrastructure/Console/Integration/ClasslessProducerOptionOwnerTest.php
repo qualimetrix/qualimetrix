@@ -269,7 +269,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
     {
         return new ComputedMetricDefinition(
             name: $name,
-            formulas: ['namespace' => 'lcom'],
+            formulas: ['namespace' => 'cohesion.lcom'],
             description: 'Fixture dimension',
             levels: [SymbolLevel::Namespace_],
             inverted: true,

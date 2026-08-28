@@ -207,7 +207,7 @@ computed_metrics:
 
 ```yaml
 computed_metrics:
-  computed.my_score:
+  computed.my-score:
     description: "Custom quality score"
     formula: 'clamp((health__complexity ?? 75) * 0.5 + (health__coupling ?? 75) * 0.5, 0, 100)'
     levels: [class, namespace, project]

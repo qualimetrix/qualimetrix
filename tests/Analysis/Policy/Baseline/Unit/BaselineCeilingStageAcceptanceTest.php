@@ -617,12 +617,12 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
             10,
         );
         $metrics = (new MetricBag())
-            ->with('wmc', $wmc)
-            ->with('lcom', 4)
-            ->with('tcc', 0.2)
-            ->with('classLoc', 100)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0);
+            ->with('complexity.wmc', $wmc)
+            ->with('cohesion.lcom', 4)
+            ->with('cohesion.tcc', 0.2)
+            ->with('size.class-loc', 100)
+            ->with('size.method-count', 10)
+            ->with('design.is-readonly', 0);
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('all')

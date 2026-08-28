@@ -479,7 +479,7 @@ final class HealthBarRendererTest extends TestCase
         // Parent namespace: flat score with 5 classes
         $parentBag = MetricBag::fromArray([
             'health.overall' => $flatScore,
-            'classCount.sum' => 5,
+            'size.class-count.sum' => 5,
         ]);
 
         // Calculate child score so the weighted average = overallScore
@@ -489,7 +489,7 @@ final class HealthBarRendererTest extends TestCase
 
         $childBag = MetricBag::fromArray([
             'health.overall' => $childScore,
-            'classCount.sum' => 5,
+            'size.class-count.sum' => 5,
         ]);
 
         $nsInfo = new SymbolInfo($nsPath, RelativePath::fromString('src/Service'), null);

@@ -378,12 +378,12 @@ final class Builder
     public function build(): array
     {
         return [
-            'ccn' => [
+            'complexity.ccn' => [
                 'label' => '{$label}',
                 'direction' => '{$direction}',
                 'goodValue' => '{$goodValue}',
             ],
-            'wmc' => [
+            'complexity.wmc' => [
                 'label' => '{$label}2',
                 'direction' => '{$direction}',
                 'goodValue' => '{$goodValue}2',
@@ -416,12 +416,12 @@ PHP;
 final class BoundaryCase
 {
     private const array MAP = [
-        'ccn' => [
+        'complexity.ccn' => [
             'label' => 'Cyclomatic',
             'direction' => 'lower',
             'goodValue' => 'below four',
         ],
-        'wmc' => [
+        'complexity.wmc' => [
             'label' => 'Weighted',
             'direction' => 'lower',
             'goodValue' => 'below ten',
@@ -543,17 +543,17 @@ PHP;
 final class {$className}
 {
     private const array {$constName} = [
-        'ccn' => [
+        'complexity.ccn' => [
             'label' => 'Cyclomatic',
             'direction' => 'lower',
             'goodValue' => 'below four',
         ],
-        'wmc' => [
+        'complexity.wmc' => [
             'label' => 'Weighted',
             'direction' => 'lower',
             'goodValue' => 'below ten',
         ],
-        'lcom' => [
+        'cohesion.lcom' => [
             'label' => 'Cohesion',
             'direction' => 'higher',
             'goodValue' => 'above one',
@@ -575,17 +575,17 @@ PHP;
 final class {$className}
 {
     private static array \$defaults = [
-        'ccn' => [
+        'complexity.ccn' => [
             'label' => 'Cyclomatic',
             'direction' => 'lower',
             'goodValue' => 'below four',
         ],
-        'wmc' => [
+        'complexity.wmc' => [
             'label' => 'Weighted',
             'direction' => 'lower',
             'goodValue' => 'below ten',
         ],
-        'lcom' => [
+        'cohesion.lcom' => [
             'label' => 'Cohesion',
             'direction' => 'higher',
             'goodValue' => 'above one',

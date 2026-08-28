@@ -50,7 +50,7 @@ final class WmcRuleTest extends TestCase
     {
         $rule = new WmcRule(new WmcOptions());
 
-        self::assertSame(['wmc', 'isDataClass', 'methodCount'], $rule->requires());
+        self::assertSame(['complexity.wmc', 'design.is-data-class', 'size.method-count'], $rule->requires());
     }
 
     #[Test]
@@ -109,7 +109,7 @@ final class WmcRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SimpleClass.php'), 10);
 
         // WMC of 20 is below warning threshold (50)
-        $metricBag = (new MetricBag())->with('wmc', 20);
+        $metricBag = (new MetricBag())->with('complexity.wmc', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -132,7 +132,7 @@ final class WmcRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/MediumClass.php'), 10);
 
         // WMC of 60 is above warning threshold (50) but below error (80)
-        $metricBag = (new MetricBag())->with('wmc', 60)->with('methodCount', 15);
+        $metricBag = (new MetricBag())->with('complexity.wmc', 60)->with('size.method-count', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -165,7 +165,7 @@ final class WmcRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/ComplexClass.php'), 10);
 
         // WMC of 85 is above error threshold (80)
-        $metricBag = (new MetricBag())->with('wmc', 85)->with('methodCount', 10);
+        $metricBag = (new MetricBag())->with('complexity.wmc', 85)->with('size.method-count', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -197,7 +197,7 @@ final class WmcRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/LargeClass.php'), 10);
 
         // WMC of 93, 31 methods -> avg 3.0 -> "many methods, consider splitting"
-        $metricBag = (new MetricBag())->with('wmc', 93)->with('methodCount', 31);
+        $metricBag = (new MetricBag())->with('complexity.wmc', 93)->with('size.method-count', 31);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -224,7 +224,7 @@ final class WmcRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/HugeClass.php'), 10);
 
         // WMC of 60, 30 methods -> avg 2.0 -> "many methods, consider splitting"
-        $metricBag = (new MetricBag())->with('wmc', 60)->with('methodCount', 30);
+        $metricBag = (new MetricBag())->with('complexity.wmc', 60)->with('size.method-count', 30);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -251,7 +251,7 @@ final class WmcRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
         // WMC without methodCount metric
-        $metricBag = (new MetricBag())->with('wmc', 60);
+        $metricBag = (new MetricBag())->with('complexity.wmc', 60);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -279,7 +279,7 @@ final class WmcRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn(
-            (new MetricBag())->with('wmc', 60)->with('methodCount', 0),
+            (new MetricBag())->with('complexity.wmc', 60)->with('size.method-count', 0),
         );
         $context = new AnalysisContext(
             metrics: $repository,
@@ -306,7 +306,7 @@ final class WmcRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/CustomClass.php'), 10);
 
         // WMC of 25 is above custom warning threshold (20) but below custom error (40)
-        $metricBag = (new MetricBag())->with('wmc', 25);
+        $metricBag = (new MetricBag())->with('complexity.wmc', 25);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -330,7 +330,7 @@ final class WmcRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/EmptyClass.php'), 10);
 
         // WMC of 0 for class without methods
-        $metricBag = (new MetricBag())->with('wmc', 0);
+        $metricBag = (new MetricBag())->with('complexity.wmc', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -355,8 +355,8 @@ final class WmcRuleTest extends TestCase
         $classInfo1 = self::subjectInfo($symbolPath1, RelativePath::fromString('src/SimpleClass.php'), 10);
         $classInfo2 = self::subjectInfo($symbolPath2, RelativePath::fromString('src/ComplexClass.php'), 20);
 
-        $metricBag1 = (new MetricBag())->with('wmc', 20); // No finding
-        $metricBag2 = (new MetricBag())->with('wmc', 90); // Error
+        $metricBag1 = (new MetricBag())->with('complexity.wmc', 20); // No finding
+        $metricBag2 = (new MetricBag())->with('complexity.wmc', 90); // Error
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -388,7 +388,7 @@ final class WmcRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
-        // No 'wmc' metric
+        // No 'complexity.wmc' metric
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -455,7 +455,7 @@ final class WmcRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('wmc', $wmc);
+        $metricBag = (new MetricBag())->with('complexity.wmc', $wmc);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -540,8 +540,8 @@ final class WmcRuleTest extends TestCase
 
         // WMC of 60 is above warning threshold (50), but isDataClass = 1
         $metricBag = (new MetricBag())
-            ->with('wmc', 60)
-            ->with('isDataClass', 1);
+            ->with('complexity.wmc', 60)
+            ->with('design.is-data-class', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -566,8 +566,8 @@ final class WmcRuleTest extends TestCase
 
         // WMC of 90 is above error threshold (80), and isDataClass = 1
         $metricBag = (new MetricBag())
-            ->with('wmc', 90)
-            ->with('isDataClass', 1);
+            ->with('complexity.wmc', 90)
+            ->with('design.is-data-class', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -592,7 +592,7 @@ final class WmcRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
         $repository->method('get')->willReturn(
-            (new MetricBag())->with('wmc', 60)->with('methodCount', 15),
+            (new MetricBag())->with('complexity.wmc', 60)->with('size.method-count', 15),
         );
 
         $findings = (new WmcRule(new WmcOptions()))

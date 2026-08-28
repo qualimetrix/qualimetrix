@@ -98,7 +98,7 @@ final class HtmlTreeBuilderTest extends TestCase
         // Add namespace metrics
         $metrics->add(
             SymbolPath::forNamespace('App\\Service'),
-            MetricBag::fromArray(['loc.sum' => 200, 'classes.count' => 2]),
+            MetricBag::fromArray(['size.loc.sum' => 200, 'classes.count' => 2]),
             null,
             null,
         );
@@ -106,13 +106,13 @@ final class HtmlTreeBuilderTest extends TestCase
         // Add classes
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
-            MetricBag::fromArray(['ccn.sum' => 5, 'loc.sum' => 120]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 5, 'size.loc.sum' => 120]),
             RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'OrderService'),
-            MetricBag::fromArray(['ccn.sum' => 3, 'loc.sum' => 80]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 3, 'size.loc.sum' => 80]),
             RelativePath::fromString('src/Service/OrderService.php'),
             5,
         );
@@ -161,13 +161,13 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App\\Controller', 'HomeController'),
-            MetricBag::fromArray(['ccn.sum' => 2]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 2]),
             RelativePath::fromString('src/Controller/HomeController.php'),
             1,
         );
         $metrics->add(
             SymbolPath::forClass('Domain\\User', 'UserEntity'),
-            MetricBag::fromArray(['ccn.sum' => 1]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 1]),
             RelativePath::fromString('src/Domain/User/UserEntity.php'),
             1,
         );
@@ -199,13 +199,13 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forNamespace('App\\Payment\\Processing'),
-            MetricBag::fromArray(['loc.sum' => 100]),
+            MetricBag::fromArray(['size.loc.sum' => 100]),
             null,
             null,
         );
         $metrics->add(
             SymbolPath::forClass('App\\Payment\\Processing', 'PaymentProcessor'),
-            MetricBag::fromArray(['ccn.sum' => 4]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 4]),
             RelativePath::fromString('src/Payment/Processing/PaymentProcessor.php'),
             1,
         );
@@ -244,7 +244,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('', 'GlobalHelper'),
-            MetricBag::fromArray(['ccn.sum' => 1]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 1]),
             RelativePath::fromString('src/GlobalHelper.php'),
             1,
         );
@@ -276,7 +276,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
-            MetricBag::fromArray(['ccn.sum' => 15]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 15]),
             RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
@@ -330,13 +330,13 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App\\A', 'ClassA'),
-            MetricBag::fromArray(['ccn.sum' => 10]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 10]),
             RelativePath::fromString('src/A/ClassA.php'),
             1,
         );
         $metrics->add(
             SymbolPath::forClass('App\\B', 'ClassB'),
-            MetricBag::fromArray(['ccn.sum' => 5]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 5]),
             RelativePath::fromString('src/B/ClassB.php'),
             1,
         );
@@ -445,7 +445,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App', 'Service'),
-            MetricBag::fromArray(['ccn.sum' => 10]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 10]),
             RelativePath::fromString('src/Service.php'),
             1,
         );
@@ -490,7 +490,7 @@ final class HtmlTreeBuilderTest extends TestCase
             MetricBag::fromArray([
                 'health.overall' => 85.0,
                 'health.complexity' => 90.0,
-                'loc.sum' => 1000,
+                'size.loc.sum' => 1000,
                 'classes.count' => 10,
             ]),
             null,
@@ -509,7 +509,7 @@ final class HtmlTreeBuilderTest extends TestCase
         $healthScores = (array) $result['summary']['healthScores'];
         self::assertSame(85.0, $healthScores['health.overall']);
         self::assertSame(90.0, $healthScores['health.complexity']);
-        self::assertArrayNotHasKey('loc.sum', $healthScores);
+        self::assertArrayNotHasKey('size.loc.sum', $healthScores);
         self::assertArrayNotHasKey('classes.count', $healthScores);
     }
 
@@ -520,7 +520,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App', 'ScriptTag</script>Test'),
-            MetricBag::fromArray(['ccn.sum' => 1]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 1]),
             RelativePath::fromString('src/ScriptTagTest.php'),
             1,
         );
@@ -622,7 +622,7 @@ final class HtmlTreeBuilderTest extends TestCase
         $metrics->add(
             SymbolPath::forClass('App', 'Service'),
             MetricBag::fromArray([
-                'ccn.sum' => 5,
+                'complexity.ccn.sum' => 5,
                 'internal:cache_key' => 42,
                 'some:internal:value' => 99,
             ]),
@@ -641,7 +641,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $classNode = $result['tree']['children'][0]['children'][0];
         $classMetrics = (array) $classNode['metrics'];
-        self::assertArrayHasKey('ccn.sum', $classMetrics);
+        self::assertArrayHasKey('complexity.ccn.sum', $classMetrics);
         self::assertArrayNotHasKey('internal:cache_key', $classMetrics);
         self::assertArrayNotHasKey('some:internal:value', $classMetrics);
     }
@@ -653,7 +653,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App', 'Service'),
-            MetricBag::fromArray(['mi' => 50.0]),
+            MetricBag::fromArray(['maintainability.mi' => 50.0]),
             RelativePath::fromString('src/Service.php'),
             1,
         );
@@ -690,13 +690,13 @@ final class HtmlTreeBuilderTest extends TestCase
         // Classes have loc.sum but the namespace does not
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
-            MetricBag::fromArray(['loc.sum' => 100]),
+            MetricBag::fromArray(['size.loc.sum' => 100]),
             RelativePath::fromString('src/Service/UserService.php'),
             1,
         );
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'OrderService'),
-            MetricBag::fromArray(['loc.sum' => 150]),
+            MetricBag::fromArray(['size.loc.sum' => 150]),
             RelativePath::fromString('src/Service/OrderService.php'),
             1,
         );
@@ -716,11 +716,11 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame('Service', $serviceNode['name']);
 
         $serviceMetrics = (array) $serviceNode['metrics'];
-        self::assertSame(250, $serviceMetrics['loc.sum']);
+        self::assertSame(250, $serviceMetrics['size.loc.sum']);
 
         // Root should also aggregate
         $rootMetrics = (array) $tree['metrics'];
-        self::assertSame(250, $rootMetrics['loc.sum']);
+        self::assertSame(250, $rootMetrics['size.loc.sum']);
     }
 
     #[Test]
@@ -780,7 +780,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App', 'Service'),
-            MetricBag::fromArray(['ccn.sum' => 5]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 5]),
             RelativePath::fromString('src/Service.php'),
             1,
         );
@@ -818,7 +818,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forProject(),
-            MetricBag::fromArray(['loc.sum' => 100, 'classes.count' => 1]),
+            MetricBag::fromArray(['size.loc.sum' => 100, 'classes.count' => 1]),
             null,
             null,
         );
@@ -832,7 +832,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App', 'Foo'),
-            MetricBag::fromArray(['ccn.sum' => 5]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 5]),
             RelativePath::fromString('src/Foo.php'),
             1,
         );

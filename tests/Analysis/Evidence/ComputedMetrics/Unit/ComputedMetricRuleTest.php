@@ -117,7 +117,7 @@ final class ComputedMetricRuleTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.info',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Info only metric',
             levels: [SymbolLevel::Class_],
         );
@@ -137,7 +137,7 @@ final class ComputedMetricRuleTest extends TestCase
     {
         $def1 = new ComputedMetricDefinition(
             name: 'health.alpha',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Alpha',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -145,7 +145,7 @@ final class ComputedMetricRuleTest extends TestCase
         );
         $def2 = new ComputedMetricDefinition(
             name: 'health.beta',
-            formulas: ['class' => 'loc'],
+            formulas: ['class' => 'size.loc'],
             description: 'Beta',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -179,7 +179,7 @@ final class ComputedMetricRuleTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.multi',
-            formulas: ['class' => 'ccn', 'namespace' => 'avg(ccn)'],
+            formulas: ['class' => 'complexity.ccn', 'namespace' => 'avg(ccn)'],
             description: 'Multi-level',
             levels: [SymbolLevel::Class_, SymbolLevel::Namespace_],
             inverted: false,
@@ -269,7 +269,7 @@ final class ComputedMetricRuleTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.cls',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Class metric',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -297,7 +297,7 @@ final class ComputedMetricRuleTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.cls',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Class metric',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -325,7 +325,7 @@ final class ComputedMetricRuleTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.cls',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Class metric',
             levels: [SymbolLevel::Class_],
             inverted: false,
@@ -353,7 +353,7 @@ final class ComputedMetricRuleTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.cls',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Class metric',
             levels: [SymbolLevel::Class_],
             inverted: false,

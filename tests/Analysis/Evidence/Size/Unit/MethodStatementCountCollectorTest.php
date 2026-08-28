@@ -132,7 +132,7 @@ PHP;
         $closureCounts = [];
         foreach ($methods as $method) {
             if ($method->kind === \Qualimetrix\Core\Symbol\CallableKind::AnonymousCallable) {
-                $closureCounts[] = $method->metrics->get('methodStatementCount');
+                $closureCounts[] = $method->metrics->get('size.method-statement-count');
             }
         }
 
@@ -159,7 +159,7 @@ PHP;
         $collector = new MethodStatementCountCollector();
 
         self::assertSame('method-statement-count', $collector->getName());
-        self::assertSame(['methodStatementCount'], $collector->provides());
+        self::assertSame(['size.method-statement-count'], $collector->provides());
 
         $definitions = $collector->getMetricDefinitions();
         self::assertCount(1, $definitions);
@@ -177,7 +177,7 @@ PHP;
                 ? $method->declarationPath->logical->type . '::' . $method->declarationPath->logical->member
                 : $method->declarationPath->logical->member;
             if ($methodFqn === $fqn) {
-                return (int) ($method->metrics->get('methodStatementCount') ?? -1);
+                return (int) ($method->metrics->get('size.method-statement-count') ?? -1);
             }
         }
 

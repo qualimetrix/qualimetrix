@@ -114,7 +114,7 @@ final class JsonOffenderSection
             ];
 
             if ($showClassCount) {
-                $entry['classCount'] = $offender->classCount;
+                $entry['size.class-count'] = $offender->classCount;
             } else {
                 $entry['file'] = $offender->file !== null
                     ? $context->relativizePath($offender->file)

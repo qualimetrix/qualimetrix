@@ -389,7 +389,7 @@ final class UnusedDirectiveRuleTest extends TestCase
     {
         $withMetric = self::snapshotFactory()->snapshot(new ResolvedComputedMetricDefinitions([
             new ComputedMetricDefinition(
-                name: 'computed.team_score',
+                name: 'computed.team-score',
                 formulas: ['class' => '1'],
                 description: 'test',
                 levels: [SymbolLevel::Class_],
@@ -397,9 +397,9 @@ final class UnusedDirectiveRuleTest extends TestCase
         ]));
         $withoutMetric = self::snapshotFactory()->snapshot(new ResolvedComputedMetricDefinitions([]));
 
-        self::assertSame([], self::runWithSuppression('computed.team_score', $withMetric));
+        self::assertSame([], self::runWithSuppression('computed.team-score', $withMetric));
 
-        $findings = self::runWithSuppression('computed.team_score', $withoutMetric);
+        $findings = self::runWithSuppression('computed.team-score', $withoutMetric);
         self::assertCount(1, $findings);
         self::assertSame(
             InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,

@@ -1313,6 +1313,14 @@
       "closure_package": "P5",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\FormulaMetricReference": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/FormulaMetricReference.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator": {
       "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php",
       "kind": "class",
@@ -1522,6 +1530,14 @@
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\MetricLookup": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/MetricLookup.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator": {
       "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php",
@@ -2803,14 +2819,6 @@
     },
     "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\AggregationHelper": {
       "path": "src/Analysis/Evidence/Measurement/Aggregation/AggregationHelper.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Measurement",
-      "visibility": "internal",
-      "closure_package": "P3",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\AggregationMeta": {
-      "path": "src/Analysis/Evidence/Measurement/Aggregation/AggregationMeta.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Measurement",
       "visibility": "internal",

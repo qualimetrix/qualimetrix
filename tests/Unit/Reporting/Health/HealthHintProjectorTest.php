@@ -32,26 +32,26 @@ final class HealthHintProjectorTest extends TestCase
     public function itExportForHtmlMetricHintsContainsAllRangedMetrics(): void
     {
         $hints = $this->projector->project()['metricHints'];
-        $expectedKeys = ['ccn', 'cognitive', 'npath', 'lcom', 'tcc', 'lcc', 'wmc', 'cbo', 'instability', 'abstractness', 'distance', 'classRank', 'dit', 'noc', 'rfc', 'methodCount', 'propertyCount', 'classCount.sum', 'mi', 'typeCoverage.pct', 'typeCoverage.param', 'typeCoverage.return', 'typeCoverage.property'];
+        $expectedKeys = ['complexity.ccn', 'complexity.cognitive', 'complexity.npath', 'cohesion.lcom', 'cohesion.tcc', 'cohesion.lcc', 'complexity.wmc', 'coupling.cbo', 'coupling.instability', 'coupling.abstractness', 'coupling.distance', 'coupling.class-rank', 'design.dit', 'design.noc', 'coupling.rfc', 'size.method-count', 'size.property-count', 'size.class-count.sum', 'maintainability.mi', 'design.type-coverage.pct', 'design.type-coverage.param', 'design.type-coverage.return', 'design.type-coverage.property'];
         foreach ($expectedKeys as $key) {
             self::assertArrayHasKey($key, $hints, "Missing metric hint for: {$key}");
             self::assertArrayHasKey('label', $hints[$key]);
             self::assertArrayHasKey('ranges', $hints[$key]);
             self::assertArrayHasKey('formatTemplate', $hints[$key]);
         }
-        self::assertArrayNotHasKey('loc', $hints);
-        self::assertArrayNotHasKey('lloc', $hints);
-        self::assertArrayNotHasKey('cloc', $hints);
+        self::assertArrayNotHasKey('size.loc', $hints);
+        self::assertArrayNotHasKey('size.lloc', $hints);
+        self::assertArrayNotHasKey('size.cloc', $hints);
     }
 
     #[Test]
     public function itExportForHtmlLabelsAreDescriptive(): void
     {
         $hints = $this->projector->project()['metricHints'];
-        self::assertSame('Cyclomatic Complexity', $hints['ccn']['label']);
-        self::assertSame('Cognitive Complexity', $hints['cognitive']['label']);
-        self::assertSame('Tight Class Cohesion', $hints['tcc']['label']);
-        self::assertSame('Maintainability Index', $hints['mi']['label']);
+        self::assertSame('Cyclomatic Complexity', $hints['complexity.ccn']['label']);
+        self::assertSame('Cognitive Complexity', $hints['complexity.cognitive']['label']);
+        self::assertSame('Tight Class Cohesion', $hints['cohesion.tcc']['label']);
+        self::assertSame('Maintainability Index', $hints['maintainability.mi']['label']);
     }
 
     #[Test]
@@ -76,9 +76,9 @@ final class HealthHintProjectorTest extends TestCase
     public function itExportForHtmlFormatTemplateOnlyOnLcom(): void
     {
         $hints = $this->projector->project()['metricHints'];
-        self::assertSame('{value} disconnected group{plural}', $hints['lcom']['formatTemplate']);
+        self::assertSame('{value} disconnected group{plural}', $hints['cohesion.lcom']['formatTemplate']);
         foreach ($hints as $key => $hint) {
-            if ($key !== 'lcom') {
+            if ($key !== 'cohesion.lcom') {
                 self::assertNull($hint['formatTemplate'], "{$key} should have null formatTemplate");
             }
         }

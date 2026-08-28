@@ -30,15 +30,15 @@ final class DataClassRuleTest extends TestCase
     private function makeMetricBag(array $overrides = []): MetricBag
     {
         $defaults = [
-            'woc' => 10,
-            'wmc' => 5,
-            'methodCountTotal' => 10,
-            'propertyCount' => 3,
-            'isReadonly' => 0,
-            'isPromotedPropertiesOnly' => 0,
-            'isAbstract' => 0,
-            'isInterface' => 0,
-            'isException' => 0,
+            'design.woc' => 10,
+            'complexity.wmc' => 5,
+            'size.method-count.total' => 10,
+            'size.property-count' => 3,
+            'design.is-readonly' => 0,
+            'design.is-promoted-properties-only' => 0,
+            'design.is-abstract' => 0,
+            'design.is-interface' => 0,
+            'design.is-exception' => 0,
         ];
 
         $values = array_merge($defaults, $overrides);
@@ -79,7 +79,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         self::assertSame(
-            ['woc', 'wmc', 'methodCountTotal', 'propertyCount', 'isReadonly', 'isPromotedPropertiesOnly', 'isAbstract', 'isInterface', 'isException'],
+            ['design.woc', 'complexity.wmc', 'size.method-count.total', 'size.property-count', 'design.is-readonly', 'design.is-promoted-properties-only', 'design.is-abstract', 'design.is-interface', 'design.is-exception'],
             $rule->requires(),
         );
     }
@@ -133,7 +133,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'SmallClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SmallClass.php'), 10);
 
-        $metricBag = $this->makeMetricBag(['methodCountTotal' => 1, 'propertyCount' => 1]);
+        $metricBag = $this->makeMetricBag(['size.method-count.total' => 1, 'size.property-count' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -152,7 +152,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'ReadonlyDto');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Dto/ReadonlyDto.php'), 5);
 
-        $metricBag = $this->makeMetricBag(['isReadonly' => 1]);
+        $metricBag = $this->makeMetricBag(['design.is-readonly' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -171,7 +171,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'ReadonlyDto');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Dto/ReadonlyDto.php'), 5);
 
-        $metricBag = $this->makeMetricBag(['isReadonly' => 1]);
+        $metricBag = $this->makeMetricBag(['design.is-readonly' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -192,7 +192,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'PromotedDto');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Dto/PromotedDto.php'), 5);
 
-        $metricBag = $this->makeMetricBag(['isPromotedPropertiesOnly' => 1]);
+        $metricBag = $this->makeMetricBag(['design.is-promoted-properties-only' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -211,7 +211,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'PromotedDto');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Dto/PromotedDto.php'), 5);
 
-        $metricBag = $this->makeMetricBag(['isPromotedPropertiesOnly' => 1]);
+        $metricBag = $this->makeMetricBag(['design.is-promoted-properties-only' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -232,7 +232,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'PureDto');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Dto/PureDto.php'), 5);
 
-        $metricBag = $this->makeMetricBag(['woc' => 0]);
+        $metricBag = $this->makeMetricBag(['design.woc' => 0]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -279,7 +279,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'GoodClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/GoodClass.php'), 10);
 
-        $metricBag = $this->makeMetricBag(['woc' => 50]);
+        $metricBag = $this->makeMetricBag(['design.woc' => 50]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -298,7 +298,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'ComplexClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/ComplexClass.php'), 10);
 
-        $metricBag = $this->makeMetricBag(['wmc' => 15]);
+        $metricBag = $this->makeMetricBag(['complexity.wmc' => 15]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -317,16 +317,16 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'NoWocClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/NoWocClass.php'), 10);
 
-        // Omit 'woc' key entirely to get null
+        // Omit 'design.woc' key entirely to get null
         $metricBag = (new MetricBag())
-            ->with('wmc', 5)
-            ->with('methodCountTotal', 10)
-            ->with('propertyCount', 3)
-            ->with('isReadonly', 0)
-            ->with('isPromotedPropertiesOnly', 0)
-            ->with('isAbstract', 0)
-            ->with('isInterface', 0)
-            ->with('isException', 0);
+            ->with('complexity.wmc', 5)
+            ->with('size.method-count.total', 10)
+            ->with('size.property-count', 3)
+            ->with('design.is-readonly', 0)
+            ->with('design.is-promoted-properties-only', 0)
+            ->with('design.is-abstract', 0)
+            ->with('design.is-interface', 0)
+            ->with('design.is-exception', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -347,7 +347,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Contract', 'NodeVisitor');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Contract/NodeVisitor.php'), 5);
 
-        $metricBag = $this->makeMetricBag(['isInterface' => 1]);
+        $metricBag = $this->makeMetricBag(['design.is-interface' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -366,7 +366,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Base', 'AbstractHandler');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Base/AbstractHandler.php'), 5);
 
-        $metricBag = $this->makeMetricBag(['isAbstract' => 1]);
+        $metricBag = $this->makeMetricBag(['design.is-abstract' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -385,7 +385,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'StatelessService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/StatelessService.php'), 5);
 
-        $metricBag = $this->makeMetricBag(['propertyCount' => 0]);
+        $metricBag = $this->makeMetricBag(['size.property-count' => 0]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -404,7 +404,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Exception', 'FileNotFoundException');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Exception/FileNotFoundException.php'), 5);
 
-        $metricBag = $this->makeMetricBag(['isException' => 1]);
+        $metricBag = $this->makeMetricBag(['design.is-exception' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -423,7 +423,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Exception', 'FileNotFoundException');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Exception/FileNotFoundException.php'), 5);
 
-        $metricBag = $this->makeMetricBag(['isException' => 1]);
+        $metricBag = $this->makeMetricBag(['design.is-exception' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);

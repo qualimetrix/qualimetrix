@@ -25,12 +25,12 @@ final class RepositoryMergeTest extends TestCase
     #[Test]
     public function itMergesScalarOverridesAndStructuredPayloads(): void
     {
-        $left = (new MetricBag())->with('loc', 10)->withEntry('dependency', ['name' => 'left']);
-        $right = (new MetricBag())->with('loc', 20)->withEntry('dependency', ['name' => 'right']);
+        $left = (new MetricBag())->with('size.loc', 10)->withEntry('dependency', ['name' => 'left']);
+        $right = (new MetricBag())->with('size.loc', 20)->withEntry('dependency', ['name' => 'right']);
 
         $merged = RepositoryMerge::metrics($left, $right);
 
-        self::assertSame(20, $merged->get('loc'));
+        self::assertSame(20, $merged->get('size.loc'));
         self::assertSame([
             ['name' => 'left'],
             ['name' => 'right'],

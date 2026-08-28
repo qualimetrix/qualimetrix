@@ -52,7 +52,7 @@ final class InstabilityRuleTest extends TestCase
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
-        self::assertSame(['instability', 'ca', 'ce'], $rule->requires());
+        self::assertSame(['coupling.instability', 'coupling.ca', 'coupling.ce'], $rule->requires());
     }
 
     #[Test]
@@ -157,9 +157,9 @@ final class InstabilityRuleTest extends TestCase
 
         // 0.85 is above warning (0.8), below error (0.95)
         $metricBag = (new MetricBag())
-            ->with('instability', 0.85)
-            ->with('ca', 2)
-            ->with('ce', 12);
+            ->with('coupling.instability', 0.85)
+            ->with('coupling.ca', 2)
+            ->with('coupling.ce', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -188,9 +188,9 @@ final class InstabilityRuleTest extends TestCase
 
         // 0.97 is above error (0.95)
         $metricBag = (new MetricBag())
-            ->with('instability', 0.97)
-            ->with('ca', 1)
-            ->with('ce', 32);
+            ->with('coupling.instability', 0.97)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 32);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -216,9 +216,9 @@ final class InstabilityRuleTest extends TestCase
 
         // Ca=0, below default minAfferent=1, should be skipped
         $metricBag = (new MetricBag())
-            ->with('instability', 1.0)
-            ->with('ca', 0)
-            ->with('ce', 5);
+            ->with('coupling.instability', 1.0)
+            ->with('coupling.ca', 0)
+            ->with('coupling.ce', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -246,9 +246,9 @@ final class InstabilityRuleTest extends TestCase
 
         // Ca=0, but minAfferent=0 means check all classes
         $metricBag = (new MetricBag())
-            ->with('instability', 1.0)
-            ->with('ca', 0)
-            ->with('ce', 5);
+            ->with('coupling.instability', 1.0)
+            ->with('coupling.ca', 0)
+            ->with('coupling.ce', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -274,7 +274,7 @@ final class InstabilityRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn(
-            (new MetricBag())->with('instability', 1.0),
+            (new MetricBag())->with('coupling.instability', 1.0),
         );
 
         $findings = $rule->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
@@ -301,9 +301,9 @@ final class InstabilityRuleTest extends TestCase
 
         // Ca=1, below minAfferent=2, should be skipped
         $metricBag = (new MetricBag())
-            ->with('instability', 0.92)
-            ->with('ca', 1)
-            ->with('ce', 11);
+            ->with('coupling.instability', 0.92)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 11);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -331,9 +331,9 @@ final class InstabilityRuleTest extends TestCase
 
         // Ca=2, meets minAfferent=2, should NOT be skipped
         $metricBag = (new MetricBag())
-            ->with('instability', 0.85)
-            ->with('ca', 2)
-            ->with('ce', 12);
+            ->with('coupling.instability', 0.85)
+            ->with('coupling.ca', 2)
+            ->with('coupling.ce', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -377,10 +377,10 @@ final class InstabilityRuleTest extends TestCase
 
         // 0.88 is above warning (0.8), below error (0.95)
         $metricBag = (new MetricBag())
-            ->with('instability', 0.88)
-            ->with('ca', 3)
-            ->with('ce', 22)
-            ->with('classCount.sum', 5);
+            ->with('coupling.instability', 0.88)
+            ->with('coupling.ca', 3)
+            ->with('coupling.ce', 22)
+            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -407,10 +407,10 @@ final class InstabilityRuleTest extends TestCase
 
         // 0.98 is above error (0.95)
         $metricBag = (new MetricBag())
-            ->with('instability', 0.98)
-            ->with('ca', 1)
-            ->with('ce', 49)
-            ->with('classCount.sum', 5);
+            ->with('coupling.instability', 0.98)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 49)
+            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -436,10 +436,10 @@ final class InstabilityRuleTest extends TestCase
 
         // Ca=0, below default minAfferent=1, should be skipped
         $metricBag = (new MetricBag())
-            ->with('instability', 1.0)
-            ->with('ca', 0)
-            ->with('ce', 10)
-            ->with('classCount.sum', 5);
+            ->with('coupling.instability', 1.0)
+            ->with('coupling.ca', 0)
+            ->with('coupling.ce', 10)
+            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -467,10 +467,10 @@ final class InstabilityRuleTest extends TestCase
 
         // Ca=0, but minAfferent=0 means check all namespaces
         $metricBag = (new MetricBag())
-            ->with('instability', 1.0)
-            ->with('ca', 0)
-            ->with('ce', 10)
-            ->with('classCount.sum', 5);
+            ->with('coupling.instability', 1.0)
+            ->with('coupling.ca', 0)
+            ->with('coupling.ce', 10)
+            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -499,10 +499,10 @@ final class InstabilityRuleTest extends TestCase
 
         // Ca=1, below minAfferent=2, should be skipped
         $metricBag = (new MetricBag())
-            ->with('instability', 0.92)
-            ->with('ca', 1)
-            ->with('ce', 11)
-            ->with('classCount.sum', 5);
+            ->with('coupling.instability', 0.92)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 11)
+            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -528,10 +528,10 @@ final class InstabilityRuleTest extends TestCase
 
         // classCount.sum = 1, below default minClassCount (3)
         $metricBag = (new MetricBag())
-            ->with('instability', 0.98)
-            ->with('ca', 1)
-            ->with('ce', 49)
-            ->with('classCount.sum', 1);
+            ->with('coupling.instability', 0.98)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 49)
+            ->with('size.class-count.sum', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -555,10 +555,10 @@ final class InstabilityRuleTest extends TestCase
 
         // classCount.sum = 5, above default minClassCount (3)
         $metricBag = (new MetricBag())
-            ->with('instability', 0.98)
-            ->with('ca', 1)
-            ->with('ce', 49)
-            ->with('classCount.sum', 5);
+            ->with('coupling.instability', 0.98)
+            ->with('coupling.ca', 1)
+            ->with('coupling.ce', 49)
+            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -587,14 +587,14 @@ final class InstabilityRuleTest extends TestCase
         $nsInfo = self::subjectInfo($nsPath, RelativePath::fromString('src/Service'), null);
 
         $classBag = (new MetricBag())
-            ->with('instability', 0.85)
-            ->with('ca', 2)
-            ->with('ce', 12);
+            ->with('coupling.instability', 0.85)
+            ->with('coupling.ca', 2)
+            ->with('coupling.ce', 12);
         $nsBag = (new MetricBag())
-            ->with('instability', 0.88)
-            ->with('ca', 3)
-            ->with('ce', 22)
-            ->with('classCount.sum', 5);
+            ->with('coupling.instability', 0.88)
+            ->with('coupling.ca', 3)
+            ->with('coupling.ce', 22)
+            ->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -769,9 +769,9 @@ final class InstabilityRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
-            ->with('instability', $instability)
-            ->with('ca', 5)
-            ->with('ce', 10);
+            ->with('coupling.instability', $instability)
+            ->with('coupling.ca', 5)
+            ->with('coupling.ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -908,7 +908,7 @@ final class InstabilityRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
         $repository->method('get')->willReturn(
-            (new MetricBag())->with('instability', 0.85)->with('ca', 2)->with('ce', 12),
+            (new MetricBag())->with('coupling.instability', 0.85)->with('coupling.ca', 2)->with('coupling.ce', 12),
         );
 
         $findings = (new InstabilityRule(new InstabilityOptions()))

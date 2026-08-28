@@ -55,7 +55,7 @@ final class RuleInputValidatorTest extends TestCase
         $definitions = new ResolvedComputedMetricDefinitions([
             new ComputedMetricDefinition(
                 name: 'health.complexity',
-                formulas: ['class' => 'ccn__avg'],
+                formulas: ['class' => 'm["complexity.ccn.avg"]'],
                 description: 'Complexity health',
                 levels: [SymbolLevel::Class_],
                 inverted: true,
@@ -94,7 +94,7 @@ final class RuleInputValidatorTest extends TestCase
         $definitions = new ResolvedComputedMetricDefinitions([
             new ComputedMetricDefinition(
                 name: 'health.complexity',
-                formulas: ['class' => 'ccn__avg'],
+                formulas: ['class' => 'm["complexity.ccn.avg"]'],
                 description: 'Complexity health',
                 levels: [SymbolLevel::Class_],
                 inverted: true,

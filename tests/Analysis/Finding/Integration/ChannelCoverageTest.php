@@ -121,7 +121,7 @@ final class ChannelCoverageTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $methodInfo = self::callableInfo('calculate');
-        $metricBag = (new MetricBag())->with('mi', 10.0)->with('methodStatementCount', 50);
+        $metricBag = (new MetricBag())->with('maintainability.mi', 10.0)->with('size.method-statement-count', 50);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -139,7 +139,7 @@ final class ChannelCoverageTest extends TestCase
         $rule = new ComplexityRule(new ComplexityOptions());
 
         $methodInfo = self::callableInfo('calculate');
-        $metricBag = (new MetricBag())->with('ccn', 25)->with('cognitive', 5);
+        $metricBag = (new MetricBag())->with('complexity.ccn', 25)->with('complexity.cognitive', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -157,7 +157,7 @@ final class ChannelCoverageTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $methodInfo = self::callableInfo('__construct');
-        $metricBag = (new MetricBag())->with('parameterCount', 15);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -200,7 +200,7 @@ final class ChannelCoverageTest extends TestCase
         $classInfo = self::classInfo('CriticalHub', RelativePath::fromString('src/CriticalHub.php'));
         // With one class, computeScaleFactor(1) = sqrt(1/100) = 0.1, so the
         // default error threshold (0.05) scales to 0.5 — 0.9 clears it.
-        $metricBag = (new MetricBag())->with('classRank', 0.9);
+        $metricBag = (new MetricBag())->with('coupling.class-rank', 0.9);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -220,11 +220,11 @@ final class ChannelCoverageTest extends TestCase
 
         $classInfo = self::classInfo('TestClass', RelativePath::fromString('src/TestClass.php'));
         $metricBag = (new MetricBag())
-            ->with('typeCoverage.paramTotal', 10)
-            ->with('typeCoverage.paramTyped', 7)
-            ->with('typeCoverage.param', 70.0)
-            ->with('typeCoverage.returnTotal', 0)
-            ->with('typeCoverage.propertyTotal', 0);
+            ->with('design.type-coverage.param.total', 10)
+            ->with('design.type-coverage.param.typed', 7)
+            ->with('design.type-coverage.param', 70.0)
+            ->with('design.type-coverage.return.total', 0)
+            ->with('design.type-coverage.property.total', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -293,7 +293,7 @@ final class ChannelCoverageTest extends TestCase
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $namespaceInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
-        $metricBag = (new MetricBag())->with('classCount.sum', 30);
+        $metricBag = (new MetricBag())->with('size.class-count.sum', 30);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$namespaceInfo]);

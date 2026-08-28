@@ -98,7 +98,7 @@ final class HealthScoreResolverTest extends TestCase
                 $nsPath->toCanonical() => (new MetricBag())
                     ->with('health.complexity', 70.0)
                     ->with('health.overall', 65.0)
-                    ->with('classCount.sum', 3),
+                    ->with('size.class-count.sum', 3),
             ],
         );
 

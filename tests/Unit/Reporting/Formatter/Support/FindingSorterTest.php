@@ -96,7 +96,7 @@ final class FindingSorterTest extends TestCase
     {
         $v1 = $this->finding('a.php', 1, Severity::Error, 'complexity');
         $v2 = $this->finding('b.php', 2, Severity::Warning, 'size');
-        $v3 = $this->finding('c.php', 3, Severity::Error, 'lcom');
+        $v3 = $this->finding('c.php', 3, Severity::Error, 'cohesion.lcom');
 
         $groups = FindingSorter::group([$v1, $v2, $v3], GroupBy::Severity);
 

@@ -71,16 +71,16 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         $result = $this->resolver->resolve([
             'health.complexity' => [
-                'formula' => '100 - ccn__avg * 10',
+                'formula' => '100 - m["complexity.ccn.avg"] * 10',
             ],
         ]);
 
         $complexity = $this->findByName($result, 'health.complexity');
         self::assertNotNull($complexity);
         // Singular formula applies to all levels
-        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolLevel::Class_));
-        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
-        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolLevel::Project));
+        self::assertSame('100 - m["complexity.ccn.avg"] * 10', $complexity->getFormulaForLevel(SymbolLevel::Class_));
+        self::assertSame('100 - m["complexity.ccn.avg"] * 10', $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
+        self::assertSame('100 - m["complexity.ccn.avg"] * 10', $complexity->getFormulaForLevel(SymbolLevel::Project));
     }
 
     #[Test]
@@ -89,7 +89,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $result = $this->resolver->resolve([
             'health.complexity' => [
                 'formulas' => [
-                    'class' => '100 - ccn * 5',
+                    'class' => '100 - m["complexity.ccn"] * 5',
                 ],
             ],
         ]);
@@ -97,9 +97,9 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $complexity = $this->findByName($result, 'health.complexity');
         self::assertNotNull($complexity);
         // Only class formula overridden
-        self::assertSame('100 - ccn * 5', $complexity->getFormulaForLevel(SymbolLevel::Class_));
+        self::assertSame('100 - m["complexity.ccn"] * 5', $complexity->getFormulaForLevel(SymbolLevel::Class_));
         // Namespace keeps default formula (uses per-method average via ccn__sum / symbolMethodCount)
-        self::assertStringContainsString('ccn__sum', (string) $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
+        self::assertStringContainsString('m["complexity.ccn.sum"]', (string) $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
     }
 
     #[Test]
@@ -125,7 +125,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotNull($overall);
 
         $classFormula = $overall->formulas['class'] ?? '';
-        self::assertStringNotContainsString('health__typing', $classFormula);
+        self::assertStringNotContainsString('m["health.typing"]', $classFormula);
         preg_match_all('/\*\s*([\d.]+)/', $classFormula, $matches);
         $weights = array_map('floatval', $matches[1]);
         self::assertEqualsWithDelta(1.0, array_sum($weights), 0.001);
@@ -168,8 +168,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $overall = $this->findByName($result, 'health.overall');
         self::assertNotNull($overall);
-        self::assertStringNotContainsString('health__typing', $overall->formulas['namespace'] ?? '');
-        self::assertStringNotContainsString('health__maintainability', $overall->formulas['namespace'] ?? '');
+        self::assertStringNotContainsString('m["health.typing"]', $overall->formulas['namespace'] ?? '');
+        self::assertStringNotContainsString('m["health.maintainability"]', $overall->formulas['namespace'] ?? '');
     }
 
     #[Test]
@@ -179,7 +179,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         // no formula renormalization applies (no health.overall reference path).
         $result = $this->resolver->resolve([
             'computed.foo' => [
-                'formula' => 'loc__avg * 2',
+                'formula' => 'm["size.loc.avg"] * 2',
                 'levels' => ['namespace'],
                 'enabled' => false,
             ],
@@ -235,8 +235,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     public function itCreatesNewComputedMetric(): void
     {
         $result = $this->resolver->resolve([
-            'computed.my_score' => [
-                'formula' => 'loc__avg * 2',
+            'computed.my-score' => [
+                'formula' => 'm["size.loc.avg"] * 2',
                 'description' => 'My custom score',
                 'levels' => ['class', 'namespace'],
                 'inverted' => true,
@@ -246,13 +246,13 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
 
         self::assertCount(7, $result); // 6 defaults + 1 custom
-        $custom = $this->findByName($result, 'computed.my_score');
+        $custom = $this->findByName($result, 'computed.my-score');
         self::assertNotNull($custom);
         self::assertSame('My custom score', $custom->description);
         self::assertTrue($custom->inverted);
         self::assertSame(80.0, $custom->warningThreshold);
         self::assertSame(40.0, $custom->errorThreshold);
-        self::assertSame('loc__avg * 2', $custom->getFormulaForLevel(SymbolLevel::Class_));
+        self::assertSame('m["size.loc.avg"] * 2', $custom->getFormulaForLevel(SymbolLevel::Class_));
         self::assertContains(SymbolLevel::Class_, $custom->levels);
         self::assertContains(SymbolLevel::Namespace_, $custom->levels);
         self::assertNotContains(SymbolLevel::Project, $custom->levels);
@@ -273,7 +273,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $this->resolver->resolve([
             'computed.repeated' => [
-                'formula' => 'loc__avg',
+                'formula' => 'm["size.loc.avg"]',
                 'levels' => ['class', 'class'],
             ],
         ]);
@@ -346,7 +346,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     public function itThrowsForInvalidPrefix(): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('must start with "health." or "computed."');
+        self::expectExceptionMessage('must be "health.<name>" or "computed.<name>"');
 
         $this->resolver->resolve([
             'custom.my_score' => [
@@ -377,11 +377,11 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $this->resolver->resolve([
             'computed.a' => [
-                'formula' => 'computed__b + 1',
+                'formula' => 'm["computed.b"] + 1',
                 'levels' => ['namespace'],
             ],
             'computed.b' => [
-                'formula' => 'computed__a + 1',
+                'formula' => 'm["computed.a"] + 1',
                 'levels' => ['namespace'],
             ],
         ]);
@@ -395,7 +395,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $this->resolver->resolve([
             'computed.ref' => [
-                'formula' => 'computed__nonexistent + 1',
+                'formula' => 'm["computed.nonexistent"] + 1',
                 'levels' => ['namespace'],
             ],
         ]);
@@ -410,7 +410,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $this->resolver->resolve([
             'computed.partial' => [
                 'formulas' => [
-                    'namespace' => 'loc__avg * 2',
+                    'namespace' => 'm["size.loc.avg"] * 2',
                 ],
                 'levels' => ['class', 'namespace'],
             ],
@@ -425,7 +425,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $this->resolver->resolve([
             'health.custom' => [
-                'formula' => 'ccn__avg * 10',
+                'formula' => 'm["complexity.ccn.avg"] * 10',
             ],
         ]);
     }
@@ -435,9 +435,9 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         $result = $this->resolver->resolve([
             'health.complexity' => [
-                'formula' => 'ccn__avg * 10',
+                'formula' => 'm["complexity.ccn.avg"] * 10',
                 'formulas' => [
-                    'class' => 'ccn * 5',
+                    'class' => 'm["complexity.ccn"] * 5',
                 ],
             ],
         ]);
@@ -445,9 +445,9 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $complexity = $this->findByName($result, 'health.complexity');
         self::assertNotNull($complexity);
         // formulas per-level takes precedence over formula singular
-        self::assertSame('ccn * 5', $complexity->getFormulaForLevel(SymbolLevel::Class_));
+        self::assertSame('m["complexity.ccn"] * 5', $complexity->getFormulaForLevel(SymbolLevel::Class_));
         // Other levels get the singular formula
-        self::assertSame('ccn__avg * 10', $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
+        self::assertSame('m["complexity.ccn.avg"] * 10', $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
     }
 
     /**
@@ -476,7 +476,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         $result = $this->resolver->resolve([
             'computed.spelling' => [
-                'formula' => 'loc__avg',
+                'formula' => 'm["size.loc.avg"]',
                 'levels' => [$spelling],
             ],
         ]);
@@ -518,7 +518,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $this->resolver->resolve([
             'computed.unsupported' => [
-                'formula' => 'loc__avg',
+                'formula' => 'm["size.loc.avg"]',
                 'levels' => [$spelling],
             ],
         ]);
@@ -532,7 +532,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $this->resolver->resolve([
             'computed.bogus' => [
-                'formula' => 'loc__avg',
+                'formula' => 'm["size.loc.avg"]',
                 'levels' => ['bogus'],
             ],
         ]);
@@ -557,7 +557,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         $result = $this->resolver->resolve([
             'computed.simple' => [
-                'formula' => 'loc__avg',
+                'formula' => 'm["size.loc.avg"]',
             ],
         ]);
 

@@ -145,7 +145,7 @@ final class SummaryFormatterTest extends TestCase
                 'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
                 'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0),
                 'cohesion' => new HealthScore('cohesion', 40.0, 'Poor', 50.0, 25.0, [
-                    new DecompositionItem('tcc.avg', 'TCC (avg)', 0.3, 'above 0.5', 'higher_is_better', 'methods share few common fields'),
+                    new DecompositionItem('cohesion.tcc.avg', 'TCC (avg)', 0.3, 'above 0.5', 'higher_is_better', 'methods share few common fields'),
                 ]),
             ],
         );
@@ -1039,7 +1039,7 @@ final class SummaryFormatterTest extends TestCase
             'health.coupling' => 55.0,
             'health.typing' => 70.0,
             'health.maintainability' => 50.0,
-            'classCount' => 5,
+            'size.class-count' => 5,
         ]);
 
         $metrics = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);

@@ -145,7 +145,7 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
             $weights = $this->parseWeightsFromFormula($formula);
 
             // Auto-renormalization works only on the canonical weighted-sum shape
-            // `(health__dim ?? 75) * 0.NN + ...`. If a user has overridden
+            // `(m["health.dim"] ?? 75) * 0.NN + ...`. If a user has overridden
             // `health.overall` with a non-canonical formula (e.g. `min(...)`,
             // a conditional, a custom aggregator), parsing yields no weights and
             // silently dropping the level would lose the user's intent. Refuse
@@ -155,7 +155,7 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
                 throw new InvalidArgumentException(\sprintf(
                     'Cannot auto-renormalize "health.overall" at level "%s" after excluding '
                     . 'health dimensions: the custom formula does not match the canonical '
-                    . 'weighted-sum shape `(health__dimension ?? fallback) * weight`. '
+                    . 'weighted-sum shape `(m["health.dimension"] ?? fallback) * weight`. '
                     . 'Either rewrite the custom formula to reference disabled dimensions '
                     . 'via `??` fallbacks, or remove the exclusion. Formula: %s',
                     $level,
@@ -191,7 +191,7 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
     /**
      * Parses dimension weights from a health.overall formula string.
      *
-     * Expected pattern: `(health__dimension ?? 75) * 0.25`
+     * Expected pattern: `(m["health.dimension"] ?? 75) * 0.25`
      *
      * @return array<string, float> dimension name => weight
      */
@@ -199,11 +199,12 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
     {
         $weights = [];
 
-        // Match patterns like: (health__complexity ?? 75) * 0.30
-        if (preg_match_all('/\((\w+)\s*\?\?\s*\d+\)\s*\*\s*([\d.]+)/', $formula, $matches, \PREG_SET_ORDER) !== 0) {
+        // Match patterns like: (m["health.complexity"] ?? 75) * 0.30
+        $pattern = '/\(m\[\s*(?:\'([^\']*)\'|"([^"]*)")\s*\]\s*\?\?\s*\d+\)\s*\*\s*([\d.]+)/';
+
+        if (preg_match_all($pattern, $formula, $matches, \PREG_SET_ORDER) !== 0) {
             foreach ($matches as $match) {
-                $varName = str_replace('__', '.', $match[1]);
-                $weights[$varName] = (float) $match[2];
+                $weights[$match[1] !== '' ? $match[1] : $match[2]] = (float) $match[3];
             }
         }
 
@@ -236,8 +237,7 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
 
         foreach ($remaining as $dim => $weight) {
             $normalizedWeight = round($weight / $totalWeight, 4);
-            $varName = str_replace('.', '__', $dim);
-            $terms[] = \sprintf('(%s ?? 75) * %s', $varName, $normalizedWeight);
+            $terms[] = \sprintf('(m["%s"] ?? 75) * %s', $dim, $normalizedWeight);
         }
 
         return \sprintf('clamp(%s, 0, 100)', implode(' + ', $terms));

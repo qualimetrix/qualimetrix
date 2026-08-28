@@ -16,245 +16,245 @@ final class MetricHintCatalog
      * @var array<string, array{label: string, direction: string, goodValue: string, badExplanation: string, goodExplanation: string}>
      */
     private const array METRICS = [
-        'ccn' => [
+        'complexity.ccn' => [
             'label' => 'Cyclomatic',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 4',
             'badExplanation' => 'too many code paths',
             'goodExplanation' => 'manageable branching',
         ],
-        'ccn.avg' => [
+        'complexity.ccn.avg' => [
             'label' => 'Cyclomatic (avg)',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 4',
             'badExplanation' => 'too many code paths per method',
             'goodExplanation' => 'manageable branching',
         ],
-        'cognitive' => [
+        'complexity.cognitive' => [
             'label' => 'Cognitive',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 5',
             'badExplanation' => 'deeply nested, hard to follow',
             'goodExplanation' => 'straightforward control flow',
         ],
-        'cognitive.avg' => [
+        'complexity.cognitive.avg' => [
             'label' => 'Cognitive (avg)',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 5',
             'badExplanation' => 'deeply nested, hard to follow',
             'goodExplanation' => 'straightforward control flow',
         ],
-        'npath' => [
+        'complexity.npath' => [
             'label' => 'NPath',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 200',
             'badExplanation' => 'explosive number of execution paths',
             'goodExplanation' => 'few execution paths',
         ],
-        'tcc' => [
+        'cohesion.tcc' => [
             'label' => 'TCC',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 0.5',
             'badExplanation' => 'methods share few common fields',
             'goodExplanation' => 'methods share common fields',
         ],
-        'lcc' => [
+        'cohesion.lcc' => [
             'label' => 'LCC',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 0.5',
             'badExplanation' => 'methods are loosely connected',
             'goodExplanation' => 'methods are well connected',
         ],
-        'lcom' => [
+        'cohesion.lcom' => [
             'label' => 'LCOM4',
             'direction' => 'lower_is_better',
             'goodValue' => '1 or less',
             'badExplanation' => 'class has {value} unrelated method groups',
             'goodExplanation' => 'class is cohesive',
         ],
-        'wmc' => [
+        'complexity.wmc' => [
             'label' => 'WMC',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 20',
             'badExplanation' => 'total method complexity is high',
             'goodExplanation' => 'total complexity is manageable',
         ],
-        'cbo' => [
+        'coupling.cbo' => [
             'label' => 'CBO',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 7',
             'badExplanation' => 'coupled to too many classes',
             'goodExplanation' => 'well-isolated',
         ],
-        'cbo.avg' => [
+        'coupling.cbo.avg' => [
             'label' => 'CBO (avg)',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 7',
             'badExplanation' => 'classes depend on too many others',
             'goodExplanation' => 'reasonable coupling',
         ],
-        'ce' => [
+        'coupling.ce' => [
             'label' => 'Ce',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 3',
             'badExplanation' => 'depends on too many external classes',
             'goodExplanation' => 'limited outgoing dependencies',
         ],
-        'ce.avg' => [
+        'coupling.ce.avg' => [
             'label' => 'Ce (avg)',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 3',
             'badExplanation' => 'classes depend on too many others outgoing',
             'goodExplanation' => 'low outgoing coupling',
         ],
-        'ce_packages' => [
+        'coupling.ce-packages' => [
             'label' => 'Ce packages',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 2',
             'badExplanation' => 'spread across too many external packages',
             'goodExplanation' => 'narrow package dependencies',
         ],
-        'ce_packages.avg' => [
+        'coupling.ce-packages.avg' => [
             'label' => 'Ce pkg (avg)',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 1',
             'badExplanation' => 'classes touch many external packages',
             'goodExplanation' => 'narrow package dependencies',
         ],
-        'instability' => [
+        'coupling.instability' => [
             'label' => 'Instability',
             'direction' => 'range',
             'goodValue' => '0.3 – 0.7',
             'badExplanation' => 'package is highly unstable',
             'goodExplanation' => 'balanced stability',
         ],
-        'abstractness' => [
+        'coupling.abstractness' => [
             'label' => 'Abstractness',
             'direction' => 'range',
             'goodValue' => '0.3 – 0.7',
             'badExplanation' => 'package is too abstract/concrete',
             'goodExplanation' => 'balanced abstraction',
         ],
-        'distance' => [
+        'coupling.distance' => [
             'label' => 'Distance',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 0.3',
             'badExplanation' => 'poor balance of abstraction and stability',
             'goodExplanation' => 'well-balanced design',
         ],
-        'classRank' => [
+        'coupling.class-rank' => [
             'label' => 'ClassRank',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 0.02',
             'badExplanation' => 'coupling hotspot, many depend on this',
             'goodExplanation' => 'peripheral, low risk',
         ],
-        'dit' => [
+        'design.dit' => [
             'label' => 'DIT',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 3',
             'badExplanation' => 'deep inheritance, fragile hierarchy',
             'goodExplanation' => 'normal inheritance',
         ],
-        'noc' => [
+        'design.noc' => [
             'label' => 'NOC',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 5',
             'badExplanation' => 'too many direct subclasses',
             'goodExplanation' => 'normal subclass count',
         ],
-        'rfc' => [
+        'coupling.rfc' => [
             'label' => 'RFC',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 50',
             'badExplanation' => 'too many callable methods',
             'goodExplanation' => 'reasonable method reach',
         ],
-        'methodCount' => [
+        'size.method-count' => [
             'label' => 'Methods',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 20',
             'badExplanation' => 'too many methods',
             'goodExplanation' => 'focused class',
         ],
-        'propertyCount' => [
+        'size.property-count' => [
             'label' => 'Properties',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 10',
             'badExplanation' => 'too many properties',
             'goodExplanation' => 'reasonable state',
         ],
-        'classCount.sum' => [
+        'size.class-count.sum' => [
             'label' => 'Classes',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 10',
             'badExplanation' => 'too many classes in namespace',
             'goodExplanation' => 'focused namespace',
         ],
-        'mi' => [
+        'maintainability.mi' => [
             'label' => 'MI',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 65',
             'badExplanation' => 'code is hard to change safely',
             'goodExplanation' => 'code is maintainable',
         ],
-        'mi.avg' => [
+        'maintainability.mi.avg' => [
             'label' => 'MI (avg)',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 65',
             'badExplanation' => 'code is hard to change safely',
             'goodExplanation' => 'code is maintainable',
         ],
-        'mi.p5' => [
+        'maintainability.mi.p5' => [
             'label' => 'MI (p5)',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 50',
             'badExplanation' => 'worst methods are hard to maintain',
             'goodExplanation' => 'even worst methods are maintainable',
         ],
-        'typeCoverage.pct' => [
+        'design.type-coverage.pct' => [
             'label' => 'Type coverage',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 80%',
             'badExplanation' => 'missing type declarations',
             'goodExplanation' => 'well-typed code',
         ],
-        'typeCoverage.param' => [
+        'design.type-coverage.param' => [
             'label' => 'Parameter Type Coverage',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 80%',
             'badExplanation' => 'missing parameter types',
             'goodExplanation' => 'well-typed parameters',
         ],
-        'typeCoverage.return' => [
+        'design.type-coverage.return' => [
             'label' => 'Return Type Coverage',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 80%',
             'badExplanation' => 'missing return types',
             'goodExplanation' => 'well-typed returns',
         ],
-        'typeCoverage.property' => [
+        'design.type-coverage.property' => [
             'label' => 'Property Type Coverage',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 80%',
             'badExplanation' => 'missing property types',
             'goodExplanation' => 'well-typed properties',
         ],
-        'loc' => [
+        'size.loc' => [
             'label' => 'LOC',
             'direction' => 'neutral',
             'goodValue' => '',
             'badExplanation' => '',
             'goodExplanation' => '',
         ],
-        'lloc' => [
+        'size.lloc' => [
             'label' => 'LLOC',
             'direction' => 'neutral',
             'goodValue' => '',
             'badExplanation' => '',
             'goodExplanation' => '',
         ],
-        'cloc' => [
+        'size.cloc' => [
             'label' => 'CLOC',
             'direction' => 'neutral',
             'goodValue' => '',
@@ -272,119 +272,119 @@ final class MetricHintCatalog
      */
     private const array RANGES = [
         // Complexity
-        'ccn' => [
+        'complexity.ccn' => [
             ['max' => 4, 'text' => 'Simple, easy to test'],
             ['max' => 10, 'text' => 'Moderate complexity'],
             ['max' => 20, 'text' => 'Complex, consider refactoring'],
             ['max' => 50, 'text' => 'Very complex, hard to maintain'],
             ['above' => true, 'text' => 'Extremely complex'],
         ],
-        'cognitive' => [
+        'complexity.cognitive' => [
             ['max' => 5, 'text' => 'Simple, easy to understand'],
             ['max' => 15, 'text' => 'Moderate complexity'],
             ['max' => 30, 'text' => 'Complex, hard to follow'],
             ['above' => true, 'text' => 'Very hard to follow'],
         ],
-        'npath' => [
+        'complexity.npath' => [
             ['max' => 20, 'text' => 'Simple, few execution paths'],
             ['max' => 200, 'text' => 'Moderate path count'],
             ['max' => 1000, 'text' => 'Many execution paths'],
             ['above' => true, 'text' => 'Explosive path count'],
         ],
         // Cohesion
-        'lcom' => [
+        'cohesion.lcom' => [
             ['max' => 1, 'text' => 'Cohesive — single responsibility'],
             ['max' => 3, 'text' => 'Moderate cohesion'],
             ['max' => 5, 'text' => 'Low cohesion, consider splitting'],
             ['above' => true, 'text' => 'Very low cohesion'],
         ],
-        'tcc' => [
+        'cohesion.tcc' => [
             ['max' => 0.29, 'text' => 'Low method interconnection'],
             ['max' => 0.49, 'text' => 'Moderate cohesion'],
             ['above' => true, 'text' => 'Good cohesion'],
         ],
-        'lcc' => [
+        'cohesion.lcc' => [
             ['max' => 0.29, 'text' => 'Low cohesion (incl. transitive)'],
             ['max' => 0.49, 'text' => 'Moderate cohesion'],
             ['above' => true, 'text' => 'Good cohesion'],
         ],
-        'wmc' => [
+        'complexity.wmc' => [
             ['max' => 20, 'text' => 'Manageable class'],
             ['max' => 50, 'text' => 'Large class'],
             ['max' => 80, 'text' => 'Very large class'],
             ['above' => true, 'text' => 'Excessive — consider splitting'],
         ],
         // Coupling
-        'cbo' => [
+        'coupling.cbo' => [
             ['max' => 7, 'text' => 'Normal coupling'],
             ['max' => 14, 'text' => 'Moderate coupling'],
             ['max' => 20, 'text' => 'High coupling'],
             ['above' => true, 'text' => 'Very high coupling'],
         ],
-        'instability' => [
+        'coupling.instability' => [
             ['max' => 0.09, 'text' => 'Maximally stable'],
             ['max' => 0.29, 'text' => 'Stable'],
             ['max' => 0.7, 'text' => 'Balanced'],
             ['max' => 0.9, 'text' => 'Unstable'],
             ['above' => true, 'text' => 'Maximally unstable'],
         ],
-        'abstractness' => [
+        'coupling.abstractness' => [
             ['max' => 0.09, 'text' => 'All concrete'],
             ['max' => 0.5, 'text' => 'Mostly concrete'],
             ['max' => 0.9, 'text' => 'Mostly abstract'],
             ['above' => true, 'text' => 'All abstract'],
         ],
-        'distance' => [
+        'coupling.distance' => [
             ['max' => 0.1, 'text' => 'On main sequence'],
             ['max' => 0.3, 'text' => 'Acceptable balance'],
             ['above' => true, 'text' => 'Off balance'],
         ],
-        'classRank' => [
+        'coupling.class-rank' => [
             ['max' => 0.009, 'text' => 'Peripheral class'],
             ['max' => 0.02, 'text' => 'Moderate importance'],
             ['max' => 0.05, 'text' => 'Important hub'],
             ['above' => true, 'text' => 'Critical coupling point'],
         ],
         // Design
-        'dit' => [
+        'design.dit' => [
             ['max' => 0, 'text' => 'Root class'],
             ['max' => 3, 'text' => 'Normal depth'],
             ['max' => 6, 'text' => 'Deep hierarchy'],
             ['above' => true, 'text' => 'Fragile hierarchy'],
         ],
-        'noc' => [
+        'design.noc' => [
             ['max' => 0, 'text' => 'Leaf class'],
             ['max' => 5, 'text' => 'Normal inheritance'],
             ['max' => 10, 'text' => 'Many subclasses'],
             ['above' => true, 'text' => 'Heavy base class'],
         ],
-        'rfc' => [
+        'coupling.rfc' => [
             ['max' => 20, 'text' => 'Simple interface'],
             ['max' => 50, 'text' => 'Moderate interface'],
             ['max' => 100, 'text' => 'Complex interface'],
             ['above' => true, 'text' => 'Very complex interface'],
         ],
         // Size
-        'methodCount' => [
+        'size.method-count' => [
             ['max' => 10, 'text' => 'Focused class'],
             ['max' => 20, 'text' => 'Large class'],
             ['max' => 30, 'text' => 'Very large class'],
             ['above' => true, 'text' => 'God Class territory'],
         ],
-        'propertyCount' => [
+        'size.property-count' => [
             ['max' => 10, 'text' => 'Normal'],
             ['max' => 15, 'text' => 'Large'],
             ['max' => 20, 'text' => 'Heavy'],
             ['above' => true, 'text' => 'Excessive'],
         ],
-        'classCount.sum' => [
+        'size.class-count.sum' => [
             ['max' => 10, 'text' => 'Focused namespace'],
             ['max' => 15, 'text' => 'Moderate namespace'],
             ['max' => 25, 'text' => 'Large namespace'],
             ['above' => true, 'text' => 'Bloated namespace'],
         ],
         // Maintainability
-        'mi' => [
+        'maintainability.mi' => [
             ['max' => 19, 'text' => 'Critical — very hard to maintain'],
             ['max' => 39, 'text' => 'Poor — refactoring recommended'],
             ['max' => 64, 'text' => 'Moderate — could benefit from simplification'],
@@ -392,22 +392,22 @@ final class MetricHintCatalog
             ['above' => true, 'text' => 'Excellent maintainability'],
         ],
         // Type Coverage
-        'typeCoverage.pct' => [
+        'design.type-coverage.pct' => [
             ['max' => 49, 'text' => 'Low type coverage'],
             ['max' => 79, 'text' => 'Moderate type coverage'],
             ['above' => true, 'text' => 'Good type coverage'],
         ],
-        'typeCoverage.param' => [
+        'design.type-coverage.param' => [
             ['max' => 49, 'text' => 'Low coverage'],
             ['max' => 79, 'text' => 'Moderate coverage'],
             ['above' => true, 'text' => 'Good coverage'],
         ],
-        'typeCoverage.return' => [
+        'design.type-coverage.return' => [
             ['max' => 49, 'text' => 'Low coverage'],
             ['max' => 79, 'text' => 'Moderate coverage'],
             ['above' => true, 'text' => 'Good coverage'],
         ],
-        'typeCoverage.property' => [
+        'design.type-coverage.property' => [
             ['max' => 49, 'text' => 'Low coverage'],
             ['max' => 79, 'text' => 'Moderate coverage'],
             ['above' => true, 'text' => 'Good coverage'],
@@ -422,7 +422,7 @@ final class MetricHintCatalog
      * @var array<string, string>
      */
     private const array FORMAT_TEMPLATES = [
-        'lcom' => '{value} disconnected group{plural}',
+        'cohesion.lcom' => '{value} disconnected group{plural}',
     ];
 
     /**
@@ -435,22 +435,22 @@ final class MetricHintCatalog
      * @var array<string, string>
      */
     private const array HTML_LABELS = [
-        'ccn' => 'Cyclomatic Complexity',
-        'cognitive' => 'Cognitive Complexity',
-        'npath' => 'NPath Complexity',
-        'tcc' => 'Tight Class Cohesion',
-        'lcc' => 'Loose Class Cohesion',
-        'wmc' => 'Weighted Methods per Class',
-        'cbo' => 'Coupling Between Objects',
-        'ce' => 'Efferent Coupling',
-        'ce_packages' => 'Efferent Packages',
-        'dit' => 'Depth of Inheritance Tree',
-        'noc' => 'Number of Children',
-        'rfc' => 'Response for a Class',
-        'mi' => 'Maintainability Index',
-        'methodCount' => 'Method Count',
-        'propertyCount' => 'Property Count',
-        'classCount.sum' => 'Class Count',
+        'complexity.ccn' => 'Cyclomatic Complexity',
+        'complexity.cognitive' => 'Cognitive Complexity',
+        'complexity.npath' => 'NPath Complexity',
+        'cohesion.tcc' => 'Tight Class Cohesion',
+        'cohesion.lcc' => 'Loose Class Cohesion',
+        'complexity.wmc' => 'Weighted Methods per Class',
+        'coupling.cbo' => 'Coupling Between Objects',
+        'coupling.ce' => 'Efferent Coupling',
+        'coupling.ce-packages' => 'Efferent Packages',
+        'design.dit' => 'Depth of Inheritance Tree',
+        'design.noc' => 'Number of Children',
+        'coupling.rfc' => 'Response for a Class',
+        'maintainability.mi' => 'Maintainability Index',
+        'size.method-count' => 'Method Count',
+        'size.property-count' => 'Property Count',
+        'size.class-count.sum' => 'Class Count',
     ];
 
     /** @var list<string> */

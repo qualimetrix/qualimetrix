@@ -116,7 +116,7 @@ final class SummaryEnricherTest extends TestCase
             'health.coupling' => 52.0,
             'health.typing' => 35.0,
             'health.maintainability' => 22.0,
-            'classCount.sum' => 4,
+            'size.class-count.sum' => 4,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -175,8 +175,8 @@ final class SummaryEnricherTest extends TestCase
             'health.coupling' => 35.0,
             'health.typing' => 20.0,
             'health.maintainability' => 15.0,
-            'methodCount' => 32,
-            'cbo' => 18,
+            'size.method-count' => 32,
+            'coupling.cbo' => 18,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -208,8 +208,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame(28.0, $cls->healthOverall);
         self::assertSame('src/Service/PaymentService.php', $cls->file?->value());
         self::assertSame(0, $cls->classCount);
-        self::assertArrayHasKey('methodCount', $cls->metrics);
-        self::assertSame(32, $cls->metrics['methodCount']);
+        self::assertArrayHasKey('size.method-count', $cls->metrics);
+        self::assertSame(32, $cls->metrics['size.method-count']);
     }
 
     #[Test]
@@ -296,8 +296,8 @@ final class SummaryEnricherTest extends TestCase
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
-                'ccn.avg' => 5.0,
-                'loc' => 1000,
+                'complexity.ccn.avg' => 5.0,
+                'size.loc' => 1000,
             ]),
         );
 
@@ -323,8 +323,8 @@ final class SummaryEnricherTest extends TestCase
             projectMetrics: MetricBag::fromArray([
                 'health.complexity' => 30.0,
                 'health.overall' => 50.0,
-                'ccn.avg' => 12.0,
-                'cognitive.avg' => 10.0,
+                'complexity.ccn.avg' => 12.0,
+                'complexity.cognitive.avg' => 10.0,
             ]),
         );
 
@@ -344,9 +344,9 @@ final class SummaryEnricherTest extends TestCase
         $complexity = $result->healthScores['complexity'];
         self::assertSame(30.0, $complexity->score);
         self::assertCount(2, $complexity->decomposition);
-        self::assertSame('ccn.avg', $complexity->decomposition[0]->metricKey);
+        self::assertSame('complexity.ccn.avg', $complexity->decomposition[0]->metricKey);
         self::assertSame(12.0, $complexity->decomposition[0]->value);
-        self::assertSame('cognitive.avg', $complexity->decomposition[1]->metricKey);
+        self::assertSame('complexity.cognitive.avg', $complexity->decomposition[1]->metricKey);
         self::assertSame(10.0, $complexity->decomposition[1]->value);
     }
 
@@ -375,7 +375,7 @@ final class SummaryEnricherTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
                 'health.overall' => 72.0,
-                'loc.sum' => 5000,
+                'size.loc.sum' => 5000,
             ]),
         );
 
@@ -412,7 +412,7 @@ final class SummaryEnricherTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
                 'health.overall' => 85.0,
-                'loc.sum' => 10000,
+                'size.loc.sum' => 10000,
             ]),
         );
 
@@ -488,8 +488,8 @@ final class SummaryEnricherTest extends TestCase
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
-                'ccn.avg' => 5.0,
-                'loc' => 1000,
+                'complexity.ccn.avg' => 5.0,
+                'size.loc' => 1000,
             ]),
         );
 

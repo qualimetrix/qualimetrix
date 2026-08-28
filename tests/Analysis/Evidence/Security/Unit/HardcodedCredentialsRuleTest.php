@@ -37,7 +37,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
-        self::assertSame(['security.hardcodedCredentials'], $rule->requires());
+        self::assertSame(['security.hardcoded-credentials'], $rule->requires());
     }
 
     #[Test]
@@ -47,8 +47,8 @@ final class HardcodedCredentialsRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 1, 'pattern' => 'variable'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 2, 'pattern' => 'variable']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 1, 'pattern' => 'variable'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 2, 'pattern' => 'variable']),
         );
 
         $findings = $rule->analyze($context);
@@ -75,7 +75,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 15, 'pattern' => 'variable']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 15, 'pattern' => 'variable']),
         );
 
         $findings = $rule->analyze($context);
@@ -94,9 +94,9 @@ final class HardcodedCredentialsRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 25, 'pattern' => 'array_key'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 42, 'pattern' => 'define']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 25, 'pattern' => 'array_key'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 42, 'pattern' => 'define']),
         );
 
         $findings = $rule->analyze($context);
@@ -116,10 +116,10 @@ final class HardcodedCredentialsRuleTest extends TestCase
         $secondInfo = new SymbolInfo(SymbolPath::forFile($secondPath), $secondPath, null);
         $metrics = [
             $firstPath->value() => (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 20, 'pattern' => 'property'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 20, 'pattern' => 'property'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable']),
             $secondPath->value() => (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 5, 'pattern' => 'define']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 5, 'pattern' => 'define']),
         ];
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -147,9 +147,9 @@ final class HardcodedCredentialsRuleTest extends TestCase
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
         $findings = $rule->analyze($this->createContext(
             (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 20, 'pattern' => 'variable'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 30, 'pattern' => 'define']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 20, 'pattern' => 'variable'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 30, 'pattern' => 'define']),
         ));
 
         self::assertSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
@@ -165,7 +165,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'enum_case']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'enum_case']),
         );
 
         $findings = $rule->analyze($context);
@@ -190,7 +190,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
         ];
         $metrics = new MetricBag();
         foreach ($patterns as $line => $pattern) {
-            $metrics = $metrics->withEntry('security.hardcodedCredentials', [
+            $metrics = $metrics->withEntry('security.hardcoded-credentials', [
                 'subjectKind' => 'file',
                 'line' => $line + 1,
                 'pattern' => $pattern,

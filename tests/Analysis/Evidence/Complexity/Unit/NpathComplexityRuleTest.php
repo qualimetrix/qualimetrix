@@ -50,7 +50,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
-        self::assertSame(['npath'], $rule->requires());
+        self::assertSame(['complexity.npath'], $rule->requires());
     }
 
     #[Test]
@@ -113,7 +113,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('npath', 250); // Above warning (200), below error (1000)
+        $metricBag = (new MetricBag())->with('complexity.npath', 250); // Above warning (200), below error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -143,7 +143,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('npath', 1200); // Above error (1000)
+        $metricBag = (new MetricBag())->with('complexity.npath', 1200); // Above error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -194,7 +194,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $metricBag = (new MetricBag())->with('npath.max', 600); // Above warning (500), below error (1000)
+        $metricBag = (new MetricBag())->with('complexity.npath.max', 600); // Above warning (500), below error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -227,7 +227,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $metricBag = (new MetricBag())->with('npath.max', 1200); // Above error (1000)
+        $metricBag = (new MetricBag())->with('complexity.npath.max', 1200); // Above error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -265,8 +265,8 @@ final class NpathComplexityRuleTest extends TestCase
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $methodBag = (new MetricBag())->with('npath', 250); // Warning
-        $classBag = (new MetricBag())->with('npath.max', 600); // Warning
+        $methodBag = (new MetricBag())->with('complexity.npath', 250); // Warning
+        $classBag = (new MetricBag())->with('complexity.npath.max', 600); // Warning
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -297,7 +297,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('npath', 2_500_000); // > 1M
+        $metricBag = (new MetricBag())->with('complexity.npath', 2_500_000); // > 1M
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -447,7 +447,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('npath', $npath);
+        $metricBag = (new MetricBag())->with('complexity.npath', $npath);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -536,7 +536,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('npath', $npath);
+        $metricBag = (new MetricBag())->with('complexity.npath', $npath);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -572,7 +572,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App', 'Test');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('npath.max', $npath);
+        $metricBag = (new MetricBag())->with('complexity.npath.max', $npath);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -635,7 +635,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $metricBag = (new MetricBag())->with('npath.max', 2_500_000); // > 1M
+        $metricBag = (new MetricBag())->with('complexity.npath.max', 2_500_000); // > 1M
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -673,7 +673,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('npath', 1_500_000);
+        $metricBag = (new MetricBag())->with('complexity.npath', 1_500_000);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -711,7 +711,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App', 'Test');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('npath.max', 1_500_000);
+        $metricBag = (new MetricBag())->with('complexity.npath.max', 1_500_000);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -751,7 +751,7 @@ final class NpathComplexityRuleTest extends TestCase
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('npath', 1296)
+            ->with('complexity.npath', 1296)
             ->withEntry('npath-complexity.factors', ['type' => 'if/else', 'line' => 25, 'factor' => 6])
             ->withEntry('npath-complexity.factors', ['type' => 'match', 'line' => 31, 'factor' => 4])
             ->withEntry('npath-complexity.factors', ['type' => 'switch', 'line' => 20, 'factor' => 3]);
@@ -786,7 +786,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('npath', 1200);
+        $metricBag = (new MetricBag())->with('complexity.npath', 1200);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -813,7 +813,7 @@ final class NpathComplexityRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('npath.max', 600));
+        $repository->method('get')->willReturn((new MetricBag())->with('complexity.npath.max', 600));
         $rule = new NpathComplexityRule(new NpathComplexityOptions(
             class: new ClassNpathComplexityOptions(enabled: true),
         ));
@@ -838,7 +838,7 @@ final class NpathComplexityRuleTest extends TestCase
             self::subjectInfo($method, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($method, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('npath', 300));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('complexity.npath', 300));
 
         $findings = (new NpathComplexityRule(new NpathComplexityOptions()))
             ->analyzeLevel(SymbolLevel::Callable, new AnalysisContext($repository));

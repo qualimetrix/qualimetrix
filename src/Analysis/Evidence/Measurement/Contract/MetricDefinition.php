@@ -23,7 +23,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final readonly class MetricDefinition
 {
     /**
-     * @param string $name Base metric name (e.g., 'ccn', 'loc', 'classCount')
+     * @param string $name Base metric name (e.g., 'complexity.ccn', 'size.loc', 'size.class-count')
      * @param SymbolLevel $collectedAt Level where the metric is originally collected
      * @param array<string, list<AggregationStrategy>> $aggregations
      *                                                               Map of target level (SymbolLevel->value) to list of aggregation strategies.
@@ -39,8 +39,8 @@ final readonly class MetricDefinition
      * Returns the name for an aggregated metric.
      *
      * Examples:
-     *   - ('ccn', Sum) → 'ccn.sum'
-     *   - ('loc', Average) → 'loc.avg'
+     *   - ('complexity.ccn', Sum) → 'complexity.ccn.sum'
+     *   - ('size.loc', Average) → 'size.loc.avg'
      *
      * @param AggregationStrategy $strategy The aggregation strategy applied
      *

@@ -130,7 +130,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements De
         $result = [];
 
         foreach ($this->scopes as $fqn => $scope) {
-            $metrics = (new MetricBag())->with('cognitive', $this->complexities[$fqn] ?? 0);
+            $metrics = (new MetricBag())->with('complexity.cognitive', $this->complexities[$fqn] ?? 0);
 
             foreach ($this->increments[$fqn] ?? [] as $increment) {
                 $metrics = $metrics->withEntry('cognitive-complexity.increments', [

@@ -67,7 +67,7 @@ final class HealthTextFormatterTest extends TestCase
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, [
-                new DecompositionItem('ccn.avg', 'Cyclomatic (avg)', 3.2, 'below 4', 'lower_is_better', 'manageable branching'),
+                new DecompositionItem('complexity.ccn.avg', 'Cyclomatic (avg)', 3.2, 'below 4', 'lower_is_better', 'manageable branching'),
             ]),
             'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0),
             'coupling' => new HealthScore('coupling', 81.5, 'Good', 60.0, 40.0),
@@ -108,8 +108,8 @@ final class HealthTextFormatterTest extends TestCase
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, [
-                new DecompositionItem('ccn.avg', 'Cyclomatic (avg)', 3.2, 'below 4', 'lower_is_better', 'manageable branching'),
-                new DecompositionItem('cognitive.avg', 'Cognitive (avg)', 4.5, 'below 5', 'lower_is_better', ''),
+                new DecompositionItem('complexity.ccn.avg', 'Cyclomatic (avg)', 3.2, 'below 4', 'lower_is_better', 'manageable branching'),
+                new DecompositionItem('complexity.cognitive.avg', 'Cognitive (avg)', 4.5, 'below 5', 'lower_is_better', ''),
             ]),
             'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0),
         ]);
@@ -179,7 +179,7 @@ final class HealthTextFormatterTest extends TestCase
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, [
-                new DecompositionItem('ccn.avg', 'Cyclomatic (avg)', 3.2, 'below 4', 'lower_is_better', 'manageable branching'),
+                new DecompositionItem('complexity.ccn.avg', 'Cyclomatic (avg)', 3.2, 'below 4', 'lower_is_better', 'manageable branching'),
             ]),
             'overall' => new HealthScore('overall', 72.3, 'Good', 50.0, 30.0),
         ]);
@@ -278,16 +278,16 @@ final class HealthTextFormatterTest extends TestCase
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 42.0, 'Poor', 50.0, 30.0, [
-                new DecompositionItem('ccn.avg', 'CCN avg', 8.5, '1-3', 'lower_is_better', ''),
+                new DecompositionItem('complexity.ccn.avg', 'CCN avg', 8.5, '1-3', 'lower_is_better', ''),
             ], [
-                new HealthContributor('HeavyService', 'class:App\\HeavyService', ['ccn.sum' => 45, 'cognitive.sum' => 30]),
+                new HealthContributor('HeavyService', 'class:App\\HeavyService', ['complexity.ccn.sum' => 45, 'complexity.cognitive.sum' => 30]),
             ]),
             'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
-                new DecompositionItem('tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
+                new DecompositionItem('cohesion.tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
             ], [
-                new HealthContributor('ComputedMetricDefinition', 'class:App\\ComputedMetricDefinition', ['tcc' => 0.3, 'lcom' => 5]),
-                new HealthContributor('FormulaParser', 'class:App\\FormulaParser', ['tcc' => 0.42, 'lcom' => 3]),
-                new HealthContributor('ExpressionValidator', 'class:App\\ExpressionValidator', ['tcc' => 0.458, 'lcom' => 2]),
+                new HealthContributor('ComputedMetricDefinition', 'class:App\\ComputedMetricDefinition', ['cohesion.tcc' => 0.3, 'cohesion.lcom' => 5]),
+                new HealthContributor('FormulaParser', 'class:App\\FormulaParser', ['cohesion.tcc' => 0.42, 'cohesion.lcom' => 3]),
+                new HealthContributor('ExpressionValidator', 'class:App\\ExpressionValidator', ['cohesion.tcc' => 0.458, 'cohesion.lcom' => 2]),
             ]),
             'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0),
         ]);
@@ -316,9 +316,9 @@ final class HealthTextFormatterTest extends TestCase
     {
         $report = $this->createReportWithHealthScores([
             'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
-                new DecompositionItem('tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
+                new DecompositionItem('cohesion.tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
             ], [
-                new HealthContributor('SomeClass', 'class:App\\SomeClass', ['tcc' => 0.1]),
+                new HealthContributor('SomeClass', 'class:App\\SomeClass', ['cohesion.tcc' => 0.1]),
             ]),
             'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0),
         ]);
@@ -335,11 +335,11 @@ final class HealthTextFormatterTest extends TestCase
     {
         $report = $this->createReportWithHealthScores([
             'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
-                new DecompositionItem('tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
+                new DecompositionItem('cohesion.tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
             ], [
-                new HealthContributor('ClassA', 'class:App\\ClassA', ['tcc' => 0.1]),
-                new HealthContributor('ClassB', 'class:App\\ClassB', ['tcc' => 0.2]),
-                new HealthContributor('ClassC', 'class:App\\ClassC', ['tcc' => 0.3]),
+                new HealthContributor('ClassA', 'class:App\\ClassA', ['cohesion.tcc' => 0.1]),
+                new HealthContributor('ClassB', 'class:App\\ClassB', ['cohesion.tcc' => 0.2]),
+                new HealthContributor('ClassC', 'class:App\\ClassC', ['cohesion.tcc' => 0.3]),
             ]),
             'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0),
         ]);
@@ -357,9 +357,9 @@ final class HealthTextFormatterTest extends TestCase
     {
         $report = $this->createReportWithHealthScores([
             'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
-                new DecompositionItem('tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
+                new DecompositionItem('cohesion.tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
             ], [
-                new HealthContributor('SomeClass', 'class:App\\SomeClass', ['tcc' => 0.1]),
+                new HealthContributor('SomeClass', 'class:App\\SomeClass', ['cohesion.tcc' => 0.1]),
             ]),
             'overall' => new HealthScore('overall', 67.4, 'Good', 50.0, 30.0),
         ]);
@@ -375,7 +375,7 @@ final class HealthTextFormatterTest extends TestCase
     {
         $report = $this->createReportWithHealthScores([
             'cohesion' => new HealthScore('cohesion', 80.0, 'Good', 50.0, 30.0, [
-                new DecompositionItem('tcc.avg', 'TCC', 0.8, 'above 0.5', 'higher_is_better', ''),
+                new DecompositionItem('cohesion.tcc.avg', 'TCC', 0.8, 'above 0.5', 'higher_is_better', ''),
             ], []),
             'overall' => new HealthScore('overall', 80.0, 'Good', 50.0, 30.0),
         ]);

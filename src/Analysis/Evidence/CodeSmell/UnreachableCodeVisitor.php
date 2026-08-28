@@ -79,10 +79,10 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Declar
         $result = [];
 
         foreach ($this->scopes as $fqn => $scope) {
-            $bag = (new MetricBag())->with('unreachableCode', $this->unreachableCounts[$fqn] ?? 0);
+            $bag = (new MetricBag())->with('code-smell.unreachable-code', $this->unreachableCounts[$fqn] ?? 0);
 
             if (isset($this->firstUnreachableLines[$fqn])) {
-                $bag = $bag->with('unreachableCode.firstLine', $this->firstUnreachableLines[$fqn]);
+                $bag = $bag->with('code-smell.unreachable-code.first-line', $this->firstUnreachableLines[$fqn]);
             }
 
             $result[] = $this->createCallableWithMetrics($scope, $file, $bag);

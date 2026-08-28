@@ -60,7 +60,7 @@ final class NocCollectorTest extends TestCase
     #[Test]
     public function provides_returnsNoc(): void
     {
-        self::assertSame(['noc'], $this->collector->provides());
+        self::assertSame(['design.noc'], $this->collector->provides());
     }
 
     #[Test]
@@ -77,7 +77,7 @@ final class NocCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $metrics = $repository->get($leafPath);
-        self::assertSame(0, $metrics->get('noc'));
+        self::assertSame(0, $metrics->get('design.noc'));
     }
 
     #[Test]
@@ -101,10 +101,10 @@ final class NocCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $parentMetrics = $repository->get($parentPath);
-        self::assertSame(1, $parentMetrics->get('noc'));
+        self::assertSame(1, $parentMetrics->get('design.noc'));
 
         $childMetricsAfter = $repository->get($childPath);
-        self::assertSame(0, $childMetricsAfter->get('noc'));
+        self::assertSame(0, $childMetricsAfter->get('design.noc'));
     }
 
     #[Test]
@@ -134,7 +134,7 @@ final class NocCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $parentMetrics = $repository->get($parentPath);
-        self::assertSame(2, $parentMetrics->get('noc'));
+        self::assertSame(2, $parentMetrics->get('design.noc'));
     }
 
     #[Test]
@@ -166,15 +166,15 @@ final class NocCollectorTest extends TestCase
 
         // GrandParent has only 1 direct child (Parent)
         $grandparentMetrics = $repository->get($grandparentPath);
-        self::assertSame(1, $grandparentMetrics->get('noc'));
+        self::assertSame(1, $grandparentMetrics->get('design.noc'));
 
         // Parent has only 1 direct child (Child)
         $parentMetricsAfter = $repository->get($parentPath);
-        self::assertSame(1, $parentMetricsAfter->get('noc'));
+        self::assertSame(1, $parentMetricsAfter->get('design.noc'));
 
         // Child has no children
         $childMetricsAfter = $repository->get($childPath);
-        self::assertSame(0, $childMetricsAfter->get('noc'));
+        self::assertSame(0, $childMetricsAfter->get('design.noc'));
     }
 
     #[Test]
@@ -203,7 +203,7 @@ final class NocCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $parentMetrics = $repository->get($parentPath);
-        self::assertSame(2, $parentMetrics->get('noc'));
+        self::assertSame(2, $parentMetrics->get('design.noc'));
     }
 
     #[Test]
@@ -228,7 +228,7 @@ final class NocCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $parentMetrics = $repository->get($parentPath);
-        self::assertSame(1, $parentMetrics->get('noc'));
+        self::assertSame(1, $parentMetrics->get('design.noc'));
     }
 
     #[Test]
@@ -254,7 +254,7 @@ final class NocCollectorTest extends TestCase
 
         // Child should have NOC = 0 (no children of its own)
         $childMetrics = $repository->get($childPath);
-        self::assertSame(0, $childMetrics->get('noc'));
+        self::assertSame(0, $childMetrics->get('design.noc'));
     }
 
     #[Test]
@@ -276,7 +276,7 @@ final class NocCollectorTest extends TestCase
         // All classes should have noc metric
         foreach ($repository->all(SymbolLevel::Class_) as $classInfo) {
             $metrics = $repository->get($classInfo->symbolPath);
-            self::assertTrue($metrics->has('noc'));
+            self::assertTrue($metrics->has('design.noc'));
         }
     }
 
@@ -293,7 +293,7 @@ final class NocCollectorTest extends TestCase
 
         // Add parent with existing metrics
         $parentPath = SymbolPath::forClass('App', 'BaseClass');
-        $existingMetrics = (new MetricBag())->with('dit', 2)->with('wmc', 10);
+        $existingMetrics = (new MetricBag())->with('design.dit', 2)->with('complexity.wmc', 10);
         $repository->add($parentPath, $existingMetrics, RelativePath::fromString('base.php'), 10);
 
         // Add child
@@ -304,9 +304,9 @@ final class NocCollectorTest extends TestCase
 
         // Parent should still have original metrics + noc
         $parentMetrics = $repository->get($parentPath);
-        self::assertSame(2, $parentMetrics->get('dit'));
-        self::assertSame(10, $parentMetrics->get('wmc'));
-        self::assertSame(1, $parentMetrics->get('noc'));
+        self::assertSame(2, $parentMetrics->get('design.dit'));
+        self::assertSame(10, $parentMetrics->get('complexity.wmc'));
+        self::assertSame(1, $parentMetrics->get('design.noc'));
     }
 
     /** @param list<Dependency> $dependencies */

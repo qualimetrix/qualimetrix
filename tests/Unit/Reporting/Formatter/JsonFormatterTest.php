@@ -236,7 +236,7 @@ final class JsonFormatterTest extends TestCase
                     errorThreshold: 25.0,
                     decomposition: [
                         new DecompositionItem(
-                            metricKey: 'ccn.avg',
+                            metricKey: 'complexity.ccn.avg',
                             humanName: 'Cyclomatic (avg)',
                             value: 8.2,
                             goodValue: 'below 4',
@@ -271,7 +271,7 @@ final class JsonFormatterTest extends TestCase
         // Decomposition always included in JSON
         self::assertCount(1, $complexity['decomposition']);
         $d = $complexity['decomposition'][0];
-        self::assertSame('ccn.avg', $d['metric']);
+        self::assertSame('complexity.ccn.avg', $d['metric']);
         self::assertSame('Cyclomatic (avg)', $d['humanName']);
         self::assertSame(8.2, $d['value']);
         self::assertSame('below 4', $d['good']);
@@ -325,7 +325,7 @@ final class JsonFormatterTest extends TestCase
                     evidence: new WorstOffenderEvidence(
                         violationCount: 12,
                         classCount: 4,
-                        metrics: ['cbo.avg' => 8.5],
+                        metrics: ['coupling.cbo.avg' => 8.5],
                         healthScores: ['complexity' => 28.0, 'cohesion' => 25.0],
                     ),
                 ),
@@ -342,7 +342,7 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('Critical', $ns['label']);
         self::assertSame('low cohesion, high complexity', $ns['reason']);
         self::assertSame(12, $ns['violationCount']);
-        self::assertSame(4, $ns['classCount']);
+        self::assertSame(4, $ns['size.class-count']);
         self::assertArrayNotHasKey('file', $ns);
         self::assertArrayNotHasKey('metrics', $ns);
         self::assertEquals(['complexity' => 28.0, 'cohesion' => 25.0], $ns['healthScores']);
@@ -368,7 +368,7 @@ final class JsonFormatterTest extends TestCase
                     evidence: new WorstOffenderEvidence(
                         violationCount: 5,
                         classCount: 0,
-                        metrics: ['methodCount' => 32, 'cbo' => 18],
+                        metrics: ['size.method-count' => 32, 'coupling.cbo' => 18],
                         healthScores: ['complexity' => 12.0, 'cohesion' => 8.0],
                     ),
                 ),
@@ -385,8 +385,8 @@ final class JsonFormatterTest extends TestCase
         self::assertEquals(28.0, $cls['healthOverall']);
         self::assertSame('Critical', $cls['label']);
         self::assertSame(5, $cls['violationCount']);
-        self::assertArrayNotHasKey('classCount', $cls);
-        self::assertSame(['methodCount' => 32, 'cbo' => 18], $cls['metrics']);
+        self::assertArrayNotHasKey('size.class-count', $cls);
+        self::assertSame(['size.method-count' => 32, 'coupling.cbo' => 18], $cls['metrics']);
         self::assertEquals(['complexity' => 12.0, 'cohesion' => 8.0], $cls['healthScores']);
     }
 
@@ -1048,7 +1048,7 @@ final class JsonFormatterTest extends TestCase
             'health.overall' => 40.0,
             'health.complexity' => 55.0,
             'health.cohesion' => 25.0,
-            'classCount' => 5,
+            'size.class-count' => 5,
         ]);
 
         $metrics = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
@@ -1101,8 +1101,8 @@ final class JsonFormatterTest extends TestCase
             'health.overall' => 25.0,
             'health.complexity' => 20.0,
             'health.cohesion' => 15.0,
-            'methodCount' => 32,
-            'cbo' => 18,
+            'size.method-count' => 32,
+            'coupling.cbo' => 18,
         ]);
 
         $nsPath = SymbolPath::forNamespace('App\Service');
@@ -1150,7 +1150,7 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('App\Service\UserService', $data['worstClasses'][0]['symbolPath']);
         self::assertEquals(25.0, $data['worstClasses'][0]['healthOverall']);
         self::assertSame('src/Service/UserService.php', $data['worstClasses'][0]['file']);
-        self::assertSame(32, $data['worstClasses'][0]['metrics']['methodCount']);
+        self::assertSame(32, $data['worstClasses'][0]['metrics']['size.method-count']);
     }
 
     #[Test]

@@ -56,7 +56,7 @@ final class DitGlobalCollectorTest extends TestCase
     #[Test]
     public function provides_returnsDit(): void
     {
-        self::assertSame(['dit'], $this->collector->provides());
+        self::assertSame(['design.dit'], $this->collector->provides());
     }
 
     #[Test]
@@ -70,7 +70,7 @@ final class DitGlobalCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        self::assertSame(0, $repository->get($path)->get('dit'));
+        self::assertSame(0, $repository->get($path)->get('design.dit'));
     }
 
     #[Test]
@@ -86,7 +86,7 @@ final class DitGlobalCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        self::assertSame(1, $repository->get($path)->get('dit'));
+        self::assertSame(1, $repository->get($path)->get('design.dit'));
     }
 
     #[Test]
@@ -100,20 +100,20 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $grandparentPath = SymbolPath::forClass('App', 'GrandParent');
-        $repository->add($grandparentPath, (new MetricBag())->with('dit', 0), RelativePath::fromString('gp.php'), 1);
+        $repository->add($grandparentPath, (new MetricBag())->with('design.dit', 0), RelativePath::fromString('gp.php'), 1);
 
         $parentPath = SymbolPath::forClass('App', 'Parent');
-        $repository->add($parentPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('p.php'), 1);
+        $repository->add($parentPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('p.php'), 1);
 
         $childPath = SymbolPath::forClass('App', 'Child');
         // The per-file collector would have set dit=1 (can't see grandparent)
-        $repository->add($childPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('c.php'), 1);
+        $repository->add($childPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('c.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
-        self::assertSame(0, $repository->get($grandparentPath)->get('dit'));
-        self::assertSame(1, $repository->get($parentPath)->get('dit'));
-        self::assertSame(2, $repository->get($childPath)->get('dit'));
+        self::assertSame(0, $repository->get($grandparentPath)->get('design.dit'));
+        self::assertSame(1, $repository->get($parentPath)->get('design.dit'));
+        self::assertSame(2, $repository->get($childPath)->get('design.dit'));
     }
 
     #[Test]
@@ -127,23 +127,23 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $aPath = SymbolPath::forClass('App', 'A');
-        $repository->add($aPath, (new MetricBag())->with('dit', 0), RelativePath::fromString('a.php'), 1);
+        $repository->add($aPath, (new MetricBag())->with('design.dit', 0), RelativePath::fromString('a.php'), 1);
 
         $bPath = SymbolPath::forClass('App', 'B');
-        $repository->add($bPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('b.php'), 1);
+        $repository->add($bPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('b.php'), 1);
 
         $cPath = SymbolPath::forClass('App', 'C');
-        $repository->add($cPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('c.php'), 1);
+        $repository->add($cPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('c.php'), 1);
 
         $dPath = SymbolPath::forClass('App', 'D');
-        $repository->add($dPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('d.php'), 1);
+        $repository->add($dPath, (new MetricBag())->with('design.dit', 1), RelativePath::fromString('d.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
-        self::assertSame(0, $repository->get($aPath)->get('dit'));
-        self::assertSame(1, $repository->get($bPath)->get('dit'));
-        self::assertSame(2, $repository->get($cPath)->get('dit'));
-        self::assertSame(3, $repository->get($dPath)->get('dit'));
+        self::assertSame(0, $repository->get($aPath)->get('design.dit'));
+        self::assertSame(1, $repository->get($bPath)->get('design.dit'));
+        self::assertSame(2, $repository->get($cPath)->get('design.dit'));
+        self::assertSame(3, $repository->get($dPath)->get('design.dit'));
     }
 
     #[Test]
@@ -168,9 +168,9 @@ final class DitGlobalCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        self::assertSame(1, $repository->get($bPath)->get('dit'));
-        self::assertSame(2, $repository->get($cPath)->get('dit'));
-        self::assertSame(3, $repository->get($dPath)->get('dit'));
+        self::assertSame(1, $repository->get($bPath)->get('design.dit'));
+        self::assertSame(2, $repository->get($cPath)->get('design.dit'));
+        self::assertSame(3, $repository->get($dPath)->get('design.dit'));
     }
 
     #[Test]
@@ -182,18 +182,18 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $parentPath = SymbolPath::forClass('App', 'Parent');
-        $repository->add($parentPath, (new MetricBag())->with('wmc', 10)->with('dit', 0), RelativePath::fromString('p.php'), 1);
+        $repository->add($parentPath, (new MetricBag())->with('complexity.wmc', 10)->with('design.dit', 0), RelativePath::fromString('p.php'), 1);
 
         $childPath = SymbolPath::forClass('App', 'Child');
-        $repository->add($childPath, (new MetricBag())->with('wmc', 5)->with('dit', 1), RelativePath::fromString('c.php'), 1);
+        $repository->add($childPath, (new MetricBag())->with('complexity.wmc', 5)->with('design.dit', 1), RelativePath::fromString('c.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
         // WMC should be preserved, DIT updated
-        self::assertSame(10, $repository->get($parentPath)->get('wmc'));
-        self::assertSame(0, $repository->get($parentPath)->get('dit'));
-        self::assertSame(5, $repository->get($childPath)->get('wmc'));
-        self::assertSame(1, $repository->get($childPath)->get('dit'));
+        self::assertSame(10, $repository->get($parentPath)->get('complexity.wmc'));
+        self::assertSame(0, $repository->get($parentPath)->get('design.dit'));
+        self::assertSame(5, $repository->get($childPath)->get('complexity.wmc'));
+        self::assertSame(1, $repository->get($childPath)->get('design.dit'));
     }
 
     #[Test]
@@ -216,9 +216,9 @@ final class DitGlobalCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        self::assertSame(0, $repository->get($componentPath)->get('dit'));
-        self::assertSame(1, $repository->get($abstractPath)->get('dit'));
-        self::assertSame(2, $repository->get($handlerPath)->get('dit'));
+        self::assertSame(0, $repository->get($componentPath)->get('design.dit'));
+        self::assertSame(1, $repository->get($abstractPath)->get('design.dit'));
+        self::assertSame(2, $repository->get($handlerPath)->get('design.dit'));
     }
 
     /** @param list<Dependency> $dependencies */

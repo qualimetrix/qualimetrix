@@ -200,8 +200,8 @@ final class TextFormatterTest extends TestCase
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-                ruleName: 'lcom',
-                code: 'lcom',
+                ruleName: 'cohesion.lcom',
+                code: 'cohesion.lcom',
                 message: 'LCOM is 5',
                 severity: Severity::Warning,
             ))
@@ -212,7 +212,7 @@ final class TextFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, $this->plainContext);
 
-        self::assertStringContainsString('warning[lcom]: LCOM is 5 (UserService)', $output);
+        self::assertStringContainsString('warning[cohesion.lcom]: LCOM is 5 (UserService)', $output);
     }
 
     #[Test]

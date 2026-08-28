@@ -67,7 +67,7 @@ final class CallableToClassAggregator implements AggregationPhaseInterface
                 $classBag = $classBag->with(MetricName::STRUCTURE_WMC, $ccnSum);
             }
 
-            $classBag = $classBag->with(AggregationMeta::SYMBOL_METHOD_COUNT, \count($callableInfos));
+            $classBag = $classBag->with(MetricName::SIZE_SYMBOL_METHOD_COUNT, \count($callableInfos));
 
             $repository->addSubject(
                 MetricSubject::logicalClass($logicalOwner),

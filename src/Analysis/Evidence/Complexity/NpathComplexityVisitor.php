@@ -127,7 +127,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Declar
         $result = [];
 
         foreach ($this->scopes as $fqn => $scope) {
-            $metrics = (new MetricBag())->with('npath', $this->npath[$fqn] ?? 1);
+            $metrics = (new MetricBag())->with('complexity.npath', $this->npath[$fqn] ?? 1);
 
             foreach ($this->factors[$fqn] ?? [] as $factor) {
                 $metrics = $metrics->withEntry('npath-complexity.factors', [

@@ -186,8 +186,10 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\FormulaMetricReference'
     - name: analysis-evidence-computedmetrics-health
       patterns:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder'
@@ -313,7 +315,6 @@ architecture:
     - name: analysis-evidence-measurement
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper'
-        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationMeta'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationPhaseInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\CallableToClassAggregator'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\ClassToNamespaceAggregator'

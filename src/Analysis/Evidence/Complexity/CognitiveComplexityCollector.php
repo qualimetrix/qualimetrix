@@ -24,7 +24,7 @@ use SplFileInfo;
  * considering nesting depth and control flow structures.
  *
  * Metric format: cognitive:{FQN}
- * Example: cognitive:App\Service\UserService::calculate
+ * Example: complexity.cognitive:App\Service\UserService::calculate
  *
  * @see https://www.sonarsource.com/docs/CognitiveComplexity.pdf
  */

@@ -35,13 +35,13 @@ final class DistanceCollectorTest extends TestCase
     #[Test]
     public function requires_returnsRequiredMetrics(): void
     {
-        self::assertSame(['instability', 'abstractness'], $this->collector->requires());
+        self::assertSame(['coupling.instability', 'coupling.abstractness'], $this->collector->requires());
     }
 
     #[Test]
     public function provides_returnsDistance(): void
     {
-        self::assertSame(['distance'], $this->collector->provides());
+        self::assertSame(['coupling.distance'], $this->collector->provides());
     }
 
     #[Test]
@@ -52,7 +52,7 @@ final class DistanceCollectorTest extends TestCase
         self::assertCount(1, $definitions);
 
         $distance = $definitions[0];
-        self::assertSame('distance', $distance->name);
+        self::assertSame('coupling.distance', $distance->name);
         self::assertSame(SymbolLevel::Namespace_, $distance->collectedAt);
         self::assertNotEmpty($distance->aggregations);
         self::assertSame([AggregationStrategy::Average], $distance->getStrategiesForLevel(SymbolLevel::Project));
@@ -68,8 +68,8 @@ final class DistanceCollectorTest extends TestCase
         $nsPath = SymbolPath::forNamespace('App\\Balanced');
 
         $metrics = (new MetricBag())
-            ->with('abstractness', 0.5)
-            ->with('instability', 0.5);
+            ->with('coupling.abstractness', 0.5)
+            ->with('coupling.instability', 0.5);
 
         $repository->add($nsPath, $metrics, null, 0);
 
@@ -78,7 +78,7 @@ final class DistanceCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(0.0, $result->get('distance'), 0.001);
+        self::assertEqualsWithDelta(0.0, $result->get('coupling.distance'), 0.001);
     }
 
     #[Test]
@@ -89,8 +89,8 @@ final class DistanceCollectorTest extends TestCase
         $nsPath = SymbolPath::forNamespace('App\\ZoneOfPain');
 
         $metrics = (new MetricBag())
-            ->with('abstractness', 0.0)
-            ->with('instability', 0.0);
+            ->with('coupling.abstractness', 0.0)
+            ->with('coupling.instability', 0.0);
 
         $repository->add($nsPath, $metrics, null, 0);
 
@@ -99,7 +99,7 @@ final class DistanceCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(1.0, $result->get('distance'), 0.001);
+        self::assertEqualsWithDelta(1.0, $result->get('coupling.distance'), 0.001);
     }
 
     #[Test]
@@ -110,8 +110,8 @@ final class DistanceCollectorTest extends TestCase
         $nsPath = SymbolPath::forNamespace('App\\ZoneOfUselessness');
 
         $metrics = (new MetricBag())
-            ->with('abstractness', 1.0)
-            ->with('instability', 1.0);
+            ->with('coupling.abstractness', 1.0)
+            ->with('coupling.instability', 1.0);
 
         $repository->add($nsPath, $metrics, null, 0);
 
@@ -120,7 +120,7 @@ final class DistanceCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(1.0, $result->get('distance'), 0.001);
+        self::assertEqualsWithDelta(1.0, $result->get('coupling.distance'), 0.001);
     }
 
     #[Test]
@@ -131,8 +131,8 @@ final class DistanceCollectorTest extends TestCase
         $nsPath = SymbolPath::forNamespace('App\\Service');
 
         $metrics = (new MetricBag())
-            ->with('abstractness', 0.3)
-            ->with('instability', 0.4);
+            ->with('coupling.abstractness', 0.3)
+            ->with('coupling.instability', 0.4);
 
         $repository->add($nsPath, $metrics, null, 0);
 
@@ -141,7 +141,7 @@ final class DistanceCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(0.3, $result->get('distance'), 0.001);
+        self::assertEqualsWithDelta(0.3, $result->get('coupling.distance'), 0.001);
     }
 
     #[Test]
@@ -159,7 +159,7 @@ final class DistanceCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(1.0, $result->get('distance'), 0.001);
+        self::assertEqualsWithDelta(1.0, $result->get('coupling.distance'), 0.001);
     }
 
     private function createEmptyGraph(): DependencyGraphInterface

@@ -39,9 +39,9 @@ final class RfcCollectorTest extends TestCase
     {
         $provides = $this->collector->provides();
 
-        self::assertContains('rfc', $provides);
-        self::assertContains('rfc_own', $provides);
-        self::assertContains('rfc_external', $provides);
+        self::assertContains('coupling.rfc', $provides);
+        self::assertContains('coupling.rfc-own', $provides);
+        self::assertContains('coupling.rfc-external', $provides);
         self::assertCount(3, $provides);
     }
 
@@ -54,7 +54,7 @@ final class RfcCollectorTest extends TestCase
 
         // Check rfc metric definition
         $rfcDef = $definitions[0];
-        self::assertSame('rfc', $rfcDef->name);
+        self::assertSame('coupling.rfc', $rfcDef->name);
         self::assertSame(SymbolLevel::Class_, $rfcDef->collectedAt);
 
         $namespaceStrategies = $rfcDef->getStrategiesForLevel(SymbolLevel::Namespace_);
@@ -71,12 +71,12 @@ final class RfcCollectorTest extends TestCase
 
         // Check rfc_own metric definition
         $rfcOwnDef = $definitions[1];
-        self::assertSame('rfc_own', $rfcOwnDef->name);
+        self::assertSame('coupling.rfc-own', $rfcOwnDef->name);
         self::assertSame(SymbolLevel::Class_, $rfcOwnDef->collectedAt);
 
         // Check rfc_external metric definition
         $rfcExternalDef = $definitions[2];
-        self::assertSame('rfc_external', $rfcExternalDef->name);
+        self::assertSame('coupling.rfc-external', $rfcExternalDef->name);
         self::assertSame(SymbolLevel::Class_, $rfcExternalDef->collectedAt);
     }
 
@@ -94,9 +94,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('rfc:App\EmptyClass'));
-        self::assertSame(0, $metrics->get('rfc_own:App\EmptyClass'));
-        self::assertSame(0, $metrics->get('rfc_external:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('coupling.rfc:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('coupling.rfc-own:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('coupling.rfc-external:App\EmptyClass'));
     }
 
     #[Test]
@@ -120,9 +120,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('rfc:Calculator'));
-        self::assertSame(2, $metrics->get('rfc_own:Calculator'));
-        self::assertSame(0, $metrics->get('rfc_external:Calculator'));
+        self::assertSame(2, $metrics->get('coupling.rfc:Calculator'));
+        self::assertSame(2, $metrics->get('coupling.rfc-own:Calculator'));
+        self::assertSame(0, $metrics->get('coupling.rfc-external:Calculator'));
     }
 
     #[Test]
@@ -149,9 +149,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(5, $metrics->get('rfc:App\OrderService')); // 2 own + 3 external
-        self::assertSame(2, $metrics->get('rfc_own:App\OrderService'));
-        self::assertSame(3, $metrics->get('rfc_external:App\OrderService'));
+        self::assertSame(5, $metrics->get('coupling.rfc:App\OrderService')); // 2 own + 3 external
+        self::assertSame(2, $metrics->get('coupling.rfc-own:App\OrderService'));
+        self::assertSame(3, $metrics->get('coupling.rfc-external:App\OrderService'));
     }
 
     #[Test]
@@ -175,9 +175,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('rfc:Logger')); // 2 own + 1 external (write counted once)
-        self::assertSame(2, $metrics->get('rfc_own:Logger'));
-        self::assertSame(1, $metrics->get('rfc_external:Logger'));
+        self::assertSame(3, $metrics->get('coupling.rfc:Logger')); // 2 own + 1 external (write counted once)
+        self::assertSame(2, $metrics->get('coupling.rfc-own:Logger'));
+        self::assertSame(1, $metrics->get('coupling.rfc-external:Logger'));
     }
 
     #[Test]
@@ -201,9 +201,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('rfc:InternalCalls')); // 2 own + 0 external
-        self::assertSame(2, $metrics->get('rfc_own:InternalCalls'));
-        self::assertSame(0, $metrics->get('rfc_external:InternalCalls'));
+        self::assertSame(2, $metrics->get('coupling.rfc:InternalCalls')); // 2 own + 0 external
+        self::assertSame(2, $metrics->get('coupling.rfc-own:InternalCalls'));
+        self::assertSame(0, $metrics->get('coupling.rfc-external:InternalCalls'));
     }
 
     #[Test]
@@ -223,9 +223,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('rfc:StaticCalls')); // 1 own + 2 external
-        self::assertSame(1, $metrics->get('rfc_own:StaticCalls'));
-        self::assertSame(2, $metrics->get('rfc_external:StaticCalls'));
+        self::assertSame(3, $metrics->get('coupling.rfc:StaticCalls')); // 1 own + 2 external
+        self::assertSame(1, $metrics->get('coupling.rfc-own:StaticCalls'));
+        self::assertSame(2, $metrics->get('coupling.rfc-external:StaticCalls'));
     }
 
     #[Test]
@@ -246,9 +246,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('rfc:GlobalFunctions')); // 1 own + 2 external
-        self::assertSame(1, $metrics->get('rfc_own:GlobalFunctions'));
-        self::assertSame(2, $metrics->get('rfc_external:GlobalFunctions'));
+        self::assertSame(3, $metrics->get('coupling.rfc:GlobalFunctions')); // 1 own + 2 external
+        self::assertSame(1, $metrics->get('coupling.rfc-own:GlobalFunctions'));
+        self::assertSame(2, $metrics->get('coupling.rfc-external:GlobalFunctions'));
     }
 
     #[Test]
@@ -268,9 +268,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('rfc:Factory')); // 1 own + 2 external
-        self::assertSame(1, $metrics->get('rfc_own:Factory'));
-        self::assertSame(2, $metrics->get('rfc_external:Factory'));
+        self::assertSame(3, $metrics->get('coupling.rfc:Factory')); // 1 own + 2 external
+        self::assertSame(1, $metrics->get('coupling.rfc-own:Factory'));
+        self::assertSame(2, $metrics->get('coupling.rfc-external:Factory'));
     }
 
     #[Test]
@@ -305,14 +305,14 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // First class: 1 own + 1 external = 2
-        self::assertSame(2, $metrics->get('rfc:App\First'));
-        self::assertSame(1, $metrics->get('rfc_own:App\First'));
-        self::assertSame(1, $metrics->get('rfc_external:App\First'));
+        self::assertSame(2, $metrics->get('coupling.rfc:App\First'));
+        self::assertSame(1, $metrics->get('coupling.rfc-own:App\First'));
+        self::assertSame(1, $metrics->get('coupling.rfc-external:App\First'));
 
         // Second class: 2 own + 2 external = 4
-        self::assertSame(4, $metrics->get('rfc:App\Second'));
-        self::assertSame(2, $metrics->get('rfc_own:App\Second'));
-        self::assertSame(2, $metrics->get('rfc_external:App\Second'));
+        self::assertSame(4, $metrics->get('coupling.rfc:App\Second'));
+        self::assertSame(2, $metrics->get('coupling.rfc-own:App\Second'));
+        self::assertSame(2, $metrics->get('coupling.rfc-external:App\Second'));
     }
 
     #[Test]
@@ -349,9 +349,9 @@ PHP;
         self::assertSame('UserService', $classMetrics->declarationPath->logical->type);
 
         $bag = $classMetrics->metrics;
-        self::assertSame(3, $bag->get('rfc')); // 1 own + 2 external
-        self::assertSame(1, $bag->get('rfc_own'));
-        self::assertSame(2, $bag->get('rfc_external'));
+        self::assertSame(3, $bag->get('coupling.rfc')); // 1 own + 2 external
+        self::assertSame(1, $bag->get('coupling.rfc-own'));
+        self::assertSame(2, $bag->get('coupling.rfc-external'));
     }
 
     #[Test]
@@ -369,7 +369,7 @@ class First
 PHP;
 
         $metrics1 = $this->collectMetrics($code1);
-        self::assertSame(2, $metrics1->get('rfc:First'));
+        self::assertSame(2, $metrics1->get('coupling.rfc:First'));
 
         // Reset
         $this->collector->reset();
@@ -385,8 +385,8 @@ PHP;
         $metrics2 = $this->collectMetrics($code2);
 
         // First class should not be in the results
-        self::assertNull($metrics2->get('rfc:First'));
-        self::assertSame(1, $metrics2->get('rfc:Second'));
+        self::assertNull($metrics2->get('coupling.rfc:First'));
+        self::assertSame(1, $metrics2->get('coupling.rfc:Second'));
     }
 
     #[Test]
@@ -407,9 +407,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('rfc:AbstractClass')); // 1 concrete + 1 external
-        self::assertSame(1, $metrics->get('rfc_own:AbstractClass'));
-        self::assertSame(1, $metrics->get('rfc_external:AbstractClass'));
+        self::assertSame(2, $metrics->get('coupling.rfc:AbstractClass')); // 1 concrete + 1 external
+        self::assertSame(1, $metrics->get('coupling.rfc-own:AbstractClass'));
+        self::assertSame(1, $metrics->get('coupling.rfc-external:AbstractClass'));
     }
 
     #[Test]
@@ -438,9 +438,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(11, $metrics->get('rfc:App\Service\OrderProcessor')); // 1 own + 10 external
-        self::assertSame(1, $metrics->get('rfc_own:App\Service\OrderProcessor'));
-        self::assertSame(10, $metrics->get('rfc_external:App\Service\OrderProcessor'));
+        self::assertSame(11, $metrics->get('coupling.rfc:App\Service\OrderProcessor')); // 1 own + 10 external
+        self::assertSame(1, $metrics->get('coupling.rfc-own:App\Service\OrderProcessor'));
+        self::assertSame(10, $metrics->get('coupling.rfc-external:App\Service\OrderProcessor'));
     }
 
     #[Test]

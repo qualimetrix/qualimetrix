@@ -130,7 +130,7 @@ final class JsonFormatter implements FormatterInterface
                 'severity' => $finding->severity->value,
                 'message' => $finding->getDisplayMessage(),
                 'impactScore' => round($issue->impactScore, 2),
-                'classRank' => $issue->classRank !== null ? round($issue->classRank, 4) : null,
+                'coupling.class-rank' => $issue->classRank !== null ? round($issue->classRank, 4) : null,
                 'debtMinutes' => $issue->debtMinutes,
             ];
         }

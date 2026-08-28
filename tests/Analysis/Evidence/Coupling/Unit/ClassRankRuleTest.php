@@ -47,7 +47,7 @@ final class ClassRankRuleTest extends TestCase
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
-        self::assertSame(['classRank'], $rule->requires());
+        self::assertSame(['coupling.class-rank'], $rule->requires());
     }
 
     #[Test]
@@ -125,7 +125,7 @@ final class ClassRankRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn($this->createDummyClasses(100));
         $repository->method('allDeclarations')->willReturn([$targetInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('classRank', 0.03));
+        $repository->method('get')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03));
 
         self::assertCount(1, $rule->analyze(new AnalysisContext($repository)));
 
@@ -149,7 +149,7 @@ final class ClassRankRuleTest extends TestCase
 
         $classes = $this->createDummyClasses(100);
 
-        $metricBag = (new MetricBag())->with('classRank', 0.01);
+        $metricBag = (new MetricBag())->with('coupling.class-rank', 0.01);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -175,8 +175,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/ImportantClass.php'), 10);
 
         // 0.03 is above warning (0.02) but below error (0.05)
-        $targetBag = (new MetricBag())->with('classRank', 0.03);
-        $normalBag = (new MetricBag())->with('classRank', 0.005);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.005);
 
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
@@ -211,8 +211,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/CriticalHub.php'), 10);
 
         // 0.08 is above error threshold (0.05)
-        $targetBag = (new MetricBag())->with('classRank', 0.08);
-        $normalBag = (new MetricBag())->with('classRank', 0.005);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.08);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.005);
 
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
@@ -248,8 +248,8 @@ final class ClassRankRuleTest extends TestCase
         $targetPath = SymbolPath::forClass('App', 'TestClass');
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('test.php'), 1);
 
-        $targetBag = (new MetricBag())->with('classRank', $classRank);
-        $normalBag = (new MetricBag())->with('classRank', 0.001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', $classRank);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
 
         // Use 100 classes so scale factor = 1.0
         $classes = $this->createDummyClasses(99);
@@ -330,8 +330,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/Hub.php'), 10);
 
         // 0.015 would be below unscaled warning (0.02), but above scaled warning (0.01)
-        $targetBag = (new MetricBag())->with('classRank', 0.015);
-        $normalBag = (new MetricBag())->with('classRank', 0.001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.015);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
 
         $classes = $this->createDummyClasses(399);
         $classes[] = $targetInfo;
@@ -367,8 +367,8 @@ final class ClassRankRuleTest extends TestCase
 
         // 0.03 would normally be a warning with default thresholds,
         // but with 25 classes, scaled warning = 0.04, so no finding
-        $targetBag = (new MetricBag())->with('classRank', 0.03);
-        $normalBag = (new MetricBag())->with('classRank', 0.001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
 
         $classes = $this->createDummyClasses(24);
         $classes[] = $targetInfo;
@@ -402,8 +402,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/MegaHub.php'), 10);
 
         // 0.02 would normally just be a warning, but with 1600 classes it's an error
-        $targetBag = (new MetricBag())->with('classRank', 0.02);
-        $normalBag = (new MetricBag())->with('classRank', 0.0001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.02);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.0001);
 
         $classes = $this->createDummyClasses(1599);
         $classes[] = $targetInfo;
@@ -435,8 +435,8 @@ final class ClassRankRuleTest extends TestCase
         $targetPath = SymbolPath::forClass('App', 'Hub');
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/Hub.php'), 10);
 
-        $targetBag = (new MetricBag())->with('classRank', 0.03);
-        $normalBag = (new MetricBag())->with('classRank', 0.001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
 
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
@@ -548,7 +548,7 @@ final class ClassRankRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn($this->createDummyClasses(100));
         $repository->method('allDeclarations')->willReturn([$first, $second]);
-        $repository->method('get')->willReturn((new MetricBag())->with('classRank', 0.03));
+        $repository->method('get')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03));
 
         $findings = (new ClassRankRule(new ClassRankOptions()))
             ->analyze(new AnalysisContext($repository));

@@ -203,7 +203,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
      * find, the filter being case-sensitive), a doubled separator
      * (`complexity..foo`), a segment with a space in it, and a first segment
      * that is a typo of an existing family. Not widened here on purpose: the
-     * corpus already registers `computed.branch_load`, a legal name today
+     * corpus already registers `computed.branch-load`, a legal name today
      * that a strict pattern would refuse. The producer-name grammar is the
      * next substep's subject.
      *

@@ -36,7 +36,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         // Namespace App\Service: 2 classes, total 12 methods
         $repository->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
-            (new MetricBag())->with('mi.avg', 80.0)->with('mi.count', 10)->with('mi.min', 70.0),
+            (new MetricBag())->with('maintainability.mi.avg', 80.0)->with('maintainability.mi.count', 10)->with('maintainability.mi.min', 70.0),
             RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
@@ -44,7 +44,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
 
         $repository->add(
             SymbolPath::forClass('App\\Service', 'OrderService'),
-            (new MetricBag())->with('mi.avg', 60.0)->with('mi.count', 2)->with('mi.min', 50.0),
+            (new MetricBag())->with('maintainability.mi.avg', 60.0)->with('maintainability.mi.count', 2)->with('maintainability.mi.min', 50.0),
             RelativePath::fromString('src/Service/OrderService.php'),
             10,
         );
@@ -53,7 +53,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         // Namespace App\Repository: 1 class, 8 methods
         $repository->add(
             SymbolPath::forClass('App\\Repository', 'UserRepository'),
-            (new MetricBag())->with('mi.avg', 90.0)->with('mi.count', 8)->with('mi.min', 85.0),
+            (new MetricBag())->with('maintainability.mi.avg', 90.0)->with('maintainability.mi.count', 8)->with('maintainability.mi.min', 85.0),
             RelativePath::fromString('src/Repository/UserRepository.php'),
             10,
         );
@@ -67,11 +67,11 @@ final class NamespaceToProjectAggregatorTest extends TestCase
 
         // Project-level weighted average reads class-level data directly:
         // (80*10 + 60*2 + 90*8) / (10+2+8) = (800+120+720) / 20 = 1640/20 = 82.0
-        self::assertEqualsWithDelta(82.0, $projectMetrics->get('mi.avg'), 0.01);
+        self::assertEqualsWithDelta(82.0, $projectMetrics->get('maintainability.mi.avg'), 0.01);
         // Total method count = 20
-        self::assertSame(20, $projectMetrics->get('mi.count'));
+        self::assertSame(20, $projectMetrics->get('maintainability.mi.count'));
         // Min is computed from raw callable-level values = min(80..., 60..., 90...) = 60.0
-        self::assertEqualsWithDelta(60.0, $projectMetrics->get('mi.min'), 0.01);
+        self::assertEqualsWithDelta(60.0, $projectMetrics->get('maintainability.mi.min'), 0.01);
     }
 
     #[Test]
@@ -96,13 +96,13 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         // Store namespace-collected metric (like distance) directly on namespace paths
         $repository->add(
             SymbolPath::forNamespace('App\\Service'),
-            (new MetricBag())->with('distance', 0.3),
+            (new MetricBag())->with('coupling.distance', 0.3),
             null,
             null,
         );
         $repository->add(
             SymbolPath::forNamespace('App\\Repository'),
-            (new MetricBag())->with('distance', 0.1),
+            (new MetricBag())->with('coupling.distance', 0.1),
             null,
             null,
         );
@@ -110,7 +110,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         // Define a namespace-collected metric with project-level Average aggregation
         $definitions = [
             new MetricDefinition(
-                name: 'distance',
+                name: 'coupling.distance',
                 collectedAt: SymbolLevel::Namespace_,
                 aggregations: [
                     SymbolLevel::Project->value => [AggregationStrategy::Average],
@@ -125,7 +125,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         $projectMetrics = $repository->get(SymbolPath::forProject());
 
         // distance.avg = (0.3 + 0.1) / 2 = 0.2
-        self::assertEqualsWithDelta(0.2, $projectMetrics->get('distance.avg'), 0.001);
+        self::assertEqualsWithDelta(0.2, $projectMetrics->get('coupling.distance.avg'), 0.001);
     }
 
     #[Test]
@@ -133,11 +133,11 @@ final class NamespaceToProjectAggregatorTest extends TestCase
     {
         $repository = new InMemoryMetricRepository();
         $file = RelativePath::fromString('src/Multi.php');
-        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['loc' => 20]), $file, 1);
-        $repository->add(SymbolPath::forNamespace('One'), MetricBag::fromArray(['loc' => 8, 'loc.count' => 1]), $file, 2);
-        $repository->add(SymbolPath::forNamespace('Two'), MetricBag::fromArray(['loc' => 9, 'loc.count' => 1]), $file, 10);
+        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['size.loc' => 20]), $file, 1);
+        $repository->add(SymbolPath::forNamespace('One'), MetricBag::fromArray(['size.loc' => 8, 'size.loc.count' => 1]), $file, 2);
+        $repository->add(SymbolPath::forNamespace('Two'), MetricBag::fromArray(['size.loc' => 9, 'size.loc.count' => 1]), $file, 10);
 
-        $definitions = [new MetricDefinition('loc', SymbolLevel::File, [
+        $definitions = [new MetricDefinition('size.loc', SymbolLevel::File, [
             SymbolLevel::Project->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
         ])];
 
@@ -148,8 +148,8 @@ final class NamespaceToProjectAggregatorTest extends TestCase
             ->aggregate($repository, $definitions);
 
         $project = $repository->get(SymbolPath::forProject());
-        self::assertSame(20, $project->get('loc.sum'));
-        self::assertSame(20, $project->get('loc.avg'));
+        self::assertSame(20, $project->get('size.loc.sum'));
+        self::assertSame(20, $project->get('size.loc.avg'));
     }
 
     private function addMethodsWithMi(
@@ -169,7 +169,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
                 null,
                 null,
                 new LogicalClassPath(SymbolPath::forClass($namespace, $class)),
-                (new MetricBag())->with('mi', $miValue),
+                (new MetricBag())->with('maintainability.mi', $miValue),
             ));
         }
     }

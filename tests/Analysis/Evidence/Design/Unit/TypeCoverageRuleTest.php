@@ -70,8 +70,8 @@ final class TypeCoverageRuleTest extends TestCase
             'class' => ParamTypeCoverageRule::class,
             'name' => 'design.param-type-coverage',
             'description' => 'Checks type coverage of parameters per class',
-            'total' => 'typeCoverage.paramTotal',
-            'coverage' => 'typeCoverage.param',
+            'total' => 'design.type-coverage.param.total',
+            'coverage' => 'design.type-coverage.param',
             'label' => 'Parameter',
             'hint' => 'Add type declarations to method parameters',
         ]];
@@ -79,8 +79,8 @@ final class TypeCoverageRuleTest extends TestCase
             'class' => ReturnTypeCoverageRule::class,
             'name' => 'design.return-type-coverage',
             'description' => 'Checks type coverage of return types per class',
-            'total' => 'typeCoverage.returnTotal',
-            'coverage' => 'typeCoverage.return',
+            'total' => 'design.type-coverage.return.total',
+            'coverage' => 'design.type-coverage.return',
             'label' => 'Return',
             'hint' => 'Add return type declarations to methods',
         ]];
@@ -88,8 +88,8 @@ final class TypeCoverageRuleTest extends TestCase
             'class' => PropertyTypeCoverageRule::class,
             'name' => 'design.property-type-coverage',
             'description' => 'Checks type coverage of properties per class',
-            'total' => 'typeCoverage.propertyTotal',
-            'coverage' => 'typeCoverage.property',
+            'total' => 'design.type-coverage.property.total',
+            'coverage' => 'design.type-coverage.property',
             'label' => 'Property',
             'hint' => 'Add type declarations to properties',
         ]];

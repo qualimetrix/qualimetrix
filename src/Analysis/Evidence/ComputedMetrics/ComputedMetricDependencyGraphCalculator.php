@@ -166,21 +166,15 @@ final class ComputedMetricDependencyGraphCalculator
 
     /**
      * Extract computed metric dependencies from a formula.
-     * Variables matching health__* or computed__* are inter-metric references.
+     * Keys under health.* or computed.* are inter-metric references.
      *
      * @return list<string>
      */
     private function extractComputedMetricDeps(string $formula): array
     {
-        $deps = [];
-        if (preg_match_all('/\b(health__[a-zA-Z0-9_]+|computed__[a-zA-Z0-9_]+)\b/', $formula, $matches) !== 0) {
-            foreach ($matches[1] as $var) {
-                // Convert back: health__complexity → health.complexity
-                $name = str_replace('__', '.', $var);
-                $deps[] = $name;
-            }
-        }
-
-        return array_values(array_unique($deps));
+        return array_values(array_filter(
+            FormulaMetricReference::keysOf($formula),
+            static fn(string $key): bool => str_starts_with($key, 'health.') || str_starts_with($key, 'computed.'),
+        ));
     }
 }

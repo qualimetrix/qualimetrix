@@ -39,7 +39,7 @@ final class AbstractnessCollectorTest extends TestCase
     public function itRequiresTheImplementingEnumCountRatherThanTheTotalEnumCount(): void
     {
         self::assertSame(
-            ['classCount.sum', 'implementingEnumCount.sum', 'traitCount.sum', 'abstractClassCount.sum', 'interfaceCount.sum'],
+            ['size.class-count.sum', 'size.implementing-enum-count.sum', 'size.trait-count.sum', 'size.abstract-class-count.sum', 'size.interface-count.sum'],
             $this->collector->requires(),
         );
     }
@@ -47,7 +47,7 @@ final class AbstractnessCollectorTest extends TestCase
     #[Test]
     public function itProvidesAbstractness(): void
     {
-        self::assertSame(['abstractness'], $this->collector->provides());
+        self::assertSame(['coupling.abstractness'], $this->collector->provides());
     }
 
     #[Test]
@@ -56,19 +56,19 @@ final class AbstractnessCollectorTest extends TestCase
         // 10 classes + 3 traits + 3 interfaces = 16 total types; the 2 bare enums are neutral.
         // 2 abstract classes + 3 interfaces = 5 abstractions => 5 / 16 = 0.3125
         $repository = $this->repositoryWithNamespaceCounts('App\\Domain', [
-            'classCount.sum' => 10,
-            'enumCount.sum' => 2,
-            'implementingEnumCount.sum' => 0,
-            'traitCount.sum' => 3,
-            'abstractClassCount.sum' => 2,
-            'interfaceCount.sum' => 3,
+            'size.class-count.sum' => 10,
+            'size.enum-count.sum' => 2,
+            'size.implementing-enum-count.sum' => 0,
+            'size.trait-count.sum' => 3,
+            'size.abstract-class-count.sum' => 2,
+            'size.interface-count.sum' => 3,
         ]);
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
         self::assertEqualsWithDelta(
             0.3125,
-            $repository->get(SymbolPath::forNamespace('App\\Domain'))->get('abstractness'),
+            $repository->get(SymbolPath::forNamespace('App\\Domain'))->get('coupling.abstractness'),
             0.0001,
         );
     }
@@ -79,19 +79,19 @@ final class AbstractnessCollectorTest extends TestCase
         // 10 classes + 3 traits + 3 interfaces + 2 implementing enums = 18 total types
         // 5 abstractions => 5 / 18 = 0.278
         $repository = $this->repositoryWithNamespaceCounts('App\\Domain', [
-            'classCount.sum' => 10,
-            'enumCount.sum' => 2,
-            'implementingEnumCount.sum' => 2,
-            'traitCount.sum' => 3,
-            'abstractClassCount.sum' => 2,
-            'interfaceCount.sum' => 3,
+            'size.class-count.sum' => 10,
+            'size.enum-count.sum' => 2,
+            'size.implementing-enum-count.sum' => 2,
+            'size.trait-count.sum' => 3,
+            'size.abstract-class-count.sum' => 2,
+            'size.interface-count.sum' => 3,
         ]);
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
         self::assertEqualsWithDelta(
             0.278,
-            $repository->get(SymbolPath::forNamespace('App\\Domain'))->get('abstractness'),
+            $repository->get(SymbolPath::forNamespace('App\\Domain'))->get('coupling.abstractness'),
             0.001,
         );
     }
@@ -102,17 +102,17 @@ final class AbstractnessCollectorTest extends TestCase
         // One interface plus four enums implementing it: the implementations sit right there,
         // so the namespace must not read as fully abstract. A = 1 / 5 = 0.2
         $repository = $this->repositoryWithNamespaceCounts('App\\Status', [
-            'classCount.sum' => 0,
-            'enumCount.sum' => 4,
-            'implementingEnumCount.sum' => 4,
-            'traitCount.sum' => 0,
-            'abstractClassCount.sum' => 0,
-            'interfaceCount.sum' => 1,
+            'size.class-count.sum' => 0,
+            'size.enum-count.sum' => 4,
+            'size.implementing-enum-count.sum' => 4,
+            'size.trait-count.sum' => 0,
+            'size.abstract-class-count.sum' => 0,
+            'size.interface-count.sum' => 1,
         ]);
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        $abstractness = $repository->get(SymbolPath::forNamespace('App\\Status'))->get('abstractness');
+        $abstractness = $repository->get(SymbolPath::forNamespace('App\\Status'))->get('coupling.abstractness');
 
         self::assertLessThan(1.0, $abstractness);
         self::assertEqualsWithDelta(0.2, $abstractness, 0.001);
@@ -123,17 +123,17 @@ final class AbstractnessCollectorTest extends TestCase
     {
         // Bare enums leave totalTypes at 0, which keeps the pre-existing no-type behaviour.
         $repository = $this->repositoryWithNamespaceCounts('App\\Enums', [
-            'classCount.sum' => 0,
-            'enumCount.sum' => 5,
-            'implementingEnumCount.sum' => 0,
-            'traitCount.sum' => 0,
-            'abstractClassCount.sum' => 0,
-            'interfaceCount.sum' => 0,
+            'size.class-count.sum' => 0,
+            'size.enum-count.sum' => 5,
+            'size.implementing-enum-count.sum' => 0,
+            'size.trait-count.sum' => 0,
+            'size.abstract-class-count.sum' => 0,
+            'size.interface-count.sum' => 0,
         ]);
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        self::assertSame(0.0, $repository->get(SymbolPath::forNamespace('App\\Enums'))->get('abstractness'));
+        self::assertSame(0.0, $repository->get(SymbolPath::forNamespace('App\\Enums'))->get('coupling.abstractness'));
     }
 
     #[Test]
@@ -146,12 +146,12 @@ final class AbstractnessCollectorTest extends TestCase
         $repository->add(
             SymbolPath::forFile($file),
             MetricBag::fromArray([
-                'classCount' => 6,
-                'abstractClassCount' => 1,
-                'interfaceCount' => 0,
-                'traitCount' => 0,
-                'enumCount' => 0,
-                'implementingEnumCount' => 0,
+                'size.class-count' => 6,
+                'size.abstract-class-count' => 1,
+                'size.interface-count' => 0,
+                'size.trait-count' => 0,
+                'size.enum-count' => 0,
+                'size.implementing-enum-count' => 0,
             ]),
             $file,
             1,
@@ -160,18 +160,18 @@ final class AbstractnessCollectorTest extends TestCase
         $repository->add(
             SymbolPath::forNamespace($namespace),
             MetricBag::fromArray([
-                'classCount' => 6,
-                'classCount.count' => 6,
-                'abstractClassCount' => 1,
-                'abstractClassCount.count' => 6,
-                'interfaceCount' => 0,
-                'interfaceCount.count' => 6,
-                'traitCount' => 0,
-                'traitCount.count' => 6,
-                'enumCount' => 0,
-                'enumCount.count' => 6,
-                'implementingEnumCount' => 0,
-                'implementingEnumCount.count' => 6,
+                'size.class-count' => 6,
+                'size.class-count.count' => 6,
+                'size.abstract-class-count' => 1,
+                'size.abstract-class-count.count' => 6,
+                'size.interface-count' => 0,
+                'size.interface-count.count' => 6,
+                'size.trait-count' => 0,
+                'size.trait-count.count' => 6,
+                'size.enum-count' => 0,
+                'size.enum-count.count' => 6,
+                'size.implementing-enum-count' => 0,
+                'size.implementing-enum-count.count' => 6,
             ]),
             $file,
             1,
@@ -182,27 +182,27 @@ final class AbstractnessCollectorTest extends TestCase
         ]), self::createStub(ProfilerInterface::class)))->aggregate($repository);
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        self::assertSame(6, $repository->get(SymbolPath::forNamespace($namespace))->get('classCount.sum'));
-        self::assertSame(1, $repository->get(SymbolPath::forNamespace($namespace))->get('abstractClassCount.sum'));
-        self::assertEqualsWithDelta(1 / 6, $repository->get(SymbolPath::forNamespace($namespace))->get('abstractness'), 0.000001);
+        self::assertSame(6, $repository->get(SymbolPath::forNamespace($namespace))->get('size.class-count.sum'));
+        self::assertSame(1, $repository->get(SymbolPath::forNamespace($namespace))->get('size.abstract-class-count.sum'));
+        self::assertEqualsWithDelta(1 / 6, $repository->get(SymbolPath::forNamespace($namespace))->get('coupling.abstractness'), 0.000001);
     }
 
     #[Test]
     public function itReturnsZeroForAFullyConcreteNamespace(): void
     {
         $repository = $this->repositoryWithNamespaceCounts('App\\Concrete', [
-            'classCount.sum' => 5,
-            'implementingEnumCount.sum' => 2,
-            'traitCount.sum' => 1,
-            'abstractClassCount.sum' => 0,
-            'interfaceCount.sum' => 0,
+            'size.class-count.sum' => 5,
+            'size.implementing-enum-count.sum' => 2,
+            'size.trait-count.sum' => 1,
+            'size.abstract-class-count.sum' => 0,
+            'size.interface-count.sum' => 0,
         ]);
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
         self::assertEqualsWithDelta(
             0.0,
-            $repository->get(SymbolPath::forNamespace('App\\Concrete'))->get('abstractness'),
+            $repository->get(SymbolPath::forNamespace('App\\Concrete'))->get('coupling.abstractness'),
             0.001,
         );
     }
@@ -212,18 +212,18 @@ final class AbstractnessCollectorTest extends TestCase
     {
         // classCount includes abstract classes: totalTypes = 2 + 3 = 5, abstractions = 2 + 3 = 5
         $repository = $this->repositoryWithNamespaceCounts('App\\Contracts', [
-            'classCount.sum' => 2,
-            'implementingEnumCount.sum' => 0,
-            'traitCount.sum' => 0,
-            'abstractClassCount.sum' => 2,
-            'interfaceCount.sum' => 3,
+            'size.class-count.sum' => 2,
+            'size.implementing-enum-count.sum' => 0,
+            'size.trait-count.sum' => 0,
+            'size.abstract-class-count.sum' => 2,
+            'size.interface-count.sum' => 3,
         ]);
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
         self::assertEqualsWithDelta(
             1.0,
-            $repository->get(SymbolPath::forNamespace('App\\Contracts'))->get('abstractness'),
+            $repository->get(SymbolPath::forNamespace('App\\Contracts'))->get('coupling.abstractness'),
             0.001,
         );
     }
@@ -232,18 +232,18 @@ final class AbstractnessCollectorTest extends TestCase
     public function itReturnsZeroForANamespaceWithoutAnyType(): void
     {
         $repository = $this->repositoryWithNamespaceCounts('App\\Empty', [
-            'classCount.sum' => 0,
-            'implementingEnumCount.sum' => 0,
-            'traitCount.sum' => 0,
-            'abstractClassCount.sum' => 0,
-            'interfaceCount.sum' => 0,
+            'size.class-count.sum' => 0,
+            'size.implementing-enum-count.sum' => 0,
+            'size.trait-count.sum' => 0,
+            'size.abstract-class-count.sum' => 0,
+            'size.interface-count.sum' => 0,
         ]);
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
         self::assertEqualsWithDelta(
             0.0,
-            $repository->get(SymbolPath::forNamespace('App\\Empty'))->get('abstractness'),
+            $repository->get(SymbolPath::forNamespace('App\\Empty'))->get('coupling.abstractness'),
             0.001,
         );
     }
@@ -253,16 +253,16 @@ final class AbstractnessCollectorTest extends TestCase
     {
         // 2 interfaces + 6 implementing enums => 2 / 8 = 0.25
         $repository = $this->repositoryWithNamespaceCounts('App\\Mixed', [
-            'classCount.sum' => 0,
-            'implementingEnumCount.sum' => 6,
-            'traitCount.sum' => 0,
-            'abstractClassCount.sum' => 0,
-            'interfaceCount.sum' => 2,
+            'size.class-count.sum' => 0,
+            'size.implementing-enum-count.sum' => 6,
+            'size.trait-count.sum' => 0,
+            'size.abstract-class-count.sum' => 0,
+            'size.interface-count.sum' => 2,
         ]);
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        $abstractness = $repository->get(SymbolPath::forNamespace('App\\Mixed'))->get('abstractness');
+        $abstractness = $repository->get(SymbolPath::forNamespace('App\\Mixed'))->get('coupling.abstractness');
 
         self::assertGreaterThanOrEqual(0.0, $abstractness);
         self::assertLessThanOrEqual(1.0, $abstractness);
@@ -273,18 +273,18 @@ final class AbstractnessCollectorTest extends TestCase
     public function itReturnsOneForAnInterfaceOnlyNamespace(): void
     {
         $repository = $this->repositoryWithNamespaceCounts('App\\Contracts\\Only', [
-            'classCount.sum' => 0,
-            'implementingEnumCount.sum' => 0,
-            'traitCount.sum' => 0,
-            'abstractClassCount.sum' => 0,
-            'interfaceCount.sum' => 3,
+            'size.class-count.sum' => 0,
+            'size.implementing-enum-count.sum' => 0,
+            'size.trait-count.sum' => 0,
+            'size.abstract-class-count.sum' => 0,
+            'size.interface-count.sum' => 3,
         ]);
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
         self::assertEqualsWithDelta(
             1.0,
-            $repository->get(SymbolPath::forNamespace('App\\Contracts\\Only'))->get('abstractness'),
+            $repository->get(SymbolPath::forNamespace('App\\Contracts\\Only'))->get('coupling.abstractness'),
             0.001,
         );
     }
@@ -293,18 +293,18 @@ final class AbstractnessCollectorTest extends TestCase
     public function itCountsInterfacesInBothNumeratorAndDenominator(): void
     {
         $repository = $this->repositoryWithNamespaceCounts('App\\Service', [
-            'classCount.sum' => 2,
-            'implementingEnumCount.sum' => 0,
-            'traitCount.sum' => 0,
-            'abstractClassCount.sum' => 0,
-            'interfaceCount.sum' => 1,
+            'size.class-count.sum' => 2,
+            'size.implementing-enum-count.sum' => 0,
+            'size.trait-count.sum' => 0,
+            'size.abstract-class-count.sum' => 0,
+            'size.interface-count.sum' => 1,
         ]);
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
         self::assertEqualsWithDelta(
             0.333,
-            $repository->get(SymbolPath::forNamespace('App\\Service'))->get('abstractness'),
+            $repository->get(SymbolPath::forNamespace('App\\Service'))->get('coupling.abstractness'),
             0.001,
         );
     }

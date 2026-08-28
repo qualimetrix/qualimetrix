@@ -49,7 +49,7 @@ final class NocRuleTest extends TestCase
     {
         $rule = new NocRule(new NocOptions());
 
-        self::assertSame(['noc'], $rule->requires());
+        self::assertSame(['design.noc'], $rule->requires());
     }
 
     #[Test]
@@ -108,7 +108,7 @@ final class NocRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/LeafClass.php'), 10);
 
         // NOC of 0 means no children (should be skipped)
-        $metricBag = (new MetricBag())->with('noc', 0);
+        $metricBag = (new MetricBag())->with('design.noc', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -131,7 +131,7 @@ final class NocRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/BaseService.php'), 10);
 
         // NOC of 12 is above warning threshold (10) but below error (15)
-        $metricBag = (new MetricBag())->with('noc', 12);
+        $metricBag = (new MetricBag())->with('design.noc', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -160,7 +160,7 @@ final class NocRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/VeryPopularBase.php'), 10);
 
         // NOC of 20 is above error threshold (15)
-        $metricBag = (new MetricBag())->with('noc', 20);
+        $metricBag = (new MetricBag())->with('design.noc', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -185,7 +185,7 @@ final class NocRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/ReasonableBase.php'), 10);
 
         // NOC of 3 is normal (below warning threshold 7)
-        $metricBag = (new MetricBag())->with('noc', 3);
+        $metricBag = (new MetricBag())->with('design.noc', 3);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -207,7 +207,7 @@ final class NocRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
-        // No 'noc' metric
+        // No 'design.noc' metric
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -230,7 +230,7 @@ final class NocRuleTest extends TestCase
         self::assertNotNull($subject);
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('noc', 6));
+        $repository->method('get')->willReturn((new MetricBag())->with('design.noc', 6));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -299,7 +299,7 @@ final class NocRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('noc', $noc);
+        $metricBag = (new MetricBag())->with('design.noc', $noc);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -350,7 +350,7 @@ final class NocRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('noc', 12));
+        $repository->method('get')->willReturn((new MetricBag())->with('design.noc', 12));
 
         $findings = (new NocRule(new NocOptions()))
             ->analyze(new AnalysisContext($repository));

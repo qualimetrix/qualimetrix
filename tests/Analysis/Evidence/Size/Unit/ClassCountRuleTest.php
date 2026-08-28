@@ -44,7 +44,7 @@ final class ClassCountRuleTest extends TestCase
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
-        self::assertSame(['classCount'], $rule->requires());
+        self::assertSame(['size.class-count'], $rule->requires());
     }
 
     #[Test]
@@ -106,7 +106,7 @@ final class ClassCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
-        $metricBag = (new MetricBag())->with('classCount.sum', 5);
+        $metricBag = (new MetricBag())->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -128,7 +128,7 @@ final class ClassCountRuleTest extends TestCase
         $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // 18 classes is above warning (15) but below error (25)
-        $metricBag = (new MetricBag())->with('classCount.sum', 18);
+        $metricBag = (new MetricBag())->with('size.class-count.sum', 18);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -156,7 +156,7 @@ final class ClassCountRuleTest extends TestCase
         $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // 30 classes is above error threshold (25)
-        $metricBag = (new MetricBag())->with('classCount.sum', 30);
+        $metricBag = (new MetricBag())->with('size.class-count.sum', 30);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -185,7 +185,7 @@ final class ClassCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Test');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 0);
 
-        $metricBag = (new MetricBag())->with('classCount.sum', $classCount);
+        $metricBag = (new MetricBag())->with('size.class-count.sum', $classCount);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

@@ -61,8 +61,8 @@ final class DeclarationNumberCollisionTest extends TestCase
         $this->expectExceptionMessage('was collected at file positions 40 and 900');
 
         $this->process(self::callableCollector([
-            new CallableWithMetrics($path, 40, CallableKind::Method, null, null, null, MetricBag::fromArray(['ccn' => 1]), 3),
-            new CallableWithMetrics($path, 900, CallableKind::Method, null, null, null, MetricBag::fromArray(['ccn' => 2]), 3),
+            new CallableWithMetrics($path, 40, CallableKind::Method, null, null, null, MetricBag::fromArray(['complexity.ccn' => 1]), 3),
+            new CallableWithMetrics($path, 900, CallableKind::Method, null, null, null, MetricBag::fromArray(['complexity.ccn' => 2]), 3),
         ]));
     }
 
@@ -79,8 +79,8 @@ final class DeclarationNumberCollisionTest extends TestCase
         $this->expectExceptionMessage('was collected at file positions 40 and 900');
 
         $this->process(self::classCollector([
-            new ClassWithMetrics($path, 40, 3, MetricBag::fromArray(['wmc' => 1])),
-            new ClassWithMetrics($path, 900, 3, MetricBag::fromArray(['wmc' => 2])),
+            new ClassWithMetrics($path, 40, 3, MetricBag::fromArray(['complexity.wmc' => 1])),
+            new ClassWithMetrics($path, 900, 3, MetricBag::fromArray(['complexity.wmc' => 2])),
         ]));
     }
 
@@ -111,7 +111,7 @@ final class DeclarationNumberCollisionTest extends TestCase
             /** @return list<string> */
             public function provides(): array
             {
-                return ['ccn'];
+                return ['complexity.ccn'];
             }
 
             /** @return list<\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition> */
@@ -156,7 +156,7 @@ final class DeclarationNumberCollisionTest extends TestCase
             /** @return list<string> */
             public function provides(): array
             {
-                return ['wmc'];
+                return ['complexity.wmc'];
             }
 
             /** @return list<\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition> */

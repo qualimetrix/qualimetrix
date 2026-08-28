@@ -53,7 +53,7 @@ final class ViolationDensityTest extends TestCase
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 30.0,
             'health.complexity' => 25.0,
-            'classLoc' => 200,
+            'size.class-loc' => 200,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -88,8 +88,8 @@ final class ViolationDensityTest extends TestCase
         $nsMetrics = MetricBag::fromArray([
             'health.overall' => 40.0,
             'health.complexity' => 35.0,
-            'classCount.sum' => 3,
-            'loc.sum' => 1000,
+            'size.class-count.sum' => 3,
+            'size.loc.sum' => 1000,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -123,7 +123,7 @@ final class ViolationDensityTest extends TestCase
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 80.0,
             'health.complexity' => 75.0,
-            'classLoc' => 500,
+            'size.class-loc' => 500,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -155,7 +155,7 @@ final class ViolationDensityTest extends TestCase
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 50.0,
             'health.complexity' => 45.0,
-            'classLoc' => 0,
+            'size.class-loc' => 0,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -189,7 +189,7 @@ final class ViolationDensityTest extends TestCase
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 50.0,
             'health.complexity' => 45.0,
-            // No 'loc' metric
+            // No 'size.loc' metric
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -224,7 +224,7 @@ final class ViolationDensityTest extends TestCase
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 35.0,
             'health.complexity' => 30.0,
-            'classLoc' => 300,
+            'size.class-loc' => 300,
         ]);
 
         $metrics = $this->createMetricRepository(

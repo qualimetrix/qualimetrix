@@ -27,7 +27,7 @@ final class FileProcessingResultTest extends TestCase
     #[Test]
     public function itCreatesSuccessResult(): void
     {
-        $fileBag = MetricBag::fromArray(['loc' => 100]);
+        $fileBag = MetricBag::fromArray(['size.loc' => 100]);
         $filePath = RelativePath::fromString('path/to/file.php');
 
         $result = FileProcessingResult::success(
@@ -45,9 +45,9 @@ final class FileProcessingResultTest extends TestCase
     #[Test]
     public function itCreatesSuccessResultWithMethodMetrics(): void
     {
-        $fileBag = MetricBag::fromArray(['loc' => 100]);
+        $fileBag = MetricBag::fromArray(['size.loc' => 100]);
         $symbolPath = SymbolPath::forMethod('App', 'Service', 'doSomething');
-        $methodBag = MetricBag::fromArray(['ccn' => 5]);
+        $methodBag = MetricBag::fromArray(['complexity.ccn' => 5]);
 
         $callableMetrics = [new CallableWithMetrics(
             DeclarationPath::of($symbolPath, RelativePath::fromString('path/to/file.php'), DeclarationOrdinal::fromRank(0)),
@@ -74,9 +74,9 @@ final class FileProcessingResultTest extends TestCase
     #[Test]
     public function itCreatesSuccessResultWithClassMetrics(): void
     {
-        $fileBag = MetricBag::fromArray(['loc' => 100]);
+        $fileBag = MetricBag::fromArray(['size.loc' => 100]);
         $symbolPath = SymbolPath::forClass('App', 'Service');
-        $classBag = MetricBag::fromArray(['wmc' => 15]);
+        $classBag = MetricBag::fromArray(['complexity.wmc' => 15]);
 
         $classMetrics = [
             'declaration:class:App\\Service@path/to/file.php#1' => [

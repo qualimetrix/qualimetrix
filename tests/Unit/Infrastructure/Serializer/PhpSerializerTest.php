@@ -197,7 +197,7 @@ final class PhpSerializerTest extends TestCase
     public function itDeserializesScalarArraysCorrectly(): void
     {
         // Metrics are scalar arrays - should work fine with allowed_classes=false
-        $metrics = ['ccn' => 5, 'loc' => 100, 'ratio' => 0.85, 'name' => 'test'];
+        $metrics = ['complexity.ccn' => 5, 'size.loc' => 100, 'ratio' => 0.85, 'name' => 'test'];
         $serialized = serialize($metrics);
 
         $result = $this->serializer->unserialize($serialized);

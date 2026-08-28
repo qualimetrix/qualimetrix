@@ -333,7 +333,7 @@
 #     enabled: false
 #
 #   # Define a custom metric using Symfony Expression Language
-#   computed.risk_score:
+#   computed.risk-score:
 #     formula: "ccn__avg * (1 - (tcc__avg ?? 0))"
 #     levels: [namespace]
 #     warning: 30

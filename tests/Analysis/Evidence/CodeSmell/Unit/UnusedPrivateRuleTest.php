@@ -62,7 +62,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $classInfo = $this->exactClassInfo($symbolPath, 'src/Clean.php', 5);
 
         $metricBag = (new MetricBag())
-            ->with('unusedPrivate.total', 0);
+            ->with('code-smell.unused-private.total', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -83,8 +83,8 @@ final class UnusedPrivateRuleTest extends TestCase
         $classInfo = $this->exactClassInfo($symbolPath, 'src/Smelly.php', 5);
 
         $metricBag = (new MetricBag())
-            ->with('unusedPrivate.total', 1)
-            ->withEntry('unusedPrivate.method', ['line' => 15, 'name' => 'doLoadMappingFile']);
+            ->with('code-smell.unused-private.total', 1)
+            ->withEntry('code-smell.unused-private.method', ['line' => 15, 'name' => 'doLoadMappingFile']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -111,8 +111,8 @@ final class UnusedPrivateRuleTest extends TestCase
         $classInfo = $this->exactClassInfo($symbolPath, 'src/PropClass.php', 5);
 
         $metricBag = (new MetricBag())
-            ->with('unusedPrivate.total', 1)
-            ->withEntry('unusedPrivate.property', ['line' => 10, 'name' => 'cache']);
+            ->with('code-smell.unused-private.total', 1)
+            ->withEntry('code-smell.unused-private.property', ['line' => 10, 'name' => 'cache']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -135,8 +135,8 @@ final class UnusedPrivateRuleTest extends TestCase
         $classInfo = $this->exactClassInfo($symbolPath, 'src/ConstClass.php', 5);
 
         $metricBag = (new MetricBag())
-            ->with('unusedPrivate.total', 1)
-            ->withEntry('unusedPrivate.constant', ['line' => 8, 'name' => 'MAX_RETRIES']);
+            ->with('code-smell.unused-private.total', 1)
+            ->withEntry('code-smell.unused-private.constant', ['line' => 8, 'name' => 'MAX_RETRIES']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -160,11 +160,11 @@ final class UnusedPrivateRuleTest extends TestCase
         $classInfo = $this->exactClassInfo($symbolPath, 'src/ManyUnused.php', 5);
 
         $metricBag = (new MetricBag())
-            ->with('unusedPrivate.total', 4)
-            ->withEntry('unusedPrivate.method', ['line' => 10, 'name' => 'foo'])
-            ->withEntry('unusedPrivate.method', ['line' => 15, 'name' => 'bar'])
-            ->withEntry('unusedPrivate.property', ['line' => 7, 'name' => 'baz'])
-            ->withEntry('unusedPrivate.constant', ['line' => 8, 'name' => 'QUX']);
+            ->with('code-smell.unused-private.total', 4)
+            ->withEntry('code-smell.unused-private.method', ['line' => 10, 'name' => 'foo'])
+            ->withEntry('code-smell.unused-private.method', ['line' => 15, 'name' => 'bar'])
+            ->withEntry('code-smell.unused-private.property', ['line' => 7, 'name' => 'baz'])
+            ->withEntry('code-smell.unused-private.constant', ['line' => 8, 'name' => 'QUX']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -195,8 +195,8 @@ final class UnusedPrivateRuleTest extends TestCase
         $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('getSubject')->willReturn(
             (new MetricBag())
-                ->with('unusedPrivate.total', 1)
-                ->withEntry('unusedPrivate.property', ['line' => 9]),
+                ->with('code-smell.unused-private.total', 1)
+                ->withEntry('code-smell.unused-private.property', ['line' => 9]),
         );
 
         $findings = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
@@ -249,8 +249,8 @@ final class UnusedPrivateRuleTest extends TestCase
         $repository->method('allDeclarations')->willReturn([$first, $second]);
         $repository->method('getSubject')->willReturnCallback(
             static fn() => (new MetricBag())
-                ->with('unusedPrivate.total', 1)
-                ->withEntry('unusedPrivate.method', ['line' => 15, 'name' => 'stale']),
+                ->with('code-smell.unused-private.total', 1)
+                ->withEntry('code-smell.unused-private.method', ['line' => 15, 'name' => 'stale']),
         );
 
         $findings = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));

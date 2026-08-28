@@ -29,9 +29,9 @@
         "--rule-opt=design.property-type-coverage:error=-1"
     ],
     "channels": [
-        "computed.branch_load@class",
-        "computed.branch_load@namespace",
-        "computed.branch_load@project",
+        "computed.branch-load@class",
+        "computed.branch-load@namespace",
+        "computed.branch-load@project",
         "health.cohesion@class",
         "health.cohesion@namespace",
         "health.cohesion@project",

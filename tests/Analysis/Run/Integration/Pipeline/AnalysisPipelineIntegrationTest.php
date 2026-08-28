@@ -400,13 +400,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $repository = new InMemoryMetricRepository();
         $repository->add(
             SymbolPath::forClass('App\Service', 'OrderService'),
-            (new MetricBag())->with('loc', 50),
+            (new MetricBag())->with('size.loc', 50),
             RelativePath::fromString('tmp/OrderService.php'),
             1,
         );
         $repository->add(
             SymbolPath::forClass('App\Service', 'PaymentService'),
-            (new MetricBag())->with('loc', 30),
+            (new MetricBag())->with('size.loc', 30),
             RelativePath::fromString('tmp/PaymentService.php'),
             1,
         );
@@ -444,7 +444,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             SymbolPath::forClass('App\Service', 'OrderService'),
         );
         self::assertNotNull(
-            $orderServiceBag->get('cbo'),
+            $orderServiceBag->get('coupling.cbo'),
             'Sanity check: class-level CBO should be computed by CouplingCollector',
         );
 
@@ -453,9 +453,9 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         // The CouplingCollector defines cbo aggregation at namespace level
         // with Sum, Average, Max strategies. These should produce cbo.sum, cbo.avg, cbo.max.
-        $cboSum = $namespaceBag->get('cbo.sum');
-        $cboAvg = $namespaceBag->get('cbo.avg');
-        $cboMax = $namespaceBag->get('cbo.max');
+        $cboSum = $namespaceBag->get('coupling.cbo.sum');
+        $cboAvg = $namespaceBag->get('coupling.cbo.avg');
+        $cboMax = $namespaceBag->get('coupling.cbo.max');
 
         self::assertNotNull(
             $cboSum,

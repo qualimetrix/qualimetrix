@@ -41,21 +41,21 @@ final class HealthContributorTest extends TestCase
         $contributor = new HealthContributor(
             className: 'UserService',
             symbolPath: 'class:App\\Service\\UserService',
-            metricValues: ['ccn.sum' => 15, 'cognitive.sum' => 12],
+            metricValues: ['complexity.ccn.sum' => 15, 'complexity.cognitive.sum' => 12],
         );
 
         self::assertSame('UserService', $contributor->className);
         self::assertSame('class:App\\Service\\UserService', $contributor->symbolPath);
-        self::assertSame(['ccn.sum' => 15, 'cognitive.sum' => 12], $contributor->metricValues);
+        self::assertSame(['complexity.ccn.sum' => 15, 'complexity.cognitive.sum' => 12], $contributor->metricValues);
     }
 
     #[Test]
     public function itComplexityContributorsRankedByHighestCcn(): void
     {
         $report = $this->buildReportWithClasses([
-            ['ns' => 'App\\Service', 'name' => 'LowComplexity', 'ccn' => 2, 'cognitive' => 1],
-            ['ns' => 'App\\Service', 'name' => 'HighComplexity', 'ccn' => 25, 'cognitive' => 20],
-            ['ns' => 'App\\Service', 'name' => 'MedComplexity', 'ccn' => 10, 'cognitive' => 8],
+            ['ns' => 'App\\Service', 'name' => 'LowComplexity', 'complexity.ccn' => 2, 'complexity.cognitive' => 1],
+            ['ns' => 'App\\Service', 'name' => 'HighComplexity', 'complexity.ccn' => 25, 'complexity.cognitive' => 20],
+            ['ns' => 'App\\Service', 'name' => 'MedComplexity', 'complexity.ccn' => 10, 'complexity.cognitive' => 8],
         ]);
 
         $result = $this->summarize($report);
@@ -70,17 +70,17 @@ final class HealthContributorTest extends TestCase
         self::assertSame('LowComplexity', $contributors[2]->className);
 
         // Check metric values are included (class-level keys are aggregated: ccn.sum, cognitive.sum)
-        self::assertSame(25, $contributors[0]->metricValues['ccn.sum']);
-        self::assertSame(20, $contributors[0]->metricValues['cognitive.sum']);
+        self::assertSame(25, $contributors[0]->metricValues['complexity.ccn.sum']);
+        self::assertSame(20, $contributors[0]->metricValues['complexity.cognitive.sum']);
     }
 
     #[Test]
     public function itCohesionContributorsRankedByLowestTcc(): void
     {
         $report = $this->buildReportWithClasses([
-            ['ns' => 'App', 'name' => 'WellCohesive', 'tcc' => 0.9, 'lcom' => 1],
-            ['ns' => 'App', 'name' => 'PoorlyCohesive', 'tcc' => 0.1, 'lcom' => 5],
-            ['ns' => 'App', 'name' => 'MedCohesive', 'tcc' => 0.4, 'lcom' => 3],
+            ['ns' => 'App', 'name' => 'WellCohesive', 'cohesion.tcc' => 0.9, 'cohesion.lcom' => 1],
+            ['ns' => 'App', 'name' => 'PoorlyCohesive', 'cohesion.tcc' => 0.1, 'cohesion.lcom' => 5],
+            ['ns' => 'App', 'name' => 'MedCohesive', 'cohesion.tcc' => 0.4, 'cohesion.lcom' => 3],
         ]);
 
         $result = $this->summarize($report);
@@ -99,8 +99,8 @@ final class HealthContributorTest extends TestCase
     public function itCouplingContributorsRankedByHighestCe(): void
     {
         $report = $this->buildReportWithClasses([
-            ['ns' => 'App', 'name' => 'Isolated', 'ce' => 2, 'distance' => 0.1],
-            ['ns' => 'App', 'name' => 'HighlyCoupled', 'ce' => 20, 'distance' => 0.8],
+            ['ns' => 'App', 'name' => 'Isolated', 'coupling.ce' => 2, 'coupling.distance' => 0.1],
+            ['ns' => 'App', 'name' => 'HighlyCoupled', 'coupling.ce' => 20, 'coupling.distance' => 0.8],
         ]);
 
         $result = $this->summarize($report);
@@ -110,16 +110,16 @@ final class HealthContributorTest extends TestCase
 
         self::assertCount(2, $contributors);
         self::assertSame('HighlyCoupled', $contributors[0]->className);
-        self::assertSame(20, $contributors[0]->metricValues['ce']);
+        self::assertSame(20, $contributors[0]->metricValues['coupling.ce']);
     }
 
     #[Test]
     public function itMaintainabilityContributorsRankedByLowestMi(): void
     {
         $report = $this->buildReportWithClasses([
-            ['ns' => 'App', 'name' => 'WellMaintained', 'mi' => 85.0],
-            ['ns' => 'App', 'name' => 'HardToMaintain', 'mi' => 25.0],
-            ['ns' => 'App', 'name' => 'Moderate', 'mi' => 55.0],
+            ['ns' => 'App', 'name' => 'WellMaintained', 'maintainability.mi' => 85.0],
+            ['ns' => 'App', 'name' => 'HardToMaintain', 'maintainability.mi' => 25.0],
+            ['ns' => 'App', 'name' => 'Moderate', 'maintainability.mi' => 55.0],
         ]);
 
         $result = $this->summarize($report);
@@ -130,7 +130,7 @@ final class HealthContributorTest extends TestCase
         self::assertCount(3, $contributors);
         // Worst first (lowest MI for higher_is_better)
         self::assertSame('HardToMaintain', $contributors[0]->className);
-        self::assertSame(25.0, $contributors[0]->metricValues['mi']);
+        self::assertSame(25.0, $contributors[0]->metricValues['maintainability.mi']);
         self::assertSame('Moderate', $contributors[1]->className);
         self::assertSame('WellMaintained', $contributors[2]->className);
     }
@@ -139,7 +139,7 @@ final class HealthContributorTest extends TestCase
     public function itFewerClassesThanLimitShowsAll(): void
     {
         $report = $this->buildReportWithClasses([
-            ['ns' => 'App', 'name' => 'OnlyOne', 'ccn' => 5, 'cognitive' => 3],
+            ['ns' => 'App', 'name' => 'OnlyOne', 'complexity.ccn' => 5, 'complexity.cognitive' => 3],
         ]);
 
         $result = $this->summarize($report);
@@ -159,15 +159,15 @@ final class HealthContributorTest extends TestCase
         ];
 
         $classMetrics = [
-            'class:App\\HasCcn' => MetricBag::fromArray(['ccn.sum' => 10, 'cognitive.sum' => 5]),
-            'class:App\\NoCcn' => MetricBag::fromArray(['cognitive.sum' => 3]), // no ccn.sum
+            'class:App\\HasCcn' => MetricBag::fromArray(['complexity.ccn.sum' => 10, 'complexity.cognitive.sum' => 5]),
+            'class:App\\NoCcn' => MetricBag::fromArray(['complexity.cognitive.sum' => 3]), // no ccn.sum
         ];
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
                 'health.complexity' => 50.0,
                 'health.overall' => 60.0,
-                'ccn.avg' => 10.0,
+                'complexity.ccn.avg' => 10.0,
             ]),
             classes: $classes,
             classMetrics: $classMetrics,
@@ -194,9 +194,9 @@ final class HealthContributorTest extends TestCase
     public function itTieBreaksByClassNameAlphabetically(): void
     {
         $report = $this->buildReportWithClasses([
-            ['ns' => 'App', 'name' => 'Zeta', 'ccn' => 10, 'cognitive' => 5],
-            ['ns' => 'App', 'name' => 'Alpha', 'ccn' => 10, 'cognitive' => 5],
-            ['ns' => 'App', 'name' => 'Mu', 'ccn' => 10, 'cognitive' => 5],
+            ['ns' => 'App', 'name' => 'Zeta', 'complexity.ccn' => 10, 'complexity.cognitive' => 5],
+            ['ns' => 'App', 'name' => 'Alpha', 'complexity.ccn' => 10, 'complexity.cognitive' => 5],
+            ['ns' => 'App', 'name' => 'Mu', 'complexity.ccn' => 10, 'complexity.cognitive' => 5],
         ]);
 
         $result = $this->summarize($report);
@@ -212,7 +212,7 @@ final class HealthContributorTest extends TestCase
     public function itOverallDimensionHasNoContributors(): void
     {
         $report = $this->buildReportWithClasses([
-            ['ns' => 'App', 'name' => 'SomeClass', 'ccn' => 5, 'cognitive' => 3],
+            ['ns' => 'App', 'name' => 'SomeClass', 'complexity.ccn' => 5, 'complexity.cognitive' => 3],
         ]);
 
         $result = $this->summarize($report);
@@ -225,7 +225,7 @@ final class HealthContributorTest extends TestCase
     public function itContributorSymbolPath(): void
     {
         $report = $this->buildReportWithClasses([
-            ['ns' => 'App\\Domain', 'name' => 'SomeService', 'ccn' => 15, 'cognitive' => 10],
+            ['ns' => 'App\\Domain', 'name' => 'SomeService', 'complexity.ccn' => 15, 'complexity.cognitive' => 10],
         ]);
 
         $result = $this->summarize($report);
@@ -259,40 +259,40 @@ final class HealthContributorTest extends TestCase
 
             $bag = [];
 
-            if (isset($spec['ccn'])) {
-                $bag['ccn.sum'] = $spec['ccn'];
+            if (isset($spec['complexity.ccn'])) {
+                $bag['complexity.ccn.sum'] = $spec['complexity.ccn'];
                 $dimensionMetrics['health.complexity'] ??= 50.0;
-                $dimensionMetrics['ccn.avg'] ??= 5.0;
+                $dimensionMetrics['complexity.ccn.avg'] ??= 5.0;
             }
 
-            if (isset($spec['cognitive'])) {
-                $bag['cognitive.sum'] = $spec['cognitive'];
+            if (isset($spec['complexity.cognitive'])) {
+                $bag['complexity.cognitive.sum'] = $spec['complexity.cognitive'];
             }
 
-            if (isset($spec['tcc'])) {
-                $bag['tcc'] = $spec['tcc'];
+            if (isset($spec['cohesion.tcc'])) {
+                $bag['cohesion.tcc'] = $spec['cohesion.tcc'];
                 $dimensionMetrics['health.cohesion'] ??= 50.0;
-                $dimensionMetrics['tcc.avg'] ??= 0.5;
+                $dimensionMetrics['cohesion.tcc.avg'] ??= 0.5;
             }
 
-            if (isset($spec['lcom'])) {
-                $bag['lcom'] = $spec['lcom'];
+            if (isset($spec['cohesion.lcom'])) {
+                $bag['cohesion.lcom'] = $spec['cohesion.lcom'];
             }
 
-            if (isset($spec['ce'])) {
-                $bag['ce'] = $spec['ce'];
+            if (isset($spec['coupling.ce'])) {
+                $bag['coupling.ce'] = $spec['coupling.ce'];
                 $dimensionMetrics['health.coupling'] ??= 50.0;
-                $dimensionMetrics['ce.avg'] ??= 3.0;
+                $dimensionMetrics['coupling.ce.avg'] ??= 3.0;
             }
 
-            if (isset($spec['distance'])) {
-                $bag['distance'] = $spec['distance'];
+            if (isset($spec['coupling.distance'])) {
+                $bag['coupling.distance'] = $spec['coupling.distance'];
             }
 
-            if (isset($spec['mi'])) {
-                $bag['mi'] = $spec['mi'];
+            if (isset($spec['maintainability.mi'])) {
+                $bag['maintainability.mi'] = $spec['maintainability.mi'];
                 $dimensionMetrics['health.maintainability'] ??= 50.0;
-                $dimensionMetrics['mi.avg'] ??= 65.0;
+                $dimensionMetrics['maintainability.mi.avg'] ??= 65.0;
             }
 
             $classMetrics[$symbol->toCanonical()] = MetricBag::fromArray($bag);

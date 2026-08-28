@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -149,8 +150,8 @@ final class AggregationHelper
         }
 
         return $bag
-            ->with(AggregationMeta::SYMBOL_METHOD_COUNT, $methodCount)
-            ->with(AggregationMeta::SYMBOL_CLASS_COUNT, $classCount);
+            ->with(MetricName::SIZE_SYMBOL_METHOD_COUNT, $methodCount)
+            ->with(MetricName::SIZE_SYMBOL_CLASS_COUNT, $classCount);
     }
 
     /**

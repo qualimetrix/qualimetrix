@@ -9,6 +9,7 @@ use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphCalculator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\FormulaMetricReference;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
@@ -120,8 +121,8 @@ class ComputedMetricEvaluator
     /**
      * Validates that all required formula variables exist in the metric repository.
      *
-     * Variables protected by null-coalescing (`??`) are intentionally optional and skipped.
-     * References to other computed metrics (`health__*`, `computed__*`) are validated
+     * Keys guarded by null-coalescing (`??`) are intentionally optional and skipped.
+     * References to other computed metrics (`health.*`, `computed.*`) are validated
      * separately by `ComputedMetricFormulaValidator` and also skipped here.
      *
      * @param list<array{SymbolPath, ?RelativePath, ?int}> $symbols
@@ -170,8 +171,8 @@ class ComputedMetricEvaluator
     {
         $allKnownKeys = [];
         foreach ($symbols as [$symbolPath]) {
-            foreach ($repo->get($symbolPath)->all() as $key => $value) {
-                $allKnownKeys[str_replace('.', '__', $key)] = true;
+            foreach (array_keys($repo->get($symbolPath)->all()) as $key) {
+                $allKnownKeys[$key] = true;
             }
         }
 
@@ -189,14 +190,14 @@ class ComputedMetricEvaluator
     private function findUnknownVariables(array $requiredVars, array $allKnownKeys): array
     {
         $unknownVars = [];
-        foreach ($requiredVars as $var) {
+        foreach ($requiredVars as $key) {
             // Skip computed metric references — validated by ComputedMetricFormulaValidator
-            if (str_starts_with($var, 'health__') || str_starts_with($var, 'computed__')) {
+            if (str_starts_with($key, 'health.') || str_starts_with($key, 'computed.')) {
                 continue;
             }
 
-            if (!isset($allKnownKeys[$var])) {
-                $unknownVars[] = str_replace('__', '.', $var);
+            if (!isset($allKnownKeys[$key])) {
+                $unknownVars[] = $key;
             }
         }
 
@@ -213,75 +214,8 @@ class ComputedMetricEvaluator
      */
     private function extractRequiredFormulaVariables(string $formula): array
     {
-        $allVars = $this->extractFormulaVariables($formula);
-        $optionalVars = $this->extractNullCoalescingVariables($formula);
-
-        $required = [];
-        foreach ($allVars as $var) {
-            if (!isset($optionalVars[$var])) {
-                $required[] = $var;
-            }
-        }
-
-        return $required;
+        return FormulaMetricReference::requiredKeysOf($formula);
     }
-
-    /**
-     * Extracts all variable-like tokens from a formula, excluding known functions and EL keywords.
-     *
-     * @return list<string>
-     */
-    private function extractFormulaVariables(string $formula): array
-    {
-        if (preg_match_all('/\b([a-zA-Z_][a-zA-Z0-9_]*)\b/', $formula, $matches) === false) {
-            return [];
-        }
-
-        $excluded = array_flip([...self::KNOWN_FUNCTIONS, ...self::EL_KEYWORDS]);
-
-        $variables = [];
-        $seen = [];
-        foreach ($matches[1] as $token) {
-            if (isset($excluded[$token]) || isset($seen[$token])) {
-                continue;
-            }
-            $variables[] = $token;
-            $seen[$token] = true;
-        }
-
-        return $variables;
-    }
-
-    /**
-     * Extracts variables that appear on the left side of `??` (null-coalescing).
-     *
-     * Matches patterns like `(var ?? fallback)` and `var ?? fallback`.
-     *
-     * @return array<string, true>
-     */
-    private function extractNullCoalescingVariables(string $formula): array
-    {
-        $optional = [];
-
-        // Match: identifier followed by optional whitespace and ??
-        if (preg_match_all('/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\?\?/', $formula, $matches) !== 0) {
-            foreach ($matches[1] as $var) {
-                $optional[$var] = true;
-            }
-        }
-
-        return $optional;
-    }
-
-    /** @var list<string> */
-    private const array KNOWN_FUNCTIONS = [
-        'min', 'max', 'abs', 'sqrt', 'log', 'log10', 'clamp',
-    ];
-
-    /** @var list<string> */
-    private const array EL_KEYWORDS = [
-        'true', 'false', 'null', 'not', 'and', 'or', 'in', 'matches',
-    ];
 
     /**
      * @return list<array{SymbolPath, ?RelativePath, ?int}>
@@ -303,18 +237,11 @@ class ComputedMetricEvaluator
     }
 
     /**
-     * @return array<string, int|float|null>
+     * @return array{m: MetricLookup}
      */
     private function buildVariableMap(MetricBag $bag): array
     {
-        $variables = [];
-        foreach ($bag->all() as $key => $value) {
-            // Replace . with __ for ExpressionLanguage compatibility
-            $elKey = str_replace('.', '__', $key);
-            $variables[$elKey] = $value;
-        }
-
-        return $variables;
+        return ['m' => new MetricLookup($bag->all())];
     }
 
     /**

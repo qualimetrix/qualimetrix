@@ -47,7 +47,7 @@ final class UnreachableCodeRuleTest extends TestCase
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
-        self::assertSame(['unreachableCode'], $rule->requires());
+        self::assertSame(['code-smell.unreachable-code'], $rule->requires());
     }
 
     #[Test]
@@ -109,7 +109,7 @@ final class UnreachableCodeRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('unreachableCode', 0);
+        $metricBag = (new MetricBag())->with('code-smell.unreachable-code', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -130,8 +130,8 @@ final class UnreachableCodeRuleTest extends TestCase
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())
-            ->with('unreachableCode', 2)
-            ->with('unreachableCode.firstLine', 15);
+            ->with('code-smell.unreachable-code', 2)
+            ->with('code-smell.unreachable-code.first-line', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -158,7 +158,7 @@ final class UnreachableCodeRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('unreachableCode', 1);
+        $metricBag = (new MetricBag())->with('code-smell.unreachable-code', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -185,7 +185,7 @@ final class UnreachableCodeRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('unreachableCode', 1));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('code-smell.unreachable-code', 1));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
 

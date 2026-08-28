@@ -37,7 +37,7 @@ final class CyclomaticComplexityCollectorTest extends TestCase
     #[Test]
     public function itProvides(): void
     {
-        self::assertSame(['ccn'], $this->collector->provides());
+        self::assertSame(['complexity.ccn'], $this->collector->provides());
     }
 
     #[Test]
@@ -59,7 +59,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('ccn:App\Service\Calculator::add'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\Service\Calculator::add'));
     }
 
     #[Test]
@@ -85,7 +85,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 1 (if) = 2
-        self::assertSame(2, $metrics->get('ccn:App\Test::check'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\Test::check'));
     }
 
     #[Test]
@@ -115,7 +115,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 1 (if) + 2 (elseif) = 4
-        self::assertSame(4, $metrics->get('ccn:App\Test::grade'));
+        self::assertSame(4, $metrics->get('complexity.ccn:App\Test::grade'));
     }
 
     #[Test]
@@ -152,7 +152,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 1 (for) + 1 (foreach) + 1 (while) + 1 (do-while) = 5
-        self::assertSame(5, $metrics->get('ccn:App\LoopTest::process'));
+        self::assertSame(5, $metrics->get('complexity.ccn:App\LoopTest::process'));
     }
 
     #[Test]
@@ -184,7 +184,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 3 (cases, default doesn't count) = 4
-        self::assertSame(4, $metrics->get('ccn:App\SwitchTest::dayName'));
+        self::assertSame(4, $metrics->get('complexity.ccn:App\SwitchTest::dayName'));
     }
 
     #[Test]
@@ -213,7 +213,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 2 (catches) = 3
-        self::assertSame(3, $metrics->get('ccn:App\ExceptionTest::risky'));
+        self::assertSame(3, $metrics->get('complexity.ccn:App\ExceptionTest::risky'));
     }
 
     #[Test]
@@ -240,7 +240,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 2 (non-default match arms) = 3
-        self::assertSame(3, $metrics->get('ccn:App\MatchTest::label'));
+        self::assertSame(3, $metrics->get('complexity.ccn:App\MatchTest::label'));
     }
 
     #[Test]
@@ -271,7 +271,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 1 (if) + 1 (&&) + 1 (if) + 2 (||) + 1 (and) = 7
-        self::assertSame(7, $metrics->get('ccn:App\BooleanTest::check'));
+        self::assertSame(7, $metrics->get('complexity.ccn:App\BooleanTest::check'));
     }
 
     #[Test]
@@ -294,7 +294,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 1 (ternary) = 2
-        self::assertSame(2, $metrics->get('ccn:App\TernaryTest::max'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\TernaryTest::max'));
     }
 
     #[Test]
@@ -317,7 +317,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 1 (??) = 2
-        self::assertSame(2, $metrics->get('ccn:App\NullCoalescingTest::getName'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\NullCoalescingTest::getName'));
     }
 
     #[Test]
@@ -340,7 +340,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 2 (?->) = 3
-        self::assertSame(3, $metrics->get('ccn:App\NullsafeTest::getLength'));
+        self::assertSame(3, $metrics->get('complexity.ccn:App\NullsafeTest::getLength'));
     }
 
     #[Test]
@@ -363,7 +363,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 1 (if) = 2
-        self::assertSame(2, $metrics->get('ccn:App\Utils\validate'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\Utils\validate'));
     }
 
     #[Test]
@@ -383,7 +383,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 1 (if) = 2
-        self::assertSame(2, $metrics->get('ccn:globalHelper'));
+        self::assertSame(2, $metrics->get('complexity.ccn:globalHelper'));
     }
 
     #[Test]
@@ -411,10 +411,10 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Method itself: CC = 1
-        self::assertSame(1, $metrics->get('ccn:App\ClosureTest::withClosure'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\ClosureTest::withClosure'));
 
         // Closure: CC = 1 (base) + 1 (if) = 2
-        self::assertSame(2, $metrics->get('ccn:App\ClosureTest::{closure#1}'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\ClosureTest::{closure#1}'));
     }
 
     #[Test]
@@ -445,9 +445,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('ccn:App\MultiMethod::simple'));
-        self::assertSame(2, $metrics->get('ccn:App\MultiMethod::withIf'));
-        self::assertSame(2, $metrics->get('ccn:App\MultiMethod::withLoop'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\MultiMethod::simple'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\MultiMethod::withIf'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\MultiMethod::withLoop'));
     }
 
     #[Test]
@@ -490,8 +490,8 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         // Should only contain metrics from second file
-        self::assertNull($metrics->get('ccn:App\First::method'));
-        self::assertSame(1, $metrics->get('ccn:App\Second::otherMethod'));
+        self::assertNull($metrics->get('complexity.ccn:App\First::method'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\Second::otherMethod'));
     }
 
     #[Test]
@@ -541,7 +541,7 @@ PHP;
 
         // CC = 1 (base) + 1 (if empty) + 1 (foreach) + 1 (if validate) + 1 (&&)
         //    + 1 (??) + 1 (if value) + 1 (||) + 1 (ternary) + 2 (catches) = 11
-        self::assertSame(11, $metrics->get('ccn:App\Service\ComplexService::process'));
+        self::assertSame(11, $metrics->get('complexity.ccn:App\Service\ComplexService::process'));
     }
 
     #[Test]
@@ -566,7 +566,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 1 (if) = 2
-        self::assertSame(2, $metrics->get('ccn:App\Traits\LoggableTrait::log'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\Traits\LoggableTrait::log'));
     }
 
     #[Test]
@@ -586,7 +586,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Interface methods have no body, so CC = 1
-        self::assertSame(1, $metrics->get('ccn:App\Contracts\ServiceInterface::execute'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\Contracts\ServiceInterface::execute'));
     }
 
     #[Test]
@@ -612,7 +612,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base)
-        self::assertSame(1, $metrics->get('ccn:App\Enums\Status::isActive'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\Enums\Status::isActive'));
     }
 
     #[Test]
@@ -623,7 +623,7 @@ PHP;
         self::assertCount(1, $definitions);
 
         $ccnDefinition = $definitions[0];
-        self::assertSame('ccn', $ccnDefinition->name);
+        self::assertSame('complexity.ccn', $ccnDefinition->name);
         self::assertSame(SymbolLevel::Callable, $ccnDefinition->collectedAt);
 
         // Check Class_ level aggregations
@@ -692,16 +692,16 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // simple: CC = 1 (base)
-        self::assertSame(1, $metrics->get('ccn:App\Outer::simple'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\Outer::simple'));
 
         // factory: CC = 1 (base) — anonymous class complexity should NOT leak
-        self::assertSame(1, $metrics->get('ccn:App\Outer::factory'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\Outer::factory'));
 
         // afterAnonymous: CC = 1 (base) + 1 (if) = 2
-        self::assertSame(2, $metrics->get('ccn:App\Outer::afterAnonymous'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\Outer::afterAnonymous'));
 
         // Anonymous class methods should NOT appear in metrics
-        self::assertNull($metrics->get('ccn:App\Outer::innerComplex'));
+        self::assertNull($metrics->get('complexity.ccn:App\Outer::innerComplex'));
     }
 
     /**
@@ -727,10 +727,10 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Method itself: CC = 1 (base, no decision points)
-        self::assertSame(1, $metrics->get('ccn:App\Test::getMapper'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\Test::getMapper'));
 
         // Arrow function: CC = 1 (base) + 1 (ternary) = 2
-        self::assertSame(2, $metrics->get('ccn:App\Test::{closure#1}'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\Test::{closure#1}'));
     }
 
     /**
@@ -756,7 +756,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Arrow function with no decision points: CC = 1
-        self::assertSame(1, $metrics->get('ccn:App\Test::{closure#1}'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\Test::{closure#1}'));
     }
 
     /**
@@ -782,7 +782,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Arrow function: CC = 1 (base) + 1 (&&) = 2
-        self::assertSame(2, $metrics->get('ccn:App\Test::{closure#1}'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\Test::{closure#1}'));
     }
 
     /**
@@ -816,7 +816,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // outerMethod: CC = 1 (base) — closure inside anonymous class is ignored
-        self::assertSame(1, $metrics->get('ccn:App\Outer::outerMethod'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\Outer::outerMethod'));
     }
 
     /**
@@ -846,7 +846,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 3 (arm 1: 3 conditions) + 2 (arm 2: 2 conditions) + 0 (default) = 6
-        self::assertSame(6, $metrics->get('ccn:App\Test::categorize'));
+        self::assertSame(6, $metrics->get('complexity.ccn:App\Test::categorize'));
     }
 
     /**
@@ -875,7 +875,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 1 (if) + 1 (xor) = 3
-        self::assertSame(3, $metrics->get('ccn:App\Test::check'));
+        self::assertSame(3, $metrics->get('complexity.ccn:App\Test::check'));
     }
 
     /**
@@ -901,7 +901,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // CC = 1 (base) + 1 (xor) = 2
-        self::assertSame(2, $metrics->get('ccn:App\Foo::bar'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\Foo::bar'));
     }
 
     private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag

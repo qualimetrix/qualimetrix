@@ -38,7 +38,7 @@ final class ClassCountCollectorTest extends TestCase
     public function itProvides(): void
     {
         self::assertSame(
-            ['classCount', 'abstractClassCount', 'interfaceCount', 'traitCount', 'enumCount', 'implementingEnumCount', 'functionCount'],
+            ['size.class-count', 'size.abstract-class-count', 'size.interface-count', 'size.trait-count', 'size.enum-count', 'size.implementing-enum-count', 'size.function-count'],
             $this->collector->provides(),
         );
     }
@@ -50,11 +50,11 @@ final class ClassCountCollectorTest extends TestCase
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('classCount'));
-        self::assertSame(0, $metrics->get('interfaceCount'));
-        self::assertSame(0, $metrics->get('traitCount'));
-        self::assertSame(0, $metrics->get('enumCount'));
-        self::assertSame(0, $metrics->get('functionCount'));
+        self::assertSame(0, $metrics->get('size.class-count'));
+        self::assertSame(0, $metrics->get('size.interface-count'));
+        self::assertSame(0, $metrics->get('size.trait-count'));
+        self::assertSame(0, $metrics->get('size.enum-count'));
+        self::assertSame(0, $metrics->get('size.function-count'));
     }
 
     #[Test]
@@ -75,13 +75,13 @@ PHP;
         self::assertSame(2, $namespaces[0]->line);
         self::assertSame(
             [
-                'classCount' => 0,
-                'abstractClassCount' => 0,
-                'interfaceCount' => 0,
-                'traitCount' => 0,
-                'enumCount' => 0,
-                'implementingEnumCount' => 0,
-                'functionCount' => 0,
+                'size.class-count' => 0,
+                'size.abstract-class-count' => 0,
+                'size.interface-count' => 0,
+                'size.trait-count' => 0,
+                'size.enum-count' => 0,
+                'size.implementing-enum-count' => 0,
+                'size.function-count' => 0,
             ],
             $namespaces[0]->metrics->all(),
         );
@@ -103,10 +103,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('classCount'));
-        self::assertSame(0, $metrics->get('interfaceCount'));
-        self::assertSame(0, $metrics->get('traitCount'));
-        self::assertSame(0, $metrics->get('enumCount'));
+        self::assertSame(1, $metrics->get('size.class-count'));
+        self::assertSame(0, $metrics->get('size.interface-count'));
+        self::assertSame(0, $metrics->get('size.trait-count'));
+        self::assertSame(0, $metrics->get('size.enum-count'));
     }
 
     #[Test]
@@ -124,7 +124,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('classCount'));
+        self::assertSame(3, $metrics->get('size.class-count'));
     }
 
     #[Test]
@@ -143,8 +143,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('classCount'));
-        self::assertSame(1, $metrics->get('interfaceCount'));
+        self::assertSame(0, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.interface-count'));
     }
 
     #[Test]
@@ -162,7 +162,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('interfaceCount'));
+        self::assertSame(3, $metrics->get('size.interface-count'));
     }
 
     #[Test]
@@ -184,8 +184,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('classCount'));
-        self::assertSame(1, $metrics->get('traitCount'));
+        self::assertSame(0, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.trait-count'));
     }
 
     #[Test]
@@ -202,7 +202,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('traitCount'));
+        self::assertSame(2, $metrics->get('size.trait-count'));
     }
 
     #[Test]
@@ -222,8 +222,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('classCount'));
-        self::assertSame(1, $metrics->get('enumCount'));
+        self::assertSame(0, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.enum-count'));
     }
 
     #[Test]
@@ -241,7 +241,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('enumCount'));
+        self::assertSame(3, $metrics->get('size.enum-count'));
     }
 
     #[Test]
@@ -263,12 +263,12 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('classCount'));
-        self::assertSame(2, $metrics->get('interfaceCount'));
-        self::assertSame(1, $metrics->get('traitCount'));
-        self::assertSame(1, $metrics->get('enumCount'));
-        self::assertSame(0, $metrics->get('implementingEnumCount'));
-        self::assertSame(0, $metrics->get('functionCount'));
+        self::assertSame(2, $metrics->get('size.class-count'));
+        self::assertSame(2, $metrics->get('size.interface-count'));
+        self::assertSame(1, $metrics->get('size.trait-count'));
+        self::assertSame(1, $metrics->get('size.enum-count'));
+        self::assertSame(0, $metrics->get('size.implementing-enum-count'));
+        self::assertSame(0, $metrics->get('size.function-count'));
     }
 
     #[Test]
@@ -293,7 +293,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Only the named class is counted, anonymous class is ignored
-        self::assertSame(1, $metrics->get('classCount'));
+        self::assertSame(1, $metrics->get('size.class-count'));
     }
 
     #[Test]
@@ -326,7 +326,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Only the named class Container is counted
-        self::assertSame(1, $metrics->get('classCount'));
+        self::assertSame(1, $metrics->get('size.class-count'));
     }
 
     #[Test]
@@ -353,7 +353,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('classCount'));
+        self::assertSame(2, $metrics->get('size.class-count'));
     }
 
     #[Test]
@@ -372,8 +372,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('classCount'));
-        self::assertSame(1, $metrics->get('functionCount'));
+        self::assertSame(0, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.function-count'));
     }
 
     #[Test]
@@ -391,7 +391,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('functionCount'));
+        self::assertSame(3, $metrics->get('size.function-count'));
     }
 
     #[Test]
@@ -418,8 +418,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('classCount'));
-        self::assertSame(0, $metrics->get('functionCount'));
+        self::assertSame(1, $metrics->get('size.class-count'));
+        self::assertSame(0, $metrics->get('size.function-count'));
     }
 
     #[Test]
@@ -444,9 +444,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('classCount'));
-        self::assertSame(1, $metrics->get('interfaceCount'));
-        self::assertSame(2, $metrics->get('functionCount'));
+        self::assertSame(1, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.interface-count'));
+        self::assertSame(2, $metrics->get('size.function-count'));
     }
 
     #[Test]
@@ -473,13 +473,13 @@ PHP;
             $byNamespace[$namespaceMetrics->namespace] = $namespaceMetrics->metrics;
         }
 
-        self::assertSame(2, $byNamespace['One']->get('classCount'));
-        self::assertSame(1, $byNamespace['One']->get('abstractClassCount'));
-        self::assertSame(1, $byNamespace['One']->get('functionCount'));
-        self::assertSame(1, $byNamespace['Two']->get('interfaceCount'));
-        self::assertSame(1, $byNamespace['Two']->get('traitCount'));
-        self::assertSame(1, $byNamespace['Two']->get('enumCount'));
-        self::assertSame(0, $byNamespace['Empty']->get('classCount'));
+        self::assertSame(2, $byNamespace['One']->get('size.class-count'));
+        self::assertSame(1, $byNamespace['One']->get('size.abstract-class-count'));
+        self::assertSame(1, $byNamespace['One']->get('size.function-count'));
+        self::assertSame(1, $byNamespace['Two']->get('size.interface-count'));
+        self::assertSame(1, $byNamespace['Two']->get('size.trait-count'));
+        self::assertSame(1, $byNamespace['Two']->get('size.enum-count'));
+        self::assertSame(0, $byNamespace['Empty']->get('size.class-count'));
     }
 
     #[Test]
@@ -508,7 +508,7 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         // Should only reflect second file
-        self::assertSame(1, $metrics->get('classCount'));
+        self::assertSame(1, $metrics->get('size.class-count'));
     }
 
     #[Test]
@@ -527,8 +527,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('classCount'));
-        self::assertSame(1, $metrics->get('abstractClassCount'));
+        self::assertSame(1, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.abstract-class-count'));
     }
 
     #[Test]
@@ -547,8 +547,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(4, $metrics->get('classCount'));
-        self::assertSame(2, $metrics->get('abstractClassCount'));
+        self::assertSame(4, $metrics->get('size.class-count'));
+        self::assertSame(2, $metrics->get('size.abstract-class-count'));
     }
 
     #[Test]
@@ -566,7 +566,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('classCount'));
+        self::assertSame(1, $metrics->get('size.class-count'));
     }
 
     #[Test]
@@ -587,7 +587,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('classCount'));
+        self::assertSame(1, $metrics->get('size.class-count'));
     }
 
     #[Test]
@@ -608,7 +608,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('enumCount'));
+        self::assertSame(1, $metrics->get('size.enum-count'));
     }
 
     #[Test]
@@ -630,7 +630,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('enumCount'));
+        self::assertSame(1, $metrics->get('size.enum-count'));
     }
 
     #[Test]
@@ -656,8 +656,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('enumCount'));
-        self::assertSame(1, $metrics->get('implementingEnumCount'));
+        self::assertSame(2, $metrics->get('size.enum-count'));
+        self::assertSame(1, $metrics->get('size.implementing-enum-count'));
     }
 
     #[Test]
@@ -684,10 +684,10 @@ PHP;
             $byNamespace[$namespaceMetrics->namespace] = $namespaceMetrics->metrics;
         }
 
-        self::assertSame(0, $byNamespace['Bare']->get('implementingEnumCount'));
-        self::assertSame(1, $byNamespace['Bare']->get('enumCount'));
-        self::assertSame(1, $byNamespace['Implementing']->get('implementingEnumCount'));
-        self::assertSame(1, $byNamespace['Implementing']->get('enumCount'));
+        self::assertSame(0, $byNamespace['Bare']->get('size.implementing-enum-count'));
+        self::assertSame(1, $byNamespace['Bare']->get('size.enum-count'));
+        self::assertSame(1, $byNamespace['Implementing']->get('size.implementing-enum-count'));
+        self::assertSame(1, $byNamespace['Implementing']->get('size.enum-count'));
     }
 
     #[Test]
@@ -698,13 +698,13 @@ PHP;
         self::assertCount(7, $definitions);
 
         $metricNames = array_map(fn($d) => $d->name, $definitions);
-        self::assertContains('classCount', $metricNames);
-        self::assertContains('abstractClassCount', $metricNames);
-        self::assertContains('interfaceCount', $metricNames);
-        self::assertContains('traitCount', $metricNames);
-        self::assertContains('enumCount', $metricNames);
-        self::assertContains('implementingEnumCount', $metricNames);
-        self::assertContains('functionCount', $metricNames);
+        self::assertContains('size.class-count', $metricNames);
+        self::assertContains('size.abstract-class-count', $metricNames);
+        self::assertContains('size.interface-count', $metricNames);
+        self::assertContains('size.trait-count', $metricNames);
+        self::assertContains('size.enum-count', $metricNames);
+        self::assertContains('size.implementing-enum-count', $metricNames);
+        self::assertContains('size.function-count', $metricNames);
 
         foreach ($definitions as $definition) {
             self::assertSame(SymbolLevel::File, $definition->collectedAt);

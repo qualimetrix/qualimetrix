@@ -112,7 +112,7 @@ final class AnalysisResultTest extends TestCase
     public function itMergesMetricsFromBothRepositories(): void
     {
         $repo1 = new InMemoryMetricRepository();
-        $metrics1 = (new MetricBag())->with('ccn', 5);
+        $metrics1 = (new MetricBag())->with('complexity.ccn', 5);
         $repo1->addCallable(new CallableWithMetrics(
             DeclarationPath::of(SymbolPath::forMethod('App', 'ServiceA', 'method1'), RelativePath::fromString('ServiceA.php'), DeclarationOrdinal::fromRank(0)),
             100,
@@ -124,7 +124,7 @@ final class AnalysisResultTest extends TestCase
         ));
 
         $repo2 = new InMemoryMetricRepository();
-        $metrics2 = (new MetricBag())->with('ccn', 10);
+        $metrics2 = (new MetricBag())->with('complexity.ccn', 10);
         $repo2->addCallable(new CallableWithMetrics(
             DeclarationPath::of(SymbolPath::forMethod('App', 'ServiceB', 'method2'), RelativePath::fromString('ServiceB.php'), DeclarationOrdinal::fromRank(0)),
             200,
@@ -147,11 +147,11 @@ final class AnalysisResultTest extends TestCase
 
         self::assertSame(
             5,
-            $merged->metrics->get(SymbolPath::forMethod('App', 'ServiceA', 'method1'))->get('ccn'),
+            $merged->metrics->get(SymbolPath::forMethod('App', 'ServiceA', 'method1'))->get('complexity.ccn'),
         );
         self::assertSame(
             10,
-            $merged->metrics->get(SymbolPath::forMethod('App', 'ServiceB', 'method2'))->get('ccn'),
+            $merged->metrics->get(SymbolPath::forMethod('App', 'ServiceB', 'method2'))->get('complexity.ccn'),
         );
     }
 
@@ -238,7 +238,7 @@ final class AnalysisResultTest extends TestCase
         );
         $suppression2 = new Suppression('size', null, 20, SuppressionType::NextLine);
         $suppression3 = new Suppression(
-            'lcom',
+            'cohesion.lcom',
             null,
             30,
             SuppressionType::Symbol,

@@ -102,7 +102,7 @@ final class WorstClassDrillDownTest extends TestCase
             classMetrics: [
                 'class:App\\Service\\Foo' => MetricBag::fromArray([
                     'health.overall' => 60.0,
-                    'classLoc' => 100,
+                    'size.class-loc' => 100,
                 ]),
             ],
         );
@@ -208,9 +208,9 @@ final class WorstClassDrillDownTest extends TestCase
             classMetrics: [
                 'class:App\\Service\\Rich' => MetricBag::fromArray([
                     'health.overall' => 70.0,
-                    'methodCount' => 15,
-                    'cbo' => 8,
-                    'loc' => 300,
+                    'size.method-count' => 15,
+                    'coupling.cbo' => 8,
+                    'size.loc' => 300,
                 ]),
             ],
         );
@@ -218,10 +218,10 @@ final class WorstClassDrillDownTest extends TestCase
         $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', [], includeNotableMetrics: true);
 
         self::assertCount(1, $result);
-        self::assertArrayHasKey('methodCount', $result[0]->metrics);
-        self::assertSame(15, $result[0]->metrics['methodCount']);
-        self::assertArrayHasKey('cbo', $result[0]->metrics);
-        self::assertArrayHasKey('loc', $result[0]->metrics);
+        self::assertArrayHasKey('size.method-count', $result[0]->metrics);
+        self::assertSame(15, $result[0]->metrics['size.method-count']);
+        self::assertArrayHasKey('coupling.cbo', $result[0]->metrics);
+        self::assertArrayHasKey('size.loc', $result[0]->metrics);
     }
 
     #[Test]
@@ -237,7 +237,7 @@ final class WorstClassDrillDownTest extends TestCase
             classMetrics: [
                 'class:App\\Service\\Simple' => MetricBag::fromArray([
                     'health.overall' => 70.0,
-                    'methodCount' => 5,
+                    'size.method-count' => 5,
                 ]),
             ],
         );
