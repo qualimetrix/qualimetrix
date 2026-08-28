@@ -108,6 +108,7 @@ final class FailureClass
         self::TUPLE_FIELD_DRIFT,
         self::FINGERPRINT_MISMATCH,
         self::FINGERPRINT_OPAQUE,
+        self::REPORT_PAYLOAD_UNREADABLE,
         self::COVERAGE_SHORTFALL,
         self::COVERAGE_SURPLUS,
         self::COVERAGE_MULTIPLICITY,

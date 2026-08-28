@@ -194,14 +194,15 @@ final class Controls
      * run the candidate's corpus, so a fixture missing from it is missing from
      * both, and no surface or count can differ.
      *
-     * A `map-stale` toleration on this channel's row used to sit here, from the
-     * step whose map declared a row per channel: taking the only fixture that
-     * fires one away left that row translating nothing. Ш5c's map declares ten
-     * rows and every one of them is a `complexity.*` or `coupling.*` collapse,
-     * so no row names this channel and none of them goes idle when this fixture
-     * leaves. A toleration nothing matches now fails the control, which is why
-     * the withdrawal is the fix rather than a preference — and the docblock
-     * above it had claimed "nothing is tolerated" the whole time.
+     * A `map-stale` toleration comes and goes with the step's own map, and it is
+     * back. It first sat here for the step whose map declared a row per channel:
+     * taking away the only fixture that fires one left that row translating
+     * nothing. Ш5c's ten rows were all `complexity.*` and `coupling.*`
+     * collapses, so none of them named this channel and the toleration was
+     * withdrawn — a toleration nothing matches fails the control. Ш5e3 declares
+     * a row per metric key, and `unreachableCode.firstLine` is published by this
+     * fixture and by nothing else, so its row goes idle exactly when the fixture
+     * does. The base key's row does not: other fixtures publish it.
      *
      * The `layers` case would not do:
      * its layer-policy diagnostics are computed from the policy and the import
@@ -220,6 +221,9 @@ final class Controls
             [
                 new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus'),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:smells'),
+            ],
+            [
+                new Expectation(FailureClass::MAP_STALE, 'unreachableCode.firstLine'),
             ],
         );
     }
@@ -270,7 +274,7 @@ final class Controls
             Mutation::edit(
                 'finding-gate/cases/health/qmx.yaml',
                 ['    levels: [class, namespace, project]' => '    levels: [namespace, project]'],
-                'computed.branch_load stops being computed per class, and keeps firing per namespace and project',
+                'the corpus\' user-defined computed metric stops being computed per class, and keeps firing per namespace and project',
             ),
             [new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:health')],
         );
@@ -506,6 +510,10 @@ final class Controls
             [new Expectation(FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:disabled-rule')],
             [
                 new Expectation(FailureClass::RUN_FAILED, 'reference / disabled-rule'),
+                // The reference's run for that case dies, so its HTML artifact
+                // has no payload to read. The dead run is the finding; this is
+                // its downstream symptom, and it lands on the same case.
+                new Expectation(FailureClass::REPORT_PAYLOAD_UNREADABLE, 'case:disabled-rule'),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:disabled-rule'),
                 new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:disabled-rule'),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:layers'),

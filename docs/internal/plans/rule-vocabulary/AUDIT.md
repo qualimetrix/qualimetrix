@@ -225,6 +225,49 @@ The lesson generalises past this file: a grep for level *literals* does not find
 a consumer that parses the level out of the channel code. That needs its own
 probe — grep for the code-splitting helpers, not for `'.class'`.
 
+## Found while renaming the metric keys (Ш5e3), out of scope here
+
+### One collector publishes three families, and is named after one of them
+
+`Analysis/Evidence/Size/MethodCountCollector` writes the method and property
+counters (`size.*`), the seven class-shape facts (`design.is-readonly`,
+`design.is-data-class`, `design.is-abstract`, `design.is-interface`,
+`design.is-exception`, `design.is-promoted-properties-only`) and `design.woc`.
+Ш5e3 gave every key the family its meaning belongs to rather than the family of
+its producer, so the mismatch is now visible in the names: a `Size` collector
+publishes `design.*`. The name is right and the placement is not — the shape
+facts are a Design subject that happens to be cheap to read while counting
+methods. Moving them needs a collector split and a look at what else reads the
+same visitor.
+
+### `MetricName` holds two kinds of key and nothing tells them apart
+
+`security.hardcoded-credentials`, `security.sensitive-parameter` and the three
+`code-smell.unused-private.{method,property,constant}` halves are not metrics.
+They are keys of the structured-entry store (`MetricBag::withEntry`), never
+present in `MetricBag::all()` and therefore never published in any format. They
+sit in `MetricName` beside 77 keys that are published, with the same shape and
+no marker. Measured while the gate refused their map rows as stale: the rows
+declared a rename no surface could ever show, which is how the difference was
+found at all. A reader — or a tool building the published vocabulary from this
+class, as the gate's `MetricVocabulary` does — has nothing to filter on.
+
+### The report's JavaScript strips a shorter suffix list than the product's
+
+`src/Reporting/Template/src/hints.js::resolveBaseKey` strips `.avg`, `.max`,
+`.min`, `.sum`, `.p95` and `.p5`. `AggregationStrategy` has a seventh, `count`,
+so a hint for `<key>.count` resolves to nothing and the report shows none. Two
+copies of one closed list, and the copy is short; the PHP side now reads the
+list from the enum through `MetricName::base()`.
+
+### `collect-benchmark-data.php` cannot run under PHP's default memory limit
+
+It builds the whole output document in memory and `implode`s it, which exhausts
+128 MB on this project alone (measured 2026-08-28: fatal at line 102, 103 MB
+resident). It runs under `php -d memory_limit=2G`. The composer script sets no
+limit, so the documented invocation fails on a default PHP; every other script
+in `composer.json` that needs headroom passes `--memory-limit`.
+
 ## Disposition
 
 In scope for the rules-and-metrics pass: A1, A2, the `ViolationChannel` half of

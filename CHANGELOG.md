@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+- Every published metric key is renamed to `family.metric` in kebab: `ccn` →
+  `complexity.ccn`, `classCount` → `size.class-count`, `typeCoverage.paramTotal`
+  → `design.type-coverage.param.total`, and so on for all 82. Aggregated
+  spellings follow their key (`ccn.avg` → `complexity.ccn.avg`). The keys appear
+  in `--format=metrics`, `--format=json` and the HTML report.
+- Computed-metric formulas address a metric by its key through one variable:
+  `m["complexity.ccn.avg"]` replaces the `ccn__avg` encoding. A formula that
+  indexes `m` with anything but a quoted literal is refused.
+- A computed metric's name must be lower-case kebab after `health.` or
+  `computed.`: `computed.my_score` becomes `computed.my-score`.
+- The three type-coverage rules are renamed `design.type-coverage.param`,
+  `design.type-coverage.return` and `design.type-coverage.property`. Their CLI
+  options are unchanged (`--param-type-coverage-warning` and its siblings).
+- Every rule name must be lower-case kebab in every segment; a malformed name
+  now fails container assembly instead of registering under a heading of its own.
+- `qmx rules --group=<name>` fails and lists the existing groups when no rule
+  belongs to the group, instead of printing an empty listing and exiting 0.
+
+### Fixed
+
+- An aggregated metric requirement (`size.class-count.sum`) resolved its base
+  key by cutting at the first dot, which matched no provider for any key whose
+  name contains a dot.
+
 ### Changed
 - Every rule now declares its own estimated remediation time (in minutes) on its own class, alongside its documentation page and default thresholds. See [Remediation Time](reference/remediation-time.md) for the full table. `coupling.class-rank` debt is no longer scaled by overshoot: its rank is a project-wide normalised PageRank rescaled per class count, so a stored value is not comparable across runs — it now reports its flat base estimate like every other `occurrence`-shaped channel.
 - Baseline files are written one entry per line inside the same JSON document: a tightened ceiling is a one-line diff, and the file is two thirds its former size (60 401 B against 90 365 B for this project's own 264 entries). The layout is presentation only — the schema is unchanged at the time of this line-per-entry change, and a reformatted file still loads. (The schema itself changes separately; see the version 12 entry below.)
