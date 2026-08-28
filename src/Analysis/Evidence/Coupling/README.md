@@ -4,7 +4,7 @@
 
 `Analysis\\Evidence\\Coupling` owns graph-derived coupling evidence, RFC
 collection, threshold options and rules, and framework namespace
-classification for `cbo_app` and `ce_framework`. It consumes the public
+classification for `coupling.cbo-app` and `coupling.ce-framework`. It consumes the public
 DependencyModel, Measurement, Finding, ConfigurationDocument, and neutral Core
 contracts; it publishes one configuration contract for the runtime adapter.
 
@@ -23,20 +23,20 @@ Coupling metrics measure dependencies between components. All collectors in this
 
 **Collector:** `CouplingCollector`
 **Type:** `GlobalContextCollectorInterface`
-**Provides:** `ca`, `ce`, `cbo`, `instability`, `ce_packages`, `cbo_app`, `ce_framework`
+**Provides:** `coupling.ca`, `coupling.ce`, `coupling.cbo`, `coupling.instability`, `coupling.ce-packages`, `coupling.cbo-app`, `coupling.ce-framework`
 **Level:** Class
 
 ### Metrics
 
-| Metric         | Description                                           | Formula                           |
-| -------------- | ----------------------------------------------------- | --------------------------------- |
-| `ca`           | Afferent Coupling — incoming dependencies             | count(dependents)                 |
-| `ce`           | Efferent Coupling — outgoing dependencies             | count(dependencies)               |
-| `cbo`          | Coupling Between Objects (C&K) — all dependencies     | \|Ca ∪ Ce\|                       |
-| `instability`  | Class instability (Qualimetrix extension)             | Ce / (Ca + Ce)                    |
-| `ce_packages`  | Distinct external top-level namespaces in Ce          | count(distinct external packages) |
-| `cbo_app`      | Application-only CBO (excludes framework deps)        | \|Ca_app ∪ Ce_app\|               |
-| `ce_framework` | Framework efferent coupling (outgoing framework deps) | count(framework Ce targets)       |
+| Metric                  | Description                                           | Formula                           |
+| ----------------------- | ----------------------------------------------------- | --------------------------------- |
+| `coupling.ca`           | Afferent Coupling — incoming dependencies             | count(dependents)                 |
+| `coupling.ce`           | Efferent Coupling — outgoing dependencies             | count(dependencies)               |
+| `coupling.cbo`          | Coupling Between Objects (C&K) — all dependencies     | \|Ca ∪ Ce\|                       |
+| `coupling.instability`  | Class instability (Qualimetrix extension)             | Ce / (Ca + Ce)                    |
+| `coupling.ce-packages`  | Distinct external top-level namespaces in Ce          | count(distinct external packages) |
+| `coupling.cbo-app`      | Application-only CBO (excludes framework deps)        | \|Ca_app ∪ Ce_app\|               |
+| `coupling.ce-framework` | Framework efferent coupling (outgoing framework deps) | count(framework Ce targets)       |
 
 > **Note:** Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification.
 
@@ -61,7 +61,7 @@ Coupling metrics measure dependencies between components. All collectors in this
 
 ### Framework CBO Distinction
 
-The `cbo_app` and `ce_framework` metrics separate framework coupling (structural, can't be eliminated without changing framework) from application coupling (architectural, should be minimized).
+The `coupling.cbo-app` and `coupling.ce-framework` metrics separate framework coupling (structural, can't be eliminated without changing framework) from application coupling (architectural, should be minimized).
 
 **Configuration:**
 
@@ -79,14 +79,14 @@ coupling:
 
 **Partition property:** `Ce = Ce_app + Ce_framework` (outgoing dependencies partition cleanly).
 
-When no `framework-namespaces` are configured, `cbo_app` = `cbo` and `ce_framework` = 0.
+When no `framework-namespaces` are configured, `coupling.cbo-app` = `coupling.cbo` and `coupling.ce-framework` = 0.
 
 **CBO rule scope:** The `coupling.cbo` rule supports a `scope` option:
 
 ```yaml
 rules:
   coupling.cbo:
-    scope: application  # 'all' (default, uses cbo) | 'application' (uses cbo_app)
+    scope: application  # 'all' (default, uses coupling.cbo) | 'application' (uses coupling.cbo-app)
 ```
 
 `scope` is a recognized rule-level option. It selects the class-level CBO metric;
@@ -98,15 +98,15 @@ namespace CBO configuration remains under `namespace:`.
 
 **Collector:** `AbstractnessCollector`
 **Type:** `GlobalContextCollectorInterface`
-**Requires:** `classCount.sum`, `abstractClassCount.sum`, `interfaceCount.sum`, `implementingEnumCount.sum`, `traitCount.sum`
-**Provides:** `abstractness`
+**Requires:** `size.class-count.sum`, `size.abstract-class-count.sum`, `size.interface-count.sum`, `size.implementing-enum-count.sum`, `size.trait-count.sum`
+**Provides:** `coupling.abstractness`
 **Level:** Namespace
 
 ### Formula
 
 ```
-A = (abstractClassCount + interfaceCount)
-  / (classCount + traitCount + interfaceCount + implementingEnumCount)
+A = (size.abstract-class-count + size.interface-count)
+  / (size.class-count + size.trait-count + size.interface-count + size.implementing-enum-count)
 ```
 
 > **Note:** Enums are not a construct of Martin's 1994 model, so mapping them onto it
@@ -114,7 +114,7 @@ A = (abstractClassCount + interfaceCount)
 > substitution point -- it cannot be extended, subtyped or implemented -- so it is
 > neutral: excluded from the denominator rather than counted as concrete. An
 > `enum X implements Y` *is* a substitution point, a concrete implementation of a
-> declared contract, and stays in the denominator via `implementingEnumCount`.
+> declared contract, and stays in the denominator via `size.implementing-enum-count`.
 > Without that split, a namespace holding one interface and N enums implementing it
 > would report `A = 1.0` while its implementations sit right beside it. The shape of
 > the formula is unchanged; only the classification of one construct is.
@@ -142,8 +142,8 @@ concrete types still computes as `1 / 6` rather than losing the abstraction in a
 
 **Collector:** `DistanceCollector`
 **Type:** `GlobalContextCollectorInterface`
-**Requires:** `instability`, `abstractness`
-**Provides:** `distance`
+**Requires:** `coupling.instability`, `coupling.abstractness`
+**Provides:** `coupling.distance`
 **Level:** Namespace
 
 ### Formula
@@ -187,7 +187,7 @@ Ideal packages lie on the line `A + I = 1`:
 
 ```php
 new MetricDefinition(
-    name: 'instability',
+    name: 'coupling.instability',
     collectedAt: SymbolLevel::Class_,
     aggregations: [
         SymbolLevel::Namespace_->value => [Average],
@@ -199,7 +199,7 @@ new MetricDefinition(
 
 ```php
 new MetricDefinition(
-    name: 'abstractness',
+    name: 'coupling.abstractness',
     collectedAt: SymbolLevel::Namespace_,
     aggregations: [], // Computed globally
 )
@@ -209,7 +209,7 @@ new MetricDefinition(
 
 ```php
 new MetricDefinition(
-    name: 'distance',
+    name: 'coupling.distance',
     collectedAt: SymbolLevel::Namespace_,
     aggregations: [], // Derived metric
 )

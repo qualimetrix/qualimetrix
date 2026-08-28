@@ -593,7 +593,7 @@ function retireExecutedRows(array $existingNew, array $measuredRows, array $alre
         $identitiesByKind[$row['kind']][$row['old']] = true;
     }
 
-    assertExecutedRowsStillHold($alreadyExecuted, $measuredKeys, $identitiesByKind);
+    assertExecutedRowsStillHold($alreadyExecuted, $measuredKeys, $identitiesByKind, $existingNew);
 
     $retired = $alreadyExecuted;
     $lost = [];
@@ -666,6 +666,34 @@ function retireExecutedRows(array $existingNew, array $measuredRows, array $alre
 }
 
 /**
+ * Follows a name through every later rename of it, and answers where it lands.
+ *
+ * A name that a later step split has no single landing place, so the chain
+ * stops there and the caller reports the multivalued target as it stands.
+ *
+ * @param array<string, string> $later "kind\told" => new
+ */
+function resolveThroughLaterRenames(string $name, string $kind, array $later): string
+{
+    $seen = [];
+
+    while (isset($later[$kind . "\t" . $name]) && !isset($seen[$name])) {
+        $seen[$name] = true;
+        $next = $later[$kind . "\t" . $name];
+
+        if (str_contains($next, '|') || str_contains($next, '*') || $next === '?' || $next === '') {
+            break;
+        }
+
+        $name = $kind === 'channel' && str_contains($next, '#')
+            ? substr($next, (int) strpos($next, '#') + 1)
+            : $next;
+    }
+
+    return $name;
+}
+
+/**
  * The two invariants an executed row must still satisfy on every later run.
  *
  * History cannot be re-derived — that is stated in retireExecutedRows() and
@@ -685,12 +713,36 @@ function retireExecutedRows(array $existingNew, array $measuredRows, array $alre
  * Ш5b a channel is identified by that half alone, so this is the same identity
  * spelled the way it was spelled then.
  *
+ * A promised target that a LATER step renamed again is followed rather than
+ * reported. Ш4b split `design.type-coverage` into three producers and Ш5e3
+ * renamed all three; holding the older row against its literal target would
+ * force history to be rewritten every time a name moves twice, which is the one
+ * thing this file must never do. The chain is followed through the executed
+ * rows and the decided ones alike, and it is the END of the chain that has to
+ * be measured.
+ *
  * @param list<array{old: string, kind: string, new: string, step: string}> $executed
  * @param array<string, true> $measuredKeys
  * @param array<string, array<string, true>> $identitiesByKind
+ * @param array<string, array{new: string, step: string}> $decided rows a later step has decided but not yet executed
  */
-function assertExecutedRowsStillHold(array $executed, array $measuredKeys, array $identitiesByKind): void
-{
+function assertExecutedRowsStillHold(
+    array $executed,
+    array $measuredKeys,
+    array $identitiesByKind,
+    array $decided,
+): void {
+    $later = [];
+
+    foreach ($executed as $row) {
+        $later[$row['kind'] . "\t" . $row['old']] = $row['new'];
+    }
+
+    foreach ($decided as $mergeKey => $decision) {
+        [$old, $kind] = array_pad(explode("\t", $mergeKey, 2), 2, '');
+        $later[$kind . "\t" . $old] = $decision['new'];
+    }
+
     $problems = [];
 
     foreach ($executed as $row) {
@@ -715,14 +767,16 @@ function assertExecutedRowsStillHold(array $executed, array $measuredKeys, array
                 ? substr($target, (int) strpos($target, '#') + 1)
                 : $target;
 
-            if (!isset($identitiesByKind[$row['kind']][$measurable])) {
+            $resolved = resolveThroughLaterRenames($measurable, $row['kind'], $later);
+
+            if (!isset($identitiesByKind[$row['kind']][$resolved])) {
                 $problems[] = sprintf(
                     '%s (%s), recorded as executed by %s, promised %s — but %s is not measured any more',
                     $row['old'],
                     $row['kind'],
                     $row['step'],
                     $row['new'],
-                    $target,
+                    $resolved === $target ? $target : $target . ' (renamed since to ' . $resolved . ')',
                 );
             }
         }

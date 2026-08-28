@@ -232,7 +232,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
      * printing.
      */
     #[Test]
-    public function itThrowsWhenAProducerNameYieldsNoFamily(): void
+    public function itThrowsWhenAProducerNameIsMalformed(): void
     {
         $container = new ContainerBuilder();
         self::registerUniverse($container);
@@ -241,7 +241,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ->addTag(RuleRegistryCompilerPass::TAG);
 
         self::expectException(LogicException::class);
-        self::expectExceptionMessage('Producer ".orphan" has no family');
+        self::expectExceptionMessage('Producer ".orphan" is not a well-formed name');
 
         (new ChannelDeclarationCompilerPass())->process($container);
     }
@@ -585,7 +585,7 @@ final class FixtureOptionsWithNoChannelDeclarations implements RuleOptionsInterf
  *
  * A name whose first dot-separated segment is empty — the one shape
  * {@see RuleFamily} cannot answer for, and therefore the shape
- * {@see ChannelDeclarationCompilerPassTest::itThrowsWhenAProducerNameYieldsNoFamily()}
+ * {@see ChannelDeclarationCompilerPassTest::itThrowsWhenAProducerNameIsMalformed()}
  * requires the container build to refuse.
  */
 final class FixtureRuleWithoutAFamily implements RuleInterface

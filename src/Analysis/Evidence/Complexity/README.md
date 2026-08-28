@@ -55,7 +55,7 @@ Complexity metrics measure the number of execution paths and cognitive load of c
 ## Cyclomatic Complexity (CCN)
 
 **Collector:** `CyclomaticComplexityCollector`
-**Provides:** `ccn`
+**Provides:** `complexity.ccn`
 **Level:** Callable
 
 ### Formula
@@ -92,7 +92,7 @@ CCN = 1 + number of branching points
 ## Cognitive Complexity
 
 **Collector:** `CognitiveComplexityCollector`
-**Provides:** `cognitive`
+**Provides:** `complexity.cognitive`
 **Level:** Callable
 
 ### Differences from CCN
@@ -155,7 +155,7 @@ function processItems(array $data): void {
 ## NPath Complexity
 
 **Collector:** `NpathComplexityCollector`
-**Provides:** `npath`
+**Provides:** `complexity.npath`
 **Level:** Callable
 
 ### Differences from CCN
@@ -235,7 +235,7 @@ Concrete PHP methods and global functions are both represented as callables:
 
 ```php
 new MetricDefinition(
-    name: 'ccn', // 'cognitive', 'npath'
+    name: 'complexity.ccn', // 'complexity.cognitive', 'complexity.npath'
     collectedAt: SymbolLevel::Callable,
     aggregations: [
         SymbolLevel::Class_->value => [Sum, Average, Max],
@@ -245,7 +245,7 @@ new MetricDefinition(
 )
 ```
 
-**Aggregated names:** `ccn.sum`, `ccn.avg`, `ccn.max`, `cognitive.sum`, `npath.avg`, etc.
+**Aggregated names:** `complexity.ccn.sum`, `complexity.ccn.avg`, `complexity.ccn.max`, `complexity.cognitive.sum`, `complexity.npath.avg`, etc.
 
 ## WMC (Weighted Methods per Class)
 

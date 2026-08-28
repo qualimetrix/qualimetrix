@@ -8241,8 +8241,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleFamily": {
-      "path": "src/Analysis/Finding/Contract/Rule/RuleFamily.php",
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\ProducerName": {
+      "path": "src/Analysis/Finding/Contract/Rule/ProducerName.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "contract",
@@ -8254,6 +8254,14 @@
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleFamily": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleFamily.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleNameReader": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleNameReader.php",

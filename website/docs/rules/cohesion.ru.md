@@ -73,7 +73,7 @@ Qualimetrix реализует основанный на графах алгор
 
 ## TCC -- Тесная связность класса
 
-**Metric ID:** `tcc`
+**Metric ID:** `cohesion.tcc`
 
 <!-- llms:skip-begin -->
 ### Что измеряет
@@ -180,7 +180,7 @@ class OrderService
 
 ## LCC -- Свободная связность класса
 
-**Metric ID:** `lcc`
+**Metric ID:** `cohesion.lcc`
 
 <!-- llms:skip-begin -->
 ### Что измеряет

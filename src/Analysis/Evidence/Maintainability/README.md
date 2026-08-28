@@ -34,7 +34,7 @@ Maintainability metrics assess the difficulty of understanding, modifying, and t
 ## Halstead Metrics
 
 **Collector:** `HalsteadCollector`
-**Provides:** `halstead.volume`, `halstead.difficulty`, `halstead.effort`, `halstead.bugs`, `halstead.time`
+**Provides:** `maintainability.halstead.volume`, `maintainability.halstead.difficulty`, `maintainability.halstead.effort`, `maintainability.halstead.bugs`, `maintainability.halstead.time`
 **Level:** Callable
 
 ### Base Components
@@ -127,8 +127,8 @@ function add(int $a, int $b): int
 
 **Collector:** `MaintainabilityIndexCollector`
 **Type:** `DerivedCollectorInterface`
-**Requires:** `halstead.volume`, `ccn`
-**Provides:** `mi`
+**Requires:** `maintainability.halstead.volume`, `complexity.ccn`
+**Provides:** `maintainability.mi`
 **Level:** Method
 
 ### Formula
@@ -206,7 +206,7 @@ function processComplexData(array $data): array
 
 ```php
 new MetricDefinition(
-    name: 'halstead.volume', // same for others
+    name: 'maintainability.halstead.volume', // same for others
     collectedAt: SymbolLevel::Callable,
     aggregations: [
         SymbolLevel::Class_->value => [Average, Max],
@@ -220,7 +220,7 @@ new MetricDefinition(
 
 ```php
 new MetricDefinition(
-    name: 'mi',
+    name: 'maintainability.mi',
     collectedAt: SymbolLevel::Callable,
     aggregations: [
         SymbolLevel::Class_->value => [Average, Min],
@@ -231,9 +231,9 @@ new MetricDefinition(
 ```
 
 **Aggregated names:**
-- `halstead.volume.avg`, `halstead.volume.max`
-- `halstead.difficulty.avg`, `halstead.effort.max`
-- `mi.avg`, `mi.min` (minimum = worst MI in a class/namespace)
+- `maintainability.halstead.volume.avg`, `maintainability.halstead.volume.max`
+- `maintainability.halstead.difficulty.avg`, `maintainability.halstead.effort.max`
+- `maintainability.mi.avg`, `maintainability.mi.min` (minimum = worst MI in a class/namespace)
 
 ---
 
@@ -257,7 +257,7 @@ Read this README with:
   MI calculation and derived-collector ordering, and rule/default behavior.
 
 Changes are complete when the seven flat leaf declarations retain collector
-name `halstead`, all five `halstead.*` metrics, derived requirements exactly
+name `halstead`, all five `maintainability.halstead.*` metrics, derived requirements exactly
 `halstead`, `cyclomatic-complexity`, and `method-statement-count`, and the
 `maintainability.index` ID, aliases, channels, option defaults, thresholds,
 and 101 owned PHPUnit IDs. Do not add a `Contract/` directory without a named

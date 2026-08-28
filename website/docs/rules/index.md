@@ -63,10 +63,10 @@ These rules measure how well the methods inside a class work together. Low cohes
 | ------------------- | --------------- | ---------------------------------------------- | --------------- | ------------- |
 | [LCOM](cohesion.md) | `cohesion.lcom` | Whether a class does too many unrelated things | 3               | 5             |
 
-| Metric             | ID    | What it checks                                     | Recommended |
-| ------------------ | ----- | -------------------------------------------------- | ----------- |
-| [TCC](cohesion.md) | `tcc` | Fraction of public method pairs sharing properties | >= 0.5      |
-| [LCC](cohesion.md) | `lcc` | Fraction including transitive connections          | >= 0.5      |
+| Metric             | ID             | What it checks                                     | Recommended |
+| ------------------ | -------------- | -------------------------------------------------- | ----------- |
+| [TCC](cohesion.md) | `cohesion.tcc` | Fraction of public method pairs sharing properties | >= 0.5      |
+| [LCC](cohesion.md) | `cohesion.lcc` | Fraction including transitive connections          | >= 0.5      |
 
 !!! note
     TCC and LCC are **metrics**, not rules. They cannot be enabled or disabled via `--disable-rule` / `--only-rule`, and do not generate violations. They appear in reports as informational values and are used by the God Class rule as inputs. LCOM, above, is a rule with its own thresholds.
@@ -219,7 +219,7 @@ Compact rule catalog. For warning/error thresholds, see [Default Thresholds Refe
 - **Complexity:** `complexity.cyclomatic`, `complexity.cognitive`, `complexity.npath`, `complexity.wmc`
 - **Size:** `size.method-count`, `size.class-count`, `size.property-count`
 - **Design:** `design.inheritance`, `design.noc`, `design.type-coverage.param`, `design.type-coverage.return`, `design.type-coverage.property`, `design.data-class`, `design.god-class`
-- **Cohesion:** `cohesion.lcom` (rule); `tcc`, `lcc` (metrics only, no rule — used as inputs by `design.god-class`)
+- **Cohesion:** `cohesion.lcom` (rule); `cohesion.tcc`, `cohesion.lcc` (metrics only, no rule — used as inputs by `design.god-class`)
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
 - **Maintainability:** `maintainability.index`
 - **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.unassigned-class`

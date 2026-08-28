@@ -516,7 +516,7 @@ detection is not configurable: `namespace.strategy` and
 
 ### Coupling
 
-Configure framework namespace prefixes for the CBO (Coupling Between Objects) metric. Dependencies on framework namespaces are tracked separately as `cbo_app` and `ce_framework`:
+Configure framework namespace prefixes for the CBO (Coupling Between Objects) metric. Dependencies on framework namespaces are tracked separately as `coupling.cbo-app` and `coupling.ce-framework`:
 
 ```yaml
 coupling:
@@ -527,7 +527,7 @@ coupling:
     - Illuminate
 ```
 
-When no `framework-namespaces` are configured, `cbo_app` equals `cbo` (no effect).
+When no `framework-namespaces` are configured, `coupling.cbo-app` equals `coupling.cbo` (no effect).
 
 ### Aggregation
 

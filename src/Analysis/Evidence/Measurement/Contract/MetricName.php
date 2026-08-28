@@ -15,7 +15,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  * The constant is the key upper-cased, so a constant cannot drift from the
  * family of its own value the way `STRUCTURE_LCOM = 'lcom'` did.
  *
- * @qmx-threshold coupling.cbo 65 -- Canonical names are an intentional Measurement contract hub; current raw CBO 64 gets one-edge headroom. It rose from 62 when design.type-coverage became three rules, each naming its own dimension's metrics.
+ * @qmx-threshold coupling.cbo 67 -- Canonical names are an intentional Measurement contract hub, and this CBO is afferent: it counts adoption, not entanglement. Current raw CBO 66 gets one-edge headroom. It rose from 64 when Ш5e3 moved the eleven collector-owned counters here and gave the aggregated-key decomposition a home beside its inverse.
  */
 final class MetricName
 {
@@ -137,6 +137,31 @@ final class MetricName
     public static function agg(string $metric, AggregationStrategy $strategy): string
     {
         return $metric . '.' . $strategy->value;
+    }
+
+    /**
+     * The base metric an aggregated name was built from, or the name itself.
+     *
+     * The inverse of {@see agg()}, and it lives beside it because the two are
+     * one rule read in two directions. Apart, the decomposition drifted: it
+     * used to cut at the first dot, which was already wrong for
+     * `maintainability.halstead.volume` and matched nothing at all once every
+     * key carried its family. The suffix is a strategy or it is part of the
+     * name — there is no third case.
+     *
+     * Example: base('complexity.ccn.sum') → 'complexity.ccn'
+     */
+    public static function base(string $metric): string
+    {
+        $lastDot = strrpos($metric, '.');
+
+        if ($lastDot === false) {
+            return $metric;
+        }
+
+        return AggregationStrategy::tryFrom(substr($metric, $lastDot + 1)) === null
+            ? $metric
+            : substr($metric, 0, $lastDot);
     }
 
     private function __construct()

@@ -535,10 +535,10 @@ Exports raw metric values for all symbols (methods, classes, namespaces, files) 
       "file": "src/Service/UserService.php",
       "line": 42,
       "metrics": {
-        "ccn": 25,
-        "cognitive_complexity": 18,
-        "npath": 128,
-        "loc": 45
+        "complexity.ccn": 25,
+        "complexity.cognitive": 18,
+        "complexity.npath": 128,
+        "size.loc": 45
       }
     }
   ],

@@ -514,7 +514,7 @@ Qualimetrix определяет неймспейсы проекта по `compo
 
 ### Связанность (coupling)
 
-Настройка префиксов неймспейсов фреймворка для метрики CBO (Coupling Between Objects). Зависимости от неймспейсов фреймворка отслеживаются отдельно как `cbo_app` и `ce_framework`:
+Настройка префиксов неймспейсов фреймворка для метрики CBO (Coupling Between Objects). Зависимости от неймспейсов фреймворка отслеживаются отдельно как `coupling.cbo-app` и `coupling.ce-framework`:
 
 ```yaml
 coupling:
@@ -525,7 +525,7 @@ coupling:
     - Illuminate
 ```
 
-Если `framework-namespaces` не указаны, `cbo_app` равен `cbo` (без эффекта).
+Если `framework-namespaces` не указаны, `coupling.cbo-app` равен `coupling.cbo` (без эффекта).
 
 ### Агрегация (aggregation)
 

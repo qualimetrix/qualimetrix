@@ -63,10 +63,10 @@ Qualimetrix содержит набор встроенных правил для
 | ---------------------- | --------------- | ------------------------------------------------------- | ------- | ----- |
 | [LCOM](cohesion.ru.md) | `cohesion.lcom` | Занимается ли класс слишком многими несвязанными вещами | 3       | 5     |
 
-| Метрика               | ID    | Что проверяет                                    | Рекомендация |
-| --------------------- | ----- | ------------------------------------------------ | ------------ |
-| [TCC](cohesion.ru.md) | `tcc` | Доля пар публичных методов, разделяющих свойства | >= 0.5       |
-| [LCC](cohesion.ru.md) | `lcc` | Доля с учётом транзитивных связей                | >= 0.5       |
+| Метрика               | ID             | Что проверяет                                    | Рекомендация |
+| --------------------- | -------------- | ------------------------------------------------ | ------------ |
+| [TCC](cohesion.ru.md) | `cohesion.tcc` | Доля пар публичных методов, разделяющих свойства | >= 0.5       |
+| [LCC](cohesion.ru.md) | `cohesion.lcc` | Доля с учётом транзитивных связей                | >= 0.5       |
 
 !!! note
     TCC и LCC — это **метрики**, а не правила. Их нельзя включить или отключить через `--disable-rule` / `--only-rule`, и они не генерируют нарушений. В отчётах они отображаются как информационные значения и используются правилом God Class в качестве входных данных. LCOM выше — правило со своими порогами.
@@ -219,7 +219,7 @@ rules:
 - **Complexity:** `complexity.cyclomatic`, `complexity.cognitive`, `complexity.npath`, `complexity.wmc`
 - **Size:** `size.method-count`, `size.class-count`, `size.property-count`
 - **Design:** `design.inheritance`, `design.noc`, `design.type-coverage.param`, `design.type-coverage.return`, `design.type-coverage.property`, `design.data-class`, `design.god-class`
-- **Cohesion:** `cohesion.lcom` (правило); `tcc`, `lcc` (только метрики, не правила — используются как входы `design.god-class`)
+- **Cohesion:** `cohesion.lcom` (правило); `cohesion.tcc`, `cohesion.lcc` (только метрики, не правила — используются как входы `design.god-class`)
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
 - **Maintainability:** `maintainability.index`
 - **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.unassigned-class`

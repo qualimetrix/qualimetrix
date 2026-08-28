@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
 use LogicException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 
 /**
  * Sorts GlobalContextCollectors in topological order based on their dependencies.
@@ -150,7 +150,7 @@ final class GlobalCollectorSorter
 
         foreach ($collectors as $collector) {
             foreach ($collector->requires() as $metric) {
-                if (isset($available[$metric]) || isset($available[$this->getBaseMetric($metric)])) {
+                if (isset($available[$metric]) || isset($available[MetricName::base($metric)])) {
                     continue;
                 }
 
@@ -178,7 +178,7 @@ final class GlobalCollectorSorter
 
         foreach ($collector->requires() as $metric) {
             // Handle dotted metric names (e.g., 'size.class-count.sum' → 'size.class-count')
-            $baseMetric = $this->getBaseMetric($metric);
+            $baseMetric = MetricName::base($metric);
 
             if (isset($providers[$metric])) {
                 $required[$providers[$metric]] = true;
@@ -188,29 +188,6 @@ final class GlobalCollectorSorter
         }
 
         return array_keys($required);
-    }
-
-    /**
-     * Strips the aggregation suffix a requirement may carry.
-     *
-     * 'size.class-count.sum' → 'size.class-count'
-     * 'coupling.instability' → 'coupling.instability'
-     *
-     * The suffix is recognised by the closed strategy list, not by the first
-     * dot: every metric key carries its family in front of the metric, so
-     * cutting at the first dot returns the family and matches no provider.
-     */
-    private function getBaseMetric(string $metric): string
-    {
-        $dotPos = strrpos($metric, '.');
-
-        if ($dotPos === false) {
-            return $metric;
-        }
-
-        $suffix = substr($metric, $dotPos + 1);
-
-        return AggregationStrategy::tryFrom($suffix) === null ? $metric : substr($metric, 0, $dotPos);
     }
 
     /**

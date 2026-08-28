@@ -1,2 +1,5 @@
 old	new	reason
 computed.branch_load	computed.branch-load	Ш5e3 renames this channel
+design.param-type-coverage	design.type-coverage.param	Ш5e3 renames this channel
+design.property-type-coverage	design.type-coverage.property	Ш5e3 renames this channel
+design.return-type-coverage	design.type-coverage.return	Ш5e3 renames this channel

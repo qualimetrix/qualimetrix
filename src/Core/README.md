@@ -196,7 +196,7 @@ typed APIs preserve declaration and logical-class identity without collapsing th
 - `allDeclarations()`, `allCallables()`, `allLogicalClasses()` — typed iteration
 
 All symbol levels (Callable, Class, File, Namespace, Project) return `MetricBag`.
-Aggregated metrics use naming convention: `{metric}.{strategy}` (e.g., `ccn.sum`, `loc.avg`).
+Aggregated metrics use naming convention: `{metric}.{strategy}` (e.g., `complexity.ccn.sum`, `size.loc.avg`).
 
 **SymbolType (Enum):**
 ```php
@@ -216,14 +216,14 @@ enum SymbolType: string {
 foreach ($repository->allCallables() as $callableInfo) {
     $subject = $callableInfo->subject
         ?? throw new LogicException('Callable metrics require an exact declaration subject');
-    $ccn = $repository->getSubject($subject)->get('ccn'); // int|null
+    $ccn = $repository->getSubject($subject)->get('complexity.ccn'); // int|null
 }
 
 // Namespace metrics (aggregated)
 $nsMetrics = $repository->get(SymbolPath::forNamespace('App\Service'));
-$avgCcn = $nsMetrics->get('ccn.avg'); // float
-$totalLoc = $nsMetrics->get('loc.sum'); // int
-$classCount = $nsMetrics->get('classCount.sum'); // int
+$avgCcn = $nsMetrics->get('complexity.ccn.avg'); // float
+$totalLoc = $nsMetrics->get('size.loc.sum'); // int
+$classCount = $nsMetrics->get('size.class-count.sum'); // int
 
 ```
 
@@ -250,7 +250,7 @@ Defines how metrics are aggregated when transitioning to a higher level.
 Value Object — describes a metric and its aggregation strategies.
 
 **Fields:**
-- `name: string` — base name (`ccn`, `loc`, `classCount`)
+- `name: string` — base name (`complexity.ccn`, `size.loc`, `size.class-count`)
 - `collectedAt: SymbolLevel` — collection level
 - `aggregations: array<string, list<AggregationStrategy>>` — strategies by level
 
@@ -262,7 +262,7 @@ Value Object — describes a metric and its aggregation strategies.
 **Example:**
 ```php
 new MetricDefinition(
-    name: 'ccn',
+    name: 'complexity.ccn',
     collectedAt: SymbolLevel::Callable,
     aggregations: [
         'class' => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
@@ -277,7 +277,7 @@ new MetricDefinition(
 Metrics are aggregated **upward** through the symbol hierarchy: Callable → Class → Namespace → Project.
 Each level aggregates only from its **direct children** (flat aggregation):
 
-- **Class** metrics = aggregated from its callables (e.g., `ccn.sum` = sum of all callable CCN values)
+- **Class** metrics = aggregated from its callables (e.g., `complexity.ccn.sum` = sum of all callable CCN values)
 - **Namespace** metrics = aggregated from callables/classes directly in the namespace (not from nested namespaces). For callable-collected metrics (CCN, Cognitive, NPath, MI), `.max`/`.avg`/`.p95` reflect per-callable values.
 - **Project** metrics = aggregated from all namespaces
 

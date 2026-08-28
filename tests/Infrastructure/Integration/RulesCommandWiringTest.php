@@ -194,12 +194,13 @@ final class RulesCommandWiringTest extends TestCase
     }
 
     /**
-     * The debt Ш5e2 deliberately does not take: an unknown group, and a known
-     * group in the wrong case, stay fail-open — an empty listing and exit 0.
-     * Pinned so the next step changes it on purpose rather than in passing.
+     * The debt Ш5e2 pinned as fail-open, taken by Ш5e3: an unknown group, and a
+     * known group in the wrong case, are refused instead of answered with an
+     * empty listing and exit 0. Checked against the real container, so the
+     * groups the failure offers are the ones the listing actually prints.
      */
     #[Test]
-    public function itStaysSilentAndSuccessfulForAGroupNoProducerHas(): void
+    public function itRefusesAGroupNoProducerHas(): void
     {
         $container = (new ContainerFactory())->create();
 
@@ -210,8 +211,9 @@ final class RulesCommandWiringTest extends TestCase
             $tester = new CommandTester($command);
             $tester->execute(['--group' => $group]);
 
-            self::assertSame(0, $tester->getStatusCode());
-            self::assertStringContainsString(\sprintf('No rules found in group "%s"', $group), $tester->getDisplay());
+            self::assertSame(1, $tester->getStatusCode(), $group);
+            self::assertStringContainsString(\sprintf('No rule group "%s"', $group), $tester->getDisplay());
+            self::assertStringContainsString('complexity', $tester->getDisplay(), 'the failure names the groups that exist');
         }
     }
 }

@@ -47,7 +47,7 @@ final class SelfTest
     {
         $empty = RenameMaps::fromPairs([]);
         $this->assert($empty->isIdentity(), 'an empty map set is the identity');
-        $this->same('code-smell.eval', $empty->forward('code-smell.eval'), 'identity forward');
+        $this->same('code-smell.eval', $empty->forward('code-smell.eval', 'format:json'), 'identity forward');
         $this->same('code-smell.eval', $empty->reverse('code-smell.eval'), 'identity reverse');
 
         // About the tracked map files this self-test asserts ONE thing: that they
@@ -95,12 +95,12 @@ final class SelfTest
         ]);
         $this->same(
             'design.param-typing#design.param-typing',
-            $channel->forward('design.type-coverage#design.type-coverage.param'),
+            $channel->forward('design.type-coverage#design.type-coverage.param', 'format:json'),
             'a whole channel key maps before its halves do',
         );
         $this->same(
             '"rule": "design.param-typing"',
-            $channel->forward('"rule": "design.type-coverage"'),
+            $channel->forward('"rule": "design.type-coverage"', 'format:json'),
             'the rule half of a renamed channel maps too',
         );
         // Forward-only, and the reason is measured: after a collapse the target
@@ -123,13 +123,13 @@ final class SelfTest
         // everywhere else, which is how a rename leaks into an undeclared diff.
         $this->same(
             'source="qmx.design.param-typing"',
-            $channel->forward('source="qmx.design.type-coverage.param"'),
+            $channel->forward('source="qmx.design.type-coverage.param"', 'format:json'),
             'a prefixed spelling of the code is translated too',
         );
         $prefixOnly = RenameMaps::fromPairs([
             ['old' => 'code-smell.eval#code-smell.eval', 'new' => 'code-smell.eval#smell.eval', 'source' => 'channels.tsv'],
         ]);
-        $prefixOnly->forward('source="qmx.code-smell.eval"');
+        $prefixOnly->forward('source="qmx.code-smell.eval"', 'format:json');
         $this->same([], $prefixOnly->staleRows(), 'a row whose only match was the prefixed spelling is not stale');
 
         $inputs = RenameMaps::fromPairs([
@@ -148,7 +148,7 @@ final class SelfTest
         );
         $this->same(
             '--param-typing-warning (--rule-opt=design.param-typing:warning=…)',
-            $inputs->forward('--type-coverage-param-warning (--rule-opt=design.type-coverage:param_warning=…)'),
+            $inputs->forward('--type-coverage-param-warning (--rule-opt=design.type-coverage:param_warning=…)', 'format:json'),
             'an input row also applies forward, because the rules snapshot prints the same tokens',
         );
 
@@ -180,7 +180,7 @@ final class SelfTest
         // is what reports the undeclared rename.
         $this->same(
             '"channel":"design.param-typing#design.type-coverage.property"',
-            $channel->forward('"channel":"design.type-coverage#design.type-coverage.property"'),
+            $channel->forward('"channel":"design.type-coverage#design.type-coverage.property"', 'format:json'),
             'a row does not translate a longer name that merely starts with it',
         );
 
@@ -189,7 +189,7 @@ final class SelfTest
         ]);
         $this->same(
             '"complexity.cyclomatic.callable" and "complexity.ccn"',
-            $levels->forward('"complexity.cyclomatic.callable" and "complexity.cyclomatic"'),
+            $levels->forward('"complexity.cyclomatic.callable" and "complexity.cyclomatic"', 'format:json'),
             'a level segment keeps a prefix row away from the whole name',
         );
 
@@ -205,7 +205,7 @@ final class SelfTest
         ]);
         $this->same(
             'new.rule#a.code',
-            $cascade->forward('old.rule#a.code'),
+            $cascade->forward('old.rule#a.code', 'format:json'),
             'substitution is one pass over the original text, so rows cannot cascade',
         );
 
@@ -237,7 +237,7 @@ final class SelfTest
         $stale = RenameMaps::fromPairs([
             ['old' => 'never.observed', 'new' => 'nor.published', 'source' => 'metric-keys.tsv'],
         ]);
-        $stale->forward('nothing this row can translate');
+        $stale->forward('nothing this row can translate', 'format:json');
         $this->same(
             ['metric-keys.tsv: "never.observed" -> "nor.published"'],
             $stale->staleRows(),
@@ -250,7 +250,7 @@ final class SelfTest
         ]);
         $this->same(
             '"subject": "declaration:class:Qualimetrix\\\\Analysis\\\\Finding\\\\Contract\\\\Finding@src/x.php"',
-            $symbols->forward('"subject": "declaration:class:Qualimetrix\\\\Analysis\\\\Finding\\\\Contract\\\\Violation@src/x.php"'),
+            $symbols->forward('"subject": "declaration:class:Qualimetrix\\\\Analysis\\\\Finding\\\\Contract\\\\Violation@src/x.php"', 'format:json'),
             'a symbol row maps its JSON-escaped form as well as its raw form',
         );
     }
@@ -283,14 +283,14 @@ final class SelfTest
 
         $this->same(
             '"cohesion.lcom" and "cohesion.lcom"',
-            $collapse->forward('"cohesion.lcom#cohesion.lcom" and "cohesion.lcom"'),
+            $collapse->forward('"cohesion.lcom#cohesion.lcom" and "cohesion.lcom"', 'format:json'),
             'a collapse row translates the whole key and leaves the surviving rule name alone',
         );
 
         $renamed = RenameMaps::fromPairs([$row('cohesion.lcom', 'cohesion.lcom4')]);
         $this->same(
             '"cohesion.lcom4"',
-            $renamed->forward('"cohesion.lcom"'),
+            $renamed->forward('"cohesion.lcom"', 'format:json'),
             'a channel that is already one name is renamed by an ordinary row',
         );
 
@@ -304,7 +304,7 @@ final class SelfTest
         ]);
         $this->same(
             '"name": "Complexity Cyclomatic Call"',
-            $half->forward('"name": "Complexity Cyclomatic Callable"'),
+            $half->forward('"name": "Complexity Cyclomatic Callable"', 'format:json'),
             'a renamed code half is translated in the title-cased spelling SARIF publishes as a rule name',
         );
 
@@ -315,7 +315,7 @@ final class SelfTest
         ]]);
         $this->same(
             'Src/old Php',
-            $symbols->forward('Src/old Php'),
+            $symbols->forward('Src/old Php', 'format:json'),
             'the title-cased spelling belongs to channel rows only, so a symbol row does not invent one',
         );
     }
@@ -548,14 +548,14 @@ final class SelfTest
 
         $this->same(
             '"complexity.ccn"',
-            $keys->forward('"ccn"'),
+            $keys->forward('"ccn"', 'format:json'),
             'a key row translates the bare spelling',
         );
 
         foreach ($strategies as $strategy) {
             $this->same(
                 '"complexity.ccn.' . $strategy . '"',
-                $keys->forward('"ccn.' . $strategy . '"'),
+                $keys->forward('"ccn.' . $strategy . '"', 'format:json'),
                 'and the aggregated spelling for ' . $strategy,
             );
         }
@@ -566,14 +566,14 @@ final class SelfTest
         // stay green.
         $this->same(
             '"ccn.average" and "ccn.avg.avg" and "ccnx"',
-            $keys->forward('"ccn.average" and "ccn.avg.avg" and "ccnx"'),
+            $keys->forward('"ccn.average" and "ccn.avg.avg" and "ccnx"', 'format:json'),
             'an unknown suffix, a doubled one and a longer name are not translated',
         );
 
         $idle = RenameMaps::fromPairs([
             ['old' => 'ccn', 'new' => 'complexity.ccn', 'source' => RenameMaps::METRIC_KEYS],
         ], $vocabulary);
-        $idle->forward('nothing this row can translate');
+        $idle->forward('nothing this row can translate', 'format:json');
         $this->same(
             [RenameMaps::METRIC_KEYS . ': "ccn" -> "complexity.ccn"'],
             $idle->staleRows(),
@@ -583,7 +583,7 @@ final class SelfTest
         $suffixOnly = RenameMaps::fromPairs([
             ['old' => 'ccn', 'new' => 'complexity.ccn', 'source' => RenameMaps::METRIC_KEYS],
         ], $vocabulary);
-        $suffixOnly->forward('"ccn.p5"');
+        $suffixOnly->forward('"ccn.p5"', 'format:json');
         $this->same(
             [],
             $suffixOnly->staleRows(),
@@ -726,11 +726,59 @@ final class SelfTest
         );
         $this->same(
             '"coupling.class-coupling.avg"',
-            $both->forward('"coupling.cbo.avg"'),
+            $both->forward('"coupling.cbo.avg"', 'format:json'),
             'and is translated forwards, where the key role does apply',
         );
 
         $this->aggregationVocabulary();
+        $this->keysTravelOnlyWhereKeysArePublished();
+    }
+
+    /**
+     * A key map reaches the surfaces that publish keys, and no others.
+     *
+     * Half the metric vocabulary is an English word, so on a prose surface the
+     * whole-name rule is no protection at all: `cognitive` in "Maximum method
+     * cognitive complexity is 29" has the same boundaries as the key. Measured
+     * on the corpus 2026-08-28, before the restriction existed: the reference's
+     * `format:text`, `format:checkstyle`, `format:gitlab`, `format:github`,
+     * `format:summary`, `format:sarif` and the `rules` listing all came back
+     * rewritten, and the run reported the corruption against the step.
+     *
+     * Both halves are checked, because only the pair says the restriction is a
+     * restriction rather than an omission: the key is translated where keys are
+     * published, and a channel row — which every surface publishes — still
+     * travels everywhere.
+     */
+    private function keysTravelOnlyWhereKeysArePublished(): void
+    {
+        $maps = RenameMaps::fromPairs([
+            ['old' => 'cognitive', 'new' => 'complexity.cognitive', 'source' => RenameMaps::METRIC_KEYS],
+            ['old' => 'design.param-type-coverage', 'new' => 'design.type-coverage.param', 'source' => RenameMaps::CHANNELS],
+        ], MetricVocabulary::of(['avg'], ['cognitive']));
+
+        $prose = 'error[design.param-type-coverage]: Maximum method cognitive complexity is 29';
+
+        $this->same(
+            'error[design.type-coverage.param]: Maximum method cognitive complexity is 29',
+            $maps->forward($prose, 'format:text'),
+            'on a surface that publishes no metric key, the key map is not applied and prose survives',
+        );
+        $this->same(
+            '{"cognitive": 29}',
+            $maps->forward('{"cognitive": 29}', 'format:text'),
+            'and the key itself is left alone there, so a key reaching a prose surface goes red instead of silent',
+        );
+        $this->same(
+            '{"complexity.cognitive": 29}',
+            $maps->forward('{"cognitive": 29}', 'format:metrics'),
+            'on a surface that publishes keys, the key map is applied',
+        );
+        $this->same(
+            '{"complexity.cognitive.avg": 29}',
+            $maps->forward('{"cognitive.avg": 29}', 'format:json'),
+            'and so are the aggregated spellings of that same row',
+        );
     }
 
     /**
@@ -753,7 +801,7 @@ final class SelfTest
             'the aggregation vocabulary is read out of the product',
         );
         $this->assert(
-            \in_array('ccn', $product->baseKeys, true) && \count($product->baseKeys) > 50,
+            \in_array('complexity.ccn', $product->baseKeys, true) && \count($product->baseKeys) > 50,
             'and so are the base keys the product declares in one place',
         );
 
@@ -824,7 +872,7 @@ final class SelfTest
         );
         $this->same(
             'design.type-coverage-of-something',
-            $split->forward('design.type-coverage-of-something'),
+            $split->forward('design.type-coverage-of-something', 'format:json'),
             'the row still translates a whole token only, so a longer name it merely starts is left alone',
         );
 
@@ -832,11 +880,11 @@ final class SelfTest
         // translation, and picking the first would publish a rename no row
         // declared.
         $this->assert(
-            self::throws(static fn(): mixed => $split->forward('"rule": "design.type-coverage"')),
+            self::throws(static fn(): mixed => $split->forward('"rule": "design.type-coverage"', 'format:json')),
             'the forward direction of a multivalued row refuses out loud instead of taking the first image',
         );
         $this->assert(
-            self::throws(static fn(): mixed => $split->forward('source="qmx.design.type-coverage"')),
+            self::throws(static fn(): mixed => $split->forward('source="qmx.design.type-coverage"', 'format:json')),
             'and refuses the prefixed spelling too, rather than silently not seeing it',
         );
 
@@ -915,10 +963,38 @@ final class SelfTest
         ]);
         $this->same(
             '"complexity.cyclomatic" and "complexity.cyclomatic"',
-            $collapse->forward('"complexity.cyclomatic.callable" and "complexity.cyclomatic.class"'),
+            $collapse->forward('"complexity.cyclomatic.callable" and "complexity.cyclomatic.class"', 'format:json'),
             'a collapse is allowed forwards, and both codes reach the one new name',
         );
         $this->same([], $collapse->splits(), 'a collapse is not a split');
+
+        // A collapse is refused only where both halves travel backwards. One
+        // reversible row and one forward-only row reaching the same name is the
+        // arrangement Ш5e3 creates on purpose — a metric key and the channel
+        // checking it are one name — and backwards only the reversible row is
+        // consulted, so the translation is still a function.
+        $mixed = RenameMaps::fromPairs([
+            ['old' => 'typeCoverage.param', 'new' => 'design.type-coverage.param', 'source' => 'metric-keys.tsv'],
+            ['old' => 'design.param-type-coverage', 'new' => 'design.type-coverage.param', 'source' => 'inputs.tsv'],
+        ]);
+        $this->same(
+            '"design.type-coverage.param" and "design.type-coverage.param"',
+            $mixed->forward('"typeCoverage.param" and "design.param-type-coverage"', 'format:json'),
+            'forwards, both old names reach the one new name',
+        );
+        $this->same(
+            '--rule-opt=design.param-type-coverage:warning=1',
+            $mixed->reverse('--rule-opt=design.type-coverage.param:warning=1'),
+            'backwards, only the reversible row is consulted, so the input is a function',
+        );
+
+        $this->assert(
+            self::throws(static fn(): RenameMaps => RenameMaps::fromPairs([
+                ['old' => 'design.param-type-coverage', 'new' => 'design.type-coverage.param', 'source' => 'inputs.tsv'],
+                ['old' => 'design.param-typing', 'new' => 'design.type-coverage.param', 'source' => 'inputs.tsv'],
+            ])),
+            'two reversible rows onto one name are still refused: backwards there is no function',
+        );
 
         $split = RenameMaps::fromPairs([
             ['old' => 'design.type-coverage#design.type-coverage.param', 'new' => 'design.param-typing#design.param-typing', 'source' => 'channels.tsv'],
@@ -931,12 +1007,12 @@ final class SelfTest
         );
         $this->same(
             '"rule": "design.type-coverage"',
-            $split->forward('"rule": "design.type-coverage"'),
+            $split->forward('"rule": "design.type-coverage"', 'format:json'),
             'the split half is not translated, because no translation of it is right',
         );
         $this->same(
             '"channel": "design.param-typing#design.param-typing"',
-            $split->forward('"channel": "design.type-coverage#design.type-coverage.param"'),
+            $split->forward('"channel": "design.type-coverage#design.type-coverage.param"', 'format:json'),
             'the whole key still maps: only the ambiguous half is left alone',
         );
 
@@ -1149,7 +1225,7 @@ final class SelfTest
         );
         $this->same(
             '--rule-opt=design.param-type-coverage:warning=-1',
-            $maps->forward('--rule-opt=design.type-coverage:param_warning=-1'),
+            $maps->forward('--rule-opt=design.type-coverage:param_warning=-1', 'format:json'),
             'and forward the same way',
         );
         // Forward-only, asserted rather than trusted to the constant: a channels
@@ -1165,7 +1241,7 @@ final class SelfTest
         );
         $this->same(
             'design.param-type-coverage#design.param-type-coverage',
-            $channelsOnly->forward('design.type-coverage#design.type-coverage.param'),
+            $channelsOnly->forward('design.type-coverage#design.type-coverage.param', 'format:json'),
             'while forward it translates the whole key',
         );
     }
@@ -1556,7 +1632,7 @@ final class SelfTest
         ]]);
 
         $this->assert(
-            $maps->forward($reference) !== $candidate,
+            $maps->forward($reference, 'format:json') !== $candidate,
             'before substituting, the collapse moves the published GitLab bytes and would need a declared delta',
         );
 
@@ -1568,12 +1644,12 @@ final class SelfTest
 
         $this->same(
             $substitute($candidate, $new),
-            $maps->forward($substitute($reference, $old)),
+            $maps->forward($substitute($reference, $old), 'format:gitlab'),
             'substituted and then translated, the collapsed identity needs no declared delta',
         );
 
         $this->assert(
-            $substitute($candidate, $new) !== RenameMaps::fromPairs([])->forward($substitute($reference, $old)),
+            $substitute($candidate, $new) !== RenameMaps::fromPairs([])->forward($substitute($reference, $old), 'format:gitlab'),
             'with no row declaring the collapse, the substituted surfaces still differ',
         );
     }

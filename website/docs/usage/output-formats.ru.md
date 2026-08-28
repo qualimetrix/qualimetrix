@@ -161,7 +161,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo]: CBO is 18, max allow
             "label": "Poor",
             "reason": "high coupling",
             "violationCount": 15,
-            "classCount": 8,
+            "size.class-count": 8,
             "healthScores": {}
         }
     ],
@@ -287,9 +287,9 @@ bin/qmx check src/ --format=json --no-progress > report.json
             "file": "src/Service/UserService.php",
             "line": 1,
             "metrics": {
-                "loc": 150,
-                "lloc": 120,
-                "classCount": 1
+                "size.loc": 150,
+                "size.lloc": 120,
+                "size.class-count": 1
             }
         },
         {
@@ -298,14 +298,14 @@ bin/qmx check src/ --format=json --no-progress > report.json
             "file": "src/Service/UserService.php",
             "line": 10,
             "metrics": {
-                "methodCount": 8,
-                "propertyCount": 3,
-                "lcom4": 2,
-                "wmc": 35,
-                "ca": 5,
-                "ce": 12,
-                "cbo": 17,
-                "instability": 0.71
+                "size.method-count": 8,
+                "size.property-count": 3,
+                "cohesion.lcom": 2,
+                "complexity.wmc": 35,
+                "coupling.ca": 5,
+                "coupling.ce": 12,
+                "coupling.cbo": 17,
+                "coupling.instability": 0.71
             }
         },
         {
@@ -314,10 +314,10 @@ bin/qmx check src/ --format=json --no-progress > report.json
             "file": "src/Service/UserService.php",
             "line": 42,
             "metrics": {
-                "ccn": 15,
-                "cognitive": 22,
-                "halstead.volume": 384.5,
-                "loc": 35
+                "complexity.ccn": 15,
+                "complexity.cognitive": 22,
+                "maintainability.halstead.volume": 384.5,
+                "size.loc": 35
             }
         }
     ],

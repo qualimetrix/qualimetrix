@@ -46,6 +46,25 @@ final class RulesCommand extends Command
         /** @var string|null $groupFilter */
         $groupFilter = $input->getOption('group');
 
+        $families = [];
+
+        foreach ($this->ruleExecution->allRules() as $rule) {
+            $families[$rule->family] = true;
+        }
+
+        if ($groupFilter !== null && !isset($families[$groupFilter])) {
+            $known = array_keys($families);
+            sort($known);
+
+            $output->writeln(\sprintf(
+                '<error>No rule group "%s". Groups: %s</error>',
+                $groupFilter,
+                implode(', ', $known),
+            ));
+
+            return self::FAILURE;
+        }
+
         $rules = [];
         foreach ($this->ruleExecution->allRules() as $rule) {
             $name = $rule->name;
@@ -66,9 +85,7 @@ final class RulesCommand extends Command
         usort($rules, static fn(array $a, array $b): int => ($a['group'] <=> $b['group']) !== 0 ? ($a['group'] <=> $b['group']) : ($a['name'] <=> $b['name']));
 
         if ($rules === []) {
-            $output->writeln($groupFilter !== null
-                ? \sprintf('<comment>No rules found in group "%s"</comment>', $groupFilter)
-                : '<comment>No rules found</comment>');
+            $output->writeln('<comment>No rules found</comment>');
 
             return self::SUCCESS;
         }

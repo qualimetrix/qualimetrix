@@ -35,7 +35,7 @@ Cohesion/
 
 ## Behaviour and runtime configuration
 
-`LcomCollector` provides `lcom`; `TccLccCollector` provides `tcc` and `lcc`.
+`LcomCollector` provides `cohesion.lcom`; `TccLccCollector` provides `cohesion.tcc` and `cohesion.lcc`.
 They retain their collector names, metric keys, class-level aggregation
 definitions, visitor reset semantics, and anonymous-class exclusion.
 

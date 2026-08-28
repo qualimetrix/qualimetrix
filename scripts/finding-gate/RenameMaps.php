@@ -115,6 +115,30 @@ final class RenameMaps
     public const METRIC_KEYS = 'metric-keys.tsv';
     public const INPUTS = 'inputs.tsv';
 
+    /**
+     * Map file => the surface classes it may be applied to, or `null` for all.
+     *
+     * A row translates a whole name, and half the metric vocabulary is an
+     * ordinary English word: `cognitive`, `distance`, `instability`,
+     * `abstractness`. Applied to a surface that prints prose, a key map turns
+     * "Maximum method cognitive complexity is 29" into "Maximum method
+     * complexity.cognitive complexity is 29" — a rename leaking into text the
+     * step never touched, and reported against the step as a mismatch.
+     *
+     * The restriction is a measurement, not a convenience: Ш5e3 measured which
+     * surfaces publish a metric key at all — `format:metrics` (282 spellings),
+     * `format:json` (13) and the HTML report, which embeds the JSON payload.
+     * The other eight formats, the baseline, `baseline:explain` and the `rules`
+     * listing publish none. A key that later reaches one of those is therefore
+     * NOT silently translated: it stands as an undeclared difference and the run
+     * goes red, which is the direction this has to fail in.
+     *
+     * @var array<string, list<string>|null>
+     */
+    private const SURFACES = [
+        self::METRIC_KEYS => ['format:json', 'format:metrics', 'format:html'],
+    ];
+
     /** Map file => whether it may also be applied backwards. */
     private const FILES = [
         self::CHANNELS => false,
@@ -205,8 +229,8 @@ final class RenameMaps
         // direction is a guard whose moment is decided by the run — the reverse
         // direction is not built at all on a run whose reference needs no input
         // translated.
-        $this->buildSubstitutions('old', 'new', reversibleOnly: false);
-        $this->buildSubstitutions('new', 'old', reversibleOnly: true);
+        $this->buildSubstitutions('old', 'new', reversibleOnly: false, surfaceClass: null);
+        $this->buildSubstitutions('new', 'old', reversibleOnly: true, surfaceClass: null);
     }
 
     public static function load(string $mapsDirectory, MetricVocabulary $vocabulary): self
@@ -379,16 +403,22 @@ final class RenameMaps
         $this->explainedRows[$row] = true;
     }
 
-    /** Reference output, restated in the candidate's vocabulary. */
-    public function forward(string $text): string
+    /**
+     * Reference output, restated in the candidate's vocabulary.
+     *
+     * The surface class decides which maps apply — see {@see SURFACES}. It is
+     * required rather than optional: a default would let a new call site keep
+     * the unrestricted behaviour by saying nothing.
+     */
+    public function forward(string $text, string $surfaceClass): string
     {
-        return $this->replace($text, old: 'old', new: 'new', reversibleOnly: false);
+        return $this->replace($text, old: 'old', new: 'new', reversibleOnly: false, surfaceClass: $surfaceClass);
     }
 
     /** Candidate-side input, restated in the reference's vocabulary. */
     public function reverse(string $text): string
     {
-        return $this->replace($text, old: 'new', new: 'old', reversibleOnly: true);
+        return $this->replace($text, old: 'new', new: 'old', reversibleOnly: true, surfaceClass: null);
     }
 
     /**
@@ -401,14 +431,24 @@ final class RenameMaps
         return array_map($this->reverse(...), $arguments);
     }
 
-    private function replace(string $text, string $old, string $new, bool $reversibleOnly): string
-    {
+    private function replace(
+        string $text,
+        string $old,
+        string $new,
+        bool $reversibleOnly,
+        ?string $surfaceClass,
+    ): string {
         if ($this->pairs === []) {
             return $text;
         }
 
-        $direction = $old . '>' . $new;
-        $substitutions = $this->substitutions[$direction] ??= $this->buildSubstitutions($old, $new, $reversibleOnly);
+        $direction = $old . '>' . $new . '@' . ($surfaceClass ?? '*');
+        $substitutions = $this->substitutions[$direction] ??= $this->buildSubstitutions(
+            $old,
+            $new,
+            $reversibleOnly,
+            $surfaceClass,
+        );
 
         if ($substitutions === []) {
             return $text;
@@ -471,6 +511,32 @@ final class RenameMaps
     }
 
     /**
+     * Whether a declaration reaches a surface at all.
+     *
+     * A declaration carrying several roles reaches a surface if ANY of its maps
+     * does: the roles are the same translation, and the one that publishes there
+     * is the one that matters.
+     *
+     * @param list<string> $sources
+     */
+    private static function appliesToSurface(array $sources, ?string $surfaceClass): bool
+    {
+        if ($surfaceClass === null) {
+            return true;
+        }
+
+        foreach ($sources as $source) {
+            $surfaces = self::SURFACES[$source] ?? null;
+
+            if ($surfaces === null || \in_array($surfaceClass, $surfaces, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * A name reaches an artifact in more spellings than a map row can be written
      * in: a backslash-bearing symbol appears raw on text surfaces and
      * JSON-escaped in JSON, checkstyle prefixes a channel code with `qmx.`, and
@@ -485,14 +551,22 @@ final class RenameMaps
      *
      * @return list<array{0: string, 1: string, 2: int, 3: bool}>
      */
-    private function buildSubstitutions(string $old, string $new, bool $reversibleOnly): array
-    {
+    private function buildSubstitutions(
+        string $old,
+        string $new,
+        bool $reversibleOnly,
+        ?string $surfaceClass,
+    ): array {
         $substitutions = [];
         $refused = [];
         $claimed = [];
 
         foreach ($this->pairs as $index => $pair) {
             if ($reversibleOnly && !$pair['reversible']) {
+                continue;
+            }
+
+            if (!self::appliesToSurface($pair['sources'], $surfaceClass)) {
                 continue;
             }
 
@@ -910,8 +984,16 @@ final class RenameMaps
 
             // Two rows onto one name is a collapse, and forwards a collapse is
             // correct: the two reference names really do become one. It only
-            // breaks the backwards direction, so it is refused exactly there.
-            if (isset($targets[$pair['new']]) && ($pair['reversible'] || $targets[$pair['new']]['reversible'])) {
+            // breaks the backwards direction, so it is refused exactly there —
+            // and "there" means BOTH rows travel backwards. A reversible row
+            // sharing its target with a forward-only one is still a function
+            // backwards, because the forward-only row is not consulted in that
+            // direction at all. Ш5e3 makes that arrangement the normal case: a
+            // metric key and the channel checking it are one name on purpose,
+            // so `typeCoverage.param` (forward-only) and
+            // `design.param-type-coverage` (reversible, the corpus addresses it
+            // in --rule-opt) both arrive at `design.type-coverage.param`.
+            if (isset($targets[$pair['new']]) && $pair['reversible'] && $targets[$pair['new']]['reversible']) {
                 throw new GateError(\sprintf(
                     '%s and %s both produce "%s". A map applied backwards must be injective in both directions,'
                     . ' and a collapse cannot be inverted.',

@@ -479,6 +479,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\ProducerName'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader'

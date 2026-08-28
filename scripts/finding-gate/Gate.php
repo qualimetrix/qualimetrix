@@ -623,7 +623,10 @@ final class Gate
             $left = $this->normalization->normalize($surface, $this->substituteFingerprints('candidate', $key, $candidate[$key]));
             $right = $this->normalization->normalize(
                 $surface,
-                $this->maps->forward($this->substituteFingerprints('reference', $key, $reference[$key])),
+                $this->maps->forward(
+                    $this->substituteFingerprints('reference', $key, $reference[$key]),
+                    $surface,
+                ),
             );
 
             if ($left === $right) {
@@ -1006,7 +1009,7 @@ final class Gate
         foreach ($this->corpus->cases as $case) {
             $key = Surfaces::key('case:' . $case->id, 'format:json');
             $left = self::findingCount($candidate[$key] ?? '');
-            $right = self::findingCount($this->maps->forward($reference[$key] ?? ''));
+            $right = self::findingCount($this->maps->forward($reference[$key] ?? '', Surfaces::surfaceClass($key)));
 
             if ($left !== $right) {
                 $this->report->fail(

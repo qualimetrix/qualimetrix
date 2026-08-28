@@ -57,16 +57,41 @@ final class RulesCommandTest extends TestCase
         self::assertStringContainsString('No rules found', $tester->getDisplay());
     }
 
+    /**
+     * A group nobody has is a typo, and a typo used to be answered with an
+     * empty listing and exit 0 — the same answer as "this group exists and is
+     * empty", which no group is. The failure names the groups that do exist,
+     * because the reader who typed it needs the list, not the refusal.
+     */
     #[Test]
-    public function itDisplaysNoRulesMessageForAnUnknownGroup(): void
+    public function itFailsOnAGroupNoProducerHas(): void
+    {
+        $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $other = $this->createRuleMock('size.class-count', 'Class count');
+
+        $tester = new CommandTester($this->createCommand([$rule, $other]));
+        $tester->execute(['--group' => 'complexty']);
+
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('No rule group "complexty"', $tester->getDisplay());
+        self::assertStringContainsString('Groups: complexity, size', $tester->getDisplay());
+    }
+
+    /**
+     * The comparison stays exact: `--group` reads the very value the heading is
+     * printed from, so a case-folded match here would make the option answer a
+     * question the listing does not.
+     */
+    #[Test]
+    public function itFailsOnAGroupThatDiffersOnlyInCase(): void
     {
         $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
 
         $tester = new CommandTester($this->createCommand([$rule]));
-        $tester->execute(['--group' => 'nonexistent']);
+        $tester->execute(['--group' => 'Complexity']);
 
-        self::assertSame(0, $tester->getStatusCode());
-        self::assertStringContainsString('No rules found in group "nonexistent"', $tester->getDisplay());
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('No rule group "Complexity"', $tester->getDisplay());
     }
 
     #[Test]

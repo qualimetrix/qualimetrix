@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ProducerName;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
@@ -140,7 +141,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
             $shapeByRule,
         );
 
-        self::refuseFamilylessProducers(array_keys($thresholdOverrideSupport));
+        self::refuseMalformedProducers(array_keys($thresholdOverrideSupport));
 
         /** @var array<string, ChannelDeclaration> $declarations */
         $declarations = [];
@@ -197,22 +198,21 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
      *
      * **This refuses one shape of bad name, not a name grammar.** Rejected:
      * an empty name and one starting with the separator — exactly the two
-     * that yield no family at all. Accepted, and reaching the listing as a
-     * heading of its own: a trailing separator (`foo.`), an upper-case
-     * segment (`Complexity.Foo`, which `--group=complexity` then does not
-     * find, the filter being case-sensitive), a doubled separator
-     * (`complexity..foo`), a segment with a space in it, and a first segment
-     * that is a typo of an existing family. Not widened here on purpose: the
-     * corpus already registers `computed.branch-load`, a legal name today
-     * that a strict pattern would refuse. The producer-name grammar is the
-     * next substep's subject.
+     * that do not obey the producer grammar. Until Ш5e3 this refused only a
+     * name with no family at all, because `computed.branch_load` was a legal
+     * producer a strict pattern would have refused; with every producer name
+     * lower-case kebab the whole form is held here. What that closes is
+     * measured: `Complexity.Foo` used to register, print under a heading of its
+     * own, and then not be found by `--group=complexity` — the filter being
+     * case-sensitive — and a trailing separator, a doubled separator and a
+     * segment with a space in it did the same.
      *
      * @param list<string> $producerRuleNames
      */
-    private static function refuseFamilylessProducers(array $producerRuleNames): void
+    private static function refuseMalformedProducers(array $producerRuleNames): void
     {
         foreach ($producerRuleNames as $producerRuleName) {
-            RuleFamily::of($producerRuleName);
+            ProducerName::assertWellFormed($producerRuleName);
         }
     }
 

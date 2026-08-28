@@ -3618,7 +3618,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itRecordsEveryTaggedRuleNameEvenWhenItDeclaresNoChannel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsOnAChannelDeclaredByTwoDifferentRuleServices
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsOnATaggedServiceWithNoClass
- - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsWhenAProducerNameYieldsNoFamily
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsWhenAProducerNameIsMalformed
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsWhenAProducersDeclaredShapeDisagreesWithItsChannelDirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itThrowsWhenTwoClassesUnderOneProducerNameDeclareDifferentShapes
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationReaderTest::itReadsARealRulesDeclarationsCorrectly
@@ -3769,6 +3769,22 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\PredicateFilterStageTest::itKeepsWhatThePredicateIncludesAndCollectsWhatItDoesNot
  - Qualimetrix\Tests\Analysis\Finding\Unit\PredicateFilterStageTest::itPassesThroughTheSameObjectsInTheSameOrder
  - Qualimetrix\Tests\Analysis\Finding\Unit\PredicateFilterStageTest::itReportsTheStageItWasBuiltFor
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itAcceptsAWellFormedName"digits after the first letter"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itAcceptsAWellFormedName"kebab inside a segment"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itAcceptsAWellFormedName"one segment"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itAcceptsAWellFormedName"three segments"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itAcceptsAWellFormedName"two segments"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itPublishesTheTemplateItEnforces
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itRefusesAMalformedName"doubled hyphen"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itRefusesAMalformedName"doubled separator"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itRefusesAMalformedName"empty"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itRefusesAMalformedName"leading digit"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itRefusesAMalformedName"leading separator"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itRefusesAMalformedName"space inside a segment"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itRefusesAMalformedName"trailing hyphen"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itRefusesAMalformedName"trailing separator"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itRefusesAMalformedName"underscore"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ProducerNameTest::itRefusesAMalformedName"upper case"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfigurationIsolationTest::itClearsEveryPerRunValueBeforeTheNextConfiguration
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itReadsTheDocsPageConstantWithoutInstantiation
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsAClassThatCannotBeLoaded
@@ -6087,7 +6103,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterResetFailure
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itFiltersByGroupAgainstTheRealRuleSet
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itListsEveryRegisteredRule
- - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itStaysSilentAndSuccessfulForAGroupNoProducerHas
+ - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itRefusesAGroupNoProducerHas
  - Qualimetrix\Tests\Infrastructure\Integration\SharedRuleOptionsContainerTest::itCreatesIndependentlyConfiguredOptionsForEverySharedOptionsProducer
  - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itFormatsContext
  - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itHandlesEmptyContext
@@ -6229,10 +6245,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Unit\RuleRegistryTest::itThrowsWhenTwoRulesShareACliAlias
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itConfiguresTheGroupOption
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itDisplaysCliAliases
- - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itDisplaysNoRulesMessageForAnUnknownGroup
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itDisplaysNoRulesMessageWhenNoRulesAreRegistered
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itDisplaysTheLayerViolationSeverityAlias
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itDisplaysUsageHints
+ - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itFailsOnAGroupNoProducerHas
+ - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itFailsOnAGroupThatDiffersOnlyInCase
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itFiltersRulesByGroup
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itListsRulesUnderGroupHeaders
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itSetsTheCommandNameAndDescription
