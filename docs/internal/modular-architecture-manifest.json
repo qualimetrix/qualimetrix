@@ -1313,13 +1313,24 @@
       "closure_package": "P5",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricExpression": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricExpression.php",
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpression": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricExpression.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics",
-      "visibility": "internal",
+      "visibility": "contract",
       "closure_package": "P5",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\WeightedHealthFormula",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder",
+          "closes_in": null
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator": {
       "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php",
@@ -1576,6 +1587,14 @@
       "path": "src/Analysis/Evidence/ComputedMetrics/Finding/ComputedMetricFindingBuilder.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\WeightedHealthFormula": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Health/Configuration/WeightedHealthFormula.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics.Health",
       "visibility": "internal",
       "closure_package": "P5",
       "consumers": []
@@ -4058,6 +4077,11 @@
       "visibility": "contract",
       "closure_package": "P3",
       "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinition",
+          "closes_in": null
+        },
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\MetricHintCatalog",

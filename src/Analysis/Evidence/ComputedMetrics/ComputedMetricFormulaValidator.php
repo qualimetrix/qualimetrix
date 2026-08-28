@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
 
 /**
@@ -63,7 +64,14 @@ final class ComputedMetricFormulaValidator
                     ));
                 }
 
-                $this->expression->assertEveryAccessIsALiteralIndex($formula, $definition->name);
+                if (!$this->expression->everyAccessIsALiteralIndex($formula)) {
+                    throw new ComputedMetricConfigurationException(\sprintf(
+                        'Computed metric "%s" reaches "m" by something other than a quoted metric key, which makes'
+                        . ' the key unverifiable. Write every access as m["<metric key>"]. Formula: %s',
+                        $definition->name,
+                        $formula,
+                    ));
+                }
             }
         }
     }

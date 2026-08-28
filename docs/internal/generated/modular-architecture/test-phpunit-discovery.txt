@@ -1577,6 +1577,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::variableExistingInSomeSymbolsPassesValidation
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itAcceptsALiteralIndexHoweverItIsSpaced
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itDoesNotRequireAKeyGuardedEverywhere
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReadsNoKeyOutOfAnIndexOnSomethingOtherThanTheLookup
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReadsOnlyComputedMetricReferences
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"a method call on the lookup"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"a method call with a space"
@@ -1585,6 +1586,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"the lookup guarded on its own"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"the lookup handed to a function"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRequiresAKeyThatIsGuardedInOnePlaceAndBareInAnother
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRequiresTheFallbackSideOfANullCoalesce
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricFindingBuilderTest::itCarriesThresholdFieldInFinding
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricFindingBuilderTest::itEmitsErrorWhenInvertedMetricBelowErrorThreshold
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricFindingBuilderTest::itEmitsErrorWhenNormalMetricAboveErrorThreshold
@@ -1680,6 +1682,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itThrowsExplicitlyForCustomNonWeightedOverallFormula
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itThrowsForUnknownDimension
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itWrapsRebuiltFormulaInClamp
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsAWeightedSumInEveryShapeTheLanguageAccepts
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsNoWeightedSumAtAllWhenOneTermIsNotOne
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsNoWeightedSumOutOfAFormulaThatIsNotOne
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itCalculatesOneSixthFromExplicitNamespaceCountTotals
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itClampsTheResultToTheUnitRange
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itCountsEnumsImplementingAnInterfaceAsConcrete

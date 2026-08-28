@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
+namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
@@ -83,22 +83,23 @@ final class ComputedMetricExpression
     }
 
     /**
-     * Refuses a formula that reaches `m` by anything but a literal index.
+     * Whether every access to `m` is a quoted index.
      *
      * The check the encoding gave away for free is restated here: under
      * `a__b`, a misspelled key was an unknown VARIABLE and the parser refused it
      * at no cost. One variable buys that for nothing, so an index that cannot be
-     * read — a method call, a computed index, `m` handed to a function — is
-     * refused rather than validated as far as it can be.
+     * read — a method call, a computed index, `m` handed to a function — has to
+     * be caught by something.
      *
-     * @throws ComputedMetricConfigurationException
+     * Answers rather than throws: what a violation means is a configuration
+     * decision, and configuration is not this zone's subject.
      */
-    public function assertEveryAccessIsALiteralIndex(string $formula, string $metricName): void
+    public function everyAccessIsALiteralIndex(string $formula): bool
     {
         try {
             $nodes = $this->parse($formula)->getNodes();
         } catch (SyntaxError) {
-            return; // Reported, with its own message, by the syntax validation.
+            return true; // Reported, with its own message, by the syntax validation.
         }
 
         foreach (self::walk($nodes) as [$node, $parent]) {
@@ -106,36 +107,54 @@ final class ComputedMetricExpression
                 continue;
             }
 
-            if (self::isLiteralIndexOf($parent)) {
-                continue;
+            if (self::keyReadFrom($parent) === null) {
+                return false;
             }
-
-            throw new ComputedMetricConfigurationException(\sprintf(
-                'Computed metric "%s" reaches "%s" by something other than a quoted metric key, which makes the key'
-                . ' unverifiable. Write every access as m["<metric key>"]. Formula: %s',
-                $metricName,
-                self::VARIABLE,
-                $formula,
-            ));
         }
+
+        return true;
     }
 
     /**
-     * Whether a node is `<something>["a literal"]`.
+     * The key a node reads out of `m`, or null if it is not such a read.
      *
-     * The one shape a formula may reach `m` through, and the one shape a key can
-     * be read out of — asked in both directions from here, so the guard and the
-     * reader cannot drift into disagreeing about what an access is.
+     * The base is checked, not just the index. Asking only "is this a literal
+     * index" made the guard and the reader answer about different nodes:
+     * `m["complexity.ccn"]["health.overall"]` indexes the VALUE the first read
+     * returned, so the guard saw a legal access to `m` and the reader collected
+     * `health.overall` as a key of its own — a dependency edge to a metric the
+     * formula never reads. One function answers for both, and it answers about
+     * one node.
      */
-    private static function isLiteralIndexOf(?Node $node): bool
+    public static function keyReadFrom(?Node $node): ?string
     {
         if (!$node instanceof GetAttrNode || $node->attributes['type'] !== GetAttrNode::ARRAY_CALL) {
-            return false;
+            return null;
+        }
+
+        $base = $node->nodes['node'] ?? null;
+
+        if (!$base instanceof NameNode || $base->attributes['name'] !== self::VARIABLE) {
+            return null;
         }
 
         $attribute = $node->nodes['attribute'] ?? null;
 
-        return $attribute instanceof ConstantNode && \is_string($attribute->attributes['value']);
+        return $attribute instanceof ConstantNode && \is_string($attribute->attributes['value'])
+            ? $attribute->attributes['value']
+            : null;
+    }
+
+    /**
+     * Whether `??` guards this access, i.e. it is the LEFT side of one.
+     *
+     * Both sides of `a ?? b` share a parent, so asking only about the parent
+     * marks `b` guarded too — and `b` is read exactly when `a` is absent, which
+     * is the one case that makes it required.
+     */
+    private static function isGuardedBy(?Node $parent, Node $node): bool
+    {
+        return $parent instanceof NullCoalesceNode && ($parent->nodes['expr1'] ?? null) === $node;
     }
 
     /**
@@ -202,15 +221,13 @@ final class ComputedMetricExpression
         $accesses = [];
 
         foreach (self::walk($nodes) as [$node, $parent]) {
-            if (!self::isLiteralIndexOf($node)) {
+            $key = self::keyReadFrom($node);
+
+            if ($key === null) {
                 continue;
             }
 
-            $attribute = $node->nodes['attribute'];
-            \assert($attribute instanceof ConstantNode);
-            \assert(\is_string($attribute->attributes['value']));
-
-            $accesses[] = [$attribute->attributes['value'], $parent instanceof NullCoalesceNode];
+            $accesses[] = [$key, self::isGuardedBy($parent, $node)];
         }
 
         return $accesses;

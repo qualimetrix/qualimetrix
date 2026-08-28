@@ -63,7 +63,7 @@ cohesion.lcc	metric-key	?		7	44	0	0	0	6	0	1
 cohesion.lcom	metric-key	?		41	150	2	2	0	31	0	5
 cohesion.pure-method-count	metric-key	?		3	8	0	0	0	2	0	1
 cohesion.tcc	metric-key	?		21	85	0	0	0	10	0	1
-complexity.ccn	metric-key	?		41	284	0	0	0	4	0	1
+complexity.ccn	metric-key	?		42	288	0	0	0	4	0	1
 complexity.cognitive	metric-key	?		24	79	2	2	31	48	0	10
 complexity.npath	metric-key	?		22	92	2	2	12	38	0	9
 complexity.wmc	metric-key	?		20	85	2	2	11	31	0	5
@@ -117,7 +117,7 @@ size.getter-count	metric-key	?		7	13	0	0	0	0	0	1
 size.implementing-enum-count	metric-key	?		13	9	0	0	0	0	0	1
 size.interface-count	metric-key	?		13	17	0	0	0	0	0	1
 size.lloc	metric-key	?		8	18	0	0	0	3	0	1
-size.loc	metric-key	?		11	191	0	0	0	5	0	1
+size.loc	metric-key	?		11	193	0	0	0	5	0	1
 size.method-count	metric-key	?		24	151	2	2	0	50	0	4
 size.method-count.private	metric-key	?		4	6	0	0	0	0	0	1
 size.method-count.protected	metric-key	?		4	6	0	0	0	0	0	1
@@ -156,7 +156,7 @@ complexity.cognitive	producer	?		24	79	2	2	31	48	0	10
 complexity.cyclomatic	producer	?		37	621	2	2	55	120	0	9
 complexity.npath	producer	?		22	92	2	2	12	38	0	9
 complexity.wmc	producer	?		20	85	2	2	11	31	0	5
-computed	producer	?		84	86	0	1	0	24	0	11
+computed	producer	?		85	86	0	1	0	24	0	11
 coupling.cbo	producer	?		65	285	2	4	8	102	0	7
 coupling.class-rank	producer	?		25	97	0	2	2	26	0	27
 coupling.distance	producer	?		29	65	2	2	2	32	0	28
@@ -169,11 +169,11 @@ design.type-coverage.param	producer	?		10	53	2	1	1	23	0	6
 design.type-coverage.property	producer	?		10	24	2	1	1	22	0	6
 design.type-coverage.return	producer	?		10	31	2	1	0	22	0	6
 duplication.code-duplication	producer	?		14	53	0	2	12	35	0	4
-health.cohesion	producer	?		38	113	0	2	31	36	0	17
-health.complexity	producer	?		50	175	0	1	0	22	0	20
+health.cohesion	producer	?		38	113	0	2	30	36	0	17
+health.complexity	producer	?		49	175	0	1	0	22	0	20
 health.coupling	producer	?		39	37	0	0	0	13	0	17
 health.maintainability	producer	?		16	28	0	0	0	13	0	17
-health.overall	producer	?		108	137	0	0	0	20	0	17
+health.overall	producer	?		109	140	0	0	0	20	0	17
 health.typing	producer	?		21	53	0	1	1	16	0	17
 maintainability.index	producer	?		11	45	2	2	0	27	0	3
 security.command-injection	producer	?		3	5	0	0	0	13	0	1

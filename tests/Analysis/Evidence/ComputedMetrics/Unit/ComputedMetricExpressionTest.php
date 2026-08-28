@@ -8,8 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 
 /**
  * The reader that replaced a pattern over formula text.
@@ -33,11 +32,7 @@ final class ComputedMetricExpressionTest extends TestCase
     #[DataProvider('accessesThatAreNotALiteralIndex')]
     public function itRefusesAnAccessThatIsNotALiteralIndex(string $formula, string $why): void
     {
-        self::expectException(ComputedMetricConfigurationException::class);
-        self::expectExceptionMessage('reaches "m" by something other than a quoted metric key');
-
-        $this->expression->assertEveryAccessIsALiteralIndex($formula, 'health.test');
-        self::fail($why);
+        self::assertFalse($this->expression->everyAccessIsALiteralIndex($formula), $why);
     }
 
     /**
@@ -79,7 +74,7 @@ final class ComputedMetricExpressionTest extends TestCase
     #[Test]
     public function itAcceptsALiteralIndexHoweverItIsSpaced(): void
     {
-        $this->expression->assertEveryAccessIsALiteralIndex('m ["complexity.ccn"] + m[ \'size.loc\' ]', 'health.test');
+        self::assertTrue($this->expression->everyAccessIsALiteralIndex('m ["complexity.ccn"] + m[ \'size.loc\' ]'));
 
         self::assertSame(
             ['complexity.ccn', 'size.loc'],
@@ -116,5 +111,34 @@ final class ComputedMetricExpressionTest extends TestCase
             ['health.complexity', 'computed.density'],
             $this->expression->computedReferencesOf($formula),
         );
+    }
+
+    /**
+     * The index has a base, and the base has to be `m`.
+     *
+     * `m["complexity.ccn"]["health.overall"]` indexes the VALUE the first read
+     * returned. Asking only "is this a literal index" made the guard and the
+     * reader answer about different nodes: the guard saw a legal access and the
+     * reader collected `health.overall` as a key of its own — a dependency edge
+     * to a metric the formula never reads, which reached "circular dependency"
+     * on a formula with no cycle.
+     */
+    #[Test]
+    public function itReadsNoKeyOutOfAnIndexOnSomethingOtherThanTheLookup(): void
+    {
+        $formula = 'm["complexity.ccn"]["health.overall"]';
+
+        self::assertSame(['complexity.ccn'], $this->expression->keysOf($formula));
+        self::assertSame([], $this->expression->computedReferencesOf($formula));
+    }
+
+    /**
+     * Only the LEFT side of `??` is guarded by it. The right side is read
+     * exactly when the left is absent, which is what makes it required.
+     */
+    #[Test]
+    public function itRequiresTheFallbackSideOfANullCoalesce(): void
+    {
+        self::assertSame(['size.loc'], $this->expression->requiredKeysOf('m["complexity.ccn"] ?? m["size.loc"]'));
     }
 }

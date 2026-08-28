@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final readonly class ComputedMetricDefinition
@@ -136,16 +137,28 @@ final readonly class ComputedMetricDefinition
      */
     private function validateName(): void
     {
-        if (preg_match(self::NAME_TEMPLATE, $this->name) === 1) {
+        if (preg_match(self::NAME_TEMPLATE, $this->name) === 1 && !self::endsInAnAggregationStrategy($this->name)) {
             return;
         }
 
         throw new InvalidArgumentException(\sprintf(
-            'Computed metric name "%s" must be "health.<name>" or "computed.<name>",'
-            . ' where every segment is lower-case kebab (%s)',
+            'Computed metric name "%s" must be "health.<name>" or "computed.<name>", where every segment is'
+            . ' lower-case kebab (%s) and the last segment is not the name of an aggregation strategy',
             $this->name,
             self::NAME_TEMPLATE,
         ));
+    }
+
+    /**
+     * A user-chosen name is the one key the product does not declare, so the
+     * invariant every declared key is held to has to be held here too:
+     * `computed.sum` would be indistinguishable from an aggregated spelling of
+     * `computed`, and `MetricName::base()` would cut the last segment off it.
+     * Asked through `base()` itself, so the strategy list has one reader.
+     */
+    private static function endsInAnAggregationStrategy(string $name): bool
+    {
+        return MetricName::base($name) !== $name;
     }
 
 }

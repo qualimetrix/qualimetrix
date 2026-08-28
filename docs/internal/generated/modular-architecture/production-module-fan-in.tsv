@@ -19,6 +19,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetric
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension	Analysis.Evidence.ComputedMetrics	7	2
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions	Analysis.Evidence.ComputedMetrics	3	2
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator	Analysis.Evidence.ComputedMetrics	1	1
+Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression	Analysis.Evidence.ComputedMetrics	2	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily	Analysis.Evidence.ComputedMetrics	2	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown	Analysis.Evidence.ComputedMetrics.Health	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown	Analysis.Evidence.ComputedMetrics.Health	2	1
@@ -56,7 +57,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterfa
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.Measurement	45	11
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface	Analysis.Evidence.Measurement	1	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	22	7
-Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	64	11
+Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	65	12
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface	Analysis.Evidence.Measurement	5	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	23	11
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface	Analysis.Evidence.Measurement	3	2

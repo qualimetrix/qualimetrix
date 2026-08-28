@@ -15,7 +15,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  * The constant is the key upper-cased, so a constant cannot drift from the
  * family of its own value the way `STRUCTURE_LCOM = 'lcom'` did.
  *
- * @qmx-threshold coupling.cbo 69 -- Canonical names are an intentional Measurement contract hub, and this CBO is afferent: it counts adoption, not entanglement. Current raw CBO 68 gets one-edge headroom. It rose from 64 when Ш5e3 moved the eleven collector-owned counters here and gave the aggregated-key decomposition a home beside its inverse; every reader that stopped keeping a private copy of the strategy list is one of the edges.
+ * @qmx-threshold coupling.cbo 70 -- Canonical names are an intentional Measurement contract hub, and this CBO is afferent: it counts adoption, not entanglement. Current raw CBO 69 gets one-edge headroom. It rose from 64 when Ш5e3 moved the eleven collector-owned counters here and gave the aggregated-key decomposition a home beside its inverse; every reader that stopped keeping a private copy of the strategy list is one of the edges.
  */
 final class MetricName
 {

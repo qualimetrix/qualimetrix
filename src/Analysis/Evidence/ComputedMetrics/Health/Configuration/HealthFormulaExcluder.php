@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 
 /**
  * Filters out excluded health dimensions and rebuilds the health.overall
@@ -15,6 +16,13 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDime
  */
 final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInterface
 {
+    private ComputedMetricExpression $expression;
+
+    public function __construct()
+    {
+        $this->expression = new ComputedMetricExpression();
+    }
+
     /**
      * Filters out excluded health dimensions and rebuilds health.overall formula
      * with normalized weights when dimensions are excluded.
@@ -142,7 +150,7 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
         $allEmpty = true;
 
         foreach ($formulas as $level => $formula) {
-            $weights = $this->parseWeightsFromFormula($formula);
+            $terms = WeightedHealthFormula::termsOf($this->expression, $formula);
 
             // Auto-renormalization works only on the canonical weighted-sum shape
             // `(m["health.dim"] ?? 75) * 0.NN + ...`. If a user has overridden
@@ -151,7 +159,7 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
             // silently dropping the level would lose the user's intent. Refuse
             // explicitly so the user can either drop the exclusion or rewrite
             // their custom formula to handle the missing dimension via `??`.
-            if ($weights === []) {
+            if ($terms === null) {
                 throw new InvalidArgumentException(\sprintf(
                     'Cannot auto-renormalize "health.overall" at level "%s" after excluding '
                     . 'health dimensions: the custom formula does not match the canonical '
@@ -163,7 +171,7 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
                 ));
             }
 
-            $rebuilt = $this->buildWeightedFormula($weights, $excludedSet);
+            $rebuilt = self::buildWeightedFormula($terms, $excludedSet);
 
             if ($rebuilt !== null) {
                 $formulas[$level] = $rebuilt;
@@ -189,57 +197,43 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
     }
 
     /**
-     * Parses dimension weights from a health.overall formula string.
+     * Rebuilds the weighted sum over the dimensions that remain, each keeping
+     * the fallback it was written with.
      *
-     * Expected pattern: `(m["health.dimension"] ?? 75) * 0.25`
+     * The fallback used to be re-emitted as a literal 75 whatever the formula
+     * said, so a user's own default was replaced by ours on the way through.
      *
-     * @return array<string, float> dimension name => weight
-     */
-    private function parseWeightsFromFormula(string $formula): array
-    {
-        $weights = [];
-
-        // Match patterns like: (m["health.complexity"] ?? 75) * 0.30
-        $pattern = '/\(m\[\s*(?:\'([^\']*)\'|"([^"]*)")\s*\]\s*\?\?\s*\d+\)\s*\*\s*([\d.]+)/';
-
-        if (preg_match_all($pattern, $formula, $matches, \PREG_SET_ORDER) !== 0) {
-            foreach ($matches as $match) {
-                $weights[$match[1] !== '' ? $match[1] : $match[2]] = (float) $match[3];
-            }
-        }
-
-        return $weights;
-    }
-
-    /**
-     * Builds a weighted formula string with normalized weights after exclusions.
-     *
-     * @param array<string, float> $weights
+     * @param array<string, array{weight: float, fallback: float}> $terms
      * @param array<string, int> $excludedSet
      */
-    private function buildWeightedFormula(array $weights, array $excludedSet): ?string
+    private static function buildWeightedFormula(array $terms, array $excludedSet): ?string
     {
-        // Filter out excluded dimensions
-        $remaining = [];
-        foreach ($weights as $dim => $weight) {
-            if (!isset($excludedSet[$dim])) {
-                $remaining[$dim] = $weight;
-            }
-        }
+        $remaining = array_diff_key($terms, $excludedSet);
 
         if ($remaining === []) {
             return null;
         }
 
-        // Normalize weights to sum to 1.0
-        $totalWeight = array_sum($remaining);
-        $terms = [];
+        $totalWeight = array_sum(array_column($remaining, 'weight'));
+        $rebuilt = [];
 
-        foreach ($remaining as $dim => $weight) {
-            $normalizedWeight = round($weight / $totalWeight, 4);
-            $terms[] = \sprintf('(m["%s"] ?? 75) * %s', $dim, $normalizedWeight);
+        foreach ($remaining as $dimension => $term) {
+            $rebuilt[] = \sprintf(
+                '(m["%s"] ?? %s) * %s',
+                $dimension,
+                self::number($term['fallback']),
+                self::number(round($term['weight'] / $totalWeight, 4)),
+            );
         }
 
-        return \sprintf('clamp(%s, 0, 100)', implode(' + ', $terms));
+        return \sprintf('clamp(%s, 0, 100)', implode(' + ', $rebuilt));
+    }
+
+    /** A float printed the way a formula reads it, without a trailing `.0`. */
+    private static function number(float $value): string
+    {
+        $trimmed = rtrim(rtrim(\sprintf('%.4F', $value), '0'), '.');
+
+        return $trimmed === '' || $trimmed === '-' ? '0' : $trimmed;
     }
 }
