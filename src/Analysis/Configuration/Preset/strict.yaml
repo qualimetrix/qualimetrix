@@ -71,12 +71,12 @@ rules:
     error: 5
     vo-warning: 6
     vo-error: 10
-  design.param-type-coverage:
+  design.type-coverage.param:
     warning: 90
     error: 70
-  design.return-type-coverage:
+  design.type-coverage.return:
     warning: 90
     error: 70
-  design.property-type-coverage:
+  design.type-coverage.property:
     warning: 90
     error: 70

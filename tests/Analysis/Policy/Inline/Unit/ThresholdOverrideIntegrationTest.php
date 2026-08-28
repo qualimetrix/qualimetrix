@@ -130,7 +130,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$symbolInfo]);
         $repository->method('get')->willReturn(
-            MetricBag::fromArray([MetricName::STRUCTURE_METHOD_COUNT => 25]),
+            MetricBag::fromArray([MetricName::SIZE_METHOD_COUNT => 25]),
         );
 
         // Default thresholds: warning=20, error=30
@@ -580,7 +580,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$symbolInfo]);
         $repository->method('get')->willReturn(
-            MetricBag::fromArray([MetricName::STRUCTURE_METHOD_COUNT => 35]),
+            MetricBag::fromArray([MetricName::SIZE_METHOD_COUNT => 35]),
         );
 
         // Default thresholds: warning=20, error=30
@@ -703,18 +703,18 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             new SymbolInfo($subject, RelativePath::fromString('src/Service/TypedService.php'), 10),
         ]);
         $repository->method('get')->willReturn(MetricBag::fromArray([
-            MetricName::TYPE_COVERAGE_PARAM_TOTAL => 1,
-            MetricName::TYPE_COVERAGE_PARAM => 70.0,
-            MetricName::TYPE_COVERAGE_RETURN_TOTAL => 1,
-            MetricName::TYPE_COVERAGE_RETURN => 70.0,
-            MetricName::TYPE_COVERAGE_PROPERTY_TOTAL => 1,
-            MetricName::TYPE_COVERAGE_PROPERTY => 70.0,
+            MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL => 1,
+            MetricName::DESIGN_TYPE_COVERAGE_PARAM => 70.0,
+            MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL => 1,
+            MetricName::DESIGN_TYPE_COVERAGE_RETURN => 70.0,
+            MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL => 1,
+            MetricName::DESIGN_TYPE_COVERAGE_PROPERTY => 70.0,
         ]));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
                 'src/Service/TypedService.php' => [
-                    self::override('design.param-type-coverage', 60.0, 40.0, $subject, ControlScope::Class_, 1, 100),
+                    self::override('design.type-coverage.param', 60.0, 40.0, $subject, ControlScope::Class_, 1, 100),
                 ],
             ],
         );

@@ -177,9 +177,9 @@ final readonly class HealthSummaryBuilder
     private function buildTypingDecomposition(MetricBag $metrics): array
     {
         $components = [
-            ['label' => 'Parameter types', 'typed' => MetricName::agg(MetricName::TYPE_COVERAGE_PARAM_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::TYPE_COVERAGE_PARAM_TOTAL, AggregationStrategy::Sum)],
-            ['label' => 'Return types', 'typed' => MetricName::agg(MetricName::TYPE_COVERAGE_RETURN_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::TYPE_COVERAGE_RETURN_TOTAL, AggregationStrategy::Sum)],
-            ['label' => 'Property types', 'typed' => MetricName::agg(MetricName::TYPE_COVERAGE_PROPERTY_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::TYPE_COVERAGE_PROPERTY_TOTAL, AggregationStrategy::Sum)],
+            ['label' => 'Parameter types', 'typed' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL, AggregationStrategy::Sum)],
+            ['label' => 'Return types', 'typed' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_RETURN_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL, AggregationStrategy::Sum)],
+            ['label' => 'Property types', 'typed' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL, AggregationStrategy::Sum)],
         ];
 
         $items = [];
@@ -366,12 +366,12 @@ final readonly class HealthSummaryBuilder
         $notable = [];
         $keys = $level === SymbolLevel::Class_
             ? [
-                MetricName::STRUCTURE_METHOD_COUNT,
-                MetricName::STRUCTURE_PROPERTY_COUNT,
+                MetricName::SIZE_METHOD_COUNT,
+                MetricName::SIZE_PROPERTY_COUNT,
                 MetricName::COUPLING_CBO,
                 MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Average),
                 MetricName::COHESION_TCC,
-                MetricName::STRUCTURE_WMC,
+                MetricName::COMPLEXITY_WMC,
                 MetricName::agg(MetricName::MAINTAINABILITY_MI, AggregationStrategy::Average),
                 MetricName::SIZE_LOC,
             ]

@@ -34,9 +34,9 @@
 | -------------------------- | ------------------------------- | ------ |
 | DIT (глубина наследования) | `design.inheritance`            | 30     |
 | NOC                        | `design.noc`                    | 20     |
-| Покрытие типами параметров | `design.param-type-coverage`    | 15     |
-| Покрытие типами возврата   | `design.return-type-coverage`   | 15     |
-| Покрытие типами свойств    | `design.property-type-coverage` | 15     |
+| Покрытие типами параметров | `design.type-coverage.param`    | 15     |
+| Покрытие типами возврата   | `design.type-coverage.return`   | 15     |
+| Покрытие типами свойств    | `design.type-coverage.property` | 15     |
 | Data Class                 | `design.data-class`             | 30     |
 | God Class                  | `design.god-class`              | 120    |
 

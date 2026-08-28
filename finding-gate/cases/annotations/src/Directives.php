@@ -46,20 +46,6 @@ class Directives
     }
 
     /**
-     * The same tie, in a different family: three edits from both
-     * `design.return-type-coverage` and `design.property-type-coverage`
-     * (ADR 0030's split of `design.type-coverage`), so the "did you mean"
-     * order between them is observable here too. Deliberately not addable
-     * before the reference already knew the three post-split names — see the
-     * Ш4c entry in docs/internal/plans/rule-vocabulary/PLAN.md.
-     *
-     * @qmx-ignore design.repert-type-coverage -- equidistant from return and property
-     */
-    public function equidistantAcrossFamilies(): void
-    {
-    }
-
-    /**
      * A pair whose level the channel it names does not declare. The name half
      * resolves, so what is unaddressable here is the pair -- the one shape the
      * level vocabulary added and the corpus did not yet hold.

@@ -64,7 +64,7 @@ final class CallableToClassAggregator implements AggregationPhaseInterface
             $methodBag = AggregationHelper::applyAggregations($methodValues, $callableDefinitions, SymbolLevel::Class_);
             $ccnSum = $methodBag->get(MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Sum));
             if ($ccnSum !== null) {
-                $classBag = $classBag->with(MetricName::STRUCTURE_WMC, $ccnSum);
+                $classBag = $classBag->with(MetricName::COMPLEXITY_WMC, $ccnSum);
             }
 
             $classBag = $classBag->with(MetricName::SIZE_SYMBOL_METHOD_COUNT, \count($callableInfos));

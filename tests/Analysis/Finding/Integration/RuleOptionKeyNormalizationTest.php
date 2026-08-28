@@ -177,7 +177,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
         $this->registry->setCliOptions($parsed['rule'], [$parsed['option'] => $parsed['value']]);
 
         /** @var TypeCoverageOptions $options */
-        $options = $this->factory->create('design.param-type-coverage', TypeCoverageOptions::class);
+        $options = $this->factory->create('design.type-coverage.param', TypeCoverageOptions::class);
 
         self::assertSame(90.0, $options->error);
         self::assertSame([], $this->logger->records);
@@ -191,13 +191,13 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     public function itAppliesErrorViaRuleOptToOneDimensionOnly(): void
     {
         $this->applyCliOptions($this->ruleOptionsParser->parseRuleOptions([
-            'design.return-type-coverage:error=85',
+            'design.type-coverage.return:error=85',
         ]));
 
         /** @var TypeCoverageOptions $configured */
-        $configured = $this->factory->create('design.return-type-coverage', TypeCoverageOptions::class);
+        $configured = $this->factory->create('design.type-coverage.return', TypeCoverageOptions::class);
         /** @var TypeCoverageOptions $untouched */
-        $untouched = $this->factory->create('design.param-type-coverage', TypeCoverageOptions::class);
+        $untouched = $this->factory->create('design.type-coverage.param', TypeCoverageOptions::class);
 
         self::assertSame(85.0, $configured->error);
         self::assertSame(50.0, $untouched->error);

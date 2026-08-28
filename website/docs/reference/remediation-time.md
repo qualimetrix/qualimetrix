@@ -34,9 +34,9 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 | ----------------------- | ------------------------------- | ------- |
 | DIT (Inheritance Depth) | `design.inheritance`            | 30      |
 | NOC                     | `design.noc`                    | 20      |
-| Parameter Type Coverage | `design.param-type-coverage`    | 15      |
-| Return Type Coverage    | `design.return-type-coverage`   | 15      |
-| Property Type Coverage  | `design.property-type-coverage` | 15      |
+| Parameter Type Coverage | `design.type-coverage.param`    | 15      |
+| Return Type Coverage    | `design.type-coverage.return`   | 15      |
+| Property Type Coverage  | `design.type-coverage.property` | 15      |
 | Data Class              | `design.data-class`             | 30      |
 | God Class               | `design.god-class`              | 120     |
 

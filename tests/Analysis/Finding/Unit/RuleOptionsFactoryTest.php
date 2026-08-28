@@ -1400,11 +1400,11 @@ final class RuleOptionsFactoryTest extends TestCase
         $factory = new RuleOptionsFactory($this->registry, $logger);
 
         $this->registry->setConfigFileOptions([
-            'design.param-type-coverage' => ['threshold' => 70.0],
+            'design.type-coverage.param' => ['threshold' => 70.0],
         ]);
 
         /** @var TypeCoverageOptions $options */
-        $options = $factory->create('design.param-type-coverage', TypeCoverageOptions::class);
+        $options = $factory->create('design.type-coverage.param', TypeCoverageOptions::class);
 
         self::assertSame(70.0, $options->warning);
         self::assertSame(70.0, $options->error);

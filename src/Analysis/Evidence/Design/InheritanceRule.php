@@ -52,7 +52,7 @@ final class InheritanceRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [MetricName::STRUCTURE_DIT];
+        return [MetricName::DESIGN_DIT];
     }
 
     /**
@@ -72,7 +72,7 @@ final class InheritanceRule extends AbstractRule
                 continue;
             }
             $metrics = $context->metrics->get($subject->toSymbolPath());
-            $dit = $metrics->get(MetricName::STRUCTURE_DIT);
+            $dit = $metrics->get(MetricName::DESIGN_DIT);
 
             if ($dit === null) {
                 continue;

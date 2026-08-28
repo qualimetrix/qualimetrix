@@ -43,9 +43,9 @@
 | LCOM                       | `cohesion.lcom`                 | 3         | 5         | Класс   |
 | NOC                        | `design.noc`                    | 10        | 15        | Класс   |
 | DIT                        | `design.inheritance`            | 4         | 6         | Класс   |
-| Покрытие типами параметров | `design.param-type-coverage`    | 80 (ниже) | 50 (ниже) | Класс   |
-| Покрытие типами возврата   | `design.return-type-coverage`   | 80 (ниже) | 50 (ниже) | Класс   |
-| Покрытие типами свойств    | `design.property-type-coverage` | 80 (ниже) | 50 (ниже) | Класс   |
+| Покрытие типами параметров | `design.type-coverage.param`    | 80 (ниже) | 50 (ниже) | Класс   |
+| Покрытие типами возврата   | `design.type-coverage.return`   | 80 (ниже) | 50 (ниже) | Класс   |
+| Покрытие типами свойств    | `design.type-coverage.property` | 80 (ниже) | 50 (ниже) | Класс   |
 
 **LCOM (Lack of Cohesion of Methods)** измеряет, насколько хорошо методы в классе связаны друг с другом. Высокий LCOM говорит о том, что класс стоит разделить.
 

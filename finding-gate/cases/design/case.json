@@ -34,9 +34,9 @@
         "design.god-class@class",
         "design.inheritance@class",
         "design.noc@class",
-        "design.param-type-coverage@class",
-        "design.property-type-coverage@class",
-        "design.return-type-coverage@class",
+        "design.type-coverage.param@class",
+        "design.type-coverage.property@class",
+        "design.type-coverage.return@class",
         "size.class-count@namespace",
         "size.method-count@class",
         "size.property-count@class"

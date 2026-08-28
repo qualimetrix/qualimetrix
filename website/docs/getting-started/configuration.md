@@ -195,11 +195,11 @@ Each type-coverage dimension is a rule of its own, so each takes its own bare
 
 ```yaml
 rules:
-  design.param-type-coverage:
+  design.type-coverage.param:
     threshold: 90
-  design.return-type-coverage:
+  design.type-coverage.return:
     threshold: 90
-  design.property-type-coverage:
+  design.type-coverage.property:
     threshold: 80
 ```
 

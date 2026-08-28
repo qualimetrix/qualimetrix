@@ -168,13 +168,13 @@ final class RemediationTimeRegistryTest extends TestCase
     {
         $registry = new RemediationTimeRegistry(
             new StubChannelDeclarationRegistry([
-                'design.param-type-coverage' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
+                'design.type-coverage.param' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
             ]),
             StubRemediationMinutes::withRealValues(),
         );
 
         // Type coverage=40, threshold=80 (inverted): ratio=80/40=2, ln(2)=0.693, max(1, 0.693)=1 → 15*1=15
-        $finding = $this->createFinding('design.param-type-coverage', metricValue: 40, threshold: 80);
+        $finding = $this->createFinding('design.type-coverage.param', metricValue: 40, threshold: 80);
 
         $minutes = $registry->getMinutesForFinding($finding);
 

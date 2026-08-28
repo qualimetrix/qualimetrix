@@ -465,7 +465,7 @@ final class CollectionOrchestratorTest extends TestCase
         $suppression = new Suppression('complexity', 'fixture', 7, SuppressionType::File);
         $secondSuppression = new Suppression('design', 'second fixture', 17, SuppressionType::NextLine);
         $override = new ThresholdOverride('complexity.cyclomatic', 12, 20, 8, $subject, ControlScope::Class_);
-        $secondOverride = new ThresholdOverride('design.param-type-coverage', 95, 80, 18, $subject, ControlScope::Class_);
+        $secondOverride = new ThresholdOverride('design.type-coverage.param', 95, 80, 18, $subject, ControlScope::Class_);
         $diagnostic = new ThresholdDiagnostic(9, $subject, 'invalid fixture threshold');
         $secondDiagnostic = new ThresholdDiagnostic(19, $subject, 'second invalid fixture threshold');
         $dependencies = [

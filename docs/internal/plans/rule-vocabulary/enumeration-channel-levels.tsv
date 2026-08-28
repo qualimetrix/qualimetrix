@@ -49,9 +49,9 @@ design.data-class#design.data-class	class	no	no	C1 C2	both
 design.god-class#design.god-class	class	no	no	C1 C2	both
 design.inheritance#design.inheritance	class	no	no	C1 C2	both
 design.noc#design.noc	class	no	no	C2	both
-design.param-type-coverage#design.param-type-coverage	class	no	no	C2	both
-design.property-type-coverage#design.property-type-coverage	class	no	no	C2	both
-design.return-type-coverage#design.return-type-coverage	class	no	no	C2	both
+design.type-coverage.param#design.type-coverage.param	class	no	no	C2	both
+design.type-coverage.property#design.type-coverage.property	class	no	no	C2	both
+design.type-coverage.return#design.type-coverage.return	class	no	no	C2	both
 duplication.code-duplication#duplication.code-duplication	project	no	no	C1	both
 maintainability.index#maintainability.index	callable	no	no	C1 C2	both
 security.command-injection#security.command-injection	callable	no	no	C2	both

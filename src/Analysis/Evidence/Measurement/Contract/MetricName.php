@@ -7,23 +7,26 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
 /**
  * Canonical metric name constants shared between collectors and rules.
  *
- * Both Metrics and Rules layers depend on Core, so placing metric names
- * here avoids cross-layer dependencies between Metrics and Rules.
+ * A key is `family.metric` in kebab, where the family is the subject the metric
+ * belongs to rather than the collector that happens to produce it: the seven
+ * class-shape facts below are `design.*` although Size writes them, and that
+ * mismatch is a defect of the layout recorded in AUDIT.md, not of the name.
  *
- * Constants follow the naming pattern: CATEGORY_METRIC (e.g., COMPLEXITY_CCN).
- * Values match the metric key strings used in MetricBag.
+ * The constant is the key upper-cased, so a constant cannot drift from the
+ * family of its own value the way `STRUCTURE_LCOM = 'lcom'` did.
  *
  * @qmx-threshold coupling.cbo 65 -- Canonical names are an intentional Measurement contract hub; current raw CBO 64 gets one-edge headroom. It rose from 62 when design.type-coverage became three rules, each naming its own dimension's metrics.
  */
 final class MetricName
 {
-    // -- Complexity ----------------------------------------------------------
+    // -- Complexity ------------------------------------------------------------
 
     public const string COMPLEXITY_CCN = 'complexity.ccn';
     public const string COMPLEXITY_COGNITIVE = 'complexity.cognitive';
     public const string COMPLEXITY_NPATH = 'complexity.npath';
+    public const string COMPLEXITY_WMC = 'complexity.wmc';
 
-    // -- Coupling ------------------------------------------------------------
+    // -- Coupling --------------------------------------------------------------
 
     public const string COUPLING_CA = 'coupling.ca';
     public const string COUPLING_CE = 'coupling.ce';
@@ -35,44 +38,54 @@ final class MetricName
     public const string COUPLING_CE_PACKAGES = 'coupling.ce-packages';
     public const string COUPLING_CBO_APP = 'coupling.cbo-app';
     public const string COUPLING_CE_FRAMEWORK = 'coupling.ce-framework';
+    public const string COUPLING_RFC = 'coupling.rfc';
+    public const string COUPLING_RFC_OWN = 'coupling.rfc-own';
+    public const string COUPLING_RFC_EXTERNAL = 'coupling.rfc-external';
 
-    // -- Design --------------------------------------------------------------
-
-    public const string TYPE_COVERAGE_PARAM_TOTAL = 'design.type-coverage.param.total';
-    public const string TYPE_COVERAGE_PARAM_TYPED = 'design.type-coverage.param.typed';
-    public const string TYPE_COVERAGE_PARAM = 'design.type-coverage.param';
-    public const string TYPE_COVERAGE_RETURN_TOTAL = 'design.type-coverage.return.total';
-    public const string TYPE_COVERAGE_RETURN_TYPED = 'design.type-coverage.return.typed';
-    public const string TYPE_COVERAGE_RETURN = 'design.type-coverage.return';
-    public const string TYPE_COVERAGE_PROPERTY_TOTAL = 'design.type-coverage.property.total';
-    public const string TYPE_COVERAGE_PROPERTY_TYPED = 'design.type-coverage.property.typed';
-    public const string TYPE_COVERAGE_PROPERTY = 'design.type-coverage.property';
-    public const string TYPE_COVERAGE_PCT = 'design.type-coverage.pct';
-
-    // -- Halstead ------------------------------------------------------------
-
-    public const string HALSTEAD_VOLUME = 'maintainability.halstead.volume';
-    public const string HALSTEAD_DIFFICULTY = 'maintainability.halstead.difficulty';
-    public const string HALSTEAD_EFFORT = 'maintainability.halstead.effort';
-    public const string HALSTEAD_BUGS = 'maintainability.halstead.bugs';
-    public const string HALSTEAD_TIME = 'maintainability.halstead.time';
-
-    // -- Maintainability -----------------------------------------------------
-
-    public const string MAINTAINABILITY_MI = 'maintainability.mi';
-
-    // -- Security ------------------------------------------------------------
-
-    public const string SECURITY_HARDCODED_CREDENTIALS = 'security.hardcoded-credentials';
-    public const string SECURITY_SENSITIVE_PARAMETER = 'security.sensitive-parameter';
-
-    // -- Cohesion ------------------------------------------------------------
+    // -- Cohesion --------------------------------------------------------------
 
     public const string COHESION_TCC = 'cohesion.tcc';
     public const string COHESION_LCC = 'cohesion.lcc';
     public const string COHESION_PURE_METHOD_COUNT = 'cohesion.pure-method-count';
+    public const string COHESION_LCOM = 'cohesion.lcom';
 
-    // -- Size ----------------------------------------------------------------
+    // -- Design ----------------------------------------------------------------
+
+    public const string DESIGN_TYPE_COVERAGE_PARAM_TOTAL = 'design.type-coverage.param.total';
+    public const string DESIGN_TYPE_COVERAGE_PARAM_TYPED = 'design.type-coverage.param.typed';
+    public const string DESIGN_TYPE_COVERAGE_PARAM = 'design.type-coverage.param';
+    public const string DESIGN_TYPE_COVERAGE_RETURN_TOTAL = 'design.type-coverage.return.total';
+    public const string DESIGN_TYPE_COVERAGE_RETURN_TYPED = 'design.type-coverage.return.typed';
+    public const string DESIGN_TYPE_COVERAGE_RETURN = 'design.type-coverage.return';
+    public const string DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL = 'design.type-coverage.property.total';
+    public const string DESIGN_TYPE_COVERAGE_PROPERTY_TYPED = 'design.type-coverage.property.typed';
+    public const string DESIGN_TYPE_COVERAGE_PROPERTY = 'design.type-coverage.property';
+    public const string DESIGN_TYPE_COVERAGE_PCT = 'design.type-coverage.pct';
+    public const string DESIGN_DIT = 'design.dit';
+    public const string DESIGN_IS_READONLY = 'design.is-readonly';
+    public const string DESIGN_IS_PROMOTED_PROPERTIES_ONLY = 'design.is-promoted-properties-only';
+    public const string DESIGN_IS_DATA_CLASS = 'design.is-data-class';
+    public const string DESIGN_NOC = 'design.noc';
+    public const string DESIGN_IS_ABSTRACT = 'design.is-abstract';
+    public const string DESIGN_IS_INTERFACE = 'design.is-interface';
+    public const string DESIGN_IS_EXCEPTION = 'design.is-exception';
+    public const string DESIGN_WOC = 'design.woc';
+
+    // -- Maintainability -------------------------------------------------------
+
+    public const string MAINTAINABILITY_HALSTEAD_VOLUME = 'maintainability.halstead.volume';
+    public const string MAINTAINABILITY_HALSTEAD_DIFFICULTY = 'maintainability.halstead.difficulty';
+    public const string MAINTAINABILITY_HALSTEAD_EFFORT = 'maintainability.halstead.effort';
+    public const string MAINTAINABILITY_HALSTEAD_BUGS = 'maintainability.halstead.bugs';
+    public const string MAINTAINABILITY_HALSTEAD_TIME = 'maintainability.halstead.time';
+    public const string MAINTAINABILITY_MI = 'maintainability.mi';
+
+    // -- Security --------------------------------------------------------------
+
+    public const string SECURITY_HARDCODED_CREDENTIALS = 'security.hardcoded-credentials';
+    public const string SECURITY_SENSITIVE_PARAMETER = 'security.sensitive-parameter';
+
+    // -- Size ------------------------------------------------------------------
 
     public const string SIZE_CLASS_LOC = 'size.class-loc';
     public const string SIZE_CLASS_COUNT = 'size.class-count';
@@ -95,43 +108,22 @@ final class MetricName
     public const string SIZE_PROPERTY_COUNT_PROTECTED = 'size.property-count.protected';
     public const string SIZE_PROPERTY_COUNT_PRIVATE = 'size.property-count.private';
     public const string SIZE_PROMOTED_PROPERTY_COUNT = 'size.promoted-property-count';
-
     /**
      * Symbol counters the aggregation pipeline injects at namespace and project
      * level, where they serve as denominators in the built-in health formulas.
      */
     public const string SIZE_SYMBOL_METHOD_COUNT = 'size.symbol-method-count';
     public const string SIZE_SYMBOL_CLASS_COUNT = 'size.symbol-class-count';
+    public const string SIZE_METHOD_COUNT = 'size.method-count';
+    public const string SIZE_METHOD_COUNT_TOTAL = 'size.method-count.total';
+    public const string SIZE_PROPERTY_COUNT = 'size.property-count';
 
-    // -- RFC (Response for a Class) ------------------------------------------
+    // -- Code smell ------------------------------------------------------------
 
-    public const string RFC_TOTAL = 'coupling.rfc';
-    public const string RFC_OWN = 'coupling.rfc-own';
-    public const string RFC_EXTERNAL = 'coupling.rfc-external';
-
-    // -- Structure -----------------------------------------------------------
-
-    public const string STRUCTURE_DIT = 'design.dit';
-    public const string STRUCTURE_LCOM = 'cohesion.lcom';
-    public const string STRUCTURE_METHOD_COUNT = 'size.method-count';
-    public const string STRUCTURE_METHOD_COUNT_TOTAL = 'size.method-count.total';
-    public const string STRUCTURE_PROPERTY_COUNT = 'size.property-count';
-    public const string STRUCTURE_IS_READONLY = 'design.is-readonly';
-    public const string STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY = 'design.is-promoted-properties-only';
-    public const string STRUCTURE_IS_DATA_CLASS = 'design.is-data-class';
-    public const string STRUCTURE_NOC = 'design.noc';
-    public const string STRUCTURE_UNUSED_PRIVATE_TOTAL = 'code-smell.unused-private.total';
-    public const string STRUCTURE_UNUSED_PRIVATE_METHOD = 'code-smell.unused-private.method';
-    public const string STRUCTURE_UNUSED_PRIVATE_PROPERTY = 'code-smell.unused-private.property';
-    public const string STRUCTURE_UNUSED_PRIVATE_CONSTANT = 'code-smell.unused-private.constant';
-    public const string STRUCTURE_IS_ABSTRACT = 'design.is-abstract';
-    public const string STRUCTURE_IS_INTERFACE = 'design.is-interface';
-    public const string STRUCTURE_IS_EXCEPTION = 'design.is-exception';
-    public const string STRUCTURE_WMC = 'complexity.wmc';
-    public const string STRUCTURE_WOC = 'design.woc';
-
-    // -- Code Smell ----------------------------------------------------------
-
+    public const string CODE_SMELL_UNUSED_PRIVATE_TOTAL = 'code-smell.unused-private.total';
+    public const string CODE_SMELL_UNUSED_PRIVATE_METHOD = 'code-smell.unused-private.method';
+    public const string CODE_SMELL_UNUSED_PRIVATE_PROPERTY = 'code-smell.unused-private.property';
+    public const string CODE_SMELL_UNUSED_PRIVATE_CONSTANT = 'code-smell.unused-private.constant';
     public const string CODE_SMELL_PARAMETER_COUNT = 'code-smell.parameter-count';
     public const string CODE_SMELL_IS_VO_CONSTRUCTOR = 'code-smell.is-vo-constructor';
     public const string CODE_SMELL_UNREACHABLE_CODE = 'code-smell.unreachable-code';

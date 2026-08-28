@@ -51,7 +51,7 @@ final class MethodCountRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [MetricName::STRUCTURE_METHOD_COUNT];
+        return [MetricName::SIZE_METHOD_COUNT];
     }
 
     /**
@@ -95,7 +95,7 @@ final class MethodCountRule extends AbstractRule
                 continue;
             }
             $metrics = $context->metrics->get($subject->toSymbolPath());
-            $methodCount = $metrics->get(MetricName::STRUCTURE_METHOD_COUNT);
+            $methodCount = $metrics->get(MetricName::SIZE_METHOD_COUNT);
 
             if ($methodCount === null) {
                 continue;

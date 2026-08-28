@@ -58,15 +58,15 @@ final class DataClassRule extends AbstractRule
     public function requires(): array
     {
         return [
-            MetricName::STRUCTURE_WOC,
-            MetricName::STRUCTURE_WMC,
-            MetricName::STRUCTURE_METHOD_COUNT_TOTAL,
-            MetricName::STRUCTURE_PROPERTY_COUNT,
-            MetricName::STRUCTURE_IS_READONLY,
-            MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY,
-            MetricName::STRUCTURE_IS_ABSTRACT,
-            MetricName::STRUCTURE_IS_INTERFACE,
-            MetricName::STRUCTURE_IS_EXCEPTION,
+            MetricName::DESIGN_WOC,
+            MetricName::COMPLEXITY_WMC,
+            MetricName::SIZE_METHOD_COUNT_TOTAL,
+            MetricName::SIZE_PROPERTY_COUNT,
+            MetricName::DESIGN_IS_READONLY,
+            MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY,
+            MetricName::DESIGN_IS_ABSTRACT,
+            MetricName::DESIGN_IS_INTERFACE,
+            MetricName::DESIGN_IS_EXCEPTION,
         ];
     }
 
@@ -119,13 +119,13 @@ final class DataClassRule extends AbstractRule
             return null;
         }
 
-        $woc = $metrics->get(MetricName::STRUCTURE_WOC);
+        $woc = $metrics->get(MetricName::DESIGN_WOC);
         if ($woc === null) {
             return null;
         }
 
         $wocValue = (int) $woc;
-        $wmcValue = (int) ($metrics->get(MetricName::STRUCTURE_WMC) ?? 0);
+        $wmcValue = (int) ($metrics->get(MetricName::COMPLEXITY_WMC) ?? 0);
 
         // Data Class: high WOC (public surface) + low WMC (complexity)
         if ($wocValue > $effectiveOptions->wocThreshold || $wmcValue > $effectiveOptions->wmcThreshold) {

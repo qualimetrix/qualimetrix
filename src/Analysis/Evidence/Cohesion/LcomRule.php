@@ -55,7 +55,7 @@ final class LcomRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [MetricName::STRUCTURE_LCOM, MetricName::STRUCTURE_METHOD_COUNT, MetricName::STRUCTURE_IS_READONLY];
+        return [MetricName::COHESION_LCOM, MetricName::SIZE_METHOD_COUNT, MetricName::DESIGN_IS_READONLY];
     }
 
     /**
@@ -126,14 +126,14 @@ final class LcomRule extends AbstractRule
 
     private function eligibleLcom(MetricBag $metrics, LcomOptions $options): ?int
     {
-        if ($options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
+        if ($options->excludeReadonly && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1) {
             return null;
         }
-        $methodCount = (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT) ?? 0);
+        $methodCount = (int) ($metrics->get(MetricName::SIZE_METHOD_COUNT) ?? 0);
         if ($methodCount < $options->minMethods) {
             return null;
         }
-        $lcom = $metrics->get(MetricName::STRUCTURE_LCOM);
+        $lcom = $metrics->get(MetricName::COHESION_LCOM);
 
         return $lcom !== null ? (int) $lcom : null;
     }

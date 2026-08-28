@@ -113,11 +113,11 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements DeclarationIn
             $halstead = $this->metrics[$fqn] ?? HalsteadMetrics::empty();
 
             $bag = (new MetricBag())
-                ->with(MetricName::HALSTEAD_VOLUME, $halstead->volume())
-                ->with(MetricName::HALSTEAD_DIFFICULTY, $halstead->difficulty())
-                ->with(MetricName::HALSTEAD_EFFORT, $halstead->effort())
-                ->with(MetricName::HALSTEAD_BUGS, $halstead->bugs())
-                ->with(MetricName::HALSTEAD_TIME, $halstead->time());
+                ->with(MetricName::MAINTAINABILITY_HALSTEAD_VOLUME, $halstead->volume())
+                ->with(MetricName::MAINTAINABILITY_HALSTEAD_DIFFICULTY, $halstead->difficulty())
+                ->with(MetricName::MAINTAINABILITY_HALSTEAD_EFFORT, $halstead->effort())
+                ->with(MetricName::MAINTAINABILITY_HALSTEAD_BUGS, $halstead->bugs())
+                ->with(MetricName::MAINTAINABILITY_HALSTEAD_TIME, $halstead->time());
 
             $result[] = $this->createCallableWithMetrics($scope, $file, $bag);
         }

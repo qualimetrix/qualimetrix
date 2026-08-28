@@ -38,26 +38,26 @@ final class DataClassExclusionCheck
     {
         return [
             // Interfaces are contracts, not data classes
-            static fn(MetricBag $metrics): bool => $metrics->get(MetricName::STRUCTURE_IS_INTERFACE) === 1,
+            static fn(MetricBag $metrics): bool => $metrics->get(MetricName::DESIGN_IS_INTERFACE) === 1,
             // Abstract classes are contracts, not data classes
-            static fn(MetricBag $metrics): bool => $metrics->get(MetricName::STRUCTURE_IS_ABSTRACT) === 1,
+            static fn(MetricBag $metrics): bool => $metrics->get(MetricName::DESIGN_IS_ABSTRACT) === 1,
             // Classes with zero properties cannot be data classes by definition
-            static fn(MetricBag $metrics): bool => (int) ($metrics->get(MetricName::STRUCTURE_PROPERTY_COUNT) ?? 0) === 0,
+            static fn(MetricBag $metrics): bool => (int) ($metrics->get(MetricName::SIZE_PROPERTY_COUNT) ?? 0) === 0,
             // Exception classes are DTOs by design — they hold error context, not behavior
             static fn(MetricBag $metrics): bool => $options->excludeExceptions
-                && $metrics->get(MetricName::STRUCTURE_IS_EXCEPTION) === 1,
+                && $metrics->get(MetricName::DESIGN_IS_EXCEPTION) === 1,
             // Skip readonly classes if configured
             static fn(MetricBag $metrics): bool => $options->excludeReadonly
-                && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1,
+                && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1,
             // Skip promoted-properties-only classes if configured
             static fn(MetricBag $metrics): bool => $options->excludePromotedOnly
-                && $metrics->get(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY) === 1,
+                && $metrics->get(MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY) === 1,
             // Size is counted in members, not methods: a struct of public
             // fields declares no methods at all and is the purest Data Class
             // there is. Accessors count too — they are what such a class is
             // made of.
-            static fn(MetricBag $metrics): bool => (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT_TOTAL) ?? 0)
-                + (int) ($metrics->get(MetricName::STRUCTURE_PROPERTY_COUNT) ?? 0) < $options->minMembers,
+            static fn(MetricBag $metrics): bool => (int) ($metrics->get(MetricName::SIZE_METHOD_COUNT_TOTAL) ?? 0)
+                + (int) ($metrics->get(MetricName::SIZE_PROPERTY_COUNT) ?? 0) < $options->minMembers,
         ];
     }
 }

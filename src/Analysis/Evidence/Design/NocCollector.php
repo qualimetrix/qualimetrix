@@ -50,14 +50,14 @@ final class NocCollector implements GlobalContextCollectorInterface
 
     public function provides(): array
     {
-        return [MetricName::STRUCTURE_NOC];
+        return [MetricName::DESIGN_NOC];
     }
 
     public function getMetricDefinitions(): array
     {
         return [
             new MetricDefinition(
-                name: MetricName::STRUCTURE_NOC,
+                name: MetricName::DESIGN_NOC,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
@@ -93,7 +93,7 @@ final class NocCollector implements GlobalContextCollectorInterface
 
             $noc = $children['count'];
 
-            $repository->addScalar($parentPath, MetricName::STRUCTURE_NOC, $noc);
+            $repository->addScalar($parentPath, MetricName::DESIGN_NOC, $noc);
         }
 
         // Step 3: Ensure all classes have NOC (even if 0)
@@ -103,8 +103,8 @@ final class NocCollector implements GlobalContextCollectorInterface
                 continue;
             }
 
-            if (!$repository->get($classSymbol->symbolPath)->has(MetricName::STRUCTURE_NOC)) {
-                $repository->addScalar($classSymbol->symbolPath, MetricName::STRUCTURE_NOC, 0);
+            if (!$repository->get($classSymbol->symbolPath)->has(MetricName::DESIGN_NOC)) {
+                $repository->addScalar($classSymbol->symbolPath, MetricName::DESIGN_NOC, 0);
             }
         }
     }

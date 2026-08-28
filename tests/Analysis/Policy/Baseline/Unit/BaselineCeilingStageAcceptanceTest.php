@@ -106,12 +106,12 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
-            'design.param-type-coverage',
+            'design.type-coverage.param',
             ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
         );
 
-        $recorded = self::findingOn('design.param-type-coverage', 'design.param-type-coverage', self::someClass(), 60.0);
-        $current = self::findingOn('design.param-type-coverage', 'design.param-type-coverage', self::someClass(), 75.0);
+        $recorded = self::findingOn('design.type-coverage.param', 'design.type-coverage.param', self::someClass(), 60.0);
+        $current = self::findingOn('design.type-coverage.param', 'design.type-coverage.param', self::someClass(), 75.0);
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [60.0])]), $declarations);
 

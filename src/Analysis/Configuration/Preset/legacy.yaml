@@ -70,13 +70,13 @@ rules:
     error: 10
     vo-warning: 12
     vo-error: 18
-  design.param-type-coverage:
+  design.type-coverage.param:
     warning: 30
     error: 10
-  design.return-type-coverage:
+  design.type-coverage.return:
     warning: 30
     error: 10
-  design.property-type-coverage:
+  design.type-coverage.property:
     warning: 30
     error: 10
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Integration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
@@ -265,14 +266,17 @@ final class UnusedDirectiveRuleTest extends TestCase
     }
 
     /**
-     * The old spelling of a type-coverage dimension names nothing at all now:
-     * the aspect moved out of the channel code and into the rule name, so
-     * neither half of `design.type-coverage.param` exists to be pointed at.
+     * Type coverage has been spelled three ways and only the third resolves.
+     * Ш4b split the single `design.type-coverage` into three producers, and
+     * Ш5e3 moved the aspect to the end of the name; both retired spellings are
+     * pinned here, because a directive naming one of them must say so rather
+     * than resolve to whichever producer is textually nearest.
      */
     #[Test]
-    public function itRejectsAThresholdNamingTheOldTypeCoverageDimensionSpelling(): void
+    #[DataProvider('retiredTypeCoverageSpellings')]
+    public function itRejectsAThresholdNamingARetiredTypeCoverageSpelling(string $spelling): void
     {
-        $findings = self::runWithThreshold('design.type-coverage.param');
+        $findings = self::runWithThreshold($spelling);
 
         self::assertCount(1, $findings);
         self::assertSame(
@@ -281,11 +285,20 @@ final class UnusedDirectiveRuleTest extends TestCase
         );
     }
 
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function retiredTypeCoverageSpellings(): iterable
+    {
+        yield 'before the Ш4b split' => ['design.type-coverage'];
+        yield 'before the Ш5e3 rename' => ['design.param-type-coverage'];
+    }
+
     /** One dimension, one rule, one threshold that addresses it. */
     #[Test]
     public function itAcceptsAThresholdOnOneTypeCoverageDimension(): void
     {
-        self::assertSame([], self::runWithThreshold('design.param-type-coverage'));
+        self::assertSame([], self::runWithThreshold('design.type-coverage.param'));
     }
 
     /**

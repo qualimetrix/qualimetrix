@@ -119,7 +119,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
         $result = $this->extract(
             ruleName: ParamTypeCoverageRule::NAME,
             validator: TypeCoverageOptions::getOverrideValidator(),
-            docblock: '/** @qmx-threshold design.param-type-coverage warning=70 error=40 */',
+            docblock: '/** @qmx-threshold design.type-coverage.param warning=70 error=40 */',
         );
 
         self::assertSame(InvertedOverrideValidator::instance(), TypeCoverageOptions::getOverrideValidator());

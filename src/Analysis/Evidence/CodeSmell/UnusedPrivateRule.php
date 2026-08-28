@@ -40,9 +40,9 @@ final class UnusedPrivateRule extends AbstractRule
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
     private const ENTRY_KEYS = [
-        MetricName::STRUCTURE_UNUSED_PRIVATE_METHOD => 'Unused private method',
-        MetricName::STRUCTURE_UNUSED_PRIVATE_PROPERTY => 'Unused private property',
-        MetricName::STRUCTURE_UNUSED_PRIVATE_CONSTANT => 'Unused private constant',
+        MetricName::CODE_SMELL_UNUSED_PRIVATE_METHOD => 'Unused private method',
+        MetricName::CODE_SMELL_UNUSED_PRIVATE_PROPERTY => 'Unused private property',
+        MetricName::CODE_SMELL_UNUSED_PRIVATE_CONSTANT => 'Unused private constant',
     ];
 
     public function getName(): string
@@ -58,7 +58,7 @@ final class UnusedPrivateRule extends AbstractRule
     public function requires(): array
     {
         return [
-            MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL,
+            MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL,
         ];
     }
 
@@ -89,7 +89,7 @@ final class UnusedPrivateRule extends AbstractRule
         }
 
         $metrics = $context->metrics->getSubject($subject);
-        $total = (int) ($metrics->get(MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL) ?? 0);
+        $total = (int) ($metrics->get(MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL) ?? 0);
         if ($total === 0) {
             return [];
         }

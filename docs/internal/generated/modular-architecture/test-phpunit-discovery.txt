@@ -2326,9 +2326,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturnsClassLevelMetricDefinitionWithNoAggregation
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturnsCollectorName
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturnsCorrectPercentageForPartiallyTypedClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly"param"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly"property"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itAliasesItsOwnTwoBoundariesOnly"return"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentOnFullCoverage"param"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentOnFullCoverage"property"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentOnFullCoverage"return"
@@ -2870,9 +2867,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.god-class"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.inheritance"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.noc"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.param-type-coverage"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.property-type-coverage"
- - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.return-type-coverage"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.type-coverage.param"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.type-coverage.property"
+ - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"design.type-coverage.return"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"duplication.code-duplication"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"file-size"
  - Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"fixture.rule"
@@ -4063,15 +4060,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.noc::(top)#0[error]=error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.noc::(top)#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.noc::(top)#0[warning]=warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.param-type-coverage::(top)#0[error]=error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.param-type-coverage::(top)#0[threshold]=threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.param-type-coverage::(top)#0[warning]=warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.property-type-coverage::(top)#0[error]=error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.property-type-coverage::(top)#0[threshold]=threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.property-type-coverage::(top)#0[warning]=warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.return-type-coverage::(top)#0[error]=error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.return-type-coverage::(top)#0[threshold]=threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.return-type-coverage::(top)#0[warning]=warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage.param::(top)#0[error]=error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage.param::(top)#0[threshold]=threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage.param::(top)#0[warning]=warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage.property::(top)#0[error]=error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage.property::(top)#0[threshold]=threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage.property::(top)#0[warning]=warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage.return::(top)#0[error]=error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage.return::(top)#0[threshold]=threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"design.type-coverage.return::(top)#0[warning]=warning"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"duplication.code-duplication::(top)#0[error]=error"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"duplication.code-duplication::(top)#0[threshold]=threshold"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyDeclaredKeyStillAffectsTheRealOptionsInstance"duplication.code-duplication::(top)#0[warning]=warning"
@@ -4111,9 +4108,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"coupling.instability::namespace"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.inheritance::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.noc::"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.param-type-coverage::"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.property-type-coverage::"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.return-type-coverage::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.type-coverage.param::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.type-coverage.property::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"design.type-coverage.return::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"duplication.code-duplication::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"maintainability.index::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyRegistryEntryCorrespondsToARealThresholdParserCallSite"size.class-count::"
@@ -4143,9 +4140,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"coupling.instability::namespace"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.inheritance::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.noc::"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.param-type-coverage::"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.property-type-coverage::"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.return-type-coverage::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.type-coverage.param::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.type-coverage.property::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"design.type-coverage.return::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"duplication.code-duplication::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"maintainability.index::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"size.class-count::"
@@ -5455,8 +5452,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAMisspelledChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsARuleNameWhereASuppressionMustNameAChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdInTheRetiredChannelPairForm
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingARetiredTypeCoverageSpelling"before the Ш4b split"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingARetiredTypeCoverageSpelling"before the Ш5e3 rename"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingARuleFamilyRatherThanARule
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingTheOldTypeCoverageDimensionSpelling
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdNamingTheSplitTypeCoverageRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdOnARuleThatDeclaresNoOverrideSupport
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsGroupAndWildcardThresholds

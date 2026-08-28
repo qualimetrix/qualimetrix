@@ -92,9 +92,9 @@ design.data-class lower class
 design.god-class higher class
 design.inheritance higher class
 design.noc higher class
-design.param-type-coverage lower class
-design.property-type-coverage lower class
-design.return-type-coverage lower class
+design.type-coverage.param lower class
+design.type-coverage.property lower class
+design.type-coverage.return lower class
 duplication.code-duplication higher project
 maintainability.index lower callable
 security.command-injection - callable

@@ -57,12 +57,12 @@ final class GodClassRule extends AbstractRule
     public function requires(): array
     {
         return [
-            MetricName::STRUCTURE_WMC,
-            MetricName::STRUCTURE_LCOM,
+            MetricName::COMPLEXITY_WMC,
+            MetricName::COHESION_LCOM,
             MetricName::COHESION_TCC,
             MetricName::SIZE_CLASS_LOC,
-            MetricName::STRUCTURE_METHOD_COUNT,
-            MetricName::STRUCTURE_IS_READONLY,
+            MetricName::SIZE_METHOD_COUNT,
+            MetricName::DESIGN_IS_READONLY,
         ];
     }
 
@@ -153,11 +153,11 @@ final class GodClassRule extends AbstractRule
      */
     private function isExcluded(GodClassOptions $options, MetricBag $metrics): bool
     {
-        if ($options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
+        if ($options->excludeReadonly && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1) {
             return true;
         }
 
-        $methodCount = (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT) ?? 0);
+        $methodCount = (int) ($metrics->get(MetricName::SIZE_METHOD_COUNT) ?? 0);
 
         return $methodCount < $options->minMethods;
     }

@@ -177,13 +177,13 @@
 
   # Type coverage — one rule per dimension, each with its own thresholds.
   # Inverted: values BELOW the threshold trigger violations.
-  # design.param-type-coverage:
+  # design.type-coverage.param:
   #   warning: 80                # default: 80%
   #   error: 50
-  # design.return-type-coverage:
+  # design.type-coverage.return:
   #   warning: 80
   #   error: 50
-  # design.property-type-coverage:
+  # design.type-coverage.property:
   #   warning: 80
   #   error: 50
 

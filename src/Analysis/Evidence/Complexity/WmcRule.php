@@ -54,7 +54,7 @@ final class WmcRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [MetricName::STRUCTURE_WMC, MetricName::STRUCTURE_IS_DATA_CLASS, MetricName::STRUCTURE_METHOD_COUNT];
+        return [MetricName::COMPLEXITY_WMC, MetricName::DESIGN_IS_DATA_CLASS, MetricName::SIZE_METHOD_COUNT];
     }
 
     /**
@@ -86,11 +86,11 @@ final class WmcRule extends AbstractRule
         }
 
         $metrics = $context->metrics->get($subject->toSymbolPath());
-        if ($options->excludeDataClasses && $metrics->get(MetricName::STRUCTURE_IS_DATA_CLASS) === 1) {
+        if ($options->excludeDataClasses && $metrics->get(MetricName::DESIGN_IS_DATA_CLASS) === 1) {
             return null;
         }
 
-        $wmc = $metrics->get(MetricName::STRUCTURE_WMC);
+        $wmc = $metrics->get(MetricName::COMPLEXITY_WMC);
         if ($wmc === null) {
             return null;
         }
@@ -104,7 +104,7 @@ final class WmcRule extends AbstractRule
         }
 
         $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
-        $methodCount = $metrics->get(MetricName::STRUCTURE_METHOD_COUNT);
+        $methodCount = $metrics->get(MetricName::SIZE_METHOD_COUNT);
 
         return new Finding(
             location: new Location($classInfo->file, $classInfo->line),

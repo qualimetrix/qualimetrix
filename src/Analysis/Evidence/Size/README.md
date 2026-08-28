@@ -323,7 +323,7 @@ nor constructor — over all other public members, which are public methods
 name in `MethodCountVisitor`, so a public method whose body only forwards to a
 collaborator counts as functional. Only members declared by the class itself
 are counted. A class with no public members scores 100 rather than being left
-undefined. `methodCountTotal` moved to `MetricName::STRUCTURE_METHOD_COUNT_TOTAL`
+undefined. `methodCountTotal` moved to `MetricName::SIZE_METHOD_COUNT_TOTAL`
 so Design can require it without importing a Size constant.
 
 ## Structure

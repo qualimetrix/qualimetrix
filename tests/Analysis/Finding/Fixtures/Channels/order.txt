@@ -44,9 +44,9 @@ design.data-class
 design.god-class
 design.inheritance
 design.noc
-design.param-type-coverage
-design.return-type-coverage
-design.property-type-coverage
+design.type-coverage.param
+design.type-coverage.return
+design.type-coverage.property
 maintainability.index
 security.command-injection
 security.hardcoded-credentials

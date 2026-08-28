@@ -60,7 +60,7 @@ final class MaintainabilityIndexCollector implements DerivedCollectorInterface, 
         // MI is only meaningful at callable level where Halstead metrics exist.
         // At class level, TypeCoverage creates FQN entries without Halstead data,
         // causing MI to be calculated with volume=0 → MI=100 (false perfect score).
-        $volume = $sourceBag->get(MetricName::HALSTEAD_VOLUME);
+        $volume = $sourceBag->get(MetricName::MAINTAINABILITY_HALSTEAD_VOLUME);
         if ($volume === null) {
             return new MetricBag();
         }

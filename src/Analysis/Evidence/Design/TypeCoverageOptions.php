@@ -16,8 +16,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 /**
  * Options for one type-coverage dimension.
  *
- * One class, three producers: `design.param-type-coverage`,
- * `design.return-type-coverage` and `design.property-type-coverage` measure
+ * One class, three producers: `design.type-coverage.param`,
+ * `design.type-coverage.return` and `design.type-coverage.property` measure
  * different declarations and are configured independently, but the shape of
  * the answer — one warning boundary, one error boundary, coverage in percent
  * where lower is worse — is the same for all three. Configuration is keyed by

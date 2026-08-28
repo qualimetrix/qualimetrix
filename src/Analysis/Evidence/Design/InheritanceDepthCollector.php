@@ -59,7 +59,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Decla
      */
     public function provides(): array
     {
-        return [MetricName::STRUCTURE_DIT];
+        return [MetricName::DESIGN_DIT];
     }
 
     /**
@@ -75,7 +75,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Decla
 
         foreach ($classParents as $classFqn => $parentFqn) {
             $dit = $this->calculateDit($classFqn, $classParents);
-            $bag = $bag->with(MetricName::STRUCTURE_DIT . ':' . $classFqn, $dit);
+            $bag = $bag->with(MetricName::DESIGN_DIT . ':' . $classFqn, $dit);
 
             // Note: Parent information is stored in dependency graph as DependencyType::Extends
             // NocCollector will use that information for NOC calculation
@@ -97,7 +97,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Decla
         foreach ($this->visitor->getClassInfo() as $classFqn => $info) {
             $dit = $this->calculateDit($classFqn, $classParents);
 
-            $bag = (new MetricBag())->with(MetricName::STRUCTURE_DIT, $dit);
+            $bag = (new MetricBag())->with(MetricName::DESIGN_DIT, $dit);
 
             // Note: Parent information is stored in dependency graph as DependencyType::Extends
             // NocCollector will use that information for NOC calculation
@@ -215,7 +215,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Decla
     {
         return [
             new MetricDefinition(
-                name: MetricName::STRUCTURE_DIT,
+                name: MetricName::DESIGN_DIT,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [

@@ -120,13 +120,13 @@ final class RuleThresholdKeyGroupRegistry
         // The three type-coverage dimensions — one rule each, flat and bare
         // (TypeCoverageOptions::fromArray(), shared by all three). The prefix
         // that used to distinguish them lives in the rule name now.
-        'design.param-type-coverage' => [
+        'design.type-coverage.param' => [
             '' => [self::BARE_PAIR],
         ],
-        'design.return-type-coverage' => [
+        'design.type-coverage.return' => [
             '' => [self::BARE_PAIR],
         ],
-        'design.property-type-coverage' => [
+        'design.type-coverage.property' => [
             '' => [self::BARE_PAIR],
         ],
 

@@ -204,7 +204,7 @@ bin/qmx check src/ --rule-opt="design.inheritance:error=7"
 
 ## Покрытие типами параметров (Parameter Type Coverage) { #parameter-type-coverage }
 
-**Rule ID:** `design.param-type-coverage`
+**Rule ID:** `design.type-coverage.param`
 
 <!-- llms:skip-begin -->
 ### Что измеряет
@@ -278,13 +278,13 @@ public function process(array $data)
 ```yaml
 # qmx.yaml
 rules:
-  design.param-type-coverage:
+  design.type-coverage.param:
     warning: 80
     error: 50
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="design.param-type-coverage:warning=90"
+bin/qmx check src/ --rule-opt="design.type-coverage.param:warning=90"
 bin/qmx check src/ --param-type-coverage-error=60
 ```
 
@@ -292,7 +292,7 @@ bin/qmx check src/ --param-type-coverage-error=60
 
 ## Покрытие типами возвращаемых значений (Return Type Coverage)
 
-**Rule ID:** `design.return-type-coverage`
+**Rule ID:** `design.type-coverage.return`
 
 <!-- llms:skip-begin -->
 ### Что измеряет
@@ -343,13 +343,13 @@ class LegacyService
 ```yaml
 # qmx.yaml
 rules:
-  design.return-type-coverage:
+  design.type-coverage.return:
     warning: 80
     error: 50
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="design.return-type-coverage:warning=90"
+bin/qmx check src/ --rule-opt="design.type-coverage.return:warning=90"
 bin/qmx check src/ --return-type-coverage-error=60
 ```
 
@@ -357,7 +357,7 @@ bin/qmx check src/ --return-type-coverage-error=60
 
 ## Покрытие типами свойств (Property Type Coverage)
 
-**Rule ID:** `design.property-type-coverage`
+**Rule ID:** `design.type-coverage.property`
 
 <!-- llms:skip-begin -->
 ### Что измеряет
@@ -404,13 +404,13 @@ public function __construct(private readonly CacheInterface $cache) {}
 ```yaml
 # qmx.yaml
 rules:
-  design.property-type-coverage:
+  design.type-coverage.property:
     warning: 80
     error: 50
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="design.property-type-coverage:warning=90"
+bin/qmx check src/ --rule-opt="design.type-coverage.property:warning=90"
 bin/qmx check src/ --property-type-coverage-error=60
 ```
 

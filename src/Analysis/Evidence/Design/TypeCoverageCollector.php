@@ -53,15 +53,15 @@ final class TypeCoverageCollector extends AbstractCollector implements ClassMetr
     public function provides(): array
     {
         return [
-            MetricName::TYPE_COVERAGE_PARAM_TOTAL,
-            MetricName::TYPE_COVERAGE_PARAM_TYPED,
-            MetricName::TYPE_COVERAGE_PARAM,
-            MetricName::TYPE_COVERAGE_RETURN_TOTAL,
-            MetricName::TYPE_COVERAGE_RETURN_TYPED,
-            MetricName::TYPE_COVERAGE_RETURN,
-            MetricName::TYPE_COVERAGE_PROPERTY_TOTAL,
-            MetricName::TYPE_COVERAGE_PROPERTY_TYPED,
-            MetricName::TYPE_COVERAGE_PROPERTY,
+            MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL,
+            MetricName::DESIGN_TYPE_COVERAGE_PARAM_TYPED,
+            MetricName::DESIGN_TYPE_COVERAGE_PARAM,
+            MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL,
+            MetricName::DESIGN_TYPE_COVERAGE_RETURN_TYPED,
+            MetricName::DESIGN_TYPE_COVERAGE_RETURN,
+            MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL,
+            MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TYPED,
+            MetricName::DESIGN_TYPE_COVERAGE_PROPERTY,
         ];
     }
 
@@ -76,31 +76,31 @@ final class TypeCoverageCollector extends AbstractCollector implements ClassMetr
 
         foreach ($this->visitor->getClassTypeInfo() as $fqn => $info) {
             $bag = $bag
-                ->with(MetricName::TYPE_COVERAGE_PARAM_TOTAL . ':' . $fqn, $info['paramTotal'])
-                ->with(MetricName::TYPE_COVERAGE_PARAM_TYPED . ':' . $fqn, $info['paramTyped'])
-                ->with(MetricName::TYPE_COVERAGE_RETURN_TOTAL . ':' . $fqn, $info['returnTotal'])
-                ->with(MetricName::TYPE_COVERAGE_RETURN_TYPED . ':' . $fqn, $info['returnTyped'])
-                ->with(MetricName::TYPE_COVERAGE_PROPERTY_TOTAL . ':' . $fqn, $info['propertyTotal'])
-                ->with(MetricName::TYPE_COVERAGE_PROPERTY_TYPED . ':' . $fqn, $info['propertyTyped']);
+                ->with(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL . ':' . $fqn, $info['paramTotal'])
+                ->with(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TYPED . ':' . $fqn, $info['paramTyped'])
+                ->with(MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL . ':' . $fqn, $info['returnTotal'])
+                ->with(MetricName::DESIGN_TYPE_COVERAGE_RETURN_TYPED . ':' . $fqn, $info['returnTyped'])
+                ->with(MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL . ':' . $fqn, $info['propertyTotal'])
+                ->with(MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TYPED . ':' . $fqn, $info['propertyTyped']);
 
             // Only store percentages when total > 0
             if ($info['paramTotal'] > 0) {
                 $bag = $bag->with(
-                    MetricName::TYPE_COVERAGE_PARAM . ':' . $fqn,
+                    MetricName::DESIGN_TYPE_COVERAGE_PARAM . ':' . $fqn,
                     round($info['paramTyped'] / $info['paramTotal'] * 100, 2),
                 );
             }
 
             if ($info['returnTotal'] > 0) {
                 $bag = $bag->with(
-                    MetricName::TYPE_COVERAGE_RETURN . ':' . $fqn,
+                    MetricName::DESIGN_TYPE_COVERAGE_RETURN . ':' . $fqn,
                     round($info['returnTyped'] / $info['returnTotal'] * 100, 2),
                 );
             }
 
             if ($info['propertyTotal'] > 0) {
                 $bag = $bag->with(
-                    MetricName::TYPE_COVERAGE_PROPERTY . ':' . $fqn,
+                    MetricName::DESIGN_TYPE_COVERAGE_PROPERTY . ':' . $fqn,
                     round($info['propertyTyped'] / $info['propertyTotal'] * 100, 2),
                 );
             }
@@ -136,47 +136,47 @@ final class TypeCoverageCollector extends AbstractCollector implements ClassMetr
 
         return [
             new MetricDefinition(
-                name: MetricName::TYPE_COVERAGE_PARAM_TOTAL,
+                name: MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: MetricName::TYPE_COVERAGE_PARAM_TYPED,
+                name: MetricName::DESIGN_TYPE_COVERAGE_PARAM_TYPED,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: MetricName::TYPE_COVERAGE_PARAM,
+                name: MetricName::DESIGN_TYPE_COVERAGE_PARAM,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [],
             ),
             new MetricDefinition(
-                name: MetricName::TYPE_COVERAGE_RETURN_TOTAL,
+                name: MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: MetricName::TYPE_COVERAGE_RETURN_TYPED,
+                name: MetricName::DESIGN_TYPE_COVERAGE_RETURN_TYPED,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: MetricName::TYPE_COVERAGE_RETURN,
+                name: MetricName::DESIGN_TYPE_COVERAGE_RETURN,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [],
             ),
             new MetricDefinition(
-                name: MetricName::TYPE_COVERAGE_PROPERTY_TOTAL,
+                name: MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: MetricName::TYPE_COVERAGE_PROPERTY_TYPED,
+                name: MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TYPED,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: MetricName::TYPE_COVERAGE_PROPERTY,
+                name: MetricName::DESIGN_TYPE_COVERAGE_PROPERTY,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [],
             ),

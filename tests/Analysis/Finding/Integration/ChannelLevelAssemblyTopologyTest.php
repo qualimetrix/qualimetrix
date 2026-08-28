@@ -127,7 +127,7 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
         self::assertSame(SymbolLevel::Class_, self::levelSegmentOf('coupling.cbo.class'));
         self::assertSame(SymbolLevel::Namespace_, self::levelSegmentOf('coupling.cbo.namespace'));
         self::assertNull(self::levelSegmentOf('coupling.cbo'));
-        self::assertNull(self::levelSegmentOf('design.param-type-coverage'));
+        self::assertNull(self::levelSegmentOf('design.type-coverage.param'));
     }
 
     /**

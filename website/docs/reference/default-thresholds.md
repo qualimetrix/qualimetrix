@@ -43,9 +43,9 @@ Rules that check class design and inheritance structure.
 | LCOM                    | `cohesion.lcom`                 | 3          | 5          | Class |
 | NOC                     | `design.noc`                    | 10         | 15         | Class |
 | DIT                     | `design.inheritance`            | 4          | 6          | Class |
-| Parameter Type Coverage | `design.param-type-coverage`    | 80 (below) | 50 (below) | Class |
-| Return Type Coverage    | `design.return-type-coverage`   | 80 (below) | 50 (below) | Class |
-| Property Type Coverage  | `design.property-type-coverage` | 80 (below) | 50 (below) | Class |
+| Parameter Type Coverage | `design.type-coverage.param`    | 80 (below) | 50 (below) | Class |
+| Return Type Coverage    | `design.type-coverage.return`   | 80 (below) | 50 (below) | Class |
+| Property Type Coverage  | `design.type-coverage.property` | 80 (below) | 50 (below) | Class |
 
 **LCOM (Lack of Cohesion of Methods)** measures how well the methods in a class belong together. A high LCOM suggests the class should be split.
 
@@ -221,11 +221,11 @@ Each type-coverage dimension is its own rule, so each takes its own bare
 
 ```yaml
 rules:
-  design.param-type-coverage:
+  design.type-coverage.param:
     threshold: 90
-  design.return-type-coverage:
+  design.type-coverage.return:
     threshold: 90
-  design.property-type-coverage:
+  design.type-coverage.property:
     threshold: 80
 ```
 

@@ -20,7 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 #[CliAlias('property-type-coverage-error', 'error')]
 final class PropertyTypeCoverageRule extends AbstractTypeCoverageRule
 {
-    public const string NAME = 'design.property-type-coverage';
+    public const string NAME = 'design.type-coverage.property';
 
     public function getDescription(): string
     {
@@ -32,7 +32,7 @@ final class PropertyTypeCoverageRule extends AbstractTypeCoverageRule
      */
     public function requires(): array
     {
-        return [MetricName::TYPE_COVERAGE_PROPERTY];
+        return [MetricName::DESIGN_TYPE_COVERAGE_PROPERTY];
     }
 
     /**
@@ -50,12 +50,12 @@ final class PropertyTypeCoverageRule extends AbstractTypeCoverageRule
 
     protected function totalMetric(): string
     {
-        return MetricName::TYPE_COVERAGE_PROPERTY_TOTAL;
+        return MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL;
     }
 
     protected function coverageMetric(): string
     {
-        return MetricName::TYPE_COVERAGE_PROPERTY;
+        return MetricName::DESIGN_TYPE_COVERAGE_PROPERTY;
     }
 
     protected function label(): string

@@ -47,9 +47,9 @@ These rules check inheritance depth, type coverage, and structural problems.
 | ------------------------------------ | ------------------------------- | ------------------------------------------------------ | --------------- | ------------- |
 | [Inheritance Depth](design.md)       | `design.inheritance`            | How deep the inheritance chain is                      | 4               | 6             |
 | [NOC](design.md)                     | `design.noc`                    | Number of classes inheriting from this one             | 10              | 15            |
-| [Parameter Type Coverage](design.md) | `design.param-type-coverage`    | Percentage of typed parameters                         | 80% (below)     | 50% (below)   |
-| [Return Type Coverage](design.md)    | `design.return-type-coverage`   | Percentage of typed return declarations                | 80% (below)     | 50% (below)   |
-| [Property Type Coverage](design.md)  | `design.property-type-coverage` | Percentage of typed properties                         | 80% (below)     | 50% (below)   |
+| [Parameter Type Coverage](design.md) | `design.type-coverage.param`    | Percentage of typed parameters                         | 80% (below)     | 50% (below)   |
+| [Return Type Coverage](design.md)    | `design.type-coverage.return`   | Percentage of typed return declarations                | 80% (below)     | 50% (below)   |
+| [Property Type Coverage](design.md)  | `design.type-coverage.property` | Percentage of typed properties                         | 80% (below)     | 50% (below)   |
 | [Data Class](design.md)              | `design.data-class`             | Public interface is mostly data access, low complexity | Warning         | --            |
 | [God Class](design.md)               | `design.god-class`              | Overly complex, large classes with low cohesion        | 3+ criteria     | all criteria  |
 
@@ -218,7 +218,7 @@ Compact rule catalog. For warning/error thresholds, see [Default Thresholds Refe
 
 - **Complexity:** `complexity.cyclomatic`, `complexity.cognitive`, `complexity.npath`, `complexity.wmc`
 - **Size:** `size.method-count`, `size.class-count`, `size.property-count`
-- **Design:** `design.inheritance`, `design.noc`, `design.param-type-coverage`, `design.return-type-coverage`, `design.property-type-coverage`, `design.data-class`, `design.god-class`
+- **Design:** `design.inheritance`, `design.noc`, `design.type-coverage.param`, `design.type-coverage.return`, `design.type-coverage.property`, `design.data-class`, `design.god-class`
 - **Cohesion:** `cohesion.lcom` (rule); `tcc`, `lcc` (metrics only, no rule — used as inputs by `design.god-class`)
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
 - **Maintainability:** `maintainability.index`

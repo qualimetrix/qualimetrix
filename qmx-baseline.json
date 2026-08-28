@@ -486,10 +486,10 @@
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger@src/Infrastructure/Logging/DelegatingLogger.php": [
-      {"channel":"design.param-type-coverage","magnitudes":[75]}
+      {"channel":"design.type-coverage.param","magnitudes":[75]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Logging\\FileLogger@src/Infrastructure/Logging/FileLogger.php": [
-      {"channel":"design.property-type-coverage","magnitudes":[50]},
+      {"channel":"design.type-coverage.property","magnitudes":[50]},
       {"channel":"health.typing","magnitudes":[75]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Logging\\LoggerHolder@src/Infrastructure/Logging/LoggerHolder.php": [

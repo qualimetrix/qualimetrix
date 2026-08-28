@@ -20,7 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 #[CliAlias('return-type-coverage-error', 'error')]
 final class ReturnTypeCoverageRule extends AbstractTypeCoverageRule
 {
-    public const string NAME = 'design.return-type-coverage';
+    public const string NAME = 'design.type-coverage.return';
 
     public function getDescription(): string
     {
@@ -32,7 +32,7 @@ final class ReturnTypeCoverageRule extends AbstractTypeCoverageRule
      */
     public function requires(): array
     {
-        return [MetricName::TYPE_COVERAGE_RETURN];
+        return [MetricName::DESIGN_TYPE_COVERAGE_RETURN];
     }
 
     /**
@@ -50,12 +50,12 @@ final class ReturnTypeCoverageRule extends AbstractTypeCoverageRule
 
     protected function totalMetric(): string
     {
-        return MetricName::TYPE_COVERAGE_RETURN_TOTAL;
+        return MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL;
     }
 
     protected function coverageMetric(): string
     {
-        return MetricName::TYPE_COVERAGE_RETURN;
+        return MetricName::DESIGN_TYPE_COVERAGE_RETURN;
     }
 
     protected function label(): string

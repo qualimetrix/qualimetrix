@@ -271,7 +271,7 @@ final class DataClassDetectionTest extends TestCase
             // in Measurement, which this collector-only stand does not run.
             $repository->addSubject(
                 $class->subject,
-                $class->metrics->with(MetricName::STRUCTURE_WMC, $wmc),
+                $class->metrics->with(MetricName::COMPLEXITY_WMC, $wmc),
                 RelativePath::fromString('src/Subject.php'),
                 $class->line,
             );

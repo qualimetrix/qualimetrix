@@ -54,7 +54,7 @@ final class NocRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [MetricName::STRUCTURE_NOC];
+        return [MetricName::DESIGN_NOC];
     }
 
     /**
@@ -85,7 +85,7 @@ final class NocRule extends AbstractRule
             return null;
         }
 
-        $noc = $context->metrics->get($subject->toSymbolPath())->get(MetricName::STRUCTURE_NOC);
+        $noc = $context->metrics->get($subject->toSymbolPath())->get(MetricName::DESIGN_NOC);
         if ($noc === null || $noc === 0) {
             return null;
         }

@@ -25,8 +25,8 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * It exists because two orders moved in one step: the three type-coverage
  * rules, whose relative order is now a decision in `DesignConfigurator`, and
  * `architecture.unassigned-class`, which moved five places when it became a
- * producer of its own. The first is reachable and is pinned in the corpus; the
- * second is not, and this is where that is measured rather than argued.
+ * producer of its own. The first is reachable, the second is not, and this is
+ * where both are measured rather than argued.
  */
 #[CoversClass(ChannelUniverseInterface::class)]
 final class ChannelSuggestionTieTest extends TestCase
@@ -88,24 +88,26 @@ final class ChannelSuggestionTieTest extends TestCase
      * The counterweight: the guard above is only worth anything if a tie is
      * reachable in general. The three type-coverage channels are six edits
      * apart, so a string three from two of them exists, and
-     * `design.repert-type-coverage` is one.
+     * `design.type-coverage.propurn` is one.
      *
-     * That string is deliberately NOT in the finding-gate corpus. It cannot be:
-     * the names it suggests do not exist in the reference's vocabulary and are
-     * more than five edits from every name that does, so the two sides print
-     * different `message` values — and `message` is a compared field, which the
-     * gate refuses to let a declared delta cover (`delta-overreach`). The tie is
-     * therefore guarded here, by measurement, and becomes corpus-guardable from
-     * the first step whose reference already knows the three names.
+     * That string cannot be in the finding-gate corpus during the step that
+     * renames the three channels, and neither could the one before it. The two
+     * vocabularies are fourteen edits apart, so by the triangle inequality no
+     * single string is within five of a channel under both — whichever
+     * spelling the corpus holds, one side prints two suggestions and the other
+     * prints none, and `message` is a compared field a declared delta may not
+     * cover (`delta-overreach`). Ш4c added the fixture once the split names
+     * were on both sides; Ш5e3 retired it for the same reason, and the step
+     * after this one puts it back.
      */
     #[Test]
     public function aTieIsReachableBetweenTheThreeTypeCoverageChannels(): void
     {
         $codes = self::channelCodes();
         $typeCoverage = [
-            'design.param-type-coverage',
-            'design.return-type-coverage',
-            'design.property-type-coverage',
+            'design.type-coverage.param',
+            'design.type-coverage.return',
+            'design.type-coverage.property',
         ];
 
         foreach ($typeCoverage as $code) {
@@ -122,13 +124,13 @@ final class ChannelSuggestionTieTest extends TestCase
 
         self::assertSame(
             3,
-            levenshtein('design.repert-type-coverage', 'design.return-type-coverage'),
-            'the corpus fixture must stay equidistant from the two names it ties',
+            levenshtein('design.type-coverage.propurn', 'design.type-coverage.return'),
+            'the demonstrating string must stay equidistant from the two names it ties',
         );
         self::assertSame(
             3,
-            levenshtein('design.repert-type-coverage', 'design.property-type-coverage'),
-            'the corpus fixture must stay equidistant from the two names it ties',
+            levenshtein('design.type-coverage.propurn', 'design.type-coverage.property'),
+            'the demonstrating string must stay equidistant from the two names it ties',
         );
     }
 
@@ -142,12 +144,12 @@ final class ChannelSuggestionTieTest extends TestCase
         $positions = array_flip(self::channelCodes());
 
         self::assertLessThan(
-            $positions['design.return-type-coverage'],
-            $positions['design.param-type-coverage'],
+            $positions['design.type-coverage.return'],
+            $positions['design.type-coverage.param'],
         );
         self::assertLessThan(
-            $positions['design.property-type-coverage'],
-            $positions['design.return-type-coverage'],
+            $positions['design.type-coverage.property'],
+            $positions['design.type-coverage.return'],
         );
     }
 

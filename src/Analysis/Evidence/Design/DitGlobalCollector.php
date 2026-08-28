@@ -45,7 +45,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
 
     public function provides(): array
     {
-        return [MetricName::STRUCTURE_DIT];
+        return [MetricName::DESIGN_DIT];
     }
 
     public function getMetricDefinitions(): array
@@ -73,7 +73,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
 
             $dit = $this->calculateDit($classFqn, $parentMap, $ditCache);
 
-            $repository->addScalar($classSymbol->symbolPath, MetricName::STRUCTURE_DIT, $dit);
+            $repository->addScalar($classSymbol->symbolPath, MetricName::DESIGN_DIT, $dit);
         }
     }
 

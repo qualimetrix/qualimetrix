@@ -648,12 +648,12 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 | `--lcom-exclude-readonly`            | cohesion.lcom                 | excludeReadonly     |
 | `--noc-warning=N`                    | design.noc                    | warning             |
 | `--noc-error=N`                      | design.noc                    | error               |
-| `--param-type-coverage-warning=N`    | design.param-type-coverage    | warning             |
-| `--param-type-coverage-error=N`      | design.param-type-coverage    | error               |
-| `--return-type-coverage-warning=N`   | design.return-type-coverage   | warning             |
-| `--return-type-coverage-error=N`     | design.return-type-coverage   | error               |
-| `--property-type-coverage-warning=N` | design.property-type-coverage | warning             |
-| `--property-type-coverage-error=N`   | design.property-type-coverage | error               |
+| `--param-type-coverage-warning=N`    | design.type-coverage.param    | warning             |
+| `--param-type-coverage-error=N`      | design.type-coverage.param    | error               |
+| `--return-type-coverage-warning=N`   | design.type-coverage.return   | warning             |
+| `--return-type-coverage-error=N`     | design.type-coverage.return   | error               |
+| `--property-type-coverage-warning=N` | design.type-coverage.property | warning             |
+| `--property-type-coverage-error=N`   | design.type-coverage.property | error               |
 | `--property-exclude-readonly`        | size.property-count           | excludeReadonly     |
 | `--property-exclude-promoted-only`   | size.property-count           | excludePromotedOnly |
 

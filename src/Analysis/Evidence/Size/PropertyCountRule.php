@@ -52,7 +52,7 @@ final class PropertyCountRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [MetricName::STRUCTURE_PROPERTY_COUNT, MetricName::STRUCTURE_IS_READONLY, MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY];
+        return [MetricName::SIZE_PROPERTY_COUNT, MetricName::DESIGN_IS_READONLY, MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY];
     }
 
     /**
@@ -146,14 +146,14 @@ final class PropertyCountRule extends AbstractRule
 
     private function eligiblePropertyCount(MetricBag $metrics, PropertyCountOptions $options): ?int
     {
-        $propertyCount = $metrics->get(MetricName::STRUCTURE_PROPERTY_COUNT);
+        $propertyCount = $metrics->get(MetricName::SIZE_PROPERTY_COUNT);
         if ($propertyCount === null) {
             return null;
         }
-        if ($options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
+        if ($options->excludeReadonly && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1) {
             return null;
         }
-        if ($options->excludePromotedOnly && $metrics->get(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY) === 1) {
+        if ($options->excludePromotedOnly && $metrics->get(MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY) === 1) {
             return null;
         }
 

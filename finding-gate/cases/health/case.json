@@ -21,12 +21,12 @@
         "--rule-opt=complexity.cyclomatic:callable.error=2000",
         "--rule-opt=coupling.instability:class.max_warning=2",
         "--rule-opt=coupling.instability:class.max_error=2",
-        "--rule-opt=design.param-type-coverage:warning=-1",
-        "--rule-opt=design.param-type-coverage:error=-1",
-        "--rule-opt=design.return-type-coverage:warning=-1",
-        "--rule-opt=design.return-type-coverage:error=-1",
-        "--rule-opt=design.property-type-coverage:warning=-1",
-        "--rule-opt=design.property-type-coverage:error=-1"
+        "--rule-opt=design.type-coverage.param:warning=-1",
+        "--rule-opt=design.type-coverage.param:error=-1",
+        "--rule-opt=design.type-coverage.return:warning=-1",
+        "--rule-opt=design.type-coverage.return:error=-1",
+        "--rule-opt=design.type-coverage.property:warning=-1",
+        "--rule-opt=design.type-coverage.property:error=-1"
     ],
     "channels": [
         "computed.branch-load@class",

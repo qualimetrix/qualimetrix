@@ -177,7 +177,7 @@ final class ChannelUniverseCoverageTest extends TestCase
         // the facet used to be a suffix on one producer's channel code, and a
         // reader had to know the rule to know which facet it was looking at.
         foreach (['param', 'property', 'return'] as $facet) {
-            $name = 'design.' . $facet . '-type-coverage';
+            $name = 'design.type-coverage.' . $facet;
             self::assertSame($name, $universe->producerOf($name), $facet);
         }
 

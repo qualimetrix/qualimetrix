@@ -10,7 +10,7 @@ rules that interpret that evidence: `complexity.cyclomatic`,
 The leaf does not publish a `Contract/` surface. It consumes Measurement's
 collector, metric and aggregation contracts and Finding's rule and finding
 contracts. Measurement retains `CallableToClassAggregator` and the
-`MetricName::STRUCTURE_WMC` derived metric: WMC is the class-level sum of
+`MetricName::COMPLEXITY_WMC` derived metric: WMC is the class-level sum of
 callable CCN, while this leaf owns its rule and options.
 
 ## Structure
@@ -249,7 +249,7 @@ new MetricDefinition(
 
 ## WMC (Weighted Methods per Class)
 
-WMC is derived by Measurement as `MetricName::STRUCTURE_WMC`: the sum of the
+WMC is derived by Measurement as `MetricName::COMPLEXITY_WMC`: the sum of the
 callable-level CCN values for a class. `WmcRule` consumes that metric together
 with data-class and method-count evidence; it does not collect or aggregate
 WMC itself. Its `complexity.wmc` channel retains the existing warning/error

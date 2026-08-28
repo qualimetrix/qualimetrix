@@ -47,9 +47,9 @@ Qualimetrix содержит набор встроенных правил для
 | ------------------------------------------ | ------------------------------- | -------------------------------------------------------------- | ----------- | ------------ |
 | [Глубина наследования](design.ru.md)       | `design.inheritance`            | Глубина цепочки наследования                                   | 4           | 6            |
 | [NOC](design.ru.md)                        | `design.noc`                    | Количество классов, наследующих от данного                     | 10          | 15           |
-| [Покрытие типами параметров](design.ru.md) | `design.param-type-coverage`    | Процент типизированных параметров                              | 80% (ниже)  | 50% (ниже)   |
-| [Покрытие типами возврата](design.ru.md)   | `design.return-type-coverage`   | Процент типизированных возвращаемых значений                   | 80% (ниже)  | 50% (ниже)   |
-| [Покрытие типами свойств](design.ru.md)    | `design.property-type-coverage` | Процент типизированных свойств                                 | 80% (ниже)  | 50% (ниже)   |
+| [Покрытие типами параметров](design.ru.md) | `design.type-coverage.param`    | Процент типизированных параметров                              | 80% (ниже)  | 50% (ниже)   |
+| [Покрытие типами возврата](design.ru.md)   | `design.type-coverage.return`   | Процент типизированных возвращаемых значений                   | 80% (ниже)  | 50% (ниже)   |
+| [Покрытие типами свойств](design.ru.md)    | `design.type-coverage.property` | Процент типизированных свойств                                 | 80% (ниже)  | 50% (ниже)   |
 | [Data-класс](design.ru.md)                 | `design.data-class`             | Публичный интерфейс в основном отдаёт данные, низкая сложность | Warning     | --           |
 | [God-класс](design.ru.md)                  | `design.god-class`              | Чрезмерно сложные, большие классы с низкой связностью          | 3+ критерия | все критерии |
 
@@ -218,7 +218,7 @@ rules:
 
 - **Complexity:** `complexity.cyclomatic`, `complexity.cognitive`, `complexity.npath`, `complexity.wmc`
 - **Size:** `size.method-count`, `size.class-count`, `size.property-count`
-- **Design:** `design.inheritance`, `design.noc`, `design.param-type-coverage`, `design.return-type-coverage`, `design.property-type-coverage`, `design.data-class`, `design.god-class`
+- **Design:** `design.inheritance`, `design.noc`, `design.type-coverage.param`, `design.type-coverage.return`, `design.type-coverage.property`, `design.data-class`, `design.god-class`
 - **Cohesion:** `cohesion.lcom` (правило); `tcc`, `lcc` (только метрики, не правила — используются как входы `design.god-class`)
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
 - **Maintainability:** `maintainability.index`

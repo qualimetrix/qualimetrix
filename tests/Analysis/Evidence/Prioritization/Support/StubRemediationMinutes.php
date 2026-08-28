@@ -44,9 +44,9 @@ final class StubRemediationMinutes
             // Design
             'design.inheritance' => 30,
             'design.noc' => 20,
-            'design.param-type-coverage' => 15,
-            'design.return-type-coverage' => 15,
-            'design.property-type-coverage' => 15,
+            'design.type-coverage.param' => 15,
+            'design.type-coverage.return' => 15,
+            'design.type-coverage.property' => 15,
             'cohesion.lcom' => 45,
             'design.data-class' => 30,
             'design.god-class' => 120,
