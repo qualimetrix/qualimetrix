@@ -407,8 +407,8 @@ only one is:
 ### One name, two roles
 
 A name can be a channel identity *and* a token the corpus writes into its own
-configuration: `computed.branch_load` is both. The step that renames it declares
-the same pair in `channels.tsv` and in `inputs.tsv`, and that is **one
+configuration: a user-defined computed metric is both. The step that renames one
+declares the same pair in `channels.tsv` and in `inputs.tsv`, and that is **one
 declaration in two roles**, not two rows renaming one name. It is applied in the
 union of its roles' directions, held to the shape rules of each, and credited
 once. Two maps *disagreeing* about a name stays refused — that decides nothing —
@@ -699,7 +699,7 @@ differs. Three properties of the declaration are worth knowing before adding one
   `class` level away from the `health` case's user-defined computed metric, which
   is the only way this corpus can lose one level of a multi-level channel:
   measured, the seven channels of that case's computed family — the six
-  `health.*` dimensions and `computed.branch_load`, each with a producer of its
+  `health.*` dimensions and `computed.density`, each with a producer of its
   own since Ш5d — are the only ones firing at more than one level in a case, they
   are computed for every class, and deleting any single fixture of that case
   leaves the level set untouched. Nothing is

@@ -1,1 +1,2 @@
 surface	file	reason
+case:health|format:health	declared-delta/case-health-format-health.diff	Ш5e3 spells the type-coverage metric in kebab, so the contributor label reads TYPE_COVERAGE.PCT where the reference read TYPECOVERAGE.PCT. The label is the metric in constant case; the words it separates are the ones the key now separates.

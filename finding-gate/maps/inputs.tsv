@@ -1,5 +1,4 @@
 old	new	reason
-computed.branch_load	computed.branch-load	Ш5e3 renames this channel, which the corpus also writes into its own configuration
 design.param-type-coverage	design.type-coverage.param	Ш5e3 renames this producer, which the corpus addresses in --rule-opt
 design.return-type-coverage	design.type-coverage.return	Ш5e3 renames this producer, which the corpus addresses in --rule-opt
 design.property-type-coverage	design.type-coverage.property	Ш5e3 renames this producer, which the corpus addresses in --rule-opt

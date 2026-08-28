@@ -18,7 +18,14 @@ computed_metrics:
   # same at every level, so this channel no longer distinguishes one level's
   # value from another's. The six dimensions above do, at all three levels, so
   # the corpus keeps that property — but it is theirs now, not this metric's.
-  computed.branch-load:
+  #
+  # One word, and that is also on purpose. The recommendation a computed metric
+  # publishes is derived from its name's leaf, and `recommendation` is a
+  # compared field no declared delta may move — so during the step that changes
+  # how a leaf is spelled, the only name the corpus can carry is one both
+  # vocabularies spell identically. A multi-word user metric comes back in the
+  # step after, whose reference already reads kebab.
+  computed.density:
     formula: "clamp(37, 0, 100)"
     description: "A fixed score; the corpus' user-defined computed metric"
     levels: [class, namespace, project]

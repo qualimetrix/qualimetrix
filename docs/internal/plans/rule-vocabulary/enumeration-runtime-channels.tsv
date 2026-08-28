@@ -41,4 +41,4 @@ health.coupling	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefa
 health.maintainability	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.maintainability	Ш5d
 health.overall	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.overall	Ш5d
 health.typing	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.typing	Ш5d
-computed.branch_load	corpus-observed	finding-gate/cases/health/qmx.yaml	computed	Ш5d
+computed.density	corpus-observed	finding-gate/cases/health/qmx.yaml	computed	Ш5d
