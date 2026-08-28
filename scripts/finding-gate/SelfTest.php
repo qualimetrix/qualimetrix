@@ -775,6 +775,23 @@ final class SelfTest
             self::throws(static fn(): string => ReportPayload::of($report('var A=1', '{oops'), 'case:x|format:html', 'candidate')),
             'a payload that is not JSON is refused too',
         );
+
+        // Normalization addresses the payload, and by the time it runs the
+        // payload has already been reduced out of the report — so the rule has
+        // to find it there too, or the surface would be compared unnormalized
+        // and its clock field would diverge on every run.
+        $normalization = Normalization::fromRules([
+            new NormalizationRule('format:html', 'project.generatedAt', NormalizationRule::KIND_HTML_REPORT_DATA_PATH, 'test'),
+        ]);
+        $payload = ReportPayload::of(
+            $report('var A=1', '{"project":{"generatedAt":"2026-01-01T00:00:00+00:00","metrics":{"complexity.ccn":5}}}'),
+            'case:x|format:html',
+            'candidate',
+        );
+        $this->assert(
+            !str_contains($normalization->normalize('format:html', $payload), '2026-01-01'),
+            'a rule for the report payload still finds it once the payload is the whole surface',
+        );
     }
 
     /**
@@ -1042,6 +1059,26 @@ final class SelfTest
                 ['old' => 'design.param-typing', 'new' => 'design.type-coverage.param', 'source' => 'inputs.tsv'],
             ])),
             'two reversible rows onto one name are still refused: backwards there is no function',
+        );
+
+        // And still refused when a forward-only row reaches the same name —
+        // the arrangement Ш5e3 makes ordinary, since a metric key and the
+        // channel checking it are one name. What this pins is that the refusal
+        // does not depend on the order the rows happen to load in: the check
+        // remembers the last REVERSIBLE row per target rather than the last row,
+        // so an intervening forward-only row cannot answer "not reversible" on
+        // a reversible row's behalf. Measured 2026-08-28: with the weaker form
+        // no input reached the hole either, because normalization does not
+        // produce the interleaving it needs — this is the check saying what it
+        // means, not a closed exploit.
+        $this->assert(
+            self::throws(static fn(): RenameMaps => RenameMaps::fromPairs([
+                ['old' => 'design.param-type-coverage', 'new' => 'design.type-coverage.param', 'source' => RenameMaps::CHANNELS],
+                ['old' => 'design.param-type-coverage', 'new' => 'design.type-coverage.param', 'source' => RenameMaps::INPUTS],
+                ['old' => 'typeCoverage.param', 'new' => 'design.type-coverage.param', 'source' => RenameMaps::METRIC_KEYS],
+                ['old' => 'design.param-typing', 'new' => 'design.type-coverage.param', 'source' => RenameMaps::INPUTS],
+            ])),
+            'a forward-only row between two reversible ones does not hide the collapse',
         );
 
         $split = RenameMaps::fromPairs([

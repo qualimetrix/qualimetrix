@@ -65,7 +65,7 @@ final readonly class WorstClassDrillDown
     /**
      * @param list<string> $notableMetricNames
      *
-     * @return iterable<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, 'size.loc': int|float|null, notableMetrics: array<string, int|float>}>
+     * @return iterable<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, loc: int|float|null, notableMetrics: array<string, int|float>}>
      */
     private function snapshots(MetricRepositoryInterface $repository, array $notableMetricNames): iterable
     {
@@ -76,7 +76,7 @@ final readonly class WorstClassDrillDown
                 'symbol' => $symbol,
                 'overall' => $overall === null ? null : (float) $overall,
                 'dimensionScores' => $this->dimensionScores($metrics->get(...)),
-                'size.loc' => $metrics->get($this->dimensions->classLocMetric()),
+                'loc' => $metrics->get($this->dimensions->classLocMetric()),
                 'notableMetrics' => $this->selectedMetrics($metrics->get(...), $notableMetricNames),
             ];
         }

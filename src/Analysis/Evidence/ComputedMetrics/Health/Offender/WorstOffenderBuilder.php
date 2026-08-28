@@ -18,7 +18,7 @@ final class WorstOffenderBuilder
     ) {}
 
     /**
-     * @param array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, 'size.loc': int|float|null, notableMetrics: array<string, int|float>} $snapshot
+     * @param array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, loc: int|float|null, notableMetrics: array<string, int|float>} $snapshot
      */
     public function build(array $snapshot, WorstOffenderEvidence $evidence, float $warningThreshold, float $errorThreshold): ?WorstOffender
     {
@@ -39,13 +39,13 @@ final class WorstOffenderBuilder
                 $evidence->classCount,
                 $snapshot['notableMetrics'],
                 $snapshot['dimensionScores'],
-                WorstOffender::computeViolationDensity($evidence->violationCount, $snapshot['size.loc']),
+                WorstOffender::computeViolationDensity($evidence->violationCount, $snapshot['loc']),
             ),
         );
     }
 
     /**
-     * @param iterable<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, 'size.loc': int|float|null, notableMetrics: array<string, int|float>}> $snapshots
+     * @param iterable<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, loc: int|float|null, notableMetrics: array<string, int|float>}> $snapshots
      * @param list<Finding> $findings
      *
      * @return list<WorstOffender>
@@ -61,7 +61,7 @@ final class WorstOffenderBuilder
     }
 
     /**
-     * @param iterable<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, 'size.loc': int|float|null, notableMetrics: array<string, int|float>}> $snapshots
+     * @param iterable<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, loc: int|float|null, notableMetrics: array<string, int|float>}> $snapshots
      * @param list<Finding> $findings
      *
      * @return list<WorstOffender>

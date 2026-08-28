@@ -252,13 +252,26 @@ declared a rename no surface could ever show, which is how the difference was
 found at all. A reader — or a tool building the published vocabulary from this
 class, as the gate's `MetricVocabulary` does — has nothing to filter on.
 
-### The report's JavaScript strips a shorter suffix list than the product's
+### Two copies of the strategy list were short, and both are fixed
 
-`src/Reporting/Template/src/hints.js::resolveBaseKey` strips `.avg`, `.max`,
-`.min`, `.sum`, `.p95` and `.p5`. `AggregationStrategy` has a seventh, `count`,
-so a hint for `<key>.count` resolves to nothing and the report shows none. Two
-copies of one closed list, and the copy is short; the PHP side now reads the
-list from the enum through `MetricName::base()`.
+`hints.js::resolveBaseKey` and `MetricHintCatalog` each kept their own copy of
+the aggregation suffixes, and both were missing `count` — so a hint for
+`<key>.count` resolved to nothing and the report showed none. The PHP copy is
+gone (it reads `MetricName::base()`); the JavaScript one is completed rather than
+removed, because nothing crosses from the enum into the bundle. That leaves one
+list restated in one place, which is the smallest this can be made without a
+generated constant.
+
+### `--exclude-health` loses a custom fallback when it rebuilds the overall score
+
+`HealthFormulaExcluder::parseWeightsFromFormula` reads `(m["health.x"] ?? 75) * w`
+with `\d+` for the fallback and `buildWeightedFormula` writes `?? 75` back
+unconditionally. A user whose overall formula falls back to anything but 75 has
+that replaced on exclusion, and a fractional fallback (`?? 75.5`) does not match
+the pattern at all, so the whole formula is refused as "not the canonical
+weighted-sum shape". Predates Ш5e3 — the same `\d+` and the same literal were
+there before the vocabulary changed — and it is the third mechanism in this file
+that reads a formula by matching its text.
 
 ### `collect-benchmark-data.php` cannot run under PHP's default memory limit
 

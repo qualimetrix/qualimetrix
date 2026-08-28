@@ -826,7 +826,8 @@ final class Controls
      * found it before a run did.
      *
      * `p95` is the strategy moved, and no value changes with it: the built-in
-     * health formulas read `cbo__p95` and `cognitive__p95` out of the metric bag,
+     * health formulas read `coupling.cbo.p95` and `complexity.cognitive.p95` out
+     * of the metric bag,
      * not out of this formatter, so the findings, the counts, the claims and the
      * baselines are all identical on both sides. What differs is one published
      * name on one surface — which is exactly the difference the suffix expansion

@@ -127,9 +127,9 @@ final class AggregationHelper
     /**
      * Adds method and class counts to the metric bag.
      *
-     * Functions are counted in symbolMethodCount because health formulas use
-     * ccn__sum / symbolMethodCount for per-callable averages, and standalone
-     * functions are callables just like methods.
+     * Functions are counted in `size.symbol-method-count` because health formulas
+     * divide `m["complexity.ccn.sum"]` by it for per-callable averages, and a
+     * standalone function is a callable just like a method.
      *
      * @param list<SymbolInfo> $symbolInfos
      */

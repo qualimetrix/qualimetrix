@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-28T11:59:09+00:00",
+  "generated": "2026-08-28T13:14:48+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -404,6 +404,9 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\SaturatingCandidateFilter@src/Analysis/Evidence/Duplication/SaturatingCandidateFilter.php": [
       {"channel":"design.data-class","magnitudes":[33]}
     ],
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\AggregationStrategy@src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php": [
+      {"channel":"coupling.class-rank","count":1}
+    ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Measurement\\DataBag@src/Analysis/Evidence/Measurement/DataBag.php": [
       {"channel":"coupling.class-rank","count":1}
     ],
@@ -527,6 +530,9 @@
     "ns:Qualimetrix\\Analysis\\Evidence\\Complexity": [
       {"channel":"size.class-count","magnitudes":[21]}
     ],
+    "ns:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation": [
+      {"channel":"health.cohesion","magnitudes":[40]}
+    ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
       {"channel":"coupling.cbo","magnitudes":[17]},
       {"channel":"coupling.instability","magnitudes":[0.953125]}
@@ -541,7 +547,7 @@
       {"channel":"coupling.cbo","magnitudes":[16]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract": [
-      {"channel":"coupling.cbo","magnitudes":[39]}
+      {"channel":"coupling.cbo","magnitudes":[40]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor": [
       {"channel":"coupling.instability","magnitudes":[0.92]}

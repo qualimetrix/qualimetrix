@@ -56,7 +56,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterfa
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.Measurement	45	11
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface	Analysis.Evidence.Measurement	1	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	22	7
-Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	63	11
+Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	64	11
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface	Analysis.Evidence.Measurement	5	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	23	11
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface	Analysis.Evidence.Measurement	3	2

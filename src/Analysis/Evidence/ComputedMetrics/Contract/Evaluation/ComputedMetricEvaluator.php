@@ -7,9 +7,9 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphCalculator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\FormulaMetricReference;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
@@ -17,12 +17,11 @@ use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use RuntimeException;
-use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Throwable;
 
 class ComputedMetricEvaluator
 {
-    private readonly ExpressionLanguage $expressionLanguage;
+    private readonly ComputedMetricExpression $expression;
     private readonly ComputedMetricDependencyGraphCalculator $dependencyGraphCalculator;
 
     public function __construct(
@@ -30,9 +29,8 @@ class ComputedMetricEvaluator
         private readonly ProfilerInterface $profiler,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
-        $this->expressionLanguage = new ExpressionLanguage();
-        $this->dependencyGraphCalculator = new ComputedMetricDependencyGraphCalculator();
-        $this->registerMathFunctions();
+        $this->expression = new ComputedMetricExpression();
+        $this->dependencyGraphCalculator = new ComputedMetricDependencyGraphCalculator($this->expression);
     }
 
     public function evaluate(MetricRepositoryInterface $repo, int $filesAnalyzed): void
@@ -82,7 +80,7 @@ class ComputedMetricEvaluator
             $variables = $this->buildVariableMap($metricBag);
 
             try {
-                $result = $this->expressionLanguage->evaluate($formula, $variables);
+                $result = $this->expression->evaluate($formula, $variables);
             } catch (Throwable $e) {
                 $this->logger->warning('Computed metric evaluation failed', [
                     'metric' => $definition->name,
@@ -214,7 +212,28 @@ class ComputedMetricEvaluator
      */
     private function extractRequiredFormulaVariables(string $formula): array
     {
-        return FormulaMetricReference::requiredKeysOf($formula);
+        return $this->expression->requiredKeysOf($formula);
+    }
+
+    /**
+     * Sorts definitions in dependency order using Kahn's algorithm.
+     *
+     * @param list<ComputedMetricDefinition> $definitions
+     *
+     * @return list<ComputedMetricDefinition>
+     */
+    private function topologicalSort(array $definitions): array
+    {
+        $sorted = $this->dependencyGraphCalculator->sort($definitions);
+
+        if ($sorted === null) {
+            // Circular dependency — return original order and let config validation catch it
+            $this->logger->warning('Circular dependency detected among computed metrics');
+
+            return $definitions;
+        }
+
+        return $sorted;
     }
 
     /**
@@ -244,43 +263,4 @@ class ComputedMetricEvaluator
         return ['m' => new MetricLookup($bag->all())];
     }
 
-    /**
-     * Sorts definitions in dependency order using Kahn's algorithm.
-     *
-     * @param list<ComputedMetricDefinition> $definitions
-     *
-     * @return list<ComputedMetricDefinition>
-     */
-    private function topologicalSort(array $definitions): array
-    {
-        $sorted = $this->dependencyGraphCalculator->sort($definitions);
-
-        if ($sorted === null) {
-            // Circular dependency — return original order and let config validation catch it
-            $this->logger->warning('Circular dependency detected among computed metrics');
-
-            return $definitions;
-        }
-
-        return $sorted;
-    }
-
-    private function registerMathFunctions(): void
-    {
-        $phpFunctions = ['min', 'max', 'abs', 'sqrt', 'log', 'log10'];
-        foreach ($phpFunctions as $fn) {
-            $this->expressionLanguage->register(
-                $fn,
-                static fn(mixed ...$args) => \sprintf('%s(%s)', $fn, implode(', ', $args)),
-                static fn(array $values, mixed ...$args) => $fn(...$args),
-            );
-        }
-
-        // clamp(value, min, max)
-        $this->expressionLanguage->register(
-            'clamp',
-            static fn(mixed $value, mixed $min, mixed $max) => \sprintf('max(%s, min(%s, %s))', $min, $max, $value),
-            static fn(array $values, mixed $value, mixed $min, mixed $max) => max($min, min($max, $value)),
-        );
-    }
 }

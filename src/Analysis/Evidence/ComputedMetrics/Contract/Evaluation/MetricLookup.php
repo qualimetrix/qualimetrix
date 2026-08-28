@@ -25,7 +25,7 @@ final readonly class MetricLookup implements ArrayAccess
 
     public function offsetExists(mixed $offset): bool
     {
-        return \is_string($offset) && ($this->values[$offset] ?? null) !== null;
+        return $this->offsetGet($offset) !== null;
     }
 
     public function offsetGet(mixed $offset): int|float|null

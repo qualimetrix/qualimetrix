@@ -620,29 +620,37 @@ final class Gate
             // translated at all; the reference's is, and by then its hashes have
             // already become the identities they hash, so a declared row reaches
             // them like it reaches every other name.
-            $left = $this->normalization->normalize($surface, $this->substituteFingerprints('candidate', $key, $candidate[$key]));
-            $right = $this->normalization->normalize(
-                $surface,
-                $this->maps->forward(
-                    $this->substituteFingerprints('reference', $key, $reference[$key]),
-                    $surface,
-                ),
-            );
+            $candidateArtifact = $candidate[$key];
+            $referenceArtifact = $reference[$key];
 
             // The HTML report is compared through its payload; the shell and the
             // report application's bundle are the tool ({@see ReportPayload}).
-            // Reduced last, so normalization still addresses the payload where it
-            // sits and a declared row still reaches the whole file.
+            //
+            // Reduced FIRST, before anything is substituted or translated. A row
+            // of a map counts as used the moment it substitutes something, so
+            // translating the whole file would let a row fire inside the bundle
+            // — minified JavaScript that carries every metric key as a literal —
+            // and stop being reported stale, having proved nothing on the
+            // surface that is actually compared.
             if ($surface === 'format:html') {
                 try {
-                    $left = ReportPayload::of($left, $key, 'candidate');
-                    $right = ReportPayload::of($right, $key, 'reference');
+                    $candidateArtifact = ReportPayload::of($candidateArtifact, $key, 'candidate');
+                    $referenceArtifact = ReportPayload::of($referenceArtifact, $key, 'reference');
                 } catch (GateError $error) {
                     $this->report->fail(FailureClass::REPORT_PAYLOAD_UNREADABLE, $key, $error->getMessage());
 
                     continue;
                 }
             }
+
+            $left = $this->normalization->normalize($surface, $this->substituteFingerprints('candidate', $key, $candidateArtifact));
+            $right = $this->normalization->normalize(
+                $surface,
+                $this->maps->forward(
+                    $this->substituteFingerprints('reference', $key, $referenceArtifact),
+                    $surface,
+                ),
+            );
 
             if ($left === $right) {
                 continue;

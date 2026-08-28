@@ -668,29 +668,49 @@ function retireExecutedRows(array $existingNew, array $measuredRows, array $alre
 /**
  * Follows a name through every later rename of it, and answers where it lands.
  *
- * A name that a later step split has no single landing place, so the chain
- * stops there and the caller reports the multivalued target as it stands.
+ * Three exits, and the caller needs to tell them apart, which is why this
+ * returns a verdict rather than a name. A chain that ends at a single name is
+ * the ordinary case. A chain that reaches a SPLIT ends at several names, and
+ * every one of them has to be measured — returning the pre-split name instead
+ * would demand that a name the split consumed still exist. And a chain that
+ * loops is a contradiction in the declarations, which has to be reported as one
+ * instead of resolved to whichever member the walk stopped on.
  *
  * @param array<string, string> $later "kind\told" => new
+ *
+ * @return array{names: list<string>, cycle: bool}
  */
-function resolveThroughLaterRenames(string $name, string $kind, array $later): string
+function resolveThroughLaterRenames(string $name, string $kind, array $later): array
 {
     $seen = [];
 
-    while (isset($later[$kind . "\t" . $name]) && !isset($seen[$name])) {
+    while (isset($later[$kind . "\t" . $name])) {
+        if (isset($seen[$name])) {
+            return ['names' => [$name], 'cycle' => true];
+        }
+
         $seen[$name] = true;
         $next = $later[$kind . "\t" . $name];
 
-        if (str_contains($next, '|') || str_contains($next, '*') || $next === '?' || $next === '') {
+        if ($next === '?' || $next === '' || str_contains($next, '*')) {
             break;
         }
 
-        $name = $kind === 'channel' && str_contains($next, '#')
-            ? substr($next, (int) strpos($next, '#') + 1)
-            : $next;
+        $halves = array_map(
+            static fn(string $target): string => $kind === 'channel' && str_contains($target, '#')
+                ? substr($target, (int) strpos($target, '#') + 1)
+                : $target,
+            explode('|', $next),
+        );
+
+        if (count($halves) > 1) {
+            return ['names' => $halves, 'cycle' => false];
+        }
+
+        $name = $halves[0];
     }
 
-    return $name;
+    return ['names' => [$name], 'cycle' => false];
 }
 
 /**
@@ -738,8 +758,17 @@ function assertExecutedRowsStillHold(
         $later[$row['kind'] . "\t" . $row['old']] = $row['new'];
     }
 
+    // A decided row is only a hop once it has HAPPENED. While its old name is
+    // still measured the rename has not been performed, and following it would
+    // resolve a live name to one that does not exist yet — reporting a history
+    // that holds as broken because a LATER step has been planned.
     foreach ($decided as $mergeKey => $decision) {
         [$old, $kind] = array_pad(explode("\t", $mergeKey, 2), 2, '');
+
+        if (isset($measuredKeys[$old . "\t" . $kind])) {
+            continue;
+        }
+
         $later[$kind . "\t" . $old] = $decision['new'];
     }
 
@@ -767,9 +796,27 @@ function assertExecutedRowsStillHold(
                 ? substr($target, (int) strpos($target, '#') + 1)
                 : $target;
 
-            $resolved = resolveThroughLaterRenames($measurable, $row['kind'], $later);
+            $chain = resolveThroughLaterRenames($measurable, $row['kind'], $later);
 
-            if (!isset($identitiesByKind[$row['kind']][$resolved])) {
+            if ($chain['cycle']) {
+                $problems[] = sprintf(
+                    '%s (%s), recorded as executed by %s, promised %s, and the declarations rename that name in a'
+                    . ' loop through "%s": a chain that returns to itself names no outcome',
+                    $row['old'],
+                    $row['kind'],
+                    $row['step'],
+                    $row['new'],
+                    $chain['names'][0],
+                );
+
+                continue;
+            }
+
+            foreach ($chain['names'] as $resolved) {
+                if (isset($identitiesByKind[$row['kind']][$resolved])) {
+                    continue;
+                }
+
                 $problems[] = sprintf(
                     '%s (%s), recorded as executed by %s, promised %s — but %s is not measured any more',
                     $row['old'],
@@ -1079,7 +1126,7 @@ function describeMismatch(string $onDisk, string $fresh, string $path, string $c
  * The runtime half of the channel universe, which `staticDeclarations()` cannot
  * see and this file's other mode therefore never enumerated.
  *
- * `ChannelUniverse` resolves every `computed.health#<name>` channel from the
+ * `ChannelUniverse` resolves every computed-metric channel from the
  * *resolved* definition catalog, so the set exists only once a configuration
  * document has been read. It splits in two, and the two halves are knowable in
  * different ways:

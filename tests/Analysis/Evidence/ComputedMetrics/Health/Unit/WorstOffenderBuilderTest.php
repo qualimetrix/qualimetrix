@@ -58,7 +58,7 @@ final class WorstOffenderBuilderTest extends TestCase
     }
 
     /**
-     * @return list<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, 'size.loc': int|float|null, notableMetrics: array<string, int|float>}>
+     * @return list<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, loc: int|float|null, notableMetrics: array<string, int|float>}>
      */
     private function snapshots(): array
     {
@@ -70,7 +70,7 @@ final class WorstOffenderBuilderTest extends TestCase
     }
 
     /**
-     * @return array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, 'size.loc': int|float|null, notableMetrics: array<string, int|float>}
+     * @return array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, loc: int|float|null, notableMetrics: array<string, int|float>}
      */
     private function snapshot(string $namespace, string $class): array
     {
@@ -82,7 +82,7 @@ final class WorstOffenderBuilderTest extends TestCase
             ),
             'overall' => 50.0,
             'dimensionScores' => ['complexity' => 50.0],
-            'size.loc' => 100,
+            'loc' => 100,
             'notableMetrics' => [],
         ];
     }

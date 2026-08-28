@@ -1575,6 +1575,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::typingHealthIsVacuousTruthForNamespaceWithNoTypeableDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::typingHealthIsVacuousTruthForNamespaceWithoutAnyTypeCoverageMetrics
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::variableExistingInSomeSymbolsPassesValidation
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itAcceptsALiteralIndexHoweverItIsSpaced
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itDoesNotRequireAKeyGuardedEverywhere
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReadsOnlyComputedMetricReferences
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"a method call on the lookup"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"a method call with a space"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"an index built by concatenation"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"an index that is another lookup"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"the lookup guarded on its own"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"the lookup handed to a function"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRequiresAKeyThatIsGuardedInOnePlaceAndBareInAnother
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricFindingBuilderTest::itCarriesThresholdFieldInFinding
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricFindingBuilderTest::itEmitsErrorWhenInvertedMetricBelowErrorThreshold
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricFindingBuilderTest::itEmitsErrorWhenNormalMetricAboveErrorThreshold
@@ -2729,6 +2739,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\DerivedMetricExtractorTest::itPreservesGlobalNamespaceMethodMetricsByExactDeclarationIdentity
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\DerivedMetricExtractorTest::itResolvesDerivedMetricsForStandaloneFunctions
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\DerivedMetricExtractorTest::itUsesCallableSourceLineWhenAddingDerivedMetricsToAPlainExactSubject
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\MetricNameVocabularyTest::everyKeyNamesItsFamilyInKebab
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\MetricNameVocabularyTest::noKeyEndsInASegmentThatIsAnAggregationStrategy
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\MetricNameVocabularyTest::noKeyIsAnAggregatedSpellingOfAnother
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Namespace_\ProjectNamespaceResolverTest::itConsidersEmptyNamespaceAsProjectNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Namespace_\ProjectNamespaceResolverTest::itExtractsPrefixesFromComposerJson
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Namespace_\ProjectNamespaceResolverTest::itGracefullyDegradeIfComposerJsonIsInvalid

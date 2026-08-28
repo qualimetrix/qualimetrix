@@ -1313,8 +1313,8 @@
       "closure_package": "P5",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\FormulaMetricReference": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/FormulaMetricReference.php",
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricExpression": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricExpression.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics",
       "visibility": "internal",
@@ -4058,6 +4058,11 @@
       "visibility": "contract",
       "closure_package": "P3",
       "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\MetricHintCatalog",
+          "closes_in": null
+        },
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Health\\HealthTextFormatter",

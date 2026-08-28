@@ -33,11 +33,21 @@ its first segment.
 **The typo protection the encoding gave away for free is restated explicitly.**
 Under the encoding, `ccnn__avg` was an unknown *variable* and Expression
 Language refused it at parse time. With one variable that check is worth
-nothing, so `FormulaMetricReference` reads the string literals a formula indexes
-`m` with, and a computed index — `m[$x]`, a concatenation — is refused loudly
-rather than validated as far as it can be. Absence answers rather than warns:
-`m['x'] ?? 0` is the idiom for an optional metric, and a missing key never
-becomes a PHP warning inside an expression.
+nothing, so `ComputedMetricExpression` reads what the formula names — from the
+parsed expression, not from its text — and an access that is not a quoted index
+is refused loudly rather than validated as far as it can be. Absence answers
+rather than warns: `m['x'] ?? 0` is the idiom for an optional metric, and a
+missing key never becomes a PHP warning inside an expression.
+
+**The first version of that check read the text, and review walked past it twice
+in one sitting.** A pattern requiring `m[` misses `m ["k"]`, which the parser
+does not distinguish, and it misses `m.offsetGet("k")` entirely, because
+`ArrayAccess` is public and Expression Language calls methods. Both left the key
+invisible to the dependency graph while the guard reported nothing. A grammar
+defended by a pattern over text is defended against the shapes its author
+thought of; the parser already knows all of them, and reading its tree also
+settles what the pattern could only approximate — whether a key is required is a
+fact about each occurrence, not about the name.
 
 ## Consequences
 

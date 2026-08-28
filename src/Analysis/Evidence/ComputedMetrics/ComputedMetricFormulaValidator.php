@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Symfony\Component\ExpressionLanguage\ExpressionFunction;
-use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
 
 /**
@@ -15,12 +13,11 @@ use Symfony\Component\ExpressionLanguage\SyntaxError;
  */
 final class ComputedMetricFormulaValidator
 {
-    private readonly ExpressionLanguage $expressionLanguage;
+    private readonly ComputedMetricExpression $expression;
 
     public function __construct()
     {
-        $this->expressionLanguage = new ExpressionLanguage();
-        $this->registerMathFunctions();
+        $this->expression = new ComputedMetricExpression();
     }
 
     /**
@@ -52,10 +49,8 @@ final class ComputedMetricFormulaValidator
                     continue; // Coverage validation handles missing formulas
                 }
 
-                FormulaMetricReference::assertEveryIndexIsLiteral($formula, $definition->name);
-
                 try {
-                    $this->expressionLanguage->parse($formula, ['m']);
+                    $this->expression->parse($formula);
                 } catch (SyntaxError $e) {
                     $levelKey = $level->value;
 
@@ -67,6 +62,8 @@ final class ComputedMetricFormulaValidator
                         $formula,
                     ));
                 }
+
+                $this->expression->assertEveryAccessIsALiteralIndex($formula, $definition->name);
             }
         }
     }
@@ -188,33 +185,7 @@ final class ComputedMetricFormulaValidator
      */
     private function extractComputedMetricReferences(string $formula): array
     {
-        return array_values(array_filter(
-            FormulaMetricReference::keysOf($formula),
-            static fn(string $key): bool => str_starts_with($key, 'health.') || str_starts_with($key, 'computed.'),
-        ));
+        return $this->expression->computedReferencesOf($formula);
     }
 
-    /**
-     * Registers math functions in ExpressionLanguage.
-     */
-    private function registerMathFunctions(): void
-    {
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('min'));
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('max'));
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('abs'));
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('sqrt'));
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('log'));
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('log10'));
-
-        $this->expressionLanguage->addFunction(new ExpressionFunction(
-            'clamp',
-            static fn(string $value, string $min, string $max): string => \sprintf(
-                'max(%s, min(%s, %s))',
-                $min,
-                $max,
-                $value,
-            ),
-            static fn(array $arguments, float $value, float $min, float $max): float => max($min, min($max, $value)),
-        ));
-    }
 }

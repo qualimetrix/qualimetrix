@@ -17,6 +17,10 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
  */
 final class ComputedMetricDependencyGraphCalculator
 {
+    public function __construct(
+        private readonly ComputedMetricExpression $expression = new ComputedMetricExpression(),
+    ) {}
+
     /**
      * Sorts definitions in dependency order.
      *
@@ -172,9 +176,6 @@ final class ComputedMetricDependencyGraphCalculator
      */
     private function extractComputedMetricDeps(string $formula): array
     {
-        return array_values(array_filter(
-            FormulaMetricReference::keysOf($formula),
-            static fn(string $key): bool => str_starts_with($key, 'health.') || str_starts_with($key, 'computed.'),
-        ));
+        return $this->expression->computedReferencesOf($formula);
     }
 }

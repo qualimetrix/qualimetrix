@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+
 /**
  * Single source of truth for metric display metadata.
  *
@@ -453,9 +455,6 @@ final class MetricHintCatalog
         'size.class-count.sum' => 'Class Count',
     ];
 
-    /** @var list<string> */
-    private const array AGGREGATION_SUFFIXES = ['.avg', '.max', '.min', '.sum', '.p95', '.p5'];
-
     public function getLabel(string $metricKey): ?string
     {
         $entry = $this->resolveMetric($metricKey);
@@ -523,14 +522,14 @@ final class MetricHintCatalog
             return self::METRICS[$metricKey];
         }
 
-        foreach (self::AGGREGATION_SUFFIXES as $suffix) {
-            if (str_ends_with($metricKey, $suffix)) {
-                $baseKey = substr($metricKey, 0, -\strlen($suffix));
+        // The base key is read through the vocabulary rather than a local copy
+        // of the suffix list. The copy that stood here was one short — it had no
+        // `.count` — so a hint for a counted metric resolved to nothing and the
+        // report simply showed none.
+        $baseKey = MetricName::base($metricKey);
 
-                if (isset(self::METRICS[$baseKey])) {
-                    return self::METRICS[$baseKey];
-                }
-            }
+        if ($baseKey !== $metricKey && isset(self::METRICS[$baseKey])) {
+            return self::METRICS[$baseKey];
         }
 
         return null;

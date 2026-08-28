@@ -66,6 +66,13 @@ final class Normalization
         if ($decoded instanceof stdClass || \is_array($decoded)) {
             $this->applyPaths($surface, NormalizationRule::KIND_JSON_PATH, $decoded);
 
+            // The report payload arrives as a document of its own: the HTML
+            // surface is compared through it, and the reduction happens before
+            // anything is normalized. Its rules address a path into a decoded
+            // document, which is what this branch already has — the two kinds
+            // differ in where the document was carried, not in how it is read.
+            $this->applyPaths($surface, NormalizationRule::KIND_HTML_REPORT_DATA_PATH, $decoded);
+
             return self::encode($decoded);
         }
 

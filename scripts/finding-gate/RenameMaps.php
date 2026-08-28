@@ -1004,6 +1004,7 @@ final class RenameMaps
     {
         $targets = [];
         $sources = [];
+        $reversibleTargets = [];
 
         foreach ($this->pairs as $pair) {
             if ($pair['old'] === $pair['new']) {
@@ -1034,11 +1035,11 @@ final class RenameMaps
             // so `typeCoverage.param` (forward-only) and
             // `design.param-type-coverage` (reversible, the corpus addresses it
             // in --rule-opt) both arrive at `design.type-coverage.param`.
-            if (isset($targets[$pair['new']]) && $pair['reversible'] && $targets[$pair['new']]['reversible']) {
+            if ($pair['reversible'] && isset($reversibleTargets[$pair['new']])) {
                 throw new GateError(\sprintf(
                     '%s and %s both produce "%s". A map applied backwards must be injective in both directions,'
                     . ' and a collapse cannot be inverted.',
-                    $targets[$pair['new']]['row'],
+                    $reversibleTargets[$pair['new']],
                     $pair['row'],
                     $pair['new'],
                 ));
@@ -1046,6 +1047,16 @@ final class RenameMaps
 
             $sources[$pair['old']] = $pair['row'];
             $targets[$pair['new']] = $pair;
+
+            // Remembered separately from `$targets`, and that separation is the
+            // whole check. Written into one map, a forward-only row landing
+            // between two reversible ones overwrites the first and the second
+            // sees a target that "is not reversible" — the maps load in file
+            // order, so a merged channels+inputs row, a metric-keys row and a
+            // plain inputs row on one target is exactly that sequence.
+            if ($pair['reversible']) {
+                $reversibleTargets[$pair['new']] = $pair['row'];
+            }
         }
 
         foreach ($this->pairs as $pair) {

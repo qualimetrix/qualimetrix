@@ -31,7 +31,7 @@ complexity.cyclomatic	channel	?		37	621	2	2	55	120	0	9
 complexity.npath	channel	?		22	92	2	2	12	38	0	9
 complexity.wmc	channel	?		20	85	2	2	11	31	0	5
 coupling.cbo	channel	?		65	285	2	4	8	102	0	7
-coupling.class-rank	channel	?		25	97	0	2	1	26	0	27
+coupling.class-rank	channel	?		25	97	0	2	2	26	0	27
 coupling.distance	channel	?		29	65	2	2	2	32	0	28
 coupling.instability	channel	?		32	87	2	3	8	48	0	9
 design.data-class	channel	?		13	13	1	2	10	32	0	3
@@ -48,8 +48,8 @@ security.hardcoded-credentials	channel	?		6	31	0	0	0	15	0	1
 security.sensitive-parameter	channel	?		5	19	0	0	0	13	0	1
 security.sql-injection	channel	?		3	6	0	0	0	13	0	1
 security.xss	channel	?		4	17	0	0	0	13	0	1
-size.class-count	channel	?		26	86	2	1	5	29	0	5
-size.method-count	channel	?		24	150	2	2	0	50	0	4
+size.class-count	channel	?		26	87	2	1	5	29	0	5
+size.method-count	channel	?		24	151	2	2	0	50	0	4
 size.property-count	channel	?		20	35	2	2	0	24	0	4
 code-smell.is-vo-constructor	metric-key	?		1	25	0	0	0	0	0	2
 code-smell.parameter-count	metric-key	?		2	53	0	0	0	0	0	1
@@ -61,9 +61,9 @@ code-smell.unused-private.property	metric-key	?		1	20	0	0	0	0	0	0
 code-smell.unused-private.total	metric-key	?		1	20	0	0	0	0	0	1
 cohesion.lcc	metric-key	?		7	44	0	0	0	6	0	1
 cohesion.lcom	metric-key	?		41	150	2	2	0	31	0	5
-cohesion.pure-method-count	metric-key	?		3	7	0	0	0	2	0	1
+cohesion.pure-method-count	metric-key	?		3	8	0	0	0	2	0	1
 cohesion.tcc	metric-key	?		21	85	0	0	0	10	0	1
-complexity.ccn	metric-key	?		41	273	0	0	0	4	0	1
+complexity.ccn	metric-key	?		41	284	0	0	0	4	0	1
 complexity.cognitive	metric-key	?		24	79	2	2	31	48	0	10
 complexity.npath	metric-key	?		22	92	2	2	12	38	0	9
 complexity.wmc	metric-key	?		20	85	2	2	11	31	0	5
@@ -74,7 +74,7 @@ coupling.cbo-app	metric-key	?		7	12	0	0	0	12	0	1
 coupling.ce	metric-key	?		12	81	0	0	0	8	0	1
 coupling.ce-framework	metric-key	?		6	11	0	0	0	6	0	1
 coupling.ce-packages	metric-key	?		7	8	0	0	0	4	0	1
-coupling.class-rank	metric-key	?		25	97	0	2	1	26	0	27
+coupling.class-rank	metric-key	?		25	97	0	2	2	26	0	27
 coupling.distance	metric-key	?		29	65	2	2	2	32	0	28
 coupling.instability	metric-key	?		32	87	2	3	8	48	0	9
 coupling.rfc	metric-key	?		6	44	0	0	0	0	0	1
@@ -108,17 +108,17 @@ maintainability.mi	metric-key	?		12	133	0	0	0	0	0	1
 security.hardcoded-credentials	metric-key	?		6	31	0	0	0	15	0	1
 security.sensitive-parameter	metric-key	?		5	19	0	0	0	13	0	1
 size.abstract-class-count	metric-key	?		8	11	0	0	0	0	0	1
-size.class-count	metric-key	?		26	86	2	1	5	29	0	5
+size.class-count	metric-key	?		26	87	2	1	5	29	0	5
 size.class-loc	metric-key	?		2	31	0	0	0	0	0	1
-size.cloc	metric-key	?		10	20	0	0	0	0	0	1
+size.cloc	metric-key	?		5	20	0	0	0	0	0	1
 size.enum-count	metric-key	?		12	18	0	0	0	0	0	1
 size.function-count	metric-key	?		7	10	0	0	0	0	0	1
 size.getter-count	metric-key	?		7	13	0	0	0	0	0	1
 size.implementing-enum-count	metric-key	?		13	9	0	0	0	0	0	1
 size.interface-count	metric-key	?		13	17	0	0	0	0	0	1
-size.lloc	metric-key	?		13	18	0	0	0	3	0	1
-size.loc	metric-key	?		23	190	0	0	0	5	0	1
-size.method-count	metric-key	?		24	150	2	2	0	50	0	4
+size.lloc	metric-key	?		8	18	0	0	0	3	0	1
+size.loc	metric-key	?		11	191	0	0	0	5	0	1
+size.method-count	metric-key	?		24	151	2	2	0	50	0	4
 size.method-count.private	metric-key	?		4	6	0	0	0	0	0	1
 size.method-count.protected	metric-key	?		4	6	0	0	0	0	0	1
 size.method-count.public	metric-key	?		4	8	0	0	0	0	0	1
@@ -131,7 +131,7 @@ size.property-count.protected	metric-key	?		5	7	0	0	0	0	0	1
 size.property-count.public	metric-key	?		6	11	0	0	0	0	0	1
 size.setter-count	metric-key	?		5	11	0	0	0	0	0	1
 size.symbol-class-count	metric-key	?		1	0	0	0	0	0	0	1
-size.symbol-method-count	metric-key	?		5	3	0	0	0	2	0	1
+size.symbol-method-count	metric-key	?		6	3	0	0	0	2	0	1
 size.trait-count	metric-key	?		11	13	0	0	0	0	0	1
 annotation.directive	producer	?		4	3	0	0	0	23	0	1
 architecture.circular-dependency	producer	?		9	29	0	2	0	39	0	1
@@ -156,9 +156,9 @@ complexity.cognitive	producer	?		24	79	2	2	31	48	0	10
 complexity.cyclomatic	producer	?		37	621	2	2	55	120	0	9
 complexity.npath	producer	?		22	92	2	2	12	38	0	9
 complexity.wmc	producer	?		20	85	2	2	11	31	0	5
-computed	producer	?		82	85	0	1	0	24	0	11
+computed	producer	?		84	86	0	1	0	24	0	11
 coupling.cbo	producer	?		65	285	2	4	8	102	0	7
-coupling.class-rank	producer	?		25	97	0	2	1	26	0	27
+coupling.class-rank	producer	?		25	97	0	2	2	26	0	27
 coupling.distance	producer	?		29	65	2	2	2	32	0	28
 coupling.instability	producer	?		32	87	2	3	8	48	0	9
 design.data-class	producer	?		13	13	1	2	10	32	0	3
@@ -169,8 +169,8 @@ design.type-coverage.param	producer	?		10	53	2	1	1	23	0	6
 design.type-coverage.property	producer	?		10	24	2	1	1	22	0	6
 design.type-coverage.return	producer	?		10	31	2	1	0	22	0	6
 duplication.code-duplication	producer	?		14	53	0	2	12	35	0	4
-health.cohesion	producer	?		38	113	0	2	30	36	0	17
-health.complexity	producer	?		50	173	0	1	0	22	0	20
+health.cohesion	producer	?		38	113	0	2	31	36	0	17
+health.complexity	producer	?		50	175	0	1	0	22	0	20
 health.coupling	producer	?		39	37	0	0	0	13	0	17
 health.maintainability	producer	?		16	28	0	0	0	13	0	17
 health.overall	producer	?		108	137	0	0	0	20	0	17
@@ -181,8 +181,8 @@ security.hardcoded-credentials	producer	?		6	31	0	0	0	15	0	1
 security.sensitive-parameter	producer	?		5	19	0	0	0	13	0	1
 security.sql-injection	producer	?		3	6	0	0	0	13	0	1
 security.xss	producer	?		4	17	0	0	0	13	0	1
-size.class-count	producer	?		26	86	2	1	5	29	0	5
-size.method-count	producer	?		24	150	2	2	0	50	0	4
+size.class-count	producer	?		26	87	2	1	5	29	0	5
+size.method-count	producer	?		24	151	2	2	0	50	0	4
 size.property-count	producer	?		20	35	2	2	0	24	0	4
 #
 # ROW COUNTS: 52 channel, 51 producer, 82 metric-key

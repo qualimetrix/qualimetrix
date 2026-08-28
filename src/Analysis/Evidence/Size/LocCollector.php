@@ -92,9 +92,9 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
         $this->namespaceMetrics = $this->calculateNamespaceMetrics($content);
 
         $bag = (new MetricBag())
-            ->with(MetricName::SIZE_LOC, $metrics['size.loc'])
-            ->with(MetricName::SIZE_LLOC, $metrics['size.lloc'])
-            ->with(MetricName::SIZE_CLOC, $metrics['size.cloc']);
+            ->with(MetricName::SIZE_LOC, $metrics[MetricName::SIZE_LOC])
+            ->with(MetricName::SIZE_LLOC, $metrics[MetricName::SIZE_LLOC])
+            ->with(MetricName::SIZE_CLOC, $metrics[MetricName::SIZE_CLOC]);
 
         // Store class-level LOC with class FQN as key
         \assert($this->visitor instanceof LocVisitor);
@@ -143,13 +143,16 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
     }
 
     /**
-     * @return array{'size.loc': int, 'size.lloc': int, 'size.cloc': int}
+     * The keys are metric names: this array becomes a `MetricBag` unchanged,
+     * so a literal here would be the published vocabulary written twice.
+     *
+     * @return array<string, int>
      */
     private function calculateMetrics(string $content, int $startLine = 1, ?int $endLine = null): array
     {
         // Handle empty content
         if ($content === '') {
-            return ['size.loc' => 0, 'size.lloc' => 0, 'size.cloc' => 0];
+            return [MetricName::SIZE_LOC => 0, MetricName::SIZE_LLOC => 0, MetricName::SIZE_CLOC => 0];
         }
 
         $lines = explode("\n", $content);
@@ -225,9 +228,9 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
         $lloc = $loc - $emptyCount - $pureCommentLineCount;
 
         return [
-            'size.loc' => $loc,
-            'size.lloc' => max(0, $lloc),
-            'size.cloc' => $pureCommentLineCount,
+            MetricName::SIZE_LOC => $loc,
+            MetricName::SIZE_LLOC => max(0, $lloc),
+            MetricName::SIZE_CLOC => $pureCommentLineCount,
         ];
     }
 
@@ -251,7 +254,7 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
 
         $result = [];
         foreach ($rangesByNamespace as $namespace => $ranges) {
-            $totals = ['size.loc' => 0, 'size.lloc' => 0, 'size.cloc' => 0];
+            $totals = [MetricName::SIZE_LOC => 0, MetricName::SIZE_LLOC => 0, MetricName::SIZE_CLOC => 0];
             foreach ($ranges as $range) {
                 $metrics = $this->calculateMetrics($content, $range['startLine'], $range['endLine']);
                 foreach ($totals as $name => $value) {

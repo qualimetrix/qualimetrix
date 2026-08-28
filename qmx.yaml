@@ -172,6 +172,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphCalculator'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricExpression'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricProducerOptions'
@@ -189,7 +190,6 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\FormulaMetricReference'
     - name: analysis-evidence-computedmetrics-health
       patterns:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder'

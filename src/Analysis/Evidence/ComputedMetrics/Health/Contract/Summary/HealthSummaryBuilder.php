@@ -274,7 +274,7 @@ final readonly class HealthSummaryBuilder
                     'symbol' => $symbolInfo,
                     'overall' => $scoreValue,
                     'dimensionScores' => $perDimensionScores,
-                    'size.loc' => $metrics->get(
+                    'loc' => $metrics->get(
                         $level === SymbolLevel::Namespace_
                             ? MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)
                             : MetricName::SIZE_CLASS_LOC,
