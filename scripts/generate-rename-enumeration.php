@@ -358,6 +358,39 @@ function readPreviousFile(string $path): array
 }
 
 /**
+ * The steps PLAN.md actually declares, read from its headings.
+ *
+ * A shape assertion stood here before and refused `Ш5e3`, whose name the plan
+ * had carried for four steps: the grammar of a step name is a fact about the
+ * plan, and reading it is cheaper than keeping a regex in step with it.
+ *
+ * @return list<string>
+ */
+function planSteps(): array
+{
+    static $steps = null;
+
+    if ($steps !== null) {
+        return $steps;
+    }
+
+    $path = dirname(__DIR__) . '/docs/internal/plans/rule-vocabulary/PLAN.md';
+    $text = file_get_contents($path);
+
+    if ($text === false) {
+        throw new RuntimeException(sprintf('Could not read "%s".', $path));
+    }
+
+    if (preg_match_all('/^#{2,4}\s+([\x{0410}-\x{044F}A-Za-z][^\s.]*)\./mu', $text, $matches) === false) {
+        throw new RuntimeException('Regex failure while reading the step headings of PLAN.md.');
+    }
+
+    $steps = array_values(array_unique($matches[1]));
+
+    return $steps;
+}
+
+/**
  * A decision has to say which step makes it, or Ш5's renames leak into the map
  * a step earlier asks for. The pair is therefore checked in both directions: a
  * decided `new` without a `step`, and a `step` on a row nobody has decided.
@@ -383,11 +416,12 @@ function assertEveryDecisionNamesItsStep(array $rows): void
             $premature[] = $row['old'] . ' (' . $row['kind'] . ')';
         }
 
-        if ($row['step'] !== '' && preg_match('/^\x{0428}[0-9]+[a-z]?$/u', $row['step']) !== 1) {
+        if ($row['step'] !== '' && !in_array($row['step'], planSteps(), true)) {
             throw new RuntimeException(sprintf(
-                'Row "%s" names step "%s", which is not a step of PLAN.md (expected the form Ш4b).',
+                'Row "%s" names step "%s", which is no heading of PLAN.md. Known steps: %s.',
                 $row['old'],
                 $row['step'],
+                implode(', ', planSteps()),
             ));
         }
     }

@@ -38,9 +38,9 @@ design.data-class	channel	?		13	13	1	2	10	32	0	3
 design.god-class	channel	?		13	16	1	2	2	35	0	7
 design.inheritance	channel	?		6	9	2	2	0	20	0	3
 design.noc	channel	?		7	9	2	2	0	20	0	3
-design.param-type-coverage	channel	?		5	25	2	1	1	24	0	4
-design.property-type-coverage	channel	?		5	7	2	1	1	22	0	5
-design.return-type-coverage	channel	?		5	10	2	1	0	22	0	5
+design.param-type-coverage	channel	design.type-coverage.param	Ш5e3	5	25	2	1	1	24	0	4
+design.property-type-coverage	channel	design.type-coverage.property	Ш5e3	5	7	2	1	1	22	0	5
+design.return-type-coverage	channel	design.type-coverage.return	Ш5e3	5	10	2	1	0	22	0	5
 duplication.code-duplication	channel	?		14	53	0	2	12	35	0	4
 maintainability.index	channel	?		11	45	2	2	0	27	0	3
 security.command-injection	channel	?		3	5	0	0	0	13	0	1
@@ -51,77 +51,88 @@ security.xss	channel	?		4	17	0	0	0	13	0	1
 size.class-count	channel	?		9	27	2	1	5	24	0	4
 size.method-count	channel	?		9	60	2	2	0	46	0	3
 size.property-count	channel	?		9	7	2	2	0	22	0	3
-abstractClassCount	metric-key	?		14	11	0	0	0	0	0	0
-abstractness	metric-key	?		60	61	0	1	0	9	0	0
-ca	metric-key	?		42	78	0	0	0	2	0	0
-cbo	metric-key	?		48	74	0	0	0	10	0	0
-cbo_app	metric-key	?		8	13	0	0	0	13	0	0
-ccn	metric-key	?		50	321	0	0	0	3	0	1
-ce	metric-key	?		50	99	0	0	0	11	0	0
-ce_framework	metric-key	?		7	12	0	0	0	7	0	0
-ce_packages	metric-key	?		8	14	0	0	0	6	0	0
-classCount	metric-key	?		75	116	0	0	0	6	0	1
-classLoc	metric-key	?		14	45	0	0	0	0	0	0
-classRank	metric-key	?		44	64	0	0	0	1	0	1
-cloc	metric-key	?		11	21	0	0	0	0	0	0
-cognitive	metric-key	?		47	72	0	0	0	20	0	0
-distance	metric-key	?		76	66	0	6	0	8	0	2
-dit	metric-key	?		25	110	0	0	0	0	0	0
-enumCount	metric-key	?		17	18	0	0	0	1	0	0
-functionCount	metric-key	?		12	10	0	0	0	0	0	0
-halstead.bugs	metric-key	?		2	4	0	0	0	0	0	0
-halstead.difficulty	metric-key	?		2	5	0	0	0	0	0	0
-halstead.effort	metric-key	?		2	4	0	0	0	0	0	0
-halstead.time	metric-key	?		2	4	0	0	0	0	0	0
-halstead.volume	metric-key	?		5	38	0	0	0	2	0	0
-implementingEnumCount	metric-key	?		21	9	0	0	0	1	0	0
-instability	metric-key	?		99	75	0	2	0	13	0	1
-interfaceCount	metric-key	?		22	19	0	0	0	0	0	0
-isAbstract	metric-key	?		11	12	0	0	0	0	0	0
-isDataClass	metric-key	?		5	8	0	0	0	1	0	0
-isException	metric-key	?		5	6	0	0	0	0	0	0
-isInterface	metric-key	?		5	6	0	0	0	0	0	0
-isPromotedPropertiesOnly	metric-key	?		2	9	0	0	0	0	0	0
-isReadonly	metric-key	?		8	39	0	0	0	0	0	0
-isVoConstructor	metric-key	?		5	28	0	0	0	0	0	0
-lcc	metric-key	?		11	56	0	0	0	6	0	0
-lcom	metric-key	?		41	136	0	0	0	3	0	0
-lloc	metric-key	?		16	22	0	0	0	3	0	0
-loc	metric-key	?		72	191	0	0	0	5	0	0
-methodCount	metric-key	?		46	127	0	0	0	5	0	0
-methodCountTotal	metric-key	?		12	18	0	0	0	0	0	0
-methodStatementCount	metric-key	?		2	33	0	0	0	5	0	0
-mi	metric-key	?		20	181	0	0	0	0	0	0
-noc	metric-key	?		16	38	0	0	0	0	0	0
-npath	metric-key	?		68	102	0	0	0	0	0	0
-parameterCount	metric-key	?		14	62	0	0	0	0	0	0
-propertyCount	metric-key	?		29	62	0	0	0	2	0	0
-pureMethodCount_cohesion	metric-key	?		3	7	0	0	0	3	0	0
-rfc	metric-key	?		9	46	0	0	0	0	0	0
-rfc_external	metric-key	?		2	16	0	0	0	0	0	0
-rfc_own	metric-key	?		2	16	0	0	0	0	0	0
-security.hardcodedCredentials	metric-key	?		3	23	0	0	0	0	0	0
-security.sensitiveParameter	metric-key	?		3	14	0	0	0	0	0	0
-tcc	metric-key	?		36	101	0	0	0	11	0	0
-traitCount	metric-key	?		19	13	0	0	0	0	0	0
-typeCoverage.param	metric-key	?		6	23	0	0	0	0	0	0
-typeCoverage.paramTotal	metric-key	?		3	15	0	0	0	0	0	0
-typeCoverage.paramTyped	metric-key	?		3	9	0	0	0	0	0	0
-typeCoverage.pct	metric-key	?		13	26	0	0	0	1	0	0
-typeCoverage.property	metric-key	?		6	17	0	0	0	0	0	0
-typeCoverage.propertyTotal	metric-key	?		3	10	0	0	0	0	0	0
-typeCoverage.propertyTyped	metric-key	?		3	7	0	0	0	0	0	0
-typeCoverage.return	metric-key	?		6	21	0	0	0	0	0	0
-typeCoverage.returnTotal	metric-key	?		3	9	0	0	0	0	0	0
-typeCoverage.returnTyped	metric-key	?		3	3	0	0	0	0	0	0
-unreachableCode	metric-key	?		3	31	0	0	0	0	0	0
-unreachableCode.firstLine	metric-key	?		3	10	0	0	0	0	0	0
-unusedPrivate.constant	metric-key	?		2	13	0	0	0	0	0	0
-unusedPrivate.method	metric-key	?		2	42	0	0	0	0	0	0
-unusedPrivate.property	metric-key	?		2	20	0	0	0	0	0	0
-unusedPrivate.total	metric-key	?		2	20	0	0	0	0	0	0
-wmc	metric-key	?		18	95	0	0	0	4	0	0
-woc	metric-key	?		11	12	0	0	0	4	0	0
+abstractClassCount	metric-key	size.abstract-class-count	Ш5e3	14	11	0	0	0	0	0	0
+abstractness	metric-key	coupling.abstractness	Ш5e3	60	61	0	1	0	9	0	0
+ca	metric-key	coupling.ca	Ш5e3	42	78	0	0	0	2	0	0
+cbo	metric-key	coupling.cbo	Ш5e3	48	74	0	0	0	10	0	0
+cbo_app	metric-key	coupling.cbo-app	Ш5e3	8	13	0	0	0	13	0	0
+ccn	metric-key	complexity.ccn	Ш5e3	50	321	0	0	0	3	0	1
+ce	metric-key	coupling.ce	Ш5e3	50	99	0	0	0	11	0	0
+ce_framework	metric-key	coupling.ce-framework	Ш5e3	7	12	0	0	0	7	0	0
+ce_packages	metric-key	coupling.ce-packages	Ш5e3	8	14	0	0	0	6	0	0
+classCount	metric-key	size.class-count	Ш5e3	75	116	0	0	0	6	0	1
+classLoc	metric-key	size.class-loc	Ш5e3	14	45	0	0	0	0	0	0
+classRank	metric-key	coupling.class-rank	Ш5e3	44	64	0	0	0	1	0	1
+cloc	metric-key	size.cloc	Ш5e3	11	21	0	0	0	0	0	0
+cognitive	metric-key	complexity.cognitive	Ш5e3	47	72	0	0	0	20	0	0
+distance	metric-key	coupling.distance	Ш5e3	76	66	0	6	0	8	0	2
+dit	metric-key	design.dit	Ш5e3	25	110	0	0	0	0	0	0
+enumCount	metric-key	size.enum-count	Ш5e3	17	18	0	0	0	1	0	0
+functionCount	metric-key	size.function-count	Ш5e3	12	10	0	0	0	0	0	0
+getterCount	metric-key	size.getter-count	Ш5e3	14	13	0	0	0	0	0	0
+halstead.bugs	metric-key	maintainability.halstead.bugs	Ш5e3	2	4	0	0	0	0	0	0
+halstead.difficulty	metric-key	maintainability.halstead.difficulty	Ш5e3	2	5	0	0	0	0	0	0
+halstead.effort	metric-key	maintainability.halstead.effort	Ш5e3	2	4	0	0	0	0	0	0
+halstead.time	metric-key	maintainability.halstead.time	Ш5e3	2	4	0	0	0	0	0	0
+halstead.volume	metric-key	maintainability.halstead.volume	Ш5e3	5	38	0	0	0	2	0	0
+implementingEnumCount	metric-key	size.implementing-enum-count	Ш5e3	21	9	0	0	0	1	0	0
+instability	metric-key	coupling.instability	Ш5e3	99	75	0	2	0	13	0	1
+interfaceCount	metric-key	size.interface-count	Ш5e3	22	19	0	0	0	0	0	0
+isAbstract	metric-key	design.is-abstract	Ш5e3	11	12	0	0	0	0	0	0
+isDataClass	metric-key	design.is-data-class	Ш5e3	5	8	0	0	0	1	0	0
+isException	metric-key	design.is-exception	Ш5e3	5	6	0	0	0	0	0	0
+isInterface	metric-key	design.is-interface	Ш5e3	5	6	0	0	0	0	0	0
+isPromotedPropertiesOnly	metric-key	design.is-promoted-properties-only	Ш5e3	2	9	0	0	0	0	0	0
+isReadonly	metric-key	design.is-readonly	Ш5e3	8	39	0	0	0	0	0	0
+isVoConstructor	metric-key	code-smell.is-vo-constructor	Ш5e3	5	28	0	0	0	0	0	0
+lcc	metric-key	cohesion.lcc	Ш5e3	11	56	0	0	0	6	0	0
+lcom	metric-key	cohesion.lcom	Ш5e3	41	136	0	0	0	3	0	0
+lloc	metric-key	size.lloc	Ш5e3	16	22	0	0	0	3	0	0
+loc	metric-key	size.loc	Ш5e3	72	191	0	0	0	5	0	0
+methodCount	metric-key	size.method-count	Ш5e3	46	127	0	0	0	5	0	0
+methodCountPrivate	metric-key	size.method-count.private	Ш5e3	11	6	0	0	0	0	0	0
+methodCountProtected	metric-key	size.method-count.protected	Ш5e3	11	6	0	0	0	0	0	0
+methodCountPublic	metric-key	size.method-count.public	Ш5e3	12	8	0	0	0	0	0	0
+methodCountTotal	metric-key	size.method-count.total	Ш5e3	12	18	0	0	0	0	0	0
+methodStatementCount	metric-key	size.method-statement-count	Ш5e3	2	33	0	0	0	5	0	0
+mi	metric-key	maintainability.mi	Ш5e3	20	181	0	0	0	0	0	0
+noc	metric-key	design.noc	Ш5e3	16	38	0	0	0	0	0	0
+npath	metric-key	complexity.npath	Ш5e3	68	102	0	0	0	0	0	0
+parameterCount	metric-key	code-smell.parameter-count	Ш5e3	14	62	0	0	0	0	0	0
+promotedPropertyCount	metric-key	size.promoted-property-count	Ш5e3	13	5	0	0	0	0	0	0
+propertyCount	metric-key	size.property-count	Ш5e3	29	62	0	0	0	2	0	0
+propertyCountPrivate	metric-key	size.property-count.private	Ш5e3	11	10	0	0	0	0	0	0
+propertyCountProtected	metric-key	size.property-count.protected	Ш5e3	11	7	0	0	0	0	0	0
+propertyCountPublic	metric-key	size.property-count.public	Ш5e3	14	11	0	0	0	0	0	0
+pureMethodCount_cohesion	metric-key	cohesion.pure-method-count	Ш5e3	3	7	0	0	0	3	0	0
+rfc	metric-key	coupling.rfc	Ш5e3	9	46	0	0	0	0	0	0
+rfc_external	metric-key	coupling.rfc-external	Ш5e3	2	16	0	0	0	0	0	0
+rfc_own	metric-key	coupling.rfc-own	Ш5e3	2	16	0	0	0	0	0	0
+security.hardcodedCredentials	metric-key	security.hardcoded-credentials	Ш5e3	3	23	0	0	0	0	0	0
+security.sensitiveParameter	metric-key	security.sensitive-parameter	Ш5e3	3	14	0	0	0	0	0	0
+setterCount	metric-key	size.setter-count	Ш5e3	12	11	0	0	0	0	0	0
+symbolClassCount	metric-key	size.symbol-class-count	Ш5e3	1	20	0	0	0	0	0	0
+symbolMethodCount	metric-key	size.symbol-method-count	Ш5e3	7	20	0	0	0	3	0	0
+tcc	metric-key	cohesion.tcc	Ш5e3	36	101	0	0	0	11	0	0
+traitCount	metric-key	size.trait-count	Ш5e3	19	13	0	0	0	0	0	0
+typeCoverage.param	metric-key	design.type-coverage.param	Ш5e3	6	23	0	0	0	0	0	0
+typeCoverage.paramTotal	metric-key	design.type-coverage.param.total	Ш5e3	3	15	0	0	0	0	0	0
+typeCoverage.paramTyped	metric-key	design.type-coverage.param.typed	Ш5e3	3	9	0	0	0	0	0	0
+typeCoverage.pct	metric-key	design.type-coverage.pct	Ш5e3	13	26	0	0	0	1	0	0
+typeCoverage.property	metric-key	design.type-coverage.property	Ш5e3	6	17	0	0	0	0	0	0
+typeCoverage.propertyTotal	metric-key	design.type-coverage.property.total	Ш5e3	3	10	0	0	0	0	0	0
+typeCoverage.propertyTyped	metric-key	design.type-coverage.property.typed	Ш5e3	3	7	0	0	0	0	0	0
+typeCoverage.return	metric-key	design.type-coverage.return	Ш5e3	6	21	0	0	0	0	0	0
+typeCoverage.returnTotal	metric-key	design.type-coverage.return.total	Ш5e3	3	9	0	0	0	0	0	0
+typeCoverage.returnTyped	metric-key	design.type-coverage.return.typed	Ш5e3	3	3	0	0	0	0	0	0
+unreachableCode	metric-key	code-smell.unreachable-code	Ш5e3	3	31	0	0	0	0	0	0
+unreachableCode.firstLine	metric-key	code-smell.unreachable-code.first-line	Ш5e3	3	10	0	0	0	0	0	0
+unusedPrivate.constant	metric-key	code-smell.unused-private.constant	Ш5e3	2	13	0	0	0	0	0	0
+unusedPrivate.method	metric-key	code-smell.unused-private.method	Ш5e3	2	42	0	0	0	0	0	0
+unusedPrivate.property	metric-key	code-smell.unused-private.property	Ш5e3	2	20	0	0	0	0	0	0
+unusedPrivate.total	metric-key	code-smell.unused-private.total	Ш5e3	2	20	0	0	0	0	0	0
+wmc	metric-key	complexity.wmc	Ш5e3	18	95	0	0	0	4	0	0
+woc	metric-key	design.woc	Ш5e3	11	12	0	0	0	4	0	0
 annotation.directive	producer	?		4	3	0	0	0	23	0	1
 architecture.circular-dependency	producer	?		9	29	0	2	0	39	0	1
 architecture.layer-violation	producer	?		26	100	0	3	0	79	0	1
@@ -154,9 +165,9 @@ design.data-class	producer	?		13	13	1	2	10	32	0	3
 design.god-class	producer	?		13	16	1	2	2	35	0	7
 design.inheritance	producer	?		6	9	2	2	0	20	0	3
 design.noc	producer	?		7	9	2	2	0	20	0	3
-design.param-type-coverage	producer	?		5	25	2	1	1	24	0	4
-design.property-type-coverage	producer	?		5	7	2	1	1	22	0	5
-design.return-type-coverage	producer	?		5	10	2	1	0	22	0	5
+design.param-type-coverage	producer	design.type-coverage.param	Ш5e3	5	25	2	1	1	24	0	4
+design.property-type-coverage	producer	design.type-coverage.property	Ш5e3	5	7	2	1	1	22	0	5
+design.return-type-coverage	producer	design.type-coverage.return	Ш5e3	5	10	2	1	0	22	0	5
 duplication.code-duplication	producer	?		14	53	0	2	12	35	0	4
 health.cohesion	producer	?		36	113	0	2	30	34	0	17
 health.complexity	producer	?		48	173	0	1	0	20	0	20
@@ -174,7 +185,7 @@ size.class-count	producer	?		9	27	2	1	5	24	0	4
 size.method-count	producer	?		9	60	2	2	0	46	0	3
 size.property-count	producer	?		9	7	2	2	0	22	0	3
 #
-# ROW COUNTS: 52 channel, 51 producer, 71 metric-key
+# ROW COUNTS: 52 channel, 51 producer, 82 metric-key
 #
 # HOW THIS WAS PRODUCED: `php scripts/generate-rename-enumeration.php`.
 # - `channel` rows: 52 keys from
@@ -184,7 +195,7 @@ size.property-count	producer	?		9	7	2	2	0	22	0	3
 #   because a rule can name its own channel through an inherited constant.
 # - `producer` rows: 51 names from
 #   `RuleExecutionInterface::allRules()` (`RuleMetadata::name`).
-# - `metric-key` rows: 71 values, `ReflectionClass(MetricName::class)->getConstants()`.
+# - `metric-key` rows: 82 values, `ReflectionClass(MetricName::class)->getConstants()`.
 #   `MetricName` is a plain final class with `public const string` members,
 #   not a backed enum — reflecting its constants is the equivalent measurement.
 # Occurrence columns (src, tests, presets, config, baseline, website_docs, benchmarks, finding_gate) count WHOLE-IDENTIFIER matches of the
