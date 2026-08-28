@@ -114,8 +114,8 @@ describe('aggregateSmallNodes', () => {
 
   it('does not aggregate when all nodes are visible', () => {
     const children = [
-      { name: 'A', metrics: { 'loc.sum': 500 }, violationCountTotal: 0 },
-      { name: 'B', metrics: { 'loc.sum': 500 }, violationCountTotal: 0 },
+      { name: 'A', metrics: { 'size.loc.sum': 500 }, violationCountTotal: 0 },
+      { name: 'B', metrics: { 'size.loc.sum': 500 }, violationCountTotal: 0 },
     ];
     const result = aggregateSmallNodes(children, 10000, 1000);
     expect(result).toEqual(children);
@@ -123,10 +123,10 @@ describe('aggregateSmallNodes', () => {
 
   it('aggregates nodes below visibility threshold', () => {
     const children = [
-      { name: 'Big', metrics: { 'loc.sum': 900 }, violationCountTotal: 0 },
-      { name: 'Tiny1', metrics: { 'loc.sum': 5 }, violationCountTotal: 1 },
-      { name: 'Tiny2', metrics: { 'loc.sum': 5 }, violationCountTotal: 2 },
-      { name: 'Tiny3', metrics: { 'loc.sum': 5 }, violationCountTotal: 0 },
+      { name: 'Big', metrics: { 'size.loc.sum': 900 }, violationCountTotal: 0 },
+      { name: 'Tiny1', metrics: { 'size.loc.sum': 5 }, violationCountTotal: 1 },
+      { name: 'Tiny2', metrics: { 'size.loc.sum': 5 }, violationCountTotal: 2 },
+      { name: 'Tiny3', metrics: { 'size.loc.sum': 5 }, violationCountTotal: 0 },
     ];
     // Total area = 1000px², total LOC = 915
     // Big: (900/915)*1000 ≈ 983px² > 400 → visible
@@ -143,8 +143,8 @@ describe('aggregateSmallNodes', () => {
 
   it('does not aggregate single small node', () => {
     const children = [
-      { name: 'Big', metrics: { 'loc.sum': 900 }, violationCountTotal: 0 },
-      { name: 'Small', metrics: { 'loc.sum': 10 }, violationCountTotal: 1 },
+      { name: 'Big', metrics: { 'size.loc.sum': 900 }, violationCountTotal: 0 },
+      { name: 'Small', metrics: { 'size.loc.sum': 10 }, violationCountTotal: 1 },
     ];
     const result = aggregateSmallNodes(children, 1000, 910);
     expect(result).toEqual(children);
@@ -153,7 +153,7 @@ describe('aggregateSmallNodes', () => {
 
 describe('getLoc', () => {
   it('returns loc.sum from metrics', () => {
-    expect(getLoc({ metrics: { 'loc.sum': 100 } })).toBe(100);
+    expect(getLoc({ metrics: { 'size.loc.sum': 100 } })).toBe(100);
   });
 
   it('returns 0 for missing metrics', () => {
@@ -162,7 +162,7 @@ describe('getLoc', () => {
   });
 
   it('returns 0 for zero or negative LOC', () => {
-    expect(getLoc({ metrics: { 'loc.sum': 0 } })).toBe(0);
-    expect(getLoc({ metrics: { 'loc.sum': -5 } })).toBe(0);
+    expect(getLoc({ metrics: { 'size.loc.sum': 0 } })).toBe(0);
+    expect(getLoc({ metrics: { 'size.loc.sum': -5 } })).toBe(0);
   });
 });

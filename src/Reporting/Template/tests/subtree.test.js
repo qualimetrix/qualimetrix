@@ -6,7 +6,7 @@ describe('computeSubtreeMetrics', () => {
     const node = {
       name: 'Foo',
       type: 'class',
-      metrics: { 'health.overall': 75, 'loc.sum': 100 },
+      metrics: { 'health.overall': 75, 'size.loc.sum': 100 },
       violationCountTotal: 3,
     };
 
@@ -23,8 +23,8 @@ describe('computeSubtreeMetrics', () => {
       type: 'namespace',
       metrics: {},
       children: [
-        { name: 'A', type: 'class', metrics: { 'health.overall': 80, 'loc.sum': 200 }, violationCountTotal: 1 },
-        { name: 'B', type: 'class', metrics: { 'health.overall': 40, 'loc.sum': 800 }, violationCountTotal: 4 },
+        { name: 'A', type: 'class', metrics: { 'health.overall': 80, 'size.loc.sum': 200 }, violationCountTotal: 1 },
+        { name: 'B', type: 'class', metrics: { 'health.overall': 40, 'size.loc.sum': 800 }, violationCountTotal: 4 },
       ],
     };
 
@@ -47,13 +47,13 @@ describe('computeSubtreeMetrics', () => {
           type: 'namespace',
           metrics: {},
           children: [
-            { name: 'Foo', type: 'class', metrics: { 'health.overall': 100, 'loc.sum': 500 }, violationCountTotal: 0 },
+            { name: 'Foo', type: 'class', metrics: { 'health.overall': 100, 'size.loc.sum': 500 }, violationCountTotal: 0 },
             {
               name: 'Sub',
               type: 'namespace',
               metrics: {},
               children: [
-                { name: 'Bar', type: 'class', metrics: { 'health.overall': 20, 'loc.sum': 500 }, violationCountTotal: 10 },
+                { name: 'Bar', type: 'class', metrics: { 'health.overall': 20, 'size.loc.sum': 500 }, violationCountTotal: 10 },
               ],
             },
           ],
@@ -84,8 +84,8 @@ describe('computeSubtreeMetrics', () => {
       type: 'namespace',
       metrics: {},
       children: [
-        { name: 'A', type: 'class', metrics: { 'loc.sum': 100 }, violationCountTotal: 0 },
-        { name: 'B', type: 'class', metrics: { 'health.overall': 50, 'loc.sum': 100 }, violationCountTotal: 0 },
+        { name: 'A', type: 'class', metrics: { 'size.loc.sum': 100 }, violationCountTotal: 0 },
+        { name: 'B', type: 'class', metrics: { 'health.overall': 50, 'size.loc.sum': 100 }, violationCountTotal: 0 },
       ],
     };
 
@@ -102,8 +102,8 @@ describe('computeSubtreeMetrics', () => {
       type: 'namespace',
       metrics: {},
       children: [
-        { name: 'A', type: 'class', metrics: { 'health.overall': 30, 'loc.sum': 0 }, violationCountTotal: 0 },
-        { name: 'B', type: 'class', metrics: { 'health.overall': 70, 'loc.sum': 100 }, violationCountTotal: 0 },
+        { name: 'A', type: 'class', metrics: { 'health.overall': 30, 'size.loc.sum': 0 }, violationCountTotal: 0 },
+        { name: 'B', type: 'class', metrics: { 'health.overall': 70, 'size.loc.sum': 100 }, violationCountTotal: 0 },
       ],
     };
 
@@ -119,8 +119,8 @@ describe('computeSubtreeMetrics', () => {
       type: 'namespace',
       metrics: {},
       children: [
-        { name: 'Small', type: 'class', metrics: { 'health.overall': 30, 'loc.sum': 100 }, violationCountTotal: 0 },
-        { name: 'Large', type: 'class', metrics: { 'health.overall': 90, 'loc.sum': 900 }, violationCountTotal: 0 },
+        { name: 'Small', type: 'class', metrics: { 'health.overall': 30, 'size.loc.sum': 100 }, violationCountTotal: 0 },
+        { name: 'Large', type: 'class', metrics: { 'health.overall': 90, 'size.loc.sum': 900 }, violationCountTotal: 0 },
       ],
     };
 

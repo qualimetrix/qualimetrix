@@ -102,7 +102,7 @@ export function aggregateSmallNodes(children, totalArea, totalValue) {
     name: `Other (${small.length} items)`,
     path: '',
     type: 'other',
-    metrics: { 'loc.sum': otherLoc },
+    metrics: { 'size.loc.sum': otherLoc },
     violations: [],
     violationCountTotal: otherViolations,
     debtMinutes: 0,
@@ -121,6 +121,6 @@ export function aggregateSmallNodes(children, totalArea, totalValue) {
  * @returns {number} LOC value (minimum 1 to avoid zero-weight in treemap)
  */
 export function getLoc(node) {
-  const loc = node.metrics?.['loc.sum'];
+  const loc = node.metrics?.['size.loc.sum'];
   return (loc != null && loc > 0) ? loc : 0;
 }

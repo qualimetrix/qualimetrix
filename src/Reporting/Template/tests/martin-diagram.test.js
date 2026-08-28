@@ -10,8 +10,8 @@ describe('collectNamespacesWithMetrics', () => {
   it('collects namespace children with both instability and abstractness', () => {
     const node = {
       children: [
-        { type: 'namespace', name: 'A', metrics: { instability: 0.5, abstractness: 0.3, distance: 0.2, 'loc.sum': 100 } },
-        { type: 'namespace', name: 'B', metrics: { instability: 0.8, abstractness: 0.1, distance: 0.1, 'loc.sum': 200 } },
+        { type: 'namespace', name: 'A', metrics: { instability: 0.5, abstractness: 0.3, distance: 0.2, 'size.loc.sum': 100 } },
+        { type: 'namespace', name: 'B', metrics: { instability: 0.8, abstractness: 0.1, distance: 0.1, 'size.loc.sum': 200 } },
       ],
     };
 
@@ -40,7 +40,7 @@ describe('collectNamespacesWithMetrics', () => {
   it('excludes namespaces without instability', () => {
     const node = {
       children: [
-        { type: 'namespace', name: 'A', metrics: { abstractness: 0.3, 'loc.sum': 100 } },
+        { type: 'namespace', name: 'A', metrics: { abstractness: 0.3, 'size.loc.sum': 100 } },
       ],
     };
 
@@ -50,7 +50,7 @@ describe('collectNamespacesWithMetrics', () => {
   it('excludes namespaces without abstractness', () => {
     const node = {
       children: [
-        { type: 'namespace', name: 'A', metrics: { instability: 0.5, 'loc.sum': 100 } },
+        { type: 'namespace', name: 'A', metrics: { instability: 0.5, 'size.loc.sum': 100 } },
       ],
     };
 
