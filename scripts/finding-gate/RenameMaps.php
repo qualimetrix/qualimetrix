@@ -580,32 +580,56 @@ final class RenameMaps
             $refused[$pair['row']] = $refusal;
             $from = $forward ? $pair['old'] : $pair['new'];
             $to = $forward ? $pair['new'] : $pair['old'];
-            $spellings = [[$from, $to]];
 
-            if (str_contains($from, '\\')) {
-                $spellings[] = [str_replace('\\', '\\\\', $from), str_replace('\\', '\\\\', $to)];
-            }
-
-            foreach (self::PREFIXES as $prefix) {
-                $spellings[] = [$prefix . $from, $prefix . $to];
-            }
-
-            // The aggregated spellings of a metric key. Only the suffix moves
-            // with the key, and only at the end of the name: the strategy list
-            // is closed, so `ccn.avg` is translated and `ccn.average` is not,
-            // and neither is `ccn.avg.avg` — a doubled suffix is a spelling the
-            // product does not publish, and inventing a translation for it
-            // would be the substring rewrite the whole-name rule refuses.
-            //
-            // A spelling belongs to the ROLE that publishes it, so it travels
-            // only in the directions that role is applied in. A declaration in
-            // two roles is reversible if either of them is, and without this a
+            // A spelling belongs to the ROLE that publishes it, and travels only
+            // in the directions that role is applied in. A declaration in two
+            // roles is reversible if either of them is, and without this split a
             // forward-only role's own spellings would ride the other role's
             // backwards direction — substituting, on the input, a spelling only
             // an artifact ever carries.
-            if (self::applies(self::METRIC_KEYS, $pair['sources'], $forward)) {
+            $keyRole = self::applies(self::METRIC_KEYS, $pair['sources'], $forward);
+            $otherRoles = array_values(array_filter(
+                $pair['sources'],
+                static fn(string $source): bool => $source !== self::METRIC_KEYS,
+            ));
+
+            $spellings = [];
+
+            // Every role but the key one names a rule, a channel, a symbol or a
+            // token of the input, and each of those appears bare in an artifact.
+            if ($otherRoles !== [] && self::appliesToAny($otherRoles, $pair['sources'], $forward)) {
+                $spellings[] = [$from, $to];
+
+                if (str_contains($from, '\\')) {
+                    $spellings[] = [str_replace('\\', '\\\\', $from), str_replace('\\', '\\\\', $to)];
+                }
+
+                foreach (self::PREFIXES as $prefix) {
+                    $spellings[] = [$prefix . $from, $prefix . $to];
+                }
+            }
+
+            // A metric key travels only where it is a WHOLE string, quotes
+            // included. Half the vocabulary is an ordinary English word —
+            // `cognitive`, `distance`, `instability`, `abstractness` — and the
+            // surfaces that publish keys publish messages beside them: measured
+            // 2026-08-28, the reference's `format:json` came back with "Maximum
+            // method cognitive complexity is 29" rewritten into "Maximum method
+            // complexity.cognitive complexity is 29". A key is published as a
+            // JSON string and nothing else, so the quotes are the boundary the
+            // name-character rule cannot supply.
+            //
+            // The aggregated spellings are the same row's, and only the suffix
+            // moves with the key, and only at the end of the name: the strategy
+            // list is closed, so `ccn.avg` is translated and `ccn.average` is
+            // not, and neither is `ccn.avg.avg` — a doubled suffix is a spelling
+            // the product does not publish, and inventing a translation for it
+            // would be the substring rewrite the whole-name rule refuses.
+            if ($keyRole) {
+                $spellings[] = ['"' . $from . '"', '"' . $to . '"'];
+
                 foreach ($this->vocabulary->suffixes as $suffix) {
-                    $spellings[] = [$from . '.' . $suffix, $to . '.' . $suffix];
+                    $spellings[] = ['"' . $from . '.' . $suffix . '"', '"' . $to . '.' . $suffix . '"'];
                 }
             }
 
@@ -650,6 +674,23 @@ final class RenameMaps
         usort($substitutions, static fn(array $a, array $b): int => \strlen($b[0]) <=> \strlen($a[0]));
 
         return $substitutions;
+    }
+
+    /**
+     * Whether any of a declaration's non-key roles applies in this direction.
+     *
+     * @param list<string> $roles
+     * @param list<string> $sources
+     */
+    private static function appliesToAny(array $roles, array $sources, bool $forward): bool
+    {
+        foreach ($roles as $role) {
+            if (self::applies($role, $sources, $forward)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

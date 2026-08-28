@@ -770,6 +770,11 @@ final class SelfTest
             'and the key itself is left alone there, so a key reaching a prose surface goes red instead of silent',
         );
         $this->same(
+            '{"message": "Maximum method cognitive complexity is 29"}',
+            $maps->forward('{"message": "Maximum method cognitive complexity is 29"}', 'format:json'),
+            'even where keys are published, a key inside a longer string is prose and is left alone',
+        );
+        $this->same(
             '{"complexity.cognitive": 29}',
             $maps->forward('{"cognitive": 29}', 'format:metrics'),
             'on a surface that publishes keys, the key map is applied',

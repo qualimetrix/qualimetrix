@@ -2031,6 +2031,7 @@ Qualimetrix\Reporting\Formatter\GithubActionsFormatter	Reporting	Qualimetrix\Ana
 Qualimetrix\Reporting\Formatter\GithubActionsFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract	P6-A
 Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem	Analysis.Evidence.ComputedMetrics.Health	contract	P5
 Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore	Analysis.Evidence.ComputedMetrics.Health	contract	P5
+Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract	P3
 Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract	P8
 Qualimetrix\Reporting\Formatter\Html\HtmlDebtCalculator	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	contract	P6-D
 Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract	P8
