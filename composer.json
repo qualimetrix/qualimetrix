@@ -88,6 +88,10 @@
         "enumeration:renames:check": "php scripts/generate-rename-enumeration.php --check",
         "enumeration:runtime-channels": "php scripts/generate-rename-enumeration.php --runtime-channels",
         "enumeration:runtime-channels:check": "php scripts/generate-rename-enumeration.php --runtime-channels --check",
+        "enumeration:directives": "php scripts/enumerate-inline-directives.php src",
+        "enumeration:directives:check": "php scripts/enumerate-inline-directives.php src --check",
+        "suppression-snapshot": "php scripts/generate-suppression-snapshot.php",
+        "suppression-snapshot:check": "php scripts/generate-suppression-snapshot.php --check",
         "selfcheck": [
             "@architecture:check",
             "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M"
@@ -112,8 +116,10 @@
             "@phpstan",
             "@enumeration:renames:check",
             "@enumeration:runtime-channels:check",
+            "@enumeration:directives:check",
             "@gate:self-test",
-            "@selfcheck"
+            "@selfcheck",
+            "@suppression-snapshot:check"
         ]
     },
     "scripts-descriptions": {
@@ -133,9 +139,13 @@
         "architecture:generate": "Regenerate modular-architecture governance projections and inventories",
         "architecture:check": "Validate the manifest and generated modular-architecture artifacts without writing",
         "enumeration:renames": "Regenerate docs/internal/plans/rule-vocabulary/enumeration-renames.tsv from the production container and MetricName",
+        "enumeration:directives": "Regenerate the authored @qmx-threshold enumeration from src",
+        "enumeration:directives:check": "Fail when that enumeration and the tree disagree, so the count is never repeated in prose",
         "enumeration:renames:check": "Fail if enumeration-renames.tsv is stale against a fresh measurement, without writing",
+        "suppression-snapshot": "Regenerate docs/internal/generated/suppression/{composition,inert}.tsv from a self-analysis of src/",
+        "suppression-snapshot:check": "Fail if the suppression snapshot is stale against a fresh self-analysis, without writing",
         "selfcheck": "Validate modular-architecture governance, then run Qualimetrix on its own source code",
-        "check": "Run all checks: leaks, code style, strict docs build, PHP/Python tests, phpstan, selfcheck (selfcheck enforces architecture via qmx.yaml)"
+        "check": "Run all checks: leaks, code style, strict docs build, PHP/Python tests, phpstan, selfcheck (selfcheck enforces architecture via qmx.yaml), suppression snapshot freshness"
     },
     "config": {
         "sort-packages": true,
