@@ -119,7 +119,7 @@ rediscovered.
    repeats the stale paths. A reader following the failure message looks in a
    directory that does not exist.
 
-4. **`--show-suppressed` corrupts every machine-readable format.** The
+4. **`--show-suppressed` corrupts every machine-readable format.** ~~The
    suppressed-findings report is written to stdout as plain text *before* the
    formatter's own output, whatever the format is. With `--format=json` the
    artifact is a 186-byte text preamble followed by a JSON document, so it does
@@ -129,7 +129,20 @@ rediscovered.
    the equivalence gate captures. Consequence beyond the gate: Ш3's DoD, which
    asks for the split into suppressible and non-suppressible findings to be
    identical before and after, can be gated on the text surface alone until this
-   is fixed. Measured 2026-08-23 while building the Ш1 corpus.
+   is fixed.~~ **Half-closed incidentally, 2026-08-24, one day after this was
+   measured:** `5526676d` (`refactor(finding): a violation becomes a finding,
+   and its dead level goes`) routed diagnostics through
+   `DiagnosticOutput::stream()`, which prints to the error output on a real
+   console and is what `FindingFilterOrchestrator::filterAndReport()` now calls
+   first. The suppressed-findings prose lands on stderr, `--format=json` parses,
+   and `bin/qmx check src --format=json --show-suppressed` and the same command
+   without the flag are today byte-identical on stdout. That commit's message
+   does not mention this — it is a renaming commit — so the fix was not
+   discoverable from history; it was found by rerunning the corpus case this
+   entry measured. What is still true, and is Ш6's own subject: nothing about
+   *what* was suppressed is machine-readable anywhere, on any surface — routing
+   the prose off stdout is not the same as publishing the composition. Measured
+   2026-08-23 while building the Ш1 corpus; reverified 2026-08-29.
 5. **The documented custom-computed-metric example is rejected by the
    resolver.** ~~`website/docs/reference/health-scores.md:159` shows
    `computed.code-density:`; a run with exactly that config exits 3 with
@@ -197,14 +210,54 @@ outliving its reason) is what the channel did catch in Ш5e2.
 The two belong to one step, not two: auditing a threshold means asking "would
 removing this directive change any decision?", and answering that for a channel
 excluded by namespace requires knowing what was suppressed — which is exactly
-the surface that does not exist. Five of the 136 `@qmx-threshold` directives in
-`src` sit inside such a namespace today (`SymbolLevel` ×2, `RelativePath` ×2,
-`ThresholdOverride`), and none of them is dead.
+the surface that does not exist. ~~Five of the 136 `@qmx-threshold` directives
+in `src` sit inside such a namespace today (`SymbolLevel` ×2, `RelativePath`
+×2, `ThresholdOverride`), and none of them is dead.~~ **Corrected, 2026-08-29:**
+four, not five — `ThresholdOverride` contributes no authored directive at all;
+every `@qmx-threshold` token on that class sits inside a backtick-delimited
+documentation example (its docblock is *teaching* the annotation grammar), and
+the product's own parsing strips backtick regions before matching (AGENTS.md
+§8), so an authored-site count built the product's way never counts it. The
+four real sites are `SymbolLevel` ×2 (`coupling.cbo`, `coupling.class-rank`)
+and `RelativePath` ×2 (the same pair), and none of them is dead.
+
+136 was never a count of authored directives — it is a naive
+`grep -rn '@qmx-threshold' src | wc -l`, which also matches every mention of
+the tag in prose, including the very documentation examples the paragraph
+above is about, and including this file's own use of the string above. Counted
+the product's way — `token_get_all()` restricted to `T_DOC_COMMENT`, the same
+backtick-stripping, and `ThresholdOverrideExtractor`'s own matching pattern —
+`scripts/enumerate-inline-directives.php src` finds 41 authored
+`@qmx-threshold` sites today (`docs/internal/plans/rule-vocabulary/PLAN.md`'s
+П2 retrospective already recorded this count moving 37 → 39 as a side effect
+of that package; it has since moved to 41, past this file's original
+measurement). The two counts disagree by roughly 3.5x, which is the cost of
+asking a text grep a question about an annotation grammar.
 
 Not fixed here: both add published output, so they carry a declared delta and a
 corpus fixture, and Ш5e3 renames 82 metric keys — a new observable channel in
 between would be compared against maps written for the rename. Scheduled after
 Ш5e3. Measured 2026-08-26.
+
+## Found while documenting the `suppressed` format (Ш6), out of scope here
+
+**`--show-suppressed` prints nothing when the command runs against a
+non-console `OutputInterface`.** `DiagnosticOutput::stream()`
+(`src/Infrastructure/Console/DiagnosticOutput.php`) routes to
+`$output->getErrorOutput()` only when `$output instanceof
+ConsoleOutputInterface`; every other `OutputInterface` — a `BufferedOutput`, a
+plain `StreamOutput`, anything a caller hands `CheckCommand::run()` outside a
+real terminal invocation — gets a fresh `NullOutput` instead. Both the flag's
+own text rendering (`FindingFilterOrchestrator`) and every other diagnostic
+line go through this same gate, so a caller that embeds the command
+programmatically and passes such an output silently gets none of that prose:
+not an error, not a warning, just an absent section where `--show-suppressed`
+was asked for. The machine-readable `suppressed` format this step adds is
+unaffected — it is `Report`/`FormatterInterface` output on the command's normal
+`OutputInterface`, not routed through `DiagnosticOutput` at all. Verified by
+reading `DiagnosticOutput.php`; not fixed here — nothing in this repository's
+own CLI path constructs a non-`ConsoleOutputInterface` output, so no test on
+`src` observes it. Measured 2026-08-29.
 
 ## Consumers that read the level from the channel NAME
 

@@ -124,7 +124,7 @@ bin/qmx check src/ --format=json
 bin/qmx check src/ --format=sarif
 ```
 
-Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`.
+Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
 
 See [Output Formats](output-formats.md) for details on each format.
 
@@ -368,6 +368,13 @@ Independently of `--show-suppressed`, running with `-v` prints a per-rule count 
 violations were suppressed this way. The namespace bucket includes both namespace options and
 is separate from `exclude_paths`; each is broken down by rule name. Unlike `@qmx-ignore`, this suppression is otherwise silent: nothing in
 the default output indicates it happened.
+
+`--show-suppressed` renders this as prose on the text surface.
+`--format=suppressed` reports the same composition — every mechanism that can
+remove a finding, not only these two — as machine-readable JSON; see
+[Output Formats](output-formats.md#suppressed). Either `--show-suppressed` or
+selecting `--format=suppressed` (including `format: suppressed` in
+`qmx.yaml`) is enough to capture it; you do not need both.
 
 ### `--no-suppression-annotations`
 

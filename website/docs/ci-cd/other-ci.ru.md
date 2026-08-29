@@ -156,6 +156,7 @@ vendor/bin/qmx check src/
 | SARIF      | `--format=sarif`      | GitHub, VS Code, дашборды безопасности           |
 | GitHub     | `--format=github`     | Инлайн-аннотации в GitHub Actions                |
 | GitLab     | `--format=gitlab`     | Виджет Code Quality в GitLab                     |
+| Suppressed | `--format=suppressed` | Аудит того, что прогон удержал и почему          |
 
 ### 4. Обработайте коды возврата
 

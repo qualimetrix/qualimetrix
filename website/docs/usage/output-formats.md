@@ -1,6 +1,6 @@
 # Output Formats
 
-Qualimetrix supports 11 output formats (including the deprecated
+Qualimetrix supports 12 output formats (including the deprecated
 `text-verbose`). Choose the one that fits your workflow.
 
 ```bash
@@ -585,6 +585,123 @@ xdg-open report.html  # Linux
 
 ---
 
+## suppressed
+
+Machine-readable JSON composition of what a run held back from its report and
+why. A separate format rather than a section of `json`: an ordinary `check`
+payload never changes shape for a feature you did not ask for, no matter which
+format you selected it with.
+
+**When to use:** Auditing why an expected finding is missing, reviewing what a
+`qmx.yaml` exclusion actually silences, spotting a dead `exclude_paths`/
+`exclude_namespaces` entry (a typo'd path, a file the project deleted).
+
+**Capture is armed the same way by two independent routes** — passing
+`--show-suppressed` (which also still prints the same information as prose on
+`--format=text`), or selecting `--format=suppressed` itself, including via
+`format: suppressed` in `qmx.yaml`. Either route arms the same per-rule
+exclusion capture, so they never disagree.
+
+**The composition is a multiset, not a set of findings.** One finding can be
+removed by more than one mechanism — for example, a finding an inline
+`@qmx-ignore` would suppress may already have been removed earlier by a
+namespace exclusion. There are seven mechanisms: `suppression` (inline
+`@qmx-ignore`/`@qmx-ignore-file`/`@qmx-ignore-next-line`), `path-exclusion` and
+`namespace-exclusion` (global `exclude_paths`/`exclude_namespaces`),
+`baseline` (the accepted-level ceiling), `git-scope` (`--report=git:*`
+narrowing), and the two halves of the per-rule exclusion ledger configured
+under `rules: {<rule-name>: {...}}` — `rule-namespace-exclusion` and
+`rule-path-exclusion`. `byMechanism` counts entries per mechanism; because the
+same finding can appear under more than one, those counts **do not sum** to
+the number of distinct findings suppressed — the format's own `note` field
+says so.
+
+A separate `neverMatched` list reports configured suppressors that excluded
+nothing this run: without it, a stale `exclude_paths` entry pointing at a
+deleted file is indistinguishable from one that was never written.
+
+**Top-level keys:** `meta`, `note`, `mechanisms` (all seven, always present),
+`byMechanism` (count per mechanism, including zero), `suppressed` (the
+multiset), `neverMatched`.
+
+<!-- llms:skip-begin -->
+**Example output (abbreviated, from this project's own self-analysis):**
+
+```json
+{
+    "meta": {
+        "version": "dev-main",
+        "package": "qmx",
+        "timestamp": "2026-08-29T09:14:02+00:00"
+    },
+    "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
+    "mechanisms": [
+        "suppression",
+        "path-exclusion",
+        "namespace-exclusion",
+        "baseline",
+        "git-scope",
+        "rule-namespace-exclusion",
+        "rule-path-exclusion"
+    ],
+    "byMechanism": {
+        "suppression": 12,
+        "path-exclusion": 0,
+        "namespace-exclusion": 0,
+        "baseline": 0,
+        "git-scope": 0,
+        "rule-namespace-exclusion": 58,
+        "rule-path-exclusion": 131
+    },
+    "suppressed": [
+        {
+            "mechanism": "suppression",
+            "suppressor": "src/Infrastructure/Ast/CachedFileParser.php:15",
+            "rule": "code-smell.empty-catch",
+            "channel": "code-smell.empty-catch",
+            "file": "src/Infrastructure/Ast/CachedFileParser.php",
+            "line": 73,
+            "symbol": "src/Infrastructure/Ast/CachedFileParser.php",
+            "severity": "error",
+            "message": "Log the exception or add a comment explaining why it is safe to ignore."
+        },
+        {
+            "mechanism": "rule-path-exclusion",
+            "suppressor": "code-smell.constructor-overinjection",
+            "rule": "code-smell.constructor-overinjection",
+            "channel": "code-smell.constructor-overinjection",
+            "file": "src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php",
+            "line": 28,
+            "symbol": "Qualimetrix\\Analysis\\Run\\Contract\\Collection\\SuccessfulFileProcessing::__construct",
+            "severity": "warning",
+            "message": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
+        }
+    ],
+    "neverMatched": [
+        {
+            "mechanism": "rule-path-exclusion",
+            "suppressor": "coupling.cbo: src/Analysis/Evidence/Design/*Visitor.php"
+        }
+    ]
+}
+```
+
+For the two ledger mechanisms (`rule-namespace-exclusion`,
+`rule-path-exclusion`), `suppressor` names the producer rule; for
+`path-exclusion`/`namespace-exclusion` it is the matched configured pattern;
+for `suppression` it is the directive's `file:line`; for `baseline` it is the
+accepted entry's description; for `git-scope` it is the configured git
+reference.
+<!-- llms:skip-end -->
+
+**Usage:**
+
+```bash
+bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
+```
+
+---
+
 ## Analysis coverage in every format
 
 Every discovered PHP file is classified as analyzed, intentionally excluded as
@@ -606,6 +723,7 @@ formatter instead of being replaced with command prose.
 | `checkstyle`   | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                   |
 | `github`       | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                        |
 | `html`         | Embedded `coverage` data; incomplete runs also show a visible warning banner                                   |
+| `suppressed`   | Not represented — this format publishes a suppression composition, not a `coverage` object                     |
 
 For `json` and `metrics`, each `failures[]` item has `path`, `kind` (`parse` or
 `processing`), and `message`. Human formats distinguish no discovered files,
@@ -626,6 +744,7 @@ generated-only input, complete analysis, and incomplete analysis.
 | `github`       | No          | No        | Flat list                    | GitHub Actions annotations |
 | `health`       | Good        | No        | Health dimensions            | Quick checks, CI           |
 | `html`         | Interactive | No        | Treemap hierarchy            | Reports, reviews           |
+| `suppressed`   | No          | Yes       | Flat multiset by mechanism   | Suppression auditing       |
 
 ### Exit codes
 

@@ -124,7 +124,7 @@ bin/qmx check src/ --format=json
 bin/qmx check src/ --format=sarif
 ```
 
-Доступные форматы: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`.
+Доступные форматы: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
 
 Подробности о каждом формате смотрите в разделе [Форматы вывода](output-formats.md).
 
@@ -365,6 +365,13 @@ bin/qmx check src/ --show-suppressed
 нарушений подавлено таким образом. Namespace-бакет включает обе опции неймспейсов и выводится
 отдельно от `exclude_paths`; каждый бакет разбит по имени правила. В отличие от `@qmx-ignore`, в остальном это подавление проходит
 незаметно — ничто в стандартном выводе не сигнализирует о том, что оно произошло.
+
+`--show-suppressed` выводит это прозой на текстовой поверхности.
+`--format=suppressed` публикует тот же состав — все механизмы, способные
+убрать находку, а не только эти два, — как машиночитаемый JSON; см.
+[«Форматы вывода»](output-formats.ru.md#suppressed). Для захвата достаточно
+либо `--show-suppressed`, либо выбора `--format=suppressed` (в том числе
+`format: suppressed` в `qmx.yaml`) — оба вместе не нужны.
 
 ### `--no-suppression-annotations`
 

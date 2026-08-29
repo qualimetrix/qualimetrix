@@ -25,14 +25,14 @@ jobs:
 
 ## Inputs
 
-| Input               | Description                                      | Required | Default |
-| ------------------- | ------------------------------------------------ | -------- | ------- |
-| `paths`             | Paths to analyze (space-separated)               | No       | `src/`  |
-| `baseline`          | Path to baseline file                            | No       | -       |
-| `config`            | Path to config file                              | No       | -       |
-| `format`            | Output format: `text`, `json`, `sarif`, `gitlab` | No       | `text`  |
-| `php-version`       | PHP version to use                               | No       | `8.4`   |
-| `working-directory` | Working directory for analysis                   | No       | `.`     |
+| Input               | Description                                                    | Required | Default |
+| ------------------- | -------------------------------------------------------------- | -------- | ------- |
+| `paths`             | Paths to analyze (space-separated)                             | No       | `src/`  |
+| `baseline`          | Path to baseline file                                          | No       | -       |
+| `config`            | Path to config file                                            | No       | -       |
+| `format`            | Output format: `text`, `json`, `sarif`, `gitlab`, `suppressed` | No       | `text`  |
+| `php-version`       | PHP version to use                                             | No       | `8.4`   |
+| `working-directory` | Working directory for analysis                                 | No       | `.`     |
 
 ## Outputs
 

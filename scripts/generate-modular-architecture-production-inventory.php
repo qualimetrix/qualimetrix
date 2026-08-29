@@ -2448,6 +2448,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0034-the-level-is-a-coordinate-of-a-symbol.md' => ['Core.Symbol', 'P8'],
         'docs/adr/0035-a-metric-key-names-its-family-in-kebab.md' => ['Analysis.Evidence.Measurement', 'P3'],
         'docs/adr/0036-a-formula-addresses-a-metric-by-its-key.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
+        'docs/adr/0037-suppressed-format-and-produced-findings.md' => ['Reporting', 'P6-D'],
         'docs/internal/plans/modular-architecture.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture/decisions-and-target.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture/p0-governance.md' => ['Architecture.Governance', 'P2'],

@@ -50,7 +50,14 @@ Reporting/
 │   ├── Contract/                          # Framework-free Git scope port and request/result
 │   ├── FindingProjectionOptions.php      # Immutable projection controls
 │   ├── FindingProjectionResult.php       # Reported, measured, accepted, and stale facts
-│   └── FindingProjector.php              # Authoritative suppression/filtering order
+│   ├── FindingProjector.php              # Authoritative suppression/filtering order
+│   ├── SuppressionMechanism.php           # Closed 7-value vocabulary: 5 FindingFilterStage cases + the 2 per-rule ledger halves
+│   ├── SuppressedFinding.php              # One finding x mechanism x suppressor pairing (multiset unit, not a finding-level fact)
+│   ├── InertSuppressor.php                # A configured suppressor (pattern/rule) that excluded nothing this run
+│   ├── SuppressionComposition.php         # `$all` (multiset) + `$neverMatched`, published by `--format=suppressed`
+│   ├── SuppressionCompositionBuilder.php  # Builds SuppressionComposition for the five global stages; delegates the ledger halves
+│   ├── RuleExclusionLedgerAttributor.php  # Attributes ledger-excluded findings to their firing per-rule pattern; finds inert ones
+│   └── LedgerHit.php                      # One ledger-attributed finding, carrying the matched pattern for zero-count detection
 ├── Filter/
 │   └── FindingFilter.php                # Shared finding/offender filtering by namespace/class context
 ├── Profile/
@@ -97,7 +104,9 @@ Reporting/
     │   ├── HtmlDebtCalculator.php         # Computes and aggregates technical debt for HTML reports
     │   ├── HtmlMetricAggregator.php       # Bottom-up metric aggregation for HTML tree
     │   └── HtmlFindingPartitioner.php   # Partitions findings by file/class for HTML tree
-    └── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
+    ├── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
+    └── Suppressed/
+        └── SuppressedFormatter.php          # Machine-readable suppression composition (`--format=suppressed`)
 ```
 
 ## Contracts
@@ -114,6 +123,19 @@ measured, accepted, or stale Baseline facts.
 Configuration-owned `OutputFormat` carries the resolved formatter name to the
 Console presenter without adding output policy to the transitional runtime
 configuration.
+
+### Suppression composition
+
+`FindingProjection\SuppressionCompositionBuilder` assembles
+`SuppressionComposition` — the multiset `SuppressedFormatter` publishes — from
+facts the pipeline already computed: `FindingProjectionResult` for the five
+global `FindingFilterStage` cases, and `RuleExecutionResult`'s exclusion
+ledger (via `RuleExclusionLedgerAttributor`) for the two per-rule halves. It
+recomputes *which* pattern or directive removed a finding rather than reading
+a per-finding attribution the pipeline carries, because no stage records one;
+see the class docblock for why that narrow duplication was accepted. See
+`docs/adr/0037-suppressed-format-and-produced-findings.md` for why this is a
+separate format rather than a `json` section.
 
 ### GraphProjection
 
@@ -384,6 +406,7 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 | GitHub       | `github`       | GitHub Actions workflow-command annotations                   | GitHub Actions             |
 | Health       | `health`       | Text table of health dimensions with scores and decomposition | CLI                        |
 | Html         | `html`         | Interactive treemap report with D3.js                         | Browser, CI artifacts      |
+| Suppressed   | `suppressed`   | Machine-readable composition of what was suppressed and why   | Auditing, CI               |
 
 ## JsonFormatter
 
@@ -561,6 +584,41 @@ bin/qmx check src/ --format=metrics > metrics.json
 
 ---
 
+## SuppressedFormatter
+
+**Name:** `suppressed`
+
+Machine-readable composition of what a run held back from its report and why
+— a format of its own rather than a section of `json`, so an ordinary `check`
+payload never changes shape for a feature it did not ask for (see
+`docs/adr/0037-suppressed-format-and-produced-findings.md`). Reads
+`Report::$suppressionComposition` (built by
+`FindingProjection\SuppressionCompositionBuilder`), never the finding list
+every other formatter reads.
+
+The composition is a multiset over mechanism x finding across seven
+mechanisms — `SuppressionMechanism`'s five global stages plus the two
+per-rule exclusion-ledger halves — not a set of findings: a finding removed
+by more than one mechanism appears once per mechanism, so `byMechanism`
+counts do not sum to a distinct-finding total. A separate `neverMatched` list
+publishes configured suppressors (a path/namespace pattern, a per-rule
+exclusion) that matched nothing this run.
+
+### Capture
+
+Selecting this format arms the same per-rule ledger capture `--show-suppressed`
+arms on the text surface (`RuntimeConfigurator`): the two routes never
+disagree, and `format: suppressed` in `qmx.yaml` triggers capture exactly as
+`--show-suppressed` does.
+
+### Usage
+
+```bash
+bin/qmx check src/ --format=suppressed > suppressed.json
+```
+
+---
+
 ## Adding a New Formatter
 
 ### Steps
@@ -636,17 +694,17 @@ Per-format decision — whether the accepted level is carried, and how:
 
 ## Formatter Comparison
 
-| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics | Health | Html            |
-| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------- | ------ | --------------- |
-| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No      | Yes    | No              |
-| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No      | Yes    | Yes             |
-| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No      | No     | No              |
-| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No      | High   | Visual          |
-| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom  | No     | CI artifacts    |
-| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No      | No     | No              |
-| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No      | No     | No              |
-| **Fingerprinting**      | No      | No     | No           | No      | No                | No           | Yes    | No      | No     | No              |
-| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT  | STDOUT | File (--output) |
+| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics | Health | Html            | Suppressed |
+| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------- | ------ | --------------- | ---------- |
+| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No      | Yes    | No              | No         |
+| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No      | Yes    | Yes             | No         |
+| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No      | No     | No              | No         |
+| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No      | High   | Visual          | No         |
+| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom  | No     | CI artifacts    | Auditing   |
+| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No      | No     | No              | No         |
+| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No      | No     | No              | No         |
+| **Fingerprinting**      | No      | No     | No           | No      | No                | No           | Yes    | No      | No     | No              | No         |
+| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT  | STDOUT | File (--output) | STDOUT     |
 
 ### Choosing the Right Format
 
@@ -662,6 +720,7 @@ Per-format decision — whether the accepted level is carried, and how:
 - **Custom dashboards / metrics analysis** -> `metrics`
 - **Health scores (terminal)** -> `health`
 - **Visual exploration / stakeholder reports** -> `html`
+- **Auditing what a run suppressed** -> `suppressed`
 
 ## HealthTextFormatter
 

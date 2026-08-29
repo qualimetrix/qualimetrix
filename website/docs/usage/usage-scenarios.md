@@ -150,9 +150,10 @@ vendor/bin/qmx check src/ --report=git:main..HEAD --format=github --no-progress
 
 ## Comparison
 
-| Scenario    | Recommended format             | Key options                                            |
-| ----------- | ------------------------------ | ------------------------------------------------------ |
-| CI/CD       | `github` or `sarif`            | `only_rules` in config, `--fail-on=warning` for strict |
-| Pre-commit  | `text` (default)               | Automatic via `hook:install`                           |
-| AI-assisted | `text` or `json`               | `--report=git:main..HEAD`                              |
-| Code review | `github`, `sarif`, or `gitlab` | `--report=git:main..HEAD`                              |
+| Scenario          | Recommended format             | Key options                                            |
+| ----------------- | ------------------------------ | ------------------------------------------------------ |
+| CI/CD             | `github` or `sarif`            | `only_rules` in config, `--fail-on=warning` for strict |
+| Pre-commit        | `text` (default)               | Automatic via `hook:install`                           |
+| AI-assisted       | `text` or `json`               | `--report=git:main..HEAD`                              |
+| Code review       | `github`, `sarif`, or `gitlab` | `--report=git:main..HEAD`                              |
+| Suppression audit | `suppressed`                   | See [Output Formats](output-formats.md#suppressed)     |

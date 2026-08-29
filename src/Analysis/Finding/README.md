@@ -14,9 +14,18 @@ Finding/
 ├── Exclusion/            # Private namespace and path exclusion stores
 ├── Rule/                 # Internal producer and channel implementations
 ├── RuleConfiguration/    # Option parsing, normalization, and per-run state
-├── RuleExecution.php     # Selects producers, executes them, and publishes metadata/stats
+├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
 └── ChannelPresentationView.php # Joins a channel's producer to that rule's own description and docs page
 ```
+
+`RuleExecutionInterface::execute()` returns `RuleExecutionResult` (in `Contract/`)
+rather than a bare finding list: `$produced` (everything rules and their
+configuration validators produced, before the per-rule exclusion ledger and
+per-finding channel selection ran), `$published` (the subset `execute()` used
+to return), and `$exclusions` (`RuleExclusionStats`, unchanged). Reporting's
+`SuppressionCompositionBuilder` reads `$produced` and `$exclusions` to publish
+`--format=suppressed`; every other caller keeps reading `$published`. See
+`docs/adr/0037-suppressed-format-and-produced-findings.md`.
 
 `RuleExecutionInterface` exposes immutable `RuleMetadata`; concrete rule instances never cross the capability boundary. `RuleConfigurationInterface` is the only external mutation/query surface for per-run options, selection, and exclusions. Runtime reset clears CLI selection and exclusion state before every run.
 

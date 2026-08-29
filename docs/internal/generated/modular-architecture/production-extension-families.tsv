@@ -15,6 +15,7 @@ formatter	Qualimetrix\Reporting\Formatter\Json\JsonFormatter	src/Reporting/Forma
 formatter	Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	src/Reporting/Formatter/MetricsJsonFormatter.php	qmx.formatter	"OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry"
 formatter	Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	src/Reporting/Formatter/Sarif/SarifFormatter.php	qmx.formatter	"OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry"
 formatter	Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter	src/Reporting/Formatter/Summary/SummaryFormatter.php	qmx.formatter	"OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry"
+formatter	Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter	src/Reporting/Formatter/Suppressed/SuppressedFormatter.php	qmx.formatter	"OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry"
 formatter	Qualimetrix\Reporting\Formatter\TextFormatter	src/Reporting/Formatter/TextFormatter.php	qmx.formatter	"OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry"
 formatter	Qualimetrix\Reporting\Formatter\TextVerboseFormatter	src/Reporting/Formatter/TextVerboseFormatter.php	qmx.formatter	"OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry"
 global_collector	Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	qmx.global_collector	"CouplingConfigurator -> GlobalCollectorCompilerPass -> GlobalCollectorRunner"

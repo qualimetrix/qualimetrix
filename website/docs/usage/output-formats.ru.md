@@ -1,6 +1,6 @@
 # Форматы вывода
 
-Qualimetrix поддерживает 11 форматов вывода (включая устаревший
+Qualimetrix поддерживает 12 форматов вывода (включая устаревший
 `text-verbose`). Выбирайте тот, который подходит для вашего рабочего процесса.
 
 ```bash
@@ -585,6 +585,124 @@ xdg-open report.html  # Linux
 
 ---
 
+## suppressed
+
+Машиночитаемый JSON-состав того, что прогон исключил из отчёта и почему.
+Отдельный формат, а не секция `json`: обычный payload `check` не меняет форму
+из-за возможности, которую вы не запрашивали, каким бы форматом вы его ни
+выбрали.
+
+**Когда использовать:** разобраться, почему ожидаемое нарушение отсутствует в
+отчёте; проверить, что именно молчаливо исключает настройка `qmx.yaml`; найти
+неработающую запись `exclude_paths`/`exclude_namespaces` (опечатку в пути,
+удалённый файл).
+
+**Захват включается двумя независимыми способами одновременно** — флагом
+`--show-suppressed` (он по-прежнему печатает те же данные прозой в
+`--format=text`) или выбором `--format=suppressed`, в том числе через
+`format: suppressed` в `qmx.yaml`. Оба пути включают один и тот же захват
+пер-рулевого исключения, поэтому они никогда не расходятся.
+
+**Состав — это мультимножество, а не множество находок.** Одна находка может
+попасть под несколько механизмов сразу — например, находку, которую убрал бы
+инлайновый `@qmx-ignore`, могло раньше убрать исключение по неймспейсу. Всего
+семь механизмов: `suppression` (инлайновые `@qmx-ignore`/`@qmx-ignore-file`/
+`@qmx-ignore-next-line`), `path-exclusion` и `namespace-exclusion` (глобальные
+`exclude_paths`/`exclude_namespaces`), `baseline` (потолок принятого уровня),
+`git-scope` (сужение `--report=git:*`) и две половины пер-рулевого леджера
+исключений, настраиваемого под ключом `rules: {<имя-правила>: {...}}` —
+`rule-namespace-exclusion` и `rule-path-exclusion`. `byMechanism` считает
+записи по каждому механизму отдельно; поскольку одна и та же находка может
+попасть под несколько механизмов, эти счётчики **не складываются** в число
+различных подавленных находок — об этом прямо говорит поле `note` самого
+формата.
+
+Отдельный список `neverMatched` показывает настроенные подавители, не
+исключившие в этом прогоне ничего: без него устаревшую запись `exclude_paths`,
+указывающую на удалённый файл, невозможно отличить от записи, которую вообще
+никогда не писали.
+
+**Ключи верхнего уровня:** `meta`, `note`, `mechanisms` (все семь, всегда
+присутствуют), `byMechanism` (счётчик на каждый механизм, включая нулевые),
+`suppressed` (само мультимножество), `neverMatched`.
+
+<!-- llms:skip-begin -->
+**Пример вывода (сокращённый, из самоанализа этого проекта):**
+
+```json
+{
+    "meta": {
+        "version": "dev-main",
+        "package": "qmx",
+        "timestamp": "2026-08-29T09:14:02+00:00"
+    },
+    "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
+    "mechanisms": [
+        "suppression",
+        "path-exclusion",
+        "namespace-exclusion",
+        "baseline",
+        "git-scope",
+        "rule-namespace-exclusion",
+        "rule-path-exclusion"
+    ],
+    "byMechanism": {
+        "suppression": 12,
+        "path-exclusion": 0,
+        "namespace-exclusion": 0,
+        "baseline": 0,
+        "git-scope": 0,
+        "rule-namespace-exclusion": 58,
+        "rule-path-exclusion": 131
+    },
+    "suppressed": [
+        {
+            "mechanism": "suppression",
+            "suppressor": "src/Infrastructure/Ast/CachedFileParser.php:15",
+            "rule": "code-smell.empty-catch",
+            "channel": "code-smell.empty-catch",
+            "file": "src/Infrastructure/Ast/CachedFileParser.php",
+            "line": 73,
+            "symbol": "src/Infrastructure/Ast/CachedFileParser.php",
+            "severity": "error",
+            "message": "Log the exception or add a comment explaining why it is safe to ignore."
+        },
+        {
+            "mechanism": "rule-path-exclusion",
+            "suppressor": "code-smell.constructor-overinjection",
+            "rule": "code-smell.constructor-overinjection",
+            "channel": "code-smell.constructor-overinjection",
+            "file": "src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php",
+            "line": 28,
+            "symbol": "Qualimetrix\\Analysis\\Run\\Contract\\Collection\\SuccessfulFileProcessing::__construct",
+            "severity": "warning",
+            "message": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
+        }
+    ],
+    "neverMatched": [
+        {
+            "mechanism": "rule-path-exclusion",
+            "suppressor": "coupling.cbo: src/Analysis/Evidence/Design/*Visitor.php"
+        }
+    ]
+}
+```
+
+Для двух механизмов леджера (`rule-namespace-exclusion`,
+`rule-path-exclusion`) `suppressor` называет правило-производитель; для
+`path-exclusion`/`namespace-exclusion` — сработавший настроенный паттерн; для
+`suppression` — `файл:строка` директивы; для `baseline` — описание принятой
+записи; для `git-scope` — настроенную git-ссылку.
+<!-- llms:skip-end -->
+
+**Использование:**
+
+```bash
+bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
+```
+
+---
+
 ## Покрытие анализа во всех форматах
 
 Каждый обнаруженный PHP-файл классифицируется как проанализированный,
@@ -606,6 +724,7 @@ Generated-исключения не делают анализ неполным; 
 | `checkstyle`   | Сбои как errors в синтетическом файле `[analysis]`, source — `qmx.analysis.<kind>`                                   |
 | `github`       | По одной `::error`-аннотации на каждый сбой; полный прогон без нарушений не даёт аннотаций                           |
 | `html`         | Встроенные данные `coverage`; при неполном анализе также виден warning-banner                                        |
+| `suppressed`   | Не представлено — этот формат публикует состав подавленного, а не объект `coverage`                                  |
 
 В `json` и `metrics` каждый элемент `failures[]` содержит `path`, `kind` (`parse` или
 `processing`) и `message`. Текстовые форматы различают нуль найденных файлов,
@@ -613,19 +732,20 @@ Generated-исключения не делают анализ неполным; 
 
 ## Сравнительная таблица
 
-| Формат         | Читаемость    | Машинный    | Группировка                    | Интеграция с CI            |
-| -------------- | ------------- | ----------- | ------------------------------ | -------------------------- |
-| `summary`      | Лучшая        | Нет         | Оценки здоровья, drill-down    | Любой (код выхода)         |
-| `text`         | Хорошая       | Парсируемый | `--group-by`                   | Любой (код выхода)         |
-| `text-verbose` | Хорошая       | Нет         | `--group-by` (по умолч.: file) | Любой (код выхода)         |
-| `json`         | Нет           | Да          | Встроенная (по файлам)         | Скрипты                    |
-| `metrics`      | Нет           | Да          | Встроенная (по символам)       | Скрипты, дашборды          |
-| `checkstyle`   | Нет           | Да          | Встроенная (по файлам)         | Jenkins, SonarQube         |
-| `sarif`        | Нет           | Да          | Встроенная                     | GitHub, VS Code, JetBrains |
-| `gitlab`       | Нет           | Да          | Плоский список                 | GitLab MR виджет           |
-| `github`       | Нет           | Нет         | Плоский список                 | GitHub Actions аннотации   |
-| `health`       | Хорошая       | Нет         | Измерения здоровья             | Быстрые проверки, CI       |
-| `html`         | Интерактивная | Нет         | Иерархия treemap               | Отчёты, ревью              |
+| Формат         | Читаемость    | Машинный    | Группировка                          | Интеграция с CI            |
+| -------------- | ------------- | ----------- | ------------------------------------ | -------------------------- |
+| `summary`      | Лучшая        | Нет         | Оценки здоровья, drill-down          | Любой (код выхода)         |
+| `text`         | Хорошая       | Парсируемый | `--group-by`                         | Любой (код выхода)         |
+| `text-verbose` | Хорошая       | Нет         | `--group-by` (по умолч.: file)       | Любой (код выхода)         |
+| `json`         | Нет           | Да          | Встроенная (по файлам)               | Скрипты                    |
+| `metrics`      | Нет           | Да          | Встроенная (по символам)             | Скрипты, дашборды          |
+| `checkstyle`   | Нет           | Да          | Встроенная (по файлам)               | Jenkins, SonarQube         |
+| `sarif`        | Нет           | Да          | Встроенная                           | GitHub, VS Code, JetBrains |
+| `gitlab`       | Нет           | Да          | Плоский список                       | GitLab MR виджет           |
+| `github`       | Нет           | Нет         | Плоский список                       | GitHub Actions аннотации   |
+| `health`       | Хорошая       | Нет         | Измерения здоровья                   | Быстрые проверки, CI       |
+| `html`         | Интерактивная | Нет         | Иерархия treemap                     | Отчёты, ревью              |
+| `suppressed`   | Нет           | Да          | Плоское мультимножество по механизму | Аудит подавления           |
 
 ### Коды выхода
 

@@ -3821,7 +3821,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotTreatABarePrefixAsAGroup
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExcludePathsAreIsolatedPerRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExcludePathsWithEmptyFilePassesThrough
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExclusionStatsAreEmptyBeforeFirstExecute
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExclusionStatsAreEmptyWhenNoRulesRan
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExclusionStatsAreResetOnEachExecuteCall
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExclusionStatsAreZeroWhenNoExclusionsConfigured
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExclusionStatsBreakDownByRuleNameSeparately
@@ -3841,6 +3841,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itGetActiveRulesReturnsOnlyEnabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itGetActiveRulesWithAGroupOnlySelector
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itGetTotalRulesCountIncludesDisabled
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itKeepsAPerRuleNamespaceExclusionCasualtyInProducedButNotInPublished
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itKeepsComputedFindingsWhenOnlyTheProducerRuleIsSelected
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itNamespaceExclusionDoesNotAffectOtherRules
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itNamespaceExclusionIncrementsStatsPerRule
@@ -4296,6 +4297,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerViolationIntegrationTest::goldenFileMatchesFullPolicyOutput
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerViolationIntegrationTest::ignoreCoverageModeSuppressesDiagnosticEvenWithUnmatchedEnds
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itChecksEveryGeneratedProjectionWithoutWriting
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itFailsWhenAPhpunitTestClassHasNoConfiguredSuite
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itPublishesOnlyPermanentExactCompositionBindingsForDiInternals
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itPublishesTheReviewedTopologyEvidenceAndRejectsProductionToTestImports
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itRejectsCompositionBindingsWhenOnlyIdentityEvidenceRemains
@@ -5637,6 +5639,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itMatchesStrictDescendantsOfAGroupSelector
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itReverseDoesNotMatch
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itWildcardMatchesAllRules
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdDirectivePatternSyncTest::itKeepsTheEnumerationScriptPatternInSyncWithTheExtractor
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itAcceptsNonemptyReasonAfterAsciiSeparator
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itAcceptsNonemptyReasonAfterExplicitSeparator
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itBacktickEscapedThresholdIsNotExtracted
@@ -5829,6 +5832,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itHasNoWarningsWhenOnlyErrors
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itHasWarningsWhenWarningFindingPresent
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itKeepsTheLeftRepositoryWhenTheRightRepositoryCannotMerge
+ - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itKeepsTheOtherSidesRuleExecutionWhenOneSideHasNone
+ - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesBothSidesOfRuleExecutionRatherThanKeepingOnlyOne
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesFindings
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesMetricsFromBothRepositories
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesSuppressionsForOverlappingFiles
@@ -6048,12 +6053,14 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ClasslessProducerOptionOwnerTest::anOwnerThatNamesNoProducerIsStillRefusedAsUnaddressable
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
- - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutionInstanceBetweenThePipelineAndTheOrchestrator
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfigurationIsolationTest::itKeepsDefaultsAfterFailedResolutionBeforeTheNextRunInTheSameContainer
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfigurationIsolationTest::itKeepsEveryOwnerStoreAtDefaultsAfterLateArchitectureFailureInTheCompiledContainer
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfigurationIsolationTest::itReplacesDynamicComputedChannelsBetweenRunsAndCommitsNothingFromAFailedRun
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfigurationIsolationTest::itRestoresDefaultOwnerConfigurationsAfterACustomRunInTheSameContainer
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\SuppressedFormatWiringTest::itKeepsShowSuppressedWorkingOnTextFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\SuppressedFormatWiringTest::itPopulatesTheLedgerHalvesWhenOnlyTheFormatFlagAsksForThem
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\SuppressedFormatWiringTest::itReportsTheSameCompositionWhetherTheFormatCameFromTheCliOrFromConfig
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itAcceptsAWildcardKeyWhoseOwnRuleReportsAtTheLevel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itAcceptsTheNamespaceLevelAndTheLevelFreeSpelling
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesALevelFreeKeyNamingAnotherRulesChannel
@@ -6378,9 +6385,35 @@ Available tests:
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesAReportNarrowedToAGitScopeContainingNothing
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesNamespaceExclusionCoveringTheNamespace
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesPathExclusionCoveringTheFile
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itAttributesTheBaselineMechanismToTheSubjectAndChannel
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itAttributesTheGitScopeMechanismToTheReference
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itAttributesTheNamespaceExclusionMechanismToTheMatchedPattern
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itAttributesThePathExclusionMechanismToTheMatchedPattern
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itAttributesTheRuleNamespaceExclusionLedgerHalfToTheProducer
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itAttributesTheRulePathExclusionLedgerHalfToTheProducer
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itAttributesTheSuppressionMechanismToTheDirectiveFileAndLine
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itReportsAGlobalExcludePathPatternThatMatchedNothingAsInert
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionCompositionBuilderTest::itReportsAPerRuleExcludePathPatternThatMatchedNothingAsInert
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest::itHasExactlySevenValues
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest::itKeepsTheLedgerHalvesDistinctFromEveryStageMechanism
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest::itMapsEveryStageToADistinctMechanism
  - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::anUnknownCodeKeepsTheHumanisedFallbackAndTheRepositoryUrl
  - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::everyChannelOfTheRealUniverseGetsItsProducersOwnDescriptorAndAWorkingHelpUri
  - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::everyConfiguredComputedMetricChannelAlsoGetsItsProducersOwnDescriptorAndAWorkingHelpUri
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Integration\SuppressionSnapshotFreshnessTest::itMatchesAFreshSelfAnalysisOfSrc
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itCountsEachSuppressedEntryUnderItsOwnMechanism
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itNamesItselfSuppressedAndDefaultsToNoGrouping
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itPublishesNeverMatchedSuppressorsSeparatelyFromSuppressedFindings
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itPublishesTheMultisetNoteSoCountsAreNotMisreadAsFindings
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressedFormatterTest::itTreatsAMissingCompositionAsEmptyRatherThanFailing
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itBuildsTheSameKeyForTwoDirectiveLocatorsAtDifferentLines
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itDistinguishesANullFileFromTheNoFilePlaceholderString
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itLeavesASuppressorWithoutAColonUnchanged
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itLeavesEveryOtherMechanismsSuppressorUnchanged
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersAnEmptyCompositionAsJustTheHeader
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersAnEmptyInertListAsJustTheHeader
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itRendersCompositionRowsInTheGivenOrderWithCounts
+ - Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit\SuppressionSnapshotKeyTest::itStripsTheLineFromASuppressionDirectiveLocator
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsEveryRequestFieldToDotProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsNamespaceFiltersToJsonProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"dot"
@@ -6414,6 +6447,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itSortsEdgesByFromThenTo
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itUsesSummaryByDefaultAndTheLastExplicitFormat
  - Qualimetrix\Tests\Unit\Analysis\RuleExecution\RuleExclusionStatsTest::itCarriesExcludedFindings
+ - Qualimetrix\Tests\Unit\Analysis\RuleExecution\RuleExclusionStatsTest::itHasExactlyTwoPerRuleExclusionHalves
  - Qualimetrix\Tests\Unit\Analysis\RuleExecution\RuleExclusionStatsTest::itIsEmptyByDefault
  - Qualimetrix\Tests\Unit\Analysis\RuleExecution\RuleExclusionStatsTest::itSumsNamespaceExclusionsAcrossRules
  - Qualimetrix\Tests\Unit\Analysis\RuleExecution\RuleExclusionStatsTest::itSumsPathExclusionsAcrossRules
@@ -6710,8 +6744,12 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsFalse"glob: no match"
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsFalse"partial prefix boundary"
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsFalse"sibling namespace"
- - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsFalseForEmptyNamespace
- - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsFalseForEmptyPrefixes
+ - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsNullForEmptyNamespace
+ - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsNullForEmptyPrefixes
+ - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsNullForZeroMatches
+ - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsTheFirstMatchedPatternWhenSeveralPrefixesMatch
+ - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsTheMatchedPatternForOneConfiguredPrefix
+ - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsTheNormalizedPatternWhenItHasATrailingBackslash
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsTrue"exact match"
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsTrue"glob: wildcard in middle"
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsTrue"glob: wildcard matches namespace"
@@ -6744,7 +6782,10 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsFalse"prefix: different directory"
  - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsFalse"prefix: empty pattern is skipped"
  - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsFalse"prefix: sibling file"
- - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsFalseForEmptyPatterns
+ - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsNullForEmptyPatterns
+ - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsNullForZeroMatches
+ - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsTheFirstMatchedPatternWhenSeveralPatternsMatch
+ - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsTheMatchedPatternForOneConfiguredPattern
  - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsTrue"glob: filename pattern"
  - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsTrue"glob: question mark wildcard"
  - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsTrue"glob: recursive pattern"

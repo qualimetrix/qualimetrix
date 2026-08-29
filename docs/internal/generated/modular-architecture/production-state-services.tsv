@@ -97,4 +97,4 @@ src/Infrastructure/Profiler/Profiler.php	Qualimetrix\Infrastructure\Profiler\Pro
 src/Infrastructure/Profiler/Span.php	Qualimetrix\Infrastructure\Profiler\Span	Infrastructure.Profiler	P8	"adapter session or cache"	-	children,endMemory,endTime,parent,peakMemory	-
 src/Reporting/Formatter/FormatterRegistry.php	Qualimetrix\Reporting\Formatter\FormatterRegistry	Reporting	P6	"runtime or composition registry"	-	formatters	register
 src/Reporting/Formatter/Html/HtmlTreeNode.php	Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode	Reporting	P6	"report projection or builder state"	-	children,debtMinutes,findings,metrics,name,path,type,violationCountTotal	-
-src/Reporting/ReportBuilder.php	Qualimetrix\Reporting\ReportBuilder	Reporting	P6	"report projection or builder state"	-	coverage,duration,filesAnalyzed,filesSkipped,findings,metrics,namespaceTree	addFinding,addFindings,build
+src/Reporting/ReportBuilder.php	Qualimetrix\Reporting\ReportBuilder	Reporting	P6	"report projection or builder state"	-	coverage,duration,filesAnalyzed,filesSkipped,findings,metrics,namespaceTree,suppressionComposition	addFinding,addFindings,build

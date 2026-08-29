@@ -1313,25 +1313,6 @@
       "closure_package": "P5",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpression": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricExpression.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.ComputedMetrics",
-      "visibility": "contract",
-      "closure_package": "P5",
-      "consumers": [
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\WeightedHealthFormula",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder",
-          "closes_in": null
-        }
-      ]
-    },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator": {
       "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php",
       "kind": "class",
@@ -1542,14 +1523,6 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\MetricLookup": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/MetricLookup.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.ComputedMetrics",
-      "visibility": "internal",
-      "closure_package": "P5",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator": {
       "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php",
       "kind": "class",
@@ -1563,6 +1536,33 @@
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpression": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricExpression.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "contract",
+      "closure_package": "P5",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\WeightedHealthFormula",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\MetricLookup": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/MetricLookup.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "closure_package": "P5",
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Finding\\ComputedMetricChannelFamily": {
       "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetricChannelFamily.php",
@@ -1591,16 +1591,16 @@
       "closure_package": "P5",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\WeightedHealthFormula": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/Health/Configuration/WeightedHealthFormula.php",
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Health/Configuration/HealthFormulaExcluder.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics.Health",
       "visibility": "internal",
       "closure_package": "P5",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/Health/Configuration/HealthFormulaExcluder.php",
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\WeightedHealthFormula": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Health/Configuration/WeightedHealthFormula.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics.Health",
       "visibility": "internal",
@@ -6374,6 +6374,16 @@
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector",
           "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionMechanism",
+          "closes_in": null
         }
       ]
     },
@@ -6737,6 +6747,21 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressedFinding",
           "closes_in": null
         }
       ]
@@ -7123,6 +7148,21 @@
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
+          "closes_in": null
         }
       ]
     },
@@ -7130,9 +7170,15 @@
       "path": "src/Analysis/Finding/Contract/RuleExclusionStats.php",
       "kind": "class",
       "owner": "Analysis.Finding",
-      "visibility": "internal",
+      "visibility": "contract",
       "closure_package": "P6-A",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
+          "closes_in": null
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\RuleExecutionInterface": {
       "path": "src/Analysis/Finding/Contract/RuleExecutionInterface.php",
@@ -7149,11 +7195,6 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
         },
         {
@@ -7174,6 +7215,35 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\RuleExecutionResult": {
+      "path": "src/Analysis/Finding/Contract/RuleExecutionResult.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "closure_package": "P6-A",
+      "consumers": [
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisResult",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
           "closes_in": null
         }
       ]
@@ -8223,6 +8293,20 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\ProducerName": {
+      "path": "src/Analysis/Finding/Contract/Rule/ProducerName.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "closure_package": "P6-A",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
+          "closes_in": null
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleChannelRegistryInterface": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleChannelRegistryInterface.php",
       "kind": "interface",
@@ -8267,20 +8351,6 @@
       "owner": "Analysis.Finding",
       "visibility": "contract",
       "closure_package": "P7",
-      "consumers": [
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
-          "closes_in": null
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\ProducerName": {
-      "path": "src/Analysis/Finding/Contract/Rule/ProducerName.php",
-      "kind": "class",
-      "owner": "Analysis.Finding",
-      "visibility": "contract",
-      "closure_package": "P6-A",
       "consumers": [
         {
           "owner": "Infrastructure.DependencyInjection",
@@ -15142,6 +15212,16 @@
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Filter\\FindingFilter",
           "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
+          "closes_in": null
         }
       ]
     },
@@ -15166,6 +15246,53 @@
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector",
           "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\Util\\PatternMatch": {
+      "path": "src/Core/Util/PatternMatch.php",
+      "kind": "class",
+      "owner": "Core.Neutral",
+      "visibility": "contract",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\PathExclusionFilter",
+          "closes_in": null,
+          "carrier_fqcn": "Qualimetrix\\Core\\Util\\PathMatcher"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Exclusion\\RulePathExclusionProvider",
+          "closes_in": null,
+          "carrier_fqcn": "Qualimetrix\\Core\\Util\\PathMatcher"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\NamespaceExclusionFilter",
+          "closes_in": null,
+          "carrier_fqcn": "Qualimetrix\\Core\\Util\\NamespaceMatcher"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Exclusion\\RuleNamespaceExclusionProvider",
+          "closes_in": null,
+          "carrier_fqcn": "Qualimetrix\\Core\\Util\\NamespaceMatcher"
         }
       ]
     },
@@ -15233,6 +15360,11 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\TextFormatter",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Suppressed\\SuppressedFormatter",
           "closes_in": null
         }
       ]
@@ -17652,6 +17784,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
+          "closes_in": null
         }
       ]
     },
@@ -17665,6 +17802,11 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
           "closes_in": null
         }
       ]
@@ -17687,6 +17829,68 @@
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Reporting\\FindingProjection\\InertSuppressor": {
+      "path": "src/Reporting/FindingProjection/InertSuppressor.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\FindingProjection\\LedgerHit": {
+      "path": "src/Reporting/FindingProjection/LedgerHit.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor": {
+      "path": "src/Reporting/FindingProjection/RuleExclusionLedgerAttributor.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\FindingProjection\\SuppressedFinding": {
+      "path": "src/Reporting/FindingProjection/SuppressedFinding.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\FindingProjection\\SuppressionComposition": {
+      "path": "src/Reporting/FindingProjection/SuppressionComposition.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder": {
+      "path": "src/Reporting/FindingProjection/SuppressionCompositionBuilder.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "contract",
+      "closure_package": "P6-A",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Reporting\\FindingProjection\\SuppressionMechanism": {
+      "path": "src/Reporting/FindingProjection/SuppressionMechanism.php",
+      "kind": "enum",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
     },
     "Qualimetrix\\Reporting\\FormatterContext": {
       "path": "src/Reporting/FormatterContext.php",
@@ -17994,6 +18198,14 @@
       "owner": "Reporting",
       "visibility": "internal",
       "closure_package": "P6",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\Formatter\\Suppressed\\SuppressedFormatter": {
+      "path": "src/Reporting/Formatter/Suppressed/SuppressedFormatter.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "closure_package": "P6-A",
       "consumers": []
     },
     "Qualimetrix\\Reporting\\Formatter\\TextFormatter": {

@@ -155,6 +155,7 @@ Pick the output format that works best with your CI system:
 | SARIF      | `--format=sarif`      | GitHub, VS Code, security dashboards    |
 | GitHub     | `--format=github`     | GitHub Actions inline annotations       |
 | GitLab     | `--format=gitlab`     | GitLab Code Quality widget              |
+| Suppressed | `--format=suppressed` | Auditing what a run held back and why   |
 
 ### 4. Handle Exit Codes
 

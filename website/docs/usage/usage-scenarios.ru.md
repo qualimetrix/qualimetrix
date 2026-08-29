@@ -156,3 +156,4 @@ vendor/bin/qmx check src/ --report=git:main..HEAD --format=github --no-progress
 | Pre-commit       | `text` (по умолчанию)          | Автоматически через `hook:install`                              |
 | С AI-ассистентом | `text` или `json`              | `--report=git:main..HEAD`                                       |
 | Code review      | `github`, `sarif` или `gitlab` | `--report=git:main..HEAD`                                       |
+| Аудит подавления | `suppressed`                   | См. [«Форматы вывода»](output-formats.ru.md#suppressed)         |

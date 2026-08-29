@@ -27,7 +27,7 @@ vendor/bin/qmx graph:export src/ -o graph.dot          # dependency graph
 vendor/bin/qmx hook:install                            # pre-commit hook
 ```
 
-Output formats: `summary` (default), `text`, `metrics`, `json`, `health` (HTML), `sarif`, `checkstyle`, `gitlab`, `github`.
+Output formats: `summary` (default), `text`, `metrics`, `json`, `health` (HTML), `sarif`, `checkstyle`, `gitlab`, `github`, `suppressed` (machine-readable composition of what was suppressed and why).
 
 Rule groups: `complexity`, `coupling`, `size`, `design`, `maintainability`, `cohesion`, `architecture`, `duplication`, `code-smell`, `security`.
 
