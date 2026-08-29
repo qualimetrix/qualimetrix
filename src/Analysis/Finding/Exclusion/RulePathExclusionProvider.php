@@ -36,7 +36,7 @@ final class RulePathExclusionProvider
             return false;
         }
 
-        return $this->matchers[$ruleName]->matches($filePath);
+        return $this->matchers[$ruleName]->matches($filePath) !== null;
     }
 
     public function reset(): void

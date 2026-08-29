@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Util;
 
 /**
- * Matches namespaces against namespace patterns.
+ * Matches namespaces against namespace patterns, naming the pattern that fired.
  *
  * Trailing backslashes are cosmetic: `App\Entity\` and `App\Entity` are the
  * same pattern. Normalization happens inside {@see matchesSingle()} so every
@@ -37,21 +37,25 @@ final readonly class NamespaceMatcher
     ) {}
 
     /**
-     * Returns true if the namespace matches at least one pattern.
+     * Returns the pattern that matched the namespace, or `null` if none did.
+     *
+     * When several configured patterns match, the first one in configuration
+     * order is returned — the same order the internal scan already used to
+     * short-circuit on the first hit.
      */
-    public function matches(string $namespace): bool
+    public function matches(string $namespace): ?PatternMatch
     {
         if ($namespace === '' || $this->patterns === []) {
-            return false;
+            return null;
         }
 
         foreach ($this->patterns as $pattern) {
             if (self::matchesSingle($pattern, $namespace)) {
-                return true;
+                return new PatternMatch(rtrim($pattern, '\\'));
             }
         }
 
-        return false;
+        return null;
     }
 
     /**

@@ -180,7 +180,7 @@ final class RuleNamespaceExclusionProvider
 
     public function isExcluded(string $ruleName, string $namespace): bool
     {
-        return isset($this->matchers[$ruleName]) && $this->matchers[$ruleName]->matches($namespace);
+        return isset($this->matchers[$ruleName]) && $this->matchers[$ruleName]->matches($namespace) !== null;
     }
 
     /**
@@ -201,7 +201,7 @@ final class RuleNamespaceExclusionProvider
         foreach ($this->channelMatchers[$ruleName] ?? [] as $selector => $matcher) {
             if (
                 ChannelLevelSelector::tryParse($selector)?->matches($channel->code, SymbolLevel::Namespace_) === true
-                && $matcher->matches($namespace)
+                && $matcher->matches($namespace) !== null
             ) {
                 return true;
             }

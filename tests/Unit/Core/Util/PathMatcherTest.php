@@ -10,8 +10,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Util\PathMatcher;
+use Qualimetrix\Core\Util\PatternMatch;
 
 #[CoversClass(PathMatcher::class)]
+#[CoversClass(PatternMatch::class)]
 final class PathMatcherTest extends TestCase
 {
     #[Test]
@@ -31,11 +33,45 @@ final class PathMatcherTest extends TestCase
     }
 
     #[Test]
-    public function itMatchesReturnsFalseForEmptyPatterns(): void
+    public function itMatchesReturnsNullForEmptyPatterns(): void
     {
         $matcher = new PathMatcher([]);
 
-        self::assertFalse($matcher->matches(RelativePath::fromString('src/Entity/User.php')));
+        self::assertNull($matcher->matches(RelativePath::fromString('src/Entity/User.php')));
+    }
+
+    #[Test]
+    public function itMatchesReturnsNullForZeroMatches(): void
+    {
+        $matcher = new PathMatcher(['src/DTO']);
+
+        self::assertNull($matcher->matches(RelativePath::fromString('src/Entity/User.php')));
+    }
+
+    #[Test]
+    public function itMatchesReturnsTheMatchedPatternForOneConfiguredPattern(): void
+    {
+        $matcher = new PathMatcher(['src/Entity']);
+
+        $result = $matcher->matches(RelativePath::fromString('src/Entity/User.php'));
+
+        self::assertInstanceOf(PatternMatch::class, $result);
+        self::assertSame('src/Entity', $result->pattern);
+    }
+
+    #[Test]
+    public function itMatchesReturnsTheFirstMatchedPatternWhenSeveralPatternsMatch(): void
+    {
+        $matcher = new PathMatcher(['src/Entity/*.php', 'src/Entity']);
+
+        $result = $matcher->matches(RelativePath::fromString('src/Entity/User.php'));
+
+        self::assertInstanceOf(PatternMatch::class, $result);
+        self::assertSame(
+            'src/Entity/*.php',
+            $result->pattern,
+            'The first pattern in configuration order must win when several patterns match.',
+        );
     }
 
     /**
@@ -47,7 +83,7 @@ final class PathMatcherTest extends TestCase
     {
         $matcher = new PathMatcher($patterns);
 
-        self::assertTrue($matcher->matches(RelativePath::fromString($filePath)), $description);
+        self::assertNotNull($matcher->matches(RelativePath::fromString($filePath)), $description);
     }
 
     /**
@@ -59,7 +95,7 @@ final class PathMatcherTest extends TestCase
     {
         $matcher = new PathMatcher($patterns);
 
-        self::assertFalse($matcher->matches(RelativePath::fromString($filePath)), $description);
+        self::assertNull($matcher->matches(RelativePath::fromString($filePath)), $description);
     }
 
     /**

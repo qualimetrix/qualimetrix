@@ -46,6 +46,6 @@ final readonly class PathExclusionFilter implements FindingFilterInterface
             return true;
         }
 
-        return !$this->pathMatcher->matches($file);
+        return $this->pathMatcher->matches($file) === null;
     }
 }

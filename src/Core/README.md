@@ -48,6 +48,7 @@ Core/
 ├── Util/
 │   ├── NamespaceMatcher.php               # Glob pattern matching for namespaces
 │   ├── PathMatcher.php                    # Glob pattern matching for file paths
+│   ├── PatternMatch.php                   # The pattern a matcher's matches() fired on
 │   └── StringSet.php                      # Immutable set of unique strings
 └── Version.php                            # Package version at runtime
 ```
@@ -707,6 +708,12 @@ An immutable set of unique strings with O(1) lookups. Implements `Countable` and
 - `diff(self $other): self` — set difference
 - `fromArray(array $values): self` — create from array (static)
 
+### PatternMatch
+
+The pattern that fired, returned by `PathMatcher::matches()` and `NamespaceMatcher::matches()` alongside the yes/no answer so a caller never has to re-scan the pattern list to learn what matched.
+
+**Fields:** `pattern: string`
+
 ### PathMatcher
 
 Matches file paths against patterns. Supports two modes per pattern: prefix matching (no glob characters — `src/Entity` matches all files under it) and glob matching (with `*`, `?`, `[` — `src/Metrics/*Visitor.php`). Used for `exclude_paths` configuration.
@@ -714,7 +721,7 @@ Matches file paths against patterns. Supports two modes per pattern: prefix matc
 **Constructor:** `__construct(list<string> $patterns)`
 
 **Methods:**
-- `matches(string $filePath): bool` — whether path matches any pattern
+- `matches(RelativePath $filePath): ?PatternMatch` — the pattern that matched, or `null`; when several patterns match, the first one in configuration order wins
 - `isEmpty(): bool` — whether no patterns are configured
 
 ### NamespaceMatcher
@@ -724,7 +731,9 @@ Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but u
 **Constructor:** `__construct(list<string> $patterns)`
 
 **Methods:**
-- `matches(string $namespace): bool` — whether namespace matches any pattern
+- `matches(string $namespace): ?PatternMatch` — the pattern that matched, or `null`; when several patterns match, the first one in configuration order wins (returned with its trailing `\` stripped)
+- `matchesSingle(string $pattern, string $namespace): bool` (static) — single-pattern primitive other Core utilities delegate to
+- `isGlob(string $pattern): bool` (static)
 - `isEmpty(): bool` — whether no patterns are configured
 
 ---

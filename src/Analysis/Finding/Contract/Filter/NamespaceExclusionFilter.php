@@ -49,6 +49,6 @@ final readonly class NamespaceExclusionFilter implements FindingFilterInterface
             ?? $finding->subject->toSymbolPath()->namespace
             ?? '';
 
-        return !$this->namespaceMatcher->matches($namespace);
+        return $this->namespaceMatcher->matches($namespace) === null;
     }
 }
