@@ -57,7 +57,11 @@ final class RuleExecutorTest extends TestCase
 
         $context = $this->createMinimalContext();
 
-        self::assertSame([], $executor->execute($context));
+        $result = $executor->execute($context);
+
+        self::assertSame([], $result->published);
+        self::assertSame([], $result->produced);
+        self::assertTrue($result->exclusions->isEmpty());
         self::assertSame([], self::activeRules($executor));
         self::assertCount(0, $executor->allRules());
     }
@@ -79,12 +83,12 @@ final class RuleExecutorTest extends TestCase
     }
 
     #[Test]
-    public function itExclusionStatsAreEmptyBeforeFirstExecute(): void
+    public function itExclusionStatsAreEmptyWhenNoRulesRan(): void
     {
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([], $provider);
 
-        $stats = $executor->exclusionStats();
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
         self::assertTrue($stats->isEmpty());
         self::assertSame(0, $stats->totalNamespaceExclusions());
@@ -101,8 +105,9 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $provider);
 
-        $findings = $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $result = $executor->execute($this->createMinimalContext());
+        $findings = $result->published;
+        $stats = $result->exclusions;
 
         self::assertCount(1, $findings);
         self::assertTrue($stats->isEmpty());
@@ -124,8 +129,9 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $findings = $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $result = $executor->execute($this->createMinimalContext());
+        $findings = $result->published;
+        $stats = $result->exclusions;
 
         self::assertCount(1, $findings);
         self::assertFalse($stats->isEmpty());
@@ -151,8 +157,9 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $findings = $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $result = $executor->execute($this->createMinimalContext());
+        $findings = $result->published;
+        $stats = $result->exclusions;
 
         self::assertCount(1, $findings);
         self::assertSame(['rule1' => 1], $stats->pathExclusionsByRule);
@@ -178,8 +185,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule1, $rule2], $registry);
 
-        $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
         self::assertSame(['rule1' => 1, 'rule2' => 1], $stats->namespaceExclusionsByRule);
         self::assertSame(2, $stats->totalNamespaceExclusions());
@@ -201,12 +207,12 @@ final class RuleExecutorTest extends TestCase
         // Two consecutive execute() calls on the same executor: if the running
         // executor accumulated counts instead of resetting them, the second
         // call would report 2 instead of 1.
-        $executor->execute($this->createMinimalContext());
-        self::assertSame(1, $executor->exclusionStats()->totalNamespaceExclusions());
+        $first = $executor->execute($this->createMinimalContext());
+        self::assertSame(1, $first->exclusions->totalNamespaceExclusions());
 
-        $executor->execute($this->createMinimalContext());
-        self::assertSame(1, $executor->exclusionStats()->totalNamespaceExclusions());
-        self::assertCount(1, $executor->exclusionStats()->excludedFindings);
+        $second = $executor->execute($this->createMinimalContext());
+        self::assertSame(1, $second->exclusions->totalNamespaceExclusions());
+        self::assertCount(1, $second->exclusions->excludedFindings);
     }
 
     #[Test]
@@ -222,7 +228,7 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         self::assertCount(2, $findings);
         self::assertSame($finding1, $findings[0]);
@@ -244,7 +250,7 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         self::assertCount(1, $findings);
         self::assertSame($finding2, $findings[0]);
@@ -266,7 +272,7 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         self::assertCount(2, $findings);
         self::assertSame($finding1, $findings[0]);
@@ -317,7 +323,7 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution($generator, $provider);
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         self::assertCount(1, $findings);
         self::assertCount(1, $executor->allRules());
@@ -337,7 +343,7 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         self::assertSame([], $findings);
         self::assertSame([], self::activeRules($executor));
@@ -362,7 +368,7 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         self::assertCount(1, $findings);
         self::assertSame('size.method-count', $findings[0]->ruleName);
@@ -389,7 +395,7 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         self::assertCount(1, $findings);
         self::assertSame($methodFinding, $findings[0]);
@@ -434,7 +440,7 @@ final class RuleExecutorTest extends TestCase
             ruleSelector: $this->computedRuleSelector(),
         );
 
-        self::assertSame([$finding], $executor->execute($this->createMinimalContext()));
+        self::assertSame([$finding], $executor->execute($this->createMinimalContext())->published);
     }
 
     #[Test]
@@ -450,7 +456,7 @@ final class RuleExecutorTest extends TestCase
             ruleSelector: $this->computedRuleSelector(),
         );
 
-        self::assertSame([$complexity], $executor->execute($this->createMinimalContext()));
+        self::assertSame([$complexity], $executor->execute($this->createMinimalContext())->published);
         self::assertSame(['computed.health'], array_map(
             static fn($metadata): string => $metadata->name,
             self::activeRules($executor),
@@ -478,7 +484,7 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         self::assertCount(2, $findings);
         self::assertContains($methodFinding, $findings);
@@ -506,7 +512,7 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         // Only method level should pass through
         self::assertCount(1, $findings);
@@ -531,7 +537,7 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         self::assertSame([], $findings);
     }
@@ -569,7 +575,7 @@ final class RuleExecutorTest extends TestCase
         );
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         self::assertCount(1, $findings);
         self::assertSame($methodFinding, $findings[0]);
@@ -592,10 +598,42 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $findings = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
         self::assertCount(1, $findings);
         self::assertSame($includedFinding, $findings[0]);
+    }
+
+    /**
+     * `produced()` must hold a per-rule `exclude_namespaces` casualty that
+     * `published()` drops — the Ш5e2b precedent (`AUDIT.md`) where an audit
+     * comparing `execute()`'s return value called four such directives
+     * "not deciding anything" because nothing recorded what the rule found
+     * before the ledger ran.
+     *
+     * Killed by collecting `produced` from {@see RuleExecution::published()}'s
+     * `$kept` accumulator instead of from the pre-ledger `$ruleFindings`: the
+     * excluded finding then vanishes from `produced()` too and this assertion
+     * goes red.
+     */
+    #[Test]
+    public function itKeepsAPerRuleNamespaceExclusionCasualtyInProducedButNotInPublished(): void
+    {
+        $excludedFinding = $this->createFindingWithNamespace('rule1', 'App\\Tests');
+        $includedFinding = $this->createFindingWithNamespace('rule1', 'App\\Core');
+
+        $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $executor = $this->createExecution([$rule], $registry);
+
+        $result = $executor->execute($this->createMinimalContext());
+
+        self::assertSame([$excludedFinding, $includedFinding], $result->produced);
+        self::assertSame([$includedFinding], $result->published);
     }
 
     #[Test]
@@ -613,7 +651,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $findings = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
         self::assertCount(1, $findings);
         self::assertSame($includedFinding, $findings[0]);
@@ -632,7 +670,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $findings = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
         self::assertCount(1, $findings);
     }
@@ -650,7 +688,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $findings = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
         self::assertCount(1, $findings);
     }
@@ -671,7 +709,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule1, $rule2], $registry);
 
-        $findings = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
         self::assertCount(1, $findings);
         self::assertSame($v2, $findings[0]);
@@ -706,12 +744,12 @@ final class RuleExecutorTest extends TestCase
             $this->computedRuleSelector(),
         );
 
-        $findings = $executor->execute($this->createMinimalContext());
+        $result = $executor->execute($this->createMinimalContext());
 
-        self::assertSame([$coupling], $findings);
+        self::assertSame([$coupling], $result->published);
         self::assertSame(
             [$cohesion],
-            $executor->exclusionStats()->excludedFindings,
+            $result->exclusions->excludedFindings,
         );
     }
 
@@ -748,7 +786,7 @@ final class RuleExecutorTest extends TestCase
             $this->computedRuleSelector(),
         );
 
-        self::assertSame([$classCohesion], $executor->execute($this->createMinimalContext()));
+        self::assertSame([$classCohesion], $executor->execute($this->createMinimalContext())->published);
     }
 
     #[Test]
@@ -780,10 +818,12 @@ final class RuleExecutorTest extends TestCase
             $this->computedRuleSelector(),
         );
 
-        self::assertSame([$projectCohesion], $executor->execute($this->createMinimalContext()));
+        $result = $executor->execute($this->createMinimalContext());
+
+        self::assertSame([$projectCohesion], $result->published);
         self::assertSame(
             [$namespaceCohesion],
-            $executor->exclusionStats()->excludedFindings,
+            $result->exclusions->excludedFindings,
         );
     }
 
@@ -804,8 +844,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
         // Counts are collected regardless of the capture toggle.
         self::assertSame(['rule1' => 1], $stats->namespaceExclusionsByRule);
@@ -829,8 +868,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
         self::assertSame(['rule1' => 1], $stats->pathExclusionsByRule);
         self::assertSame(1, $stats->totalPathExclusions());
@@ -852,8 +890,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
         self::assertSame([$excludedFinding], $stats->excludedFindings);
     }
@@ -1021,7 +1058,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $findings = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
         self::assertCount(1, $findings);
         self::assertSame($includedFinding, $findings[0]);
@@ -1043,7 +1080,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule1, $rule2], $registry);
 
-        $findings = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
         self::assertCount(1, $findings);
         self::assertSame($v2, $findings[0]);
@@ -1063,7 +1100,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $findings = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
         self::assertCount(1, $findings);
         self::assertSame($finding, $findings[0]);

@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -34,6 +35,25 @@ final readonly class AnalysisResult
      *                                                                   `baseline:explain`) can read
      *                                                                   the annotation a symbol carried
      *                                                                   in *this* run
+     * @param ?RuleExecutionResult $ruleExecution What this run's rule execution produced before the per-rule
+     *                                            exclusion ledger and channel selection ran, what it published
+     *                                            after, and the exclusion tally — the single source a consumer
+     *                                            outside rule execution (e.g. `FindingFilterOrchestrator`, or a
+     *                                            future audit comparing produced against published) reads
+     *                                            instead of a second, separately mutable accessor. `null` only
+     *                                            for values built outside a real pipeline run.
+     *
+     * @qmx-threshold code-smell.constructor-overinjection warning=9 error=9 -- Transport VO for one pipeline
+     *                run, carrying three subjects with no value of their own yet: what the run measured
+     *                (metrics, coverage, namespaceTree, duration), what controls were in force going in
+     *                (suppressions, thresholdOverrides), and what rules said coming out (findings,
+     *                ruleExecution) — the last pair already overlaps, since `findings` is exactly
+     *                `ruleExecution`'s published half plus the directive-usage audit. The eight-parameter
+     *                count is the cost of that unsplit shape, not eight independent facts; splitting by
+     *                subject is the real fix and is out of scope here because it moves every consumer that
+     *                reaches this VO, not only this constructor.
+     * @qmx-threshold code-smell.long-parameter-list warning=9 error=9 -- Same VO, same unsplit shape; see the
+     *                constructor-overinjection annotation above.
      */
     public function __construct(
         public array $findings,
@@ -43,6 +63,7 @@ final readonly class AnalysisResult
         public array $suppressions = [],
         public ?NamespaceTree $namespaceTree = null,
         public array $thresholdOverrides = [],
+        public ?RuleExecutionResult $ruleExecution = null,
     ) {
         $this->coverage = $coverage;
         $this->filesAnalyzed = $this->coverage->analyzedFilesCount();
@@ -99,6 +120,15 @@ final readonly class AnalysisResult
             $mergedThresholdOverrides[$file] = array_merge($mergedThresholdOverrides[$file] ?? [], $list);
         }
 
+        // Neither side's rule execution is dropped when both are present: a
+        // silent "take the first" would leave $findings as the union of both
+        // runs while $ruleExecution answered for only one of them.
+        $mergedRuleExecution = match (true) {
+            $this->ruleExecution === null => $other->ruleExecution,
+            $other->ruleExecution === null => $this->ruleExecution,
+            default => $this->ruleExecution->merge($other->ruleExecution),
+        };
+
         return new self(
             findings: [...$this->findings, ...$other->findings],
             duration: max($this->duration, $other->duration),
@@ -107,6 +137,7 @@ final readonly class AnalysisResult
             suppressions: $mergedSuppressions,
             namespaceTree: $this->namespaceTree ?? $other->namespaceTree,
             thresholdOverrides: $mergedThresholdOverrides,
+            ruleExecution: $mergedRuleExecution,
         );
     }
 

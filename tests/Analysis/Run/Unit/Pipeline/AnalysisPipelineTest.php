@@ -17,7 +17,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
@@ -154,7 +156,7 @@ final class AnalysisPipelineTest extends TestCase
         $repositoryFactory->method('create')->willReturn($repository);
 
         $rules = self::createStub(RuleExecutionInterface::class);
-        $rules->method('execute')->willReturn([]);
+        $rules->method('execute')->willReturn(new RuleExecutionResult([], [], new RuleExclusionStats()));
         $rules->method('allRules')->willReturn([]);
 
         return new AnalysisPipeline(

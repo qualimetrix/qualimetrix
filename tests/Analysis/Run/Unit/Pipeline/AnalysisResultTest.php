@@ -14,6 +14,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -306,6 +308,79 @@ final class AnalysisResultTest extends TestCase
 
         self::assertCount(1, $merged->thresholdOverrides['only1.php']);
         self::assertCount(1, $merged->thresholdOverrides['only2.php']);
+    }
+
+    /**
+     * A silent "take the first side" would leave `$findings` as the union of
+     * both runs while `$ruleExecution` answered for only one of them —
+     * internally inconsistent in a way nothing downstream could detect.
+     */
+    #[Test]
+    public function itMergesBothSidesOfRuleExecutionRatherThanKeepingOnlyOne(): void
+    {
+        $left = $this->createFinding(Severity::Warning);
+        $right = $this->createFinding(Severity::Error);
+
+        $result1 = new AnalysisResult(
+            findings: [$left],
+            duration: 0.1,
+            metrics: self::createStub(MetricRepositoryInterface::class),
+            coverage: self::coverage(1),
+            ruleExecution: new RuleExecutionResult(
+                produced: [$left],
+                published: [$left],
+                exclusions: new RuleExclusionStats(namespaceExclusionsByRule: ['rule1' => 1]),
+            ),
+        );
+
+        $result2 = new AnalysisResult(
+            findings: [$right],
+            duration: 0.1,
+            metrics: self::createStub(MetricRepositoryInterface::class),
+            coverage: self::coverage(1, prefix: 'other'),
+            ruleExecution: new RuleExecutionResult(
+                produced: [$right],
+                published: [$right],
+                exclusions: new RuleExclusionStats(pathExclusionsByRule: ['rule2' => 2]),
+            ),
+        );
+
+        $merged = $result1->merge($result2);
+
+        self::assertNotNull($merged->ruleExecution);
+        self::assertSame([$left, $right], $merged->ruleExecution->produced);
+        self::assertSame([$left, $right], $merged->ruleExecution->published);
+        self::assertSame(['rule1' => 1], $merged->ruleExecution->exclusions->namespaceExclusionsByRule);
+        self::assertSame(['rule2' => 2], $merged->ruleExecution->exclusions->pathExclusionsByRule);
+    }
+
+    #[Test]
+    public function itKeepsTheOtherSidesRuleExecutionWhenOneSideHasNone(): void
+    {
+        $finding = $this->createFinding(Severity::Warning);
+        $ruleExecution = new RuleExecutionResult(
+            produced: [$finding],
+            published: [$finding],
+            exclusions: new RuleExclusionStats(),
+        );
+
+        $withRuleExecution = new AnalysisResult(
+            findings: [$finding],
+            duration: 0.1,
+            metrics: self::createStub(MetricRepositoryInterface::class),
+            coverage: self::coverage(1),
+            ruleExecution: $ruleExecution,
+        );
+
+        $withoutRuleExecution = new AnalysisResult(
+            findings: [],
+            duration: 0.1,
+            metrics: self::createStub(MetricRepositoryInterface::class),
+            coverage: self::coverage(1, prefix: 'other'),
+        );
+
+        self::assertSame($ruleExecution, $withRuleExecution->merge($withoutRuleExecution)->ruleExecution);
+        self::assertSame($ruleExecution, $withoutRuleExecution->merge($withRuleExecution)->ruleExecution);
     }
 
     #[Test]

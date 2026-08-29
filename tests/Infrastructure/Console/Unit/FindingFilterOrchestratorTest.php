@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
@@ -44,7 +44,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Verifies that per-rule `exclude_namespaces`, `exclude_namespace_channels`,
  * and `exclude_paths` suppression
- * (RuleExecution::exclusionStats()) is surfaced by the orchestrator's
+ * ({@see RuleExecutionResult::exclusions()}, carried on {@see AnalysisResult}) is
+ * surfaced by the orchestrator's
  * `-v` and `--show-suppressed` output, mirroring the existing global-filter
  * reporting (path/namespace exclusion counters).
  */
@@ -66,7 +67,7 @@ final class FindingFilterOrchestratorTest extends TestCase
     #[Test]
     public function itPrintsNothingAboutRuleExclusionsWhenStatsAreEmptyAndNotVerbose(): void
     {
-        $orchestrator = $this->createOrchestrator(new RuleExclusionStats());
+        $orchestrator = $this->createOrchestrator();
 
         $output = new BufferedOutput();
         $this->filterAndReport(
@@ -86,12 +87,12 @@ final class FindingFilterOrchestratorTest extends TestCase
         $stats = new RuleExclusionStats(
             namespaceExclusionsByRule: ['complexity.cyclomatic' => 2],
         );
-        $orchestrator = $this->createOrchestrator($stats);
+        $orchestrator = $this->createOrchestrator();
 
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
         $this->filterAndReport(
             $orchestrator,
-            $this->createAnalysisResult(),
+            $this->createAnalysisResult(stats: $stats),
             $this->createInput(),
             self::diagnosticConsole($output),
             $this->createScopeResolution(),
@@ -111,12 +112,12 @@ final class FindingFilterOrchestratorTest extends TestCase
         $stats = new RuleExclusionStats(
             pathExclusionsByRule: ['coupling.cbo' => 3],
         );
-        $orchestrator = $this->createOrchestrator($stats);
+        $orchestrator = $this->createOrchestrator();
 
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
         $this->filterAndReport(
             $orchestrator,
-            $this->createAnalysisResult(),
+            $this->createAnalysisResult(stats: $stats),
             $this->createInput(),
             self::diagnosticConsole($output),
             $this->createScopeResolution(),
@@ -131,12 +132,12 @@ final class FindingFilterOrchestratorTest extends TestCase
     public function itDoesNotPrintRuleExclusionCountsWithoutVerboseFlag(): void
     {
         $stats = new RuleExclusionStats(namespaceExclusionsByRule: ['rule1' => 1]);
-        $orchestrator = $this->createOrchestrator($stats);
+        $orchestrator = $this->createOrchestrator();
 
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
         $this->filterAndReport(
             $orchestrator,
-            $this->createAnalysisResult(),
+            $this->createAnalysisResult(stats: $stats),
             $this->createInput(),
             self::diagnosticConsole($output),
             $this->createScopeResolution(),
@@ -164,12 +165,12 @@ final class FindingFilterOrchestratorTest extends TestCase
             namespaceExclusionsByRule: ['complexity.cyclomatic' => 1],
             excludedFindings: [$finding],
         );
-        $orchestrator = $this->createOrchestrator($stats);
+        $orchestrator = $this->createOrchestrator();
 
         $output = new BufferedOutput();
         $this->filterAndReport(
             $orchestrator,
-            $this->createAnalysisResult(),
+            $this->createAnalysisResult(stats: $stats),
             $this->createInput(['--show-suppressed' => true]),
             self::diagnosticConsole($output),
             $this->createScopeResolution(),
@@ -204,12 +205,12 @@ final class FindingFilterOrchestratorTest extends TestCase
             namespaceExclusionsByRule: ['complexity.cyclomatic' => 1],
             excludedFindings: [$finding],
         );
-        $orchestrator = $this->createOrchestrator($stats);
+        $orchestrator = $this->createOrchestrator();
 
         $output = new BufferedOutput();
         $this->filterAndReport(
             $orchestrator,
-            $this->createAnalysisResult(),
+            $this->createAnalysisResult(stats: $stats),
             $this->createInput(),
             self::diagnosticConsole($output),
             $this->createScopeResolution(),
@@ -240,7 +241,7 @@ final class FindingFilterOrchestratorTest extends TestCase
 
         $output = new BufferedOutput();
         $result = $this->filterAndReport(
-            $this->createOrchestrator(new RuleExclusionStats()),
+            $this->createOrchestrator(),
             $this->createAnalysisResult([$stillFiring]),
             $this->createInput(['--baseline' => $baselinePath]),
             self::diagnosticConsole($output),
@@ -272,7 +273,7 @@ final class FindingFilterOrchestratorTest extends TestCase
 
         $output = new BufferedOutput();
         $this->filterAndReport(
-            $this->createOrchestrator(new RuleExclusionStats()),
+            $this->createOrchestrator(),
             $this->createAnalysisResult([$stillFiring]),
             $this->createInput(['--baseline' => $baselinePath]),
             self::diagnosticConsole($output),
@@ -307,7 +308,7 @@ final class FindingFilterOrchestratorTest extends TestCase
 
         $output = new BufferedOutput();
         $this->filterAndReport(
-            $this->createOrchestrator(new RuleExclusionStats()),
+            $this->createOrchestrator(),
             $this->createAnalysisResult([$stillFiring]),
             $this->createInput(['--baseline' => $baselinePath, '--show-resolved' => true]),
             self::diagnosticConsole($output),
@@ -372,7 +373,7 @@ final class FindingFilterOrchestratorTest extends TestCase
         );
     }
 
-    private function createOrchestrator(RuleExclusionStats $stats): FindingFilterOrchestrator
+    private function createOrchestrator(): FindingFilterOrchestrator
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
 
@@ -388,10 +389,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             },
         );
 
-        $ruleExecutor = self::createStub(RuleExecutionInterface::class);
-        $ruleExecutor->method('exclusionStats')->willReturn($stats);
-
-        return new FindingFilterOrchestrator($pipeline, $ruleExecutor);
+        return new FindingFilterOrchestrator($pipeline);
     }
 
     private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput
@@ -423,7 +421,7 @@ final class FindingFilterOrchestratorTest extends TestCase
     /**
      * @param list<Finding> $findings
      */
-    private function createAnalysisResult(array $findings = []): AnalysisResult
+    private function createAnalysisResult(array $findings = [], RuleExclusionStats $stats = new RuleExclusionStats()): AnalysisResult
     {
         $repository = self::createStub(MetricRepositoryInterface::class);
 
@@ -432,6 +430,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             duration: 0.1,
             metrics: $repository,
             coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+            ruleExecution: new RuleExecutionResult($findings, $findings, $stats),
         );
     }
 

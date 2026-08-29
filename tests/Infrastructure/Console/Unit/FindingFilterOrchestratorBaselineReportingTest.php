@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
@@ -318,10 +318,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             },
         );
 
-        $ruleExecutor = self::createStub(RuleExecutionInterface::class);
-        $ruleExecutor->method('exclusionStats')->willReturn(new RuleExclusionStats());
-
-        return new FindingFilterOrchestrator($pipeline, $ruleExecutor);
+        return new FindingFilterOrchestrator($pipeline);
     }
 
     private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput
@@ -362,6 +359,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             duration: 0.1,
             metrics: $repository,
             coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+            ruleExecution: new RuleExecutionResult($findings, $findings, new RuleExclusionStats()),
         );
     }
 

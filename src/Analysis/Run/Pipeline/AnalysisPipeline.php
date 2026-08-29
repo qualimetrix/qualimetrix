@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
@@ -172,7 +173,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $this->logger->debug('Starting analysis phase');
 
         $profiler->start('rules', 'pipeline');
-        $findings = $this->executeRulesForRun($repository, $graph, $namespaceTree, $collectionResult);
+        $ruleExecution = $this->executeRulesForRun($repository, $graph, $namespaceTree, $collectionResult);
+        $findings = $this->reportedFindings($ruleExecution);
         $profiler->stop('rules');
 
         $analysisTime = microtime(true) - $phaseStartTime;
@@ -209,6 +211,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             suppressions: $collectionResult->suppressions,
             namespaceTree: $namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,
+            ruleExecution: $ruleExecution,
         );
     }
 
@@ -220,26 +223,38 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         return $this->graphBuilder->build($dependencies, self::collectLogicalClassPaths($repository));
     }
 
-    /** @return list<Finding> */
     private function executeRulesForRun(
         MetricRepositoryInterface $repository,
         DependencyGraphInterface $graph,
         NamespaceTree $namespaceTree,
         CollectionPhaseOutput $collectionResult,
-    ): array {
+    ): RuleExecutionResult {
         $context = new AnalysisContext(
             metrics: $repository,
             dependencyGraph: $graph,
             namespaceTree: $namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,
         );
-        $findings = $this->ruleExecutor->execute($context);
 
-        // The directive-usage half of the inline-directive report can only be
-        // answered once every rule has produced its findings — a suppression
-        // is stale exactly when nothing it covers was reported. The channel
-        // identity and the wording stay with the owning capability; Run only
-        // decides when to ask.
+        return $this->ruleExecutor->execute($context);
+    }
+
+    /**
+     * What {@see AnalysisResult::$findings} carries: `$ruleExecution`'s published
+     * findings plus the directive-usage audit below, which is not part of rule
+     * execution proper and therefore not part of `$ruleExecution` itself.
+     *
+     * The directive-usage half of the inline-directive report can only be
+     * answered once every rule has produced its findings — a suppression is
+     * stale exactly when nothing it covers was reported. The channel identity
+     * and the wording stay with the owning capability; Run only decides when
+     * to ask.
+     *
+     * @return list<Finding>
+     */
+    private function reportedFindings(RuleExecutionResult $ruleExecution): array
+    {
+        $findings = $ruleExecution->published;
         $unused = $this->ruleProducerPreparation->auditInlineDirectives($findings);
 
         return $unused === [] ? $findings : array_merge($findings, $unused);

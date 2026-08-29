@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
@@ -72,9 +72,10 @@ final class RuleExecution implements RuleExecutionInterface
         $this->exclusions = new FindingExclusionLedger($ruleOptionsRegistry);
     }
 
-    public function execute(AnalysisContext $context): array
+    public function execute(AnalysisContext $context): RuleExecutionResult
     {
-        $findings = [];
+        $produced = [];
+        $published = [];
         $profiler = $this->profiler;
 
         $this->exclusions->begin();
@@ -96,10 +97,11 @@ final class RuleExecution implements RuleExecutionInterface
             }
             $profiler->stop($spanName);
 
-            $findings = [...$findings, ...$this->published($ruleName, $ruleFindings, $selection)];
+            $produced = [...$produced, ...$ruleFindings];
+            $published = [...$published, ...$this->published($ruleName, $ruleFindings, $selection)];
         }
 
-        return $findings;
+        return new RuleExecutionResult($produced, $published, $this->exclusions->stats());
     }
 
     /**
@@ -111,8 +113,8 @@ final class RuleExecution implements RuleExecutionInterface
      * family, where one instance publishes under seven producer names: keying
      * by the instance would apply `health.cohesion`'s `exclude_namespaces` to
      * `health.coupling`'s findings, and would let one `--disable-rule` silence
-     * all seven. The granularity of {@see RuleExclusionStats} follows, which is
-     * a declared consequence rather than a side effect.
+     * all seven. The granularity of {@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats}
+     * follows, which is a declared consequence rather than a side effect.
      *
      * @param list<Finding> $findings
      *
@@ -207,11 +209,6 @@ final class RuleExecution implements RuleExecutionInterface
         }
 
         return $grouped;
-    }
-
-    public function exclusionStats(): RuleExclusionStats
-    {
-        return $this->exclusions->stats();
     }
 
     public function allRules(): array

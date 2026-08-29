@@ -426,7 +426,11 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $globalCollectorRunner = new MeasurementAggregationService([$couplingCollector], $compositeCollector, $this->profiler);
 
         $ruleExecutor = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
-        $ruleExecutor->method('execute')->willReturn([]);
+        $ruleExecutor->method('execute')->willReturn(new \Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult(
+            [],
+            [],
+            new \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats(),
+        ));
 
         $pipeline = $this->createPipelineWithGlobalCollectors(
             $dependencies,

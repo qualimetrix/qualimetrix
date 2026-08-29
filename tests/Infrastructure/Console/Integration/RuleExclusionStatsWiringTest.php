@@ -10,24 +10,22 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
-use ReflectionProperty;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * Regression guard for the assumption behind `--show-suppressed` reporting
- * per-rule `exclude_namespaces`, `exclude_namespace_channels`, and `exclude_paths` suppressions
- * ({@see RuleExclusionStats}): {@see FindingFilterOrchestrator} reads
- * {@see RuleExecutionInterface::exclusionStats()} and implicitly relies
- * on the container handing it the *same shared instance* that
- * `AnalysisPipeline` just ran `execute()` on.
+ * Regression guard for `--show-suppressed` reporting per-rule
+ * `exclude_namespaces`, `exclude_namespace_channels`, and `exclude_paths`
+ * suppressions ({@see RuleExclusionStats}): {@see FindingFilterOrchestrator}
+ * reads them off {@see \Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult},
+ * the value `AnalysisPipeline` carries on `AnalysisResult` out of the same
+ * `execute()` call — there is no second, separately mutable accessor left to
+ * drift out of sync with it.
  *
  * The end-to-end cases come in a pair, and the pair is the point. One runs a
  * rule whose producer name *is* its class's `NAME`, where a breakdown keyed by
@@ -37,11 +35,11 @@ use Symfony\Component\Console\Tester\CommandTester;
  * dimension was silenced or hides all seven behind the class.
  *
  * The unit test ({@see \Qualimetrix\Tests\Infrastructure\Console\Unit\FindingFilterOrchestratorTest})
- * substitutes a stub `RuleExecutionInterface`, so it cannot see a wiring
- * regression (e.g. the service becoming non-shared or wrapped in a
- * decorator) — that would silently turn the feature into a no-op with every
- * existing test still green. This test runs the real production container
- * end-to-end via `CommandTester`, mirroring
+ * builds `AnalysisResult` by hand, so it cannot see a wiring regression (e.g.
+ * the pipeline forgetting to pass its `RuleExecutionResult` through) — that
+ * would silently turn the feature into a no-op with every existing test still
+ * green. This test runs the real production container end-to-end via
+ * `CommandTester`, mirroring
  * {@see \Qualimetrix\Tests\Integration\Infrastructure\Console\RulesCommandWiringTest}.
  */
 #[CoversClass(FindingFilterOrchestrator::class)]
@@ -58,40 +56,6 @@ final class RuleExclusionStatsWiringTest extends TestCase
     protected function tearDown(): void
     {
         $this->removeDirectory($this->tempDir);
-    }
-
-    #[Test]
-    public function itSharesTheSameRuleExecutionInstanceBetweenThePipelineAndTheOrchestrator(): void
-    {
-        // Cheap, precise complement to the end-to-end test below: proves the
-        // exact assumption FindingFilterOrchestrator relies on, without
-        // needing a real analysis run to observe it. RuleExecutionInterface
-        // itself is private/inlined in the compiled container (not reachable
-        // via $container->get()), so both instances are recovered via
-        // reflection from the two public consumers that are wired to it.
-        $container = (new ContainerFactory())->create();
-
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
-        $command = $container->get(CheckCommand::class);
-        \assert($command instanceof CheckCommand);
-
-        $orchestrator = $this->readPrivateProperty($command, 'findingFilterOrchestrator');
-        self::assertInstanceOf(FindingFilterOrchestrator::class, $orchestrator);
-
-        $ruleExecutorFromPipeline = $this->readPrivateProperty($pipeline, 'ruleExecutor');
-        $ruleExecutorFromOrchestrator = $this->readPrivateProperty($orchestrator, 'ruleExecutor');
-
-        self::assertSame(
-            $ruleExecutorFromPipeline,
-            $ruleExecutorFromOrchestrator,
-            'RuleExecutionInterface must be a shared service — FindingFilterOrchestrator '
-                . 'reads stats produced by whichever instance the pipeline executed rules on.',
-        );
-    }
-
-    private function readPrivateProperty(object $object, string $property): mixed
-    {
-        return (new ReflectionProperty($object, $property))->getValue($object);
     }
 
     #[Test]
