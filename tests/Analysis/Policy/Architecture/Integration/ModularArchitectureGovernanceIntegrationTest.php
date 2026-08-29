@@ -104,6 +104,65 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         }
     }
 
+    /**
+     * Ш5e2b's precedent, generalized into a standing guard: `currentSuite()`
+     * is a closed literal enumeration per directory, so a PHPUnit test class
+     * whose directory nobody added there is classified `none` and silently
+     * never runs under `composer test` -- the exact shape that let
+     * SuppressedFormatterTest.php (5 methods) and
+     * tests/Reporting/Unit/OutputFormatResolverTest.php (1 method, dormant
+     * since the modular-architecture migration) sit green in `composer
+     * check` without executing. This plants a real, untracked test class
+     * under a directory no `<testsuite>` in phpunit.xml.dist covers and
+     * asserts `generate-modular-architecture-test-inventory.php --check`
+     * names it and fails -- proving the guard added to `validateInventory()`
+     * actually bites rather than only reading well.
+     */
+    #[Test]
+    public function itFailsWhenAPhpunitTestClassHasNoConfiguredSuite(): void
+    {
+        $directory = $this->root() . '/tests/Reporting/Formatter/Suppressed/UnwiredLevelProbe';
+        $probePath = $directory . '/GuardProbeTest.php';
+        self::assertDirectoryDoesNotExist($directory, 'a leftover probe directory would corrupt this test and the real inventory');
+
+        mkdir($directory);
+        file_put_contents($probePath, <<<'PHP'
+            <?php
+
+            declare(strict_types=1);
+
+            namespace Qualimetrix\Tests\Reporting\Formatter\Suppressed\UnwiredLevelProbe;
+
+            use PHPUnit\Framework\Attributes\Test;
+            use PHPUnit\Framework\TestCase;
+
+            final class GuardProbeTest extends TestCase
+            {
+                #[Test]
+                public function itIsNeverActuallyRun(): void
+                {
+                    self::assertTrue(true);
+                }
+            }
+
+            PHP);
+
+        try {
+            [$exitCode, $output] = $this->runProcess([
+                \PHP_BINARY,
+                $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+                '--check',
+            ]);
+
+            self::assertNotSame(0, $exitCode, $output);
+            self::assertStringContainsString('classified as suite "none"', $output);
+            self::assertStringContainsString('tests/Reporting/Formatter/Suppressed/UnwiredLevelProbe/GuardProbeTest.php', $output);
+        } finally {
+            unlink($probePath);
+            rmdir($directory);
+        }
+    }
+
     #[Test]
     public function itPublishesTheReviewedTopologyEvidenceAndRejectsProductionToTestImports(): void
     {

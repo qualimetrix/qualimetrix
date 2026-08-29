@@ -1022,7 +1022,9 @@ function currentSuite(string $path): string
         str_starts_with($path, 'tests/Analysis/Finding/Unit/'),
         str_starts_with($path, 'tests/Analysis/Run/Unit/'),
         str_starts_with($path, 'tests/Reporting/GraphProjection/Unit/'),
+        str_starts_with($path, 'tests/Reporting/Unit/'),
         str_starts_with($path, 'tests/Reporting/FindingProjection/Unit/'),
+        str_starts_with($path, 'tests/Reporting/Formatter/Suppressed/Unit/'),
         str_starts_with($path, 'tests/Core/Path/Unit/'),
         str_starts_with($path, 'tests/Core/Symbol/Unit/'),
         str_starts_with($path, 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/'),
@@ -1038,6 +1040,7 @@ function currentSuite(string $path): string
         str_starts_with($path, 'tests/Analysis/Run/Integration/'),
         str_starts_with($path, 'tests/Analysis/Evidence/Design/Integration/'),
         str_starts_with($path, 'tests/Reporting/Formatter/Sarif/Integration/'),
+        str_starts_with($path, 'tests/Reporting/Formatter/Suppressed/Integration/'),
         str_starts_with($path, 'tests/System/DocumentationConsistency/Integration/'),
         str_starts_with($path, 'tests/Integration/') => 'Integration',
         str_starts_with($path, 'tests/Functional/'), str_starts_with($path, 'tests/Analysis/Policy/Baseline/Functional/'), str_starts_with($path, 'tests/Infrastructure/Console/Functional/') => 'Functional',
@@ -1207,6 +1210,27 @@ function validateInventory(array $rows, array $discoveredCaseCounts): void
         }
         if (str_ends_with($row['current_path'], 'Test.php') && $row['discovered_classes'] === '') {
             fail('PHPUnit did not discover worktree test file: ' . $row['current_path']);
+        }
+
+        // A PHPUnit test class currentSuite() cannot place in any configured
+        // phpunit.xml.dist <testsuite> is a test `composer test` silently
+        // never runs — the shape that let SuppressedFormatterTest.php (5
+        // methods) and tests/Reporting/Unit/OutputFormatResolverTest.php (1
+        // method, dormant since the modular-architecture migration) sit
+        // green in `composer check` without ever executing. currentSuite()
+        // already has a closed literal per directory (see the function's
+        // docblock and assertSuiteClassifierAgreesWithPhpunit()), so 'none'
+        // on a phpunit-test-class always means a missing literal, never a
+        // legitimate resident — the only other current_suite: 'none' rows
+        // are non-PHPUnit artifacts (kind !== 'phpunit-test-class': JS test
+        // files, package.json, fixtures, placeholders).
+        if ($row['kind'] === 'phpunit-test-class' && $row['current_suite'] === 'none') {
+            fail(sprintf(
+                'PHPUnit test class classified as suite "none" (no phpunit.xml.dist <testsuite> directory covers'
+                . ' it, so `composer test` silently never runs it): %s. Add its directory to a <testsuite> in'
+                . ' phpunit.xml.dist and to the matching branch of currentSuite().',
+                $row['current_path'],
+            ));
         }
     }
 
