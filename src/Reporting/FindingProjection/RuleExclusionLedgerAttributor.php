@@ -4,28 +4,35 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
-use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Core\Util\NamespaceMatcher;
-use Qualimetrix\Core\Util\PathMatcher;
 
 /**
  * The two per-rule exclusion ledger halves — {@see SuppressionMechanism::RuleNamespaceExclusion}
  * and {@see SuppressionMechanism::RulePathExclusion} — split out of
- * {@see SuppressionCompositionBuilder} as its own subject: attributing a
- * ledger-excluded finding to the pattern that fired, and finding the
- * configured patterns that fired nothing, both read the same per-rule raw
- * configuration and neither has anything to do with the five
+ * {@see SuppressionCompositionBuilder} as its own subject: publishing a
+ * ledger-excluded finding under the mechanism and producer that removed it,
+ * and finding the configured patterns that fired nothing, both read the same
+ * {@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution} the ledger recorded, and neither has
+ * anything to do with the five
  * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage}
  * mechanisms the sibling class attributes.
  *
- * Recomputes rather than reads a per-finding attribution for the same reason
- * given on {@see SuppressionCompositionBuilder}: re-asking
- * {@see RuleConfigurationInterface}'s own `is*Excluded()` predicates —
- * namespace before path, the same short-circuit order
- * {@see \Qualimetrix\Analysis\Finding\FindingExclusionLedger::keeps()} uses —
- * against a removal the ledger already decided.
+ * **Reads the decision instead of re-asking it.** Every `SuppressedFinding`
+ * here is attributed from the `RuleExclusionAttribution`
+ * {@see \Qualimetrix\Analysis\Finding\FindingExclusionLedger::keeps()} recorded
+ * at the moment it excluded the finding — the same producer name, under the
+ * same short-circuit order, that the decision itself used. This class used to
+ * re-derive "who excluded this" from `Finding::$ruleName` and
+ * `RuleConfigurationInterface`'s `is*Excluded()` predicates; that recomputation
+ * could name the wrong producer wherever a rule instance publishes findings
+ * under several producer names (the computed-metric family), silently
+ * dropping the finding from the composition. Only the *inert*-pattern
+ * enumeration below still reads `RuleConfigurationInterface::all()` — that is
+ * not a decision predicate, it is the full universe of configured patterns a
+ * "which pattern fired nothing" answer has to range over, and no attribution
+ * exists for a pattern nothing ever tested.
  */
 final readonly class RuleExclusionLedgerAttributor
 {
@@ -34,87 +41,66 @@ final readonly class RuleExclusionLedgerAttributor
      */
     public function attribute(RuleExecutionResult $ruleExecution, RuleConfigurationInterface $ruleConfiguration): array
     {
-        $rulesConfig = $ruleConfiguration->all();
-        $namespaceHitsByRule = [];
-        $pathHitsByRule = [];
         $suppressed = [];
+        $pathHitsByRule = [];
+        $namespaceHitsByRule = [];
+        $channelHitsByRule = [];
 
-        foreach ($ruleExecution->exclusions->excludedFindings as $finding) {
-            $hit = $this->attributeOne($finding, $ruleConfiguration, $rulesConfig);
+        $stats = $ruleExecution->exclusions;
 
-            if ($hit === null) {
+        foreach ($stats->excludedFindings as $index => $finding) {
+            $attribution = $stats->attributions[$index] ?? null;
+
+            if ($attribution === null) {
+                // No attribution recorded for this capture: nothing to publish it as.
+                // Reachable only if a caller hand-builds RuleExclusionStats with
+                // excludedFindings but no matching attributions (see the class docs
+                // on FindingExclusionLedger::stats() — the two are always parallel
+                // when the ledger itself produced them).
                 continue;
             }
 
-            $suppressed[] = $hit->suppressedFinding;
-            $this->recordHit($hit, $namespaceHitsByRule, $pathHitsByRule);
+            $suppressed[] = new SuppressedFinding($finding, $this->mechanismOf($attribution), $attribution->producerRuleName);
+            $this->recordHits($attribution, $pathHitsByRule, $namespaceHitsByRule, $channelHitsByRule);
         }
 
-        return [$suppressed, $this->inertSuppressors($rulesConfig, $pathHitsByRule, $namespaceHitsByRule)];
+        $inert = $this->inertSuppressors($ruleConfiguration->all(), $pathHitsByRule, $namespaceHitsByRule, $channelHitsByRule);
+
+        return [$suppressed, $inert];
     }
 
-    /**
-     * @param array<string, mixed> $rulesConfig
-     */
-    private function attributeOne(Finding $finding, RuleConfigurationInterface $ruleConfiguration, array $rulesConfig): ?LedgerHit
+    private function mechanismOf(RuleExclusionAttribution $attribution): SuppressionMechanism
     {
-        $ruleName = $finding->ruleName;
-        $ruleOptions = $this->ruleOptionsOf($rulesConfig, $ruleName);
-        $namespace = $this->namespaceOf($finding);
-
-        if ($namespace !== '' && $this->isNamespaceLedgerExcluded($ruleConfiguration, $finding, $ruleName, $namespace)) {
-            $pattern = (new NamespaceMatcher($this->configuredNamespacePatterns($ruleOptions)))->matches($namespace)?->pattern;
-
-            return new LedgerHit(
-                new SuppressedFinding($finding, SuppressionMechanism::RuleNamespaceExclusion, $ruleName),
-                SuppressionMechanism::RuleNamespaceExclusion,
-                $ruleName,
-                $pattern,
-            );
-        }
-
-        if ($finding->location->file !== null && $ruleConfiguration->isPathExcluded($ruleName, $finding->location->file)) {
-            $pattern = (new PathMatcher($this->configuredPathPatterns($ruleOptions)))->matches($finding->location->file)?->pattern;
-
-            return new LedgerHit(
-                new SuppressedFinding($finding, SuppressionMechanism::RulePathExclusion, $ruleName),
-                SuppressionMechanism::RulePathExclusion,
-                $ruleName,
-                $pattern,
-            );
-        }
-
-        return null;
-    }
-
-    private function isNamespaceLedgerExcluded(
-        RuleConfigurationInterface $ruleConfiguration,
-        Finding $finding,
-        string $ruleName,
-        string $namespace,
-    ): bool {
-        if ($ruleConfiguration->isNamespaceExcluded($ruleName, $namespace)) {
-            return true;
-        }
-
-        return $finding->symbolPath->getType()->value === 'namespace'
-            && $ruleConfiguration->isNamespaceChannelExcluded($ruleName, $finding->channel(), $namespace);
+        return $attribution->isPathExclusion
+            ? SuppressionMechanism::RulePathExclusion
+            : SuppressionMechanism::RuleNamespaceExclusion;
     }
 
     /**
-     * @param array<string, array<string, true>> $namespaceHitsByRule
      * @param array<string, array<string, true>> $pathHitsByRule
+     * @param array<string, array<string, true>> $namespaceHitsByRule
+     * @param array<string, array<string, array<string, true>>> $channelHitsByRule rule => selector => pattern => true
      */
-    private function recordHit(LedgerHit $hit, array &$namespaceHitsByRule, array &$pathHitsByRule): void
-    {
-        if ($hit->pattern === null) {
+    private function recordHits(
+        RuleExclusionAttribution $attribution,
+        array &$pathHitsByRule,
+        array &$namespaceHitsByRule,
+        array &$channelHitsByRule,
+    ): void {
+        if ($attribution->isPathExclusion) {
+            foreach ($attribution->matchedPatterns as $pattern) {
+                $pathHitsByRule[$attribution->producerRuleName][$pattern] = true;
+            }
+
             return;
         }
 
-        if ($hit->mechanism === SuppressionMechanism::RuleNamespaceExclusion) {
-            $namespaceHitsByRule[$hit->ruleName][$hit->pattern] = true;
-        } else {
-            $pathHitsByRule[$hit->ruleName][$hit->pattern] = true;
+        foreach ($attribution->matchedPatterns as $pattern) {
+            $namespaceHitsByRule[$attribution->producerRuleName][$pattern] = true;
+        }
+
+        foreach ($attribution->matchedChannelPatterns as $hit) {
+            $channelHitsByRule[$attribution->producerRuleName][$hit['selector']][$hit['pattern']] = true;
         }
     }
 
@@ -122,10 +108,11 @@ final readonly class RuleExclusionLedgerAttributor
      * @param array<string, mixed> $rulesConfig
      * @param array<string, array<string, true>> $pathHitsByRule
      * @param array<string, array<string, true>> $namespaceHitsByRule
+     * @param array<string, array<string, array<string, true>>> $channelHitsByRule rule => selector => pattern => true
      *
      * @return list<InertSuppressor>
      */
-    private function inertSuppressors(array $rulesConfig, array $pathHitsByRule, array $namespaceHitsByRule): array
+    private function inertSuppressors(array $rulesConfig, array $pathHitsByRule, array $namespaceHitsByRule, array $channelHitsByRule): array
     {
         $inert = [];
 
@@ -138,6 +125,7 @@ final readonly class RuleExclusionLedgerAttributor
                 ...$inert,
                 ...$this->inertFor(SuppressionMechanism::RulePathExclusion, $ruleName, $this->configuredPathPatterns($ruleOptions), $pathHitsByRule),
                 ...$this->inertFor(SuppressionMechanism::RuleNamespaceExclusion, $ruleName, $this->configuredNamespacePatterns($ruleOptions), $namespaceHitsByRule),
+                ...$this->inertForChannels($ruleName, $this->configuredChannelPatterns($ruleOptions), $channelHitsByRule),
             ];
         }
 
@@ -164,13 +152,27 @@ final readonly class RuleExclusionLedgerAttributor
     }
 
     /**
-     * @param array<string, mixed> $rulesConfig
+     * @param array<string, list<string>> $channelPatterns selector => patterns
+     * @param array<string, array<string, array<string, true>>> $channelHitsByRule rule => selector => pattern => true
      *
-     * @return array<string, mixed>
+     * @return list<InertSuppressor>
      */
-    private function ruleOptionsOf(array $rulesConfig, string $ruleName): array
+    private function inertForChannels(string $ruleName, array $channelPatterns, array $channelHitsByRule): array
     {
-        return \is_array($rulesConfig[$ruleName] ?? null) ? $rulesConfig[$ruleName] : [];
+        $inert = [];
+
+        foreach ($channelPatterns as $selector => $patterns) {
+            foreach ($patterns as $pattern) {
+                if (!isset($channelHitsByRule[$ruleName][$selector][$pattern])) {
+                    $inert[] = new InertSuppressor(
+                        SuppressionMechanism::RuleNamespaceExclusion,
+                        $ruleName . ': ' . $selector . ' ' . $pattern,
+                    );
+                }
+            }
+        }
+
+        return $inert;
     }
 
     /**
@@ -198,11 +200,27 @@ final readonly class RuleExclusionLedgerAttributor
         return $this->stringList($ruleOptions['excludeNamespaces'] ?? $ruleOptions['exclude_namespaces'] ?? []);
     }
 
-    private function namespaceOf(Finding $finding): string
+    /**
+     * @param array<string, mixed> $ruleOptions
+     *
+     * @return array<string, list<string>> selector => patterns
+     */
+    private function configuredChannelPatterns(array $ruleOptions): array
     {
-        return $finding->symbolPath->namespace
-            ?? $finding->subject->toSymbolPath()->namespace
-            ?? '';
+        $channels = $ruleOptions['excludeNamespaceChannels'] ?? $ruleOptions['exclude_namespace_channels'] ?? [];
+
+        if (!\is_array($channels)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($channels as $selector => $patterns) {
+            if (\is_string($selector)) {
+                $result[$selector] = $this->stringList($patterns);
+            }
+        }
+
+        return $result;
     }
 
     /**

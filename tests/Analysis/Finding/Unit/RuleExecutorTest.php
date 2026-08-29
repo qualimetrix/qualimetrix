@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -827,6 +828,90 @@ final class RuleExecutorTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itAttributesALedgerExclusionToTheChannelIdentityProducerNotTheFindingsRuleName(): void
+    {
+        // Mirrors the computed-metric family {@see RuleExecution::producerOf()}
+        // describes: one rule instance publishes under $ruleName
+        // 'computed.health', but the channel below has its own exclusion
+        // configuration. A consumer that re-derives "who excluded this" from
+        // Finding::$ruleName instead of reading the recorded attribution
+        // would name the wrong producer.
+        $channel = 'health.cohesion';
+        $excludedFinding = $this->createFindingWithNamespace('computed.health', 'App\\Metrics', $channel);
+        $rule = $this->createRule('computed.health', [$excludedFinding]);
+
+        $registry = new RuleOptionsRegistry();
+        $registry->setConfigFileOptions([$channel => ['exclude_namespaces' => ['App\\Metrics']]]);
+        $registry->configureNamespaceExclusions($channel, ['App\\Metrics']);
+
+        $channelIdentity = self::createStub(ChannelIdentityInterface::class);
+        $channelIdentity->method('producerOf')->willReturn($channel);
+
+        $executor = $this->createExecution([$rule], $registry, channelIdentity: $channelIdentity);
+
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
+
+        self::assertCount(1, $stats->attributions);
+        self::assertSame($channel, $stats->attributions[0]->producerRuleName);
+        self::assertNotSame($excludedFinding->ruleName, $stats->attributions[0]->producerRuleName);
+        self::assertSame(['App\\Metrics'], $stats->attributions[0]->matchedPatterns);
+    }
+
+    #[Test]
+    public function itRecordsTheFiringNamespaceChannelSelectorAndPatternInTheAttribution(): void
+    {
+        $channel = 'health.cohesion';
+        $cohesion = $this->createFindingWithNamespace('computed.health', 'App\\Metrics', $channel);
+        $rule = $this->createRule('computed.health', [$cohesion]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setChannelExclusions('computed.health', $channel, ['App\\Metrics']);
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $registry->setConfigFileOptions(['computed.health' => [
+            'exclude_namespace_channels' => [$channel => ['App\\Metrics']],
+        ]]);
+
+        $executor = $this->createExecution([$rule], $registry, $this->computedRuleSelector());
+
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
+
+        self::assertCount(1, $stats->attributions);
+        self::assertSame([], $stats->attributions[0]->matchedPatterns);
+        self::assertSame(
+            [['selector' => $channel, 'pattern' => 'App\\Metrics']],
+            $stats->attributions[0]->matchedChannelPatterns,
+        );
+    }
+
+    /**
+     * Two overlapping `exclude_paths` entries both independently match the
+     * same file. The ledger must record both as fired, not only the one its
+     * own short-circuiting lookup happens to reach first — a consumer
+     * computing "which configured pattern fired nothing" needs every pattern
+     * that could have fired, or it misreports the second as dead.
+     */
+    #[Test]
+    public function itRecordsEveryConfiguredPathPatternThatIndependentlyMatchesTheExcludedFinding(): void
+    {
+        $excludedFinding = $this->createFindingWithFile('rule1', 'src/Excluded/Deep/Foo.php');
+        $rule = $this->createRule('rule1', [$excludedFinding]);
+
+        $pathExclusionProvider = new RulePathExclusionProvider();
+        $pathExclusionProvider->setExclusions('rule1', ['src/Excluded', 'src/Excluded/Deep']);
+
+        $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
+        $registry->setConfigFileOptions(['rule1' => ['exclude_paths' => ['src/Excluded', 'src/Excluded/Deep']]]);
+
+        $executor = $this->createExecution([$rule], $registry);
+
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
+
+        self::assertCount(1, $stats->attributions);
+        self::assertSame(['src/Excluded', 'src/Excluded/Deep'], $stats->attributions[0]->matchedPatterns);
+    }
+
     // --- Finding-owned excluded-finding capture policy tests ---
 
     #[Test]
@@ -911,6 +996,7 @@ final class RuleExecutorTest extends TestCase
         iterable $rules,
         ?RuleOptionsRegistry $registry = null,
         ?RuleSelector $ruleSelector = null,
+        ?ChannelIdentityInterface $channelIdentity = null,
     ): RuleExecution {
         $registry ??= new RuleOptionsRegistry();
         if ($this->captureExcludedFindings) {
@@ -922,6 +1008,7 @@ final class RuleExecutorTest extends TestCase
             self::createStub(ProfilerInterface::class),
             $registry,
             $ruleSelector,
+            channelIdentity: $channelIdentity,
         );
     }
 

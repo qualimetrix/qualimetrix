@@ -369,12 +369,26 @@ violations were suppressed this way. The namespace bucket includes both namespac
 is separate from `exclude_paths`; each is broken down by rule name. Unlike `@qmx-ignore`, this suppression is otherwise silent: nothing in
 the default output indicates it happened.
 
-`--show-suppressed` renders this as prose on the text surface.
-`--format=suppressed` reports the same composition — every mechanism that can
-remove a finding, not only these two — as machine-readable JSON; see
+`--show-suppressed` renders part of this as prose on the text surface.
+`--format=suppressed` reports the full composition — all seven suppression
+mechanisms, not only these two — as machine-readable JSON; see
 [Output Formats](output-formats.md#suppressed). Either `--show-suppressed` or
 selecting `--format=suppressed` (including `format: suppressed` in
-`qmx.yaml`) is enough to capture it; you do not need both.
+`qmx.yaml`) is enough to arm the per-rule exclusion capture; you do not need
+both. The two surfaces are not otherwise equivalent — see
+[suppressed](output-formats.md#suppressed) for what each one shows.
+
+Suppression is a closed set of seven mechanisms. Several neighboring decisions
+also make a finding invisible but are not suppression, and neither surface
+covers them: a rule that never ran (`--disable-rule`, `--only-rule`,
+`enabled: false`) produced nothing to suppress; a disabled channel for a
+classless producer (visible in `qmx rules`) is removed the same way, before
+the ledger runs; a threshold that keeps a finding from being produced at all
+(`@qmx-threshold`) is audited separately rather than through this surface;
+formatter truncation (`--detail`, `violations=N`) keeps the finding in the
+payload and only flags it `truncated`; and `--namespace`/`--class` drill-down
+narrows presentation per invocation without removing anything from the
+underlying result.
 
 ### `--no-suppression-annotations`
 

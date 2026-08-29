@@ -5,6 +5,18 @@ rule-namespace-exclusion	coupling.class-rank: Qualimetrix\Core\Dependency
 rule-namespace-exclusion	coupling.class-rank: Qualimetrix\Core\Metric
 rule-namespace-exclusion	coupling.distance: [Q]ualimetrix\Analysis
 rule-namespace-exclusion	coupling.distance: [Q]ualimetrix\Analysis\Evidence\DependencyModel
+rule-namespace-exclusion	coupling.instability: coupling.instability:namespace [Q]ualimetrix\Infrastructure\Parallel
+rule-namespace-exclusion	health.cohesion: health.cohesion Qualimetrix\Analysis\Evidence\Coupling
+rule-namespace-exclusion	health.cohesion: health.cohesion [Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Contract
+rule-namespace-exclusion	health.cohesion: health.cohesion [Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition
+rule-namespace-exclusion	health.cohesion: health.cohesion [Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract
+rule-namespace-exclusion	health.cohesion: health.cohesion [Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown
+rule-namespace-exclusion	health.cohesion: health.cohesion [Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender
+rule-namespace-exclusion	health.cohesion: health.cohesion [Q]ualimetrix\Analysis\Evidence\DependencyModel
+rule-namespace-exclusion	health.cohesion: health.cohesion [Q]ualimetrix\Analysis\Finding\Contract\Rule
+rule-namespace-exclusion	health.cohesion: health.cohesion [Q]ualimetrix\Analysis\Policy\Inline\Contract
+rule-namespace-exclusion	health.cohesion: health.cohesion [Q]ualimetrix\Infrastructure\Git
+rule-namespace-exclusion	health.cohesion: health.cohesion [Q]ualimetrix\Reporting\FindingProjection
 rule-path-exclusion	code-smell.long-parameter-list: src/Analysis/Collection/CollectedFileData.php
 rule-path-exclusion	code-smell.long-parameter-list: src/Analysis/Run/Contract/Collection/FileProcessingResult.php
 rule-path-exclusion	code-smell.long-parameter-list: src/Core/Profiler/Span.php

@@ -1002,51 +1002,75 @@ function classifyKind(string $path, array $discoveredClasses): string
     return fail('Unclassified test artifact kind: ' . $path);
 }
 
+/**
+ * Single source of truth for the plain-prefix branches of currentSuite().
+ * Order matters: a more specific prefix must precede a shorter one it nests
+ * under (e.g. the Baseline/Functional entry before the bare Functional
+ * entry). assertSuiteClassifierAgreesWithPhpunit() walks this
+ * same table to check the reverse direction, so a literal added here without
+ * a matching phpunit.xml.dist <directory> fails the same way a <directory>
+ * without a matching literal already did.
+ *
+ * @return list<array{prefix: string, suite: string}>
+ */
+function testSuitePrefixTable(): array
+{
+    return [
+        ['prefix' => 'tests/Analysis/Policy/Architecture/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Policy/Baseline/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Policy/Inline/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/CircularDependency/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Duplication/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/DependencyModel/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Measurement/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/ComputedMetrics/Health/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/ComputedMetrics/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Evidence/Prioritization/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Configuration/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Finding/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Run/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Reporting/GraphProjection/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Reporting/FindingProjection/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Reporting/Formatter/Suppressed/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/Policy/Architecture/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Policy/Baseline/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Policy/Inline/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Configuration/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Finding/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Evidence/Measurement/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Evidence/ComputedMetrics/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Run/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Evidence/Design/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Reporting/Formatter/Sarif/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Reporting/Formatter/Suppressed/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/System/DocumentationConsistency/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Policy/Baseline/Functional/', 'suite' => 'Functional'],
+        ['prefix' => 'tests/Functional/', 'suite' => 'Functional'],
+        ['prefix' => 'tests/Infrastructure/', 'suite' => 'Infrastructure'],
+    ];
+}
+
 function currentSuite(string $path): string
 {
-    return match (true) {
-        preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/Unit/#', $path) === 1 => 'Unit',
-        preg_match('#^tests/Analysis/Evidence/(CodeSmell|Complexity)/Integration/#', $path) === 1 => 'Integration',
-        str_starts_with($path, 'tests/Architecture/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Policy/Architecture/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Policy/Baseline/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Policy/Inline/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Evidence/CircularDependency/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Evidence/Duplication/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Evidence/DependencyModel/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Evidence/Measurement/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/Health/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Evidence/Prioritization/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Configuration/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Finding/Unit/'),
-        str_starts_with($path, 'tests/Analysis/Run/Unit/'),
-        str_starts_with($path, 'tests/Reporting/GraphProjection/Unit/'),
-        str_starts_with($path, 'tests/Reporting/Unit/'),
-        str_starts_with($path, 'tests/Reporting/FindingProjection/Unit/'),
-        str_starts_with($path, 'tests/Reporting/Formatter/Suppressed/Unit/'),
-        str_starts_with($path, 'tests/Core/Path/Unit/'),
-        str_starts_with($path, 'tests/Core/Symbol/Unit/'),
-        str_starts_with($path, 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/'),
-        str_starts_with($path, 'tests/Unit/') => 'Unit',
-        str_starts_with($path, 'tests/Architecture/Integration/'),
-        str_starts_with($path, 'tests/Analysis/Policy/Architecture/Integration/'),
-        str_starts_with($path, 'tests/Analysis/Policy/Baseline/Integration/'),
-        str_starts_with($path, 'tests/Analysis/Policy/Inline/Integration/'),
-        str_starts_with($path, 'tests/Analysis/Configuration/Integration/'),
-        str_starts_with($path, 'tests/Analysis/Finding/Integration/'),
-        str_starts_with($path, 'tests/Analysis/Evidence/Measurement/Integration/'),
-        str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/Integration/'),
-        str_starts_with($path, 'tests/Analysis/Run/Integration/'),
-        str_starts_with($path, 'tests/Analysis/Evidence/Design/Integration/'),
-        str_starts_with($path, 'tests/Reporting/Formatter/Sarif/Integration/'),
-        str_starts_with($path, 'tests/Reporting/Formatter/Suppressed/Integration/'),
-        str_starts_with($path, 'tests/System/DocumentationConsistency/Integration/'),
-        str_starts_with($path, 'tests/Integration/') => 'Integration',
-        str_starts_with($path, 'tests/Functional/'), str_starts_with($path, 'tests/Analysis/Policy/Baseline/Functional/'), str_starts_with($path, 'tests/Infrastructure/Console/Functional/') => 'Functional',
-        str_starts_with($path, 'tests/Infrastructure/') => 'Infrastructure',
-        default => 'none',
-    };
+    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/Unit/#', $path) === 1) {
+        return 'Unit';
+    }
+    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Complexity)/Integration/#', $path) === 1) {
+        return 'Integration';
+    }
+    foreach (testSuitePrefixTable() as $entry) {
+        if (str_starts_with($path, $entry['prefix'])) {
+            return $entry['suite'];
+        }
+    }
+
+    return 'none';
 }
 
 /**
@@ -1054,6 +1078,13 @@ function currentSuite(string $path): string
  * artifact cannot detect on its own: `currentSuite()` classifies an arbitrary
  * input path, so nothing ties its literals to the suite map they mirror. Six
  * directories had drifted apart from it before this check existed.
+ *
+ * The map disagreement is symmetric and both directions are checked: a
+ * phpunit.xml.dist <directory> currentSuite() cannot place under the same
+ * name (forward — the original six-directory drift), and a
+ * testSuitePrefixTable() literal with no matching <directory> declared for
+ * that suite (backward — a stale literal PHPUnit never runs, the same silent
+ * outcome through the opposite door).
  */
 function assertSuiteClassifierAgreesWithPhpunit(string $projectRoot): void
 {
@@ -1064,14 +1095,28 @@ function assertSuiteClassifierAgreesWithPhpunit(string $projectRoot): void
     }
 
     $mismatches = [];
+    $declaredDirectories = [];
     foreach ($document->testsuites->testsuite as $suite) {
         $name = (string) $suite['name'];
         foreach ($suite->directory as $directory) {
             $declared = rtrim(trim((string) $directory), '/');
+            $declaredDirectories[$name][] = $declared;
             $classified = currentSuite($declared . '/probe/ProbeTest.php');
             if ($classified !== $name) {
                 $mismatches[] = sprintf('%s is suite %s in %s, %s in currentSuite()', $declared, $name, basename($configuration), $classified);
             }
+        }
+    }
+
+    foreach (testSuitePrefixTable() as $entry) {
+        $literal = rtrim($entry['prefix'], '/');
+        if (!in_array($literal, $declaredDirectories[$entry['suite']] ?? [], true)) {
+            $mismatches[] = sprintf(
+                '%s is suite %s in currentSuite() but is not declared under that <testsuite> in %s',
+                $literal,
+                $entry['suite'],
+                basename($configuration),
+            );
         }
     }
 

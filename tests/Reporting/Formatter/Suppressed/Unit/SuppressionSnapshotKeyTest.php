@@ -13,9 +13,10 @@ use PHPUnit\Framework\TestCase;
  * see PLAN.md, rule-vocabulary Ш6 decision (м) for the two probes this
  * defends: a directive's own line number must not enter the key (a line
  * shift with no decision change must not redden), while everything the
- * snapshot's key is actually built from must (a removed directive/threshold
- * must redden). The script is include-safe so this can call its functions
- * directly instead of round-tripping a subprocess.
+ * snapshot's key is actually built from must (a removed directive/threshold,
+ * or a severity change on an already-suppressed finding, must redden). The
+ * script is include-safe so this can call its functions directly instead of
+ * round-tripping a subprocess.
  */
 final class SuppressionSnapshotKeyTest extends TestCase
 {
@@ -76,11 +77,37 @@ final class SuppressionSnapshotKeyTest extends TestCase
             'channel' => 'example.channel',
             'file' => 'src/Foo.php',
             'symbol' => 'App\\Foo',
+            'severity' => 'warning',
         ];
 
         self::assertSame(
             compositionKey($entry('src/Foo.php:10')),
             compositionKey($entry('src/Foo.php:11')),
+        );
+    }
+
+    /**
+     * Severity is part of the key (native F4): a config change that raises
+     * or lowers an already-suppressed finding's level is a changed decision
+     * — `--fail-on` reads severity — and Ш5e2b's precedent is exactly a
+     * decision change no field of the key caught. Without this, 26 findings
+     * moving warning -> error left the snapshot byte-for-byte identical.
+     */
+    #[Test]
+    public function itBuildsADifferentKeyWhenOnlySeverityChanges(): void
+    {
+        $entry = static fn(string $severity): array => [
+            'mechanism' => 'namespace-exclusion',
+            'suppressor' => 'App\\Generated',
+            'channel' => 'example.channel',
+            'file' => 'src/Foo.php',
+            'symbol' => 'App\\Foo',
+            'severity' => $severity,
+        ];
+
+        self::assertNotSame(
+            compositionKey($entry('warning')),
+            compositionKey($entry('error')),
         );
     }
 
@@ -96,6 +123,7 @@ final class SuppressionSnapshotKeyTest extends TestCase
             'suppressor' => 'main..HEAD',
             'channel' => 'example.channel',
             'symbol' => 'App\\Foo',
+            'severity' => 'warning',
         ];
 
         $withNullFile = compositionKey([...$base, 'file' => null]);
@@ -107,21 +135,21 @@ final class SuppressionSnapshotKeyTest extends TestCase
     #[Test]
     public function itRendersAnEmptyCompositionAsJustTheHeader(): void
     {
-        self::assertSame("mechanism\tsuppressor\tchannel\tfile\tsymbol\tcount\n", renderComposition([]));
+        self::assertSame("mechanism\tsuppressor\tchannel\tfile\tsymbol\tseverity\tcount\n", renderComposition([]));
     }
 
     #[Test]
     public function itRendersCompositionRowsInTheGivenOrderWithCounts(): void
     {
         $rendered = renderComposition([
-            "suppression\tsrc/A.php\tchan\tsrc/A.php\tApp\\A" => 2,
-            "suppression\tsrc/B.php\tchan\tsrc/B.php\tApp\\B" => 1,
+            "suppression\tsrc/A.php\tchan\tsrc/A.php\tApp\\A\twarning" => 2,
+            "suppression\tsrc/B.php\tchan\tsrc/B.php\tApp\\B\terror" => 1,
         ]);
 
         self::assertSame(
-            "mechanism\tsuppressor\tchannel\tfile\tsymbol\tcount\n"
-            . "suppression\tsrc/A.php\tchan\tsrc/A.php\tApp\\A\t2\n"
-            . "suppression\tsrc/B.php\tchan\tsrc/B.php\tApp\\B\t1\n",
+            "mechanism\tsuppressor\tchannel\tfile\tsymbol\tseverity\tcount\n"
+            . "suppression\tsrc/A.php\tchan\tsrc/A.php\tApp\\A\twarning\t2\n"
+            . "suppression\tsrc/B.php\tchan\tsrc/B.php\tApp\\B\terror\t1\n",
             $rendered,
         );
     }

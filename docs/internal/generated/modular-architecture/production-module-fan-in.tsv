@@ -100,6 +100,7 @@ Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	37	14
 Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	8	5
 Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	11	6
+Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface	Analysis.Finding	6	3
 Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult	Analysis.Finding	4	2
@@ -203,7 +204,7 @@ Qualimetrix\Core\Exception\ParseException	Core.Neutral	3	2
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	51	12
 Qualimetrix\Core\Path\PathFactory	Core.Path	17	7
-Qualimetrix\Core\Path\RelativePath	Core.Path	82	23
+Qualimetrix\Core\Path\RelativePath	Core.Path	83	23
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	22	8
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\DeclarationKey	Core.Symbol	3	2
@@ -215,7 +216,7 @@ Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	40	15
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
-Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	103	21
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	104	21
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	4	3
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	64	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	30	11

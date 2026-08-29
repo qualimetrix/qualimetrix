@@ -30,13 +30,37 @@ declare(strict_types=1);
  *
  * **The key, and why only one mechanism needs its suppressor normalized.**
  * Decision (м) fixes the key as mechanism x suppressor x channel x
- * canonical subject, ordered by that key rather than by encounter order.
- * The two probes the DoD names are, concretely:
- *   (a) removing any `@qmx-ignore` directive or `@qmx-threshold` override
- *       must change some row's count (or remove/add a row) — the very
- *       thing Ш5e2b's precedent says nothing catches today;
+ * canonical subject x severity, ordered by that key rather than by
+ * encounter order. Severity joined the key after review found a suppressed
+ * finding's level (which decides `--fail-on` outcomes) could change while
+ * every other field held — the same "decision changed, nothing reddens"
+ * shape Ш5e2b's precedent describes, just for level instead of count. The
+ * two probes the DoD names are, concretely:
+ *   (a) removing an `@qmx-ignore` directive, or an `@qmx-threshold`
+ *       override that only tightens or loosens the level of an
+ *       *already-suppressed* finding, must change some row's count (or
+ *       remove/add a row) — the very thing Ш5e2b's precedent says nothing
+ *       catches today. A `@qmx-threshold` override whose removal surfaces a
+ *       finding no other mechanism holds back is outside this snapshot's
+ *       domain by construction — see the note on scope below.
  *   (b) renaming a local (non-subject) symbol, or shifting line numbers by
  *       inserting blank lines, must change no row at all.
+ *
+ * **Scope: this is an oracle over the suppressed set, not the published
+ * one.** A `@qmx-threshold` override can do two different things: narrow
+ * the acceptance window of a finding some other mechanism already holds
+ * back (probe (a) above catches that — the row's severity or count moves),
+ * or gate whether a finding is suppressed *at all*. Removing an override of
+ * the second kind turns a finding that was never in `suppressed` into one
+ * that is published instead — this snapshot has nothing to diff, because it
+ * never counted a row for a finding that was never suppressed. That case is
+ * `composer selfcheck`'s domain (`bin/qmx check src/
+ * --baseline=qmx-baseline.json --fail-on=warning`): the newly published
+ * finding fails that gate directly, the same way any other new violation
+ * would. The two oracles are complementary, not overlapping: this snapshot
+ * answers "did a suppression decision change without our noticing", and
+ * `composer selfcheck` answers "is everything actually published still
+ * within the accepted thresholds".
  *
  * `suppressed`'s JSON does not publish `subject->toCanonical()` (the
  * declaration path with its rename-proof ordinal) — only `symbol`
@@ -44,10 +68,15 @@ declare(strict_types=1);
  * ordinal) and `file`. That pair is this snapshot's stand-in for "canonical
  * subject": it carries no line number, so it survives probe (b), and
  * combined with `channel` it is precise enough for every case measured on
- * this repository's `src`. The gap it accepts: two non-first declarations
- * of the same name in one file (an ordinal collision) would collapse into
- * one row instead of two — a granularity loss, not a blind spot, because a
- * directive removed from either declaration still changes that row's count.
+ * this repository's `src`. The gap it accepts: two non-first declarations of
+ * the same name in one file (an ordinal collision) collapse into one row.
+ * A directive removed from either declaration still changes that row's
+ * count, so unilateral removal is caught. **Not caught:** moving a decision
+ * between two such declarations — accepting ordinal 2 where ordinal 3 used
+ * to be accepted, with the aggregate count held constant — is a genuine
+ * blind spot, not mere granularity loss, because nothing in this key
+ * changes. Closing it needs the wire format to publish the ordinal, which
+ * is a `SuppressedFormatter` change outside this script.
  *
  * Per mechanism, the raw `suppressor` field is:
  *   - `suppression`      -> `file:line` of the `@qmx-ignore*` directive.
@@ -225,8 +254,9 @@ function compositionKey(array $entry): string
     $channel = (string) ($entry['channel'] ?? '');
     $file = $entry['file'] === null ? '(no file)' : (string) $entry['file'];
     $symbol = (string) ($entry['symbol'] ?? '');
+    $severity = (string) ($entry['severity'] ?? '');
 
-    return implode("\t", [$mechanism, $suppressor, $channel, $file, $symbol]);
+    return implode("\t", [$mechanism, $suppressor, $channel, $file, $symbol, $severity]);
 }
 
 /**
@@ -249,7 +279,7 @@ function normalizeSuppressor(string $mechanism, string $suppressor): string
  */
 function renderComposition(array $counts): string
 {
-    $header = "mechanism\tsuppressor\tchannel\tfile\tsymbol\tcount";
+    $header = "mechanism\tsuppressor\tchannel\tfile\tsymbol\tseverity\tcount";
     $lines = [];
 
     foreach ($counts as $key => $count) {

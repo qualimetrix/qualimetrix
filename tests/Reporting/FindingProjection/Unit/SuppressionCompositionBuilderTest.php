@@ -7,12 +7,15 @@ namespace Qualimetrix\Tests\Reporting\FindingProjection\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
@@ -168,6 +171,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         $ruleExecution = new RuleExecutionResult([$finding], [], new RuleExclusionStats(
             namespaceExclusionsByRule: ['coupling.cbo' => 1],
             excludedFindings: [$finding],
+            attributions: [new RuleExclusionAttribution('coupling.cbo', isPathExclusion: false, matchedPatterns: ['App\\Excluded'])],
         ));
 
         $composition = $this->builder->build(
@@ -190,6 +194,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         $ruleExecution = new RuleExecutionResult([$finding], [], new RuleExclusionStats(
             pathExclusionsByRule: ['code-smell.long-parameter-list' => 1],
             excludedFindings: [$finding],
+            attributions: [new RuleExclusionAttribution('code-smell.long-parameter-list', isPathExclusion: true, matchedPatterns: ['src/Excluded'])],
         ));
 
         $composition = $this->builder->build(
@@ -241,6 +246,142 @@ final class SuppressionCompositionBuilderTest extends TestCase
         self::assertCount(1, $composition->neverMatched);
         self::assertSame(SuppressionMechanism::RulePathExclusion, $composition->neverMatched[0]->mechanism);
         self::assertSame('coupling.cbo: src/DoesNotExist.php', $composition->neverMatched[0]->suppressor);
+    }
+
+    /**
+     * Reproduces the computed-metric family, where one rule instance
+     * publishes findings under a `$ruleName` distinct from the producer whose
+     * `exclude_namespaces` actually excluded them ({@see \Qualimetrix\Analysis\Finding\RuleExecution::producerOf()}).
+     * The composition must publish the ledger's recorded producer, not the
+     * finding's own `ruleName` — the bug this guards against dropped the
+     * finding from the composition entirely wherever the two names diverged.
+     */
+    #[Test]
+    public function itAttributesALedgerExclusionToItsRecordedProducerEvenWhenTheFindingsOwnRuleNameDiffers(): void
+    {
+        $channel = 'health.cohesion';
+        $finding = $this->finding($channel, 'src/Foo.php', 'App\\Excluded', ruleName: 'computed.health');
+        $ruleExecution = new RuleExecutionResult([$finding], [], new RuleExclusionStats(
+            namespaceExclusionsByRule: [$channel => 1],
+            excludedFindings: [$finding],
+            attributions: [new RuleExclusionAttribution($channel, isPathExclusion: false, matchedPatterns: ['App\\Excluded'])],
+        ));
+
+        $composition = $this->builder->build(
+            new FindingProjectionResult(findings: []),
+            $ruleExecution,
+            $this->ruleConfiguration([$channel => ['exclude_namespaces' => ['App\\Excluded']]]),
+            new FindingProjectionOptions(),
+            suppressions: [],
+        );
+
+        self::assertCount(1, $composition->all);
+        self::assertSame(SuppressionMechanism::RuleNamespaceExclusion, $composition->all[0]->mechanism);
+        self::assertSame($channel, $composition->all[0]->suppressor);
+        self::assertNotSame($finding->ruleName, $composition->all[0]->suppressor);
+    }
+
+    #[Test]
+    public function itAttributesTheRuleNamespaceChannelExclusionToTheProducerAndReportsAnUnfiredChannelPatternAsInert(): void
+    {
+        $channel = 'health.cohesion';
+        $siblingChannel = 'health.coupling';
+        $finding = $this->finding($channel, 'src/Foo.php', 'App\\Excluded', ruleName: 'computed.health');
+        $ruleExecution = new RuleExecutionResult([$finding], [], new RuleExclusionStats(
+            namespaceExclusionsByRule: ['computed.health' => 1],
+            excludedFindings: [$finding],
+            attributions: [new RuleExclusionAttribution(
+                'computed.health',
+                isPathExclusion: false,
+                matchedChannelPatterns: [['selector' => $channel, 'pattern' => 'App\\Excluded']],
+            )],
+        ));
+
+        $composition = $this->builder->build(
+            new FindingProjectionResult(findings: []),
+            $ruleExecution,
+            $this->ruleConfiguration(['computed.health' => ['exclude_namespace_channels' => [
+                $channel => ['App\\Excluded'],
+                $siblingChannel => ['App\\NeverMatched'],
+            ]]]),
+            new FindingProjectionOptions(),
+            suppressions: [],
+        );
+
+        self::assertCount(1, $composition->all);
+        self::assertSame(SuppressionMechanism::RuleNamespaceExclusion, $composition->all[0]->mechanism);
+        self::assertSame('computed.health', $composition->all[0]->suppressor);
+
+        self::assertCount(1, $composition->neverMatched);
+        self::assertSame(SuppressionMechanism::RuleNamespaceExclusion, $composition->neverMatched[0]->mechanism);
+        self::assertSame('computed.health: ' . $siblingChannel . ' App\\NeverMatched', $composition->neverMatched[0]->suppressor);
+    }
+
+    /**
+     * Two overlapping global `--exclude-path` patterns both independently
+     * match the same removed file. Crediting only the first-matched pattern
+     * (the shape {@see \Qualimetrix\Core\Util\PathMatcher::matches()} returns)
+     * would report the second as inert even though it excludes findings of
+     * its own.
+     */
+    #[Test]
+    public function itDoesNotReportAnOverlappingGlobalExcludePathPatternAsInertWhenItIndependentlyMatches(): void
+    {
+        $finding = $this->finding('code-smell.debug-code', 'src/Reporting/Foo.php');
+        $filterResult = new FindingProjectionResult(
+            findings: [],
+            removedByStage: [FindingFilterStage::PathExclusion->value => [$finding]],
+        );
+
+        $composition = $this->builder->build(
+            $filterResult,
+            $this->ruleExecution(),
+            $this->ruleConfiguration([]),
+            new FindingProjectionOptions(excludePaths: ['src', 'src/Reporting']),
+            suppressions: [],
+        );
+
+        self::assertSame([], $composition->neverMatched);
+    }
+
+    #[Test]
+    public function itAttributesTheBaselineMechanismToTheOccurrenceKeyAndDependencyEdgeWhenPresent(): void
+    {
+        $namespace = 'App\\Foo';
+        $symbolPath = SymbolPath::forNamespace($namespace);
+        $target = SymbolPath::forClass('App\\Bar', 'Baz');
+        $occurrenceKey = OccurrenceKey::semantic('test', ['edge' => 'App\\Bar\\Baz']);
+        $finding = new Finding(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 10),
+            subject: MetricSubject::aggregate($symbolPath),
+            symbolPath: $symbolPath,
+            ruleName: 'circular-dependency',
+            code: 'circular-dependency.class-cycle',
+            message: 'test',
+            severity: Severity::Warning,
+            dependencyTarget: $target,
+            dependencyType: DependencyType::New_,
+            occurrenceKey: $occurrenceKey,
+        );
+        $filterResult = new FindingProjectionResult(
+            findings: [],
+            removedByStage: [FindingFilterStage::Baseline->value => [$finding]],
+        );
+
+        $composition = $this->builder->build(
+            $filterResult,
+            $this->ruleExecution(),
+            $this->ruleConfiguration([]),
+            new FindingProjectionOptions(),
+            suppressions: [],
+        );
+
+        self::assertCount(1, $composition->all);
+        self::assertSame(
+            $finding->subject->toCanonical() . ' ' . $finding->code
+                . ' [' . $occurrenceKey->value . '] -> ' . $target->toCanonical() . ' (new)',
+            $composition->all[0]->suppressor,
+        );
     }
 
     private function finding(

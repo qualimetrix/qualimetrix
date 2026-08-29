@@ -597,10 +597,18 @@ format you selected it with.
 `exclude_namespaces` entry (a typo'd path, a file the project deleted).
 
 **Capture is armed the same way by two independent routes** — passing
-`--show-suppressed` (which also still prints the same information as prose on
-`--format=text`), or selecting `--format=suppressed` itself, including via
+`--show-suppressed`, or selecting `--format=suppressed` itself, including via
 `format: suppressed` in `qmx.yaml`. Either route arms the same per-rule
-exclusion capture, so they never disagree.
+exclusion capture, so the counts each surface reports for that mechanism never
+disagree.
+
+**The two surfaces are not otherwise equivalent.** `--show-suppressed` on
+`--format=text` prints inline `@qmx-ignore` suppressions and per-rule
+exclusions as prose. Global `path-exclusion` and `namespace-exclusion` appear
+there only as `-v` counts, not per finding; `baseline` and `git-scope`
+removals are not listed at all; and there is no text equivalent of
+`neverMatched`. `suppressed` is the only surface that publishes all seven
+mechanisms as individual findings.
 
 **The composition is a multiset, not a set of findings.** One finding can be
 removed by more than one mechanism — for example, a finding an inline

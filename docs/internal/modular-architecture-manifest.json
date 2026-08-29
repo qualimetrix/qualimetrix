@@ -6681,6 +6681,11 @@
         },
         {
           "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\DirectiveSuppressorResolver",
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector",
           "closes_in": null
         },
@@ -6752,11 +6757,6 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
-          "closes_in": null
-        },
-        {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
           "closes_in": null
         },
         {
@@ -7159,6 +7159,20 @@
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
           "closes_in": null
         },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\RuleExclusionAttribution": {
+      "path": "src/Analysis/Finding/Contract/RuleExclusionAttribution.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "closure_package": "P6-A",
+      "consumers": [
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
@@ -13130,6 +13144,11 @@
         },
         {
           "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\FindingExclusionLedger",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsRegistry",
           "closes_in": null
         },
@@ -14516,6 +14535,11 @@
         },
         {
           "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\FindingExclusionLedger",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleThresholdKeyGroupRegistry",
           "closes_in": null
         },
@@ -15194,6 +15218,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\FindingExclusionLedger",
+          "closes_in": null
+        },
+        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\TupleExtractor",
           "closes_in": null
@@ -15217,11 +15246,6 @@
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
           "closes_in": null
-        },
-        {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
-          "closes_in": null
         }
       ]
     },
@@ -15243,6 +15267,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\FindingExclusionLedger",
+          "closes_in": null
+        },
+        {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector",
           "closes_in": null
@@ -15250,11 +15279,6 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
-          "closes_in": null
-        },
-        {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
           "closes_in": null
         }
       ]
@@ -17763,6 +17787,14 @@
       "closure_package": "P6-D",
       "consumers": []
     },
+    "Qualimetrix\\Reporting\\FindingProjection\\DirectiveSuppressorResolver": {
+      "path": "src/Reporting/FindingProjection/DirectiveSuppressorResolver.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
     "Qualimetrix\\Reporting\\FindingProjection\\FindingProjectionOptions": {
       "path": "src/Reporting/FindingProjection/FindingProjectionOptions.php",
       "kind": "class",
@@ -17832,14 +17864,6 @@
     },
     "Qualimetrix\\Reporting\\FindingProjection\\InertSuppressor": {
       "path": "src/Reporting/FindingProjection/InertSuppressor.php",
-      "kind": "class",
-      "owner": "Reporting",
-      "visibility": "internal",
-      "closure_package": "P6-A",
-      "consumers": []
-    },
-    "Qualimetrix\\Reporting\\FindingProjection\\LedgerHit": {
-      "path": "src/Reporting/FindingProjection/LedgerHit.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",

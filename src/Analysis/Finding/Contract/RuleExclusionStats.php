@@ -29,11 +29,17 @@ final readonly class RuleExclusionStats
      *                                        Populated only when the current {@see RuleConfigurationInterface} enables capture from
      *                                        `RuntimeConfigurator`'s `--show-suppressed` policy — the counts above are always collected, but retaining
      *                                        every dropped `Finding` object is opt-in to avoid the memory cost when nothing will display them.
+     * @param list<RuleExclusionAttribution> $attributions Why each entry of `$excludedFindings` was removed,
+     *                                                     recorded at decision time — same index, same order, same opt-in gate.
+     *                                                     A consumer reporting the suppressed surface reads this instead of
+     *                                                     re-asking `RuleConfigurationInterface`'s predicates under a name it
+     *                                                     reconstructs itself; see {@see RuleExclusionAttribution}.
      */
     public function __construct(
         public array $namespaceExclusionsByRule = [],
         public array $pathExclusionsByRule = [],
         public array $excludedFindings = [],
+        public array $attributions = [],
     ) {}
 
     public function totalNamespaceExclusions(): int

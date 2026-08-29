@@ -56,8 +56,7 @@ Reporting/
 │   ├── InertSuppressor.php                # A configured suppressor (pattern/rule) that excluded nothing this run
 │   ├── SuppressionComposition.php         # `$all` (multiset) + `$neverMatched`, published by `--format=suppressed`
 │   ├── SuppressionCompositionBuilder.php  # Builds SuppressionComposition for the five global stages; delegates the ledger halves
-│   ├── RuleExclusionLedgerAttributor.php  # Attributes ledger-excluded findings to their firing per-rule pattern; finds inert ones
-│   └── LedgerHit.php                      # One ledger-attributed finding, carrying the matched pattern for zero-count detection
+│   └── RuleExclusionLedgerAttributor.php  # Publishes each ledger-excluded finding from the RuleExclusionAttribution the ledger recorded; finds inert patterns, including exclude_namespace_channels
 ├── Filter/
 │   └── FindingFilter.php                # Shared finding/offender filtering by namespace/class context
 ├── Profile/
