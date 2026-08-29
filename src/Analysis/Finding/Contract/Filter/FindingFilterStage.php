@@ -17,13 +17,16 @@ namespace Qualimetrix\Analysis\Finding\Contract\Filter;
  * order from counts cannot distinguish "the baseline ran fourth" from "the
  * baseline happened to remove nothing".
  *
- * **Why a closed enum, and why in `Core`.** Closed, because the pipeline is
+ * **Why a closed enum, and where it lives.** Closed, because the pipeline is
  * one fixed sequence rather than an extension point — an open string would
  * let two stages claim one name and would make the order assertion
- * stringly-typed. In `Core`, because the stage contract itself must be
- * reachable from `Baseline`, which `qmx.yaml` permits to depend only on
- * `Core`; naming a stage is not depending on the component that implements
- * it, and no case here implies an edge onto `Infrastructure`.
+ * stringly-typed. It lives beside the finding
+ * contract because the stage vocabulary must be reachable from `Baseline`,
+ * which is permitted to depend on it; naming a stage is not depending on the
+ * component that implements it, and no case here implies an edge onto
+ * `Infrastructure`. The docblock said `Core` until Ш6: the enum has not been
+ * there since the capability layout landed, and the reason it gave outlived
+ * the address it named.
  *
  * **The price, stated so it is not rediscovered later as a defect.**
  * `GitScope` is named here and implemented in `Infrastructure`, so this enum

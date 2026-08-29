@@ -51,15 +51,18 @@ addresses a key in a grammar, and Ш5e3 replaces that grammar, so the two trees
 would spell the line differently and neither spelling could be handed to the
 reference. The decision and its alternatives are in `PLAN.md` under Ш5e3-0.
 
-- **Cost, two parts.** After Ш5e3 the `m['...']` grammar is exercised by the six
-  built-in `health.*` formulas (whose values the gate compares at three levels) and
-  by Ш5e3's own tests, but not by a user-supplied formula through the config path.
-  And a constant is the same at every level, so that channel no longer
-  distinguishes one level's value from another's — the six dimensions do, so the
-  corpus keeps the property, but it belongs to them now.
-- **What would close it:** once both trees understand `m['...']` — that is, from the
-  step after Ш5e3 onwards — the corpus formula can read a metric key again with no
-  translation needed at all.
+- **Cost, while it lasted:** for one step the `m['...']` grammar was exercised only
+  by the six built-in `health.*` formulas and by Ш5e3's own tests, not by a
+  user-supplied formula through the config path; and a constant is the same at
+  every level, so that channel stopped distinguishing one level's value from
+  another's.
+- **Closed by Ш6, package П1 (2026-08-29).** The case's user metric is
+  `computed.branch-load` again — multi-word, so a user-spelled leaf is back in the
+  corpus — and its formula reads a metric key:
+  `clamp((m["complexity.ccn.avg"] ?? 0) * 10, 0, 100)`. No map row: the reference
+  speaks both kebab and `m["..."]`. Verified that it is not vacuous — the published
+  values differ per subject (32.2, 45, 15, 41.4 …), so the channel distinguishes
+  levels and subjects again.
 
 ## Ш5e3 (2026-08-28) — the breaking key vocabulary
 
@@ -74,13 +77,15 @@ string is within the product's five-edit radius of both. Whichever spelling the
 corpus held, one side of the gate would print two suggestions and the other none,
 and `message` is a compared field a declared delta may not cover.
 
-- **Cost:** between this step and the next, the tie is measured only by the unit
-  test — reachability and equidistance — and not by a run of the product. What the
-  corpus stops proving is that a tie actually reaches a published `message`.
-- **What would close it:** the step after Ш5e3 has a reference that already knows
-  the three new names, so `@qmx-ignore design.type-coverage.propurn` goes back into
-  `finding-gate/cases/annotations/src/Directives.php` with no translation needed.
-  The equidistant string is already measured, in the test.
+- **Cost, while it lasted:** for one step the tie was measured only by the unit
+  test — reachability and equidistance — and not by a run of the product.
+- **Closed by Ш6, package П1 (2026-08-29).** `@qmx-ignore design.type-coverage.propurn`
+  is back in `finding-gate/cases/annotations/src/Directives.php`, with no map row:
+  the reference already knows the three names. Verified twice — the gate against
+  `6b3722b2` is GREEN under empty maps and zero declared deltas, and a run of the
+  product prints both suggestions in one message, which is what the corpus is
+  there to prove:
+  `Addressable names closest to it: design.type-coverage.return, design.type-coverage.property`.
 
 ### The metric key and the channel it checks are one string, and one guard pays
 
@@ -118,3 +123,96 @@ a rule named after the subject rather than the measure.
   a surface Ш5b–Ш5d just stabilised, which Р7 allowed only four exceptions to.
   Neither follows from a decision already taken, so the step that closes this
   measures the radius of both and picks one.
+
+## Ш6 (2026-08-29) — the compaction surface and the audit
+
+### `AnalysisResult` glues three unrelated subjects into one VO
+
+Package П2 added an eighth constructor parameter (`ruleExecution`) to carry
+`RuleExecutionResult` from `AnalysisPipeline` to Infrastructure, which is the
+step's own contract requirement (Ш6 decision (е)). The value that now needs a
+`@qmx-threshold` to stay under `code-smell.constructor-overinjection` and
+`code-smell.long-parameter-list` was already at seven fields answering three
+different questions with no shared reason to change together: what the run
+*measured* (`metrics`, `coverage`, `namespaceTree`, `duration`), what *controls*
+were in force going in (`suppressions`, `thresholdOverrides`), and what *rules
+said* coming out (`findings`, `ruleExecution`). Splitting by subject — not by
+introducing a parameter-object wrapper, which would just rename the same eight
+fields under one more class — is the actual answer this shape asks for, and it
+is out of scope for Ш6: every consumer listed below would need to learn which
+of the three new values to reach through.
+
+- **Cost, measured 2026-08-29 via `mcp__serena__find_referencing_symbols` on
+  the exact promoted properties `AnalysisResult::$suppressions` and
+  `AnalysisResult::$thresholdOverrides`** (language-server-resolved, so it
+  counts only accesses to *this* class's fields and skips the same-named
+  fields on `CollectionPhaseOutput`, `RunConfiguration` and other unrelated
+  types that a plain `grep -rn '\->suppressions\b'` cannot tell apart): 16
+  reference sites for `$suppressions` across `AnalysisResult` itself (4:
+  constructor docblock, two in `merge()`, one local variable),
+  `AnalysisPipeline::analyze()` (1), `FindingFilterOrchestrator::filterAndReport()`
+  (1), `MeasuredFindingSet::run()` (1), `AnalysisResultTest` (7) and
+  `MeasuredFindingSetTest`/`InlineSuppressionLayerViolationIntegrationTest` (1
+  each); 13 reference sites for `$thresholdOverrides` across `AnalysisResult`
+  itself (4), `AnalysisPipeline::analyze()` (1), `StubBaselineRun::measure()`
+  (1), `BaselineExplainCommand::doExecute()` (1) and `AnalysisResultTest` (6).
+  A three-way split moves all 29 of these call sites at minimum, one import
+  and one property access each.
+- **What would close it:** a step that gives each of the three subjects its own
+  value — a measured-facts VO, a controls-in-force VO, a rule-verdict VO
+  (`RuleExecutionResult` already is one) — and makes `AnalysisResult` compose
+  the three rather than flatten them. Not attempted here: Ш6's contract names
+  `AnalysisResult` as a pass-through carrier, not as the layout to fix, and
+  fixing it would touch Reporting and Console call sites that are П4's and
+  П5's territory, not П2's.
+
+### The suppressed composition is outside the equivalence gate for one step
+
+`suppressed` is a new output format, and the gate runs every format in
+`Surfaces::FORMATS` on both trees. The reference of this step, `6b3722b2`, does
+not know the format: putting it in the list now would produce fourteen "unknown
+format" diffs plus fourteen exit-code diffs, which say nothing about the
+product. So the format is not in the list, and the step's own tests plus the
+`src` snapshot are what hold it.
+
+- **Cost:** for one step, a change to the composition's payload — a renamed
+  field, a reordered block, a mechanism silently dropped — is invisible to the
+  cross-version comparison. The snapshot catches a change in *what* is
+  suppressed on our own `src`; it does not catch a change in *how* the format
+  spells it, and no corpus case compares the format at all.
+- **What closes it, checkably:** the first step whose reference already knows
+  `suppressed` adds it to `Surfaces::FORMATS`. That is a property of the
+  reference commit, not a promise about the next step: if the next step's
+  reference predates the format, the entry stays.
+
+### `contract_surface` cannot express a chain through another owner's carrier
+
+The manifest can declare a *carried* surface — a type that crosses an owner
+boundary with no direct import — through the `contract_surface` relation and its
+`carrier_fqcn` field. Ш6 is the first step in the project to use it:
+`Core\Util\PatternMatch` is declared by four such entries whose carriers are
+`PathMatcher` and `NamespaceMatcher`, both of its own owner.
+
+`RuleExecutionResult` cannot be declared that way. Its honest carrier is
+`Analysis\Run\Contract\Pipeline\AnalysisResult`, and the check requires a
+carrier of the **same owner** as the declared type
+(`validateContractSurfaces()` in
+`scripts/generate-modular-architecture-production-inventory.php`, refusing with
+"requires a same-owner contract carrier"). The real chain,
+`Analysis.Finding → Analysis.Run → Infrastructure.Console`, has two steps, and
+the relation models one.
+
+- **Cost:** the console orchestrator reads `$result->ruleExecution->published`
+  without importing the type, so that owner pair is absent from the inventory.
+  No manifest check catches it — only reading the code does. One pair today, and
+  one more for every future carried surface that travels through a foreign
+  carrier.
+- **What must NOT close it:** naming `RuleExecutionInterface` as the carrier via
+  its `RulesCommand` consumer. The checker would pass and the statement would be
+  false — `RulesCommand` calls `allRules()` and never touches
+  `RuleExecutionResult`. Fitting the declaration to the checker is worse than the
+  gap, because it makes the gap invisible.
+- **What would close it:** either extending the relation to a carrier chain with
+  every link checked, or revisiting the same-owner requirement while naming what
+  is checked instead. That is the manifest owner's call, not the call of the step
+  that first needed it.

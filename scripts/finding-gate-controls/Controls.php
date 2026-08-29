@@ -195,14 +195,14 @@ final class Controls
      * both, and no surface or count can differ.
      *
      * A `map-stale` toleration comes and goes with the step's own map, and it is
-     * back. It first sat here for the step whose map declared a row per channel:
-     * taking away the only fixture that fires one left that row translating
-     * nothing. Ш5c's ten rows were all `complexity.*` and `coupling.*`
-     * collapses, so none of them named this channel and the toleration was
-     * withdrawn — a toleration nothing matches fails the control. Ш5e3 declares
-     * a row per metric key, and `unreachableCode.firstLine` is published by this
-     * fixture and by nothing else, so its row goes idle exactly when the fixture
-     * does. The base key's row does not: other fixtures publish it.
+     * gone again. It sits here only while some declared row is translated by
+     * this fixture alone: Ш5e3 declared a row per metric key, and
+     * `unreachableCode.firstLine` is published by this fixture and by nothing
+     * else, so removing the fixture left that row translating nothing. Ш5c's ten
+     * rows never named the channel, and Ш6 renames nothing at all, so under an
+     * empty map no row can go stale — and a toleration nothing matches fails the
+     * control, because it claims a blast radius the run did not prove. Add it
+     * back when a step's map declares a row this fixture alone translates.
      *
      * The `layers` case would not do:
      * its layer-policy diagnostics are computed from the policy and the import
@@ -221,9 +221,6 @@ final class Controls
             [
                 new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus'),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:smells'),
-            ],
-            [
-                new Expectation(FailureClass::MAP_STALE, 'unreachableCode.firstLine'),
             ],
         );
     }
@@ -412,20 +409,46 @@ final class Controls
             [
                 new Expectation(FailureClass::DELTA_MISMATCH, 'case:health|format:json'),
                 new Expectation(FailureClass::DELTA_OVERREACH, 'case:health|format:json'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:annotations'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:coupling'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:cycle'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:design'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:disabled-rule'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:duplication'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:excluded-path'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:layers'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:only-rules'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:security'),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
+                ...self::surfaceMismatchOnEveryCaseButHealth(),
             ],
         );
+    }
+
+    /**
+     * The mutation moves two lines of every JSON finding, so every case's JSON
+     * surface differs; only `health` is big enough to pass the declaration
+     * limit, and only it is required. The rest are tolerated.
+     *
+     * Derived from the corpus rather than listed, and that is the whole point:
+     * the list was written by hand, Ш6 added the `rule-exclusion-ledger` case,
+     * and the control failed on a surface the mutation explains perfectly well —
+     * "failure(s) the mutation does not explain" pointing at a case the
+     * declaration had simply never heard of. A case is a directory holding a
+     * `case.json`, the same definition {@see \QmxFindingGate\Corpus::load()}
+     * uses, so a corpus that grows again does not invalidate this control.
+     *
+     * @return list<Expectation>
+     */
+    private static function surfaceMismatchOnEveryCaseButHealth(): array
+    {
+        $root = \dirname(__DIR__, 2) . '/finding-gate/cases';
+        $entries = scandir($root);
+
+        if ($entries === false) {
+            throw new RuntimeException(\sprintf('No corpus at %s, so this control cannot state its blast radius.', $root));
+        }
+
+        $tolerated = [];
+
+        foreach ($entries as $entry) {
+            if ($entry === 'health' || !is_file($root . '/' . $entry . '/case.json')) {
+                continue;
+            }
+
+            $tolerated[] = new Expectation(FailureClass::SURFACE_MISMATCH, 'case:' . $entry);
+        }
+
+        return $tolerated;
     }
 
     /**

@@ -1,0 +1,98 @@
+# Every place an output format's name is written today, obtained by asking where
+# existing ones are written. The new `suppressed` format has to appear in each of
+# these or it exists without being findable; DI registration is the one channel
+# that needs no edit.
+#
+# Regenerate with (two probes, union — one name is not enough, see below):
+#   grep -rln 'checkstyle\|sarif' . --include='*.php' --include='*.md' --include='*.yml' \
+#     --include='*.yaml' --include='*.json' --include='*.txt' --include='*.js' \
+#     --exclude-dir=vendor --exclude-dir=node_modules --exclude-dir=.git
+#
+# ROW COUNT: 63 files — 10 product, 18 test, 15 website, 7 gate, 4 component
+# READMEs, the repository front page, `action.yml`, 6 historical (ADRs and plan
+# documents) and 1 generated inventory. The last two groups are not edited by a
+# new format.
+#
+# HOW THIS WAS PRODUCED, AND WHAT THE FIRST ATTEMPT MISSED
+# The first probe searched `checkstyle` under src/ tests/ scripts/ website/ docs/
+# finding-gate/ only, and missed three real channels because the repository ROOT
+# was not in the path list and because not every list names checkstyle:
+# `README.md`'s output-format table, `action.yml`'s `format:` input description
+# (which also branches on the format when naming the output file), and
+# `website/docs/llms.txt`. Both fixes are in the command above: search from the
+# root, and use two format names rather than one.
+#
+# WHAT THIS METHOD STILL DOES NOT SEE
+# - A list that names no format this probe knows. Checked by hand for the two
+#   lists that generate the others: `Surfaces::FORMATS` (the gate) and
+#   `CheckCommandDefinition`'s --format description.
+# - The registration channel, deliberately silent: a `*Formatter` implementing
+#   FormatterInterface is autoconfigured and needs no list entry (AGENTS.md §7).
+# - Reachability from `qmx.yaml` rather than from --format. Answered separately
+#   and it matters: `ConfigSchema::FORMAT` makes `format: suppressed` a legal
+#   configuration key, which is why the capture gate may not hang off the CLI
+#   option.
+file	role
+README.md	repository front page
+action.yml	GitHub Action input surface
+docker-compose.yml	product
+docs/adr/0003-reporting-ux-redesign.md	historical — not edited
+docs/adr/0029-channel-presentation-join.md	historical — not edited
+docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	generated — not edited by hand
+docs/internal/plans/diff-mode-new-only.md	historical — not edited
+docs/internal/plans/modular-architecture/p6/p6-test-ledger.md	historical — not edited
+docs/internal/plans/rule-vocabulary/PLAN.md	historical — not edited
+docs/internal/plans/sarif-channel-descriptions.md	historical — not edited
+finding-gate/README.md	component documentation
+scripts/finding-gate-controls/Control.php	gate
+scripts/finding-gate-controls/Controls.php	gate
+scripts/finding-gate/Fingerprints.php	gate
+scripts/finding-gate/Gate.php	gate
+scripts/finding-gate/RenameMaps.php	gate
+scripts/finding-gate/SelfTest.php	gate
+scripts/finding-gate/Surfaces.php	gate
+scripts/generate-modular-architecture-production-inventory.php	product
+src/Analysis/Configuration/Pipeline/RuleNameValidator.php	product
+src/Analysis/Finding/Contract/ChannelPresentationInterface.php	product
+src/Analysis/Finding/README.md	component documentation
+src/Infrastructure/Console/CheckCommandDefinition.php	product
+src/Infrastructure/Console/README.md	component documentation
+src/Infrastructure/Rule/ComputedMetricChannelPresentation.php	product
+src/Reporting/Formatter/CheckstyleFormatter.php	product
+src/Reporting/Formatter/Sarif/SarifFormatter.php	product
+src/Reporting/Formatter/Sarif/SarifRuleCollector.php	product
+src/Reporting/Formatter/Support/AcceptedLevelNarrator.php	product
+src/Reporting/README.md	component documentation
+tests/Analysis/Finding/Integration/ChannelPresentationCoverageTest.php	test
+tests/Analysis/Finding/Integration/RuleDocsPageCoverageTest.php	test
+tests/Analysis/Finding/Integration/RuleIdentifierLiteralGuardTest.php	test
+tests/Analysis/Finding/Integration/RuleRemediationMinutesCoverageTest.php	test
+tests/Analysis/Finding/Unit/ChannelPresentationViewTest.php	test
+tests/Analysis/Policy/Baseline/Functional/BaselineCommandOptionSurfaceTest.php	test
+tests/Fixtures/Schema/sarif-2.1.0.schema.json	test
+tests/Functional/Reporting/CoverageProjectionFormatterTest.php	test
+tests/Functional/Reporting/JsonShapePreservationTest.php	test
+tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	test
+tests/Infrastructure/Rule/Unit/ComputedMetricChannelPresentationTest.php	test
+tests/Integration/DependencyInjection/ContainerFactoryTest.php	test
+tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php	test
+tests/Unit/Reporting/Formatter/CheckstyleFormatterTest.php	test
+tests/Unit/Reporting/Formatter/FormatterRegistryTest.php	test
+tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php	test
+tests/Unit/Reporting/Formatter/Sarif/SarifSchemaValidationTest.php	test
+tests/Unit/Reporting/Formatter/SarifFormatterTest.php	test
+website/docs/ci-cd/github-actions.md	website documentation
+website/docs/ci-cd/github-actions.ru.md	website documentation
+website/docs/ci-cd/other-ci.md	website documentation
+website/docs/ci-cd/other-ci.ru.md	website documentation
+website/docs/llms.txt	website documentation (LLM index)
+website/docs/rules/duplication.md	website documentation
+website/docs/rules/duplication.ru.md	website documentation
+website/docs/usage/cli-options.md	website documentation
+website/docs/usage/cli-options.ru.md	website documentation
+website/docs/usage/git-integration.md	website documentation
+website/docs/usage/git-integration.ru.md	website documentation
+website/docs/usage/output-formats.md	website documentation
+website/docs/usage/output-formats.ru.md	website documentation
+website/docs/usage/usage-scenarios.md	website documentation
+website/docs/usage/usage-scenarios.ru.md	website documentation

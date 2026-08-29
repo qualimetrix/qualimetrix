@@ -57,10 +57,12 @@ final class TreeRun
             );
         }
 
-        // Captured as text on purpose: with `--format=json` the suppression
-        // report is prepended as plain text to the JSON document, so the
-        // artifact would not parse. The JSON finding payload is identical with
-        // and without the flag, so nothing is lost by not asking for it there.
+        // Captured on the text surface because that is where the flag speaks:
+        // the JSON finding payload is byte-identical with and without it. The
+        // machine-readable composition is a format of its own (`suppressed`),
+        // and it is deliberately not in Surfaces::FORMATS while the reference
+        // predates it — a format the reference cannot run compares as fourteen
+        // "unknown format" diffs rather than as a fact about the product.
         $artifacts += $this->capture(
             $scope,
             'show-suppressed',

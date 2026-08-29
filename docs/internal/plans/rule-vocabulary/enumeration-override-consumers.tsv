@@ -1,0 +1,63 @@
+# Every production site that reads a `@qmx-threshold` override, directly or
+# through AbstractRule. The counterfactual pass of the threshold audit claims
+# that removing the override map changes a run only through these sites, so the
+# sites are enumerated rather than asserted.
+#
+# Regenerate with:
+#   grep -rn "getEffectiveOptions\|getEffectiveSeverity\|getThresholdOverride" src/ --include='*.php'
+#
+# ROW COUNT: 36 matches in 27 files, of which one (HardcodedCredentialsRule:141) is a
+# docblock reference and not a call. The two lookup roots are
+# AbstractRule::getEffectiveOptions() and AnalysisContext::getThresholdOverride();
+# LongParameterListRule is the only rule that calls the latter itself.
+#
+# WHAT THIS METHOD DOES NOT SEE
+# - A rule that reads the override map through some other name. The grep is on
+#   three method names; the closed check is that AnalysisContext exposes exactly
+#   one accessor and it has two callers in src.
+# - Non-rule readers of the same annotations. Three exist and none is a
+#   threshold decision: ThresholdOverrideSupportReader (declares whether a rule
+#   accepts overrides at all), the per-rule OverrideValidatorInterface
+#   implementations (reject a malformed override at extraction time, publishing
+#   annotation.invalid-threshold / annotation.unsupported-threshold), and
+#   BaselineConfiguredThresholds (prints the configured boundary in
+#   baseline:explain). The audit's diff must therefore be taken over rule
+#   findings, not over the whole report, or the annotation.* channels would
+#   answer for themselves.
+site	kind
+src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php:80	call
+src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php:128	call
+src/Analysis/Evidence/CodeSmell/LongParameterListRule.php:152	call
+src/Analysis/Evidence/CodeSmell/LongParameterListRule.php:183	call
+src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php:115	call
+src/Analysis/Evidence/Cohesion/LcomRule.php:96	call
+src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php:161	call
+src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php:211	call
+src/Analysis/Evidence/Complexity/ComplexityRule.php:170	call
+src/Analysis/Evidence/Complexity/ComplexityRule.php:245	call
+src/Analysis/Evidence/Complexity/NpathComplexityRule.php:177	call
+src/Analysis/Evidence/Complexity/NpathComplexityRule.php:229	call
+src/Analysis/Evidence/Complexity/WmcRule.php:100	call
+src/Analysis/Evidence/Coupling/CboRule.php:231	call
+src/Analysis/Evidence/Coupling/ClassRankRule.php:111	call
+src/Analysis/Evidence/Coupling/DistanceRule.php:155	call
+src/Analysis/Evidence/Coupling/InstabilityRule.php:187	call
+src/Analysis/Evidence/Coupling/InstabilityRule.php:254	call
+src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php:115	call
+src/Analysis/Evidence/Design/DataClassRule.php:111	call
+src/Analysis/Evidence/Design/GodClassRule.php:99	call
+src/Analysis/Evidence/Design/InheritanceRule.php:83	call
+src/Analysis/Evidence/Design/NocRule.php:95	call
+src/Analysis/Evidence/Duplication/CodeDuplicationRule.php:124	call
+src/Analysis/Evidence/Maintainability/MaintainabilityRule.php:95	call
+src/Analysis/Evidence/Security/HardcodedCredentialsRule.php:100	call
+src/Analysis/Evidence/Security/HardcodedCredentialsRule.php:141	docblock
+src/Analysis/Evidence/Security/SensitiveParameterRule.php:99	call
+src/Analysis/Evidence/Size/ClassCountRule.php:109	call
+src/Analysis/Evidence/Size/MethodCountRule.php:106	call
+src/Analysis/Evidence/Size/PropertyCountRule.php:117	call
+src/Analysis/Finding/Contract/Rule/AbstractRule.php:106	call
+src/Analysis/Finding/Contract/Rule/AbstractRule.php:112	call
+src/Analysis/Finding/Contract/Rule/AbstractRule.php:82	call
+src/Analysis/Finding/Contract/Rule/AbstractRule.php:87	call
+src/Analysis/Finding/Contract/Rule/AnalysisContext.php:33	call
