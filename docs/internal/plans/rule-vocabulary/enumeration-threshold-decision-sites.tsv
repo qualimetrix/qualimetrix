@@ -1,91 +1,99 @@
-# Where a threshold DECISION is actually taken, per rule. Ш7's seam — "a
-# threshold is a decision, not a number" — has to cover every row whose options
-# carry a threshold, or exclude it by name.
+# Where a threshold DECISION is actually taken. One row per DECISION SITE, not
+# per rule: the first edition of this table gave one row per rule and hid three
+# facts at once — LongParameterListRule takes three decisions, the five
+# hierarchical rules take one per level, and a package split keyed on "rules"
+# therefore put the same file in two packages. Review round 1 (comprehensive,
+# codex, qwen — all three independently) rejected the plan on that.
 #
-# This is not the same population as enumeration-threshold-decision-shapes.tsv.
-# That table classifies the 27 options classes by the shape of the decision they
-# offer. This one classifies the 45 rules by who takes it, which is what the
-# seam replaces.
+# This is not enumeration-threshold-decision-shapes.tsv. That table classifies
+# the 27 options classes by the decision they OFFER, and stays correct about it.
+# This one locates every place the decision is TAKEN, which is what Ш7 replaces.
 #
 # HOW IT WAS OBTAINED
-#   For every src/**/*Rule.php that is neither Abstract* nor an interface, read
+#   For every src/**/*Rule.php that is neither Abstract* nor an interface, scan
 #   the rule class and — when it extends a base other than AbstractRule — that
-#   base as well. Classify by the first match of:
-#     getEffectiveSeverity(   -> one-call-helper   (the sanctioned path)
-#     getEffectiveOptions( and ->getSeverity(  -> manual-two-step
-#     ->getSeverity(          -> raw-options
-#     none of them            -> decides-in-rule
-#   Options class: the first `XOptions::class` literal in that same scope;
-#   `threshold-aware` = implements ThresholdAwareOptionsInterface,
-#   `hierarchical-root` = implements HierarchicalRuleOptionsInterface.
+#   base too, line by line, for:
+#     getEffectiveSeverity(   -> one-call-helper        (the sanctioned path)
+#     ->getSeverity(          -> options-getSeverity
+#     ->getVoSeverity(        -> options-getVoSeverity  (LongParameterList only)
+#     getThresholdOverride(   -> raw-override-read      (bypasses getEffectiveOptions)
+#   A rule with no such line gets one `decides-in-rule` row and no line number.
+#   Lines declaring a function, and lines starting a docblock, are skipped.
+#   Options class: the first `XOptions::class` literal in the same scope.
 #
-# WHAT THIS METHOD DOES NOT SEE, stated because two earlier passes were wrong in
-# opposite directions and both looked finished:
-# - AbstractRule is deliberately outside the walk. It contains a `->getSeverity()`
-#   call inside getEffectiveSeverity(), so counting it marks all 45 rules as
-#   asking. A pass that included it reported 45/45 "asks"; a pass that ignored
-#   inheritance entirely reported the three type-coverage rules as deciding
-#   inline, though their AbstractTypeCoverageRule base asks for them.
-# - Traits, and a decision delegated to a collaborator object rather than a base
-#   class. None is known, none was searched for.
-# - A rule that names its options only through a constructor type hint or a
-#   string. The probe is the `::class` literal.
-# - Whether a rule's inline comparison AGREES with its options class. It does not
-#   for InheritanceRule, whose own docblock says it mirrors
-#   InheritanceOptions::getSeverity() by hand.
+# WHAT THIS METHOD DOES NOT SEE
+# - AbstractRule is deliberately outside the walk: its own `->getSeverity()`
+#   lives inside getEffectiveSeverity(), so including it marks all 45 rules as
+#   asking. An earlier pass that did include it reported 45/45; one that ignored
+#   inheritance entirely called the three type-coverage rules inline deciders,
+#   though AbstractTypeCoverageRule asks for them. Both looked finished.
+# - A decision expressed through an accessor named none of the four above.
+#   getVoSeverity was found only because a reviewer read the rule; a fifth such
+#   name would be missed the same way.
+# - Traits, and a decision delegated to a collaborator rather than a base class.
+# - Whether a rule's inline comparison agrees with its options class. It does not
+#   for InheritanceRule, whose docblock says it mirrors the options by hand.
 #
-# ROW COUNT: 45 rules.
-#   21 carry no threshold at all (18 decide in the rule, 3 call the helper) —
+# ROW COUNT: 50 sites in 45 rules.
+#   21 rules carry no threshold (18 decide in the rule, 3 call the helper) —
 #      outside Ш7.
-#   24 carry a threshold: 19 threshold-aware options plus 5 hierarchical roots.
-#      2 take the sanctioned one-call path, 18 hand-roll the two-step, and 4
-#      decide in the rule body: DataClassRule and GodClassRule (already named
-#      inauditable), plus ClassRankRule, which rescales the pair by project size
-#      before comparing, and InheritanceRule, which duplicates the comparison.
+#   24 rules carry one: 29 sites. 2 take the sanctioned one-call path, 21 read
+#      the options accessor after resolving effective options, 1 reads the raw
+#      override map (LongParameterListRule's VO path, which bypasses
+#      getEffectiveOptions entirely), 1 is that path's getVoSeverity, and 4
+#      decide in the rule body.
+#   4 rules hold more than one site: LongParameterListRule (3), and
+#      CognitiveComplexityRule / NpathComplexityRule / InstabilityRule (2 each,
+#      one per level). A package split must be keyed on files, not on this count.
 #
-rule	options	options_kind	decision_path	decided_in
-BooleanArgumentRule	BooleanArgumentOptions	not-threshold-aware	decides-in-rule	BooleanArgumentRule
-CboRule	CboOptions	hierarchical-root	manual-two-step	CboRule
-CircularDependencyRule	CircularDependencyOptions	not-threshold-aware	one-call-helper	CircularDependencyRule
-ClassCountRule	ClassCountOptions	threshold-aware	manual-two-step	ClassCountRule
-ClassRankRule	ClassRankOptions	threshold-aware	decides-in-rule	ClassRankRule
-CodeDuplicationRule	CodeDuplicationOptions	threshold-aware	one-call-helper	CodeDuplicationRule
-CognitiveComplexityRule	CognitiveComplexityOptions	hierarchical-root	manual-two-step	CognitiveComplexityRule
-CommandInjectionRule	SecurityPatternOptions	not-threshold-aware	decides-in-rule	CommandInjectionRule
-ComplexityRule	ComplexityOptions	hierarchical-root	manual-two-step	ComplexityRule
-ComputedMetricRule	ComputedMetricRuleOptions	not-threshold-aware	decides-in-rule	ComputedMetricRule
-ConstructorOverinjectionRule	ConstructorOverinjectionOptions	threshold-aware	manual-two-step	ConstructorOverinjectionRule
-CountInLoopRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	CountInLoopRule
-DataClassRule	DataClassOptions	threshold-aware	decides-in-rule	DataClassRule
-DebugCodeRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	DebugCodeRule
-DistanceRule	DistanceOptions	threshold-aware	manual-two-step	DistanceRule
-EmptyCatchRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	EmptyCatchRule
-ErrorSuppressionRule	ErrorSuppressionOptions	not-threshold-aware	decides-in-rule	ErrorSuppressionRule
-EvalRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	EvalRule
-ExitRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	ExitRule
-GodClassRule	GodClassOptions	threshold-aware	decides-in-rule	GodClassRule
-GotoRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	GotoRule
-HardcodedCredentialsRule	HardcodedCredentialsOptions	not-threshold-aware	one-call-helper	HardcodedCredentialsRule
-IdenticalSubExpressionRule	IdenticalSubExpressionOptions	not-threshold-aware	decides-in-rule	IdenticalSubExpressionRule
-InheritanceRule	InheritanceOptions	threshold-aware	decides-in-rule	InheritanceRule
-InstabilityRule	InstabilityOptions	hierarchical-root	manual-two-step	InstabilityRule
-LayerViolationRule	LayerViolationOptions	not-threshold-aware	decides-in-rule	LayerViolationRule
-LcomRule	LcomOptions	threshold-aware	manual-two-step	LcomRule
-LongParameterListRule	LongParameterListOptions	threshold-aware	manual-two-step	LongParameterListRule
-MaintainabilityRule	MaintainabilityOptions	threshold-aware	manual-two-step	MaintainabilityRule
-MethodCountRule	MethodCountOptions	threshold-aware	manual-two-step	MethodCountRule
-NocRule	NocOptions	threshold-aware	manual-two-step	NocRule
-NpathComplexityRule	NpathComplexityOptions	hierarchical-root	manual-two-step	NpathComplexityRule
-ParamTypeCoverageRule	TypeCoverageOptions	threshold-aware	manual-two-step	AbstractTypeCoverageRule
-PropertyCountRule	PropertyCountOptions	threshold-aware	manual-two-step	PropertyCountRule
-PropertyTypeCoverageRule	TypeCoverageOptions	threshold-aware	manual-two-step	AbstractTypeCoverageRule
-ReturnTypeCoverageRule	TypeCoverageOptions	threshold-aware	manual-two-step	AbstractTypeCoverageRule
-SensitiveParameterRule	SensitiveParameterOptions	not-threshold-aware	one-call-helper	SensitiveParameterRule
-SqlInjectionRule	SecurityPatternOptions	not-threshold-aware	decides-in-rule	SqlInjectionRule
-SuperglobalsRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	SuperglobalsRule
-UnassignedClassRule	UnassignedClassOptions	not-threshold-aware	decides-in-rule	UnassignedClassRule
-UnreachableCodeRule	UnreachableCodeOptions	threshold-aware	one-call-helper	UnreachableCodeRule
-UnusedDirectiveRule	InlineDirectiveOptions	not-threshold-aware	decides-in-rule	UnusedDirectiveRule
-UnusedPrivateRule	UnusedPrivateOptions	not-threshold-aware	decides-in-rule	UnusedPrivateRule
-WmcRule	WmcOptions	threshold-aware	manual-two-step	WmcRule
-XssRule	SecurityPatternOptions	not-threshold-aware	decides-in-rule	XssRule
+rule	owner_file	line	call	options	options_kind
+BooleanArgumentRule	src/Analysis/Evidence/CodeSmell/BooleanArgumentRule.php	-	decides-in-rule	BooleanArgumentOptions	not-threshold-aware
+CboRule	src/Analysis/Evidence/Coupling/CboRule.php	236	options-getSeverity	CboOptions	hierarchical-root
+CircularDependencyRule	src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php	80	one-call-helper	CircularDependencyOptions	not-threshold-aware
+ClassCountRule	src/Analysis/Evidence/Size/ClassCountRule.php	110	options-getSeverity	ClassCountOptions	threshold-aware
+ClassRankRule	src/Analysis/Evidence/Coupling/ClassRankRule.php	-	decides-in-rule	ClassRankOptions	threshold-aware
+CodeDuplicationRule	src/Analysis/Evidence/Duplication/CodeDuplicationRule.php	124	one-call-helper	CodeDuplicationOptions	threshold-aware
+CognitiveComplexityRule	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	162	options-getSeverity	CognitiveComplexityOptions	hierarchical-root
+CognitiveComplexityRule	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	227	options-getSeverity	CognitiveComplexityOptions	hierarchical-root
+CommandInjectionRule	src/Analysis/Evidence/Security/CommandInjectionRule.php	-	decides-in-rule	SecurityPatternOptions	not-threshold-aware
+ComplexityRule	src/Analysis/Evidence/Complexity/ComplexityRule.php	171	options-getSeverity	ComplexityOptions	hierarchical-root
+ComputedMetricRule	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	-	decides-in-rule	ComputedMetricRuleOptions	not-threshold-aware
+ConstructorOverinjectionRule	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php	129	options-getSeverity	ConstructorOverinjectionOptions	threshold-aware
+CountInLoopRule	src/Analysis/Evidence/CodeSmell/CountInLoopRule.php	-	decides-in-rule	CodeSmellOptions	not-threshold-aware
+DataClassRule	src/Analysis/Evidence/Design/DataClassRule.php	-	decides-in-rule	DataClassOptions	threshold-aware
+DebugCodeRule	src/Analysis/Evidence/CodeSmell/DebugCodeRule.php	-	decides-in-rule	CodeSmellOptions	not-threshold-aware
+DistanceRule	src/Analysis/Evidence/Coupling/DistanceRule.php	156	options-getSeverity	DistanceOptions	threshold-aware
+EmptyCatchRule	src/Analysis/Evidence/CodeSmell/EmptyCatchRule.php	-	decides-in-rule	CodeSmellOptions	not-threshold-aware
+ErrorSuppressionRule	src/Analysis/Evidence/CodeSmell/ErrorSuppressionRule.php	-	decides-in-rule	ErrorSuppressionOptions	not-threshold-aware
+EvalRule	src/Analysis/Evidence/CodeSmell/EvalRule.php	-	decides-in-rule	CodeSmellOptions	not-threshold-aware
+ExitRule	src/Analysis/Evidence/CodeSmell/ExitRule.php	-	decides-in-rule	CodeSmellOptions	not-threshold-aware
+GodClassRule	src/Analysis/Evidence/Design/GodClassRule.php	-	decides-in-rule	GodClassOptions	threshold-aware
+GotoRule	src/Analysis/Evidence/CodeSmell/GotoRule.php	-	decides-in-rule	CodeSmellOptions	not-threshold-aware
+HardcodedCredentialsRule	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php	100	one-call-helper	HardcodedCredentialsOptions	not-threshold-aware
+IdenticalSubExpressionRule	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php	-	decides-in-rule	IdenticalSubExpressionOptions	not-threshold-aware
+InheritanceRule	src/Analysis/Evidence/Design/InheritanceRule.php	-	decides-in-rule	InheritanceOptions	threshold-aware
+InstabilityRule	src/Analysis/Evidence/Coupling/InstabilityRule.php	188	options-getSeverity	InstabilityOptions	hierarchical-root
+InstabilityRule	src/Analysis/Evidence/Coupling/InstabilityRule.php	255	options-getSeverity	InstabilityOptions	hierarchical-root
+LayerViolationRule	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	-	decides-in-rule	LayerViolationOptions	not-threshold-aware
+LcomRule	src/Analysis/Evidence/Cohesion/LcomRule.php	97	options-getSeverity	LcomOptions	threshold-aware
+LongParameterListRule	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	153	options-getSeverity	LongParameterListOptions	threshold-aware
+LongParameterListRule	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	183	raw-override-read	LongParameterListOptions	threshold-aware
+LongParameterListRule	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	187	options-getVoSeverity	LongParameterListOptions	threshold-aware
+MaintainabilityRule	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php	111	options-getSeverity	MaintainabilityOptions	threshold-aware
+MethodCountRule	src/Analysis/Evidence/Size/MethodCountRule.php	122	options-getSeverity	MethodCountOptions	threshold-aware
+NocRule	src/Analysis/Evidence/Design/NocRule.php	96	options-getSeverity	NocOptions	threshold-aware
+NpathComplexityRule	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	178	options-getSeverity	NpathComplexityOptions	hierarchical-root
+NpathComplexityRule	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	230	options-getSeverity	NpathComplexityOptions	hierarchical-root
+ParamTypeCoverageRule	src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php	119	options-getSeverity	TypeCoverageOptions	threshold-aware
+PropertyCountRule	src/Analysis/Evidence/Size/PropertyCountRule.php	118	options-getSeverity	PropertyCountOptions	threshold-aware
+PropertyTypeCoverageRule	src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php	119	options-getSeverity	TypeCoverageOptions	threshold-aware
+ReturnTypeCoverageRule	src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php	119	options-getSeverity	TypeCoverageOptions	threshold-aware
+SensitiveParameterRule	src/Analysis/Evidence/Security/SensitiveParameterRule.php	99	one-call-helper	SensitiveParameterOptions	not-threshold-aware
+SqlInjectionRule	src/Analysis/Evidence/Security/SqlInjectionRule.php	-	decides-in-rule	SecurityPatternOptions	not-threshold-aware
+SuperglobalsRule	src/Analysis/Evidence/CodeSmell/SuperglobalsRule.php	-	decides-in-rule	CodeSmellOptions	not-threshold-aware
+UnassignedClassRule	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassRule.php	-	decides-in-rule	UnassignedClassOptions	not-threshold-aware
+UnreachableCodeRule	src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php	115	one-call-helper	UnreachableCodeOptions	threshold-aware
+UnusedDirectiveRule	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php	-	decides-in-rule	InlineDirectiveOptions	not-threshold-aware
+UnusedPrivateRule	src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php	-	decides-in-rule	UnusedPrivateOptions	not-threshold-aware
+WmcRule	src/Analysis/Evidence/Complexity/WmcRule.php	101	options-getSeverity	WmcOptions	threshold-aware
+XssRule	src/Analysis/Evidence/Security/XssRule.php	-	decides-in-rule	SecurityPatternOptions	not-threshold-aware
