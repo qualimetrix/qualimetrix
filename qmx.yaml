@@ -459,6 +459,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleMetadata'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleSelection'
@@ -708,6 +709,7 @@ architecture:
         - 'Qualimetrix\Core\Time\SystemClock'
         - 'Qualimetrix\Core\Util\NamespaceMatcher'
         - 'Qualimetrix\Core\Util\PathMatcher'
+        - 'Qualimetrix\Core\Util\PatternMatch'
         - 'Qualimetrix\Core\Util\StringSet'
         - 'Qualimetrix\Core\Version'
     - name: core-path
@@ -922,6 +924,13 @@ architecture:
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionResult'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjector'
+        - 'Qualimetrix\Reporting\FindingProjection\InertSuppressor'
+        - 'Qualimetrix\Reporting\FindingProjection\LedgerHit'
+        - 'Qualimetrix\Reporting\FindingProjection\RuleExclusionLedgerAttributor'
+        - 'Qualimetrix\Reporting\FindingProjection\SuppressedFinding'
+        - 'Qualimetrix\Reporting\FindingProjection\SuppressionComposition'
+        - 'Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder'
+        - 'Qualimetrix\Reporting\FindingProjection\SuppressionMechanism'
         - 'Qualimetrix\Reporting\FormatterContext'
         - 'Qualimetrix\Reporting\Formatter\CheckstyleFormatter'
         - 'Qualimetrix\Reporting\Formatter\FormatterInterface'
@@ -957,6 +966,7 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer'
         - 'Qualimetrix\Reporting\Formatter\Support\FindingDetailRenderer'
         - 'Qualimetrix\Reporting\Formatter\Support\FindingSorter'
+        - 'Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter'
         - 'Qualimetrix\Reporting\Formatter\TextFormatter'
         - 'Qualimetrix\Reporting\Formatter\TextVerboseFormatter'
         - 'Qualimetrix\Reporting\GroupBy'
@@ -1407,6 +1417,21 @@ rules:
         # framework, serialization, and process dependencies. Its I=0.911765
         # measures the adapter role rather than an unstable promised abstraction.
         - '[Q]ualimetrix\Infrastructure\Parallel'
+        # Ca=4 / Ce=36 (I=0.9, rule-vocabulary Ш6): a formatter package is
+        # efferent by its nature — each format renders a different slice of
+        # `Report` and depends outward on exactly what it prints, the same
+        # reasoning already accepted for VisitorMethodContext's class-level
+        # `@qmx-threshold coupling.instability`. Measured before/after the
+        # eleventh formatter (`SuppressedFormatter`, Ш6's `suppressed`
+        # format): I=0.888889 (Ca=4/Ce=32) without it, 0.9 with it — the four
+        # new dependencies are `SuppressionMechanism`, `SuppressedFinding`,
+        # `InertSuppressor` and `SuppressionComposition`, the payload types
+        # that format alone renders. A twelfth formatter needing its own new
+        # payload types would cross this again by the same, unavoidable
+        # mechanism, so the exclusion is on the namespace, not a one-off
+        # number: no per-class fix exists that keeps the format able to
+        # render its own payload.
+        - '[Q]ualimetrix\Reporting\Formatter'
     exclude_paths:
       # Note: visitors and DI configurators are NOT listed here. They are indeed
       # inherently unstable, but `min_afferent: 2` below already filters them out

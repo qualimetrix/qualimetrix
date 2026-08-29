@@ -156,10 +156,10 @@ does not create a missing destination, and preserves an existing destination.
 
 ### Configuration and Formatting
 
-| Option     | Short | Default | Description                                       |
-| ---------- | ----- | ------- | ------------------------------------------------- |
-| `--config` | `-c`  | —       | Path to config file                               |
-| `--format` | `-f`  | `text`  | Output format (text/json/checkstyle/sarif/gitlab) |
+| Option     | Short | Default | Description                                                      |
+| ---------- | ----- | ------- | ---------------------------------------------------------------- |
+| `--config` | `-c`  | —       | Path to config file                                              |
+| `--format` | `-f`  | `text`  | Output format (text/json/checkstyle/sarif/gitlab/suppressed/...) |
 
 ### Caching
 
@@ -186,12 +186,12 @@ does not create a missing destination, and preserves an existing destination.
 
 ### Baseline
 
-| Option                         | Description                                                                                                                                                                                                                                                                                                                                  |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--baseline`                   | Use baseline file                                                                                                                                                                                                                                                                                                                            |
-| `--show-resolved`              | Show count of resolved findings                                                                                                                                                                                                                                                                                                              |
-| `--show-suppressed`            | Show suppressed findings — `@qmx-ignore` tags and per-rule `exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths` exclusions, each listed in its own block                                                                                                                                                                    |
-| `--no-suppression-annotations` | Report findings `@qmx-ignore` suppresses. It does **not** change what a baseline measures: the annotated findings never reach the baseline stage and are never captured, so they are shown at their own severity and compared against no entry. A flag may narrow the measured set (`--exclude-path`, `--exclude-namespace`), never widen it |
+| Option                         | Description                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--baseline`                   | Use baseline file                                                                                                                                                                                                                                                                                                                                                                                     |
+| `--show-resolved`              | Show count of resolved findings                                                                                                                                                                                                                                                                                                                                                                       |
+| `--show-suppressed`            | Show suppressed findings — `@qmx-ignore` tags and per-rule `exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths` exclusions, each listed in its own block. `--format=suppressed` (or `format: suppressed` in `qmx.yaml`) reports the same composition, across all seven suppression mechanisms, as machine-readable JSON — either route arms the same capture (`RuntimeConfigurator`) |
+| `--no-suppression-annotations` | Report findings `@qmx-ignore` suppresses. It does **not** change what a baseline measures: the annotated findings never reach the baseline stage and are never captured, so they are shown at their own severity and compared against no entry. A flag may narrow the measured set (`--exclude-path`, `--exclude-namespace`), never widen it                                                          |
 
 ### `check`'s baseline reporting
 

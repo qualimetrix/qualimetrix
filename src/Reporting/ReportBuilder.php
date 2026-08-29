@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 
 /**
  * Builder for creating Report instances.
@@ -26,6 +27,7 @@ final class ReportBuilder
     private ?MetricRepositoryInterface $metrics = null;
     private ?NamespaceTree $namespaceTree = null;
     private ?ReportCoverage $coverage = null;
+    private ?SuppressionComposition $suppressionComposition = null;
 
     /**
      * Creates a new builder instance.
@@ -135,6 +137,17 @@ final class ReportBuilder
     }
 
     /**
+     * Attaches what the `suppressed` format publishes. Left unset on every
+     * ordinary run — see {@see Report::$suppressionComposition}.
+     */
+    public function suppressionComposition(SuppressionComposition $composition): self
+    {
+        $this->suppressionComposition = $composition;
+
+        return $this;
+    }
+
+    /**
      * Builds the Report instance.
      */
     public function build(): Report
@@ -162,6 +175,7 @@ final class ReportBuilder
             namespaceTree: $this->namespaceTree,
             infoCount: $infoCount,
             coverage: $this->coverage,
+            suppressionComposition: $this->suppressionComposition,
         );
     }
 }

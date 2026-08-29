@@ -518,9 +518,6 @@
     "declaration:class:Qualimetrix\\Reporting\\Health\\SummaryEnricher@src/Reporting/Health/SummaryEnricher.php": [
       {"channel":"coupling.instability","magnitudes":[0.818182]}
     ],
-    "declaration:class:Qualimetrix\\Reporting\\Report@src/Reporting/Report.php": [
-      {"channel":"coupling.cbo","magnitudes":[28]}
-    ],
     "ns:Qualimetrix\\Analysis\\Configuration": [
       {"channel":"coupling.distance","magnitudes":[0.661616]}
     ],

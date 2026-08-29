@@ -66,6 +66,7 @@ final readonly class SummaryEnricher
             namespaceTree: $tree,
             infoCount: $report->infoCount,
             coverage: $report->coverage,
+            suppressionComposition: $report->suppressionComposition,
         );
     }
 }

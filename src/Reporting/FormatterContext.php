@@ -11,7 +11,7 @@ use Qualimetrix\Core\Path\RelativePath;
  *
  * Created by CheckCommand from CLI flags and OutputInterface state.
  *
- * @qmx-threshold coupling.cbo warning=30 error=30 -- Formatter context is the immutable Reporting input boundary that deliberately composes format, grouping, coverage, profile, projection, and path values; the inclusive threshold of 30 rejects one additional dependency.
+ * @qmx-threshold coupling.cbo warning=31 error=31 -- Formatter context is the immutable Reporting input boundary every formatter's `format(Report, FormatterContext)` signature depends on; the prior threshold of 30 reserved room for exactly one more dependent, and Ш6's `suppressed` formatter (`SuppressedFormatter`) is that one. The inclusive threshold of 31 again rejects one additional dependency beyond it.
  */
 final readonly class FormatterContext
 {

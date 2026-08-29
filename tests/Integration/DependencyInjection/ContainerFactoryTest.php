@@ -676,6 +676,7 @@ PHP;
             'metrics',
             'health',
             'html',
+            'suppressed',
         ];
 
         foreach ($expectedFormatters as $name) {

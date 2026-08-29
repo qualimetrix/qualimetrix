@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
@@ -33,7 +33,6 @@ final readonly class FindingFilterOrchestrator
 {
     public function __construct(
         private FindingProjector $findingProjector,
-        private RuleExecutionInterface $ruleExecutor,
         private DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
     ) {}
 
@@ -90,7 +89,7 @@ final readonly class FindingFilterOrchestrator
         $this->reportScopeMismatch($filterResult, $scopeResolution, $output);
         $this->reportSuppressedFindings($filterResult, $input, $output);
         $this->reportExclusionCounts($filterResult, $output);
-        $this->reportRuleExclusions($input, $output);
+        $this->reportRuleExclusions($result, $input, $output);
 
         return $filterResult;
     }
@@ -284,13 +283,16 @@ final readonly class FindingFilterOrchestrator
      * `exclude_namespace_channels`, or `exclude_paths` (any rule, set via
      * `rules: {<rule-name>: {...}}` in `qmx.yaml` —
      * {@see RuleExclusionStats}). Unlike the global exclusion filters above, this
-     * mechanism runs inside {@see RuleExecutionInterface::execute()}, before the
-     * findings even reach {@see FindingProjector}, so it needs its own
-     * reporting path.
+     * mechanism runs inside rule execution itself, before the findings even
+     * reach {@see FindingProjector}, so it needs its own reporting path. The
+     * stats travel on `$result` — the same value {@see \Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult}
+     * carries out of that run — rather than through a second, separately
+     * mutable accessor. {@see exclusionStats()} is where a missing value is
+     * refused rather than defaulted.
      */
-    private function reportRuleExclusions(InputInterface $input, OutputInterface $output): void
+    private function reportRuleExclusions(AnalysisResult $result, InputInterface $input, OutputInterface $output): void
     {
-        $stats = $this->ruleExecutor->exclusionStats();
+        $stats = $this->exclusionStats($result);
 
         if ($input->getOption('show-suppressed') === true && $stats->excludedFindings !== []) {
             $output->writeln('');
@@ -324,6 +326,26 @@ final readonly class FindingFilterOrchestrator
                 ));
             }
         }
+    }
+
+    /**
+     * A missing `$result->ruleExecution` is refused rather than defaulted to
+     * empty stats: the one production caller of {@see filterAndReport()} always
+     * runs the real pipeline, which always sets it, so a `null` here is a
+     * wiring bug — the value did not arrive — and "0 excluded" would print
+     * identically to "nothing was excluded", hiding exactly the failure a
+     * reader most needs to see.
+     */
+    private function exclusionStats(AnalysisResult $result): RuleExclusionStats
+    {
+        if ($result->ruleExecution === null) {
+            throw new LogicException(
+                'AnalysisResult::$ruleExecution is null — the pipeline did not hand a rule-execution result to'
+                . ' this run, so per-rule exclusion stats cannot be reported.',
+            );
+        }
+
+        return $result->ruleExecution->exclusions;
     }
 
     /**

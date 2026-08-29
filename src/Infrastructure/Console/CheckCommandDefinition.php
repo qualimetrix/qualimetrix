@@ -111,7 +111,7 @@ final class CheckCommandDefinition
                 'format',
                 'f',
                 InputOption::VALUE_REQUIRED,
-                'Output format (summary, text, json, checkstyle, sarif, gitlab, github, metrics, health, html). Default: summary',
+                'Output format (summary, text, json, checkstyle, sarif, gitlab, github, metrics, health, html, suppressed). Default: summary',
             )
             ->addOption(
                 'output',
@@ -195,7 +195,7 @@ final class CheckCommandDefinition
                 'show-suppressed',
                 null,
                 InputOption::VALUE_NONE,
-                'Show suppressed violations',
+                'Show suppressed violations as prose; --format=suppressed reports the same composition as machine-readable JSON',
             )
             ->addOption(
                 'no-suppression-annotations',

@@ -310,13 +310,13 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ExitCodeResolver::class),
                 new Reference(FindingFilter::class),
                 new Reference(FormatterContextFactory::class),
+                new Reference(RuleConfigurationInterface::class),
             ]);
 
         // FindingFilterOrchestrator
         $container->register(FindingFilterOrchestrator::class)
             ->setArguments([
                 new Reference($findingProjector),
-                new Reference(RuleExecutionInterface::class),
             ]);
 
         // CheckCommand with all dependencies injected

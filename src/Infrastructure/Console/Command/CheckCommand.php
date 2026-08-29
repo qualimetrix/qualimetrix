@@ -232,16 +232,17 @@ final class CheckCommand extends Command
         );
         $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
 
+        $projectionOptions = $this->findingFilterOrchestrator->projectionOptions(
+            $findingExclusions,
+            $input,
+            $scopeResolution,
+        );
         $filterResult = $this->findingFilterOrchestrator->filterAndReport(
             $result,
             $input,
             $output,
             $scopeResolution,
-            $this->findingFilterOrchestrator->projectionOptions(
-                $findingExclusions,
-                $input,
-                $scopeResolution,
-            ),
+            $projectionOptions,
         );
         $filteredFindings = $filterResult->findings;
 
@@ -257,6 +258,8 @@ final class CheckCommand extends Command
             outputFormat: $outputFormat,
             exitPolicy: $exitPolicy,
             reportScope: $scopeResolution->reportScope,
+            filterResult: $filterResult,
+            projectionOptions: $projectionOptions,
         );
 
         $this->resultPresenter->presentProfile($input, $output);
