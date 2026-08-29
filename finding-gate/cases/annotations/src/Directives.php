@@ -46,6 +46,20 @@ class Directives
     }
 
     /**
+     * The same tie, one family over and across a split: a name three edits from
+     * `design.type-coverage.return` and three from `design.type-coverage.property`,
+     * so the "did you mean" answer has to choose between two channels that
+     * different producers registered. `ChannelSuggestionTieTest` measures the
+     * distances; only a run of the product shows that the tie reaches a
+     * published `message`.
+     *
+     * @qmx-ignore design.type-coverage.propurn -- equidistant from the return and property channels
+     */
+    public function equidistantAcrossTheSplit(): void
+    {
+    }
+
+    /**
      * A pair whose level the channel it names does not declare. The name half
      * resolves, so what is unaddressable here is the pair -- the one shape the
      * level vocabulary added and the corpus did not yet hold.

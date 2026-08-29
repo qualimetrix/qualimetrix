@@ -6,28 +6,20 @@ computed_metrics:
   health.typing: { warning: 100, error: 100 }
   health.maintainability: { warning: 100, error: 100 }
   health.overall: { warning: 100, error: 100 }
-  # Reads no metric on purpose. A formula addresses a metric key in a grammar
-  # that the vocabulary rename replaces, so the two trees would spell this line
-  # differently and the reference could not be handed either spelling: the form
-  # of the expression is not a name, and a map row translates names. What the
-  # case is here to fire is a USER-DEFINED computed metric channel, and that it
-  # still does. Formulas that do read metric keys stay compared through the six
-  # built-in health dimensions above, whose bodies live in product source.
+  # A user-defined computed metric that READS a metric key, and whose name has
+  # more than one word. Both properties were retired for exactly one step: Ш5e3
+  # replaced the grammar a formula addresses a key in, and it also changed how a
+  # leaf is spelled, and `recommendation` — derived from the leaf — is a compared
+  # field no declared delta may move. The reference of this step already speaks
+  # kebab and `m["..."]`, so both come back with no map row at all.
   #
-  # What that costs, named rather than left to be discovered: a constant is the
-  # same at every level, so this channel no longer distinguishes one level's
-  # value from another's. The six dimensions above do, at all three levels, so
-  # the corpus keeps that property — but it is theirs now, not this metric's.
-  #
-  # One word, and that is also on purpose. The recommendation a computed metric
-  # publishes is derived from its name's leaf, and `recommendation` is a
-  # compared field no declared delta may move — so during the step that changes
-  # how a leaf is spelled, the only name the corpus can carry is one both
-  # vocabularies spell identically. A multi-word user metric comes back in the
-  # step after, whose reference already reads kebab.
-  computed.density:
-    formula: "clamp(37, 0, 100)"
-    description: "A fixed score; the corpus' user-defined computed metric"
+  # What each one is here for. The formula is the only path through the config
+  # that exercises the `m["..."]` grammar on a USER metric: the six built-in
+  # dimensions above exercise it from product source. The multi-word name is the
+  # only place a computed metric's leaf is spelled by a user rather than by us.
+  computed.branch-load:
+    formula: 'clamp((m["complexity.ccn.avg"] ?? 0) * 10, 0, 100)'
+    description: "Branch load; the corpus' user-defined computed metric"
     levels: [class, namespace, project]
     warning: 0
     error: 100

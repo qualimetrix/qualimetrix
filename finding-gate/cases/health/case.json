@@ -1,6 +1,6 @@
 {
     "id": "health",
-    "description": "Untyped, branch-heavy, incohesive code spread over three namespace roots, with every health dimension thresholded at 100 and one user-defined computed metric.",
+    "description": "Untyped, branch-heavy, incohesive code spread over three namespace roots, with every health dimension thresholded at 100 and one user-defined computed metric whose formula reads a metric key.",
     "paths": [
         "src",
         "lib"
@@ -29,9 +29,9 @@
         "--rule-opt=design.type-coverage.property:error=-1"
     ],
     "channels": [
-        "computed.density@class",
-        "computed.density@namespace",
-        "computed.density@project",
+        "computed.branch-load@class",
+        "computed.branch-load@namespace",
+        "computed.branch-load@project",
         "health.cohesion@class",
         "health.cohesion@namespace",
         "health.cohesion@project",
