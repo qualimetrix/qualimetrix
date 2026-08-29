@@ -1281,7 +1281,6 @@ rules:
   coupling.cbo:
     exclude_namespaces:
       - Qualimetrix\Analysis\Finding\Contract
-      - Qualimetrix\Core\Symbol
       # Reconfirmed 2026-08-26 for a namespace that grew: SymbolLevel and its
       # projection moved in here (rule-vocabulary plan Ш5e2b). This line decides
       # publication, not detection: a point threshold inside the namespace still
@@ -1294,13 +1293,8 @@ rules:
       # inside an excluded namespace still decides detection, so narrowing would
       # redistribute the silencing rather than add measurement — and the namespace
       # union it leaves behind is not addressable by a point threshold at all.
-      - Qualimetrix\Core\Metric
-      - Qualimetrix\Analysis\Finding\Rule
+      - Qualimetrix\Core\Symbol
       - Qualimetrix\Core\Path
-      # A former role-root prefix used to silence 85 classes to hide exactly one
-      # violation — AbstractRule (CBO 39), whose coupling really is structural
-      # because it aggregates every subclass dependency. The precise path below
-      # keeps the remaining classes measured.
     exclude_namespace_channels:
       coupling.cbo:namespace:
         # This exact public-contract namespace replaces four broad historical
@@ -1327,8 +1321,6 @@ rules:
       - src/Analysis/Evidence/Maintainability/*Visitor.php
       - src/Analysis/Evidence/Security/*Visitor.php
       - src/Analysis/Evidence/Size/*Visitor.php
-      - src/Analysis/Finding/Contract/Rule/AbstractRule.php
-      - src/Analysis/Finding/Contract/Rule/ThresholdParser.php
       # DI configurators wire all services (coupling is their job)
       - src/Infrastructure/DependencyInjection
       # Infrastructure console commands and pipeline orchestrators need many deps
@@ -1345,13 +1337,11 @@ rules:
   coupling.class-rank:
     exclude_namespaces:
       - Qualimetrix\Analysis\Finding\Contract
-      - Qualimetrix\Core\Symbol
       # Same reconfirmation as for the CBO channel above: the level vocabulary now
       # lives here, so its ClassRank is unpublished too, and its point threshold
       # keeps the same suppressed-report reach (rule-vocabulary Ш5e2b).
-      - Qualimetrix\Core\Metric
+      - Qualimetrix\Core\Symbol
       - Qualimetrix\Analysis\Finding\Rule
-      - Qualimetrix\Core\Dependency
       - Qualimetrix\Analysis\Evidence\DependencyModel\Contract
       - Qualimetrix\Core\Path
 
@@ -1365,9 +1355,6 @@ rules:
   # Core tree (including the umbrella namespace itself, D=0.71) and the P4
   # Layer root deliberately covers its Expansion child. Configuration/Allow is
   # a separate concrete selector/value/parser leaf, so it has its own prefix.
-  # The character-class form used
-  # for DependencyModel matches the exact owner root without prefix-enrolling its
-  # healthy Contract child.
   coupling.distance:
     exclude_namespaces:
       - Qualimetrix\Core
@@ -1376,9 +1363,6 @@ rules:
       - Qualimetrix\Analysis\Evidence\Prioritization\Debt
       - Qualimetrix\Infrastructure\Serializer
       - Qualimetrix\Reporting\Formatter\Support
-      # The stable public contract plus internal graph implementations makes the
-      # owner-root distance structural; `[Q]` avoids excluding the Contract child.
-      - '[Q]ualimetrix\Analysis\Evidence\DependencyModel'
       # Immutable score values form a stable concrete contract leaf. Its exact
       # namespace has A=0/I=0 by design; `[Q]` prevents descendant enrollment.
       - '[Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score'
@@ -1389,9 +1373,6 @@ rules:
       # concrete subject with no external production consumer for an abstraction.
       # `[Q]` keeps the exclusion exact and leaves sibling Health namespaces active.
       - '[Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender'
-      # Analysis is a navigation taxonomy with no declaration; its raw
-      # D=0.5947498097757165 aggregates independently owned leaf capabilities.
-      - '[Q]ualimetrix\Analysis'
       # This navigation root owns no declaration and unites independent Debt
       # and Impact subjects; the exact-root raw distance is 0.5294117647058824.
       - '[Q]ualimetrix\Analysis\Evidence\Prioritization'
@@ -1413,11 +1394,6 @@ rules:
   coupling.instability:
     exclude_namespace_channels:
       coupling.instability:namespace:
-        # This delivery-adapter namespace has Ca=3 / Ce=31: three inward
-        # composition/runtime seams and 31 necessary outward capability,
-        # framework, serialization, and process dependencies. Its I=0.911765
-        # measures the adapter role rather than an unstable promised abstraction.
-        - '[Q]ualimetrix\Infrastructure\Parallel'
         # Ca=4 / Ce=36 (I=0.9, rule-vocabulary Ш6): a formatter package is
         # efferent by its nature — each format renders a different slice of
         # `Report` and depends outward on exactly what it prints, the same
@@ -1437,17 +1413,15 @@ rules:
       # Note: visitors and DI configurators are NOT listed here. They are indeed
       # inherently unstable, but `min_afferent: 2` below already filters them out
       # (they have Ca=1), so path entries for them were pure no-ops — measured, then
-      # removed. The entries that remain each suppress a real violation.
+      # removed. `ClassVisitorStackTrait` is the quiet member of the trait pair the
+      # complexity rules exclude by the same reasoning; the rest each suppress a
+      # real violation.
       - src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php
       - src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
       # Console commands/orchestrators sit at the top of the stack: I→1 is correct there
       - src/Infrastructure/Console
-      # Abstract base classes aggregate deps from all subclasses — instability is structural.
-      # AbstractRule is a representative path for its namespace-level structural
-      # instability, so renaming it intentionally brings the signal back for review.
-      - src/Analysis/Finding/Contract/Rule/AbstractRule.php
-      # Same category: the walk and the emission the three type-coverage rules
-      # share. Its only afferent edges are those three subclasses.
+      # Abstract base classes aggregate deps from all subclasses — instability is
+      # structural. Its only afferent edges are the three type-coverage subclasses.
       - src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php
     class:
       min_afferent: 2
@@ -1503,7 +1477,6 @@ rules:
       - src/Analysis/Evidence/Security/*Options.php
       - src/Analysis/Evidence/Size/*Options.php
       - src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
-      - src/Analysis/Evidence/Complexity/CognitiveComplexityVisitor.php
 
   complexity.cyclomatic:
     exclude_paths:
@@ -1576,16 +1549,11 @@ rules:
     exclude_paths:
       - src/Reporting/Report.php
       - src/Reporting/FormatterContext.php
-      - src/Reporting/Health/WorstOffender.php
-      - src/Analysis/Collection/CollectedFileData.php
       - src/Analysis/Evidence/DependencyModel/DependencyGraph.php
-      - src/Analysis/Run/Contract/Collection/FileProcessingResult.php
       - src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php
       - src/Analysis/Run/Pipeline/AnalysisPipeline.php
       - src/Infrastructure/Console/Command/CheckCommand.php
       - src/Infrastructure/Console/ResultPresenter.php
-      - src/Infrastructure/Parallel/Strategy/StrategySelector.php
-      - src/Core/Profiler/Span.php
       - src/Analysis/Finding/Contract/Finding.php
 
   code-smell.constructor-overinjection:
@@ -1616,17 +1584,10 @@ rules:
       - src/Analysis/Finding/Contract/Rule/AbstractRule.php
       - src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php
 
-  # Mutable runtime stores intentionally expose state accessors rather than
-  # domain behaviour; this exact path keeps the exception local to that role.
-  design.data-class:
-    exclude_paths:
-      - src/Analysis/Evidence/Measurement/Runtime/CollectorRuntimeConfigurationStore.php
-
   cohesion.lcom:
     warning: 5
     error: 5
     exclude_paths:
-      - src/Reporting/Health
       # Derived metric collectors are thin wrappers (low cohesion by nature)
       - src/Analysis/Evidence/Coupling/*Collector.php
 
@@ -1636,9 +1597,7 @@ rules:
 
   design.god-class:
     exclude_paths:
-      - src/Reporting/Health
       - src/Reporting/Formatter/Health
-      - src/Analysis/Evidence/Coupling/CboRule.php
 
   # --- Maintainability ---
   maintainability.index:
@@ -1653,41 +1612,9 @@ rules:
   health.cohesion:
     exclude_namespace_channels:
       health.cohesion:
-        # Coupling collectors expose independent graph calculations; shared-field
-        # cohesion is structurally inapplicable to this namespace-level category.
-        - Qualimetrix\Analysis\Evidence\Coupling
-        # The root recursively includes the intentionally data-shaped graph; the
-        # `[Q]` exact-root glob keeps the healthy Contract child under analysis.
-        - '[Q]ualimetrix\Analysis\Evidence\DependencyModel'
         # Stateless expansion algorithms and their immutable result do not share
         # fields; cohesion is structurally inapplicable only to this exact root.
         - '[Q]ualimetrix\Analysis\Policy\Architecture\Layer\Expansion'
-        # Contract is a navigation-only union of independently owned subject
-        # contracts; recursive shared-field cohesion is inapplicable to the root.
-        - '[Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Contract'
-        # Immutable definition values, their catalog read contract, and the
-        # dimension enum form a value/contract language, not a stateful class set.
-        - '[Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition'
-        # Health Contract is a navigation-only union of five public subjects.
-        - '[Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract'
-        # The two stateless drill-down queries intentionally expose disjoint
-        # projections to different consumers while remaining one query subject.
-        - '[Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown'
-        # Stateless projection builders and immutable offender evidence share a
-        # subject lifecycle but intentionally do not share mutable fields.
-        - '[Q]ualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender'
         # The exact root recursively unions independent Debt and Impact
-        # subjects; shared-field cohesion 41.4 is not a root invariant.
+        # subjects; shared-field cohesion 48.6 is not a root invariant.
         - '[Q]ualimetrix\Analysis\Evidence\Prioritization'
-        # Interfaces, immutable values, enums, readers, and selectors form a
-        # rule contract language, not a shared-field cluster (raw 47.7).
-        - '[Q]ualimetrix\Analysis\Finding\Contract\Rule'
-        # Immutable extraction results and stateless policy contracts expose
-        # disjoint fields by design; exact-root cohesion is 48.6.
-        - '[Q]ualimetrix\Analysis\Policy\Inline\Contract'
-        # Immutable projection values and the stateless projector share one
-        # lifecycle but no mutable fields; exact-root cohesion is 44.0.
-        - '[Q]ualimetrix\Reporting\FindingProjection'
-        # Repository, scope, and changed-file adapters are independent values
-        # behind one delivery boundary; exact-root cohesion 43.3 is structural.
-        - '[Q]ualimetrix\Infrastructure\Git'

@@ -34,7 +34,7 @@ coupling.cbo	channel	?		66	295	2	4	7	104	0	6
 coupling.class-rank	channel	?		25	97	0	2	2	26	0	28
 coupling.distance	channel	?		29	65	2	2	2	32	0	29
 coupling.instability	channel	?		32	87	2	4	8	48	0	8
-design.data-class	channel	?		13	13	1	2	10	32	0	3
+design.data-class	channel	?		13	13	1	1	10	32	0	3
 design.god-class	channel	?		13	16	1	2	2	35	0	7
 design.inheritance	channel	?		6	9	2	2	0	20	0	3
 design.noc	channel	?		15	32	2	2	0	20	0	3
@@ -161,7 +161,7 @@ coupling.cbo	producer	?		66	295	2	4	7	104	0	6
 coupling.class-rank	producer	?		25	97	0	2	2	26	0	28
 coupling.distance	producer	?		29	65	2	2	2	32	0	29
 coupling.instability	producer	?		32	87	2	4	8	48	0	8
-design.data-class	producer	?		13	13	1	2	10	32	0	3
+design.data-class	producer	?		13	13	1	1	10	32	0	3
 design.god-class	producer	?		13	16	1	2	2	35	0	7
 design.inheritance	producer	?		6	9	2	2	0	20	0	3
 design.noc	producer	?		15	32	2	2	0	20	0	3
