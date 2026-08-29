@@ -1,0 +1,91 @@
+# Where a threshold DECISION is actually taken, per rule. Ш7's seam — "a
+# threshold is a decision, not a number" — has to cover every row whose options
+# carry a threshold, or exclude it by name.
+#
+# This is not the same population as enumeration-threshold-decision-shapes.tsv.
+# That table classifies the 27 options classes by the shape of the decision they
+# offer. This one classifies the 45 rules by who takes it, which is what the
+# seam replaces.
+#
+# HOW IT WAS OBTAINED
+#   For every src/**/*Rule.php that is neither Abstract* nor an interface, read
+#   the rule class and — when it extends a base other than AbstractRule — that
+#   base as well. Classify by the first match of:
+#     getEffectiveSeverity(   -> one-call-helper   (the sanctioned path)
+#     getEffectiveOptions( and ->getSeverity(  -> manual-two-step
+#     ->getSeverity(          -> raw-options
+#     none of them            -> decides-in-rule
+#   Options class: the first `XOptions::class` literal in that same scope;
+#   `threshold-aware` = implements ThresholdAwareOptionsInterface,
+#   `hierarchical-root` = implements HierarchicalRuleOptionsInterface.
+#
+# WHAT THIS METHOD DOES NOT SEE, stated because two earlier passes were wrong in
+# opposite directions and both looked finished:
+# - AbstractRule is deliberately outside the walk. It contains a `->getSeverity()`
+#   call inside getEffectiveSeverity(), so counting it marks all 45 rules as
+#   asking. A pass that included it reported 45/45 "asks"; a pass that ignored
+#   inheritance entirely reported the three type-coverage rules as deciding
+#   inline, though their AbstractTypeCoverageRule base asks for them.
+# - Traits, and a decision delegated to a collaborator object rather than a base
+#   class. None is known, none was searched for.
+# - A rule that names its options only through a constructor type hint or a
+#   string. The probe is the `::class` literal.
+# - Whether a rule's inline comparison AGREES with its options class. It does not
+#   for InheritanceRule, whose own docblock says it mirrors
+#   InheritanceOptions::getSeverity() by hand.
+#
+# ROW COUNT: 45 rules.
+#   21 carry no threshold at all (18 decide in the rule, 3 call the helper) —
+#      outside Ш7.
+#   24 carry a threshold: 19 threshold-aware options plus 5 hierarchical roots.
+#      2 take the sanctioned one-call path, 18 hand-roll the two-step, and 4
+#      decide in the rule body: DataClassRule and GodClassRule (already named
+#      inauditable), plus ClassRankRule, which rescales the pair by project size
+#      before comparing, and InheritanceRule, which duplicates the comparison.
+#
+rule	options	options_kind	decision_path	decided_in
+BooleanArgumentRule	BooleanArgumentOptions	not-threshold-aware	decides-in-rule	BooleanArgumentRule
+CboRule	CboOptions	hierarchical-root	manual-two-step	CboRule
+CircularDependencyRule	CircularDependencyOptions	not-threshold-aware	one-call-helper	CircularDependencyRule
+ClassCountRule	ClassCountOptions	threshold-aware	manual-two-step	ClassCountRule
+ClassRankRule	ClassRankOptions	threshold-aware	decides-in-rule	ClassRankRule
+CodeDuplicationRule	CodeDuplicationOptions	threshold-aware	one-call-helper	CodeDuplicationRule
+CognitiveComplexityRule	CognitiveComplexityOptions	hierarchical-root	manual-two-step	CognitiveComplexityRule
+CommandInjectionRule	SecurityPatternOptions	not-threshold-aware	decides-in-rule	CommandInjectionRule
+ComplexityRule	ComplexityOptions	hierarchical-root	manual-two-step	ComplexityRule
+ComputedMetricRule	ComputedMetricRuleOptions	not-threshold-aware	decides-in-rule	ComputedMetricRule
+ConstructorOverinjectionRule	ConstructorOverinjectionOptions	threshold-aware	manual-two-step	ConstructorOverinjectionRule
+CountInLoopRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	CountInLoopRule
+DataClassRule	DataClassOptions	threshold-aware	decides-in-rule	DataClassRule
+DebugCodeRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	DebugCodeRule
+DistanceRule	DistanceOptions	threshold-aware	manual-two-step	DistanceRule
+EmptyCatchRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	EmptyCatchRule
+ErrorSuppressionRule	ErrorSuppressionOptions	not-threshold-aware	decides-in-rule	ErrorSuppressionRule
+EvalRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	EvalRule
+ExitRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	ExitRule
+GodClassRule	GodClassOptions	threshold-aware	decides-in-rule	GodClassRule
+GotoRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	GotoRule
+HardcodedCredentialsRule	HardcodedCredentialsOptions	not-threshold-aware	one-call-helper	HardcodedCredentialsRule
+IdenticalSubExpressionRule	IdenticalSubExpressionOptions	not-threshold-aware	decides-in-rule	IdenticalSubExpressionRule
+InheritanceRule	InheritanceOptions	threshold-aware	decides-in-rule	InheritanceRule
+InstabilityRule	InstabilityOptions	hierarchical-root	manual-two-step	InstabilityRule
+LayerViolationRule	LayerViolationOptions	not-threshold-aware	decides-in-rule	LayerViolationRule
+LcomRule	LcomOptions	threshold-aware	manual-two-step	LcomRule
+LongParameterListRule	LongParameterListOptions	threshold-aware	manual-two-step	LongParameterListRule
+MaintainabilityRule	MaintainabilityOptions	threshold-aware	manual-two-step	MaintainabilityRule
+MethodCountRule	MethodCountOptions	threshold-aware	manual-two-step	MethodCountRule
+NocRule	NocOptions	threshold-aware	manual-two-step	NocRule
+NpathComplexityRule	NpathComplexityOptions	hierarchical-root	manual-two-step	NpathComplexityRule
+ParamTypeCoverageRule	TypeCoverageOptions	threshold-aware	manual-two-step	AbstractTypeCoverageRule
+PropertyCountRule	PropertyCountOptions	threshold-aware	manual-two-step	PropertyCountRule
+PropertyTypeCoverageRule	TypeCoverageOptions	threshold-aware	manual-two-step	AbstractTypeCoverageRule
+ReturnTypeCoverageRule	TypeCoverageOptions	threshold-aware	manual-two-step	AbstractTypeCoverageRule
+SensitiveParameterRule	SensitiveParameterOptions	not-threshold-aware	one-call-helper	SensitiveParameterRule
+SqlInjectionRule	SecurityPatternOptions	not-threshold-aware	decides-in-rule	SqlInjectionRule
+SuperglobalsRule	CodeSmellOptions	not-threshold-aware	decides-in-rule	SuperglobalsRule
+UnassignedClassRule	UnassignedClassOptions	not-threshold-aware	decides-in-rule	UnassignedClassRule
+UnreachableCodeRule	UnreachableCodeOptions	threshold-aware	one-call-helper	UnreachableCodeRule
+UnusedDirectiveRule	InlineDirectiveOptions	not-threshold-aware	decides-in-rule	UnusedDirectiveRule
+UnusedPrivateRule	UnusedPrivateOptions	not-threshold-aware	decides-in-rule	UnusedPrivateRule
+WmcRule	WmcOptions	threshold-aware	manual-two-step	WmcRule
+XssRule	SecurityPatternOptions	not-threshold-aware	decides-in-rule	XssRule
