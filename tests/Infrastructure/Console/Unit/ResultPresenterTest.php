@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankResolver;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
@@ -172,6 +173,7 @@ final class ResultPresenterTest extends TestCase
             new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
             new FindingFilter(),
             new FormatterContextFactory(),
+            self::createStub(RuleConfigurationInterface::class),
         );
     }
 

@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfig
 use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
@@ -417,6 +418,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
             new FindingFilter(),
             new FormatterContextFactory(),
+            self::createStub(RuleConfigurationInterface::class),
         );
     }
 }

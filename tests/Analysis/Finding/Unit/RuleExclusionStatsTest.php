@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use ReflectionClass;
 
 #[CoversClass(RuleExclusionStats::class)]
 final class RuleExclusionStatsTest extends TestCase
@@ -65,5 +66,35 @@ final class RuleExclusionStatsTest extends TestCase
         $stats = new RuleExclusionStats(excludedFindings: [$finding]);
 
         self::assertSame([$finding], $stats->excludedFindings);
+    }
+
+    /**
+     * The per-rule exclusion ledger has exactly two halves —
+     * `exclude_namespaces`/`exclude_namespace_channels` and `exclude_paths`.
+     * `Reporting\FindingProjection\SuppressionMechanism::ledgerHalves()` is
+     * beholden to that count (its own test,
+     * `Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest`,
+     * checks the enum side); this test reads the count structurally, off the
+     * `*ByRule` constructor parameters, so a third half added to this VO
+     * fails here rather than silently under-reporting the `suppressed`
+     * format's composition. Kept independent of the Reporting-owned enum
+     * deliberately — this is an Analysis.Finding test and has no reason to
+     * import a Reporting type.
+     */
+    #[Test]
+    public function itHasExactlyTwoPerRuleExclusionHalves(): void
+    {
+        $parameters = (new ReflectionClass(RuleExclusionStats::class))->getConstructor()?->getParameters() ?? [];
+
+        $ledgerParameterNames = array_values(array_filter(
+            array_map(static fn($parameter): string => $parameter->getName(), $parameters),
+            static fn(string $name): bool => str_ends_with($name, 'ByRule'),
+        ));
+
+        self::assertCount(
+            2,
+            $ledgerParameterNames,
+            'A third *ByRule ledger half appeared without a matching SuppressionMechanism case.',
+        );
     }
 }
