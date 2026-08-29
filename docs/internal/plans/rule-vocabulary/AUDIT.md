@@ -131,12 +131,16 @@ rediscovered.
    identical before and after, can be gated on the text surface alone until this
    is fixed. Measured 2026-08-23 while building the Ш1 corpus.
 5. **The documented custom-computed-metric example is rejected by the
-   resolver.** `website/docs/reference/health-scores.md:159` shows
+   resolver.** ~~`website/docs/reference/health-scores.md:159` shows
    `computed.code-density:`; a run with exactly that config exits 3 with
    `Computed metric name segment "code-density" ... must match
    [a-zA-Z][a-zA-Z0-9_]*`. The validator is right and the documentation is
    wrong — a hyphen is legal in a rule name and illegal in a computed metric
-   name segment, and the one page teaching the feature uses the illegal form.
+   name segment, and the one page teaching the feature uses the illegal form.~~
+   **Closed by Ш5e3, 2026-08-28:** the computed-metric name grammar is kebab, so
+   the documented example is the legal form. Verified by running exactly that
+   config — `computed.code-density` is published in `--format=metrics`. The two
+   sides met by the name grammar moving, not by the page changing.
    Measured 2026-08-23.
 
 ## Found while preparing the validator extraction (Ш3), out of scope here
