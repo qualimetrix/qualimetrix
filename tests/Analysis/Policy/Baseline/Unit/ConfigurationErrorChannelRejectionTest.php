@@ -8,11 +8,10 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason;
@@ -30,13 +29,14 @@ use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Policy\Baseline\UncapturedReason;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 
 /**
  * One place where the whole promise of
- * {@see ChannelAcceptability::ConfigurationError} is visible at once: a
+ * a configuration error is visible at once: a
  * channel that reports a configuration mistake cannot enter the ratchet by
  * **any** of the five routes an ordinary channel can.
  *
@@ -55,7 +55,6 @@ use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
  * "no rule declares this channel" for a channel that is declared would send
  * a user to delete a line when the fix is to repair their configuration.
  */
-#[CoversClass(ChannelAcceptability::class)]
 #[CoversClass(ChannelDeclaration::class)]
 final class ConfigurationErrorChannelRejectionTest extends TestCase
 {
@@ -67,7 +66,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
         $parser = new BaselineEntryParser(self::registry());
 
         $inert = $parser->parse('project:', [
-            'channel' => self::RULE_NAME . '#' . self::RULE_NAME,
+            'channel' => self::RULE_NAME,
             'count' => 1,
         ]);
 
@@ -88,7 +87,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
         $parser = new BaselineEntryParser(self::registry());
 
         $inert = $parser->parse('project:', [
-            'channel' => self::RULE_NAME . '#' . self::RULE_NAME,
+            'channel' => self::RULE_NAME,
             'count' => 1,
             'mode' => BaselineEntryMode::Suppress->value,
         ]);
@@ -114,7 +113,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     {
         $updater = new BaselineUpdater(self::registry(), new FixedClock());
         $finding = self::finding();
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($finding), null, 5);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), null, 5);
 
         $result = $updater->update(self::baselineOf($entry), [$finding], RunScope::fromRecorded(['src']));
 
@@ -127,7 +126,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     public function itListsSuchAnEntryForCleanupOnItsOwnReasonEvenWhileTheFindingIsStillMeasured(): void
     {
         $finding = self::finding();
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($finding), null, 1);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), null, 1);
 
         $candidates = (new BaselineCleaner(new FixedClock()))->candidates(
             self::baselineOf($entry),
@@ -149,12 +148,12 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     public function itNeverAcceptsAConfigurationErrorGroupAtTheCeilingAndReportsTheEntryAsInert(): void
     {
         $finding = self::finding();
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($finding), null, 10, BaselineEntryMode::Suppress);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), null, 10, BaselineEntryMode::Suppress);
         $stage = new BaselineCeilingStage(self::baselineOf($entry), self::registry());
 
         $outcome = $stage->judgeAll([$finding]);
 
-        self::assertSame([$finding], $outcome->result->violations);
+        self::assertSame([$finding], $outcome->result->findings);
         self::assertSame([], $outcome->result->removed);
         self::assertCount(1, $outcome->inertEntries);
         self::assertSame(InertEntryReason::ConfigurationErrorChannel, $outcome->inertEntries[0]->reason);
@@ -169,12 +168,12 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     public function itStillAcceptsTheSiblingLayerViolationChannelAsDebt(): void
     {
         $finding = self::finding('architecture.layer-violation', 'architecture.layer-violation');
-        $entry = new BaselineEntry(BaselineIdentity::forViolation($finding), null, 1);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), null, 1);
         $stage = new BaselineCeilingStage(self::baselineOf($entry), self::registry());
 
         $outcome = $stage->judgeAll([$finding]);
 
-        self::assertSame([], $outcome->result->violations);
+        self::assertSame([], $outcome->result->findings);
         self::assertSame([$finding], $outcome->result->removed);
         self::assertSame([], $outcome->inertEntries);
     }
@@ -183,8 +182,8 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     {
         $registry = StubChannelDeclarationRegistry::withDefaults();
         $registry->declare(
-            self::RULE_NAME . '#' . self::RULE_NAME,
-            ChannelDeclaration::configurationError(),
+            self::RULE_NAME,
+            ChannelDeclaration::occurrence(SymbolLevel::Class_)->asConfigurationError(),
         );
 
         return $registry;
@@ -192,14 +191,14 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
 
     private static function finding(
         string $ruleName = self::RULE_NAME,
-        string $violationCode = self::RULE_NAME,
-    ): Violation {
-        return new Violation(
+        string $code = self::RULE_NAME,
+    ): Finding {
+        return new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: 'the declared layers do not cover the analysed code',
             severity: Severity::Error,
         );

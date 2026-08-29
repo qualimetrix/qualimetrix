@@ -73,7 +73,7 @@ graph nodes, and the metric is the number of connected components.
 
 ## TCC -- Tight Class Cohesion
 
-**Metric ID:** `tcc`
+**Metric ID:** `cohesion.tcc`
 
 <!-- llms:skip-begin -->
 ### What it measures
@@ -180,7 +180,7 @@ With 5 public methods, NP = 5 x 4 / 2 = 10 possible pairs. Only a few pairs shar
 
 ## LCC -- Loose Class Cohesion
 
-**Metric ID:** `lcc`
+**Metric ID:** `cohesion.lcc`
 
 <!-- llms:skip-begin -->
 ### What it measures

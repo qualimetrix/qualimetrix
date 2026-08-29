@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * Options for InheritanceRule.
  *
  * DIT (Depth of Inheritance Tree) thresholds based on Lorenz & Kidd research:
- * - DIT <= 3: good inheritance design (no violation)
+ * - DIT <= 3: good inheritance design (no finding)
  * - DIT = 4-5: moderate depth, review needed (warning)
  * - DIT >= 6: deep hierarchy, likely design issue (error)
  *

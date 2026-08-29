@@ -8,16 +8,16 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -35,6 +35,8 @@ final class PropertyCountRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/size.md';
 
     public const int REMEDIATION_MINUTES = 15;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;
@@ -45,17 +47,12 @@ final class PropertyCountRule extends AbstractRule
         return 'Checks if classes have too many properties';
     }
 
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Size;
-    }
-
     /**
      * @return list<string>
      */
     public function requires(): array
     {
-        return [MetricName::STRUCTURE_PROPERTY_COUNT, MetricName::STRUCTURE_IS_READONLY, MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY];
+        return [MetricName::SIZE_PROPERTY_COUNT, MetricName::DESIGN_IS_READONLY, MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY];
     }
 
     /**
@@ -78,7 +75,7 @@ final class PropertyCountRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
         ];
     }
 
@@ -88,23 +85,23 @@ final class PropertyCountRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $violation = $this->violationForClass($classInfo, $context, $this->options);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->findingForClass($classInfo, $context, $this->options);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function violationForClass(
+    private function findingForClass(
         SymbolInfo $classInfo,
         AnalysisContext $context,
         PropertyCountOptions $options,
-    ): ?Violation {
+    ): ?Finding {
         $subject = $classInfo->subject ?? throw new LogicException('Property count findings require an exact class declaration subject');
         if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
             return null;
@@ -133,12 +130,12 @@ final class PropertyCountRule extends AbstractRule
         $location = new Location($classInfo->file, $classInfo->line);
         $symbolPath = $subject->toSymbolPath();
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: $message,
             severity: $severity,
             metricValue: $propertyCountValue,
@@ -149,14 +146,14 @@ final class PropertyCountRule extends AbstractRule
 
     private function eligiblePropertyCount(MetricBag $metrics, PropertyCountOptions $options): ?int
     {
-        $propertyCount = $metrics->get(MetricName::STRUCTURE_PROPERTY_COUNT);
+        $propertyCount = $metrics->get(MetricName::SIZE_PROPERTY_COUNT);
         if ($propertyCount === null) {
             return null;
         }
-        if ($options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
+        if ($options->excludeReadonly && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1) {
             return null;
         }
-        if ($options->excludePromotedOnly && $metrics->get(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY) === 1) {
+        if ($options->excludePromotedOnly && $metrics->get(MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY) === 1) {
             return null;
         }
 

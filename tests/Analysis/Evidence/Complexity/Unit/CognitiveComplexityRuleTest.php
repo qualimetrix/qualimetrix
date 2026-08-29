@@ -15,12 +15,10 @@ use Qualimetrix\Analysis\Evidence\Complexity\MethodCognitiveComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(CognitiveComplexityRule::class)]
 #[CoversClass(CognitiveComplexityOptions::class)]
@@ -48,19 +46,11 @@ final class CognitiveComplexityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itGetCategory(): void
-    {
-        $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
-
-        self::assertSame(RuleCategory::Complexity, $rule->getCategory());
-    }
-
-    #[Test]
     public function itRequires(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
-        self::assertSame(['cognitive'], $rule->requires());
+        self::assertSame(['complexity.cognitive'], $rule->requires());
     }
 
     #[Test]
@@ -77,7 +67,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
-        self::assertSame([RuleLevel::Callable, RuleLevel::Class_], $rule->getSupportedLevels());
+        self::assertSame([SymbolLevel::Callable, SymbolLevel::Class_], $rule->getSupportedLevels());
     }
 
     // Method-level tests
@@ -96,7 +86,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyzeLevel(RuleLevel::Callable, $context));
+        self::assertSame([], $rule->analyzeLevel(SymbolLevel::Callable, $context));
     }
 
     #[Test]
@@ -112,7 +102,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyzeLevel(RuleLevel::Callable, $context));
+        self::assertSame([], $rule->analyzeLevel(SymbolLevel::Callable, $context));
     }
 
     #[Test]
@@ -123,7 +113,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('cognitive', 20);
+        $metricBag = (new MetricBag())->with('complexity.cognitive', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -136,14 +126,13 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Cognitive complexity is 20, exceeds threshold of 15. Reduce nesting and break into smaller methods', $violations[0]->message);
-        self::assertSame(20, $violations[0]->metricValue);
-        self::assertSame('complexity.cognitive', $violations[0]->ruleName);
-        self::assertSame(RuleLevel::Callable, $violations[0]->level);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('Cognitive complexity is 20, exceeds threshold of 15. Reduce nesting and break into smaller methods', $findings[0]->message);
+        self::assertSame(20, $findings[0]->metricValue);
+        self::assertSame('complexity.cognitive', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -154,7 +143,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('cognitive', 35);
+        $metricBag = (new MetricBag())->with('complexity.cognitive', 35);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -167,11 +156,11 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(35, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(35, $findings[0]->metricValue);
     }
 
     // Class-level tests
@@ -190,7 +179,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyzeLevel(RuleLevel::Class_, $context));
+        self::assertSame([], $rule->analyzeLevel(SymbolLevel::Class_, $context));
     }
 
     #[Test]
@@ -201,7 +190,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $metricBag = (new MetricBag())->with('cognitive.max', 35); // Above warning (30), below error (50)
+        $metricBag = (new MetricBag())->with('complexity.cognitive.max', 35); // Above warning (30), below error (50)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -214,13 +203,12 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Maximum method cognitive complexity is 35, exceeds threshold of 30', $violations[0]->message);
-        self::assertSame(35, $violations[0]->metricValue);
-        self::assertSame(RuleLevel::Class_, $violations[0]->level);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('Maximum method cognitive complexity is 35, exceeds threshold of 30', $findings[0]->message);
+        self::assertSame(35, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -231,7 +219,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $metricBag = (new MetricBag())->with('cognitive.max', 55); // Above error (50)
+        $metricBag = (new MetricBag())->with('complexity.cognitive.max', 55); // Above error (50)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -244,11 +232,11 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(55, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(55, $findings[0]->metricValue);
     }
 
     // Legacy analyze() tests
@@ -264,14 +252,14 @@ final class CognitiveComplexityRuleTest extends TestCase
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $methodBag = (new MetricBag())->with('cognitive', 20); // Warning
-        $classBag = (new MetricBag())->with('cognitive.max', 35); // Warning
+        $methodBag = (new MetricBag())->with('complexity.cognitive', 20); // Warning
+        $classBag = (new MetricBag())->with('complexity.cognitive.max', 35); // Warning
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::Class_ ? [$classInfo] : []);
         $repository->method('getSubject')->willReturn($methodBag);
         $repository->method('get')
             ->willReturnCallback(fn(SymbolPath $path) => match ($path) {
@@ -281,11 +269,9 @@ final class CognitiveComplexityRuleTest extends TestCase
             });
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(RuleLevel::Callable, $violations[0]->level);
-        self::assertSame(RuleLevel::Class_, $violations[1]->level);
+        self::assertCount(2, $findings);
     }
 
     // Options tests
@@ -371,8 +357,8 @@ final class CognitiveComplexityRuleTest extends TestCase
     {
         $options = new CognitiveComplexityOptions();
 
-        self::assertSame($options->callable, $options->forLevel(RuleLevel::Callable));
-        self::assertSame($options->class, $options->forLevel(RuleLevel::Class_));
+        self::assertSame($options->callable, $options->forLevel(SymbolLevel::Callable));
+        self::assertSame($options->class, $options->forLevel(SymbolLevel::Class_));
     }
 
     #[Test]
@@ -383,8 +369,8 @@ final class CognitiveComplexityRuleTest extends TestCase
             class: new ClassCognitiveComplexityOptions(enabled: false),
         );
 
-        self::assertTrue($options->isLevelEnabled(RuleLevel::Callable));
-        self::assertFalse($options->isLevelEnabled(RuleLevel::Class_));
+        self::assertTrue($options->isLevelEnabled(SymbolLevel::Callable));
+        self::assertFalse($options->isLevelEnabled(SymbolLevel::Class_));
     }
 
     #[DataProvider('methodThresholdDataProvider')]
@@ -407,7 +393,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('cognitive', $cognitive);
+        $metricBag = (new MetricBag())->with('complexity.cognitive', $cognitive);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -420,13 +406,13 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -465,7 +451,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itMethodViolationIncludesBreakdownWhenEntriesPresent(): void
+    public function itMethodFindingIncludesBreakdownWhenEntriesPresent(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -473,7 +459,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('cognitive', 25)
+            ->with('complexity.cognitive', 25)
             ->withEntry('cognitive-complexity.increments', ['type' => 'if', 'line' => 12, 'points' => 5])
             ->withEntry('cognitive-complexity.increments', ['type' => 'foreach', 'line' => 15, 'points' => 4])
             ->withEntry('cognitive-complexity.increments', ['type' => '&&/||', 'line' => 22, 'points' => 1])
@@ -490,15 +476,15 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         // Top 3 by points: if +5, foreach +4, &&/|| +1 (or else +1)
-        self::assertStringContainsString('Top: nested if +5 L12, nested foreach +4 L15,', $violations[0]->message);
+        self::assertStringContainsString('Top: nested if +5 L12, nested foreach +4 L15,', $findings[0]->message);
         // recommendation: "CC: 25 (threshold: 15). Top: ... — deeply nested"
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('. Top:', $violations[0]->recommendation);
-        self::assertStringContainsString('— deeply nested', $violations[0]->recommendation);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('. Top:', $findings[0]->recommendation);
+        self::assertStringContainsString('— deeply nested', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -510,7 +496,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('cognitive', 20)
+            ->with('complexity.cognitive', 20)
             ->withEntry('cognitive-complexity.increments', ['type' => 'closure', 'line' => 15, 'points' => 3]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -524,22 +510,22 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         // Closure never gets "nested" prefix regardless of points
-        self::assertStringContainsString('Top: closure +3 L15.', $violations[0]->message); // trailing "." from message format, not from breakdown
+        self::assertStringContainsString('Top: closure +3 L15.', $findings[0]->message); // trailing "." from message format, not from breakdown
     }
 
     #[Test]
-    public function itMethodViolationNoBreakdownWhenNoEntries(): void
+    public function itMethodFindingNoBreakdownWhenNoEntries(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('cognitive', 20);
+        $metricBag = (new MetricBag())->with('complexity.cognitive', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -552,10 +538,10 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, $context);
 
-        self::assertCount(1, $violations);
-        self::assertStringNotContainsString('Top:', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertStringNotContainsString('Top:', $findings[0]->message);
     }
     #[Test]
     public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
@@ -566,13 +552,13 @@ final class CognitiveComplexityRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('cognitive.max', 35));
+        $repository->method('get')->willReturn((new MetricBag())->with('complexity.cognitive.max', 35));
 
-        $violations = (new CognitiveComplexityRule(new CognitiveComplexityOptions()))
-            ->analyzeLevel(RuleLevel::Class_, new AnalysisContext($repository));
+        $findings = (new CognitiveComplexityRule(new CognitiveComplexityOptions()))
+            ->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',
@@ -589,13 +575,13 @@ final class CognitiveComplexityRuleTest extends TestCase
             self::subjectInfo($method, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($method, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('cognitive', 20));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('complexity.cognitive', 20));
 
-        $violations = (new CognitiveComplexityRule(new CognitiveComplexityOptions()))
-            ->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
+        $findings = (new CognitiveComplexityRule(new CognitiveComplexityOptions()))
+            ->analyzeLevel(SymbolLevel::Callable, new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:callable:App\\Service\\Twin::run@src/A.php',

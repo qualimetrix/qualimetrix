@@ -58,7 +58,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         $config = $this->writeFile('qmx.yaml', <<<'YAML'
             computed_metrics:
               computed.ref:
-                formula: 'computed__nonexistent + 1'
+                formula: 'm["computed.nonexistent"] + 1'
                 levels: [namespace]
             YAML);
 
@@ -138,7 +138,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         $tester->execute([
             'paths' => ['tests/Fixtures/Ast/empty_file.php'],
             '--format' => 'json',
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
             ...$options,
         ], ['capture_stderr_separately' => true]);
 

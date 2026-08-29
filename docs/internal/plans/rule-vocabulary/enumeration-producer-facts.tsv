@@ -1,0 +1,84 @@
+# Enumeration of every fact about a rule (a finding producer) that is today
+# keyed by the rule's CLASS — read by reflection on the class-string, by a
+# static method call on the class, or by a PHP attribute on the class,
+# without instantiating it. Snapshot taken 2026-08-25 on branch
+# rule-vocabulary-channel-levels, ahead of the Ш5d step that splits the single
+# `computed.health` producer into seven finding names, six of which will not
+# be a rule class at all — every fact below needs a source that does not
+# require "the class named by this producer" once that split lands.
+#
+# Commands used (channel numbers per the task brief):
+#   1) grep -rn "Reader::read" src --include=*.php
+#   2) grep -rn "ReflectionClass\|getReflectionConstant\|hasConstant" src --include=*.php
+#   3) grep -rn '\$class::\|::NAME\b\|getOptionsClass' src --include=*.php
+#   4) manual read of every file in src/Infrastructure/DependencyInjection/CompilerPass/
+#   5) manual read of RuleExecution::metadata()/RuleMetadata and its consumers
+#      (ChannelPresentationView, RulesCommand, RemediationTimeRegistry)
+# All greps excluded .claude/worktrees, vendor, node_modules. ComplexityRule.php
+# was used as the representative "typical rule" for declared_at columns because
+# it alone declares all eight class-level constants/attributes/methods at once
+# (NAME, DOCS_PAGE, REMEDIATION_MINUTES, SHAPE, CliAlias, getOptionsClass,
+# getDescription, getCategory, SUPPORTS_THRESHOLD_OVERRIDE).
+#
+# Blind spots this sweep did NOT cover (named honestly, not assumed clean):
+#   - qmx.yaml / YAML configuration surface (only PHP under src/ was grepped);
+#   - test fixtures under tests/ (facts may be re-declared or re-asserted
+#     there; not enumerated — this file is about production readers/consumers);
+#   - website/docs/*.md prose that names DOCS_PAGE-style paths by hand;
+#   - external consumers (finding-gate/, benchmarks/) that shell out to bin/qmx
+#     and only see already-serialized output, not the class-keyed facts
+#     themselves;
+#   - amphp/parallel worker bootstrap re-resolution of rule classes in a
+#     forked process (WorkerBootstrap) was not read in detail — only the
+#     defensive comment referencing it in RuleValidatorMapFactory was seen.
+#
+# ANSWERED BY Ш5d (2026-08-26). Six of the family's seven producers now have no
+# class at all, so every fact above needed a source that does not require one.
+# Each is now declared on
+# src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetricChannelFamily.php
+# and read by ChannelDeclarationCompilerPass::collectClasslessProducers() at the
+# same point it reads a class's constants:
+#   NAME                        -> PRODUCER_RULE_NAMES (and HEALTH_PRODUCER_RULE_NAMES)
+#   NAME_direct_constant_access -> gone: RuleInputValidator now reads
+#                                  ChannelUniverseInterface::ruleNames(), not $class::NAME
+#   channelDeclarations         -> CHANNEL_DECLARATIONS, explicitly []
+#   SUPPORTS_THRESHOLD_OVERRIDE -> SUPPORTS_THRESHOLD_OVERRIDE, explicitly false
+#   DOCS_PAGE                   -> DOCS_PAGE
+#   REMEDIATION_MINUTES         -> REMEDIATION_MINUTES
+#   SHAPE                       -> SHAPE
+#   cli_aliases                 -> CLI_ALIASES, explicitly []
+#   getOptionsClass             -> read off the one producer of the family that IS a class
+#                                  (ChannelDeclarationCompilerPass::openProducerOptionsClass())
+#   getCategory                 -> categoryOf(): RuleCategory::Health / RuleCategory::Computed
+#   getDescription              -> descriptionOf()
+# The three silent defaults (SUPPORTS_THRESHOLD_OVERRIDE, channelDeclarations,
+# cli_aliases) are the three declared EXPLICITLY above: for a producer with no
+# class, a forgotten fact does not fail the build, it quietly impoverishes
+# behaviour.
+#
+# The five FileSetInspectionParticipant / ConfigurationValidator facts remain
+# irrelevant to this family, re-checked after the split: no participant and no
+# validator names any of the seven producers.
+#
+# The four facts a producer without a class cannot carry as reflection targets
+# reach RuleExecution as a Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration
+# (name, hostRuleName, optionsClass, category, description, aliases), which is
+# what makes allRules()/activeRules()/totalRuleCount() enumerate 51 producers
+# over 45 rule classes.
+fact	declared_at	read_by	consumers	missing_behaviour	channel_of_discovery
+NAME	src/Analysis/Evidence/Complexity/ComplexityRule.php:40	src/Analysis/Finding/Contract/Rule/RuleNameReader.php:36	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:127;src/Infrastructure/DependencyInjection/CompilerPass/RuleOptionsCompilerPass.php:62;src/Infrastructure/DependencyInjection/CompilerPass/RuleRegistryCompilerPass.php:70;src/Infrastructure/Rule/RuleRegistry.php:53;src/Infrastructure/Rule/KnownRuleNamesAdapter.php:37;src/Analysis/Finding/RuleConfiguration/RuleOptionsParserFactory.php:28;src/Analysis/Policy/Inline/Contract/RuleValidatorMapFactory.php:52;src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php:131	throws:src/Analysis/Finding/Contract/Rule/RuleNameReader.php:44	1,2,3
+NAME_direct_constant_access	src/Analysis/Evidence/Complexity/ComplexityRule.php:40	src/Infrastructure/Console/RuleInputValidator.php:54	src/Infrastructure/Console/RuleInputValidator.php:64	throws:src/Infrastructure/Console/RuleInputValidator.php:54	2,3
+channelDeclarations	src/Analysis/Evidence/Complexity/ComplexityRule.php:149	src/Analysis/Finding/Contract/Rule/ChannelDeclarationReader.php:61	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:247;src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php:115	silent-default:[]:src/Analysis/Finding/Contract/Rule/ChannelDeclarationReader.php:72-74	1,2,4
+SUPPORTS_THRESHOLD_OVERRIDE	src/Analysis/Evidence/Complexity/ComplexityRule.php:299	src/Analysis/Finding/Contract/Rule/ThresholdOverrideSupportReader.php:55	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:128	silent-default:false:src/Analysis/Finding/Contract/Rule/ThresholdOverrideSupportReader.php:66-68	1,2,4
+DOCS_PAGE	src/Analysis/Evidence/Complexity/ComplexityRule.php:41	src/Analysis/Finding/Contract/Rule/RuleDocsPageReader.php:51	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:129;src/Analysis/Finding/ChannelPresentationView.php:77	throws:src/Analysis/Finding/Contract/Rule/RuleOwnConstantReader.php:44	1,2,4,5
+REMEDIATION_MINUTES	src/Analysis/Evidence/Complexity/ComplexityRule.php:43	src/Analysis/Finding/Contract/Rule/RuleRemediationMinutesReader.php:42	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:130;src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php:76	throws:src/Analysis/Finding/Contract/Rule/RuleOwnConstantReader.php:44	1,2,4,5
+SHAPE	src/Analysis/Evidence/Complexity/ComplexityRule.php:45	src/Analysis/Finding/Contract/Rule/RuleShapeReader.php:51	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:131;src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:339	throws:src/Analysis/Finding/Contract/Rule/RuleShapeReader.php:67	1,2,3,4
+cli_aliases	src/Analysis/Evidence/Complexity/ComplexityRule.php:34	src/Analysis/Finding/Contract/Rule/CliAliasReader.php:22	src/Analysis/Finding/RuleExecution.php:318;src/Analysis/Finding/RuleConfiguration/RuleOptionsParserFactory.php:30;src/Infrastructure/Rule/RuleRegistry.php:55;src/Infrastructure/Console/CheckCommandDefinition.php:360	silent-default:[]:src/Analysis/Finding/Contract/Rule/CliAliasReader.php:25-33	1,3
+getOptionsClass	src/Analysis/Evidence/Complexity/ComplexityRule.php:127	src/Infrastructure/DependencyInjection/CompilerPass/RuleOptionsCompilerPass.php:57	src/Infrastructure/DependencyInjection/CompilerPass/RuleOptionsCompilerPass.php:68-78;src/Analysis/Policy/Inline/Contract/RuleValidatorMapFactory.php:54;src/Infrastructure/Console/CheckCommandDefinition.php:365;src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php:152;src/Analysis/Finding/RuleExecution.php:315	throws:src/Analysis/Finding/Contract/Rule/RuleDefinitionInterface.php:12	1,3,4,5
+getCategory	src/Analysis/Evidence/Complexity/ComplexityRule.php:56	src/Analysis/Finding/RuleExecution.php:316	src/Infrastructure/Console/Command/RulesCommand.php:52	throws:src/Analysis/Finding/Rule/RuleInterface.php:44	3,5
+getDescription	src/Analysis/Evidence/Complexity/ComplexityRule.php:51	src/Analysis/Finding/RuleExecution.php:317	src/Analysis/Finding/ChannelPresentationView.php:105;src/Infrastructure/Console/Command/RulesCommand.php:61	throws:src/Analysis/Finding/Rule/RuleInterface.php:39	3,5
+FileSetInspectionParticipant.producerRuleName	src/Analysis/Evidence/Duplication/DuplicationDetector.php:79	src/Infrastructure/DependencyInjection/CompilerPass/FileSetInspectionParticipantCompilerPass.php:51	src/Infrastructure/DependencyInjection/CompilerPass/FileSetInspectionParticipantCompilerPass.php:76-79	throws:src/Infrastructure/DependencyInjection/CompilerPass/FileSetInspectionParticipantCompilerPass.php:53	3,4
+FileSetInspectionParticipant.participantId	src/Analysis/Evidence/Duplication/DuplicationDetector.php:74	src/Infrastructure/DependencyInjection/CompilerPass/FileSetInspectionParticipantCompilerPass.php:43	src/Infrastructure/DependencyInjection/CompilerPass/FileSetInspectionParticipantCompilerPass.php:59-66	throws:src/Infrastructure/DependencyInjection/CompilerPass/FileSetInspectionParticipantCompilerPass.php:45	3,4
+ConfigurationValidator.producerRuleName	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php:57	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:327	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:329-337	throws:src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:330	3,4
+ConfigurationValidator.shape	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php:67	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:339	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:341-351	throws:src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:342	3,4
+ConfigurationValidator.channelDeclarations	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php:81	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:353	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:363-372	throws:src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:356	3,4

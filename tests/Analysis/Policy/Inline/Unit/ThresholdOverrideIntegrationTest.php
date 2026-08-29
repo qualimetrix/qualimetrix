@@ -22,8 +22,10 @@ use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Design\DataClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\GodClassOptions;
+use Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\PropertyTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\ReturnTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -34,7 +36,6 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Evidence\Size\PropertyCountOptions;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
@@ -44,6 +45,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -128,7 +130,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$symbolInfo]);
         $repository->method('get')->willReturn(
-            MetricBag::fromArray([MetricName::STRUCTURE_METHOD_COUNT => 25]),
+            MetricBag::fromArray([MetricName::SIZE_METHOD_COUNT => 25]),
         );
 
         // Default thresholds: warning=20, error=30
@@ -137,11 +139,11 @@ final class ThresholdOverrideIntegrationTest extends TestCase
 
         // Without override — should have warning
         $contextNoOverride = new AnalysisContext(metrics: $repository);
-        $violationsNoOverride = $rule->analyze($contextNoOverride);
-        self::assertCount(1, $violationsNoOverride);
-        self::assertSame(Severity::Warning, $violationsNoOverride[0]->severity);
+        $findingsNoOverride = $rule->analyze($contextNoOverride);
+        self::assertCount(1, $findingsNoOverride);
+        self::assertSame(Severity::Warning, $findingsNoOverride[0]->severity);
 
-        // With override raising warning to 30 — no violation
+        // With override raising warning to 30 — no finding
         $contextWithOverride = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -150,8 +152,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
                 ],
             ],
         );
-        $violationsWithOverride = $rule->analyze($contextWithOverride);
-        self::assertCount(0, $violationsWithOverride);
+        $findingsWithOverride = $rule->analyze($contextWithOverride);
+        self::assertCount(0, $findingsWithOverride);
     }
 
     #[Test]
@@ -181,9 +183,9 @@ final class ThresholdOverrideIntegrationTest extends TestCase
 
         // Without override — CCN 15 exceeds warning=10
         $contextNoOverride = new AnalysisContext(metrics: $repository);
-        $violationsNoOverride = $rule->analyze($contextNoOverride);
-        self::assertCount(1, $violationsNoOverride);
-        self::assertSame(Severity::Warning, $violationsNoOverride[0]->severity);
+        $findingsNoOverride = $rule->analyze($contextNoOverride);
+        self::assertCount(1, $findingsNoOverride);
+        self::assertSame(Severity::Warning, $findingsNoOverride[0]->severity);
 
         // With class-level override (line 10-50) raising warning to 20
         $contextWithOverride = new AnalysisContext(
@@ -194,8 +196,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
                 ],
             ],
         );
-        $violationsWithOverride = $rule->analyze($contextWithOverride);
-        self::assertCount(0, $violationsWithOverride);
+        $findingsWithOverride = $rule->analyze($contextWithOverride);
+        self::assertCount(0, $findingsWithOverride);
     }
 
     #[Test]
@@ -248,12 +250,12 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             ],
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        // complexMethod (line 20) is within override scope — no violation (15 < 20)
-        // otherMethod (line 60) is outside override scope — has violation (15 >= 10)
-        self::assertCount(1, $violations);
-        self::assertSame('otherMethod', $violations[0]->symbolPath->member);
+        // complexMethod (line 20) is within override scope — no finding (15 < 20)
+        // otherMethod (line 60) is outside override scope — has finding (15 >= 10)
+        self::assertCount(1, $findings);
+        self::assertSame('otherMethod', $findings[0]->symbolPath->member);
     }
 
     /**
@@ -390,24 +392,12 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $npathOverridden = $npath->withOverride(400, 900);
         self::assertTrue($npathOverridden->enabled, 'NPath: enabled must be preserved');
 
-        // TypeCoverageOptions — overrides all 3 dimensions uniformly with the same (warning, error)
-        $typeCov = new TypeCoverageOptions(
-            enabled: false,
-            paramWarning: 90.0,
-            paramError: 70.0,
-            returnWarning: 85.0,
-            returnError: 60.0,
-            propertyWarning: 95.0,
-            propertyError: 75.0,
-        );
+        // TypeCoverageOptions — one dimension per rule now, so one boundary pair
+        $typeCov = new TypeCoverageOptions(enabled: false, warning: 80.0, error: 50.0);
         $typeCovOverridden = $typeCov->withOverride(60.0, 30.0);
         self::assertFalse($typeCovOverridden->enabled, 'TypeCoverage: enabled must be preserved');
-        self::assertSame(60.0, $typeCovOverridden->paramWarning, 'TypeCoverage: paramWarning must take warning override');
-        self::assertSame(30.0, $typeCovOverridden->paramError, 'TypeCoverage: paramError must take error override');
-        self::assertSame(60.0, $typeCovOverridden->returnWarning, 'TypeCoverage: returnWarning must take warning override');
-        self::assertSame(30.0, $typeCovOverridden->returnError, 'TypeCoverage: returnError must take error override');
-        self::assertSame(60.0, $typeCovOverridden->propertyWarning, 'TypeCoverage: propertyWarning must take warning override');
-        self::assertSame(30.0, $typeCovOverridden->propertyError, 'TypeCoverage: propertyError must take error override');
+        self::assertSame(60.0, $typeCovOverridden->warning, 'TypeCoverage: warning must take the override');
+        self::assertSame(30.0, $typeCovOverridden->error, 'TypeCoverage: error must take the override');
 
         // GodClassOptions — warning overrides minCriteria; per-criterion thresholds preserved
         $godClass = new GodClassOptions(
@@ -581,7 +571,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function itIncludesOverriddenThresholdInViolationMessage(): void
+    public function itIncludesOverriddenThresholdInFindingMessage(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
         $subject = self::declarationSubject($symbolPath, 'src/Service/BigService.php', 100);
@@ -590,7 +580,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$symbolInfo]);
         $repository->method('get')->willReturn(
-            MetricBag::fromArray([MetricName::STRUCTURE_METHOD_COUNT => 35]),
+            MetricBag::fromArray([MetricName::SIZE_METHOD_COUNT => 35]),
         );
 
         // Default thresholds: warning=20, error=30
@@ -606,9 +596,9 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             ],
         );
 
-        // Value 35 < overridden warning 40 — no violation
-        $violations = $rule->analyze($context);
-        self::assertCount(0, $violations);
+        // Value 35 < overridden warning 40 — no finding
+        $findings = $rule->analyze($context);
+        self::assertCount(0, $findings);
 
         // Now override only raises warning to 30 (value 35 >= 30 = warning)
         $contextLower = new AnalysisContext(
@@ -620,12 +610,12 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             ],
         );
 
-        $violations = $rule->analyze($contextLower);
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        // Violation message and threshold must reflect the overridden value (30), not the default (20)
-        self::assertSame(30, $violations[0]->threshold);
-        self::assertStringContainsString('threshold of 30', $violations[0]->message);
+        $findings = $rule->analyze($contextLower);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        // Finding message and threshold must reflect the overridden value (30), not the default (20)
+        self::assertSame(30, $findings[0]->threshold);
+        self::assertStringContainsString('threshold of 30', $findings[0]->message);
     }
 
     #[Test]
@@ -650,7 +640,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             callable: new MethodComplexityOptions(warning: 20, error: 30),
         ));
 
-        // Class-level override (line 10-100): warning=30 (would suppress violation)
+        // Class-level override (line 10-100): warning=30 (would suppress finding)
         // Method-level override (line 15-40): warning=22 (should still trigger)
         $context = new AnalysisContext(
             metrics: $repository,
@@ -662,11 +652,11 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             ],
         );
 
-        // Method-level override (narrower span) should win: warning=22, value=25 >= 22 -> violation
-        $violations = $rule->analyze($context);
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(22, $violations[0]->threshold);
+        // Method-level override (narrower span) should win: warning=22, value=25 >= 22 -> finding
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(22, $findings[0]->threshold);
     }
 
     #[Test]
@@ -690,16 +680,21 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             ],
         );
 
-        $violations = (new CboRule(new CboOptions()))->analyzeLevel(RuleLevel::Class_, $context);
+        $findings = (new CboRule(new CboOptions()))->analyzeLevel(SymbolLevel::Class_, $context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(15, $violations[0]->threshold);
-        self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(15, $findings[0]->threshold);
+        self::assertSame($subject->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
+    /**
+     * One directive, one dimension. The selector used to name a rule that
+     * judged three, so a threshold written for parameters silently retuned
+     * returns and properties as well.
+     */
     #[Test]
-    public function itAppliesTheExactTypeCoverageSelectorToAllClosedDimensions(): void
+    public function itAppliesTheExactTypeCoverageSelectorToTheDimensionItNames(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'TypedService');
         $subject = self::declarationSubject($symbolPath, 'src/Service/TypedService.php', 100);
@@ -708,23 +703,25 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             new SymbolInfo($subject, RelativePath::fromString('src/Service/TypedService.php'), 10),
         ]);
         $repository->method('get')->willReturn(MetricBag::fromArray([
-            MetricName::TYPE_COVERAGE_PARAM_TOTAL => 1,
-            MetricName::TYPE_COVERAGE_PARAM => 70.0,
-            MetricName::TYPE_COVERAGE_RETURN_TOTAL => 1,
-            MetricName::TYPE_COVERAGE_RETURN => 70.0,
-            MetricName::TYPE_COVERAGE_PROPERTY_TOTAL => 1,
-            MetricName::TYPE_COVERAGE_PROPERTY => 70.0,
+            MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL => 1,
+            MetricName::DESIGN_TYPE_COVERAGE_PARAM => 70.0,
+            MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL => 1,
+            MetricName::DESIGN_TYPE_COVERAGE_RETURN => 70.0,
+            MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL => 1,
+            MetricName::DESIGN_TYPE_COVERAGE_PROPERTY => 70.0,
         ]));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
                 'src/Service/TypedService.php' => [
-                    self::override('design.type-coverage', 60.0, 40.0, $subject, ControlScope::Class_, 1, 100),
+                    self::override('design.type-coverage.param', 60.0, 40.0, $subject, ControlScope::Class_, 1, 100),
                 ],
             ],
         );
 
-        self::assertSame([], (new TypeCoverageRule(new TypeCoverageOptions()))->analyze($context));
+        self::assertSame([], (new ParamTypeCoverageRule(new TypeCoverageOptions()))->analyze($context));
+        self::assertCount(1, (new ReturnTypeCoverageRule(new TypeCoverageOptions()))->analyze($context));
+        self::assertCount(1, (new PropertyTypeCoverageRule(new TypeCoverageOptions()))->analyze($context));
     }
 
     #[Test]

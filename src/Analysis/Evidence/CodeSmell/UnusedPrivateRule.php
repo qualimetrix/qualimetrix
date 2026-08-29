@@ -7,15 +7,15 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -37,10 +37,12 @@ final class UnusedPrivateRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
     public const int REMEDIATION_MINUTES = 15;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     private const ENTRY_KEYS = [
-        MetricName::STRUCTURE_UNUSED_PRIVATE_METHOD => 'Unused private method',
-        MetricName::STRUCTURE_UNUSED_PRIVATE_PROPERTY => 'Unused private property',
-        MetricName::STRUCTURE_UNUSED_PRIVATE_CONSTANT => 'Unused private constant',
+        MetricName::CODE_SMELL_UNUSED_PRIVATE_METHOD => 'Unused private method',
+        MetricName::CODE_SMELL_UNUSED_PRIVATE_PROPERTY => 'Unused private property',
+        MetricName::CODE_SMELL_UNUSED_PRIVATE_CONSTANT => 'Unused private constant',
     ];
 
     public function getName(): string
@@ -53,15 +55,10 @@ final class UnusedPrivateRule extends AbstractRule
         return 'Detects unused private methods, properties, and constants';
     }
 
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::CodeSmell;
-    }
-
     public function requires(): array
     {
         return [
-            MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL,
+            MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL,
         ];
     }
 
@@ -71,19 +68,19 @@ final class UnusedPrivateRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $violations = [...$violations, ...$this->violationsForDeclaration($classInfo, $context)];
+            $findings = [...$findings, ...$this->findingsForDeclaration($classInfo, $context)];
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function violationsForDeclaration(SymbolInfo $classInfo, AnalysisContext $context): array
+    private function findingsForDeclaration(SymbolInfo $classInfo, AnalysisContext $context): array
     {
         $subject = $classInfo->subject ?? throw new LogicException('Unused private findings require an exact class subject');
         $declaration = $subject->declarationPath() ?? throw new LogicException('Unused private findings require a declaration subject');
@@ -92,22 +89,22 @@ final class UnusedPrivateRule extends AbstractRule
         }
 
         $metrics = $context->metrics->getSubject($subject);
-        $total = (int) ($metrics->get(MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL) ?? 0);
+        $total = (int) ($metrics->get(MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL) ?? 0);
         if ($total === 0) {
             return [];
         }
 
-        $violations = [];
+        $findings = [];
         foreach (self::ENTRY_KEYS as $entryKey => $label) {
             foreach ($metrics->entries($entryKey) as $entry) {
                 $line = (int) $entry['line'];
 
-                $violations[] = new Violation(
+                $findings[] = new Finding(
                     location: new Location($classInfo->file, $line, precise: true),
                     subject: $subject,
                     symbolPath: $declaration->logical,
                     ruleName: $this->getName(),
-                    violationCode: $this->getName(),
+                    code: $this->getName(),
                     message: $this->entryMessage($label, $entry),
                     severity: Severity::Warning,
                     metricValue: $total,
@@ -116,7 +113,7 @@ final class UnusedPrivateRule extends AbstractRule
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -145,9 +142,9 @@ final class UnusedPrivateRule extends AbstractRule
      * private members is unambiguously worse debt, independent of whether
      * anything currently gates on it.
      *
-     * Quirk worth pinning: every `Violation` in the group reports the
+     * Quirk worth pinning: every `Finding` in the group reports the
      * *same* class-wide `$total` (see the emission in {@see analyze()}) —
-     * a class with three unused private members emits three violations
+     * a class with three unused private members emits three findings
      * that each report `metricValue: 3`. Under the ceiling, `count` and
      * `magnitudes` therefore move together for this channel: redundant,
      * not wrong.
@@ -157,7 +154,7 @@ final class UnusedPrivateRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
         ];
     }
 }

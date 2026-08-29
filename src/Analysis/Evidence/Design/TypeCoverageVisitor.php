@@ -100,30 +100,30 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Declarati
             }
 
             $bag = (new MetricBag())
-                ->with('typeCoverage.paramTotal', $typeInfo['paramTotal'])
-                ->with('typeCoverage.paramTyped', $typeInfo['paramTyped'])
-                ->with('typeCoverage.returnTotal', $typeInfo['returnTotal'])
-                ->with('typeCoverage.returnTyped', $typeInfo['returnTyped'])
-                ->with('typeCoverage.propertyTotal', $typeInfo['propertyTotal'])
-                ->with('typeCoverage.propertyTyped', $typeInfo['propertyTyped']);
+                ->with('design.type-coverage.param.total', $typeInfo['paramTotal'])
+                ->with('design.type-coverage.param.typed', $typeInfo['paramTyped'])
+                ->with('design.type-coverage.return.total', $typeInfo['returnTotal'])
+                ->with('design.type-coverage.return.typed', $typeInfo['returnTyped'])
+                ->with('design.type-coverage.property.total', $typeInfo['propertyTotal'])
+                ->with('design.type-coverage.property.typed', $typeInfo['propertyTyped']);
 
             if ($typeInfo['paramTotal'] > 0) {
                 $bag = $bag->with(
-                    'typeCoverage.param',
+                    'design.type-coverage.param',
                     round($typeInfo['paramTyped'] / $typeInfo['paramTotal'] * 100, 2),
                 );
             }
 
             if ($typeInfo['returnTotal'] > 0) {
                 $bag = $bag->with(
-                    'typeCoverage.return',
+                    'design.type-coverage.return',
                     round($typeInfo['returnTyped'] / $typeInfo['returnTotal'] * 100, 2),
                 );
             }
 
             if ($typeInfo['propertyTotal'] > 0) {
                 $bag = $bag->with(
-                    'typeCoverage.property',
+                    'design.type-coverage.property',
                     round($typeInfo['propertyTyped'] / $typeInfo['propertyTotal'] * 100, 2),
                 );
             }

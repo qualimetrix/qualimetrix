@@ -8,9 +8,9 @@ use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -51,7 +51,7 @@ final class ReportingGitScopeQueryTest extends TestCase
     }
 
     #[Test]
-    public function itIncludesViolationsInChangedFiles(): void
+    public function itIncludesFindingsInChangedFiles(): void
     {
         $this->initGitRepo();
 
@@ -61,21 +61,21 @@ final class ReportingGitScopeQueryTest extends TestCase
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged');
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'UserService'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
-            violationCode: 'complexity',
+            code: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
-        self::assertTrue($filter($violation));
+        self::assertTrue($filter($finding));
     }
 
     #[Test]
-    public function itExcludesViolationsInUnchangedFiles(): void
+    public function itExcludesFindingsInUnchangedFiles(): void
     {
         $this->initGitRepo();
 
@@ -85,21 +85,21 @@ final class ReportingGitScopeQueryTest extends TestCase
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged');
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Controller.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Controller', 'HomeController'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Controller', 'HomeController'), RelativePath::fromString('src/Controller.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
-            violationCode: 'complexity',
+            code: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
-        self::assertFalse($filter($violation));
+        self::assertFalse($filter($finding));
     }
 
     #[Test]
-    public function itIncludesParentNamespaceViolationsByDefault(): void
+    public function itIncludesParentNamespaceFindingsByDefault(): void
     {
         $this->initGitRepo();
 
@@ -109,22 +109,22 @@ final class ReportingGitScopeQueryTest extends TestCase
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged');
 
-        // Violation for parent namespace
-        $violation = new Violation(
+        // Finding for parent namespace
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Service/Aggregated.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service')),
             ruleName: 'size',
-            violationCode: 'size',
+            code: 'size',
             message: 'Namespace too large',
             severity: Severity::Warning,
         );
 
-        self::assertTrue($filter($violation));
+        self::assertTrue($filter($finding));
     }
 
     #[Test]
-    public function itExcludesParentNamespaceViolationsWhenStrictModeEnabled(): void
+    public function itExcludesParentNamespaceFindingsWhenStrictModeEnabled(): void
     {
         $this->initGitRepo();
 
@@ -134,18 +134,18 @@ final class ReportingGitScopeQueryTest extends TestCase
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged', false);
 
-        // Violation for parent namespace
-        $violation = new Violation(
+        // Finding for parent namespace
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Service/Aggregated.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service')),
             ruleName: 'size',
-            violationCode: 'size',
+            code: 'size',
             message: 'Namespace too large',
             severity: Severity::Warning,
         );
 
-        self::assertFalse($filter($violation));
+        self::assertFalse($filter($finding));
     }
 
     #[Test]
@@ -165,17 +165,17 @@ final class ReportingGitScopeQueryTest extends TestCase
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged');
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'UserService'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
-            violationCode: 'complexity',
+            code: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
-        self::assertFalse($filter($violation));
+        self::assertFalse($filter($finding));
     }
 
     #[Test]
@@ -189,17 +189,17 @@ final class ReportingGitScopeQueryTest extends TestCase
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged');
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('README.md'), 10),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('README.md')),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('README.md'))),
             ruleName: 'complexity',
-            violationCode: 'complexity',
+            code: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
-        self::assertFalse($filter($violation));
+        self::assertFalse($filter($finding));
     }
 
     #[Test]
@@ -225,18 +225,18 @@ final class ReportingGitScopeQueryTest extends TestCase
         ];
 
         foreach ($namespaces as $namespace) {
-            $violation = new Violation(
+            $finding = new Finding(
                 location: new Location(RelativePath::fromString('some/file.php'), null),
                 symbolPath: SymbolPath::forNamespace($namespace),
                 subject: MetricSubject::aggregate(SymbolPath::forNamespace($namespace)),
                 ruleName: 'size',
-                violationCode: 'size',
+                code: 'size',
                 message: 'Namespace too large',
                 severity: Severity::Warning,
             );
 
             self::assertTrue(
-                $filter($violation),
+                $filter($finding),
                 "Expected namespace '$namespace' to be included",
             );
         }
@@ -254,19 +254,19 @@ final class ReportingGitScopeQueryTest extends TestCase
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged');
 
-        // Violation in the changed file should be included
-        $violation = new Violation(
+        // Finding in the changed file should be included
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/legacy.php'), 10),
             symbolPath: SymbolPath::forClass('', 'LegacyClass'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('', 'LegacyClass'), RelativePath::fromString('src/legacy.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
-            violationCode: 'complexity',
+            code: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
         // File path match should work even without namespace
-        self::assertTrue($filter($violation));
+        self::assertTrue($filter($finding));
     }
 
     #[Test]
@@ -290,38 +290,38 @@ final class ReportingGitScopeQueryTest extends TestCase
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged');
 
-        $violations = [
-            new Violation(
+        $findings = [
+            new Finding(
                 location: new Location(RelativePath::fromString('src/Service.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Service'),
                 subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Service'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
                 ruleName: 'complexity',
-                violationCode: 'complexity',
+                code: 'complexity',
                 message: 'Too complex',
                 severity: Severity::Warning,
             ),
-            new Violation(
+            new Finding(
                 location: new Location(RelativePath::fromString('src/Controller.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'Controller'),
                 subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Controller'), RelativePath::fromString('src/Controller.php'), DeclarationOrdinal::fromRank(0))),
                 ruleName: 'size',
-                violationCode: 'size',
+                code: 'size',
                 message: 'Too large',
                 severity: Severity::Warning,
             ),
-            new Violation(
+            new Finding(
                 location: new Location(RelativePath::fromString('src/Repository.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'Repository'),
                 subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Repository'), RelativePath::fromString('src/Repository.php'), DeclarationOrdinal::fromRank(0))),
                 ruleName: 'coupling',
-                violationCode: 'coupling',
+                code: 'coupling',
                 message: 'Too coupled',
                 severity: Severity::Warning,
             ),
         ];
 
-        foreach ($violations as $violation) {
-            self::assertTrue($filter($violation));
+        foreach ($findings as $finding) {
+            self::assertTrue($filter($finding));
         }
     }
 
@@ -347,27 +347,27 @@ final class ReportingGitScopeQueryTest extends TestCase
         $filter = $this->projection('main..HEAD');
 
         // Service.php was changed in main..HEAD, should be included
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'UserService'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
-            violationCode: 'complexity',
+            code: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
-        self::assertTrue($filter($violation));
+        self::assertTrue($filter($finding));
 
         // Base.php was NOT changed in main..HEAD (it's in both), should not be included
         // However, it shares namespace 'App' with Service.php which is in 'App\Service'
         // So we need to check with a different namespace
-        $baseViolation = new Violation(
+        $baseFinding = new Finding(
             location: new Location(RelativePath::fromString('src/Base.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Base'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Base'), RelativePath::fromString('src/Base.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
-            violationCode: 'complexity',
+            code: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -376,11 +376,11 @@ final class ReportingGitScopeQueryTest extends TestCase
         // and namespace 'App' is a parent of 'App\Service' so it would be included
         // Let's use strict mode to test this properly
         $strictFilter = $this->projection('main..HEAD', false);
-        self::assertFalse($strictFilter($baseViolation));
+        self::assertFalse($strictFilter($baseFinding));
     }
 
     #[Test]
-    public function itIncludesViolationsForStagedFilesEvenIfDeletedLocally(): void
+    public function itIncludesFindingsForStagedFilesEvenIfDeletedLocally(): void
     {
         $this->initGitRepo();
 
@@ -393,23 +393,23 @@ final class ReportingGitScopeQueryTest extends TestCase
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged');
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Deleted.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Deleted'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Deleted'), RelativePath::fromString('src/Deleted.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
-            violationCode: 'complexity',
+            code: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
 
-        // File is still in Git's staged changes, so violations should be included
+        // File is still in Git's staged changes, so findings should be included
         // even though the file doesn't exist locally
-        self::assertTrue($filter($violation));
+        self::assertTrue($filter($finding));
     }
 
     #[Test]
-    public function itHandlesViolationsWithNullNamespace(): void
+    public function itHandlesFindingsWithNullNamespace(): void
     {
         $this->initGitRepo();
 
@@ -419,19 +419,19 @@ final class ReportingGitScopeQueryTest extends TestCase
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged');
 
-        // File-level violation - should match by file path
-        $violation = new Violation(
+        // File-level finding - should match by file path
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Service.php'), null),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service.php')),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Service.php'))),
             ruleName: 'size',
-            violationCode: 'size',
+            code: 'size',
             message: 'File too large',
             severity: Severity::Warning,
         );
 
         // Should be included because file path matches
-        self::assertTrue($filter($violation));
+        self::assertTrue($filter($finding));
     }
 
     #[Test]
@@ -457,17 +457,17 @@ PHP;
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged');
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('some/file.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Complex\\Nested'),
             subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Complex\\Nested')),
             ruleName: 'size',
-            violationCode: 'size',
+            code: 'size',
             message: 'Namespace too large',
             severity: Severity::Warning,
         );
 
-        self::assertTrue($filter($violation));
+        self::assertTrue($filter($finding));
     }
 
     #[Test]
@@ -495,17 +495,17 @@ PHP;
         $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = $this->projection('staged');
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('some/file.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Bracketed'),
             subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Bracketed')),
             ruleName: 'size',
-            violationCode: 'size',
+            code: 'size',
             message: 'Namespace too large',
             severity: Severity::Warning,
         );
 
-        self::assertTrue($filter($violation));
+        self::assertTrue($filter($finding));
     }
 
     #[Test]
@@ -523,12 +523,12 @@ PHP;
         $filter = $this->projection('staged');
 
         foreach (['One', 'Two\\Nested', 'Two'] as $namespace) {
-            self::assertTrue($filter(new Violation(
+            self::assertTrue($filter(new Finding(
                 location: new Location(RelativePath::fromString('other.php'), null),
                 symbolPath: SymbolPath::forNamespace($namespace),
                 subject: MetricSubject::aggregate(SymbolPath::forNamespace($namespace)),
                 ruleName: 'size',
-                violationCode: 'size',
+                code: 'size',
                 message: 'Namespace issue',
                 severity: Severity::Warning,
             )));
@@ -543,7 +543,7 @@ PHP;
         $this->exec('git checkout -b main');
     }
 
-    /** @return Closure(Violation): bool */
+    /** @return Closure(Finding): bool */
     private function projection(string $reference, bool $includeParentNamespaces = true): Closure
     {
         $result = (new ReportingGitScopeQuery())->resolve(new GitScopeRequest(
@@ -554,8 +554,8 @@ PHP;
         $paths = array_fill_keys($result->paths, true);
         $namespaces = array_fill_keys($result->namespaces, true);
 
-        return static fn(Violation $violation): bool => isset($paths[$violation->location->pathString()])
-            || ($violation->symbolPath->namespace !== null && isset($namespaces[$violation->symbolPath->namespace]));
+        return static fn(Finding $finding): bool => isset($paths[$finding->location->pathString()])
+            || ($finding->symbolPath->namespace !== null && isset($namespaces[$finding->symbolPath->namespace]));
     }
 
     private function createPhpFile(string $relativePath): void

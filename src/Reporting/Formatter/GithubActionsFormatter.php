@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter;
 
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -38,8 +38,8 @@ final class GithubActionsFormatter implements FormatterInterface
             );
         }
 
-        foreach ($report->violations as $violation) {
-            $lines[] = $this->formatViolation($violation, $context);
+        foreach ($report->findings as $finding) {
+            $lines[] = $this->formatFinding($finding, $context);
         }
 
         return implode("\n", $lines) . "\n";
@@ -55,27 +55,27 @@ final class GithubActionsFormatter implements FormatterInterface
         return GroupBy::None;
     }
 
-    private function formatViolation(Violation $violation, FormatterContext $context): string
+    private function formatFinding(Finding $finding, FormatterContext $context): string
     {
-        $command = $this->severityToCommand($violation->severity);
+        $command = $this->severityToCommand($finding->severity);
 
         $params = [];
 
-        if ($violation->location->file !== null) {
-            $params[] = 'file=' . $this->escapeProperty($context->relativizePath($violation->location->file));
+        if ($finding->location->file !== null) {
+            $params[] = 'file=' . $this->escapeProperty($context->relativizePath($finding->location->file));
 
-            if ($violation->location->line !== null) {
-                $params[] = 'line=' . $violation->location->line;
+            if ($finding->location->line !== null) {
+                $params[] = 'line=' . $finding->location->line;
             }
         }
 
-        $params[] = 'title=' . $this->escapeProperty($violation->violationCode);
+        $params[] = 'title=' . $this->escapeProperty($finding->code);
 
         return \sprintf(
             '::%s %s::%s',
             $command,
             implode(',', $params),
-            $this->escapeData($violation->message . $this->formatBreachSuffix($violation)),
+            $this->escapeData($finding->message . $this->formatBreachSuffix($finding)),
         );
     }
 
@@ -83,9 +83,9 @@ final class GithubActionsFormatter implements FormatterInterface
      * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
      * Appended before escaping, so it goes through escapeData() too.
      */
-    private function formatBreachSuffix(Violation $violation): string
+    private function formatBreachSuffix(Finding $finding): string
     {
-        $breach = AcceptedLevelNarrator::describe($violation);
+        $breach = AcceptedLevelNarrator::describe($finding);
 
         return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }

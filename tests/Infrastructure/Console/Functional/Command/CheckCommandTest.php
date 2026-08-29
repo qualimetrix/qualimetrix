@@ -46,10 +46,10 @@ final class CheckCommandTest extends TestCase
             'paths' => [$this->tempDir],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
-        // Assert success (exit code 0 - no violations)
+        // Assert success (exit code 0 - no findings)
         self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
         // Text format shows "0 error(s), 0 warning(s) in X file(s)"
@@ -57,7 +57,7 @@ final class CheckCommandTest extends TestCase
     }
 
     #[Test]
-    public function itDetectsComplexityViolations(): void
+    public function itDetectsComplexityFindings(): void
     {
         // Create a PHP file with high complexity
         $complexCode = '<?php
@@ -117,7 +117,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'json',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         // Assert success
@@ -127,7 +127,7 @@ class ComplexClass {
         // Verify JSON output (config warnings may precede the document in stdout)
         $json = json_decode(self::extractJsonObject($output), true);
         self::assertIsArray($json);
-        // JSON format uses summary structure with meta, health, worst offenders, and violations
+        // JSON format uses summary structure with meta, health, worst offenders, and findings
         self::assertArrayHasKey('meta', $json);
         self::assertArrayHasKey('summary', $json);
         self::assertArrayHasKey('violations', $json);
@@ -173,7 +173,7 @@ class ComplexClass {
             '--exclude' => ['vendor'],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         // Assert success
@@ -188,7 +188,7 @@ class ComplexClass {
     #[Test]
     public function itSupportsBaselineGeneration(): void
     {
-        // Create a PHP file with violation
+        // Create a PHP file with finding
         $complexCode = '<?php
 class ComplexClass {
     public function complexMethod($a) {
@@ -228,7 +228,7 @@ class ComplexClass {
     #[Test]
     public function itUsesBaseline(): void
     {
-        // Create a PHP file with violation
+        // Create a PHP file with finding
         $complexCode = '<?php
 class ComplexClass {
     public function complexMethod($a) {
@@ -258,7 +258,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
         ]);
 
-        // Now analyze with baseline - should show no new violations.
+        // Now analyze with baseline - should show no new findings.
         // The layer rule is disabled for the same reason its siblings in this
         // file disable it: the command discovers this repository's own
         // qmx.yaml, whose declared layers cannot match a one-file temp
@@ -274,7 +274,7 @@ class ComplexClass {
             '--disable-rule' => ['architecture.layer-violation'],
         ]);
 
-        // Assert no violations (all in baseline)
+        // Assert no findings (all in baseline)
         $output = $commandTester2->getDisplay();
         self::assertSame(0, $commandTester2->getStatusCode(), "Baseline should suppress all violations. Output:\n" . $output);
     }
@@ -290,7 +290,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'checkstyle',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -310,7 +310,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'sarif',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -333,12 +333,12 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'gitlab',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        // GitLab format outputs a JSON array (empty when no violations)
+        // GitLab format outputs a JSON array (empty when no findings)
         $json = json_decode(self::extractJsonArrayOrObject($output), true);
         self::assertIsArray($json);
     }
@@ -354,7 +354,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'health',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -373,19 +373,19 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'summary',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        // Summary format shows file count and violation summary
+        // Summary format shows file count and finding summary
         self::assertStringContainsString('1 file', $output);
     }
 
     #[Test]
     public function itSupportsGithubActionsFormat(): void
     {
-        // GitHub Actions format only produces output when there are violations
+        // GitHub Actions format only produces output when there are findings
         $testFile = $this->tempDir . '/SimpleClass.php';
         file_put_contents($testFile, '<?php class SimpleClass { public function method(): int { return 42; } }');
 
@@ -394,15 +394,15 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'github',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
-        // No violations -> empty output, exit code 0
+        // No findings -> empty output, exit code 0
         self::assertSame(0, $commandTester->getStatusCode());
     }
 
     #[Test]
-    public function itSupportsGithubActionsFormatWithViolations(): void
+    public function itSupportsGithubActionsFormatWithFindings(): void
     {
         $complexCode = '<?php
 class ComplexClass {
@@ -459,7 +459,7 @@ class SimpleClass {
             'paths' => [$this->tempDir],
             '--format' => 'health',
             '--no-progress' => true,
-            // Do NOT disable computed.health — test full pipeline
+            // Do NOT disable the computed-metric family — test full pipeline
         ]);
 
         $output = $commandTester->getDisplay();
@@ -500,7 +500,7 @@ PHP);
         $configPath = $this->tempDir . '/qmx.yaml';
         file_put_contents($configPath, <<<'YAML'
 rules:
-  computed.health:
+  health.cohesion:
     enabled: true
 YAML);
 
@@ -512,14 +512,14 @@ YAML);
             '--workers' => 0,
             '--no-cache' => true,
             '--no-progress' => true,
-            '--only-rule' => ['computed.health'],
+            '--only-rule' => ['health.*'],
         ]);
 
         /** @var array{violations: list<array{symbol: string, code: string}>} $report */
         $report = json_decode(self::extractJsonObject($commandTester->getDisplay()), true, 512, \JSON_THROW_ON_ERROR);
         $classCodes = array_column(array_values(array_filter(
             $report['violations'],
-            static fn(array $violation): bool => $violation['symbol'] === 'App\\PoorHealth',
+            static fn(array $finding): bool => $finding['symbol'] === 'App\\PoorHealth',
         )), 'code');
 
         self::assertNotContains('health.cohesion', $classCodes);

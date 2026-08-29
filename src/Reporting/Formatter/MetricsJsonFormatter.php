@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter;
 
+use LogicException;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\FormatterContext;
@@ -11,9 +14,9 @@ use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
 
 /**
- * Exports all collected metrics as JSON (not just violations).
+ * Exports all collected metrics as JSON (not just findings).
  *
- * Unlike JsonFormatter which outputs violations, this formatter outputs
+ * Unlike JsonFormatter which outputs findings, this formatter outputs
  * raw metric data for every analyzed symbol — useful for custom dashboards,
  * trend analysis, and third-party integrations.
  */
@@ -22,22 +25,46 @@ final class MetricsJsonFormatter implements FormatterInterface
     private const VERSION = '1.0.0';
     private const PACKAGE = 'qmx';
 
+    /**
+     * The levels this export walks, in publication order.
+     *
+     * @var list<SymbolLevel>
+     */
+    private const array LEVELS = [
+        SymbolLevel::File,
+        SymbolLevel::Project,
+        SymbolLevel::Namespace_,
+        SymbolLevel::Class_,
+        SymbolLevel::Callable,
+    ];
+
+    /**
+     * The declaration kinds this export publishes, in publication order.
+     *
+     * This format is about declarations, not levels: every entry carries the
+     * kind of the symbol it describes, and one level can hold more than one
+     * kind — a callable is a method or a global function. The order is part of
+     * the published document, so a level's symbols are grouped by kind in this
+     * order rather than in the order the repository happens to hold them.
+     *
+     * @var list<SymbolType>
+     */
+    private const array DECLARATION_KINDS = [
+        SymbolType::File,
+        SymbolType::Project,
+        SymbolType::Namespace_,
+        SymbolType::Class_,
+        SymbolType::Method,
+        SymbolType::Function_,
+    ];
+
     public function format(Report $report, FormatterContext $context): string
     {
         $symbols = [];
 
         if ($report->metrics !== null) {
-            $symbolTypes = [
-                SymbolType::File,
-                SymbolType::Project,
-                SymbolType::Namespace_,
-                SymbolType::Class_,
-                SymbolType::Method,
-                SymbolType::Function_,
-            ];
-
-            foreach ($symbolTypes as $type) {
-                foreach ($report->metrics->all($type) as $symbolInfo) {
+            foreach (self::LEVELS as $level) {
+                foreach (self::byDeclarationKind($report->metrics->all($level)) as $symbolInfo) {
                     $bag = $report->metrics->get($symbolInfo->symbolPath);
                     // Filter out internal derived-metric keys (contain ':')
                     $rawMetrics = array_filter(
@@ -57,7 +84,7 @@ final class MetricsJsonFormatter implements FormatterInterface
                     }
 
                     $symbols[] = [
-                        'type' => $type->value,
+                        'type' => $symbolInfo->symbolPath->getType()->value,
                         'name' => $symbolInfo->symbolPath->toString(),
                         'file' => $symbolInfo->file?->value() ?? '',
                         'line' => $symbolInfo->line,
@@ -78,7 +105,7 @@ final class MetricsJsonFormatter implements FormatterInterface
                 'filesAnalyzed' => $report->filesAnalyzed,
                 'filesSkipped' => $report->filesSkipped,
                 'duration' => round($report->duration, 3),
-                'violations' => $report->getTotalViolations(),
+                'violations' => $report->getTotalFindings(),
                 'errors' => $report->errorCount,
                 'warnings' => $report->warningCount,
                 'info' => $report->infoCount,
@@ -96,5 +123,41 @@ final class MetricsJsonFormatter implements FormatterInterface
     public function getDefaultGroupBy(): GroupBy
     {
         return GroupBy::None;
+    }
+
+    /**
+     * @param iterable<SymbolInfo> $symbols
+     *
+     * @return list<SymbolInfo>
+     */
+    private static function byDeclarationKind(iterable $symbols): array
+    {
+        $buckets = [];
+        foreach ($symbols as $symbolInfo) {
+            $buckets[$symbolInfo->symbolPath->getType()->value][] = $symbolInfo;
+        }
+
+        $ordered = [];
+        foreach (self::DECLARATION_KINDS as $kind) {
+            foreach ($buckets[$kind->value] ?? [] as $symbolInfo) {
+                $ordered[] = $symbolInfo;
+            }
+
+            unset($buckets[$kind->value]);
+        }
+
+        // A kind missing from the publication order would otherwise be
+        // dropped from the export without a trace, and the export would still
+        // look well-formed. Adding a SymbolType case must extend the order
+        // above, not silently shrink the document.
+        if ($buckets !== []) {
+            throw new LogicException(\sprintf(
+                'MetricsJsonFormatter has no publication position for declaration kind(s) %s; extend %s::DECLARATION_KINDS.',
+                implode(', ', array_keys($buckets)),
+                self::class,
+            ));
+        }
+
+        return $ordered;
     }
 }

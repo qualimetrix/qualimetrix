@@ -33,16 +33,16 @@ final class HealthSummaryBuilderTest extends TestCase
                 'health.typing' => 90.0,
                 'health.maintainability' => 58.0,
                 'health.overall' => 72.0,
-                'ccn.avg' => 8.2,
-                'cognitive.avg' => 6.1,
-                'tcc.avg' => 0.15,
-                'lcom.avg' => 4.0,
+                'complexity.ccn.avg' => 8.2,
+                'complexity.cognitive.avg' => 6.1,
+                'cohesion.tcc.avg' => 0.15,
+                'cohesion.lcom.avg' => 4.0,
             ]),
             classes: [new SymbolInfo($classPath, RelativePath::fromString('src/Service.php'), null)],
             classMetrics: [
                 $classPath->toCanonical() => MetricBag::fromArray([
-                    'ccn.sum' => 12,
-                    'cognitive.sum' => 8,
+                    'complexity.ccn.sum' => 12,
+                    'complexity.cognitive.sum' => 8,
                 ]),
             ],
         );
@@ -62,20 +62,20 @@ final class HealthSummaryBuilderTest extends TestCase
         self::assertSame(65.0, $complexity->score);
         self::assertSame('Fair', $complexity->label);
         self::assertCount(2, $complexity->decomposition);
-        self::assertSame('ccn.avg', $complexity->decomposition[0]->metricKey);
-        self::assertSame('cognitive.avg', $complexity->decomposition[1]->metricKey);
+        self::assertSame('complexity.ccn.avg', $complexity->decomposition[0]->metricKey);
+        self::assertSame('complexity.cognitive.avg', $complexity->decomposition[1]->metricKey);
         self::assertCount(1, $complexity->worstContributors);
         self::assertSame(
-            ['ccn.sum' => 12, 'cognitive.sum' => 8],
+            ['complexity.ccn.sum' => 12, 'complexity.cognitive.sum' => 8],
             $complexity->worstContributors[0]->metricValues,
         );
         $cohesion = $result->healthScores['cohesion'];
         self::assertSame(45.0, $cohesion->score);
         self::assertSame('Poor', $cohesion->label);
         self::assertCount(2, $cohesion->decomposition);
-        self::assertSame('tcc.avg', $cohesion->decomposition[0]->metricKey);
+        self::assertSame('cohesion.tcc.avg', $cohesion->decomposition[0]->metricKey);
         self::assertSame(0.15, $cohesion->decomposition[0]->value);
-        self::assertSame('lcom.avg', $cohesion->decomposition[1]->metricKey);
+        self::assertSame('cohesion.lcom.avg', $cohesion->decomposition[1]->metricKey);
         self::assertSame('Fair', $result->healthScores['maintainability']->label);
     }
 }

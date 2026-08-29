@@ -12,13 +12,14 @@ use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -54,14 +55,14 @@ final class RuleInputValidatorTest extends TestCase
         $definitions = new ResolvedComputedMetricDefinitions([
             new ComputedMetricDefinition(
                 name: 'health.complexity',
-                formulas: ['class' => 'ccn__avg'],
+                formulas: ['class' => 'm["complexity.ccn.avg"]'],
                 description: 'Complexity health',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
                 inverted: true,
             ),
         ]);
 
-        foreach (['computed.health', 'health.complexity', 'computed.health#health.complexity'] as $selector) {
+        foreach (['health.complexity', 'health.*'] as $selector) {
             $configuration = new FindingConfiguration(
                 new RuleOptionsDocument([]),
                 new FindingCliOverrides([]),
@@ -70,8 +71,8 @@ final class RuleInputValidatorTest extends TestCase
 
             $snapshot = $validator->validate(new ArrayInput([], new InputDefinition()), $configuration, $definitions);
             self::assertSame(
-                ['computed.health#health.complexity'],
-                array_map(static fn($channel): string => $channel->toKey(), $snapshot->channelsProducedBy(ComputedMetricRule::NAME)),
+                ['health.complexity'],
+                array_map(static fn($channel): string => $channel->code, $snapshot->channelsProducedBy('health.complexity')),
             );
         }
     }
@@ -93,16 +94,16 @@ final class RuleInputValidatorTest extends TestCase
         $definitions = new ResolvedComputedMetricDefinitions([
             new ComputedMetricDefinition(
                 name: 'health.complexity',
-                formulas: ['class' => 'ccn__avg'],
+                formulas: ['class' => 'm["complexity.ccn.avg"]'],
                 description: 'Complexity health',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
                 inverted: true,
             ),
         ]);
 
         $accepted = new FindingConfiguration(
             new RuleOptionsDocument([
-                'computed.health' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
+                'health.complexity' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -111,7 +112,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $rejected = new FindingConfiguration(
             new RuleOptionsDocument([
-                'computed.health' => ['exclude_namespace_channels' => ['health' => ['App\\Legacy']]],
+                'health.complexity' => ['exclude_namespace_channels' => ['health' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -123,51 +124,119 @@ final class RuleInputValidatorTest extends TestCase
     }
 
     /**
-     * The documented grammar is one grammar everywhere, and this option is the
-     * one whose key *is* a channel, so it must accept the channel spelled in
-     * full. The pair used to parse as a name containing a `#`, address nothing,
-     * and be refused with advice that contradicted the documentation.
+     * The second seam of the one refusal point for an impossible
+     * `channel:level` pair — the exclusion key. Both directions from one
+     * configuration, so the case cannot pass by rejecting everything.
      */
     #[Test]
-    public function itAcceptsAChannelExclusionKeyWrittenAsTheExplicitPair(): void
+    public function itRejectsAChannelExclusionKeyNamingALevelItsChannelDoesNotReportAt(): void
+    {
+        $rules = self::createStub(RuleRegistryInterface::class);
+        $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
+        $validator = $this->validator($rules);
+        $definitions = self::healthComplexityDefinitions(SymbolLevel::Class_, SymbolLevel::Namespace_);
+
+        $accepted = new FindingConfiguration(
+            new RuleOptionsDocument([
+                'health.complexity' => [
+                    'exclude_namespace_channels' => ['health.complexity:namespace' => ['App\\Legacy']],
+                ],
+            ]),
+            new FindingCliOverrides([]),
+            new RuleSelection(),
+        );
+        $validator->validate(new ArrayInput([], new InputDefinition()), $accepted, $definitions);
+
+        $rejected = new FindingConfiguration(
+            new RuleOptionsDocument([
+                'health.complexity' => ['exclude_namespace_channels' => ['health.complexity:file' => ['App\\Legacy']]],
+            ]),
+            new FindingCliOverrides([]),
+            new RuleSelection(),
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('it does not report at level "file"');
+        $validator->validate(new ArrayInput([], new InputDefinition()), $rejected, $definitions);
+    }
+
+    /**
+     * The option only ever removes namespace aggregates, so a key narrowed to a
+     * level the channel *does* report at is still a filter that can never fire.
+     */
+    #[Test]
+    public function itRejectsAChannelExclusionKeyNarrowedToALevelTheOptionNeverAsksAbout(): void
+    {
+        $validator = $this->validatorForComputedHealth();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('removes namespace aggregates only');
+        $validator->validate(
+            new ArrayInput([], new InputDefinition()),
+            self::channelExclusion('health.complexity:class'),
+            self::healthComplexityDefinitions(),
+        );
+    }
+
+    /**
+     * A selector carrying both the retired `#` pair and a level is answered
+     * about the pair: the level question can only report the `#` half as
+     * unparseable, which says nothing about the spelling that was retired.
+     */
+    #[Test]
+    public function itRefusesTheRetiredPairBeforeJudgingTheLevel(): void
+    {
+        $validator = $this->validatorForComputedHealth();
+        $configuration = new FindingConfiguration(
+            new RuleOptionsDocument([]),
+            new FindingCliOverrides([]),
+            new RuleSelection(disabled: ['health.complexity#health.complexity:class']),
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('is written in the retired channel-pair form');
+        $validator->validate(
+            new ArrayInput([], new InputDefinition()),
+            $configuration,
+            self::healthComplexityDefinitions(),
+        );
+    }
+
+    /**
+     * The documented grammar is one grammar everywhere, and this option is the
+     * one whose key *is* a channel, so it must accept the channel by its own
+     * name.
+     */
+    #[Test]
+    public function itAcceptsAChannelExclusionKeyNamingTheChannel(): void
     {
         $validator = $this->validatorForComputedHealth();
 
         $validator->validate(
             new ArrayInput([], new InputDefinition()),
-            self::channelExclusion('computed.health#health.complexity'),
+            self::channelExclusion('health.complexity'),
             self::healthComplexityDefinitions(),
         );
 
         $this->expectNotToPerformAssertions();
     }
 
+    /**
+     * A key left in the retired `rule#code` spelling is refused **by name**,
+     * with the name to write instead. Silence here is the failure mode the
+     * refusal exists for: the key would parse as nothing, exclude nothing, and
+     * say nothing.
+     */
     #[Test]
-    public function itNamesTheRuleHalfWhenOnlyTheRuleHalfIsWrong(): void
+    public function itRefusesAChannelExclusionKeyInTheRetiredPairForm(): void
     {
         $validator = $this->validatorForComputedHealth();
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'the rule half is wrong, "health.complexity" is spelled computed.health#health.complexity',
-        );
+        $this->expectExceptionMessage('Write "health.complexity"');
         $validator->validate(
             new ArrayInput([], new InputDefinition()),
-            self::channelExclusion('coupling.cbo#health.complexity'),
-            self::healthComplexityDefinitions(),
-        );
-    }
-
-    #[Test]
-    public function itRefusesAGroupInsideTheExplicitPair(): void
-    {
-        $validator = $this->validatorForComputedHealth();
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('takes exactly two exact halves and no "*" in either');
-        $validator->validate(
-            new ArrayInput([], new InputDefinition()),
-            self::channelExclusion('computed.health#health.*'),
+            self::channelExclusion('computed.health#health.complexity'),
             self::healthComplexityDefinitions(),
         );
     }
@@ -187,7 +256,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $configuration = new FindingConfiguration(
             new RuleOptionsDocument([
-                'computed.health' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
+                'health.complexity' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -231,6 +300,36 @@ final class RuleInputValidatorTest extends TestCase
         );
     }
 
+    /**
+     * A producer whose every channel is silenced at every level it declares
+     * stops, instead of running its collection phase so that all of its output
+     * can be filtered away. The levels are only knowable from the run's own
+     * universe, so this is asserted through the preflight that resolves it.
+     */
+    #[Test]
+    public function itStopsAProducerWhoseEveryDeclaredLevelTheRunDisabled(): void
+    {
+        $rules = self::createStub(RuleRegistryInterface::class);
+        $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
+        $static = self::universe($rules);
+        $selector = new RuleSelector($static);
+        $validator = new RuleInputValidator($rules, $selector, new FindingConfigurationResolver(), $static);
+        $disabled = ['health.complexity:class'];
+
+        $snapshot = $validator->validate(
+            new ArrayInput([], new InputDefinition()),
+            new FindingConfiguration(
+                new RuleOptionsDocument([]),
+                new FindingCliOverrides([]),
+                new RuleSelection(disabled: $disabled),
+            ),
+            self::healthComplexityDefinitions(),
+        );
+        $validator->replaceChannels($snapshot);
+
+        self::assertFalse($selector->isProducerEnabled('health.complexity', [], $disabled));
+    }
+
     private function validatorForComputedHealth(): RuleInputValidator
     {
         $rules = self::createStub(RuleRegistryInterface::class);
@@ -239,14 +338,16 @@ final class RuleInputValidatorTest extends TestCase
         return $this->validator($rules);
     }
 
-    private static function healthComplexityDefinitions(): ResolvedComputedMetricDefinitions
-    {
+    private static function healthComplexityDefinitions(
+        SymbolLevel $level = SymbolLevel::Class_,
+        SymbolLevel ...$moreLevels,
+    ): ResolvedComputedMetricDefinitions {
         return new ResolvedComputedMetricDefinitions([
             new ComputedMetricDefinition(
                 name: 'health.complexity',
                 formulas: ['class' => 'ccn__avg'],
                 description: 'Complexity health',
-                levels: [SymbolType::Class_],
+                levels: array_values([$level, ...$moreLevels]),
                 inverted: true,
             ),
         ]);
@@ -256,7 +357,7 @@ final class RuleInputValidatorTest extends TestCase
     {
         return new FindingConfiguration(
             new RuleOptionsDocument([
-                'computed.health' => ['exclude_namespace_channels' => [$key => ['App\\Legacy']]],
+                'health.complexity' => ['exclude_namespace_channels' => [$key => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -265,7 +366,7 @@ final class RuleInputValidatorTest extends TestCase
 
     private function validator(RuleRegistryInterface $rules): RuleInputValidator
     {
-        $static = new ChannelUniverse([], [], [], ComputedMetricRule::NAME, new ResolvedComputedMetricDefinitions([]));
+        $static = self::universe($rules);
 
         return new RuleInputValidator(
             $rules,
@@ -273,5 +374,22 @@ final class RuleInputValidatorTest extends TestCase
             new FindingConfigurationResolver(),
             $static,
         );
+    }
+
+    /**
+     * The addressable names are the universe's, not the registry's: since the
+     * computed-metric family split, six producers have no class to read a NAME
+     * off, so a universe built without them refuses selectors the run accepts.
+     * Assembled here the way ChannelDeclarationCompilerPass assembles it.
+     */
+    private static function universe(RuleRegistryInterface $rules): ChannelUniverse
+    {
+        $names = array_map(static fn(string $class): string => $class::NAME, $rules->getClasses());
+
+        if (\in_array(ComputedMetricRule::NAME, $names, true)) {
+            $names = [...$names, ...ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES];
+        }
+
+        return new ChannelUniverse([], [], array_fill_keys($names, false), new ResolvedComputedMetricDefinitions([]));
     }
 }

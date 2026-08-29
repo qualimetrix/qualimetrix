@@ -1,6 +1,6 @@
 # Форматы вывода
 
-Qualimetrix поддерживает 11 форматов вывода (включая устаревший
+Qualimetrix поддерживает 12 форматов вывода (включая устаревший
 `text-verbose`). Выбирайте тот, который подходит для вашего рабочего процесса.
 
 ```bash
@@ -84,9 +84,9 @@ bin/qmx check src/ --detail=50
 **Пример вывода:**
 
 ```
-src/Service/UserService.php:42: error[complexity.cyclomatic.callable]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
+src/Service/UserService.php:42: error[complexity.cyclomatic]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
 src/Service/UserService.php:87: warning[size.method-count]: Class has 22 methods, max recommended is 20 (UserService)
-src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max allowed is 15 (OrderRepository)
+src/Repository/OrderRepository.php:15: error[coupling.cbo]: CBO is 18, max allowed is 15 (OrderRepository)
 
 3 error(s), 0 warning(s) in 45 file(s)
 ```
@@ -161,7 +161,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
             "label": "Poor",
             "reason": "high coupling",
             "violationCount": 15,
-            "classCount": 8,
+            "size.class-count": 8,
             "healthScores": {}
         }
     ],
@@ -183,12 +183,12 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
             "line": 42,
             "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "symbol": "App\\Service\\UserService::calculate",
-            "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
+            "channel": "complexity.cyclomatic",
             "occurrence": null,
             "edge": null,
             "namespace": "App\\Service",
             "rule": "complexity.cyclomatic",
-            "code": "complexity.cyclomatic.callable",
+            "code": "complexity.cyclomatic",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
             "recommendation": null,
@@ -287,9 +287,9 @@ bin/qmx check src/ --format=json --no-progress > report.json
             "file": "src/Service/UserService.php",
             "line": 1,
             "metrics": {
-                "loc": 150,
-                "lloc": 120,
-                "classCount": 1
+                "size.loc": 150,
+                "size.lloc": 120,
+                "size.class-count": 1
             }
         },
         {
@@ -298,14 +298,14 @@ bin/qmx check src/ --format=json --no-progress > report.json
             "file": "src/Service/UserService.php",
             "line": 10,
             "metrics": {
-                "methodCount": 8,
-                "propertyCount": 3,
-                "lcom4": 2,
-                "wmc": 35,
-                "ca": 5,
-                "ce": 12,
-                "cbo": 17,
-                "instability": 0.71
+                "size.method-count": 8,
+                "size.property-count": 3,
+                "cohesion.lcom": 2,
+                "complexity.wmc": 35,
+                "coupling.ca": 5,
+                "coupling.ce": 12,
+                "coupling.cbo": 17,
+                "coupling.instability": 0.71
             }
         },
         {
@@ -314,10 +314,10 @@ bin/qmx check src/ --format=json --no-progress > report.json
             "file": "src/Service/UserService.php",
             "line": 42,
             "metrics": {
-                "ccn": 15,
-                "cognitive": 22,
-                "halstead.volume": 384.5,
-                "loc": 35
+                "complexity.ccn": 15,
+                "complexity.cognitive": 22,
+                "maintainability.halstead.volume": 384.5,
+                "size.loc": 35
             }
         }
     ],
@@ -359,7 +359,7 @@ Checkstyle 3.0 XML: `<file name="...">` с вложенными `<error line="" 
     <error line="42"
            severity="error"
            message="Cyclomatic complexity is 15, max allowed is 10"
-           source="qmx.complexity.cyclomatic.callable"/>
+           source="qmx.complexity.cyclomatic"/>
     <error line="87"
            severity="warning"
            message="Class has 22 methods, max recommended is 20"
@@ -403,7 +403,7 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `level` (error/warning), `message.t
             },
             "results": [
                 {
-                    "ruleId": "complexity.cyclomatic.callable",
+                    "ruleId": "complexity.cyclomatic",
                     "level": "error",
                     "message": {
                         "text": "Cyclomatic complexity is 15, max allowed is 10"
@@ -459,7 +459,7 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `level` (error/warning), `message.t
 [
     {
         "description": "Cyclomatic complexity is 15, max allowed is 10",
-        "check_name": "complexity.cyclomatic.callable",
+        "check_name": "complexity.cyclomatic",
         "fingerprint": "a1b2c3d4e5f6...",
         "severity": "critical",
         "location": {
@@ -502,7 +502,7 @@ code_quality:
 
 ```
 ::warning file=src/Service/UserService.php,line=87,title=size.method-count::Class has 22 methods, max recommended is 20
-::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic.callable::Cyclomatic complexity is 15, max allowed is 10
+::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic::Cyclomatic complexity is 15, max allowed is 10
 ```
 
 **Использование в CI (GitHub Actions):**
@@ -585,6 +585,132 @@ xdg-open report.html  # Linux
 
 ---
 
+## suppressed
+
+Машиночитаемый JSON-состав того, что прогон исключил из отчёта и почему.
+Отдельный формат, а не секция `json`: обычный payload `check` не меняет форму
+из-за возможности, которую вы не запрашивали, каким бы форматом вы его ни
+выбрали.
+
+**Когда использовать:** разобраться, почему ожидаемое нарушение отсутствует в
+отчёте; проверить, что именно молчаливо исключает настройка `qmx.yaml`; найти
+неработающую запись `exclude_paths`/`exclude_namespaces` (опечатку в пути,
+удалённый файл).
+
+**Захват включается двумя независимыми способами** — флагом
+`--show-suppressed` или выбором `--format=suppressed`, в том числе через
+`format: suppressed` в `qmx.yaml`. Оба пути включают один и тот же захват
+пер-рулевого исключения, поэтому счётчики по этому механизму на обеих
+поверхностях никогда не расходятся.
+
+**В остальном эти две поверхности не эквивалентны.** `--show-suppressed` на
+`--format=text` печатает прозой инлайновые подавления `@qmx-ignore` и
+пер-рулевые исключения. Глобальные `path-exclusion` и `namespace-exclusion`
+там видны только как счётчик под `-v`, а не по находкам; снятия `baseline` и
+`git-scope` не выводятся вовсе; текстового аналога `neverMatched` нет.
+`suppressed` — единственная поверхность, публикующая все семь механизмов
+по отдельным находкам.
+
+**Состав — это мультимножество, а не множество находок.** Одна находка может
+попасть под несколько механизмов сразу — например, находку, которую убрал бы
+инлайновый `@qmx-ignore`, могло раньше убрать исключение по неймспейсу. Всего
+семь механизмов: `suppression` (инлайновые `@qmx-ignore`/`@qmx-ignore-file`/
+`@qmx-ignore-next-line`), `path-exclusion` и `namespace-exclusion` (глобальные
+`exclude_paths`/`exclude_namespaces`), `baseline` (потолок принятого уровня),
+`git-scope` (сужение `--report=git:*`) и две половины пер-рулевого леджера
+исключений, настраиваемого под ключом `rules: {<имя-правила>: {...}}` —
+`rule-namespace-exclusion` и `rule-path-exclusion`. `byMechanism` считает
+записи по каждому механизму отдельно; поскольку одна и та же находка может
+попасть под несколько механизмов, эти счётчики **не складываются** в число
+различных подавленных находок — об этом прямо говорит поле `note` самого
+формата.
+
+Отдельный список `neverMatched` показывает настроенные подавители, не
+исключившие в этом прогоне ничего: без него устаревшую запись `exclude_paths`,
+указывающую на удалённый файл, невозможно отличить от записи, которую вообще
+никогда не писали.
+
+**Ключи верхнего уровня:** `meta`, `note`, `mechanisms` (все семь, всегда
+присутствуют), `byMechanism` (счётчик на каждый механизм, включая нулевые),
+`suppressed` (само мультимножество), `neverMatched`.
+
+<!-- llms:skip-begin -->
+**Пример вывода (сокращённый, из самоанализа этого проекта):**
+
+```json
+{
+    "meta": {
+        "version": "dev-main",
+        "package": "qmx",
+        "timestamp": "2026-08-29T09:14:02+00:00"
+    },
+    "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
+    "mechanisms": [
+        "suppression",
+        "path-exclusion",
+        "namespace-exclusion",
+        "baseline",
+        "git-scope",
+        "rule-namespace-exclusion",
+        "rule-path-exclusion"
+    ],
+    "byMechanism": {
+        "suppression": 12,
+        "path-exclusion": 0,
+        "namespace-exclusion": 0,
+        "baseline": 0,
+        "git-scope": 0,
+        "rule-namespace-exclusion": 58,
+        "rule-path-exclusion": 131
+    },
+    "suppressed": [
+        {
+            "mechanism": "suppression",
+            "suppressor": "src/Infrastructure/Ast/CachedFileParser.php:15",
+            "rule": "code-smell.empty-catch",
+            "channel": "code-smell.empty-catch",
+            "file": "src/Infrastructure/Ast/CachedFileParser.php",
+            "line": 73,
+            "symbol": "src/Infrastructure/Ast/CachedFileParser.php",
+            "severity": "error",
+            "message": "Log the exception or add a comment explaining why it is safe to ignore."
+        },
+        {
+            "mechanism": "rule-path-exclusion",
+            "suppressor": "code-smell.constructor-overinjection",
+            "rule": "code-smell.constructor-overinjection",
+            "channel": "code-smell.constructor-overinjection",
+            "file": "src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php",
+            "line": 28,
+            "symbol": "Qualimetrix\\Analysis\\Run\\Contract\\Collection\\SuccessfulFileProcessing::__construct",
+            "severity": "warning",
+            "message": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
+        }
+    ],
+    "neverMatched": [
+        {
+            "mechanism": "rule-path-exclusion",
+            "suppressor": "coupling.cbo: src/Analysis/Evidence/Design/*Visitor.php"
+        }
+    ]
+}
+```
+
+Для двух механизмов леджера (`rule-namespace-exclusion`,
+`rule-path-exclusion`) `suppressor` называет правило-производитель; для
+`path-exclusion`/`namespace-exclusion` — сработавший настроенный паттерн; для
+`suppression` — `файл:строка` директивы; для `baseline` — описание принятой
+записи; для `git-scope` — настроенную git-ссылку.
+<!-- llms:skip-end -->
+
+**Использование:**
+
+```bash
+bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
+```
+
+---
+
 ## Покрытие анализа во всех форматах
 
 Каждый обнаруженный PHP-файл классифицируется как проанализированный,
@@ -606,6 +732,7 @@ Generated-исключения не делают анализ неполным; 
 | `checkstyle`   | Сбои как errors в синтетическом файле `[analysis]`, source — `qmx.analysis.<kind>`                                   |
 | `github`       | По одной `::error`-аннотации на каждый сбой; полный прогон без нарушений не даёт аннотаций                           |
 | `html`         | Встроенные данные `coverage`; при неполном анализе также виден warning-banner                                        |
+| `suppressed`   | Не представлено — этот формат публикует состав подавленного, а не объект `coverage`                                  |
 
 В `json` и `metrics` каждый элемент `failures[]` содержит `path`, `kind` (`parse` или
 `processing`) и `message`. Текстовые форматы различают нуль найденных файлов,
@@ -613,19 +740,20 @@ Generated-исключения не делают анализ неполным; 
 
 ## Сравнительная таблица
 
-| Формат         | Читаемость    | Машинный    | Группировка                    | Интеграция с CI            |
-| -------------- | ------------- | ----------- | ------------------------------ | -------------------------- |
-| `summary`      | Лучшая        | Нет         | Оценки здоровья, drill-down    | Любой (код выхода)         |
-| `text`         | Хорошая       | Парсируемый | `--group-by`                   | Любой (код выхода)         |
-| `text-verbose` | Хорошая       | Нет         | `--group-by` (по умолч.: file) | Любой (код выхода)         |
-| `json`         | Нет           | Да          | Встроенная (по файлам)         | Скрипты                    |
-| `metrics`      | Нет           | Да          | Встроенная (по символам)       | Скрипты, дашборды          |
-| `checkstyle`   | Нет           | Да          | Встроенная (по файлам)         | Jenkins, SonarQube         |
-| `sarif`        | Нет           | Да          | Встроенная                     | GitHub, VS Code, JetBrains |
-| `gitlab`       | Нет           | Да          | Плоский список                 | GitLab MR виджет           |
-| `github`       | Нет           | Нет         | Плоский список                 | GitHub Actions аннотации   |
-| `health`       | Хорошая       | Нет         | Измерения здоровья             | Быстрые проверки, CI       |
-| `html`         | Интерактивная | Нет         | Иерархия treemap               | Отчёты, ревью              |
+| Формат         | Читаемость    | Машинный    | Группировка                          | Интеграция с CI            |
+| -------------- | ------------- | ----------- | ------------------------------------ | -------------------------- |
+| `summary`      | Лучшая        | Нет         | Оценки здоровья, drill-down          | Любой (код выхода)         |
+| `text`         | Хорошая       | Парсируемый | `--group-by`                         | Любой (код выхода)         |
+| `text-verbose` | Хорошая       | Нет         | `--group-by` (по умолч.: file)       | Любой (код выхода)         |
+| `json`         | Нет           | Да          | Встроенная (по файлам)               | Скрипты                    |
+| `metrics`      | Нет           | Да          | Встроенная (по символам)             | Скрипты, дашборды          |
+| `checkstyle`   | Нет           | Да          | Встроенная (по файлам)               | Jenkins, SonarQube         |
+| `sarif`        | Нет           | Да          | Встроенная                           | GitHub, VS Code, JetBrains |
+| `gitlab`       | Нет           | Да          | Плоский список                       | GitLab MR виджет           |
+| `github`       | Нет           | Нет         | Плоский список                       | GitHub Actions аннотации   |
+| `health`       | Хорошая       | Нет         | Измерения здоровья                   | Быстрые проверки, CI       |
+| `html`         | Интерактивная | Нет         | Иерархия treemap                     | Отчёты, ревью              |
+| `suppressed`   | Нет           | Да          | Плоское мультимножество по механизму | Аудит подавления           |
 
 ### Коды выхода
 

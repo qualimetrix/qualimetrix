@@ -11,7 +11,7 @@ use Qualimetrix\Core\Util\PathMatcher;
  * Stores per-rule path exclusions and provides path matching.
  *
  * Extracted from config during RuleOptionsFactory::create() and consumed
- * by RuleExecution to filter violations at framework level.
+ * by RuleExecution to filter findings at framework level.
  */
 final class RulePathExclusionProvider
 {
@@ -36,7 +36,7 @@ final class RulePathExclusionProvider
             return false;
         }
 
-        return $this->matchers[$ruleName]->matches($filePath);
+        return $this->matchers[$ruleName]->matches($filePath) !== null;
     }
 
     public function reset(): void

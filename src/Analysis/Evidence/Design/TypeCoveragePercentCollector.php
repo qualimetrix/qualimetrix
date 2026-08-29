@@ -9,7 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Derived collector that computes type coverage percentage at class level.
@@ -39,29 +39,29 @@ final class TypeCoveragePercentCollector implements DerivedCollectorInterface, P
      */
     public function provides(): array
     {
-        return [MetricName::TYPE_COVERAGE_PCT];
+        return [MetricName::DESIGN_TYPE_COVERAGE_PCT];
     }
 
     public function calculate(MetricBag $sourceBag): MetricBag
     {
-        $paramTyped = $sourceBag->get(MetricName::TYPE_COVERAGE_PARAM_TYPED) ?? 0;
-        $returnTyped = $sourceBag->get(MetricName::TYPE_COVERAGE_RETURN_TYPED) ?? 0;
-        $propertyTyped = $sourceBag->get(MetricName::TYPE_COVERAGE_PROPERTY_TYPED) ?? 0;
+        $paramTyped = $sourceBag->get(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TYPED) ?? 0;
+        $returnTyped = $sourceBag->get(MetricName::DESIGN_TYPE_COVERAGE_RETURN_TYPED) ?? 0;
+        $propertyTyped = $sourceBag->get(MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TYPED) ?? 0;
 
-        $paramTotal = $sourceBag->get(MetricName::TYPE_COVERAGE_PARAM_TOTAL) ?? 0;
-        $returnTotal = $sourceBag->get(MetricName::TYPE_COVERAGE_RETURN_TOTAL) ?? 0;
-        $propertyTotal = $sourceBag->get(MetricName::TYPE_COVERAGE_PROPERTY_TOTAL) ?? 0;
+        $paramTotal = $sourceBag->get(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL) ?? 0;
+        $returnTotal = $sourceBag->get(MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL) ?? 0;
+        $propertyTotal = $sourceBag->get(MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL) ?? 0;
 
         $totalTyped = $paramTyped + $returnTyped + $propertyTyped;
         $totalAll = $paramTotal + $returnTotal + $propertyTotal;
 
         if ($totalAll === 0) {
-            return (new MetricBag())->with(MetricName::TYPE_COVERAGE_PCT, 100.0);
+            return (new MetricBag())->with(MetricName::DESIGN_TYPE_COVERAGE_PCT, 100.0);
         }
 
         $pct = round($totalTyped / $totalAll * 100, 2);
 
-        return (new MetricBag())->with(MetricName::TYPE_COVERAGE_PCT, $pct);
+        return (new MetricBag())->with(MetricName::DESIGN_TYPE_COVERAGE_PCT, $pct);
     }
 
     /**
@@ -71,7 +71,7 @@ final class TypeCoveragePercentCollector implements DerivedCollectorInterface, P
     {
         return [
             new MetricDefinition(
-                name: MetricName::TYPE_COVERAGE_PCT,
+                name: MetricName::DESIGN_TYPE_COVERAGE_PCT,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [],
             ),

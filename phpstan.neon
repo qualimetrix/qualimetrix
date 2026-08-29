@@ -11,6 +11,7 @@ parameters:
     paths:
         - src
         - tests
+        - scripts
     excludePaths:
         - tests/Fixtures
         - tests/Analysis/Evidence/Measurement/Fixtures

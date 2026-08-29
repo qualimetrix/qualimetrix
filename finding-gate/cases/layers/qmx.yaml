@@ -1,0 +1,30 @@
+exclude_paths: []
+computed_metrics:
+  health.complexity: { enabled: false }
+  health.cohesion: { enabled: false }
+  health.coupling: { enabled: false }
+  health.typing: { enabled: false }
+  health.maintainability: { enabled: false }
+  health.overall: { enabled: false }
+architecture:
+  layers:
+    - name: controller
+      patterns: ['Corpus\Layers\Controller\**']
+    - name: repository
+      patterns: ['Corpus\Layers\Repository\**']
+    - name: extra-broad
+      patterns: ['Corpus\Layers\Extra\**']
+    - name: extra-by-suffix
+      suffix: ['Service']
+    - name: service
+      patterns: ['Corpus\Layers\Service\**']
+    - name: future
+      patterns: ['Corpus\Layers\Controller\*']
+      pending: true
+    - name: 'mod-{m}'
+      patterns: ['Corpus\Layers\NoSuch\{m}\**']
+  allow:
+    controller: []
+    repository: []
+    extra-broad: []
+  coverage: error

@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 #[CoversClass(UnreachableCodeCollector::class)]
@@ -37,7 +37,7 @@ final class UnreachableCodeCollectorTest extends TestCase
     #[Test]
     public function itProvidesExpectedMetricKeys(): void
     {
-        self::assertSame(['unreachableCode', 'unreachableCode.firstLine'], $this->collector->provides());
+        self::assertSame(['code-smell.unreachable-code', 'code-smell.unreachable-code.first-line'], $this->collector->provides());
     }
 
     #[Test]
@@ -60,8 +60,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unreachableCode:App\Service\Calculator::add'));
-        self::assertNull($metrics->get('unreachableCode.firstLine:App\Service\Calculator::add'));
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Service\Calculator::add'));
+        self::assertNull($metrics->get('code-smell.unreachable-code.first-line:App\Service\Calculator::add'));
     }
 
     #[Test]
@@ -84,8 +84,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('unreachableCode:App\Service\Calculator::add'));
-        self::assertSame(10, $metrics->get('unreachableCode.firstLine:App\Service\Calculator::add'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Service\Calculator::add'));
+        self::assertSame(10, $metrics->get('code-smell.unreachable-code.first-line:App\Service\Calculator::add'));
     }
 
     #[Test]
@@ -108,7 +108,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('unreachableCode:App\Service\Validator::validate'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Service\Validator::validate'));
     }
 
     #[Test]
@@ -137,8 +137,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('unreachableCode:App\Runner::run'));
-        self::assertSame(1, $metrics->get('unreachableCode:App\Runner::runDie'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Runner::run'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Runner::runDie'));
     }
 
     #[Test]
@@ -167,7 +167,7 @@ PHP;
 
         // continue is inside an if block, not at the top-level of the method
         // The top-level method body has: foreach — no unreachable code
-        self::assertSame(0, $metrics->get('unreachableCode:App\Processor::process'));
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Processor::process'));
     }
 
     #[Test]
@@ -196,7 +196,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // break is inside an if block, not at top-level of the method
-        self::assertSame(0, $metrics->get('unreachableCode:App\Finder::find'));
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Finder::find'));
     }
 
     #[Test]
@@ -220,8 +220,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('unreachableCode:App\Service::execute'));
-        self::assertSame(10, $metrics->get('unreachableCode.firstLine:App\Service::execute'));
+        self::assertSame(2, $metrics->get('code-smell.unreachable-code:App\Service::execute'));
+        self::assertSame(10, $metrics->get('code-smell.unreachable-code.first-line:App\Service::execute'));
     }
 
     #[Test]
@@ -246,7 +246,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unreachableCode:App\Guard::check'));
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Guard::check'));
     }
 
     #[Test]
@@ -268,7 +268,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unreachableCode:App\Simple::getValue'));
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Simple::getValue'));
     }
 
     #[Test]
@@ -313,8 +313,8 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         // Should only contain metrics from second file
-        self::assertNull($metrics->get('unreachableCode:App\First::method'));
-        self::assertSame(0, $metrics->get('unreachableCode:App\Second::otherMethod'));
+        self::assertNull($metrics->get('code-smell.unreachable-code:App\First::method'));
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Second::otherMethod'));
     }
 
     #[Test]
@@ -326,7 +326,7 @@ PHP;
 
         // First definition: unreachableCode count
         $definition = $definitions[0];
-        self::assertSame('unreachableCode', $definition->name);
+        self::assertSame('code-smell.unreachable-code', $definition->name);
         self::assertSame(SymbolLevel::Callable, $definition->collectedAt);
 
         // Check Class_ level aggregations
@@ -346,7 +346,7 @@ PHP;
 
         // Second definition: unreachableCode.firstLine (no aggregations)
         $firstLineDefinition = $definitions[1];
-        self::assertSame('unreachableCode.firstLine', $firstLineDefinition->name);
+        self::assertSame('code-smell.unreachable-code.first-line', $firstLineDefinition->name);
         self::assertSame(SymbolLevel::Callable, $firstLineDefinition->collectedAt);
         self::assertEmpty($firstLineDefinition->getStrategiesForLevel(SymbolLevel::Class_));
         self::assertEmpty($firstLineDefinition->getStrategiesForLevel(SymbolLevel::Namespace_));
@@ -370,8 +370,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('unreachableCode:App\Utils\helper'));
-        self::assertSame(8, $metrics->get('unreachableCode.firstLine:App\Utils\helper'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Utils\helper'));
+        self::assertSame(8, $metrics->get('code-smell.unreachable-code.first-line:App\Utils\helper'));
     }
 
     #[Test]
@@ -399,7 +399,7 @@ PHP;
         // goto IS terminal — code after goto is unreachable in sequential flow.
         // The label resets reachability (it's a valid jump target), so only $x = 1 is unreachable.
         // After the label, return is reachable via the goto jump.
-        self::assertSame(1, $metrics->get('unreachableCode:App\Navigator::navigate'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Navigator::navigate'));
     }
 
     #[Test]
@@ -424,8 +424,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // goto is terminal: $unreachable = 1 is after it, but skip: label resets reachability
-        self::assertSame(1, $metrics->get('unreachableCode:App\GotoTest::test'));
-        self::assertSame(10, $metrics->get('unreachableCode.firstLine:App\GotoTest::test'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\GotoTest::test'));
+        self::assertSame(10, $metrics->get('code-smell.unreachable-code.first-line:App\GotoTest::test'));
     }
 
     #[Test]
@@ -462,12 +462,12 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Methods of Outer should have correct FQN with class context preserved
-        self::assertSame(1, $metrics->get('unreachableCode:App\Outer::before'));
-        self::assertSame(0, $metrics->get('unreachableCode:App\Outer::factory'));
-        self::assertSame(1, $metrics->get('unreachableCode:App\Outer::after'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Outer::before'));
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Outer::factory'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\Outer::after'));
 
         // Anonymous class methods should NOT appear in metrics
-        self::assertNull($metrics->get('unreachableCode:App\Outer::inner'));
+        self::assertNull($metrics->get('code-smell.unreachable-code:App\Outer::inner'));
     }
 
     /**
@@ -494,7 +494,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unreachableCode:App\Service::execute'));
+        self::assertSame(0, $metrics->get('code-smell.unreachable-code:App\Service::execute'));
     }
 
     /**
@@ -525,8 +525,8 @@ PHP;
 
         // Only $unreachable1 and $unreachable2 are unreachable.
         // The label resets reachability, so $reachable = 3 is reachable.
-        self::assertSame(2, $metrics->get('unreachableCode:App\GotoLabel::test'));
-        self::assertSame(10, $metrics->get('unreachableCode.firstLine:App\GotoLabel::test'));
+        self::assertSame(2, $metrics->get('code-smell.unreachable-code:App\GotoLabel::test'));
+        self::assertSame(10, $metrics->get('code-smell.unreachable-code.first-line:App\GotoLabel::test'));
     }
 
     /**
@@ -559,7 +559,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // $dead1 and $dead2 are unreachable, labels reset reachability
-        self::assertSame(2, $metrics->get('unreachableCode:App\MultiLabel::test'));
+        self::assertSame(2, $metrics->get('code-smell.unreachable-code:App\MultiLabel::test'));
     }
 
     /**
@@ -588,7 +588,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // $dead = 2 is unreachable (no label after it to reset)
-        self::assertSame(1, $metrics->get('unreachableCode:App\GotoNoLabel::test'));
+        self::assertSame(1, $metrics->get('code-smell.unreachable-code:App\GotoNoLabel::test'));
     }
 
     private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag

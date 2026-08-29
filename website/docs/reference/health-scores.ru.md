@@ -7,7 +7,17 @@ Qualimetrix вычисляет 6 оценок здоровья для каждо
 определений заменяется атомарно, поэтому конфигурация предыдущего запуска не
 может протечь в следующий.
 
-**Rule ID:** `computed.health`
+**Rule ID:** `computed` — пользовательские вычисляемые метрики.
+
+Каждое встроенное измерение — самостоятельный производитель и публикует свои
+находки под собственным rule ID:
+
+- **Rule ID:** `health.complexity`
+- **Rule ID:** `health.cohesion`
+- **Rule ID:** `health.coupling`
+- **Rule ID:** `health.typing`
+- **Rule ID:** `health.maintainability`
+- **Rule ID:** `health.overall`
 
 ---
 
@@ -70,9 +80,9 @@ Qualimetrix вычисляет 6 оценок здоровья для каждо
 
 Измеряет зависимости на уровне класса, пространства имён и проекта. Везде применяется гиперболическое затухание: зависимости за пределами порога снижают оценку, но каждая следующая зависимость влияет слабее предыдущей.
 
-- **На уровне класса** смешиваются `ce_packages` (количество внешних пакетов) и сглаженный raw `ce` (efferent coupling).
-- **На уровне пространства имён** используются **только efferent-сигналы**: средняя `ce.avg` и `ce_packages.avg` по классам, выброс отдельного класса (`ce.max`), а также общая исходящая ширина пространства имён (`ce`), плюс Distance from Main Sequence. Двунаправленный CBO здесь намеренно не используется — он смешивает Ca с Ce и несправедливо штрафует «контрактные» пространства имён со стабильно высоким Ca и низким Ce.
-- **На уровне проекта** оставлены агрегаты двунаправленного CBO (`cbo.avg`, `cbo.p95`, `cbo.max`): на уровне проекта Σ Ca = Σ Ce, потому что каждое внутреннее ребро вносит вклад в обе стороны, поэтому CBO симметричен и пропорционален Ce.
+- **На уровне класса** смешиваются `coupling.ce-packages` (количество внешних пакетов) и сглаженный raw `coupling.ce` (efferent coupling).
+- **На уровне пространства имён** используются **только efferent-сигналы**: средняя `coupling.ce.avg` и `coupling.ce-packages.avg` по классам, выброс отдельного класса (`coupling.ce.max`), а также общая исходящая ширина пространства имён (`coupling.ce`), плюс Distance from Main Sequence. Двунаправленный CBO здесь намеренно не используется — он смешивает Ca с Ce и несправедливо штрафует «контрактные» пространства имён со стабильно высоким Ca и низким Ce.
+- **На уровне проекта** оставлены агрегаты двунаправленного CBO (`coupling.cbo.avg`, `coupling.cbo.p95`, `coupling.cbo.max`): на уровне проекта Σ Ca = Σ Ce, потому что каждое внутреннее ребро вносит вклад в обе стороны, поэтому CBO симметричен и пропорционален Ce.
 
 ### health.typing
 
@@ -164,6 +174,14 @@ bin/qmx check src/ --exclude-health=typing
 
 Оба пути дают одинаковый результат: измерение убирается из пайплайна И веса `health.overall` ренормализуются по оставшимся измерениям (отключённое измерение не учитывается как нейтральный вклад в 75 баллов). Если вы переопределили `health.overall` нестандартной формулой (например, `min(...)` или условным выражением), исключение измерений выбросит явную ошибку — обработайте отключённое измерение через `??`-фолбэки в собственной формуле.
 
+!!! warning "Два похожих переключателя, которые делают разное"
+    Каждое встроенное измерение — сам себе производитель, поэтому его можно выключить двумя способами, читающимися почти одинаково:
+
+    - `rules: { health.cohesion: { enabled: false } }` останавливает **публикацию находок** производителем `health.cohesion`. Измерение всё равно вычисляется и продолжает участвовать в `health.overall`.
+    - `computed_metrics: { health.cohesion: { enabled: false } }` **убирает само измерение** — это переключатель из раздела «Отключение измерения» выше. Веса `health.overall` ренормализуются по оставшимся измерениям.
+
+    У измерения, убранного вторым способом, у производителя не остаётся ни одного канала. Ключ `exclude_namespace_channels`, который раньше адресовал `health.cohesion`, после этого отвергается: ключ обязан называть канал, который правило под ним действительно эмитит, а после удаления оно не эмитит ни одного.
+
 ### Переопределение формул
 
 Переопределите формулу для одного или нескольких уровней:
@@ -172,7 +190,7 @@ bin/qmx check src/ --exclude-health=typing
 computed_metrics:
   health.complexity:
     formulas:
-      class: 'clamp(100 - max((ccn__avg ?? 1) - 5, 0) * 3.0, 0, 100)'
+      class: 'clamp(100 - max((m["complexity.ccn.avg"] ?? 1) - 5, 0) * 3.0, 0, 100)'
 ```
 
 Используйте `formula` (единственное число), чтобы задать одну формулу для всех уровней:
@@ -180,7 +198,7 @@ computed_metrics:
 ```yaml
 computed_metrics:
   health.complexity:
-    formula: 'clamp(100 - max((ccn__avg ?? 1) - 5, 0) * 3.0, 0, 100)'
+    formula: 'clamp(100 - max((m["complexity.ccn.avg"] ?? 1) - 5, 0) * 3.0, 0, 100)'
 ```
 
 ### Пользовательские вычисляемые метрики
@@ -189,48 +207,52 @@ computed_metrics:
 
 ```yaml
 computed_metrics:
-  computed.my_score:
+  computed.my-score:
     description: "Custom quality score"
-    formula: 'clamp((health__complexity ?? 75) * 0.5 + (health__coupling ?? 75) * 0.5, 0, 100)'
+    formula: 'clamp((m["health.complexity"] ?? 75) * 0.5 + (m["health.coupling"] ?? 75) * 0.5, 0, 100)'
     levels: [class, namespace, project]
     inverted: true
     warning: 60
     error: 30
 ```
 
+!!! note "Именование метрик"
+    Имя вычисляемой метрики — kebab-case после точки (например, `computed.my-score`); подчёркивания и заглавные буквы отвергаются.
+
 !!! tip "Всегда используйте оператор `??`"
-    Метрики могут отсутствовать для некоторых символов (например, у интерфейсов нет тела методов). Оператор `??` задаёт значение по умолчанию и предотвращает ошибки вычисления: `(ccn__avg ?? 1)`.
+    Метрики могут отсутствовать для некоторых символов (например, у интерфейсов нет тела методов). Оператор `??` задаёт значение по умолчанию и предотвращает ошибки вычисления: `(m["complexity.ccn.avg"] ?? 1)`.
 
 ### Доступные переменные
 
-В формулах доступны все метрики символа. Точки в именах метрик заменяются на `__`:
+Формулы обращаются к метрикам через единственный массив `m`, индексированный настоящим ключом метрики: `m["complexity.ccn.avg"]`. Отдельного «имени переменной» запоминать не нужно — ключ, который вы видите в выводе `--format=metrics`/`--format=json`, и есть индекс.
 
-| Переменная                                    | Описание                                         | Доступна на уровне         |
-| --------------------------------------------- | ------------------------------------------------ | -------------------------- |
-| `ccn__avg`, `ccn__max`                        | Средняя и максимальная цикломатическая сложность | class, namespace, project  |
-| `ccn__sum`, `ccn__p95`                        | Сумма и 95-й перцентиль CCN                      | namespace, project         |
-| `cognitive__avg`, `cognitive__max`            | Средняя и максимальная когнитивная сложность     | class, namespace, project  |
-| `cognitive__sum`, `cognitive__p95`            | Сумма и 95-й перцентиль Cognitive                | namespace, project         |
-| `tcc` / `tcc__avg`                            | Tight Class Cohesion (0–1)                       | class / namespace, project |
-| `lcom` / `lcom__avg`                          | LCOM4                                            | class / namespace, project |
-| `cbo__avg`, `cbo__max`, `cbo__p95`            | Агрегаты Coupling Between Objects                | namespace, project         |
-| `ce`                                          | Efferent coupling (исходящие классы)             | class, namespace           |
-| `ce__avg`, `ce__max`, `ce__p95`               | Агрегаты per-class Ce                            | namespace, project         |
-| `ce_packages`                                 | Количество внешних пакетов                       | class                      |
-| `ce_packages__avg`, `ce_packages__max`        | Агрегаты per-class ce_packages                   | namespace, project         |
-| `distance` / `distance__avg`                  | Distance from Main Sequence                      | namespace / project        |
-| `mi__avg`, `mi__min`                          | Средний и минимальный Maintainability Index      | class, namespace, project  |
-| `mi__p5`                                      | 5-й перцентиль MI                                | namespace, project         |
-| `typeCoverage__pct`                           | Процент покрытия типами                          | class                      |
-| `methodCount`                                 | Количество методов в классе                      | class                      |
-| `symbolMethodCount`                           | Количество методов в области видимости символа   | namespace, project         |
-| `pureMethodCount_cohesion`                    | «Чистые» методы (без обращения к свойствам)      | class                      |
-| `health__complexity`, `health__cohesion`, ... | Значения других оценок здоровья                  | class, namespace, project  |
+| Ключ метрики                                                                         | Описание                                         | Доступен на уровне         |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------ | -------------------------- |
+| `complexity.ccn.avg`, `complexity.ccn.max`                                           | Средняя и максимальная цикломатическая сложность | class, namespace, project  |
+| `complexity.ccn.sum`, `complexity.ccn.p95`                                           | Сумма и 95-й перцентиль CCN                      | namespace, project         |
+| `complexity.cognitive.avg`, `complexity.cognitive.max`                               | Средняя и максимальная когнитивная сложность     | class, namespace, project  |
+| `complexity.cognitive.sum`, `complexity.cognitive.p95`                               | Сумма и 95-й перцентиль Cognitive                | namespace, project         |
+| `cohesion.tcc` / `cohesion.tcc.avg`                                                  | Tight Class Cohesion (0–1)                       | class / namespace, project |
+| `cohesion.lcom` / `cohesion.lcom.avg`                                                | LCOM4                                            | class / namespace, project |
+| `coupling.cbo.avg`, `coupling.cbo.max`, `coupling.cbo.p95`                           | Агрегаты Coupling Between Objects                | namespace, project         |
+| `coupling.ce`                                                                        | Efferent coupling (исходящие классы)             | class, namespace           |
+| `coupling.ce.avg`, `coupling.ce.max`                                                 | Агрегаты per-class Ce                            | namespace, project         |
+| `coupling.ce-packages`                                                               | Количество внешних пакетов                       | class                      |
+| `coupling.ce-packages.avg`                                                           | Агрегат per-class ce-packages                    | namespace, project         |
+| `coupling.distance` / `coupling.distance.avg`                                        | Distance from Main Sequence                      | namespace / project        |
+| `maintainability.mi.avg`, `maintainability.mi.min`                                   | Средний и минимальный Maintainability Index      | class, namespace, project  |
+| `maintainability.mi.p5`                                                              | 5-й перцентиль MI                                | namespace, project         |
+| `design.type-coverage.pct`                                                           | Процент покрытия типами                          | class                      |
+| `design.type-coverage.param.total.sum` и аналогичные `.return.` / `.property.` суммы | Суммы typed/total по пространству имён           | namespace, project         |
+| `size.method-count`                                                                  | Количество методов в классе                      | class                      |
+| `size.symbol-method-count`                                                           | Количество методов в области видимости символа   | namespace, project         |
+| `cohesion.pure-method-count`                                                         | «Чистые» методы (без обращения к свойствам)      | class                      |
+| `health.complexity`, `health.cohesion`, ...                                          | Значения других оценок здоровья                  | class, namespace, project  |
 
-Это не исчерпывающий список — в формулах можно использовать любую метрику, собираемую Qualimetrix. Команда `bin/qmx check src/ --format=metrics` покажет все доступные метрики для вашего проекта.
+Это не исчерпывающий список — в формулах можно использовать любую метрику, собираемую Qualimetrix, по её ключу. Команда `bin/qmx check src/ --format=metrics` покажет все доступные метрики и их точные ключи для вашего проекта.
 
 !!! warning "Неизвестные ссылки на метрики"
-    Если формула ссылается на несуществующую метрику (например, опечатка `ccn__abg` вместо `ccn__avg`), Qualimetrix выдаст явную ошибку вместо молчаливого возврата нуля. Всегда используйте оператор `??` для метрик, которые могут обоснованно отсутствовать: `(ccn__avg ?? 0)`.
+    Если формула ссылается на несуществующий ключ метрики (например, опечатка `m["complexity.ccn.abg"]` вместо `m["complexity.ccn.avg"]`), Qualimetrix выдаст явную ошибку вместо молчаливого возврата нуля. Всегда используйте оператор `??` для метрик, которые могут обоснованно отсутствовать: `(m["complexity.ccn.avg"] ?? 0)`.
 
 ### Доступные функции
 

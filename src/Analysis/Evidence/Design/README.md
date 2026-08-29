@@ -10,7 +10,7 @@ capability: it publishes no `Contract/` namespace.
 Collectors consume Measurement's existing collection and repository contracts.
 `DitGlobalCollector` and `NocCollector` also consume DependencyModel's public
 graph contracts. Rules consume Finding's execution, option, channel, and
-violation contracts. No consumer imports a Design collector or rule as a
+finding contracts. No consumer imports a Design collector or rule as a
 cross-capability contract.
 
 ## Structure
@@ -33,7 +33,10 @@ Design/
 ├── GodClassOptions.php
 ├── GodClassRule.php
 ├── TypeCoverageOptions.php
-├── TypeCoverageRule.php
+├── AbstractTypeCoverageRule.php
+├── ParamTypeCoverageRule.php
+├── ReturnTypeCoverageRule.php
+├── PropertyTypeCoverageRule.php
 ├── InheritanceOptions.php
 ├── InheritanceRule.php
 ├── NocOptions.php
@@ -57,9 +60,18 @@ subdirectory inside this leaf.
 - `NocCollector` derives direct-child counts from the same DependencyModel
   graph. Both global collectors retain their existing collector names,
   definitions, ordering, and aggregation semantics.
-- `DataClassRule`, `GodClassRule`, `TypeCoverageRule`, `InheritanceRule`, and
-  `NocRule` retain their IDs, options, and CLI aliases. They read precomputed
-  Measurement facts and never traverse an AST.
+- `ParamTypeCoverageRule`, `ReturnTypeCoverageRule` and
+  `PropertyTypeCoverageRule` judge one dimension each, one channel each, and
+  share `AbstractTypeCoverageRule` for the walk and the emission plus one
+  `TypeCoverageOptions` implementation for the shape of their configuration.
+  Configuration is keyed by producer rule name, never by Options class, so
+  sharing the class does not share the configured instance. They are registered
+  by name in `DesignConfigurator`, in the order `param, return, property`,
+  because channel order is published in a "did you mean" tie-break and would
+  otherwise be decided by alphabetical filenames.
+- `DataClassRule`, `GodClassRule`, `InheritanceRule`, and `NocRule` retain their
+  IDs, options, and CLI aliases. All rules here read precomputed Measurement
+  facts and never traverse an AST.
 - `DataClassRule` gates on a **low** WOC: the share of the public interface
   that carries behaviour rather than data access. Its finding channel is
   therefore `WorseDirection::Lower`, and both `@qmx-threshold` axes are upper

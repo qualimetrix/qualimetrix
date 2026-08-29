@@ -7,16 +7,18 @@ namespace Qualimetrix\Tests\Infrastructure\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -55,23 +57,48 @@ final class RulesCommandTest extends TestCase
         self::assertStringContainsString('No rules found', $tester->getDisplay());
     }
 
+    /**
+     * A group nobody has is a typo, and a typo used to be answered with an
+     * empty listing and exit 0 — the same answer as "this group exists and is
+     * empty", which no group is. The failure names the groups that do exist,
+     * because the reader who typed it needs the list, not the refusal.
+     */
     #[Test]
-    public function itDisplaysNoRulesMessageForAnUnknownGroup(): void
+    public function itFailsOnAGroupNoProducerHas(): void
     {
-        $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
+        $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $other = $this->createRuleMock('size.class-count', 'Class count');
+
+        $tester = new CommandTester($this->createCommand([$rule, $other]));
+        $tester->execute(['--group' => 'complexty']);
+
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('No rule group "complexty"', $tester->getDisplay());
+        self::assertStringContainsString('Groups: complexity, size', $tester->getDisplay());
+    }
+
+    /**
+     * The comparison stays exact: `--group` reads the very value the heading is
+     * printed from, so a case-folded match here would make the option answer a
+     * question the listing does not.
+     */
+    #[Test]
+    public function itFailsOnAGroupThatDiffersOnlyInCase(): void
+    {
+        $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
 
         $tester = new CommandTester($this->createCommand([$rule]));
-        $tester->execute(['--group' => 'nonexistent']);
+        $tester->execute(['--group' => 'Complexity']);
 
-        self::assertSame(0, $tester->getStatusCode());
-        self::assertStringContainsString('No rules found in group "nonexistent"', $tester->getDisplay());
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertStringContainsString('No rule group "Complexity"', $tester->getDisplay());
     }
 
     #[Test]
     public function itListsRulesUnderGroupHeaders(): void
     {
-        $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
-        $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
+        $ruleA = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $ruleB = $this->createRuleMock('size.class-count', 'Class count');
 
         $tester = new CommandTester($this->createCommand([$ruleA, $ruleB]));
         $tester->execute([]);
@@ -90,8 +117,8 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itFiltersRulesByGroup(): void
     {
-        $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
-        $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
+        $ruleA = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+        $ruleB = $this->createRuleMock('size.class-count', 'Class count');
 
         $tester = new CommandTester($this->createCommand([$ruleA, $ruleB]));
         $tester->execute(['--group' => 'complexity']);
@@ -121,9 +148,10 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itDisplaysTheLayerViolationSeverityAlias(): void
     {
+        $options = new LayerViolationOptions();
         $rule = new LayerViolationRule(
-            new LayerViolationOptions(),
-            new ArchitecturePolicy(),
+            $options,
+            new LayerEvidenceCollector($options, new UnassignedClassOptions(), new ArchitecturePolicy()),
         );
 
         $tester = new CommandTester($this->createCommand([$rule]));
@@ -145,7 +173,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itDisplaysUsageHints(): void
     {
-        $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
+        $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
 
         $tester = new CommandTester($this->createCommand([$rule]));
         $tester->execute([]);
@@ -158,12 +186,10 @@ final class RulesCommandTest extends TestCase
 
     private function createRuleMock(
         string $name,
-        RuleCategory $category,
         string $description,
     ): RuleInterface {
         $rule = self::createStub(RuleInterface::class);
         $rule->method('getName')->willReturn($name);
-        $rule->method('getCategory')->willReturn($category);
         $rule->method('getDescription')->willReturn($description);
 
         return $rule;
@@ -176,7 +202,6 @@ final class RulesCommandTest extends TestCase
             static fn(RuleInterface $rule): RuleMetadata => new RuleMetadata(
                 name: $rule->getName(),
                 optionsClass: StubRuleOptions::class,
-                category: $rule->getCategory(),
                 description: $rule->getDescription(),
                 aliases: CliAliasReader::read($rule::class),
                 active: true,
@@ -234,9 +259,9 @@ final class FixtureRuleWithCyclomaticAlias implements RuleInterface
         return 'Cyclomatic complexity';
     }
 
-    public function getCategory(): RuleCategory
+    public static function shape(): ChannelShape
     {
-        return RuleCategory::Complexity;
+        return ChannelShape::Magnitude;
     }
 
     public function requires(): array

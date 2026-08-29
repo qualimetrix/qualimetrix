@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 /**
@@ -91,13 +91,13 @@ final class ClassCountCollector extends AbstractCollector implements NamespaceMe
                 namespace: $namespace,
                 line: $counts['line'],
                 metrics: (new MetricBag())
-                    ->with(MetricName::SIZE_CLASS_COUNT, $counts['classCount'])
-                    ->with(MetricName::SIZE_ABSTRACT_CLASS_COUNT, $counts['abstractClassCount'])
-                    ->with(MetricName::SIZE_INTERFACE_COUNT, $counts['interfaceCount'])
-                    ->with(MetricName::SIZE_TRAIT_COUNT, $counts['traitCount'])
-                    ->with(MetricName::SIZE_ENUM_COUNT, $counts['enumCount'])
-                    ->with(MetricName::SIZE_IMPLEMENTING_ENUM_COUNT, $counts['implementingEnumCount'])
-                    ->with(MetricName::SIZE_FUNCTION_COUNT, $counts['functionCount']),
+                    ->with(MetricName::SIZE_CLASS_COUNT, $counts['size.class-count'])
+                    ->with(MetricName::SIZE_ABSTRACT_CLASS_COUNT, $counts['size.abstract-class-count'])
+                    ->with(MetricName::SIZE_INTERFACE_COUNT, $counts['size.interface-count'])
+                    ->with(MetricName::SIZE_TRAIT_COUNT, $counts['size.trait-count'])
+                    ->with(MetricName::SIZE_ENUM_COUNT, $counts['size.enum-count'])
+                    ->with(MetricName::SIZE_IMPLEMENTING_ENUM_COUNT, $counts['size.implementing-enum-count'])
+                    ->with(MetricName::SIZE_FUNCTION_COUNT, $counts['size.function-count']),
             );
         }
 

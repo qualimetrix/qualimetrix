@@ -168,7 +168,7 @@ final class CheckCommandProjectScopedGateTest extends TestCase
             '--no-cache' => true,
             '--detail' => true,
             '--rule-opt' => [
-                'architecture.layer-violation:unassignedClass=error',
+                'architecture.unassigned-class:mode=error',
                 'complexity.cyclomatic:threshold=1',
             ],
             ...$options,

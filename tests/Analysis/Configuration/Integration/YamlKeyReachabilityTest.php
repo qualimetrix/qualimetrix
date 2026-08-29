@@ -370,22 +370,22 @@ final class YamlKeyReachabilityTest extends TestCase
         // computed_metrics → computedMetrics root; child identifiers preserved.
         yield 'computed_metrics → computedMetrics root key' => [
             'computed_metrics',
-            "computed_metrics:\n  computed.my_score:\n    formula: 'loc * 2'\n",
-            ['computedMetrics', 'computed.my_score', 'formula'],
+            "computed_metrics:\n  computed.my-score:\n    formula: 'loc * 2'\n",
+            ['computedMetrics', 'computed.my-score', 'formula'],
             'loc * 2',
         ];
 
         yield 'computed_metrics: dotted metric name preserved' => [
-            'computed_metrics.computed.my_score',
-            "computed_metrics:\n  computed.my_score:\n    formula: 'loc'\n",
-            ['computedMetrics', 'computed.my_score'],
-            ['formula' => 'loc'],
+            'computed_metrics.computed.my-score',
+            "computed_metrics:\n  computed.my-score:\n    formula: 'size.loc'\n",
+            ['computedMetrics', 'computed.my-score'],
+            ['formula' => 'size.loc'],
         ];
 
         yield 'computed_metrics: option warning_threshold → warningThreshold' => [
             'computed_metrics.<name>.warning_threshold',
-            "computed_metrics:\n  computed.my_score:\n    formula: 'loc'\n    warning_threshold: 80\n",
-            ['computedMetrics', 'computed.my_score', 'warningThreshold'],
+            "computed_metrics:\n  computed.my-score:\n    formula: 'size.loc'\n    warning_threshold: 80\n",
+            ['computedMetrics', 'computed.my-score', 'warningThreshold'],
             80,
         ];
     }

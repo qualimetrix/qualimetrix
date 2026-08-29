@@ -225,14 +225,14 @@ final class DocumentationConsistencyTest extends TestCase
         $body = $matches[1];
 
         // Slugs appear inside inline-code spans, e.g. `complexity.cyclomatic`.
-        preg_match_all('/`([a-z][a-z-]*\.[a-z][a-z-]+)`/', $body, $slugMatches);
+        preg_match_all('/`([a-z][a-z-]*(?:\.[a-z][a-z-]*)+)`/', $body, $slugMatches);
         $declared = array_values(array_unique($slugMatches[1]));
         sort($declared);
 
         $actual = $this->collectAllRuleNames();
         // Catalog entries that are not real RuleInterface implementations
         // (tcc/lcc are inputs to other rules; computed.health is synthetic).
-        $catalogOnly = ['tcc', 'lcc'];
+        $catalogOnly = ['cohesion.tcc', 'cohesion.lcc'];
         $sourceOnly = ['computed.health'];
 
         $expected = array_values(array_diff($actual, $sourceOnly));

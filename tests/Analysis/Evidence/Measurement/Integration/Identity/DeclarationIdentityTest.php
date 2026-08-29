@@ -237,7 +237,7 @@ final class DeclarationIdentityTest extends TestCase
 
         $report = $this->report(config: self::EVERY_RULE);
         $rules = array_unique(array_map(
-            static fn(array $violation): string => (string) $violation['rule'],
+            static fn(array $finding): string => (string) $finding['rule'],
             $report['violations'],
         ));
 
@@ -287,7 +287,7 @@ final class DeclarationIdentityTest extends TestCase
     private function subjects(int $workers = 0): array
     {
         $subjects = array_map(
-            static fn(array $violation): string => (string) $violation['subject'],
+            static fn(array $finding): string => (string) $finding['subject'],
             $this->report($workers)['violations'],
         );
         sort($subjects);

@@ -7,16 +7,16 @@ namespace Qualimetrix\Analysis\Evidence\Design;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -37,6 +37,8 @@ final class NocRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/design.md';
 
     public const int REMEDIATION_MINUTES = 20;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;
@@ -47,21 +49,16 @@ final class NocRule extends AbstractRule
         return 'Checks Number of Children (many direct subclasses indicate wide impact)';
     }
 
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Design;
-    }
-
     /**
      * @return list<string>
      */
     public function requires(): array
     {
-        return [MetricName::STRUCTURE_NOC];
+        return [MetricName::DESIGN_NOC];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -69,26 +66,26 @@ final class NocRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $violation = $this->violationForClass($classInfo, $context, $this->options);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->findingForClass($classInfo, $context, $this->options);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function violationForClass(SymbolInfo $classInfo, AnalysisContext $context, NocOptions $options): ?Violation
+    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, NocOptions $options): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('NOC findings require an exact class declaration subject');
         if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
             return null;
         }
 
-        $noc = $context->metrics->get($subject->toSymbolPath())->get(MetricName::STRUCTURE_NOC);
+        $noc = $context->metrics->get($subject->toSymbolPath())->get(MetricName::DESIGN_NOC);
         if ($noc === null || $noc === 0) {
             return null;
         }
@@ -103,12 +100,12 @@ final class NocRule extends AbstractRule
 
         $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
 
-        return new Violation(
+        return new Finding(
             location: new Location($classInfo->file, $classInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf(
                 'NOC (Number of Children) is %d, exceeds threshold of %d. Consider using interfaces instead of inheritance',
                 $nocValue,
@@ -140,7 +137,7 @@ final class NocRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
         ];
     }
 

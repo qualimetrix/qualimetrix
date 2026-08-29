@@ -6,8 +6,9 @@ namespace Qualimetrix\Tests\Analysis\Finding\Support;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * A declaration registry a test states outright.
@@ -21,7 +22,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
 final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistryInterface
 {
     /**
-     * @param array<string, ChannelDeclaration> $declarations keyed by {@see ViolationChannel::toKey()}
+     * @param array<string, ChannelDeclaration> $declarations keyed by channel name
      * @param ?ChannelDeclaration $default answer for a channel absent from $declarations — for a test
      *                                     that needs every channel to resolve to the same shape rather
      *                                     than stating each one, see {@see alwaysHigherMagnitude()}
@@ -39,11 +40,11 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
     public static function withDefaults(): self
     {
         return new self([
-            'complexity.cyclomatic#complexity.cyclomatic.callable' => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            'duplication.code-duplication#duplication.code-duplication' => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            'maintainability.index#maintainability.index.class' => ChannelDeclaration::magnitude(WorseDirection::Lower),
-            'code-smell.goto#code-smell.goto' => ChannelDeclaration::occurrence(),
-            'architecture.layer-violation#architecture.layer-violation' => ChannelDeclaration::occurrence(),
+            'complexity.cyclomatic' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
+            'duplication.code-duplication' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
+            'maintainability.index.class' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
+            'code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            'architecture.layer-violation' => ChannelDeclaration::occurrence(SymbolLevel::Class_),
         ]);
     }
 
@@ -57,7 +58,7 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
      */
     public static function alwaysHigherMagnitude(): self
     {
-        return new self(default: ChannelDeclaration::magnitude(WorseDirection::Higher));
+        return new self(default: ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
     }
 
     public function declare(string $channelKey, ChannelDeclaration $declaration): void
@@ -65,9 +66,9 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
         $this->declarations[$channelKey] = $declaration;
     }
 
-    public function declarationFor(ViolationChannel $channel): ?ChannelDeclaration
+    public function declarationFor(FindingChannel $channel): ?ChannelDeclaration
     {
-        return $this->declarations[$channel->toKey()] ?? $this->default;
+        return $this->declarations[$channel->code] ?? $this->default;
     }
 
     public function staticDeclarations(): array

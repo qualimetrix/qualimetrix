@@ -34,7 +34,7 @@ final class HardcodedCredentialsCollectorTest extends TestCase
     #[Test]
     public function itProvidesExpectedMetrics(): void
     {
-        self::assertSame(['security.hardcodedCredentials'], $this->collector->provides());
+        self::assertSame(['security.hardcoded-credentials'], $this->collector->provides());
     }
 
     #[Test]
@@ -48,8 +48,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->entryCount('security.hardcodedCredentials'));
-        $entries = $metrics->entries('security.hardcodedCredentials');
+        self::assertSame(2, $metrics->entryCount('security.hardcoded-credentials'));
+        $entries = $metrics->entries('security.hardcoded-credentials');
         self::assertSame(2, $entries[0]['line']);
         self::assertSame(3, $entries[1]['line']);
     }
@@ -62,7 +62,7 @@ PHP;
 $password = 'top-secret';
 class Credentials { public string $password = 'class-secret'; }
 PHP);
-        $entries = $metrics->entries('security.hardcodedCredentials');
+        $entries = $metrics->entries('security.hardcoded-credentials');
 
         self::assertSame('file', $entries[0]['subjectKind']);
         self::assertSame('declaration', $entries[1]['subjectKind']);
@@ -79,7 +79,7 @@ $anonymous = new class { public string $password = 'anonymous-secret'; };
 class Named { public const PASSWORD = 'constant-secret'; }
 enum Tokens: string { case PASSWORD = 'case-secret'; }
 PHP);
-        $entries = $metrics->entries('security.hardcodedCredentials');
+        $entries = $metrics->entries('security.hardcoded-credentials');
 
         self::assertSame('file', $entries[0]['subjectKind']);
         self::assertSame('declaration', $entries[1]['subjectKind']);
@@ -99,7 +99,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->entryCount('security.hardcodedCredentials'));
+        self::assertSame(0, $metrics->entryCount('security.hardcoded-credentials'));
     }
 
     #[Test]
@@ -113,7 +113,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code2);
 
-        self::assertSame(0, $metrics->entryCount('security.hardcodedCredentials'));
+        self::assertSame(0, $metrics->entryCount('security.hardcoded-credentials'));
     }
 
     #[Test]

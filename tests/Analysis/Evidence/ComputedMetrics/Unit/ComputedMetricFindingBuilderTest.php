@@ -8,10 +8,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricProducerOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -19,20 +21,20 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(ComputedMetricFindingBuilder::class)]
 final class ComputedMetricFindingBuilderTest extends TestCase
 {
     #[Test]
-    public function itEmitsNoViolationWhenInvertedMetricAboveWarningThreshold(): void
+    public function itEmitsNoFindingWhenInvertedMetricAboveWarningThreshold(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.score',
             formulas: ['class' => 'mi * 0.5'],
             description: 'Health score',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 30.0,
@@ -47,9 +49,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.score', 75.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -59,7 +61,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.score',
             formulas: ['class' => 'mi * 0.5'],
             description: 'Health score',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 30.0,
@@ -74,13 +76,13 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.score', 40.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
         // L10: threshold matches the warning threshold for warning severity
-        self::assertSame(50.0, $violations[0]->threshold);
-        self::assertSame(40.0, $violations[0]->metricValue);
+        self::assertSame(50.0, $findings[0]->threshold);
+        self::assertSame(40.0, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -90,7 +92,7 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             name: 'health.score',
             formulas: ['class' => 'mi * 0.5'],
             description: 'Health score',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 30.0,
@@ -105,10 +107,10 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.score', 20.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -116,9 +118,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Complexity metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
             errorThreshold: 20.0,
@@ -133,10 +135,10 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.complexity', 15.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
     }
 
     #[Test]
@@ -144,9 +146,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Complexity metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
             errorThreshold: 20.0,
@@ -161,20 +163,20 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.complexity', 25.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
-    public function itFormatsViolationMessageCorrectly(): void
+    public function itFormatsFindingMessageCorrectly(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.score',
-            formulas: ['class' => 'mi'],
+            formulas: ['class' => 'maintainability.mi'],
             description: 'Health score',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 30.0,
@@ -189,26 +191,26 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.score', 25.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         self::assertSame(
             'App\Service\UserService: health.score = 25.0 (error threshold: below 30.0)',
-            $violations[0]->message,
+            $findings[0]->message,
         );
         // L10: threshold must be set for programmatic filtering
-        self::assertSame(30.0, $violations[0]->threshold);
-        self::assertSame(25.0, $violations[0]->metricValue);
+        self::assertSame(30.0, $findings[0]->threshold);
+        self::assertSame(25.0, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function itSetsViolationCodeToDefinitionName(): void
+    public function itSetsCodeToDefinitionName(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.custom',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Custom metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
         );
@@ -222,11 +224,11 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.custom', 15.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame('health.custom', $violations[0]->violationCode);
-        self::assertSame('computed.health', $violations[0]->ruleName);
+        self::assertCount(1, $findings);
+        self::assertSame('health.custom', $findings[0]->code);
+        self::assertSame('computed', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -234,9 +236,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.precise',
-            formulas: ['class' => 'mi'],
+            formulas: ['class' => 'maintainability.mi'],
             description: 'Precise metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
         );
@@ -250,10 +252,10 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.precise', 15.678));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame(15.7, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(15.7, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -261,9 +263,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.norm',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Normal metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
         );
@@ -277,11 +279,11 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.norm', 15.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('above', $violations[0]->message);
-        self::assertStringNotContainsString('below', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('above', $findings[0]->message);
+        self::assertStringNotContainsString('below', $findings[0]->message);
     }
 
     #[Test]
@@ -289,9 +291,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.inv',
-            formulas: ['class' => 'mi'],
+            formulas: ['class' => 'maintainability.mi'],
             description: 'Inverted metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
         );
@@ -305,11 +307,11 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.inv', 40.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('below', $violations[0]->message);
-        self::assertStringNotContainsString('above', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('below', $findings[0]->message);
+        self::assertStringNotContainsString('above', $findings[0]->message);
     }
 
     #[Test]
@@ -317,9 +319,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Complexity metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
             errorThreshold: 20.0,
@@ -334,10 +336,10 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.complexity', 25.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        $recommendation = $violations[0]->recommendation;
+        self::assertCount(1, $findings);
+        $recommendation = $findings[0]->recommendation;
         self::assertNotNull($recommendation);
         // Header: "Complexity health: 25.0 (threshold: 20.0)"
         self::assertStringContainsString('Complexity health: 25.0 (threshold: 20.0)', $recommendation);
@@ -350,9 +352,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.cohesion',
-            formulas: ['class' => 'tcc'],
+            formulas: ['class' => 'cohesion.tcc'],
             description: 'Cohesion metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
         );
@@ -366,22 +368,22 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.cohesion', 30.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        $recommendation = $violations[0]->recommendation;
+        self::assertCount(1, $findings);
+        $recommendation = $findings[0]->recommendation;
         self::assertNotNull($recommendation);
         self::assertStringContainsString('Cohesion health: 30.0 (threshold: 50.0)', $recommendation);
     }
 
     #[Test]
-    public function itCarriesThresholdFieldInViolation(): void
+    public function itCarriesThresholdFieldInFinding(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Complexity',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
             errorThreshold: 20.0,
@@ -396,11 +398,11 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.complexity', 25.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame(20.0, $violations[0]->threshold);
-        self::assertSame(25.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(20.0, $findings[0]->threshold);
+        self::assertSame(25.0, $findings[0]->metricValue);
     }
 
     /**
@@ -424,9 +426,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: $dimensionName,
-            formulas: ['class' => 'ccn'],
+            formulas: ['class' => 'complexity.ccn'],
             description: 'Test dimension',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: false,
             warningThreshold: 10.0,
         );
@@ -440,10 +442,10 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $repository->method('get')
             ->willReturn((new MetricBag())->with($dimensionName, 15.0));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        $recommendation = $violations[0]->recommendation;
+        self::assertCount(1, $findings);
+        $recommendation = $findings[0]->recommendation;
         self::assertNotNull($recommendation);
         self::assertStringContainsString($expectedPrefix, $recommendation);
     }
@@ -456,11 +458,18 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn($definitions);
 
+        $byProducer = [];
+
+        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producer) {
+            $byProducer[$producer] = new ComputedMetricRuleOptions(enabled: true);
+        }
+
         return new ComputedMetricRule(
             new ComputedMetricRuleOptions(enabled: true),
             $catalog,
             new ComputedMetricFindingBuilder(),
             self::createStub(ProfilerInterface::class),
+            new ComputedMetricProducerOptions($byProducer),
         );
     }
 

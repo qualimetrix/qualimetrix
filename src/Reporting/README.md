@@ -19,7 +19,7 @@ Reporting is responsible for formatting analysis results for user output. It sup
 - **text** — text output (identical format)
 - **checkstyle** — Checkstyle XML
 
-**Note:** `--format=json` uses a custom summary structure (health scores, worst offenders, violations) and is NOT PHPMD-compatible.
+**Note:** `--format=json` uses a custom summary structure (health scores, worst offenders, findings) and is NOT PHPMD-compatible.
 
 **Benefits:** seamless PHPMD replacement in CI/CD, use of existing IDE plugins, integration with existing tools.
 
@@ -50,9 +50,15 @@ Reporting/
 │   ├── Contract/                          # Framework-free Git scope port and request/result
 │   ├── FindingProjectionOptions.php      # Immutable projection controls
 │   ├── FindingProjectionResult.php       # Reported, measured, accepted, and stale facts
-│   └── FindingProjector.php              # Authoritative suppression/filtering order
+│   ├── FindingProjector.php              # Authoritative suppression/filtering order
+│   ├── SuppressionMechanism.php           # Closed 7-value vocabulary: 5 FindingFilterStage cases + the 2 per-rule ledger halves
+│   ├── SuppressedFinding.php              # One finding x mechanism x suppressor pairing (multiset unit, not a finding-level fact)
+│   ├── InertSuppressor.php                # A configured suppressor (pattern/rule) that excluded nothing this run
+│   ├── SuppressionComposition.php         # `$all` (multiset) + `$neverMatched`, published by `--format=suppressed`
+│   ├── SuppressionCompositionBuilder.php  # Builds SuppressionComposition for the five global stages; delegates the ledger halves
+│   └── RuleExclusionLedgerAttributor.php  # Publishes each ledger-excluded finding from the RuleExclusionAttribution the ledger recorded; finds inert patterns, including exclude_namespace_channels
 ├── Filter/
-│   └── ViolationFilter.php                # Shared violation/offender filtering by namespace/class context
+│   └── FindingFilter.php                # Shared finding/offender filtering by namespace/class context
 ├── Profile/
 │   └── ProfileSummaryRenderer.php         # Profiler summary rendering for console
 └── Formatter/
@@ -66,9 +72,9 @@ Reporting/
     ├── MetricsJsonFormatter.php            # Raw metrics JSON export
     ├── Support/                            # Shared formatter utilities
     │   ├── AnsiColor.php                  # Lightweight ANSI color wrapper
-    │   ├── ViolationSorter.php            # Sorting/grouping utility for violations
-    │   ├── DetailedViolationRenderer.php  # Detailed-output compositor
-    │   ├── ViolationDetailRenderer.php    # Sorted/grouped violation details
+    │   ├── FindingSorter.php            # Sorting/grouping utility for findings
+    │   ├── DetailedFindingRenderer.php  # Detailed-output compositor
+    │   ├── FindingDetailRenderer.php    # Sorted/grouped finding details
     │   ├── DebtBreakdownRenderer.php      # Per-rule technical-debt details
     │   ├── AcceptedLevelNarrator.php      # "accepted at 25, now 31" fragment for a measured breach
     │   └── CoverageNarrator.php           # Complete/empty/incomplete human coverage summary
@@ -76,15 +82,15 @@ Reporting/
     │   ├── SummaryFormatter.php           # Default: health overview + worst offenders + hints
     │   ├── HealthBarRenderer.php          # Renders ANSI health bars for console output
     │   ├── OffenderListRenderer.php       # Renders worst offender lists for console output
-    │   ├── ViolationSummaryRenderer.php   # Renders violation count summary with severity breakdown and tech debt
+    │   ├── FindingSummaryRenderer.php   # Renders finding count summary with severity breakdown and tech debt
     │   ├── HintRenderer.php              # Renders contextual hints at the bottom of summary output
     │   └── TopIssuesRenderer.php          # Renders "Top issues by impact" section
     ├── Json/
-    │   ├── JsonFormatter.php              # Summary-oriented JSON (health, worst offenders, violations)
+    │   ├── JsonFormatter.php              # Summary-oriented JSON (health, worst offenders, findings)
     │   ├── JsonSanitizer.php              # Sanitizes metric values (NaN/INF → null) for JSON output
     │   ├── JsonHealthSection.php          # Formats health scores section for JSON output
     │   ├── JsonOffenderSection.php        # Formats worst offenders sections for JSON output
-    │   └── JsonViolationSection.php       # Formats violations section for JSON output
+    │   └── JsonFindingSection.php       # Formats findings section for JSON output
     ├── Sarif/
     │   ├── SarifFormatter.php             # SARIF 2.1.0
     │   └── SarifRuleCollector.php         # Collects rule metadata for SARIF tool component, joined from ChannelPresentationInterface
@@ -96,8 +102,10 @@ Reporting/
     │   ├── HtmlTreeNode.php               # Internal VO for tree construction
     │   ├── HtmlDebtCalculator.php         # Computes and aggregates technical debt for HTML reports
     │   ├── HtmlMetricAggregator.php       # Bottom-up metric aggregation for HTML tree
-    │   └── HtmlViolationPartitioner.php   # Partitions violations by file/class for HTML tree
-    └── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
+    │   └── HtmlFindingPartitioner.php   # Partitions findings by file/class for HTML tree
+    ├── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
+    └── Suppressed/
+        └── SuppressedFormatter.php          # Machine-readable suppression composition (`--format=suppressed`)
 ```
 
 ## Contracts
@@ -114,6 +122,19 @@ measured, accepted, or stale Baseline facts.
 Configuration-owned `OutputFormat` carries the resolved formatter name to the
 Console presenter without adding output policy to the transitional runtime
 configuration.
+
+### Suppression composition
+
+`FindingProjection\SuppressionCompositionBuilder` assembles
+`SuppressionComposition` — the multiset `SuppressedFormatter` publishes — from
+facts the pipeline already computed: `FindingProjectionResult` for the five
+global `FindingFilterStage` cases, and `RuleExecutionResult`'s exclusion
+ledger (via `RuleExclusionLedgerAttributor`) for the two per-rule halves. It
+recomputes *which* pattern or directive removed a finding rather than reading
+a per-finding attribution the pipeline carries, because no stage records one;
+see the class docblock for why that narrow duplication was accepted. See
+`docs/adr/0037-suppressed-format-and-produced-findings.md` for why this is a
+separate format rather than a `json` section.
 
 ### GraphProjection
 
@@ -226,7 +247,7 @@ Registry implementation — stores formatters by name, throws `InvalidArgumentEx
 final readonly class Report
 {
     public function __construct(
-        public array $violations,
+        public array $findings,
         public int $filesAnalyzed,
         public int $filesSkipped,
         public float $duration,
@@ -238,12 +259,12 @@ final readonly class Report
         public array $worstClasses = [],       // list<WorstOffender>
         public int $techDebtMinutes = 0,
         public ?float $debtPer1kLoc = null,    // debt density (min/kLOC), null if no LOC data
-        public array $topIssues = [],          // list<RankedIssue> — top violations by impact
+        public array $topIssues = [],          // list<RankedIssue> — top findings by impact
     ) {}
 
     public function isEmpty(): bool;
-    public function getTotalViolations(): int;
-    public function getViolationsBySeverity(Severity $severity): array;
+    public function getTotalFindings(): int;
+    public function getFindingsBySeverity(Severity $severity): array;
 }
 ```
 
@@ -272,9 +293,9 @@ remain inside the Health capability.
 
 **Name:** `summary` (default) | **Default grouping:** `none`
 
-One-screen health overview with worst offenders and contextual hints. Shows health bars for 6 dimensions (complexity, cohesion, coupling, typing, maintainability, overall), top-3 worst namespaces/classes, violation summary, and actionable hints.
+One-screen health overview with worst offenders and contextual hints. Shows health bars for 6 dimensions (complexity, cohesion, coupling, typing, maintainability, overall), top-3 worst namespaces/classes, finding summary, and actionable hints.
 
-Supports `--namespace` and `--class` for drill-down (filtering worst offenders). Handles edge cases: scoped reporting (violations filtered to changed files), missing metrics, single file (no namespace section), zero violations, narrow terminals (no bars).
+Supports `--namespace` and `--class` for drill-down (filtering worst offenders). Handles edge cases: scoped reporting (findings filtered to changed files), missing metrics, single file (no namespace section), zero findings, narrow terminals (no bars).
 
 ASCII fallback with `QMX_ASCII=1` env variable.
 
@@ -282,7 +303,7 @@ ASCII fallback with `QMX_ASCII=1` env variable.
 
 **Name:** `text` | **Default grouping:** `none`
 
-Compact, parseable text output (one line per violation). GCC/Clang-compatible format.
+Compact, parseable text output (one line per finding). GCC/Clang-compatible format.
 Supports ANSI colors for severity and summary (auto-detected, disabled with `--no-ansi`).
 
 **Output format:** `file:line: severity[code]: message (symbol)`
@@ -292,10 +313,10 @@ Supports ANSI colors for severity and summary (auto-detected, disabled with `--n
 **Name:** `text-verbose` | **Default grouping:** `file`
 
 Human-readable verbose output with:
-- Violations grouped by file (default), rule, severity, or flat
-- File headers with violation count
+- Findings grouped by file (default), rule, severity, or flat
+- File headers with finding count
 - ANSI colors for severity tags and summary
-- Compact violation format (2 lines per violation)
+- Compact finding format (2 lines per finding)
 - Metric values highlighted when present
 
 ## CLI Options
@@ -334,12 +355,12 @@ Health █████████████████████░░░�
   Maintainability ██████████████████████░░░░░░░░ 74% Fair
 
 Worst namespaces
-  46 App\Metrics\Halstead (3 classes, 29 violations) — high coupling, high complexity
-  49 App\Metrics\Complexity (6 classes, 51 violations) — high coupling
+  46 App\Metrics\Halstead (3 classes, 29 findings) — high coupling, high complexity
+  49 App\Metrics\Complexity (6 classes, 51 findings) — high coupling
 
-1251 violations (384 errors, 867 warnings) | Tech debt: 63d 5h 35min
+1251 findings (384 errors, 867 warnings) | Tech debt: 63d 5h 35min
 
-Hints: --format=text to see all violations | --namespace="App\Metrics\Halstead" to drill down | --format=html -o report.html for full report
+Hints: --format=text to see all findings | --namespace="App\Metrics\Halstead" to drill down | --format=html -o report.html for full report
 ```
 
 ### TextFormatter (`--format=text`)
@@ -376,7 +397,7 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 | Summary      | `summary`      | **Default.** Health overview + worst offenders                | CLI                        |
 | Text         | `text`         | Compact human-readable text output                            | CLI                        |
 | Text Verbose | `text-verbose` | Detailed text output with sorting by severity                 | CLI                        |
-| JSON         | `json`         | Summary-oriented JSON (health + violations)                   | AI agents, CI/CD           |
+| JSON         | `json`         | Summary-oriented JSON (health + findings)                     | AI agents, CI/CD           |
 | Checkstyle   | `checkstyle`   | Checkstyle XML for CI systems                                 | Jenkins, SonarQube         |
 | SARIF        | `sarif`        | SARIF 2.1.0 for static analysis                               | GitHub, VS Code, JetBrains |
 | GitLab       | `gitlab`       | Code Climate JSON for GitLab MR                               | GitLab CI                  |
@@ -384,12 +405,13 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 | GitHub       | `github`       | GitHub Actions workflow-command annotations                   | GitHub Actions             |
 | Health       | `health`       | Text table of health dimensions with scores and decomposition | CLI                        |
 | Html         | `html`         | Interactive treemap report with D3.js                         | Browser, CI artifacts      |
+| Suppressed   | `suppressed`   | Machine-readable composition of what was suppressed and why   | Auditing, CI               |
 
 ## JsonFormatter
 
 **Name:** `json`
 
-Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includes health scores, worst offenders, and violations (top 50 by default). Example:
+Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includes health scores, worst offenders, and findings (top 50 by default). Example:
 
 ```json
 {
@@ -398,13 +420,13 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
   "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
   "worstClasses": [{ "symbolPath": "App\\Payment\\PaymentService", "file": "src/...", "healthOverall": 28, "metrics": {...} }],
-  "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.cyclomatic", "code": "complexity.cyclomatic.callable", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10, "acceptedLevel": null }]
+  "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.cyclomatic", "code": "complexity.cyclomatic", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10, "acceptedLevel": null }]
 }
 ```
 
-**Options:** `--format-opt=violations=all|0|N` (default: 50), `--format-opt=top=N` (default: 10 offenders). `--detail` shows violations (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters violations and worst offenders. `coverage` always states whether the result is complete; policy and health results from an incomplete run are not authoritative.
+**Options:** `--format-opt=violations=all|0|N` (default: 50), `--format-opt=top=N` (default: 10 offenders). `--detail` shows findings (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters findings and worst offenders. `coverage` always states whether the result is complete; policy and health results from an incomplete run are not authoritative.
 
-**`acceptedLevel`:** `null` unless the violation is a measured baseline breach (see [Accepted level](#accepted-level-baseline-breach) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
+**`acceptedLevel`:** `null` unless the finding is a measured baseline breach (see [Accepted level](#accepted-level-baseline-breach) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
 
 **Identity fields:** `symbol` remains the logical/display projection. Stable
 machine identity is `channel + subject + optional occurrence + optional edge`:
@@ -453,12 +475,12 @@ SARIF 2.1.0 for GitHub Security, VS Code, Azure DevOps, JetBrains IDEs.
 
 ### Related Locations
 
-Violations with `relatedLocations` (e.g., code duplication violations pointing to other occurrences) are rendered as SARIF `relatedLocations` entries. This provides clickable cross-references in GitHub Code Scanning, VS Code, and JetBrains IDEs.
+Findings with `relatedLocations` (e.g., code duplication findings pointing to other occurrences) are rendered as SARIF `relatedLocations` entries. This provides clickable cross-references in GitHub Code Scanning, VS Code, and JetBrains IDEs.
 
 ### Rule Descriptors
 
 `SarifRuleCollector` carries no description or documentation-URL table of its
-own: both are derived per violation code from
+own: both are derived per finding code from
 `Analysis\Finding\Contract\ChannelPresentationInterface`, which joins the
 channel to its producing rule's own description
 (`RuleInterface::getDescription()`) and declared documentation page
@@ -519,7 +541,7 @@ Results will appear in the **Code Quality** tab with inline comments in the MR.
 
 **Name:** `metrics`
 
-Exports raw metric values for all symbols (methods, classes, namespaces, files) as JSON. Unlike `json` which outputs violations, this formatter outputs the actual metric data collected during analysis — useful for cross-tool comparison, metrics analysis, and custom dashboards.
+Exports raw metric values for all symbols (methods, classes, namespaces, files) as JSON. Unlike `json` which outputs findings, this formatter outputs the actual metric data collected during analysis — useful for cross-tool comparison, metrics analysis, and custom dashboards.
 
 ### Output Structure
 
@@ -535,10 +557,10 @@ Exports raw metric values for all symbols (methods, classes, namespaces, files) 
       "file": "src/Service/UserService.php",
       "line": 42,
       "metrics": {
-        "ccn": 25,
-        "cognitive_complexity": 18,
-        "npath": 128,
-        "loc": 45
+        "complexity.ccn": 25,
+        "complexity.cognitive": 18,
+        "complexity.npath": 128,
+        "size.loc": 45
       }
     }
   ],
@@ -561,6 +583,41 @@ bin/qmx check src/ --format=metrics > metrics.json
 
 ---
 
+## SuppressedFormatter
+
+**Name:** `suppressed`
+
+Machine-readable composition of what a run held back from its report and why
+— a format of its own rather than a section of `json`, so an ordinary `check`
+payload never changes shape for a feature it did not ask for (see
+`docs/adr/0037-suppressed-format-and-produced-findings.md`). Reads
+`Report::$suppressionComposition` (built by
+`FindingProjection\SuppressionCompositionBuilder`), never the finding list
+every other formatter reads.
+
+The composition is a multiset over mechanism x finding across seven
+mechanisms — `SuppressionMechanism`'s five global stages plus the two
+per-rule exclusion-ledger halves — not a set of findings: a finding removed
+by more than one mechanism appears once per mechanism, so `byMechanism`
+counts do not sum to a distinct-finding total. A separate `neverMatched` list
+publishes configured suppressors (a path/namespace pattern, a per-rule
+exclusion) that matched nothing this run.
+
+### Capture
+
+Selecting this format arms the same per-rule ledger capture `--show-suppressed`
+arms on the text surface (`RuntimeConfigurator`): the two routes never
+disagree, and `format: suppressed` in `qmx.yaml` triggers capture exactly as
+`--show-suppressed` does.
+
+### Usage
+
+```bash
+bin/qmx check src/ --format=suppressed > suppressed.json
+```
+
+---
+
 ## Adding a New Formatter
 
 ### Steps
@@ -574,19 +631,19 @@ bin/qmx check src/ --format=metrics > metrics.json
 ### Available Data in Report
 
 ```php
-$violation->severity      // Severity enum (Error, Warning, Info)
-$violation->message       // Violation description (technical, for text/checkstyle/sarif)
-$violation->recommendation  // ?string — human-readable message (for summary/detail/json)
-$violation->threshold     // int|float|null — threshold that was exceeded
-$violation->ruleName      // Rule name
-$violation->violationCode // Stable violation code for identification
-$violation->symbolPath    // SymbolPath object
-$violation->location      // Location object (file, line); check isNone() for architectural violations
-$violation->metricValue   // int|float|null
-$violation->acceptedLevel // ?AcceptedLevel — set only on a measured baseline breach (ADR 0017); null on every other violation, including one
+$finding->severity      // Severity enum (Error, Warning, Info)
+$finding->message       // Finding description (technical, for text/checkstyle/sarif)
+$finding->recommendation  // ?string — human-readable message (for summary/detail/json)
+$finding->threshold     // int|float|null — threshold that was exceeded
+$finding->ruleName      // Rule name
+$finding->code // Stable finding code for identification
+$finding->symbolPath    // SymbolPath object
+$finding->location      // Location object (file, line); check isNone() for architectural findings
+$finding->metricValue   // int|float|null
+$finding->acceptedLevel // ?AcceptedLevel — set only on a measured baseline breach (ADR 0017); null on every other finding, including one
                           // no baseline ever judged. See "Accepted level" below.
 
-$report->violations       // list<Violation>
+$report->findings       // list<Finding>
 $report->filesAnalyzed    // int
 $report->errorCount       // int
 $report->warningCount     // int
@@ -596,7 +653,7 @@ $report->worstNamespaces  // list<WorstOffender> — worst namespaces by health
 $report->worstClasses     // list<WorstOffender> — worst classes by health
 $report->techDebtMinutes  // int — total remediation time
 $report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
-$report->topIssues        // list<RankedIssue> — top violations by impact score
+$report->topIssues        // list<RankedIssue> — top findings by impact score
 $report->coverage         // ?ReportCoverage — discovered/analyzed/generated/failed verdict
 ```
 
@@ -607,51 +664,51 @@ must make incomplete analysis machine-detectable; see
 
 ## Accepted level (baseline breach)
 
-`Violation::$acceptedLevel` is set only when a finding is a **measured breach**
+`Finding::$acceptedLevel` is set only when a finding is a **measured breach**
 of a baseline entry (ADR 0017): the group
 was checked against an applicable entry and exceeded it, and severity was
-already promoted to `Error` via `Violation::reportedAsBreach()`. It is `null`
-on every other violation, including one no baseline ever judged.
+already promoted to `Error` via `Finding::reportedAsBreach()`. It is `null`
+on every other finding, including one no baseline ever judged.
 
-`Formatter\Support\AcceptedLevelNarrator::describe(Violation $v): ?string`
+`Formatter\Support\AcceptedLevelNarrator::describe(Finding $v): ?string`
 renders the human fragment — `"accepted at 25, now 31"` for a `magnitude`
 channel, `"accepted at 3 occurrences"` for an `occurrence` channel (no
-fabricated "now": the mechanism compares a group size no single `Violation`
+fabricated "now": the mechanism compares a group size no single `Finding`
 carries). Returns `null` when `$acceptedLevel` is absent.
 
 Per-format decision — whether the accepted level is carried, and how:
 
-| Format                  | Carries it? | Mechanism                                                                                                                                                            |
-| ----------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `text` / `text-verbose` | Yes         | Appended to the message via `AcceptedLevelNarrator`                                                                                                                  |
-| `summary --detail`      | Yes         | Shares `DetailedViolationRenderer` with `text --detail`                                                                                                              |
-| `checkstyle`            | Yes         | Appended to the `message` attribute (schema has no dedicated field)                                                                                                  |
-| `gitlab`                | Yes         | Appended to `description` (fingerprint still hashes the unmodified message)                                                                                          |
-| `github`                | Yes         | Appended to the annotation message, before escaping                                                                                                                  |
-| `sarif`                 | Yes         | Appended to `message.text`; `result.level` and the rule's run-level default already derive from `Violation::severity`, so promotion propagates without extra mapping |
-| `json`                  | Yes         | Structured `acceptedLevel: {shape, describe, count} \| null` field per violation; `now` is the existing sibling `metricValue` field, not duplicated                  |
-| `metrics`               | No          | Carries no violations at all — only raw collected metric values                                                                                                      |
-| `health`                | No          | Renders health-dimension scores, never individual violations                                                                                                         |
-| `html`                  | No          | Would need `Template/` (JS) changes to render; left for a dedicated follow-up rather than shipping an inert data field                                               |
+| Format                  | Carries it? | Mechanism                                                                                                                                                          |
+| ----------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `text` / `text-verbose` | Yes         | Appended to the message via `AcceptedLevelNarrator`                                                                                                                |
+| `summary --detail`      | Yes         | Shares `DetailedFindingRenderer` with `text --detail`                                                                                                              |
+| `checkstyle`            | Yes         | Appended to the `message` attribute (schema has no dedicated field)                                                                                                |
+| `gitlab`                | Yes         | Appended to `description` (fingerprint still hashes the unmodified message)                                                                                        |
+| `github`                | Yes         | Appended to the annotation message, before escaping                                                                                                                |
+| `sarif`                 | Yes         | Appended to `message.text`; `result.level` and the rule's run-level default already derive from `Finding::severity`, so promotion propagates without extra mapping |
+| `json`                  | Yes         | Structured `acceptedLevel: {shape, describe, count} \| null` field per finding; `now` is the existing sibling `metricValue` field, not duplicated                  |
+| `metrics`               | No          | Carries no findings at all — only raw collected metric values                                                                                                      |
+| `health`                | No          | Renders health-dimension scores, never individual findings                                                                                                         |
+| `html`                  | No          | Would need `Template/` (JS) changes to render; left for a dedicated follow-up rather than shipping an inert data field                                             |
 
 ## Formatter Comparison
 
-| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics | Health | Html            |
-| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------- | ------ | --------------- |
-| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No      | Yes    | No              |
-| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No      | Yes    | Yes             |
-| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No      | No     | No              |
-| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No      | High   | Visual          |
-| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom  | No     | CI artifacts    |
-| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No      | No     | No              |
-| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No      | No     | No              |
-| **Fingerprinting**      | No      | No     | No           | No      | No                | No           | Yes    | No      | No     | No              |
-| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT  | STDOUT | File (--output) |
+| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics | Health | Html            | Suppressed |
+| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------- | ------ | --------------- | ---------- |
+| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No      | Yes    | No              | No         |
+| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No      | Yes    | Yes             | No         |
+| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No      | No     | No              | No         |
+| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No      | High   | Visual          | No         |
+| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom  | No     | CI artifacts    | Auditing   |
+| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No      | No     | No              | No         |
+| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No      | No     | No              | No         |
+| **Fingerprinting**      | No      | No     | No           | No      | No                | No           | Yes    | No      | No     | No              | No         |
+| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT  | STDOUT | File (--output) | STDOUT     |
 
 ### Choosing the Right Format
 
 - **CLI usage (overview)** -> `summary` (default)
-- **CLI usage (compact violations)** -> `text`
+- **CLI usage (compact findings)** -> `text`
 - **CLI usage (detailed)** -> `text-verbose`
 - **Generic CI/CD** (GitLab CI, CircleCI, Travis) -> `json`
 - **Jenkins / SonarQube** -> `checkstyle`
@@ -662,6 +719,7 @@ Per-format decision — whether the accepted level is carried, and how:
 - **Custom dashboards / metrics analysis** -> `metrics`
 - **Health scores (terminal)** -> `health`
 - **Visual exploration / stakeholder reports** -> `html`
+- **Auditing what a run suppressed** -> `suppressed`
 
 ## HealthTextFormatter
 
@@ -683,7 +741,7 @@ Self-contained interactive HTML report with D3.js treemap visualization. All CSS
 
 - **Treemap** — namespace hierarchy colored by health score (blue = healthy, red = unhealthy)
 - **Drill-down** — click namespaces to explore deeper
-- **Detail panel** — health bars, worst offenders, metrics table, violations
+- **Detail panel** — health bars, worst offenders, metrics table, findings
 - **Metric selector** — switch coloring between health scores (complexity, cohesion, coupling, etc.)
 - **Search** — find namespaces and classes by name
 - **URL hash navigation** — deep linking via `#ns:App/Payment`, `#cl:App/Service`

@@ -22,7 +22,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -52,19 +51,11 @@ final class DistanceRuleTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsCouplingCategory(): void
-    {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
-
-        self::assertSame(RuleCategory::Coupling, $rule->getCategory());
-    }
-
-    #[Test]
     public function itRequiresDistanceMetrics(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
-        self::assertSame(['distance', 'abstractness', 'instability'], $rule->requires());
+        self::assertSame(['coupling.distance', 'coupling.abstractness', 'coupling.instability'], $rule->requires());
     }
 
     #[Test]
@@ -145,9 +136,9 @@ final class DistanceRuleTest extends TestCase
 
         // 0.35 is above warning (0.3), below error (0.5)
         $metricBag = (new MetricBag())
-            ->with('distance', 0.35)
-            ->with('abstractness', 0.2)
-            ->with('instability', 0.45);
+            ->with('coupling.distance', 0.35)
+            ->with('coupling.abstractness', 0.2)
+            ->with('coupling.instability', 0.45);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -156,16 +147,16 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
         self::assertSame(
             'Distance from main sequence is 0.35 (A=0.20, I=0.45), exceeds threshold of 0.30. Balance abstractness and stability',
-            $violations[0]->message,
+            $findings[0]->message,
         );
-        self::assertSame(0.35, $violations[0]->metricValue);
-        self::assertSame('coupling.distance', $violations[0]->ruleName);
+        self::assertSame(0.35, $findings[0]->metricValue);
+        self::assertSame('coupling.distance', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -178,9 +169,9 @@ final class DistanceRuleTest extends TestCase
 
         // 0.6 is above error (0.5)
         $metricBag = (new MetricBag())
-            ->with('distance', 0.6)
-            ->with('abstractness', 0.1)
-            ->with('instability', 0.3);
+            ->with('coupling.distance', 0.6)
+            ->with('coupling.abstractness', 0.1)
+            ->with('coupling.instability', 0.3);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -189,15 +180,15 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(0.6, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(0.6, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function itEmitsNoViolationWhenOnMainSequence(): void
+    public function itEmitsNoFindingWhenOnMainSequence(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
@@ -206,9 +197,9 @@ final class DistanceRuleTest extends TestCase
 
         // Distance close to 0 = on main sequence
         $metricBag = (new MetricBag())
-            ->with('distance', 0.1)
-            ->with('abstractness', 0.5)
-            ->with('instability', 0.5);
+            ->with('coupling.distance', 0.1)
+            ->with('coupling.abstractness', 0.5)
+            ->with('coupling.instability', 0.5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -217,9 +208,9 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -234,13 +225,13 @@ final class DistanceRuleTest extends TestCase
         $nsInfo2 = self::subjectInfo($nsPath2, RelativePath::fromString('src/Controller'), null);
 
         $nsBag1 = (new MetricBag())
-            ->with('distance', 0.4) // Warning
-            ->with('abstractness', 0.1)
-            ->with('instability', 0.5);
+            ->with('coupling.distance', 0.4) // Warning
+            ->with('coupling.abstractness', 0.1)
+            ->with('coupling.instability', 0.5);
         $nsBag2 = (new MetricBag())
-            ->with('distance', 0.55) // Error
-            ->with('abstractness', 0.0)
-            ->with('instability', 0.45);
+            ->with('coupling.distance', 0.55) // Error
+            ->with('coupling.abstractness', 0.0)
+            ->with('coupling.instability', 0.45);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -253,11 +244,11 @@ final class DistanceRuleTest extends TestCase
             });
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(Severity::Error, $violations[1]->severity);
+        self::assertCount(2, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(Severity::Error, $findings[1]->severity);
     }
 
     // Options tests
@@ -327,9 +318,9 @@ final class DistanceRuleTest extends TestCase
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src'), null);
 
         $metricBag = (new MetricBag())
-            ->with('distance', $distance)
-            ->with('abstractness', 0.0)
-            ->with('instability', 0.0);
+            ->with('coupling.distance', $distance)
+            ->with('coupling.abstractness', 0.0)
+            ->with('coupling.instability', 0.0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -338,13 +329,13 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -371,12 +362,12 @@ final class DistanceRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // classCount.sum=2 is below minClassCount=3, so no violation despite high distance
+        // classCount.sum=2 is below minClassCount=3, so no finding despite high distance
         $metricBag = (new MetricBag())
-            ->with('distance', 0.6)
-            ->with('abstractness', 0.1)
-            ->with('instability', 0.3)
-            ->with('classCount.sum', 2);
+            ->with('coupling.distance', 0.6)
+            ->with('coupling.abstractness', 0.1)
+            ->with('coupling.instability', 0.3)
+            ->with('size.class-count.sum', 2);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -385,13 +376,13 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
-    public function itReportsViolationWhenClassCountMeetsMinimum(): void
+    public function itReportsFindingWhenClassCountMeetsMinimum(): void
     {
         $rule = new DistanceRule(
             new DistanceOptions(includeNamespaces: ['App'], minClassCount: 3),
@@ -400,12 +391,12 @@ final class DistanceRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // classCount.sum=3 meets minClassCount=3, so violation is reported
+        // classCount.sum=3 meets minClassCount=3, so finding is reported
         $metricBag = (new MetricBag())
-            ->with('distance', 0.6)
-            ->with('abstractness', 0.1)
-            ->with('instability', 0.3)
-            ->with('classCount.sum', 3);
+            ->with('coupling.distance', 0.6)
+            ->with('coupling.abstractness', 0.1)
+            ->with('coupling.instability', 0.3)
+            ->with('size.class-count.sum', 3);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -414,10 +405,10 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -427,13 +418,13 @@ final class DistanceRuleTest extends TestCase
         $namespace = 'App\\Service';
         $file = RelativePath::fromString('src/Service/One.php');
 
-        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['classCount' => 1]), $file, 1);
+        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['size.class-count' => 1]), $file, 1);
         $repository->add(SymbolPath::forClass($namespace, 'One'), new MetricBag(), $file, 2);
         $repository->add(
             SymbolPath::forNamespace($namespace),
             MetricBag::fromArray([
-                'classCount' => 1,
-                'classCount.count' => 6,
+                'size.class-count' => 1,
+                'size.class-count.count' => 6,
             ]),
             $file,
             1,
@@ -445,20 +436,20 @@ final class DistanceRuleTest extends TestCase
         $repository->add(
             SymbolPath::forNamespace($namespace),
             MetricBag::fromArray([
-                'distance' => 0.6,
-                'abstractness' => 0.1,
-                'instability' => 0.3,
+                'coupling.distance' => 0.6,
+                'coupling.abstractness' => 0.1,
+                'coupling.instability' => 0.3,
             ]),
             $file,
             1,
         );
 
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 1));
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertSame(1, $repository->get(SymbolPath::forNamespace($namespace))->get('classCount.sum'));
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertSame(1, $repository->get(SymbolPath::forNamespace($namespace))->get('size.class-count.sum'));
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -473,9 +464,9 @@ final class DistanceRuleTest extends TestCase
 
         // No classCount.sum metric at all, but minClassCount=0 so it should still be analyzed
         $metricBag = (new MetricBag())
-            ->with('distance', 0.6)
-            ->with('abstractness', 0.1)
-            ->with('instability', 0.3);
+            ->with('coupling.distance', 0.6)
+            ->with('coupling.abstractness', 0.1)
+            ->with('coupling.instability', 0.3);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -484,10 +475,10 @@ final class DistanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -557,9 +548,9 @@ final class DistanceRuleTest extends TestCase
             ->willReturn([$nsInfo]);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     #[Test]
@@ -579,9 +570,9 @@ final class DistanceRuleTest extends TestCase
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         $metricBag = (new MetricBag())
-            ->with('distance', 0.1)
-            ->with('abstractness', 0.5)
-            ->with('instability', 0.5);
+            ->with('coupling.distance', 0.1)
+            ->with('coupling.abstractness', 0.5)
+            ->with('coupling.instability', 0.5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -646,9 +637,9 @@ final class DistanceRuleTest extends TestCase
             ->willReturn([$nsInfo1, $nsInfo2]);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     #[Test]
@@ -670,15 +661,15 @@ final class DistanceRuleTest extends TestCase
             ]),
         );
 
-        $violations = (new DistanceRule(
+        $findings = (new DistanceRule(
             new DistanceOptions(includeNamespaces: ['App\\'], minClassCount: 0),
             $resolver,
         ))->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
+        self::assertCount(2, $findings);
         self::assertSame(
             ['ns:App', 'ns:App\\Service'],
-            array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations),
+            array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings),
         );
     }
 
@@ -695,9 +686,9 @@ final class DistanceRuleTest extends TestCase
             self::subjectInfo($belowPath, RelativePath::fromString('src/Below'), null),
         ]);
         $bags = [
-            $smallPath->toCanonical() => MetricBag::fromArray(['classCount.sum' => 2, 'distance' => 0.8]),
-            $missingPath->toCanonical() => MetricBag::fromArray(['classCount.sum' => 3]),
-            $belowPath->toCanonical() => MetricBag::fromArray(['classCount.sum' => 3, 'distance' => 0.1]),
+            $smallPath->toCanonical() => MetricBag::fromArray(['size.class-count.sum' => 2, 'coupling.distance' => 0.8]),
+            $missingPath->toCanonical() => MetricBag::fromArray(['size.class-count.sum' => 3]),
+            $belowPath->toCanonical() => MetricBag::fromArray(['size.class-count.sum' => 3, 'coupling.distance' => 0.1]),
         ];
         $repository->method('get')->willReturnCallback(
             static fn(SymbolPath $path): MetricBag => $bags[$path->toCanonical()],
@@ -705,12 +696,12 @@ final class DistanceRuleTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects(self::never())->method('warning');
 
-        $violations = (new DistanceRule(
+        $findings = (new DistanceRule(
             new DistanceOptions(includeNamespaces: ['App'], minClassCount: 3),
             logger: $logger,
         ))->analyze(new AnalysisContext($repository));
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

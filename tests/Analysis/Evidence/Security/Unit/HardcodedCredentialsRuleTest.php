@@ -12,10 +12,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsOptions;
 use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -30,7 +29,6 @@ final class HardcodedCredentialsRuleTest extends TestCase
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
         self::assertSame('security.hardcoded-credentials', $rule->getName());
-        self::assertSame(RuleCategory::Security, $rule->getCategory());
         self::assertSame('Detects hardcoded credentials in code', $rule->getDescription());
     }
 
@@ -39,74 +37,74 @@ final class HardcodedCredentialsRuleTest extends TestCase
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
-        self::assertSame(['security.hardcodedCredentials'], $rule->requires());
+        self::assertSame(['security.hardcoded-credentials'], $rule->requires());
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenDisabled(): void
+    public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions(enabled: false));
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 1, 'pattern' => 'variable'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 2, 'pattern' => 'variable']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 1, 'pattern' => 'variable'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 2, 'pattern' => 'variable']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenNoFindings(): void
+    public function itReturnsNoFindingsWhenNoFindings(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
         $context = $this->createContext(new MetricBag());
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
-    public function itCreatesOneViolationForSingleFinding(): void
+    public function itCreatesOneFindingForSingleFinding(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 15, 'pattern' => 'variable']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 15, 'pattern' => 'variable']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(15, $violations[0]->location->line);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('security.hardcoded-credentials', $violations[0]->ruleName);
-        self::assertStringContainsString('variable assignment', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(15, $findings[0]->location->line);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame('security.hardcoded-credentials', $findings[0]->ruleName);
+        self::assertStringContainsString('variable assignment', $findings[0]->message);
     }
 
     #[Test]
-    public function itCreatesMultipleViolationsForMultipleFindings(): void
+    public function itCreatesMultipleFindingsForMultipleFindings(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 25, 'pattern' => 'array_key'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 42, 'pattern' => 'define']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 25, 'pattern' => 'array_key'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 42, 'pattern' => 'define']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(3, $violations);
-        self::assertSame(10, $violations[0]->location->line);
-        self::assertSame(25, $violations[1]->location->line);
-        self::assertSame(42, $violations[2]->location->line);
+        self::assertCount(3, $findings);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertSame(25, $findings[1]->location->line);
+        self::assertSame(42, $findings[2]->location->line);
     }
 
     #[Test]
@@ -118,10 +116,10 @@ final class HardcodedCredentialsRuleTest extends TestCase
         $secondInfo = new SymbolInfo(SymbolPath::forFile($secondPath), $secondPath, null);
         $metrics = [
             $firstPath->value() => (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 20, 'pattern' => 'property'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 20, 'pattern' => 'property'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable']),
             $secondPath->value() => (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 5, 'pattern' => 'define']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 5, 'pattern' => 'define']),
         ];
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -130,7 +128,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
             static fn(SymbolPath $path): MetricBag => $metrics[$path->toString()],
         );
 
-        $violations = (new HardcodedCredentialsRule(new HardcodedCredentialsOptions()))
+        $findings = (new HardcodedCredentialsRule(new HardcodedCredentialsOptions()))
             ->analyze(new AnalysisContext(metrics: $repository));
 
         self::assertSame([
@@ -138,8 +136,8 @@ final class HardcodedCredentialsRuleTest extends TestCase
             ['src/Zeta.php', 10],
             ['src/Alpha.php', 5],
         ], array_map(
-            static fn(Violation $violation): array => [$violation->location->pathString(), $violation->location->line],
-            $violations,
+            static fn(Finding $finding): array => [$finding->location->pathString(), $finding->location->line],
+            $findings,
         ));
     }
 
@@ -147,17 +145,17 @@ final class HardcodedCredentialsRuleTest extends TestCase
     public function itGroupsEqualPatternEvidenceRegardlessOfLineAndNeverReceivesSecretValues(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
-        $violations = $rule->analyze($this->createContext(
+        $findings = $rule->analyze($this->createContext(
             (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 20, 'pattern' => 'variable'])
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 30, 'pattern' => 'define']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'variable'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 20, 'pattern' => 'variable'])
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 30, 'pattern' => 'define']),
         ));
 
-        self::assertSame($violations[0]->occurrenceKey?->value, $violations[1]->occurrenceKey?->value);
-        self::assertNotSame($violations[0]->occurrenceKey?->value, $violations[2]->occurrenceKey?->value);
-        self::assertNotNull($violations[0]->occurrenceKey);
-        self::assertStringNotContainsString('secret', $violations[0]->occurrenceKey->value);
+        self::assertSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
+        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[2]->occurrenceKey?->value);
+        self::assertNotNull($findings[0]->occurrenceKey);
+        self::assertStringNotContainsString('secret', $findings[0]->occurrenceKey->value);
     }
 
     #[Test]
@@ -167,14 +165,14 @@ final class HardcodedCredentialsRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.hardcodedCredentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'enum_case']),
+                ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 10, 'pattern' => 'enum_case']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('enum case', $violations[0]->message);
-        self::assertSame('security.hardcoded-credentials', $violations[0]->violationCode);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('enum case', $findings[0]->message);
+        self::assertSame('security.hardcoded-credentials', $findings[0]->code);
     }
 
     #[Test]
@@ -192,7 +190,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
         ];
         $metrics = new MetricBag();
         foreach ($patterns as $line => $pattern) {
-            $metrics = $metrics->withEntry('security.hardcodedCredentials', [
+            $metrics = $metrics->withEntry('security.hardcoded-credentials', [
                 'subjectKind' => 'file',
                 'line' => $line + 1,
                 'pattern' => $pattern,
@@ -200,7 +198,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
         }
 
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
-        $violations = $rule->analyze($this->createContext($metrics));
+        $findings = $rule->analyze($this->createContext($metrics));
 
         self::assertSame([
             'Hardcoded credential in variable assignment — use environment variables or a secrets manager',
@@ -212,8 +210,8 @@ final class HardcodedCredentialsRuleTest extends TestCase
             'Hardcoded credential in enum case — use environment variables or a secrets manager',
             'Hardcoded credential found — use environment variables or a secrets manager',
         ], array_map(
-            static fn(Violation $violation): string => $violation->message,
-            $violations,
+            static fn(Finding $finding): string => $finding->message,
+            $findings,
         ));
     }
 

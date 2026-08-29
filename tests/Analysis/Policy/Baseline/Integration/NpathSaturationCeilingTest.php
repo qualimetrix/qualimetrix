@@ -19,7 +19,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
@@ -31,6 +30,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use SplFileInfo;
@@ -47,8 +47,8 @@ final class NpathSaturationCeilingTest extends TestCase
     #[Test]
     public function itAcceptsTheSameSaturatedValueFromTwoIncreasinglyWorseSources(): void
     {
-        $recorded = self::emittedViolation(30);
-        $current = self::emittedViolation(31);
+        $recorded = self::emittedFinding(30);
+        $current = self::emittedFinding(31);
 
         self::assertSame(1_000_000_000, $recorded->metricValue);
         self::assertSame(1_000_000_000, $current->metricValue);
@@ -59,19 +59,19 @@ final class NpathSaturationCeilingTest extends TestCase
         $baseline = new Baseline(
             generated: new DateTimeImmutable('2026-08-07T12:00:00+00:00'),
             scope: ['src'],
-            entries: [new BaselineEntry(BaselineIdentity::forViolation($recorded), [1_000_000_000], 1)],
+            entries: [new BaselineEntry(BaselineIdentity::forFinding($recorded), [1_000_000_000], 1)],
         );
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
-            'complexity.npath#complexity.npath.callable',
-            ChannelDeclaration::magnitude(WorseDirection::Higher),
+            'complexity.npath',
+            ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
         );
         $stage = new BaselineCeilingStage($baseline, $declarations);
 
-        self::assertSame([], $stage->apply([$current])->violations);
+        self::assertSame([], $stage->apply([$current])->findings);
     }
 
-    private static function emittedViolation(int $branchCount): \Qualimetrix\Analysis\Finding\Contract\Violation
+    private static function emittedFinding(int $branchCount): \Qualimetrix\Analysis\Finding\Contract\Finding
     {
         $collector = new NpathComplexityCollector();
         $parser = (new ParserFactory())->createForHostVersion();
@@ -86,7 +86,7 @@ final class NpathSaturationCeilingTest extends TestCase
         $traverser->traverse($ast);
 
         $collected = $collector->collect(new SplFileInfo(__FILE__), $ast);
-        $npath = $collected->get('npath:App\\Subject::explode');
+        $npath = $collected->get('complexity.npath:App\\Subject::explode');
         self::assertIsInt($npath);
 
         $symbol = SymbolPath::forMethod('App', 'Subject', 'explode');
@@ -98,12 +98,12 @@ final class NpathSaturationCeilingTest extends TestCase
         ]);
         $repository->method('getSubject')->willReturn($metrics);
 
-        $violations = (new NpathComplexityRule(new NpathComplexityOptions()))
-            ->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
+        $findings = (new NpathComplexityRule(new NpathComplexityOptions()))
+            ->analyzeLevel(SymbolLevel::Callable, new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
 
-        return $violations[0];
+        return $findings[0];
     }
 
     private static function source(int $branchCount): string

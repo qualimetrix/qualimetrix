@@ -1,0 +1,41 @@
+# Every mechanism that keeps a produced finding out of the published report, and
+# what each one records today. The step's machine-readable surface generalises
+# over this set, so the set is enumerated rather than described.
+#
+# HOW THIS WAS PRODUCED
+# - Rows 1-6 are the closed vocabularies themselves, not a grep over their uses:
+#   `FindingFilterStage`'s five cases (src/Analysis/Finding/Contract/Filter/FindingFilterStage.php)
+#   plus the per-rule ledger, which runs earlier and therefore is not a stage
+#   (src/Analysis/Finding/FindingExclusionLedger.php, reported separately by
+#   FindingFilterOrchestrator::reportRuleExclusions()).
+# - Rows 7-11 are the neighbouring mechanisms that also make a finding invisible
+#   and are NOT suppression; they are listed so the surface's scope is a decision
+#   rather than an omission. Rows 10 and 11 were missing from the first revision:
+#   the claim in this file's own title is "every mechanism", and a review found
+#   two the enum-plus-ledger method cannot see, because neither is a filter stage
+#   and neither runs inside rule execution.
+#
+# WHAT THIS METHOD DOES NOT SEE
+# - A future stage added outside the enum: FindingFilterStage's own docblock makes
+#   that a declaration error, so the blind spot is closed by the product, not here.
+# - Suppression a rule performs internally before emitting (a rule that decides not
+#   to produce a finding at all). By construction nothing downstream can observe it;
+#   `@qmx-threshold` is exactly that case, which is why the threshold audit is the
+#   other half of this step.
+# - A configured suppressor that never matched anything. It produces no row of
+#   "mechanism x finding" at all, so in a composition keyed on what fired it is
+#   indistinguishable from a suppressor that does not exist. Four live examples
+#   in this repository: `exclude_paths` entries in qmx.yaml naming files that no
+#   longer exist. The step publishes them as their own block for that reason.
+mechanism	where applied	recorded today	published today	in the new surface
+per-rule exclude_namespaces / exclude_namespace_channels / exclude_paths	Analysis/Finding/FindingExclusionLedger (inside RuleExecution, before the projector)	counts by rule always; the findings themselves only when RuleConfigurationInterface::capturesExcludedFindings()	text on stderr under --show-suppressed; counts under -v	yes
+stage: suppression (@qmx-ignore, @qmx-ignore-file)	Reporting/FindingProjection/FindingProjector	removed list per stage	text on stderr under --show-suppressed	yes
+stage: path-exclusion (global exclude_paths, --exclude-path)	FindingProjector	removed list per stage	count on stderr under -v	yes
+stage: namespace-exclusion (global exclude_namespaces, --exclude-namespace; architecture.* exempt)	FindingProjector	removed list per stage	count on stderr under -v	yes
+stage: baseline (accepted-level ceiling)	Analysis/Policy/Baseline/Filter/BaselineCeilingStage via FindingProjector	removed list per stage; promotions separately	baseline sections of the report	yes
+stage: git-scope (--report=git:*)	FindingProjector (last, presentation only)	removed list per stage	nothing	yes
+a rule that never ran (--disable-rule, --only-rule, enabled: false)	Analysis/Finding rule selection	selection state	qmx rules	no — nothing was produced to suppress
+a threshold that kept the finding unborn (@qmx-threshold, configured thresholds)	each rule, via AbstractRule::getEffectiveOptions()	nothing	nothing	no — this step's second half audits it instead
+formatter truncation (--detail, violations=N)	Reporting/Formatter/*	the `truncated` flag in JSON	per formatter	no — presentation, and the finding is in the payload
+drill-down --namespace / --class	Reporting/Filter/FindingFilter via ResultPresenter, after projection and before the Report is built	nothing	nothing	no — presentation narrowing chosen per invocation, and it applies to every formatter equally
+channel selection of a classless producer	RuleExecution::published() via RuleSelector::isChannelEnabled(), after the ledger	nothing	qmx rules lists the channel as disabled	no — the same category as a rule that never ran, but reached per channel rather than per instance

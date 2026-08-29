@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Stringable;
 
 /**
@@ -25,6 +26,8 @@ use Stringable;
  *
  * - a bare prefix (`coupling` for "every coupling rule") is no longer a guess
  *   about intent — write `coupling.*`;
+ * - a level is not part of a name. `coupling.cbo:class` is a
+ *   {@see ChannelLevelSelector}, whose channel half is what reaches this type;
  * - a lone `*` is not a selector at all. It survives only where it never
  *   selected anything in the first place: as the "no rule filter" form of the
  *   three inline suppression directives, modelled explicitly by
@@ -59,7 +62,7 @@ final readonly class NameSelector implements Stringable
     }
 
     /**
-     * Whether this selector addresses the given rule name or violation code.
+     * Whether this selector addresses the given rule name or finding code.
      */
     public function matches(string $subject): bool
     {
@@ -109,13 +112,32 @@ final readonly class NameSelector implements Stringable
 
     /**
      * A name is the literal text of one rule or channel: non-empty, free of
-     * the wildcard token, and with no empty dot-separated segment (which
-     * would make `a.` and `a..b` addressable spellings of names no producer
-     * can ever have).
+     * the wildcard token, of the retired channel-pair separator and of the
+     * level separator, and with no empty dot-separated segment (which would
+     * make `a.` and `a..b` addressable spellings of names no producer can
+     * ever have).
      */
     private static function isWellFormedName(string $name): bool
     {
         if ($name === '' || str_contains($name, '*')) {
+            return false;
+        }
+
+        // The retired `rule#code` spelling of a channel would otherwise be a
+        // well-formed name that nothing can ever carry, i.e. a selector that
+        // silently addresses nothing. It is refused here so that every surface
+        // validating a selector reaches its "not a selector" branch, where
+        // FindingChannel::retiredPairAdvice() says what to write instead.
+        if (FindingChannel::isRetiredPairSpelling($name)) {
+            return false;
+        }
+
+        // A level is a coordinate beside the name, never part of one. Left
+        // in, `coupling.cbo:class` would be a well-formed name nothing can
+        // carry — a selector addressing nothing in silence. Refused here so
+        // that the pair is decomposed by ChannelLevelSelector, which is the
+        // only type that knows what the half after the separator means.
+        if (str_contains($name, FindingChannel::LEVEL_SEPARATOR)) {
             return false;
         }
 

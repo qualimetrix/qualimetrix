@@ -156,7 +156,7 @@ Where:
 
 - **V** = Halstead Volume (a measure of information content based on operators and operands)
 - **CCN** = Cyclomatic Complexity ([CCN2+ variant](complexity.md#implementation-notes))
-- **LOC input** = `methodStatementCount`, a formatting-independent count of executable and control-flow statements
+- **LOC input** = `size.method-statement-count`, a formatting-independent count of executable and control-flow statements
 
 The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 100 / 171)`.
 
@@ -165,7 +165,7 @@ The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 
 **Health score mapping:** The `health.maintainability` dimension uses a penalty-based formula that considers MI average (base quality), MI 5th percentile (main differentiator for outlier methods), and MI minimum (extreme outliers). This multi-term approach produces good discrimination across projects — from well-maintained libraries (score ~95) to complex frameworks (score ~48). See [Health Scores](../reference/health-scores.md) for details and customization options.
 
 !!! info "Deviation from original spec: statement-count input"
-    Qualimetrix uses the dedicated `methodStatementCount` metric for the formula's size term. It counts semantic executable/control-flow statements, not physical lines or the old Halstead-owned `methodLoc`. This keeps MI stable across formatting changes but changes existing MI values, aggregates, health scores, and baselines.
+    Qualimetrix uses the dedicated `size.method-statement-count` metric for the formula's size term. It counts semantic executable/control-flow statements, not physical lines or the old Halstead-owned `methodLoc`. This keeps MI stable across formatting changes but changes existing MI values, aggregates, health scores, and baselines.
 
 !!! info "Halstead Volume: semantic approach"
     Halstead Volume (the V in the formula) uses a **semantic interpretation** of Halstead's methodology (1977). Qualimetrix counts only elements that carry semantic meaning (arithmetic, logical, comparison operators; variables, literals, constants) and excludes syntactic delimiters (`;`, `()`, `{}`, `,`). The original Halstead paper counted all tokens, but was designed for languages (Fortran, PL/I) with minimal syntactic noise. Tools that count all tokens (e.g., pdepend) report significantly higher Volume/Difficulty/Effort values. This does not affect relative comparisons between methods within the same project.

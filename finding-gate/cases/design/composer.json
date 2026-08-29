@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/design",
+    "description": "Corpus case: design and size measurements",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\Design\\": "src/"
+        }
+    }
+}

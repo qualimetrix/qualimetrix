@@ -23,14 +23,13 @@ use LogicException;
  * `helpUri` from (`{site root}/{value}` with the `.md` extension replaced by
  * a trailing slash, matching the site's clean-URL routing).
  *
- * Deliberately **not** derived from {@see RuleCategory} or from the rule
- * name's dot-separated prefix: two registered rules break any such
- * derivation outright —
+ * Deliberately **not** derived from the rule name's dot-separated prefix —
+ * unlike the display family ({@see RuleFamily}), which is exactly that
+ * derivation. Two registered rules break any such derivation outright —
  *
  * - `cohesion.lcom` documents at `rules/cohesion.md`;
- * - `computed.health` documents at `reference/health-scores.md`, entirely
- *   outside `rules/` — no category value and no prefix rewrite can produce
- *   that path.
+ * - the computed-metric family documents at `reference/health-scores.md`, entirely
+ *   outside `rules/` — no prefix rewrite can produce that path.
  *
  * Both are named here so a future reader who notices "every other rule's
  * page is just `rules/{prefix}.md`" does not fold this reader back into a

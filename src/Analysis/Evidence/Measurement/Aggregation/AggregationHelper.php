@@ -8,9 +8,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final class AggregationHelper
 {
@@ -126,9 +127,9 @@ final class AggregationHelper
     /**
      * Adds method and class counts to the metric bag.
      *
-     * Functions are counted in symbolMethodCount because health formulas use
-     * ccn__sum / symbolMethodCount for per-callable averages, and standalone
-     * functions are callables just like methods.
+     * Functions are counted in `size.symbol-method-count` because health formulas
+     * divide `m["complexity.ccn.sum"]` by it for per-callable averages, and a
+     * standalone function is a callable just like a method.
      *
      * @param list<SymbolInfo> $symbolInfos
      */
@@ -149,8 +150,8 @@ final class AggregationHelper
         }
 
         return $bag
-            ->with(AggregationMeta::SYMBOL_METHOD_COUNT, $methodCount)
-            ->with(AggregationMeta::SYMBOL_CLASS_COUNT, $classCount);
+            ->with(MetricName::SIZE_SYMBOL_METHOD_COUNT, $methodCount)
+            ->with(MetricName::SIZE_SYMBOL_CLASS_COUNT, $classCount);
     }
 
     /**

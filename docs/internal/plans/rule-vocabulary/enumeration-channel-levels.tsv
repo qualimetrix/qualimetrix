@@ -1,36 +1,146 @@
-channel	observed_levels	counts	single_level
-code-smell.boolean-argument#code-smell.boolean-argument	callable	{'callable': 29}	yes
-code-smell.constructor-overinjection#code-smell.constructor-overinjection	callable	{'callable': 6}	yes
-code-smell.error-suppression#code-smell.error-suppression	callable	{'callable': 2}	yes
-code-smell.long-parameter-list#code-smell.long-parameter-list	callable	{'callable': 3}	yes
-complexity.cognitive#complexity.cognitive.callable	callable	{'callable': 34}	yes
-complexity.cyclomatic#complexity.cyclomatic.callable	callable	{'callable': 60}	yes
-complexity.npath#complexity.npath.callable	callable	{'callable': 13}	yes
-complexity.wmc#complexity.wmc	class	{'class': 12}	yes
-computed.health#health.cohesion	class namespace	{'class': 26, 'namespace': 5}	NO
-computed.health#health.typing	class	{'class': 1}	yes
-coupling.cbo#coupling.cbo.class	class	{'class': 7}	yes
-coupling.cbo#coupling.cbo.namespace	namespace	{'namespace': 3}	yes
-coupling.class-rank#coupling.class-rank	class	{'class': 1}	yes
-coupling.distance#coupling.distance	namespace	{'namespace': 2}	yes
-coupling.instability#coupling.instability.class	class	{'class': 6}	yes
-coupling.instability#coupling.instability.namespace	namespace	{'namespace': 2}	yes
-design.data-class#design.data-class	class	{'class': 10}	yes
-design.god-class#design.god-class	class	{'class': 2}	yes
-design.type-coverage#design.type-coverage.param	class	{'class': 1}	yes
-design.type-coverage#design.type-coverage.property	class	{'class': 1}	yes
-duplication.code-duplication#duplication.code-duplication	project	{'project': 15}	yes
-size.class-count#size.class-count	namespace	{'namespace': 5}	yes
+channel	observed_levels	multi_level	sets_level_field	corpus	witnesses
+annotation.invalid-threshold#annotation.invalid-threshold	file	no	no	C3	both
+annotation.unresolved-directive#annotation.unresolved-directive	file	no	no	C3	both
+annotation.unsupported-threshold#annotation.unsupported-threshold	file	no	no	C3	both
+annotation.unused-directive#annotation.unused-directive	file	no	no	C3	both
+architecture.circular-dependency#architecture.circular-dependency	project	no	no	C5	both
+architecture.coverage#architecture.coverage	project	no	no	C4	both
+architecture.empty-template#architecture.empty-template	project	no	no	C4	both
+architecture.layer-violation#architecture.layer-violation	class	no	no	C4	both
+architecture.pending-layer-matched#architecture.pending-layer-matched	project	no	no	C4	both
+architecture.potential-shadow#architecture.potential-shadow	project	no	no	C4	both
+architecture.unassigned-class#architecture.unassigned-class	project	no	no	C4	both
+architecture.unreachable-layer#architecture.unreachable-layer	project	no	no	C4	both
+code-smell.boolean-argument#code-smell.boolean-argument	callable	no	no	C1	both
+code-smell.constructor-overinjection#code-smell.constructor-overinjection	callable	no	no	C1	both
+code-smell.count-in-loop#code-smell.count-in-loop	callable	no	no	C2	both
+code-smell.debug-code#code-smell.debug-code	callable	no	no	C2	both
+code-smell.empty-catch#code-smell.empty-catch	callable	no	no	C2	both
+code-smell.error-suppression#code-smell.error-suppression	callable	no	no	C1	both
+code-smell.eval#code-smell.eval	callable	no	no	C2	both
+code-smell.exit#code-smell.exit	callable	no	no	C2	both
+code-smell.goto#code-smell.goto	callable	no	no	C2	both
+code-smell.identical-subexpression#code-smell.identical-subexpression	callable	no	no	C2	both
+code-smell.long-parameter-list#code-smell.long-parameter-list	callable	no	no	C1 C2	both
+code-smell.superglobals#code-smell.superglobals	callable	no	no	C2	both
+code-smell.unreachable-code#code-smell.unreachable-code	callable	no	no	C1 C2	both
+code-smell.unused-private#code-smell.unused-private	class	no	no	C2 C4	both
+cohesion.lcom#cohesion.lcom	class	no	no	C1 C2	both
+complexity.cognitive#complexity.cognitive.callable	callable	no	yes	C1 C2	both
+complexity.cognitive#complexity.cognitive.class	class	no	yes	C1 C2	both
+complexity.cyclomatic#complexity.cyclomatic.callable	callable	no	yes	C1 C2	both
+complexity.cyclomatic#complexity.cyclomatic.class	class	no	yes	C1 C2	both
+complexity.npath#complexity.npath.callable	callable	no	yes	C1 C2	both
+complexity.npath#complexity.npath.class	class	no	yes	C1	both
+complexity.wmc#complexity.wmc	class	no	no	C1 C2	both
+computed.health#health.cohesion	class namespace project	YES	no	C1 C2 C6	both
+computed.health#health.complexity	class namespace project	YES	no	C6	both
+computed.health#health.coupling	class namespace project	YES	no	C6	both
+computed.health#health.maintainability	class namespace project	YES	no	C6	both
+computed.health#health.overall	class namespace project	YES	no	C6	both
+computed.health#health.typing	class namespace project	YES	no	C2 C6	both
+coupling.cbo#coupling.cbo.class	class	no	yes	C1 C2	both
+coupling.cbo#coupling.cbo.namespace	namespace	no	yes	C1 C2	both
+coupling.class-rank#coupling.class-rank	class	no	no	C1 C2 C3 C4	both
+coupling.distance#coupling.distance	namespace	no	no	C1	both
+coupling.instability#coupling.instability.class	class	no	yes	C1 C2	both
+coupling.instability#coupling.instability.namespace	namespace	no	yes	C1	both
+design.data-class#design.data-class	class	no	no	C1 C2	both
+design.god-class#design.god-class	class	no	no	C1 C2	both
+design.inheritance#design.inheritance	class	no	no	C1 C2	both
+design.noc#design.noc	class	no	no	C2	both
+design.type-coverage.param#design.type-coverage.param	class	no	no	C2	both
+design.type-coverage.property#design.type-coverage.property	class	no	no	C2	both
+design.type-coverage.return#design.type-coverage.return	class	no	no	C2	both
+duplication.code-duplication#duplication.code-duplication	project	no	no	C1	both
+maintainability.index#maintainability.index	callable	no	no	C1 C2	both
+security.command-injection#security.command-injection	callable	no	no	C2	both
+security.hardcoded-credentials#security.hardcoded-credentials	class	no	no	C2	both
+security.sensitive-parameter#security.sensitive-parameter	callable	no	no	C2	both
+security.sql-injection#security.sql-injection	callable	no	no	C2	both
+security.xss#security.xss	callable	no	no	C2	both
+size.class-count#size.class-count	namespace	no	no	C1 C2	both
+size.method-count#size.method-count	class	no	no	C1 C2	both
+size.property-count#size.property-count	class	no	no	C1 C2	both
 #
-# HOW OBTAINED: `bin/qmx check src/ --format=json --workers=0` on this repository, 2026-08-22, then grouping
-# every emitted finding by its `channel` and by the kind prefix of its `subject`. This is the only method tried
-# that actually observes the reporting level; reading the rule classes does not, because 23 of 31 magnitude
-# channels build their subject outside the rule class (in AbstractRule helpers or in the metric record).
+# 63 of 63 channels. The channel set is not hand-listed: it is the 57 lines of
+# tests/Analysis/Finding/Fixtures/Channels/declared.txt (a fixture the container
+# guards in both directions) plus the 6 cases of HealthDimension.
 #
-# BLIND SPOTS:
-#  - only 22 of the 63 known channels fired on this codebase. The other ~41 (security, most architecture,
-#    most code-smell, annotation) emit nothing here and are NOT covered by this table. Covering them needs a
-#    second pass over the rule test fixtures, or a run against a corpus that triggers them.
-#  - a channel that fired at only one level here may still be capable of another level on other code. The table
-#    records what was observed, not what is possible.
-#  - findings removed by an exclusion in qmx.yaml never reach the report and are invisible here.
+# HOW OBTAINED: every row is an OBSERVATION of a real run, never a reading of a
+# rule class. Two independent witnesses, agreeing on all 63 rows (column
+# `witnesses` = `both` everywhere):
+#   W1  `bin/qmx check --format=json`, grouping each emitted finding by its
+#       `channel` and by the kind prefix of its `subject`.
+#   W2  a temporary probe in the `Violation` constructor, appending
+#       `channel<TAB>subject-level<TAB>$level` for every finding ever
+#       constructed. It sits BEFORE suppression, exclusion, baseline and
+#       report-scope filtering, so it sees findings W1 cannot. Reverted after
+#       measurement; it is not in the tree.
+#
+# Reading the rule class remains a failed method — see
+# enumeration-magnitude-levels.tsv. 23 of 31 magnitude channels build their
+# subject outside the rule class.
+#
+# CORPORA. `bin/qmx check` reports nothing until a threshold is breached, so
+# every corpus is paired with a configuration that makes the channel fire. All
+# runs used `--workers=0`, an explicit `-c` pointing at a config with no
+# exclusions (so the project's own `qmx.yaml` cannot hide a channel) and
+# `--fail-on=none`.
+#   C1  src/Core + src/Reporting, one run per rule, with every numeric rule
+#       option driven to the value that fires: 0 for a higher-is-worse
+#       threshold, the maximum for a lower-is-worse one, 0 for every gating
+#       minimum. Option keys were extracted from `bin/qmx rules`, not typed.
+#   C2  a synthetic corpus of code smells and vulnerabilities (eval, goto,
+#       exit, superglobals, empty catch, count-in-loop, identical
+#       sub-expression, unused private members, unreachable code, hardcoded
+#       credentials, SQL injection, XSS, command injection, sensitive
+#       parameters, untyped declarations, a three-child hierarchy), same
+#       option flooring as C1.
+#   C3  a corpus of four deliberately broken `@qmx-*` directives: one naming a
+#       rule that does not exist, one retuning a rule that declares no
+#       threshold, one with an unparseable value, one suppressing a finding
+#       that is not there.
+#   C4  a corpus of four classes plus a layer policy declaring a forbidden
+#       edge, an unmatched layer, a shadowing pair, a `pending: true` layer
+#       whose code exists, a template expanding to nothing, a class outside
+#       every layer, `coverage: error` and `--rule-opt=architecture.unassigned-class:mode=error`.
+#   C5  a three-class dependency cycle.
+#   C6  src/ and C2 with every health threshold raised to 100, so all six
+#       health scores breach at every level they are computed at.
+#
+# FINDINGS OF THIS PASS:
+#  - `file` is a real reporting level after all: all four `annotation.*`
+#    channels report on the file the directive was written in. The previous
+#    pass had observed none.
+#  - the six health channels are each multi-level, on THREE levels
+#    (class, namespace, project) under one channel name. Independently
+#    confirmed by declaration: ComputedMetricDefaults gives every health
+#    dimension `levels: [class, namespace, project]`.
+#  - no static channel is multi-level. Every one of the 57 reports at exactly
+#    one level; where a producer covers two levels it splits into two channels.
+#  - `sets_level_field` is `yes` for exactly 10 channels, and that set is
+#    byte-identical to the set of channels whose name ends in a level segment.
+#    The other 53 carry the level in the subject alone. Nothing anywhere
+#    disagreed: across every finding constructed in every run, a non-null
+#    `$level` always equalled the subject's own level.
+#  - `complexity.npath.class` is disabled by default
+#    (`ClassNpathComplexityOptions::$enabled = false`), unlike its cognitive
+#    and cyclomatic siblings. It fires only with
+#    `complexity.npath:class.enabled=true`.
+#
+# BLIND SPOTS, in the order they are likely to bite:
+#  - a level is observed, not proven exhaustive. A channel that reported at one
+#    level here may be capable of another on code these corpora do not contain.
+#    The claim "no static channel is multi-level" is a claim about this corpus;
+#    for the health family the declaration backs it independently, for the
+#    static 57 nothing does.
+#  - a user-defined `computed.*` metric declares its own `levels:` in
+#    `qmx.yaml` and is outside any fixed enumeration by construction.
+#  - `duplication.code-duplication` and `architecture.circular-dependency`
+#    report at project level because they summarise; their per-copy locations
+#    travel in `relatedLocations`, which this table does not model.
+#  - C1's option flooring makes some rules fire on a zero measurement
+#    (`code-smell.unreachable-code` reported 472 callables with no unreachable
+#    code). That is a threshold artefact and possibly a rule defect, but it
+#    does not affect the level: the subject is still the one the rule addresses.

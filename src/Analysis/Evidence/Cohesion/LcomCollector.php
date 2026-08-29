@@ -17,8 +17,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrai
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -65,7 +65,7 @@ final class LcomCollector extends AbstractCollector implements DeclarationIndexA
      */
     public function provides(): array
     {
-        return [MetricName::STRUCTURE_LCOM];
+        return [MetricName::COHESION_LCOM];
     }
 
     /**
@@ -80,7 +80,7 @@ final class LcomCollector extends AbstractCollector implements DeclarationIndexA
         foreach ($this->visitor->getClassData() as $classFqn => $classData) {
             $lcom = $this->adjustedLcom($classData);
 
-            $bag = $bag->with(MetricName::STRUCTURE_LCOM . ':' . $classFqn, $lcom);
+            $bag = $bag->with(MetricName::COHESION_LCOM . ':' . $classFqn, $lcom);
         }
 
         return $bag;
@@ -98,7 +98,7 @@ final class LcomCollector extends AbstractCollector implements DeclarationIndexA
         foreach ($this->visitor->getClassData() as $classData) {
             $lcom = $this->adjustedLcom($classData);
 
-            $bag = (new MetricBag())->with(MetricName::STRUCTURE_LCOM, $lcom);
+            $bag = (new MetricBag())->with(MetricName::COHESION_LCOM, $lcom);
 
             $result[] = $this->classWithMetrics(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos, $classData->line, $bag);
         }
@@ -128,7 +128,7 @@ final class LcomCollector extends AbstractCollector implements DeclarationIndexA
     {
         return [
             new MetricDefinition(
-                name: MetricName::STRUCTURE_LCOM,
+                name: MetricName::COHESION_LCOM,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [

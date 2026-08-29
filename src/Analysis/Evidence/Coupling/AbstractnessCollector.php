@@ -10,8 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Computes abstractness metric for namespaces.
@@ -76,7 +75,7 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
         MetricRepositoryInterface $repository,
     ): void {
         // Iterate over all namespaces and compute abstractness
-        foreach ($repository->all(SymbolType::Namespace_) as $symbolInfo) {
+        foreach ($repository->all(SymbolLevel::Namespace_) as $symbolInfo) {
             $nsPath = $symbolInfo->symbolPath;
             $metrics = $repository->get($nsPath);
 

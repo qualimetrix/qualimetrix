@@ -45,7 +45,7 @@ final class GodClassCriteriaEvaluator
      */
     private static function wmc(MetricBag $metrics, GodClassOptions $options): ?GodClassCriterionResult
     {
-        $wmc = $metrics->get(MetricName::STRUCTURE_WMC);
+        $wmc = $metrics->get(MetricName::COMPLEXITY_WMC);
         if ($wmc === null) {
             return null;
         }
@@ -66,7 +66,7 @@ final class GodClassCriteriaEvaluator
      */
     private static function lcom(MetricBag $metrics, GodClassOptions $options): ?GodClassCriterionResult
     {
-        $lcom = $metrics->get(MetricName::STRUCTURE_LCOM);
+        $lcom = $metrics->get(MetricName::COHESION_LCOM);
         if ($lcom === null) {
             return null;
         }

@@ -7,18 +7,20 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
@@ -30,21 +32,22 @@ use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(RuleExecution::class)]
 final class RuleExecutorTest extends TestCase
 {
-    private bool $captureExcludedViolations = true;
+    private bool $captureExcludedFindings = true;
 
     /**
      * Every existing test in this class predates the capture toggle and
-     * asserts on `$stats->excludedViolations` directly, so it is enabled by
+     * asserts on `$stats->excludedFindings` directly, so it is enabled by
      * default here; the dedicated toggle tests below explicitly disable it.
      */
     protected function setUp(): void
     {
-        $this->captureExcludedViolations = true;
+        $this->captureExcludedFindings = true;
     }
 
     #[Test]
@@ -55,9 +58,13 @@ final class RuleExecutorTest extends TestCase
 
         $context = $this->createMinimalContext();
 
-        self::assertSame([], $executor->execute($context));
-        self::assertSame([], $executor->activeRules($provider->selection()));
-        self::assertSame(0, $executor->totalRuleCount());
+        $result = $executor->execute($context);
+
+        self::assertSame([], $result->published);
+        self::assertSame([], $result->produced);
+        self::assertTrue($result->exclusions->isEmpty());
+        self::assertSame([], self::activeRules($executor));
+        self::assertCount(0, $executor->allRules());
     }
 
     #[Test]
@@ -69,7 +76,6 @@ final class RuleExecutorTest extends TestCase
             new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(
                 name: 'fixture.metadata',
                 optionsClass: RuleExecutionFixtureOptions::class,
-                category: RuleCategory::Complexity,
                 description: 'Metadata fixture',
                 aliases: ['fixture-threshold' => 'warning'],
                 active: true,
@@ -78,43 +84,44 @@ final class RuleExecutorTest extends TestCase
     }
 
     #[Test]
-    public function itExclusionStatsAreEmptyBeforeFirstExecute(): void
+    public function itExclusionStatsAreEmptyWhenNoRulesRan(): void
     {
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([], $provider);
 
-        $stats = $executor->exclusionStats();
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
         self::assertTrue($stats->isEmpty());
         self::assertSame(0, $stats->totalNamespaceExclusions());
         self::assertSame(0, $stats->totalPathExclusions());
-        self::assertSame([], $stats->excludedViolations);
+        self::assertSame([], $stats->excludedFindings);
     }
 
     #[Test]
     public function itExclusionStatsAreZeroWhenNoExclusionsConfigured(): void
     {
-        $violation = $this->createViolationWithNamespace('rule1', 'App\\Core');
-        $rule = $this->createRule('rule1', [$violation]);
+        $finding = $this->createFindingWithNamespace('rule1', 'App\\Core');
+        $rule = $this->createRule('rule1', [$finding]);
 
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $provider);
 
-        $violations = $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $result = $executor->execute($this->createMinimalContext());
+        $findings = $result->published;
+        $stats = $result->exclusions;
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         self::assertTrue($stats->isEmpty());
-        self::assertSame([], $stats->excludedViolations);
+        self::assertSame([], $stats->excludedFindings);
     }
 
     #[Test]
     public function itNamespaceExclusionIncrementsStatsPerRule(): void
     {
-        $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
-        $includedViolation = $this->createViolationWithNamespace('rule1', 'App\\Core');
+        $excludedFinding = $this->createFindingWithNamespace('rule1', 'App\\Tests');
+        $includedFinding = $this->createFindingWithNamespace('rule1', 'App\\Core');
 
-        $rule = $this->createRule('rule1', [$excludedViolation, $includedViolation]);
+        $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
@@ -123,25 +130,26 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $violations = $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $result = $executor->execute($this->createMinimalContext());
+        $findings = $result->published;
+        $stats = $result->exclusions;
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         self::assertFalse($stats->isEmpty());
         self::assertSame(['rule1' => 1], $stats->namespaceExclusionsByRule);
         self::assertSame([], $stats->pathExclusionsByRule);
         self::assertSame(1, $stats->totalNamespaceExclusions());
         self::assertSame(0, $stats->totalPathExclusions());
-        self::assertSame([$excludedViolation], $stats->excludedViolations);
+        self::assertSame([$excludedFinding], $stats->excludedFindings);
     }
 
     #[Test]
     public function itPathExclusionIncrementsStatsPerRule(): void
     {
-        $excludedViolation = $this->createViolationWithFile('rule1', 'src/Generated/Model.php');
-        $includedViolation = $this->createViolationWithFile('rule1', 'src/Core/Service.php');
+        $excludedFinding = $this->createFindingWithFile('rule1', 'src/Generated/Model.php');
+        $includedFinding = $this->createFindingWithFile('rule1', 'src/Core/Service.php');
 
-        $rule = $this->createRule('rule1', [$excludedViolation, $includedViolation]);
+        $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
         $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
@@ -150,21 +158,22 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $violations = $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $result = $executor->execute($this->createMinimalContext());
+        $findings = $result->published;
+        $stats = $result->exclusions;
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         self::assertSame(['rule1' => 1], $stats->pathExclusionsByRule);
         self::assertSame([], $stats->namespaceExclusionsByRule);
         self::assertSame(1, $stats->totalPathExclusions());
-        self::assertSame([$excludedViolation], $stats->excludedViolations);
+        self::assertSame([$excludedFinding], $stats->excludedFindings);
     }
 
     #[Test]
     public function itExclusionStatsBreakDownByRuleNameSeparately(): void
     {
-        $v1 = $this->createViolationWithNamespace('rule1', 'App\\Tests');
-        $v2 = $this->createViolationWithNamespace('rule2', 'App\\Tests');
+        $v1 = $this->createFindingWithNamespace('rule1', 'App\\Tests');
+        $v2 = $this->createFindingWithNamespace('rule2', 'App\\Tests');
 
         $rule1 = $this->createRule('rule1', [$v1]);
         $rule2 = $this->createRule('rule2', [$v2]);
@@ -177,8 +186,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule1, $rule2], $registry);
 
-        $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
         self::assertSame(['rule1' => 1, 'rule2' => 1], $stats->namespaceExclusionsByRule);
         self::assertSame(2, $stats->totalNamespaceExclusions());
@@ -187,8 +195,8 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itExclusionStatsAreResetOnEachExecuteCall(): void
     {
-        $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
-        $rule = $this->createRule('rule1', [$excludedViolation]);
+        $excludedFinding = $this->createFindingWithNamespace('rule1', 'App\\Tests');
+        $rule = $this->createRule('rule1', [$excludedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
@@ -200,76 +208,76 @@ final class RuleExecutorTest extends TestCase
         // Two consecutive execute() calls on the same executor: if the running
         // executor accumulated counts instead of resetting them, the second
         // call would report 2 instead of 1.
-        $executor->execute($this->createMinimalContext());
-        self::assertSame(1, $executor->exclusionStats()->totalNamespaceExclusions());
+        $first = $executor->execute($this->createMinimalContext());
+        self::assertSame(1, $first->exclusions->totalNamespaceExclusions());
 
-        $executor->execute($this->createMinimalContext());
-        self::assertSame(1, $executor->exclusionStats()->totalNamespaceExclusions());
-        self::assertCount(1, $executor->exclusionStats()->excludedViolations);
+        $second = $executor->execute($this->createMinimalContext());
+        self::assertSame(1, $second->exclusions->totalNamespaceExclusions());
+        self::assertCount(1, $second->exclusions->excludedFindings);
     }
 
     #[Test]
     public function itExecutesWithAllRulesEnabled(): void
     {
-        $violation1 = $this->createViolation('rule1');
-        $violation2 = $this->createViolation('rule2');
+        $finding1 = $this->createFinding('rule1');
+        $finding2 = $this->createFinding('rule2');
 
-        $rule1 = $this->createRule('rule1', [$violation1]);
-        $rule2 = $this->createRule('rule2', [$violation2]);
+        $rule1 = $this->createRule('rule1', [$finding1]);
+        $rule2 = $this->createRule('rule2', [$finding2]);
 
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
         $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
-        self::assertCount(2, $violations);
-        self::assertSame($violation1, $violations[0]);
-        self::assertSame($violation2, $violations[1]);
-        self::assertSame(2, $executor->totalRuleCount());
+        self::assertCount(2, $findings);
+        self::assertSame($finding1, $findings[0]);
+        self::assertSame($finding2, $findings[1]);
+        self::assertCount(2, $executor->allRules());
     }
 
     #[Test]
     public function itFiltersDisabledRulesDuringExecute(): void
     {
-        $violation1 = $this->createViolation('rule1');
-        $violation2 = $this->createViolation('rule2');
+        $finding1 = $this->createFinding('rule1');
+        $finding2 = $this->createFinding('rule2');
 
-        $rule1 = $this->createRule('rule1', [$violation1]);
-        $rule2 = $this->createRule('rule2', [$violation2]);
+        $rule1 = $this->createRule('rule1', [$finding1]);
+        $rule2 = $this->createRule('rule2', [$finding2]);
 
         $config = new RuleSelection(disabled: ['rule1']);
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
         $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
-        self::assertCount(1, $violations);
-        self::assertSame($violation2, $violations[0]);
+        self::assertCount(1, $findings);
+        self::assertSame($finding2, $findings[0]);
     }
 
     #[Test]
     public function itExecutesWithOnlyRulesFilter(): void
     {
-        $violation1 = $this->createViolation('rule1');
-        $violation2 = $this->createViolation('rule2');
-        $violation3 = $this->createViolation('rule3');
+        $finding1 = $this->createFinding('rule1');
+        $finding2 = $this->createFinding('rule2');
+        $finding3 = $this->createFinding('rule3');
 
-        $rule1 = $this->createRule('rule1', [$violation1]);
-        $rule2 = $this->createRule('rule2', [$violation2]);
-        $rule3 = $this->createRule('rule3', [$violation3]);
+        $rule1 = $this->createRule('rule1', [$finding1]);
+        $rule2 = $this->createRule('rule2', [$finding2]);
+        $rule3 = $this->createRule('rule3', [$finding3]);
 
         $config = new RuleSelection(only: ['rule1', 'rule3']);
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
         $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
-        self::assertCount(2, $violations);
-        self::assertSame($violation1, $violations[0]);
-        self::assertSame($violation3, $violations[1]);
+        self::assertCount(2, $findings);
+        self::assertSame($finding1, $findings[0]);
+        self::assertSame($finding3, $findings[1]);
     }
 
     #[Test]
@@ -282,7 +290,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
-        $activeRules = $executor->activeRules($provider->selection());
+        $activeRules = self::activeRules($executor);
 
         self::assertCount(1, $activeRules);
         self::assertSame('enabled-rule', $activeRules[0]->name);
@@ -298,15 +306,15 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
-        self::assertSame(2, $executor->totalRuleCount());
-        self::assertCount(1, $executor->activeRules($provider->selection()));
+        self::assertCount(2, $executor->allRules());
+        self::assertCount(1, self::activeRules($executor));
     }
 
     #[Test]
     public function itExecutesWithIterableRules(): void
     {
-        $violation = $this->createViolation('rule1');
-        $rule = $this->createRule('rule1', [$violation]);
+        $finding = $this->createFinding('rule1');
+        $rule = $this->createRule('rule1', [$finding]);
 
         $generator = (function () use ($rule) {
             yield $rule;
@@ -316,17 +324,17 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution($generator, $provider);
 
         $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
-        self::assertCount(1, $violations);
-        self::assertSame(1, $executor->totalRuleCount());
+        self::assertCount(1, $findings);
+        self::assertCount(1, $executor->allRules());
     }
 
     #[Test]
     public function itDisabledRulesTakePrecedenceOverOnlyRules(): void
     {
-        $violation = $this->createViolation('rule1');
-        $rule = $this->createRule('rule1', [$violation]);
+        $finding = $this->createFinding('rule1');
+        $rule = $this->createRule('rule1', [$finding]);
 
         $config = new RuleSelection(
             disabled: ['rule1'],
@@ -336,10 +344,10 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
-        self::assertSame([], $violations);
-        self::assertSame([], $executor->activeRules($provider->selection()));
+        self::assertSame([], $findings);
+        self::assertSame([], self::activeRules($executor));
     }
 
     // --- Group selector tests ---
@@ -347,9 +355,9 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itExecutesWithGroupDisable(): void
     {
-        $v1 = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic');
-        $v2 = $this->createViolation('complexity.cognitive', violationCode: 'complexity.cognitive');
-        $v3 = $this->createViolation('size.method-count', violationCode: 'size.method-count');
+        $v1 = $this->createFinding('complexity.cyclomatic', code: 'complexity.cyclomatic');
+        $v2 = $this->createFinding('complexity.cognitive', code: 'complexity.cognitive');
+        $v3 = $this->createFinding('size.method-count', code: 'size.method-count');
 
         $rule1 = $this->createRule('complexity.cyclomatic', [$v1]);
         $rule2 = $this->createRule('complexity.cognitive', [$v2]);
@@ -361,37 +369,37 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
         $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
-        self::assertCount(1, $violations);
-        self::assertSame('size.method-count', $violations[0]->ruleName);
+        self::assertCount(1, $findings);
+        self::assertSame('size.method-count', $findings[0]->ruleName);
     }
 
     #[Test]
-    public function itFiltersViolationsByViolationCodeDuringExecute(): void
+    public function itFiltersFindingsByCodeDuringExecute(): void
     {
-        $methodViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.callable');
-        $classViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.class');
+        $methodFinding = $this->createFinding('complexity.cyclomatic', code: 'complexity.cyclomatic.callable');
+        $classFinding = $this->createFinding('complexity.cyclomatic', code: 'complexity.cyclomatic.class');
 
         $rule = $this->createHierarchicalRule(
             'complexity.cyclomatic',
-            [RuleLevel::Callable, RuleLevel::Class_],
+            [SymbolLevel::Callable, SymbolLevel::Class_],
             [
-                RuleLevel::Callable->value => [$methodViolation],
-                RuleLevel::Class_->value => [$classViolation],
+                SymbolLevel::Callable->value => [$methodFinding],
+                SymbolLevel::Class_->value => [$classFinding],
             ],
         );
 
-        // Disable only class-level violations
+        // Disable only class-level findings
         $config = new RuleSelection(disabled: ['complexity.cyclomatic.class']);
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
-        self::assertCount(1, $violations);
-        self::assertSame($methodViolation, $violations[0]);
+        self::assertCount(1, $findings);
+        self::assertSame($methodFinding, $findings[0]);
     }
 
     #[Test]
@@ -405,7 +413,7 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
-        $activeRules = $executor->activeRules($provider->selection());
+        $activeRules = self::activeRules($executor);
 
         self::assertCount(2, $activeRules);
     }
@@ -419,13 +427,13 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider(new RuleSelection(only: ['complexity']));
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
-        self::assertSame([], $executor->activeRules($provider->selection()));
+        self::assertSame([], self::activeRules($executor));
     }
 
     #[Test]
     public function itKeepsComputedFindingsWhenOnlyTheProducerRuleIsSelected(): void
     {
-        $finding = $this->createViolation('computed.health', violationCode: 'health.complexity');
+        $finding = $this->createFinding('computed.health', code: 'health.complexity');
         $rule = $this->createRule('computed.health', [$finding]);
         $executor = $this->createExecution(
             [$rule],
@@ -433,14 +441,14 @@ final class RuleExecutorTest extends TestCase
             ruleSelector: $this->computedRuleSelector(),
         );
 
-        self::assertSame([$finding], $executor->execute($this->createMinimalContext()));
+        self::assertSame([$finding], $executor->execute($this->createMinimalContext())->published);
     }
 
     #[Test]
-    public function itRunsTheComputedProducerWhenOnlyItsViolationCodeIsSelected(): void
+    public function itRunsTheComputedProducerWhenOnlyItsCodeIsSelected(): void
     {
-        $complexity = $this->createViolation('computed.health', violationCode: 'health.complexity');
-        $cohesion = $this->createViolation('computed.health', violationCode: 'health.cohesion');
+        $complexity = $this->createFinding('computed.health', code: 'health.complexity');
+        $cohesion = $this->createFinding('computed.health', code: 'health.cohesion');
         $rule = $this->createRule('computed.health', [$complexity, $cohesion]);
         $provider = $this->createConfiguredProvider(new RuleSelection(only: ['health.complexity']));
         $executor = $this->createExecution(
@@ -449,10 +457,10 @@ final class RuleExecutorTest extends TestCase
             ruleSelector: $this->computedRuleSelector(),
         );
 
-        self::assertSame([$complexity], $executor->execute($this->createMinimalContext()));
+        self::assertSame([$complexity], $executor->execute($this->createMinimalContext())->published);
         self::assertSame(['computed.health'], array_map(
             static fn($metadata): string => $metadata->name,
-            $executor->activeRules($provider->selection()),
+            self::activeRules($executor),
         ));
     }
 
@@ -461,15 +469,15 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itExecutesHierarchicalRuleWithAllLevelsEnabled(): void
     {
-        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.callable', level: RuleLevel::Callable);
-        $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
+        $methodFinding = $this->createFinding('complexity', code: 'complexity.callable');
+        $classFinding = $this->createFinding('complexity', code: 'complexity.class');
 
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Callable, RuleLevel::Class_],
+            [SymbolLevel::Callable, SymbolLevel::Class_],
             [
-                RuleLevel::Callable->value => [$methodViolation],
-                RuleLevel::Class_->value => [$classViolation],
+                SymbolLevel::Callable->value => [$methodFinding],
+                SymbolLevel::Class_->value => [$classFinding],
             ],
         );
 
@@ -477,39 +485,39 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
-        self::assertCount(2, $violations);
-        self::assertContains($methodViolation, $violations);
-        self::assertContains($classViolation, $violations);
+        self::assertCount(2, $findings);
+        self::assertContains($methodFinding, $findings);
+        self::assertContains($classFinding, $findings);
     }
 
     #[Test]
-    public function itExecutesHierarchicalRuleWithSpecificViolationCodeDisabled(): void
+    public function itExecutesHierarchicalRuleWithSpecificCodeDisabled(): void
     {
-        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.callable', level: RuleLevel::Callable);
-        $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
+        $methodFinding = $this->createFinding('complexity', code: 'complexity.callable');
+        $classFinding = $this->createFinding('complexity', code: 'complexity.class');
 
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Callable, RuleLevel::Class_],
+            [SymbolLevel::Callable, SymbolLevel::Class_],
             [
-                RuleLevel::Callable->value => [$methodViolation],
-                RuleLevel::Class_->value => [$classViolation],
+                SymbolLevel::Callable->value => [$methodFinding],
+                SymbolLevel::Class_->value => [$classFinding],
             ],
         );
 
-        // Disable class-level violations via violationCode filtering
+        // Disable class-level findings via code filtering
         $config = new RuleSelection(disabled: ['complexity.class']);
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
         // Only method level should pass through
-        self::assertCount(1, $violations);
-        self::assertSame($methodViolation, $violations[0]);
+        self::assertCount(1, $findings);
+        self::assertSame($methodFinding, $findings[0]);
     }
 
     #[Test]
@@ -517,10 +525,10 @@ final class RuleExecutorTest extends TestCase
     {
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Callable, RuleLevel::Class_],
+            [SymbolLevel::Callable, SymbolLevel::Class_],
             [
-                RuleLevel::Callable->value => [$this->createViolation('complexity', violationCode: 'complexity.callable')],
-                RuleLevel::Class_->value => [$this->createViolation('complexity', violationCode: 'complexity.class')],
+                SymbolLevel::Callable->value => [$this->createFinding('complexity', code: 'complexity.callable')],
+                SymbolLevel::Class_->value => [$this->createFinding('complexity', code: 'complexity.class')],
             ],
         );
 
@@ -530,27 +538,27 @@ final class RuleExecutorTest extends TestCase
         $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     #[Test]
     public function itAppliesOnlyRulesFilterToHierarchicalRule(): void
     {
-        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.callable', level: RuleLevel::Callable);
-        $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
+        $methodFinding = $this->createFinding('complexity', code: 'complexity.callable');
+        $classFinding = $this->createFinding('complexity', code: 'complexity.class');
 
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Callable, RuleLevel::Class_],
+            [SymbolLevel::Callable, SymbolLevel::Class_],
             [
-                RuleLevel::Callable->value => [$methodViolation],
-                RuleLevel::Class_->value => [$classViolation],
+                SymbolLevel::Callable->value => [$methodFinding],
+                SymbolLevel::Class_->value => [$classFinding],
             ],
         );
 
-        // Only enable callable-level violations, addressed by their exact
+        // Only enable callable-level findings, addressed by their exact
         // channel. A channel selector reaches its producer through the channel
         // registry — never by the producer name happening to be a prefix of
         // the selector, which is the reverse match this substrate removes.
@@ -561,28 +569,28 @@ final class RuleExecutorTest extends TestCase
             $provider,
             new RuleSelector(new InMemoryRuleChannelRegistry([
                 'complexity' => [
-                    new ViolationChannel('complexity', 'complexity.callable'),
-                    new ViolationChannel('complexity', 'complexity.class'),
+                    new FindingChannel('complexity.callable'),
+                    new FindingChannel('complexity.class'),
                 ],
             ])),
         );
 
         $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
+        $findings = $executor->execute($context)->published;
 
-        self::assertCount(1, $violations);
-        self::assertSame($methodViolation, $violations[0]);
+        self::assertCount(1, $findings);
+        self::assertSame($methodFinding, $findings[0]);
     }
 
     // --- Namespace exclusion tests ---
 
     #[Test]
-    public function itFiltersViolationsByNamespaceExclusion(): void
+    public function itFiltersFindingsByNamespaceExclusion(): void
     {
-        $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
-        $includedViolation = $this->createViolationWithNamespace('rule1', 'App\\Core');
+        $excludedFinding = $this->createFindingWithNamespace('rule1', 'App\\Tests');
+        $includedFinding = $this->createFindingWithNamespace('rule1', 'App\\Core');
 
-        $rule = $this->createRule('rule1', [$excludedViolation, $includedViolation]);
+        $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
@@ -591,19 +599,51 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $violations = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
-        self::assertCount(1, $violations);
-        self::assertSame($includedViolation, $violations[0]);
+        self::assertCount(1, $findings);
+        self::assertSame($includedFinding, $findings[0]);
+    }
+
+    /**
+     * `produced()` must hold a per-rule `exclude_namespaces` casualty that
+     * `published()` drops — the Ш5e2b precedent (`AUDIT.md`) where an audit
+     * comparing `execute()`'s return value called four such directives
+     * "not deciding anything" because nothing recorded what the rule found
+     * before the ledger ran.
+     *
+     * Killed by collecting `produced` from {@see RuleExecution::published()}'s
+     * `$kept` accumulator instead of from the pre-ledger `$ruleFindings`: the
+     * excluded finding then vanishes from `produced()` too and this assertion
+     * goes red.
+     */
+    #[Test]
+    public function itKeepsAPerRuleNamespaceExclusionCasualtyInProducedButNotInPublished(): void
+    {
+        $excludedFinding = $this->createFindingWithNamespace('rule1', 'App\\Tests');
+        $includedFinding = $this->createFindingWithNamespace('rule1', 'App\\Core');
+
+        $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $executor = $this->createExecution([$rule], $registry);
+
+        $result = $executor->execute($this->createMinimalContext());
+
+        self::assertSame([$excludedFinding, $includedFinding], $result->produced);
+        self::assertSame([$includedFinding], $result->published);
     }
 
     #[Test]
-    public function itFiltersFileSymbolViolationsBySubjectNamespaceExclusion(): void
+    public function itFiltersFileSymbolFindingsBySubjectNamespaceExclusion(): void
     {
-        $excludedViolation = $this->createFileSymbolViolationWithSubjectNamespace('rule1', 'App\\Tests');
-        $includedViolation = $this->createFileSymbolViolationWithSubjectNamespace('rule1', 'App\\Core');
+        $excludedFinding = $this->createFileSymbolFindingWithSubjectNamespace('rule1', 'App\\Tests');
+        $includedFinding = $this->createFileSymbolFindingWithSubjectNamespace('rule1', 'App\\Core');
 
-        $rule = $this->createRule('rule1', [$excludedViolation, $includedViolation]);
+        $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
@@ -612,17 +652,17 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $violations = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
-        self::assertCount(1, $violations);
-        self::assertSame($includedViolation, $violations[0]);
+        self::assertCount(1, $findings);
+        self::assertSame($includedFinding, $findings[0]);
     }
 
     #[Test]
     public function itNamespaceExclusionPassesThroughNullNamespace(): void
     {
-        $fileViolation = $this->createViolation('rule1');
-        $rule = $this->createRule('rule1', [$fileViolation]);
+        $fileFinding = $this->createFinding('rule1');
+        $rule = $this->createRule('rule1', [$fileFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
@@ -631,16 +671,16 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $violations = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
     }
 
     #[Test]
     public function itNamespaceExclusionPassesThroughEmptyNamespace(): void
     {
-        $globalViolation = $this->createViolationWithNamespace('rule1', '');
-        $rule = $this->createRule('rule1', [$globalViolation]);
+        $globalFinding = $this->createFindingWithNamespace('rule1', '');
+        $rule = $this->createRule('rule1', [$globalFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
@@ -649,16 +689,16 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $violations = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
     }
 
     #[Test]
     public function itNamespaceExclusionDoesNotAffectOtherRules(): void
     {
-        $v1 = $this->createViolationWithNamespace('rule1', 'App\\Tests');
-        $v2 = $this->createViolationWithNamespace('rule2', 'App\\Tests');
+        $v1 = $this->createFindingWithNamespace('rule1', 'App\\Tests');
+        $v2 = $this->createFindingWithNamespace('rule2', 'App\\Tests');
 
         $rule1 = $this->createRule('rule1', [$v1]);
         $rule2 = $this->createRule('rule2', [$v2]);
@@ -670,21 +710,21 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule1, $rule2], $registry);
 
-        $violations = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
-        self::assertCount(1, $violations);
-        self::assertSame($v2, $violations[0]);
+        self::assertCount(1, $findings);
+        self::assertSame($v2, $findings[0]);
     }
 
     #[Test]
-    public function itChannelNamespaceExclusionLeavesSiblingViolationCodesActive(): void
+    public function itChannelNamespaceExclusionLeavesSiblingCodesActive(): void
     {
-        $cohesion = $this->createViolationWithNamespace(
+        $cohesion = $this->createFindingWithNamespace(
             'computed.health',
             'App\\Metrics',
             'health.cohesion',
         );
-        $coupling = $this->createViolationWithNamespace(
+        $coupling = $this->createFindingWithNamespace(
             'computed.health',
             'App\\Metrics',
             'health.coupling',
@@ -705,29 +745,29 @@ final class RuleExecutorTest extends TestCase
             $this->computedRuleSelector(),
         );
 
-        $violations = $executor->execute($this->createMinimalContext());
+        $result = $executor->execute($this->createMinimalContext());
 
-        self::assertSame([$coupling], $violations);
+        self::assertSame([$coupling], $result->published);
         self::assertSame(
             [$cohesion],
-            $executor->exclusionStats()->excludedViolations,
+            $result->exclusions->excludedFindings,
         );
     }
 
     #[Test]
     public function itChannelNamespaceExclusionDoesNotHideClassFindingsInThatNamespace(): void
     {
-        $namespaceCohesion = $this->createViolationWithNamespace(
+        $namespaceCohesion = $this->createFindingWithNamespace(
             'computed.health',
             'App\\Metrics',
             'health.cohesion',
         );
-        $classCohesion = new Violation(
+        $classCohesion = new Finding(
             location: new Location(RelativePath::fromString('src/Metrics/Collector.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Metrics', 'Collector'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Metrics', 'Collector'), RelativePath::fromString('src/Metrics/Collector.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'computed.health',
-            violationCode: 'health.cohesion',
+            code: 'health.cohesion',
             message: 'Class cohesion health is low',
             severity: Severity::Warning,
         );
@@ -747,23 +787,23 @@ final class RuleExecutorTest extends TestCase
             $this->computedRuleSelector(),
         );
 
-        self::assertSame([$classCohesion], $executor->execute($this->createMinimalContext()));
+        self::assertSame([$classCohesion], $executor->execute($this->createMinimalContext())->published);
     }
 
     #[Test]
     public function itChannelNamespaceWildcardDoesNotHideProjectFindings(): void
     {
-        $namespaceCohesion = $this->createViolationWithNamespace(
+        $namespaceCohesion = $this->createFindingWithNamespace(
             'computed.health',
             'App\\Metrics',
             'health.cohesion',
         );
-        $projectCohesion = new Violation(
+        $projectCohesion = new Finding(
             location: Location::none(),
             symbolPath: SymbolPath::forProject(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             ruleName: 'computed.health',
-            violationCode: 'health.cohesion',
+            code: 'health.cohesion',
             message: 'Project cohesion health is low',
             severity: Severity::Warning,
         );
@@ -779,22 +819,108 @@ final class RuleExecutorTest extends TestCase
             $this->computedRuleSelector(),
         );
 
-        self::assertSame([$projectCohesion], $executor->execute($this->createMinimalContext()));
+        $result = $executor->execute($this->createMinimalContext());
+
+        self::assertSame([$projectCohesion], $result->published);
         self::assertSame(
             [$namespaceCohesion],
-            $executor->exclusionStats()->excludedViolations,
+            $result->exclusions->excludedFindings,
         );
     }
 
-    // --- Finding-owned excluded-violation capture policy tests ---
+    #[Test]
+    public function itAttributesALedgerExclusionToTheChannelIdentityProducerNotTheFindingsRuleName(): void
+    {
+        // Mirrors the computed-metric family {@see RuleExecution::producerOf()}
+        // describes: one rule instance publishes under $ruleName
+        // 'computed.health', but the channel below has its own exclusion
+        // configuration. A consumer that re-derives "who excluded this" from
+        // Finding::$ruleName instead of reading the recorded attribution
+        // would name the wrong producer.
+        $channel = 'health.cohesion';
+        $excludedFinding = $this->createFindingWithNamespace('computed.health', 'App\\Metrics', $channel);
+        $rule = $this->createRule('computed.health', [$excludedFinding]);
+
+        $registry = new RuleOptionsRegistry();
+        $registry->setConfigFileOptions([$channel => ['exclude_namespaces' => ['App\\Metrics']]]);
+        $registry->configureNamespaceExclusions($channel, ['App\\Metrics']);
+
+        $channelIdentity = self::createStub(ChannelIdentityInterface::class);
+        $channelIdentity->method('producerOf')->willReturn($channel);
+
+        $executor = $this->createExecution([$rule], $registry, channelIdentity: $channelIdentity);
+
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
+
+        self::assertCount(1, $stats->attributions);
+        self::assertSame($channel, $stats->attributions[0]->producerRuleName);
+        self::assertNotSame($excludedFinding->ruleName, $stats->attributions[0]->producerRuleName);
+        self::assertSame(['App\\Metrics'], $stats->attributions[0]->matchedPatterns);
+    }
 
     #[Test]
-    public function itDoesNotCaptureExcludedViolationsWhenCaptureHolderIsDisabled(): void
+    public function itRecordsTheFiringNamespaceChannelSelectorAndPatternInTheAttribution(): void
     {
-        $this->captureExcludedViolations = false;
+        $channel = 'health.cohesion';
+        $cohesion = $this->createFindingWithNamespace('computed.health', 'App\\Metrics', $channel);
+        $rule = $this->createRule('computed.health', [$cohesion]);
 
-        $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
-        $rule = $this->createRule('rule1', [$excludedViolation]);
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setChannelExclusions('computed.health', $channel, ['App\\Metrics']);
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $registry->setConfigFileOptions(['computed.health' => [
+            'exclude_namespace_channels' => [$channel => ['App\\Metrics']],
+        ]]);
+
+        $executor = $this->createExecution([$rule], $registry, $this->computedRuleSelector());
+
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
+
+        self::assertCount(1, $stats->attributions);
+        self::assertSame([], $stats->attributions[0]->matchedPatterns);
+        self::assertSame(
+            [['selector' => $channel, 'pattern' => 'App\\Metrics']],
+            $stats->attributions[0]->matchedChannelPatterns,
+        );
+    }
+
+    /**
+     * Two overlapping `exclude_paths` entries both independently match the
+     * same file. The ledger must record both as fired, not only the one its
+     * own short-circuiting lookup happens to reach first — a consumer
+     * computing "which configured pattern fired nothing" needs every pattern
+     * that could have fired, or it misreports the second as dead.
+     */
+    #[Test]
+    public function itRecordsEveryConfiguredPathPatternThatIndependentlyMatchesTheExcludedFinding(): void
+    {
+        $excludedFinding = $this->createFindingWithFile('rule1', 'src/Excluded/Deep/Foo.php');
+        $rule = $this->createRule('rule1', [$excludedFinding]);
+
+        $pathExclusionProvider = new RulePathExclusionProvider();
+        $pathExclusionProvider->setExclusions('rule1', ['src/Excluded', 'src/Excluded/Deep']);
+
+        $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
+        $registry->setConfigFileOptions(['rule1' => ['exclude_paths' => ['src/Excluded', 'src/Excluded/Deep']]]);
+
+        $executor = $this->createExecution([$rule], $registry);
+
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
+
+        self::assertCount(1, $stats->attributions);
+        self::assertSame(['src/Excluded', 'src/Excluded/Deep'], $stats->attributions[0]->matchedPatterns);
+    }
+
+    // --- Finding-owned excluded-finding capture policy tests ---
+
+    #[Test]
+    public function itDoesNotCaptureExcludedFindingsWhenCaptureHolderIsDisabled(): void
+    {
+        $this->captureExcludedFindings = false;
+
+        $excludedFinding = $this->createFindingWithNamespace('rule1', 'App\\Tests');
+        $rule = $this->createRule('rule1', [$excludedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
@@ -803,23 +929,22 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
         // Counts are collected regardless of the capture toggle.
         self::assertSame(['rule1' => 1], $stats->namespaceExclusionsByRule);
         self::assertSame(1, $stats->totalNamespaceExclusions());
-        // But the heavy Violation objects are not retained when disabled.
-        self::assertSame([], $stats->excludedViolations);
+        // But the heavy Finding objects are not retained when disabled.
+        self::assertSame([], $stats->excludedFindings);
     }
 
     #[Test]
-    public function itDoesNotCaptureExcludedPathViolationsWhenCaptureHolderIsDisabled(): void
+    public function itDoesNotCaptureExcludedPathFindingsWhenCaptureHolderIsDisabled(): void
     {
-        $this->captureExcludedViolations = false;
+        $this->captureExcludedFindings = false;
 
-        $excludedViolation = $this->createViolationWithFile('rule1', 'src/Generated/Model.php');
-        $rule = $this->createRule('rule1', [$excludedViolation]);
+        $excludedFinding = $this->createFindingWithFile('rule1', 'src/Generated/Model.php');
+        $rule = $this->createRule('rule1', [$excludedFinding]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
         $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
@@ -828,21 +953,20 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
         self::assertSame(['rule1' => 1], $stats->pathExclusionsByRule);
         self::assertSame(1, $stats->totalPathExclusions());
-        self::assertSame([], $stats->excludedViolations);
+        self::assertSame([], $stats->excludedFindings);
     }
 
     #[Test]
-    public function itCapturesExcludedViolationsWhenCaptureHolderIsEnabled(): void
+    public function itCapturesExcludedFindingsWhenCaptureHolderIsEnabled(): void
     {
-        $this->captureExcludedViolations = true;
+        $this->captureExcludedFindings = true;
 
-        $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
-        $rule = $this->createRule('rule1', [$excludedViolation]);
+        $excludedFinding = $this->createFindingWithNamespace('rule1', 'App\\Tests');
+        $rule = $this->createRule('rule1', [$excludedFinding]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
@@ -851,10 +975,9 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $executor->execute($this->createMinimalContext());
-        $stats = $executor->exclusionStats();
+        $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
-        self::assertSame([$excludedViolation], $stats->excludedViolations);
+        self::assertSame([$excludedFinding], $stats->excludedFindings);
     }
 
     private function createConfiguredProvider(?RuleSelection $selection = null): RuleOptionsRegistry
@@ -873,10 +996,11 @@ final class RuleExecutorTest extends TestCase
         iterable $rules,
         ?RuleOptionsRegistry $registry = null,
         ?RuleSelector $ruleSelector = null,
+        ?ChannelIdentityInterface $channelIdentity = null,
     ): RuleExecution {
         $registry ??= new RuleOptionsRegistry();
-        if ($this->captureExcludedViolations) {
-            $registry->captureExcludedViolations();
+        if ($this->captureExcludedFindings) {
+            $registry->captureExcludedFindings();
         }
 
         return new RuleExecution(
@@ -884,20 +1008,20 @@ final class RuleExecutorTest extends TestCase
             self::createStub(ProfilerInterface::class),
             $registry,
             $ruleSelector,
+            channelIdentity: $channelIdentity,
         );
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private function createRule(string $name, array $violations, RuleCategory $category = RuleCategory::Complexity): RuleInterface
+    private function createRule(string $name, array $findings): RuleInterface
     {
-        return new class ($name, $violations, $category) implements RuleInterface {
-            /** @param list<Violation> $violations */
+        return new class ($name, $findings) implements RuleInterface {
+            /** @param list<Finding> $findings */
             public function __construct(
                 private readonly string $name,
-                private readonly array $violations,
-                private readonly RuleCategory $category,
+                private readonly array $findings,
             ) {}
 
             public function getName(): string
@@ -908,9 +1032,9 @@ final class RuleExecutorTest extends TestCase
             {
                 return $this->name;
             }
-            public function getCategory(): RuleCategory
+            public static function shape(): ChannelShape
             {
-                return $this->category;
+                return ChannelShape::Occurrence;
             }
             public function requires(): array
             {
@@ -918,7 +1042,7 @@ final class RuleExecutorTest extends TestCase
             }
             public function analyze(AnalysisContext $context): array
             {
-                return $this->violations;
+                return $this->findings;
             }
             public static function getOptionsClass(): string
             {
@@ -936,25 +1060,24 @@ final class RuleExecutorTest extends TestCase
     }
 
     /**
-     * @param list<RuleLevel> $supportedLevels
-     * @param array<string, list<Violation>> $violationsByLevel
+     * @param list<SymbolLevel> $supportedLevels
+     * @param array<string, list<Finding>> $findingsByLevel
      */
     private function createHierarchicalRule(
         string $name,
         array $supportedLevels,
-        array $violationsByLevel,
-        RuleCategory $category = RuleCategory::Complexity,
+        array $findingsByLevel,
     ): RuleInterface {
         // RuleExecution now calls analyze() for all rules uniformly.
-        // Flatten all level violations into a single list for analyze().
-        $allViolations = array_merge(...array_values($violationsByLevel));
+        // Flatten all level findings into a single list for analyze().
+        $allFindings = array_merge(...array_values($findingsByLevel));
 
-        return $this->createRule($name, $allViolations, $category);
+        return $this->createRule($name, $allFindings);
     }
 
-    private function createViolation(string $ruleName, ?string $violationCode = null, ?RuleLevel $level = null): Violation
+    private function createFinding(string $ruleName, ?string $code = null): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(
                 file: RelativePath::fromString('test/file.php'),
                 line: 1,
@@ -962,19 +1085,18 @@ final class RuleExecutorTest extends TestCase
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test/file.php')),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test/file.php'))),
             ruleName: $ruleName,
-            violationCode: $violationCode ?? $ruleName,
+            code: $code ?? $ruleName,
             message: "Violation from $ruleName",
             severity: Severity::Warning,
-            level: $level,
         );
     }
 
-    private function createViolationWithNamespace(
+    private function createFindingWithNamespace(
         string $ruleName,
         string $namespace,
-        ?string $violationCode = null,
-    ): Violation {
-        return new Violation(
+        ?string $code = null,
+    ): Finding {
+        return new Finding(
             location: new Location(
                 file: RelativePath::fromString('test/file.php'),
                 line: 1,
@@ -982,17 +1104,17 @@ final class RuleExecutorTest extends TestCase
             symbolPath: SymbolPath::forNamespace($namespace),
             subject: MetricSubject::aggregate(SymbolPath::forNamespace($namespace)),
             ruleName: $ruleName,
-            violationCode: $violationCode ?? $ruleName,
+            code: $code ?? $ruleName,
             message: "Violation from $ruleName in $namespace",
             severity: Severity::Warning,
         );
     }
 
-    private function createFileSymbolViolationWithSubjectNamespace(string $ruleName, string $namespace): Violation
+    private function createFileSymbolFindingWithSubjectNamespace(string $ruleName, string $namespace): Finding
     {
         $file = RelativePath::fromString('test/file.php');
 
-        return new Violation(
+        return new Finding(
             location: new Location(
                 file: $file,
                 line: 1,
@@ -1000,7 +1122,7 @@ final class RuleExecutorTest extends TestCase
             symbolPath: SymbolPath::forFile($file),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, 'Helper'), $file, DeclarationOrdinal::fromRank(0))),
             ruleName: $ruleName,
-            violationCode: $ruleName,
+            code: $ruleName,
             message: "Violation from $ruleName in $namespace",
             severity: Severity::Warning,
         );
@@ -1009,12 +1131,12 @@ final class RuleExecutorTest extends TestCase
     // --- Path exclusion tests ---
 
     #[Test]
-    public function itFiltersViolationsByExcludePaths(): void
+    public function itFiltersFindingsByExcludePaths(): void
     {
-        $excludedViolation = $this->createViolationWithFile('rule1', 'src/Generated/Model.php');
-        $includedViolation = $this->createViolationWithFile('rule1', 'src/Core/Service.php');
+        $excludedFinding = $this->createFindingWithFile('rule1', 'src/Generated/Model.php');
+        $includedFinding = $this->createFindingWithFile('rule1', 'src/Core/Service.php');
 
-        $rule = $this->createRule('rule1', [$excludedViolation, $includedViolation]);
+        $rule = $this->createRule('rule1', [$excludedFinding, $includedFinding]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
         $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
@@ -1023,17 +1145,17 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $violations = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
-        self::assertCount(1, $violations);
-        self::assertSame($includedViolation, $violations[0]);
+        self::assertCount(1, $findings);
+        self::assertSame($includedFinding, $findings[0]);
     }
 
     #[Test]
     public function itExcludePathsAreIsolatedPerRule(): void
     {
-        $v1 = $this->createViolationWithFile('rule1', 'src/Generated/Model.php');
-        $v2 = $this->createViolationWithFile('rule2', 'src/Generated/Model.php');
+        $v1 = $this->createFindingWithFile('rule1', 'src/Generated/Model.php');
+        $v2 = $this->createFindingWithFile('rule2', 'src/Generated/Model.php');
 
         $rule1 = $this->createRule('rule1', [$v1]);
         $rule2 = $this->createRule('rule2', [$v2]);
@@ -1045,18 +1167,18 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule1, $rule2], $registry);
 
-        $violations = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
-        self::assertCount(1, $violations);
-        self::assertSame($v2, $violations[0]);
+        self::assertCount(1, $findings);
+        self::assertSame($v2, $findings[0]);
     }
 
     #[Test]
     public function itExcludePathsWithEmptyFilePassesThrough(): void
     {
-        $violation = $this->createViolationWithFile('rule1', '');
+        $finding = $this->createFindingWithFile('rule1', '');
 
-        $rule = $this->createRule('rule1', [$violation]);
+        $rule = $this->createRule('rule1', [$finding]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
         $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
@@ -1065,17 +1187,17 @@ final class RuleExecutorTest extends TestCase
         $provider = $this->createConfiguredProvider();
         $executor = $this->createExecution([$rule], $registry);
 
-        $violations = $executor->execute($this->createMinimalContext());
+        $findings = $executor->execute($this->createMinimalContext())->published;
 
-        self::assertCount(1, $violations);
-        self::assertSame($violation, $violations[0]);
+        self::assertCount(1, $findings);
+        self::assertSame($finding, $findings[0]);
     }
 
-    private function createViolationWithFile(string $ruleName, string $file): Violation
+    private function createFindingWithFile(string $ruleName, string $file): Finding
     {
         $symbolPathFile = RelativePath::fromString($file !== '' ? $file : 'unknown');
 
-        return new Violation(
+        return new Finding(
             location: new Location(
                 file: $file !== '' ? RelativePath::fromString($file) : null,
                 line: 1,
@@ -1083,7 +1205,7 @@ final class RuleExecutorTest extends TestCase
             symbolPath: SymbolPath::forFile($symbolPathFile),
             subject: MetricSubject::aggregate(SymbolPath::forFile($symbolPathFile)),
             ruleName: $ruleName,
-            violationCode: $ruleName,
+            code: $ruleName,
             message: "Violation from $ruleName in $file",
             severity: Severity::Warning,
         );
@@ -1099,11 +1221,30 @@ final class RuleExecutorTest extends TestCase
                 }
 
                 return [
-                    new ViolationChannel('computed.health', 'health.complexity'),
-                    new ViolationChannel('computed.health', 'health.cohesion'),
+                    new FindingChannel('health.complexity'),
+                    new FindingChannel('health.cohesion'),
                 ];
             }
         });
+    }
+
+    /**
+     * The enabled subset of the registry, filtered from the one enumeration
+     * {@see RuleExecutionInterface::allRules()} publishes.
+     *
+     * The executor used to answer this itself. Nothing outside these tests ever
+     * asked, so the operation was removed rather than kept as a third
+     * enumeration of "every registered rule" — filtering here is what a real
+     * caller would have had to do anyway.
+     *
+     * @return list<RuleMetadata>
+     */
+    private static function activeRules(RuleExecutionInterface $executor): array
+    {
+        return array_values(array_filter(
+            $executor->allRules(),
+            static fn(RuleMetadata $metadata): bool => $metadata->active,
+        ));
     }
 }
 
@@ -1134,9 +1275,9 @@ final readonly class RuleMetadataFixtureRule implements RuleInterface
     {
         return 'Metadata fixture';
     }
-    public function getCategory(): RuleCategory
+    public static function shape(): ChannelShape
     {
-        return RuleCategory::Complexity;
+        return ChannelShape::Occurrence;
     }
     public function requires(): array
     {

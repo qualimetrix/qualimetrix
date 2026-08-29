@@ -8,12 +8,13 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationMeta;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -72,7 +73,7 @@ final class MetricInvariantTest extends TestCase
             }
 
             $nsBag = self::$repository->get(SymbolPath::forNamespace($ns));
-            $nsCcnSum = $nsBag->get('ccn.sum');
+            $nsCcnSum = $nsBag->get('complexity.ccn.sum');
 
             if ($nsCcnSum === null) {
                 continue;
@@ -87,7 +88,7 @@ final class MetricInvariantTest extends TestCase
 
                 if ($type === SymbolType::Class_) {
                     $classBag = self::$repository->get($symbolInfo->symbolPath);
-                    $classCcn = $classBag->get('ccn.sum');
+                    $classCcn = $classBag->get('complexity.ccn.sum');
                     if ($classCcn !== null) {
                         $classCcnTotal += $classCcn;
                         $hasClasses = true;
@@ -102,7 +103,7 @@ final class MetricInvariantTest extends TestCase
                 foreach (self::$repository->forNamespace($ns) as $symbolInfo) {
                     if ($symbolInfo->symbolPath->getType() === SymbolType::Function_) {
                         $fnBag = self::$repository->get($symbolInfo->symbolPath);
-                        $fnCcn = $fnBag->get('ccn');
+                        $fnCcn = $fnBag->get('complexity.ccn');
                         if ($fnCcn !== null) {
                             $functionCcnTotal += $fnCcn;
                         }
@@ -132,7 +133,7 @@ final class MetricInvariantTest extends TestCase
             }
 
             $parentBag = self::$repository->get(SymbolPath::forNamespace($parentNs));
-            $parentCcnSum = $parentBag->get('ccn.sum');
+            $parentCcnSum = $parentBag->get('complexity.ccn.sum');
 
             if ($parentCcnSum === null) {
                 continue;
@@ -150,13 +151,13 @@ final class MetricInvariantTest extends TestCase
 
                     if ($type === SymbolType::Class_) {
                         $classBag = self::$repository->get($symbolInfo->symbolPath);
-                        $classCcn = $classBag->get('ccn.sum');
+                        $classCcn = $classBag->get('complexity.ccn.sum');
                         if ($classCcn !== null) {
                             $classCcnTotal += $classCcn;
                         }
                     } elseif ($type === SymbolType::Function_) {
                         $fnBag = self::$repository->get($symbolInfo->symbolPath);
-                        $fnCcn = $fnBag->get('ccn');
+                        $fnCcn = $fnBag->get('complexity.ccn');
                         if ($fnCcn !== null) {
                             $functionCcnTotal += $fnCcn;
                         }
@@ -182,13 +183,13 @@ final class MetricInvariantTest extends TestCase
     public function itVerifiesProjectLocSumEqualsFileLocTotal(): void
     {
         $projectBag = self::$repository->get(SymbolPath::forProject());
-        $projectLocSum = $projectBag->get('loc.sum');
+        $projectLocSum = $projectBag->get('size.loc.sum');
         self::assertNotNull($projectLocSum, 'Project loc.sum must exist');
 
         $fileLocTotal = 0;
-        foreach (self::$repository->all(SymbolType::File) as $fileInfo) {
+        foreach (self::$repository->all(SymbolLevel::File) as $fileInfo) {
             $fileBag = self::$repository->get($fileInfo->symbolPath);
-            $fileLoc = $fileBag->get('loc');
+            $fileLoc = $fileBag->get('size.loc');
             if ($fileLoc !== null) {
                 $fileLocTotal += $fileLoc;
             }
@@ -209,13 +210,13 @@ final class MetricInvariantTest extends TestCase
     public function itVerifiesProjectClassCountEqualsFileTotal(): void
     {
         $projectBag = self::$repository->get(SymbolPath::forProject());
-        $projectClassCountSum = $projectBag->get('classCount.sum');
+        $projectClassCountSum = $projectBag->get('size.class-count.sum');
         self::assertNotNull($projectClassCountSum, 'Project classCount.sum must exist');
 
         $fileClassCountTotal = 0;
-        foreach (self::$repository->all(SymbolType::File) as $fileInfo) {
+        foreach (self::$repository->all(SymbolLevel::File) as $fileInfo) {
             $fileBag = self::$repository->get($fileInfo->symbolPath);
-            $fileClassCount = $fileBag->get('classCount');
+            $fileClassCount = $fileBag->get('size.class-count');
             if ($fileClassCount !== null) {
                 $fileClassCountTotal += $fileClassCount;
             }
@@ -242,7 +243,7 @@ final class MetricInvariantTest extends TestCase
             }
 
             $nsBag = self::$repository->get(SymbolPath::forNamespace($ns));
-            $nsCcnMax = $nsBag->get('ccn.max');
+            $nsCcnMax = $nsBag->get('complexity.ccn.max');
 
             if ($nsCcnMax === null) {
                 continue;
@@ -261,14 +262,14 @@ final class MetricInvariantTest extends TestCase
                     // ccn.max at namespace = max of raw method/function CCN values
                     if ($type === SymbolType::Method) {
                         $methodBag = self::$repository->get($symbolInfo->symbolPath);
-                        $methodCcn = $methodBag->get('ccn');
+                        $methodCcn = $methodBag->get('complexity.ccn');
                         if ($methodCcn !== null) {
                             $sourceMaxCcn = max($sourceMaxCcn, $methodCcn);
                             $hasSources = true;
                         }
                     } elseif ($type === SymbolType::Function_) {
                         $fnBag = self::$repository->get($symbolInfo->symbolPath);
-                        $fnCcn = $fnBag->get('ccn');
+                        $fnCcn = $fnBag->get('complexity.ccn');
                         if ($fnCcn !== null) {
                             $sourceMaxCcn = max($sourceMaxCcn, $fnCcn);
                             $hasSources = true;
@@ -300,7 +301,7 @@ final class MetricInvariantTest extends TestCase
             }
 
             $nsBag = self::$repository->get(SymbolPath::forNamespace($ns));
-            $symbolMethodCount = $nsBag->get(AggregationMeta::SYMBOL_METHOD_COUNT);
+            $symbolMethodCount = $nsBag->get(MetricName::SIZE_SYMBOL_METHOD_COUNT);
 
             if ($symbolMethodCount === null) {
                 continue;
@@ -364,7 +365,7 @@ final class MetricInvariantTest extends TestCase
             }
 
             $nsBag = self::$repository->get(SymbolPath::forNamespace($ns));
-            $symbolClassCount = $nsBag->get(AggregationMeta::SYMBOL_CLASS_COUNT);
+            $symbolClassCount = $nsBag->get(MetricName::SIZE_SYMBOL_CLASS_COUNT);
 
             if ($symbolClassCount === null) {
                 continue;
@@ -417,12 +418,12 @@ final class MetricInvariantTest extends TestCase
     public function itVerifiesProjectSymbolCountEqualsLeafNsTotal(): void
     {
         $projectBag = self::$repository->get(SymbolPath::forProject());
-        $projectSymbolClassCount = $projectBag->get(AggregationMeta::SYMBOL_CLASS_COUNT);
+        $projectSymbolClassCount = $projectBag->get(MetricName::SIZE_SYMBOL_CLASS_COUNT);
         self::assertNotNull($projectSymbolClassCount, 'Project symbolClassCount must exist');
 
         // Count actual Class_ symbols in the repository
         $actualClassCount = 0;
-        foreach (self::$repository->all(SymbolType::Class_) as $_) {
+        foreach (self::$repository->all(SymbolLevel::Class_) as $_) {
             $actualClassCount++;
         }
 
@@ -437,7 +438,7 @@ final class MetricInvariantTest extends TestCase
         // Each leaf namespace's symbolClassCount should equal its direct Class_ symbols only.
         foreach (self::$namespaceTree->getLeaves() as $leafNs) {
             $leafBag = self::$repository->get(SymbolPath::forNamespace($leafNs));
-            $leafClassCount = $leafBag->get(AggregationMeta::SYMBOL_CLASS_COUNT);
+            $leafClassCount = $leafBag->get(MetricName::SIZE_SYMBOL_CLASS_COUNT);
 
             if ($leafClassCount === null) {
                 continue;
@@ -475,8 +476,8 @@ final class MetricInvariantTest extends TestCase
             }
 
             $nsBag = self::$repository->get(SymbolPath::forNamespace($ns));
-            $ccnAvg = $nsBag->get('ccn.avg');
-            $ccnSum = $nsBag->get('ccn.sum');
+            $ccnAvg = $nsBag->get('complexity.ccn.avg');
+            $ccnSum = $nsBag->get('complexity.ccn.sum');
 
             if ($ccnAvg === null || $ccnSum === null) {
                 continue;
@@ -491,12 +492,12 @@ final class MetricInvariantTest extends TestCase
                     $type = $symbolInfo->symbolPath->getType();
                     if ($type === SymbolType::Method) {
                         $methodBag = self::$repository->get($symbolInfo->symbolPath);
-                        if ($methodBag->get('ccn') !== null) {
+                        if ($methodBag->get('complexity.ccn') !== null) {
                             $methodCount++;
                         }
                     } elseif ($type === SymbolType::Function_) {
                         $fnBag = self::$repository->get($symbolInfo->symbolPath);
-                        if ($fnBag->get('ccn') !== null) {
+                        if ($fnBag->get('complexity.ccn') !== null) {
                             $methodCount++;
                         }
                     }
@@ -538,8 +539,8 @@ final class MetricInvariantTest extends TestCase
 
         foreach ($symbolPaths as $symbolPath) {
             $bag = self::$repository->get($symbolPath);
-            $ccnP95 = $bag->get('ccn.p95');
-            $ccnMax = $bag->get('ccn.max');
+            $ccnP95 = $bag->get('complexity.ccn.p95');
+            $ccnMax = $bag->get('complexity.ccn.max');
 
             if ($ccnP95 === null || $ccnMax === null) {
                 continue;
@@ -572,8 +573,8 @@ final class MetricInvariantTest extends TestCase
             }
 
             $nsBag = self::$repository->get(SymbolPath::forNamespace($ns));
-            $nsCe = $nsBag->get('ce');
-            $nsCeSum = $nsBag->get('ce.sum');
+            $nsCe = $nsBag->get('coupling.ce');
+            $nsCeSum = $nsBag->get('coupling.ce.sum');
 
             if ($nsCe === null || $nsCeSum === null) {
                 continue;
@@ -607,18 +608,18 @@ final class MetricInvariantTest extends TestCase
             $nsBag = self::$repository->get(SymbolPath::forNamespace($ns));
 
             // Check that LCOM is aggregated via avg, NOT sum
-            if ($nsBag->has('lcom.avg')) {
+            if ($nsBag->has('cohesion.lcom.avg')) {
                 self::assertFalse(
-                    $nsBag->has('lcom.sum'),
+                    $nsBag->has('cohesion.lcom.sum'),
                     "NS '{$ns}': lcom.sum must NOT exist — LCOM is non-additive and should use avg strategy",
                 );
                 $checked = true;
             }
 
             // Check that TCC is aggregated via avg, NOT sum
-            if ($nsBag->has('tcc.avg')) {
+            if ($nsBag->has('cohesion.tcc.avg')) {
                 self::assertFalse(
-                    $nsBag->has('tcc.sum'),
+                    $nsBag->has('cohesion.tcc.sum'),
                     "NS '{$ns}': tcc.sum must NOT exist — TCC is non-additive and should use avg strategy",
                 );
                 $checked = true;

@@ -116,10 +116,10 @@ PHP);
         ));
 
         self::assertCount(1, $globalNamespace);
-        self::assertSame(0, $globalNamespace[0]['metrics']['classCount.sum']);
-        self::assertSame(0, $globalNamespace[0]['metrics']['abstractClassCount.sum']);
-        self::assertSame(1, $globalNamespace[0]['metrics']['classCount.count']);
-        self::assertGreaterThan(0, $globalNamespace[0]['metrics']['loc.sum']);
+        self::assertSame(0, $globalNamespace[0]['metrics']['size.class-count.sum']);
+        self::assertSame(0, $globalNamespace[0]['metrics']['size.abstract-class-count.sum']);
+        self::assertSame(1, $globalNamespace[0]['metrics']['size.class-count.count']);
+        self::assertGreaterThan(0, $globalNamespace[0]['metrics']['size.loc.sum']);
     }
 
     #[Test]

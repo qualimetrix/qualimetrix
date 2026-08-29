@@ -16,8 +16,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 #[CoversClass(HalsteadCollector::class)]
@@ -43,13 +43,13 @@ final class HalsteadCollectorTest extends TestCase
     {
         $provides = $this->collector->provides();
 
-        self::assertContains('halstead.volume', $provides);
-        self::assertContains('halstead.difficulty', $provides);
-        self::assertContains('halstead.effort', $provides);
-        self::assertContains('halstead.bugs', $provides);
-        self::assertContains('halstead.time', $provides);
+        self::assertContains('maintainability.halstead.volume', $provides);
+        self::assertContains('maintainability.halstead.difficulty', $provides);
+        self::assertContains('maintainability.halstead.effort', $provides);
+        self::assertContains('maintainability.halstead.bugs', $provides);
+        self::assertContains('maintainability.halstead.time', $provides);
         self::assertNotContains('methodLoc', $provides);
-        self::assertNotContains('methodStatementCount', $provides);
+        self::assertNotContains('size.method-statement-count', $provides);
     }
 
     #[Test]
@@ -70,11 +70,11 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0.0, $metrics->get('halstead.volume:App\Test::empty'));
-        self::assertSame(0.0, $metrics->get('halstead.difficulty:App\Test::empty'));
-        self::assertSame(0.0, $metrics->get('halstead.effort:App\Test::empty'));
-        self::assertSame(0.0, $metrics->get('halstead.bugs:App\Test::empty'));
-        self::assertSame(0.0, $metrics->get('halstead.time:App\Test::empty'));
+        self::assertSame(0.0, $metrics->get('maintainability.halstead.volume:App\Test::empty'));
+        self::assertSame(0.0, $metrics->get('maintainability.halstead.difficulty:App\Test::empty'));
+        self::assertSame(0.0, $metrics->get('maintainability.halstead.effort:App\Test::empty'));
+        self::assertSame(0.0, $metrics->get('maintainability.halstead.bugs:App\Test::empty'));
+        self::assertSame(0.0, $metrics->get('maintainability.halstead.time:App\Test::empty'));
     }
 
     #[Test]
@@ -99,7 +99,7 @@ PHP;
         // Operators: return, +  (2 unique, 2 total)
         // Operands: $a, $b (2 unique, 2 total)
         // Volume should be > 0
-        $volume = $metrics->get('halstead.volume:App\Test::add');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Test::add');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -170,11 +170,11 @@ PHP;
 
         // Operators: =, +, =, *, return, - (4 unique types: =, +, *, return, -)
         // Operands: $result, $x, $y, 2, 1 (5 unique)
-        $volume = $metrics->get('halstead.volume:App\Calculator::calculate');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Calculator::calculate');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
 
-        $difficulty = $metrics->get('halstead.difficulty:App\Calculator::calculate');
+        $difficulty = $metrics->get('maintainability.halstead.difficulty:App\Calculator::calculate');
         self::assertIsFloat($difficulty);
         self::assertGreaterThan(0, $difficulty);
     }
@@ -204,7 +204,7 @@ PHP;
 
         // Operators: if, >, return, else, return (5 total, 3 unique types)
         // Operands: $x, 0, 'positive', 'non-positive' (4 unique)
-        $volume = $metrics->get('halstead.volume:App\Flow::check');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Flow::check');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -230,7 +230,7 @@ PHP;
 
         // Operators: return, ->, -> (3 total, 2 unique)
         // Operands: $obj, getData, transform (3 unique)
-        $volume = $metrics->get('halstead.volume:App\Service::process');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Service::process');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -256,7 +256,7 @@ PHP;
 
         // Operators: return, &&, ||, ! (4 unique, 4 total)
         // Operands: $a, $b, $c (3 unique, 3 total)
-        $volume = $metrics->get('halstead.volume:App\Logic::check');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Logic::check');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -282,7 +282,7 @@ PHP;
 
         // Operators: return, new (2 unique)
         // Operands: stdClass (1 unique)
-        $volume = $metrics->get('halstead.volume:App\Factory::create');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Factory::create');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -308,7 +308,7 @@ PHP;
 
         // Operators: return, [] (2 unique)
         // Operands: $arr, $index (2 unique)
-        $volume = $metrics->get('halstead.volume:App\ArrayOps::get');
+        $volume = $metrics->get('maintainability.halstead.volume:App\ArrayOps::get');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -334,7 +334,7 @@ PHP;
 
         // Operators: return, >, ?: (3 unique)
         // Operands: $a, $b (2 unique, 4 uses)
-        $volume = $metrics->get('halstead.volume:App\Ternary::max');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Ternary::max');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -360,7 +360,7 @@ PHP;
 
         // Operators: return, ?? (2 unique)
         // Operands: $value, 'default' (2 unique)
-        $volume = $metrics->get('halstead.volume:App\NullCoalesce::getOrDefault');
+        $volume = $metrics->get('maintainability.halstead.volume:App\NullCoalesce::getOrDefault');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -387,10 +387,10 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Main method metrics
-        self::assertNotNull($metrics->get('halstead.volume:App\WithClosure::withCallback'));
+        self::assertNotNull($metrics->get('maintainability.halstead.volume:App\WithClosure::withCallback'));
 
         // Closure metrics
-        $closureVolume = $metrics->get('halstead.volume:App\WithClosure::{closure#1}');
+        $closureVolume = $metrics->get('maintainability.halstead.volume:App\WithClosure::{closure#1}');
         self::assertIsFloat($closureVolume);
         self::assertGreaterThan(0, $closureVolume);
     }
@@ -415,7 +415,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Arrow function metrics
-        $arrowVolume = $metrics->get('halstead.volume:App\WithArrow::{closure#1}');
+        $arrowVolume = $metrics->get('maintainability.halstead.volume:App\WithArrow::{closure#1}');
         self::assertIsFloat($arrowVolume);
         self::assertGreaterThan(0, $arrowVolume);
     }
@@ -436,7 +436,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        $volume = $metrics->get('halstead.volume:App\Utils\helper');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Utils\helper');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -469,11 +469,11 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        $volume = $metrics->get('halstead.volume:App\Service\ComplexService::process');
-        $difficulty = $metrics->get('halstead.difficulty:App\Service\ComplexService::process');
-        $effort = $metrics->get('halstead.effort:App\Service\ComplexService::process');
-        $bugs = $metrics->get('halstead.bugs:App\Service\ComplexService::process');
-        $time = $metrics->get('halstead.time:App\Service\ComplexService::process');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Service\ComplexService::process');
+        $difficulty = $metrics->get('maintainability.halstead.difficulty:App\Service\ComplexService::process');
+        $effort = $metrics->get('maintainability.halstead.effort:App\Service\ComplexService::process');
+        $bugs = $metrics->get('maintainability.halstead.bugs:App\Service\ComplexService::process');
+        $time = $metrics->get('maintainability.halstead.time:App\Service\ComplexService::process');
 
         // Complex method should have higher values
         self::assertGreaterThan(50, $volume);
@@ -524,8 +524,8 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         // Should only contain metrics from second file
-        self::assertNull($metrics->get('halstead.volume:App\First::method'));
-        self::assertNotNull($metrics->get('halstead.volume:App\Second::other'));
+        self::assertNull($metrics->get('maintainability.halstead.volume:App\First::method'));
+        self::assertNotNull($metrics->get('maintainability.halstead.volume:App\Second::other'));
     }
 
     #[Test]
@@ -536,11 +536,11 @@ PHP;
         self::assertCount(5, $definitions);
 
         $metricNames = array_map(fn($d) => $d->name, $definitions);
-        self::assertContains('halstead.volume', $metricNames);
-        self::assertContains('halstead.difficulty', $metricNames);
-        self::assertContains('halstead.effort', $metricNames);
-        self::assertContains('halstead.bugs', $metricNames);
-        self::assertContains('halstead.time', $metricNames);
+        self::assertContains('maintainability.halstead.volume', $metricNames);
+        self::assertContains('maintainability.halstead.difficulty', $metricNames);
+        self::assertContains('maintainability.halstead.effort', $metricNames);
+        self::assertContains('maintainability.halstead.bugs', $metricNames);
+        self::assertContains('maintainability.halstead.time', $metricNames);
 
         // Check collected at level
         foreach ($definitions as $def) {
@@ -589,9 +589,9 @@ PHP;
 
         $method1 = $methodsWithMetrics[0];
         self::assertSame('declaration:callable:App\\Test::method1@src/Test.php', $method1->declarationPath->toCanonical());
-        self::assertNotNull($method1->metrics->get('halstead.volume'));
+        self::assertNotNull($method1->metrics->get('maintainability.halstead.volume'));
         self::assertFalse($method1->metrics->has('methodLoc'));
-        self::assertFalse($method1->metrics->has('methodStatementCount'));
+        self::assertFalse($method1->metrics->has('size.method-statement-count'));
     }
 
     #[Test]
@@ -613,7 +613,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        $volume = $metrics->get('halstead.volume:App\Caster::cast');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Caster::cast');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -641,7 +641,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        $volume = $metrics->get('halstead.volume:App\Counter::count');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Counter::count');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -669,7 +669,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        $volume = $metrics->get('halstead.volume:App\Compound::accumulate');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Compound::accumulate');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -697,7 +697,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        $volume = $metrics->get('halstead.volume:App\Exceptional::risky');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Exceptional::risky');
         self::assertIsFloat($volume);
         self::assertGreaterThan(0, $volume);
     }
@@ -731,7 +731,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        $volume = $metrics->get('halstead.volume:App\Looper::loop');
+        $volume = $metrics->get('maintainability.halstead.volume:App\Looper::loop');
         self::assertIsFloat($volume);
         self::assertGreaterThan(50, $volume); // Complex method
     }
@@ -774,23 +774,23 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // simple should have low volume (just return + literal)
-        $simpleVolume = $metrics->get('halstead.volume:App\Outer::simple');
+        $simpleVolume = $metrics->get('maintainability.halstead.volume:App\Outer::simple');
         self::assertIsFloat($simpleVolume);
         self::assertGreaterThan(0, $simpleVolume);
 
         // factory should have minimal volume — anonymous class operators/operands should NOT leak
-        $factoryVolume = $metrics->get('halstead.volume:App\Outer::factory');
+        $factoryVolume = $metrics->get('maintainability.halstead.volume:App\Outer::factory');
         self::assertIsFloat($factoryVolume);
         // factory only has 'return' and 'new' — should be less than innerComplex would be
         self::assertLessThan(30, $factoryVolume);
 
         // afterAnonymous should work correctly
-        $afterVolume = $metrics->get('halstead.volume:App\Outer::afterAnonymous');
+        $afterVolume = $metrics->get('maintainability.halstead.volume:App\Outer::afterAnonymous');
         self::assertIsFloat($afterVolume);
         self::assertGreaterThan(0, $afterVolume);
 
         // Anonymous class methods should NOT appear in metrics
-        self::assertNull($metrics->get('halstead.volume:App\Outer::innerComplex'));
+        self::assertNull($metrics->get('maintainability.halstead.volume:App\Outer::innerComplex'));
     }
 
     /**
@@ -827,7 +827,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // outerMethod should have low volume — closure inside anonymous class is ignored
-        $outerVolume = $metrics->get('halstead.volume:App\Outer::outerMethod');
+        $outerVolume = $metrics->get('maintainability.halstead.volume:App\Outer::outerMethod');
         self::assertIsFloat($outerVolume);
         // Should be small (just 'return', 'new', num:1)
         self::assertLessThan(30, $outerVolume);

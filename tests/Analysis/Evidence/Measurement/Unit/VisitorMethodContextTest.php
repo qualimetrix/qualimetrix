@@ -213,10 +213,10 @@ final class VisitorMethodContextTest extends TestCase
         self::assertSame(1, $duplicate->ordinal->value);
         self::assertSame(['App\Thing::run' => 2], $context->projectLogicalMetricMap(['first' => 1, 'second' => 2], ['first' => $scope, 'second' => $duplicate]));
 
-        $callable = $context->createCallableWithMetrics($scope, RelativePath::fromString('src/Thing.php'), MetricBag::fromArray(['ccn' => 2]));
+        $callable = $context->createCallableWithMetrics($scope, RelativePath::fromString('src/Thing.php'), MetricBag::fromArray(['complexity.ccn' => 2]));
         self::assertSame('declaration:callable:App\Thing::run@src/Thing.php', $callable->declarationPath->toCanonical());
         self::assertSame('declaration:class:App\Thing@src/Thing.php', $callable->lexicalClassContext?->toCanonical());
-        self::assertSame(2, $callable->metrics->get('ccn'));
+        self::assertSame(2, $callable->metrics->get('complexity.ccn'));
     }
 
     #[Test]

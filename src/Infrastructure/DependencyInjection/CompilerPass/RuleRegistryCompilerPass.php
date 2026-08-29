@@ -7,7 +7,6 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
-use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -44,11 +43,6 @@ final class RuleRegistryCompilerPass implements CompilerPassInterface
         $this->validateNoDuplicateNames($ruleClasses);
 
         $definition->setArgument('$ruleClasses', $ruleClasses);
-
-        if ($container->hasDefinition(KnownRuleNamesAdapter::class)) {
-            $container->getDefinition(KnownRuleNamesAdapter::class)
-                ->setArgument('$ruleClasses', $ruleClasses);
-        }
     }
 
     /**

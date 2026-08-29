@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Derived collector that calculates Maintainability Index.
@@ -57,10 +57,10 @@ final class MaintainabilityIndexCollector implements DerivedCollectorInterface, 
 
     public function calculate(MetricBag $sourceBag): MetricBag
     {
-        // MI is only meaningful at method level where Halstead metrics exist.
+        // MI is only meaningful at callable level where Halstead metrics exist.
         // At class level, TypeCoverage creates FQN entries without Halstead data,
         // causing MI to be calculated with volume=0 → MI=100 (false perfect score).
-        $volume = $sourceBag->get(MetricName::HALSTEAD_VOLUME);
+        $volume = $sourceBag->get(MetricName::MAINTAINABILITY_HALSTEAD_VOLUME);
         if ($volume === null) {
             return new MetricBag();
         }

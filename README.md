@@ -32,13 +32,14 @@ bin/qmx hook:install
 
 ## Output Formats
 
-| Format       | Use Case                 |
-| ------------ | ------------------------ |
-| `text`       | CLI, human-readable      |
-| `json`       | CI/CD integration        |
-| `checkstyle` | Jenkins, SonarQube       |
-| `sarif`      | GitHub Security, VS Code |
-| `gitlab`     | GitLab Code Quality      |
+| Format       | Use Case                                                                             |
+| ------------ | ------------------------------------------------------------------------------------ |
+| `text`       | CLI, human-readable                                                                  |
+| `json`       | CI/CD integration                                                                    |
+| `checkstyle` | Jenkins, SonarQube                                                                   |
+| `sarif`      | GitHub Security, VS Code                                                             |
+| `gitlab`     | GitLab Code Quality                                                                  |
+| `suppressed` | Auditing what a run held back and why (`--show-suppressed` for a partial prose view) |
 
 ## Configuration
 

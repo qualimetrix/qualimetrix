@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
@@ -33,6 +33,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * has produced its findings, which is after every rule — including this one —
  * has finished. So Run asks twice, and the second answer is assembled here
  * rather than at the call site, so the channel identity stays with its owner.
+ *
+ * @qmx-threshold coupling.instability warning=0.89 -- Ca=2, raw Ce=15 (I=0.882): this class had one consumer (its owning rule) until `InlineDirectiveValidator` became a second; `min_afferent: 2` never measured it before that, so the fifteen outgoing edges are not new, only now counted. The actual fix is splitting directive storage from finding-building, which is not done here — it is recorded as debt in the rule-vocabulary plan's Ш5 "Debt Ш3" section, not accepted as the permanent shape of this class. Raw Ce=15 gets one-edge headroom: at Ce=16, I=0.889, still under 0.89; at Ce=17, I=0.895, over it.
  */
 final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
 {
@@ -51,11 +53,20 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      */
     private ?Severity $usageReportingSeverity = null;
 
+    /**
+     * The shared refusal for a `channel:level` pair. Built here rather than
+     * injected, mirroring {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability}:
+     * a pure function of the same universe, with no lifecycle of its own.
+     */
+    private readonly ChannelLevelAddressing $levels;
+
     public function __construct(
         private readonly ChannelIdentityInterface $identity,
         private readonly RuleSelector $ruleSelector,
         private readonly RuleConfigurationInterface $ruleConfiguration,
-    ) {}
+    ) {
+        $this->levels = new ChannelLevelAddressing($identity);
+    }
 
     public function prepare(array $suppressions, array $thresholdOverrides, array $thresholdDiagnostics): void
     {
@@ -155,7 +166,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         $this->usageReportingSeverity = $severity;
     }
 
-    public function auditDirectiveUsage(array $violations): array
+    public function auditDirectiveUsage(array $findings): array
     {
         $severity = $this->usageReportingSeverity;
         if ($severity === null) {
@@ -163,7 +174,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         }
 
         $selection = $this->ruleConfiguration->selection();
-        $findings = [];
+        $stale = [];
 
         foreach ($this->suppressions as $file => $fileSuppressions) {
             foreach (self::groupByAuthoredSite($fileSuppressions) as $group) {
@@ -172,15 +183,15 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
                     continue;
                 }
 
-                if (self::anyOfTheGroupFired($file, $group, $violations)) {
+                if (self::anyOfTheGroupFired($file, $group, $findings)) {
                     continue;
                 }
 
-                $findings[] = self::staleFinding(RelativePath::fromString($file), $directive, $severity);
+                $stale[] = self::staleFinding(RelativePath::fromString($file), $directive, $severity);
             }
         }
 
-        return $findings;
+        return $stale;
     }
 
     /**
@@ -213,12 +224,12 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      * silenced.
      *
      * @param list<Suppression> $group
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
-    private static function anyOfTheGroupFired(string $file, array $group, array $violations): bool
+    private static function anyOfTheGroupFired(string $file, array $group, array $findings): bool
     {
         foreach ($group as $suppression) {
-            if (SuppressionFilter::suppressesAny($file, $suppression, $violations)) {
+            if (SuppressionFilter::suppressesAny($file, $suppression, $findings)) {
                 return true;
             }
         }
@@ -242,15 +253,15 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         RelativePath $path,
         Suppression $suppression,
         Severity $severity,
-    ): Violation {
+    ): Finding {
         $subject = MetricSubject::aggregate(SymbolPath::forFile($path));
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, $suppression->line, precise: true),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: self::UNUSED_DIRECTIVE_NAME,
-            violationCode: self::UNUSED_DIRECTIVE_NAME,
+            code: self::UNUSED_DIRECTIVE_NAME,
             message: \sprintf(
                 'Suppression "%s" matched nothing in this run — the finding it silences is gone.',
                 $suppression->target(),
@@ -282,6 +293,13 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      * consulted, and reporting it stale would mean reporting the file's
      * cleanliness as a defect.
      *
+     * Nor does accounting start for a directive whose pair
+     * {@see ChannelLevelAddressing} already refused: `coupling.cbo:project`,
+     * naming a level `coupling.cbo` never reports at, can never be silenced
+     * by any finding, so calling it stale on top of the
+     * `annotation.unresolved-directive` {@see DirectiveAddressability} already
+     * raised would answer one mistake twice.
+     *
      * @param list<string> $only
      * @param list<string> $disabled
      */
@@ -292,8 +310,12 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
             return false;
         }
 
-        foreach ($this->addressedViolationCodes($suppression) as $violationCode) {
-            $producer = $this->identity->producerOf($violationCode);
+        if ($this->levels->problemWith((string) $target) !== null) {
+            return false;
+        }
+
+        foreach ($this->addressedCodes($suppression) as $code) {
+            $producer = $this->identity->producerOf($code);
             if ($producer === null) {
                 continue;
             }
@@ -310,40 +332,20 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
     }
 
     /**
-     * The violation codes a target addresses, whichever spelling it used.
-     *
-     * The explicit `ruleName#violationCode` pair needs no expansion — it
-     * already names one channel — while the one-part form has to be resolved
-     * against the universe before its producers can be consulted.
+     * The finding codes a target addresses.
      *
      * @return list<string>
      */
-    private function addressedViolationCodes(Suppression $suppression): array
+    private function addressedCodes(Suppression $suppression): array
     {
-        $target = $suppression->target();
-        $pair = $target->exactChannel();
-        if ($pair !== null) {
-            foreach ($this->identity->channels() as $channel) {
-                if ($channel->equals($pair)) {
-                    return [$channel->violationCode];
-                }
-            }
-
-            return [];
-        }
-
-        if ($target->looksLikeChannelPair()) {
-            return [];
-        }
-
-        $selector = NameSelector::tryParse((string) $target);
+        $selector = $suppression->target()->selector();
         if ($selector === null) {
             return [];
         }
 
         $codes = [];
-        foreach ($this->identity->expand($selector) as $channel) {
-            $codes[] = $channel->violationCode;
+        foreach ($this->identity->expand($selector->channel()) as $channel) {
+            $codes[] = $channel->code;
         }
 
         return $codes;

@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding;
 
+use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -22,193 +26,262 @@ use Traversable;
  * Default implementation of RuleExecutionInterface.
  *
  * Filters rules at runtime based on configuration (disabled_rules, only_rules)
- * and executes only active rules. Filters individual violations by violationCode.
+ * and executes only active rules. Filters individual findings by code.
  */
 final class RuleExecution implements RuleExecutionInterface
 {
     /** @var list<RuleInterface> */
     private readonly array $allRules;
 
+    /** @var array<string, list<ConfigurationValidatorInterface>> producer rule name => its validators */
+    private readonly array $validatorsByProducer;
+
     private readonly RuleSelector $ruleSelector;
 
-    private RuleExclusionStats $lastExclusionStats;
+    private readonly FindingExclusionLedger $exclusions;
+
+    /** @var list<ProducerDeclaration> */
+    private readonly array $classlessProducers;
 
     /**
      * @param iterable<RuleInterface> $rules All registered rules
+     * @param iterable<ConfigurationValidatorInterface> $configurationValidators Every registered validator; each
+     *                                                                           runs in its producer rule's slot, see {@see execute()}
+     * @param iterable<ProducerDeclaration> $classlessProducers Producers a capability owns without a rule
+     *                                                          class of their own; they are part of every
+     *                                                          "registered rule" answer and of none of the
+     *                                                          execution ones, because there is nothing to run
      */
     public function __construct(
         iterable $rules,
         private readonly ProfilerInterface $profiler,
         private readonly RuleConfigurationInterface $ruleOptionsRegistry,
         ?RuleSelector $ruleSelector = null,
+        iterable $configurationValidators = [],
+        iterable $classlessProducers = [],
+        private readonly ?ChannelIdentityInterface $channelIdentity = null,
     ) {
+        $this->classlessProducers = $classlessProducers instanceof Traversable
+            ? iterator_to_array($classlessProducers, false)
+            : array_values($classlessProducers);
         $this->allRules = $rules instanceof Traversable
             ? iterator_to_array($rules, false)
             : array_values($rules);
-        $this->lastExclusionStats = new RuleExclusionStats();
+        $this->validatorsByProducer = self::groupByProducer($configurationValidators);
         $this->ruleSelector = $ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry());
+        $this->exclusions = new FindingExclusionLedger($ruleOptionsRegistry);
     }
 
-    public function execute(AnalysisContext $context): array
+    public function execute(AnalysisContext $context): RuleExecutionResult
     {
-        $violations = [];
+        $produced = [];
+        $published = [];
         $profiler = $this->profiler;
 
-        /** @var array<string, int> $namespaceExclusionCounts */
-        $namespaceExclusionCounts = [];
-        /** @var array<string, int> $pathExclusionCounts */
-        $pathExclusionCounts = [];
-        /** @var list<Violation> $excludedViolations */
-        $excludedViolations = [];
-
-        $captureExcludedViolations = $this->ruleOptionsRegistry->capturesExcludedViolations();
+        $this->exclusions->begin();
 
         $selection = $this->ruleOptionsRegistry->selection();
         foreach ($this->activeRuleInstances($selection) as $rule) {
-            $spanName = 'rule.' . $rule->getName();
-            $profiler->start($spanName, 'rules');
-            $ruleViolations = $rule->analyze($context);
-            $profiler->stop($spanName);
-
             $ruleName = $rule->getName();
 
-            // Filter violations from excluded namespaces (per-rule)
-            $kept = [];
-            foreach ($ruleViolations as $violation) {
-                if ($this->isNamespaceExcluded($ruleName, $violation)) {
-                    $namespaceExclusionCounts[$ruleName] = ($namespaceExclusionCounts[$ruleName] ?? 0) + 1;
-                    if ($captureExcludedViolations) {
-                        $excludedViolations[] = $violation;
-                    }
-
-                    continue;
-                }
-
-                $kept[] = $violation;
+            // One span, and the validators run inside it: a configuration
+            // validator occupies its producer's slot in the execution order,
+            // which is what keeps the position of its findings — and therefore
+            // the order of every report that does not sort — exactly where it
+            // was while the diagnostics lived in the rule class.
+            $spanName = 'rule.' . $ruleName;
+            $profiler->start($spanName, 'rules');
+            $ruleFindings = $rule->analyze($context);
+            foreach ($this->validatorsByProducer[$ruleName] ?? [] as $validator) {
+                $ruleFindings = [...$ruleFindings, ...$this->validate($validator, $context)];
             }
-            $ruleViolations = $kept;
+            $profiler->stop($spanName);
 
-            // Filter violations from excluded paths (per-rule)
-            $kept = [];
-            foreach ($ruleViolations as $violation) {
-                if (
-                    $violation->location->file !== null
-                    && $this->ruleOptionsRegistry->isPathExcluded($ruleName, $violation->location->file)
-                ) {
-                    $pathExclusionCounts[$ruleName] = ($pathExclusionCounts[$ruleName] ?? 0) + 1;
-                    if ($captureExcludedViolations) {
-                        $excludedViolations[] = $violation;
-                    }
+            $produced = [...$produced, ...$ruleFindings];
+            $published = [...$published, ...$this->published($ruleName, $ruleFindings, $selection)];
+        }
 
-                    continue;
-                }
+        return new RuleExecutionResult($produced, $published, $this->exclusions->stats());
+    }
 
-                $kept[] = $violation;
+    /**
+     * Exclusion and selection are keyed by the producer of the **finding**, not
+     * by the name of the instance that ran.
+     *
+     * For every static rule and every configuration validator the two are the
+     * same name, so nothing moves. They part exactly on the computed-metric
+     * family, where one instance publishes under seven producer names: keying
+     * by the instance would apply `health.cohesion`'s `exclude_namespaces` to
+     * `health.coupling`'s findings, and would let one `--disable-rule` silence
+     * all seven. The granularity of {@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats}
+     * follows, which is a declared consequence rather than a side effect.
+     *
+     * @param list<Finding> $findings
+     *
+     * @return list<Finding>
+     */
+    private function published(string $ruleName, array $findings, RuleSelection $selection): array
+    {
+        $kept = [];
+
+        foreach ($findings as $finding) {
+            $producer = $this->producerOf($finding, $ruleName);
+
+            if (!$this->exclusions->keeps($producer, $finding)) {
+                continue;
             }
-            $ruleViolations = $kept;
 
-            // Apply rule selectors while the producing rule is still known.
-            // A violation's channel ruleName may differ from its producer's
-            // NAME, so flattening first would discard information required by
-            // producer-level selectors such as `computed.health`.
-            $ruleViolations = array_values(array_filter(
-                $ruleViolations,
-                fn(Violation $violation): bool => $this->ruleSelector->isChannelEnabled(
-                    $ruleName,
-                    $violation->channel(),
-                    $selection->only,
-                    $selection->disabled,
-                ),
+            $enabled = $this->ruleSelector->isChannelEnabled(
+                $producer,
+                $finding->channel(),
+                $finding->level(),
+                $selection->only,
+                $selection->disabled,
+            );
+
+            if ($enabled) {
+                $kept[] = $finding;
+            }
+        }
+
+        return $kept;
+    }
+
+    /**
+     * Falls back to the name of the instance that produced the finding when no
+     * identity view is installed — the behaviour of every caller that builds
+     * this executor directly, and the behaviour of the whole system before one
+     * class began publishing under more than one producer name.
+     */
+    private function producerOf(Finding $finding, string $ruleName): string
+    {
+        return $this->channelIdentity?->producerOf($finding->channel()->code) ?? $ruleName;
+    }
+
+    /**
+     * Runs one validator and refuses a finding on a channel it did not
+     * declare.
+     *
+     * This is where the discriminator is enforced rather than merely
+     * described. "Configuration error" is now a consequence of the producing
+     * type, so a validator emitting on a rule-declared channel would publish a
+     * finding classified as ordinary debt from a producer that has no
+     * thresholds, no baseline story and no suppression — the exact confusion
+     * the split exists to remove. It is a wiring error, so it ends the run.
+     *
+     * @return list<Finding>
+     */
+    private function validate(ConfigurationValidatorInterface $validator, AnalysisContext $context): array
+    {
+        $declared = $validator::channelDeclarations();
+        $findings = $validator->validate($context);
+
+        foreach ($findings as $finding) {
+            $key = $finding->channel()->code;
+
+            if (isset($declared[$key])) {
+                continue;
+            }
+
+            throw new LogicException(\sprintf(
+                'Configuration validator %s emitted a finding on channel "%s", which it does not declare.'
+                . ' A validator\'s findings are configuration errors by virtue of its type; emitting on a'
+                . ' channel declared elsewhere would publish one under the wrong classification.',
+                $validator::class,
+                $key,
             ));
-
-            $violations = [...$violations, ...$ruleViolations];
         }
 
-        $this->lastExclusionStats = new RuleExclusionStats(
-            namespaceExclusionsByRule: $namespaceExclusionCounts,
-            pathExclusionsByRule: $pathExclusionCounts,
-            excludedViolations: $excludedViolations,
-        );
-
-        return $violations;
+        return $findings;
     }
 
-    private function isNamespaceExcluded(string $ruleName, Violation $violation): bool
+    /**
+     * @param iterable<ConfigurationValidatorInterface> $validators
+     *
+     * @return array<string, list<ConfigurationValidatorInterface>>
+     */
+    private static function groupByProducer(iterable $validators): array
     {
-        // Occurrence-style rules attach a file symbol path (namespace null) to
-        // their violations; the declaring namespace lives on the subject, so
-        // fall back to it the same way NamespaceExclusionFilter does.
-        $namespace = $violation->symbolPath->namespace
-            ?? $violation->subject->toSymbolPath()->namespace
-            ?? null;
-        if ($namespace === null || $namespace === '') {
-            return false;
+        $grouped = [];
+
+        foreach ($validators as $validator) {
+            $grouped[$validator::producerRuleName()][] = $validator;
         }
 
-        if ($this->ruleOptionsRegistry->isNamespaceExcluded($ruleName, $namespace)) {
-            return true;
-        }
-
-        return $violation->symbolPath->getType()->value === 'namespace'
-            && $this->ruleOptionsRegistry->isNamespaceChannelExcluded($ruleName, $violation->channel(), $namespace);
-    }
-
-    public function exclusionStats(): RuleExclusionStats
-    {
-        return $this->lastExclusionStats;
-    }
-
-    public function activeRules(RuleSelection $selection): array
-    {
-        return array_map(
-            fn(RuleInterface $rule): RuleMetadata => $this->metadata($rule, true),
-            $this->activeRuleInstances($selection),
-        );
+        return $grouped;
     }
 
     public function allRules(): array
     {
-        $selection = $this->ruleOptionsRegistry->selection();
-
-        return array_map(
-            fn(RuleInterface $rule): RuleMetadata => $this->metadata(
-                $rule,
-                $this->ruleSelector->isProducerEnabled($rule->getName(), $selection->only, $selection->disabled),
-            ),
-            $this->allRules,
-        );
+        return $this->allProducers($this->ruleOptionsRegistry->selection());
     }
 
-    public function totalRuleCount(): int
+    /**
+     * Every producer this container knows, rule instances and classless
+     * declarations alike, each carrying whether `$selection` leaves it enabled.
+     *
+     * @return list<RuleMetadata>
+     */
+    private function allProducers(RuleSelection $selection): array
     {
-        return \count($this->allRules);
+        $producers = [];
+
+        foreach ($this->allRules as $rule) {
+            $producers[] = new RuleMetadata(
+                name: $rule->getName(),
+                optionsClass: $rule::getOptionsClass(),
+                description: $rule->getDescription(),
+                aliases: CliAliasReader::read($rule::class),
+                active: $this->isEnabled($rule->getName(), $selection),
+            );
+        }
+
+        foreach ($this->classlessProducers as $producer) {
+            $producers[] = new RuleMetadata(
+                name: $producer->name,
+                optionsClass: $producer->optionsClass,
+                description: $producer->description,
+                aliases: $producer->aliases,
+                active: $this->isEnabled($producer->name, $selection),
+            );
+        }
+
+        return $producers;
     }
 
-    /** @return list<RuleInterface> */
+    private function isEnabled(string $producerRuleName, RuleSelection $selection): bool
+    {
+        return $this->ruleSelector->isProducerEnabled($producerRuleName, $selection->only, $selection->disabled);
+    }
+
+    /**
+     * The instances to run.
+     *
+     * An instance runs when its own producer is enabled **or** when one of the
+     * classless producers it hosts is: `--only-rule health.typing` names a
+     * producer that has no analysis of its own, and dropping its host would
+     * silence exactly the findings that were asked for. The per-finding filter
+     * in {@see published()} then removes whatever the selection did not name.
+     *
+     * @return list<RuleInterface>
+     */
     private function activeRuleInstances(RuleSelection $selection): array
     {
         return array_values(array_filter(
             $this->allRules,
-            fn(RuleInterface $rule): bool => $this->ruleSelector->isProducerEnabled(
-                $rule->getName(),
-                $selection->only,
-                $selection->disabled,
-            ),
+            fn(RuleInterface $rule): bool => $this->isEnabled($rule->getName(), $selection)
+                || $this->hostsAnEnabledProducer($rule->getName(), $selection),
         ));
     }
 
-    /**
-     * @qmx-ignore code-smell.boolean-argument -- The private metadata selector maps one rule into the same immutable view for either the complete or active registry; the boolean is an internal two-state query flag, and splitting it would duplicate the exact mapping.
-     */
-    private function metadata(RuleInterface $rule, bool $active): RuleMetadata
+    private function hostsAnEnabledProducer(string $hostRuleName, RuleSelection $selection): bool
     {
-        return new RuleMetadata(
-            name: $rule->getName(),
-            optionsClass: $rule::getOptionsClass(),
-            category: $rule->getCategory(),
-            description: $rule->getDescription(),
-            aliases: CliAliasReader::read($rule::class),
-            active: $active,
-        );
+        foreach ($this->classlessProducers as $producer) {
+            if ($producer->hostRuleName === $hostRuleName && $this->isEnabled($producer->name, $selection)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

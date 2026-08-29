@@ -7,8 +7,8 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfigur
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -32,7 +33,7 @@ use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureViolation
  *   - Controller -> Service (allowed)
  *   - Service -> Repository (allowed)
  *   - Repository -> Domain (allowed)
- *   - Controller -> Repository (FORBIDDEN — produces violations)
+ *   - Controller -> Repository (FORBIDDEN — produces findings)
  *   - Controller -> Domain (forbidden by allow-list, but expected once via type hint)
  */
 #[Group('integration')]
@@ -48,44 +49,44 @@ final class LayerViolationIntegrationTest extends TestCase
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
-        $layerViolations = $this->filterByRule($result->violations, LayerViolationRule::NAME);
-        $coverageDiagnostics = $this->filterByRule($result->violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME);
+        $layerViolations = $this->filterByRule($result->findings, LayerViolationRule::NAME);
+        $coverageDiagnostics = $this->filterByRule($result->findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
 
         self::assertSame([], $layerViolations, 'No layers declared → rule must short-circuit.');
         self::assertSame([], $coverageDiagnostics, 'Empty config → no coverage diagnostic.');
     }
 
     #[Test]
-    public function fullPolicyDetectsControllerToRepositoryViolation(): void
+    public function fullPolicyDetectsControllerToRepositoryFinding(): void
     {
         $pipeline = $this->createPipelineWithArchitecture($this->buildPolicy(CoverageMode::Ignore));
 
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
-        $layerViolations = $this->filterByRule($result->violations, LayerViolationRule::NAME);
+        $layerViolations = $this->filterByRule($result->findings, LayerViolationRule::NAME);
         self::assertNotEmpty(
             $layerViolations,
             'Controller depends on Repository — at least one layer-violation expected.',
         );
 
-        // Every reported violation must be from the controller layer
-        foreach ($layerViolations as $violation) {
+        // Every reported finding must be from the controller layer
+        foreach ($layerViolations as $finding) {
             self::assertStringContainsString(
                 'Layer "controller" must not depend on layer "repository"',
-                $violation->message,
-                'Unexpected violation message: ' . $violation->message,
+                $finding->message,
+                'Unexpected violation message: ' . $finding->message,
             );
-            self::assertSame(Severity::Warning, $violation->severity);
-            self::assertNotNull($violation->dependencyTarget);
-            self::assertNotNull($violation->dependencyType);
+            self::assertSame(Severity::Warning, $finding->severity);
+            self::assertNotNull($finding->dependencyTarget);
+            self::assertNotNull($finding->dependencyType);
             self::assertStringContainsString(
                 'Fixtures\\Sample\\Controller\\UserController',
-                $violation->symbolPath->toString(),
+                $finding->symbolPath->toString(),
             );
             self::assertStringContainsString(
                 'Fixtures\\Sample\\Repository\\UserRepository',
-                $violation->dependencyTarget->toString(),
+                $finding->dependencyTarget->toString(),
             );
         }
 
@@ -111,7 +112,7 @@ final class LayerViolationIntegrationTest extends TestCase
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
-        $diagnostics = $this->filterByRule($result->violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME);
+        $diagnostics = $this->filterByRule($result->findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
         self::assertCount(1, $diagnostics, 'Exactly one coverage diagnostic expected in warn mode.');
 
         $diagnostic = $diagnostics[0];
@@ -120,14 +121,14 @@ final class LayerViolationIntegrationTest extends TestCase
     }
 
     /**
-     * Golden file regression: normalise the architecture-rule violation set
+     * Golden file regression: normalise the architecture-rule finding set
      * down to `{rule, severity, source, target, type}` tuples (no line numbers,
      * no full messages) and compare against a stored JSON snapshot. After an
      * intentional algorithm change, regenerate the snapshot by re-running with
      * `QMX_GOLDEN_UPDATE=1` in the environment — the test writes the file back.
      *
-     * Storing the projection (not the raw violation objects) keeps the file
-     * stable across cosmetic message tweaks while still pinning the violation
+     * Storing the projection (not the raw finding objects) keeps the file
+     * stable across cosmetic message tweaks while still pinning the finding
      * set itself.
      */
     #[Test]
@@ -137,7 +138,7 @@ final class LayerViolationIntegrationTest extends TestCase
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
-        $actual = ArchitectureViolationProjector::project($result->violations);
+        $actual = ArchitectureViolationProjector::project($result->findings);
         $goldenPath = self::FIXTURE_PATH . '/expected-violations.json';
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {
@@ -177,7 +178,7 @@ final class LayerViolationIntegrationTest extends TestCase
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
-        $diagnostics = $this->filterByRule($result->violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME);
+        $diagnostics = $this->filterByRule($result->findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
         self::assertSame([], $diagnostics);
     }
 
@@ -220,29 +221,29 @@ final class LayerViolationIntegrationTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function filterByRule(array $violations, string $ruleName): array
+    private function filterByRule(array $findings, string $ruleName): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $v): bool => $v->ruleName === $ruleName,
+            $findings,
+            static fn(Finding $v): bool => $v->ruleName === $ruleName,
         ));
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return list<array{0: string, 1: string}>
      */
-    private function extractSourceTargetTuples(array $violations): array
+    private function extractSourceTargetTuples(array $findings): array
     {
         $tuples = [];
-        foreach ($violations as $violation) {
-            $target = $violation->dependencyTarget?->toString() ?? '';
-            $tuples[] = [$violation->symbolPath->toString(), $target];
+        foreach ($findings as $finding) {
+            $target = $finding->dependencyTarget?->toString() ?? '';
+            $tuples[] = [$finding->symbolPath->toString(), $target];
         }
 
         return $tuples;

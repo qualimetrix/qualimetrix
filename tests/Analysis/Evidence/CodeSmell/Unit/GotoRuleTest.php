@@ -12,12 +12,11 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(GotoRule::class)]
 final class GotoRuleTest extends TestCase
@@ -29,7 +28,6 @@ final class GotoRuleTest extends TestCase
 
         self::assertSame('code-smell.goto', $rule->getName());
         self::assertSame('Detects usage of goto statement', $rule->getDescription());
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
     #[Test]
@@ -47,7 +45,7 @@ final class GotoRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new GotoRule(new CodeSmellOptions(enabled: false));
 
@@ -60,7 +58,7 @@ final class GotoRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoViolations(): void
+    public function noSmellsProducesNoFindings(): void
     {
         $rule = new GotoRule(new CodeSmellOptions());
 
@@ -71,7 +69,7 @@ final class GotoRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -81,7 +79,7 @@ final class GotoRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesViolation(): void
+    public function smellDetectedProducesFinding(): void
     {
         $rule = new GotoRule(new CodeSmellOptions());
 
@@ -93,18 +91,18 @@ final class GotoRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(50, $violations[0]->location->line);
-        self::assertSame('goto statement detected - avoid using goto', $violations[0]->message);
-        self::assertSame('code-smell.goto', $violations[0]->ruleName);
-        self::assertSame(1.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(50, $findings[0]->location->line);
+        self::assertSame('goto statement detected - avoid using goto', $findings[0]->message);
+        self::assertSame('code-smell.goto', $findings[0]->ruleName);
+        self::assertSame(1.0, $findings[0]->metricValue);
     }
 }

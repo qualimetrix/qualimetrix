@@ -124,7 +124,7 @@ bin/qmx check src/ --format=json
 bin/qmx check src/ --format=sarif
 ```
 
-Доступные форматы: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`.
+Доступные форматы: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
 
 Подробности о каждом формате смотрите в разделе [Форматы вывода](output-formats.md).
 
@@ -366,6 +366,28 @@ bin/qmx check src/ --show-suppressed
 отдельно от `exclude_paths`; каждый бакет разбит по имени правила. В отличие от `@qmx-ignore`, в остальном это подавление проходит
 незаметно — ничто в стандартном выводе не сигнализирует о том, что оно произошло.
 
+`--show-suppressed` выводит прозой лишь часть этого.
+`--format=suppressed` публикует полный состав — все семь механизмов подавления,
+а не только эти два, — как машиночитаемый JSON; см.
+[«Форматы вывода»](output-formats.ru.md#suppressed). Для взведения
+per-rule-захвата достаточно либо `--show-suppressed`, либо выбора
+`--format=suppressed` (в том числе `format: suppressed` в `qmx.yaml`) — оба
+вместе не нужны. В остальном эти две поверхности не эквивалентны — что
+показывает каждая, см. в разделе
+[suppressed](output-formats.ru.md#suppressed).
+
+Подавление — закрытое множество из семи механизмов. Несколько соседних
+решений тоже делают находку невидимой, но подавлением не являются, и ни одна
+из поверхностей их не покрывает: правило, которое вообще не исполнялось
+(`--disable-rule`, `--only-rule`, `enabled: false`), не породило находку,
+которую можно было бы подавить; отключённый канал для правила без класса
+(виден в `qmx rules`) снимается тем же способом, ещё до леджера; порог,
+из-за которого находка вообще не родилась (`@qmx-threshold`), проверяется
+отдельным аудитом, а не через эту поверхность; усечение форматтером
+(`--detail`, `violations=N`) оставляет находку в payload и лишь помечает её
+`truncated`; а сужение вывода `--namespace`/`--class` меняет только
+представление конкретного запуска, ничего не убирая из самого результата.
+
 ### `--no-suppression-annotations`
 
 Выводить все нарушения, включая те, которые подавлены тегами `@qmx-ignore`:
@@ -515,7 +537,7 @@ bin/qmx check src/ --profile=profile.json --profile-format=chrome-tracing
 Отключить правило-производитель, целую группу или отдельный канал нарушения. Селектор — это
 либо **точное** имя (правило-производитель, группа вроде `complexity` или канал), либо
 `X.*` строго для **потомков** `X` — сам `X` в это не входит. Голый префикс без звёздочки —
-ошибка; для каналов также доступна явная форма `ruleName#violationCode`, как и у
+ошибка. Селектор канала можно сузить до одного уровня дерева агрегации через `:level`, как и у
 `--only-rule`. Отключение одного канала не останавливает производителя, чтобы остальные его
 каналы продолжали попадать в отчёт. Опцию можно указывать несколько раз:
 
@@ -534,15 +556,15 @@ bin/qmx check src/ --disable-rule=health.complexity
 ```
 
 !!! tip "Оптимизация памяти"
-    Отключение правила `duplication.code-duplication` также полностью пропускает ресурсоёмкую фазу обнаружения дубликатов. На больших кодовых базах (500+ файлов) это может значительно снизить потребление памяти. Используйте `--disable-rule=duplication.code-duplication`, если возникают ошибки нехватки памяти.
+    Отключение правила `duplication.code-duplication` также полностью пропускает ресурсоёмкую фазу обнаружения дубликатов. На больших кодовых базах (500+ файлов) это может значительно снизить потребление памяти. Используйте `--disable-rule=duplication.code-duplication`, если возникают ошибки нехватки памяти. Написание с уровнем — `--disable-rule=duplication.code-duplication:project` — пропускает её так же: канал сообщает ровно на этом уровне, поэтому погасить уровень значит погасить правило. Производитель останавливается, как только селекторы отключения вместе накрывают каждый уровень каждого его канала; один уровень двухуровневого канала оставляет его работать, потому что второму уровню ещё есть о чём сообщить.
 
 ### `--only-rule`
 
 Запустить только подходящие правила-производители или каналы нарушений. Селектор — это либо
-**точное** имя (правило-производитель, группа вроде `complexity`, `ruleName` канала или
-`violationCode`), либо `X.*` строго для его **потомков**. Для однозначного полного канала
-используйте `ruleName#violationCode` — обе половины должны быть точными, звёздочка внутри
-не допускается. Опцию можно указывать несколько раз:
+**точное** имя (правило-производитель, группа вроде `complexity` или канал), либо `X.*` строго
+для его **потомков**; каждое из них можно сузить до одного уровня дерева агрегации через
+`:level`. Селектор с уровнем не останавливает своего производителя: отфильтрованный
+производитель никогда не выдал бы запрошенный уровень. Опцию можно указывать несколько раз:
 
 ```bash
 # Запустить только правила сложности
@@ -551,9 +573,9 @@ bin/qmx check src/ --only-rule=complexity.*
 # Запустить два конкретных правила
 bin/qmx check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
 
-# Выбрать один канал, который создаёт правило computed.health
+# Выбрать один канал встроенного измерения здоровья: производитель и канал
+# называются одинаково, потому что каждое из шести измерений — сам себе производитель
 bin/qmx check src/ --only-rule=health.complexity
-bin/qmx check src/ --only-rule=computed.health#health.complexity
 ```
 
 Селектор должен точно совпасть с зарегистрированным producer, группой или выводимым каналом,
@@ -585,6 +607,8 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 нужен непустой список паттернов неймспейсов, тогда как `--rule-opt` передаёт скалярные значения.
 Его ключи — это селекторы каналов, подчиняющиеся тому же правилу «точное имя или `X.*`», что
 и `@qmx-ignore`: голый префикс вроде `health` теперь ошибка, а не сокращение для `health.*`.
+Ключ может добавить `:namespace` и никакой другой уровень: опции достаются только агрегаты по
+неймспейсам, поэтому любой другой уровень назвал бы фильтр, который не сработает никогда.
 
 <!-- llms:skip-begin -->
 ### Быстрые флаги для правил
@@ -636,24 +660,24 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 
 === "Проектирование"
 
-| Флаг                                 | Правило              | Опция               |
-| ------------------------------------ | -------------------- | ------------------- |
-| `--dit-warning=N`                    | design.inheritance   | warning             |
-| `--dit-error=N`                      | design.inheritance   | error               |
-| `--lcom-warning=N`                   | cohesion.lcom        | warning             |
-| `--lcom-error=N`                     | cohesion.lcom        | error               |
-| `--lcom-min-methods=N`               | cohesion.lcom        | minMethods          |
-| `--lcom-exclude-readonly`            | cohesion.lcom        | excludeReadonly     |
-| `--noc-warning=N`                    | design.noc           | warning             |
-| `--noc-error=N`                      | design.noc           | error               |
-| `--type-coverage-param-warning=N`    | design.type-coverage | param_warning       |
-| `--type-coverage-param-error=N`      | design.type-coverage | param_error         |
-| `--type-coverage-return-warning=N`   | design.type-coverage | return_warning      |
-| `--type-coverage-return-error=N`     | design.type-coverage | return_error        |
-| `--type-coverage-property-warning=N` | design.type-coverage | property_warning    |
-| `--type-coverage-property-error=N`   | design.type-coverage | property_error      |
-| `--property-exclude-readonly`        | size.property-count  | excludeReadonly     |
-| `--property-exclude-promoted-only`   | size.property-count  | excludePromotedOnly |
+| Флаг                                 | Правило                       | Опция               |
+| ------------------------------------ | ----------------------------- | ------------------- |
+| `--dit-warning=N`                    | design.inheritance            | warning             |
+| `--dit-error=N`                      | design.inheritance            | error               |
+| `--lcom-warning=N`                   | cohesion.lcom                 | warning             |
+| `--lcom-error=N`                     | cohesion.lcom                 | error               |
+| `--lcom-min-methods=N`               | cohesion.lcom                 | minMethods          |
+| `--lcom-exclude-readonly`            | cohesion.lcom                 | excludeReadonly     |
+| `--noc-warning=N`                    | design.noc                    | warning             |
+| `--noc-error=N`                      | design.noc                    | error               |
+| `--param-type-coverage-warning=N`    | design.type-coverage.param    | warning             |
+| `--param-type-coverage-error=N`      | design.type-coverage.param    | error               |
+| `--return-type-coverage-warning=N`   | design.type-coverage.return   | warning             |
+| `--return-type-coverage-error=N`     | design.type-coverage.return   | error               |
+| `--property-type-coverage-warning=N` | design.type-coverage.property | warning             |
+| `--property-type-coverage-error=N`   | design.type-coverage.property | error               |
+| `--property-exclude-readonly`        | size.property-count           | excludeReadonly     |
+| `--property-exclude-promoted-only`   | size.property-count           | excludePromotedOnly |
 
 === "Сопровождаемость"
 
@@ -691,13 +715,13 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 
 === "Архитектура"
 
-| Флаг                                      | Правило                          | Опция            |
-| ----------------------------------------- | -------------------------------- | ---------------- |
-| `--circular-deps`                         | architecture.circular-dependency | enabled          |
-| `--max-cycle-size=N`                      | architecture.circular-dependency | maxCycleSize     |
-| `--layer-violation`                       | architecture.layer-violation     | enabled          |
-| `--layer-violation-severity=SEVERITY`     | architecture.layer-violation     | severity         |
-| `--layer-violation-unassigned-class=MODE` | architecture.layer-violation     | unassigned_class |
+| Флаг                                  | Правило                          | Опция        |
+| ------------------------------------- | -------------------------------- | ------------ |
+| `--circular-deps`                     | architecture.circular-dependency | enabled      |
+| `--max-cycle-size=N`                  | architecture.circular-dependency | maxCycleSize |
+| `--layer-violation`                   | architecture.layer-violation     | enabled      |
+| `--layer-violation-severity=SEVERITY` | architecture.layer-violation     | severity     |
+| `--unassigned-class-mode=MODE`        | architecture.unassigned-class    | mode         |
 
 ---
 

@@ -43,13 +43,15 @@ Qualimetrix содержит набор встроенных правил для
 
 Эти правила проверяют глубину наследования, покрытие типами и структурные проблемы.
 
-| Правило                              | ID                     | Что проверяет                                                  | Warning     | Error        |
-| ------------------------------------ | ---------------------- | -------------------------------------------------------------- | ----------- | ------------ |
-| [Глубина наследования](design.ru.md) | `design.inheritance`   | Глубина цепочки наследования                                   | 4           | 6            |
-| [NOC](design.ru.md)                  | `design.noc`           | Количество классов, наследующих от данного                     | 10          | 15           |
-| [Покрытие типами](design.ru.md)      | `design.type-coverage` | Процент типизированных параметров, возвратов, свойств          | 80% (ниже)  | 50% (ниже)   |
-| [Data-класс](design.ru.md)           | `design.data-class`    | Публичный интерфейс в основном отдаёт данные, низкая сложность | Warning     | --           |
-| [God-класс](design.ru.md)            | `design.god-class`     | Чрезмерно сложные, большие классы с низкой связностью          | 3+ критерия | все критерии |
+| Правило                                    | ID                              | Что проверяет                                                  | Warning     | Error        |
+| ------------------------------------------ | ------------------------------- | -------------------------------------------------------------- | ----------- | ------------ |
+| [Глубина наследования](design.ru.md)       | `design.inheritance`            | Глубина цепочки наследования                                   | 4           | 6            |
+| [NOC](design.ru.md)                        | `design.noc`                    | Количество классов, наследующих от данного                     | 10          | 15           |
+| [Покрытие типами параметров](design.ru.md) | `design.type-coverage.param`    | Процент типизированных параметров                              | 80% (ниже)  | 50% (ниже)   |
+| [Покрытие типами возврата](design.ru.md)   | `design.type-coverage.return`   | Процент типизированных возвращаемых значений                   | 80% (ниже)  | 50% (ниже)   |
+| [Покрытие типами свойств](design.ru.md)    | `design.type-coverage.property` | Процент типизированных свойств                                 | 80% (ниже)  | 50% (ниже)   |
+| [Data-класс](design.ru.md)                 | `design.data-class`             | Публичный интерфейс в основном отдаёт данные, низкая сложность | Warning     | --           |
+| [God-класс](design.ru.md)                  | `design.god-class`              | Чрезмерно сложные, большие классы с низкой связностью          | 3+ критерия | все критерии |
 
 [Подробнее о правилах проектирования --&gt;](design.ru.md)
 
@@ -61,10 +63,10 @@ Qualimetrix содержит набор встроенных правил для
 | ---------------------- | --------------- | ------------------------------------------------------- | ------- | ----- |
 | [LCOM](cohesion.ru.md) | `cohesion.lcom` | Занимается ли класс слишком многими несвязанными вещами | 3       | 5     |
 
-| Метрика               | ID    | Что проверяет                                    | Рекомендация |
-| --------------------- | ----- | ------------------------------------------------ | ------------ |
-| [TCC](cohesion.ru.md) | `tcc` | Доля пар публичных методов, разделяющих свойства | >= 0.5       |
-| [LCC](cohesion.ru.md) | `lcc` | Доля с учётом транзитивных связей                | >= 0.5       |
+| Метрика               | ID             | Что проверяет                                    | Рекомендация |
+| --------------------- | -------------- | ------------------------------------------------ | ------------ |
+| [TCC](cohesion.ru.md) | `cohesion.tcc` | Доля пар публичных методов, разделяющих свойства | >= 0.5       |
+| [LCC](cohesion.ru.md) | `cohesion.lcc` | Доля с учётом транзитивных связей                | >= 0.5       |
 
 !!! note
     TCC и LCC — это **метрики**, а не правила. Их нельзя включить или отключить через `--disable-rule` / `--only-rule`, и они не генерируют нарушений. В отчётах они отображаются как информационные значения и используются правилом God Class в качестве входных данных. LCOM выше — правило со своими порогами.
@@ -216,11 +218,11 @@ rules:
 
 - **Complexity:** `complexity.cyclomatic`, `complexity.cognitive`, `complexity.npath`, `complexity.wmc`
 - **Size:** `size.method-count`, `size.class-count`, `size.property-count`
-- **Design:** `design.inheritance`, `design.noc`, `design.type-coverage`, `design.data-class`, `design.god-class`
-- **Cohesion:** `cohesion.lcom` (правило); `tcc`, `lcc` (только метрики, не правила — используются как входы `design.god-class`)
+- **Design:** `design.inheritance`, `design.noc`, `design.type-coverage.param`, `design.type-coverage.return`, `design.type-coverage.property`, `design.data-class`, `design.god-class`
+- **Cohesion:** `cohesion.lcom` (правило); `cohesion.tcc`, `cohesion.lcc` (только метрики, не правила — используются как входы `design.god-class`)
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
 - **Maintainability:** `maintainability.index`
-- **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`
+- **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.unassigned-class`
 - **Duplication:** `duplication.code-duplication`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`

@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/disabled-rule",
+    "description": "Corpus case: a rule switched off through --disable-rule",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\DisabledRule\\": "src/"
+        }
+    }
+}

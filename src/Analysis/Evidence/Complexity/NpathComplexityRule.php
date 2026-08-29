@@ -9,26 +9,25 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
- * Hierarchical rule that checks NPath complexity at method and class levels.
+ * Hierarchical rule that checks NPath complexity at callable and class levels.
  *
- * NPath Complexity counts the number of acyclic execution paths through a method.
+ * NPath Complexity counts the number of acyclic execution paths through a callable.
  * Unlike Cyclomatic Complexity (additive), NPath is multiplicative and grows exponentially.
  *
- * - Method level: checks individual method NPath
+ * - Callable level: checks the NPath of one method or global function
  * - Class level: checks maximum NPath among class methods
  */
 #[CliAlias('npath-warning', 'callable.warning')]
@@ -41,6 +40,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     public const string DOCS_PAGE = 'rules/complexity.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     private const int MAX_DISPLAY = 1_000_000;
 
     public function getName(): string
@@ -53,11 +54,6 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         return 'Checks NPath complexity at method and class levels';
     }
 
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Complexity;
-    }
-
     /**
      * @return list<string>
      */
@@ -67,19 +63,19 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     }
 
     /**
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Callable, RuleLevel::Class_];
+        return [SymbolLevel::Callable, SymbolLevel::Class_];
     }
 
     /**
      * Analyzes at a specific level.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
+    public function analyzeLevel(SymbolLevel $level, AnalysisContext $context): array
     {
         \assert($this->options instanceof NpathComplexityOptions);
 
@@ -89,28 +85,28 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         }
 
         return match ($level) {
-            RuleLevel::Callable => $this->analyzeMethodLevel($context),
-            RuleLevel::Class_ => $this->analyzeClassLevel($context),
+            SymbolLevel::Callable => $this->analyzeMethodLevel($context),
+            SymbolLevel::Class_ => $this->analyzeClassLevel($context),
             default => [],
         };
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
         \assert($this->options instanceof NpathComplexityOptions);
 
-        $violations = [];
+        $findings = [];
 
         foreach ($this->getSupportedLevels() as $level) {
             if ($this->options->isLevelEnabled($level)) {
-                $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
+                $findings = [...$findings, ...$this->analyzeLevel($level, $context)];
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -122,23 +118,22 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     }
 
     /**
-     * Both NPath channels report the metric they check as `metricValue`
-     * (`$npathValue` in {@see analyzeMethodLevel()}, `$maxNpathValue` in
-     * {@see analyzeClassLevel()}), judged worse the higher it goes:
-     * {@see MethodNpathComplexityOptions::getSeverity()}'s `$value >=
-     * $this->error` (line 48) / `$value >= $this->warning` (line 52) for the
-     * method channel, and
+     * Both levels of the channel report the metric they check as
+     * `metricValue` (`$npathValue` in {@see analyzeMethodLevel()},
+     * `$maxNpathValue` in {@see analyzeClassLevel()}), judged worse the higher
+     * it goes: {@see MethodNpathComplexityOptions::getSeverity()}'s `$value >=
+     * $this->error` (line 48) / `$value >= $this->warning` (line 52) at the
+     * callable level, and
      * {@see ClassNpathComplexityOptions::getSeverity()}'s `$value >=
      * $this->maxError` (line 48) / `$value >= $this->maxWarning` (line 52)
-     * for the class channel.
+     * at the class level.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.callable'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
         ];
     }
 
@@ -158,14 +153,14 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeMethodLevel(AnalysisContext $context): array
     {
         \assert($this->options instanceof NpathComplexityOptions);
         $methodOptions = $this->options->callable;
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allCallables() as $methodInfo) {
             $subject = $methodInfo->subject ?? throw new LogicException('NPath complexity findings require an exact callable subject');
@@ -188,34 +183,33 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
                 $threshold = $severity === Severity::Error ? $effectiveMethodOptions->error : $effectiveMethodOptions->warning;
                 $chain = $this->formatChain($metrics);
 
-                $violations[] = new Violation(
+                $findings[] = new Finding(
                     location: new Location($methodInfo->file, $methodInfo->line),
                     subject: $subject,
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.callable',
+                    code: self::NAME,
                     message: \sprintf('NPath complexity (execution paths) is %s (%s), exceeds threshold of %s.%s Reduce branching or extract methods', $displayValue, $categoryLabel, $threshold, $chain !== '' ? " {$chain}." : ''),
                     severity: $severity,
                     metricValue: $npathValue,
-                    level: RuleLevel::Callable,
                     recommendation: \sprintf('NPath complexity: %s (threshold: %s)%s — explosive number of execution paths', $displayValue, $threshold, $chain !== '' ? ". {$chain}" : ''),
                     threshold: (float) $threshold,
                 );
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeClassLevel(AnalysisContext $context): array
     {
         \assert($this->options instanceof NpathComplexityOptions);
         $classOptions = $this->options->class;
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('NPath complexity class findings require an exact declaration subject');
@@ -240,23 +234,22 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
                 $categoryLabel = $this->getCategoryLabel($maxNpathValue);
                 $threshold = $severity === Severity::Error ? $effectiveClassOptions->maxError : $effectiveClassOptions->maxWarning;
 
-                $violations[] = new Violation(
+                $findings[] = new Finding(
                     location: new Location($classInfo->file, $classInfo->line),
                     subject: $subject,
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.class',
+                    code: self::NAME,
                     message: \sprintf('Maximum method NPath complexity is %s (%s), exceeds threshold of %s. Refactor the most complex methods', $displayValue, $categoryLabel, $threshold),
                     severity: $severity,
                     metricValue: $maxNpathValue,
-                    level: RuleLevel::Class_,
                     recommendation: \sprintf('Max NPath complexity: %s (threshold: %s) — explosive number of execution paths', $displayValue, $threshold),
                     threshold: (float) $threshold,
                 );
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**

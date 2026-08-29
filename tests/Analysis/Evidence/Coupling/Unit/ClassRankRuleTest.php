@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
@@ -44,19 +43,11 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function getCategory_returnsCoupling(): void
-    {
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        self::assertSame(RuleCategory::Coupling, $rule->getCategory());
-    }
-
-    #[Test]
     public function requires_returnsClassRank(): void
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
-        self::assertSame(['classRank'], $rule->requires());
+        self::assertSame(['coupling.class-rank'], $rule->requires());
     }
 
     #[Test]
@@ -134,7 +125,7 @@ final class ClassRankRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn($this->createDummyClasses(100));
         $repository->method('allDeclarations')->willReturn([$targetInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('classRank', 0.03));
+        $repository->method('get')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03));
 
         self::assertCount(1, $rule->analyze(new AnalysisContext($repository)));
 
@@ -151,14 +142,14 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function analyze_noViolationBelowThreshold(): void
+    public function analyze_noFindingBelowThreshold(): void
     {
         // With 100 classes, scale factor = 1.0, so thresholds are unchanged
         $rule = new ClassRankRule(new ClassRankOptions());
 
         $classes = $this->createDummyClasses(100);
 
-        $metricBag = (new MetricBag())->with('classRank', 0.01);
+        $metricBag = (new MetricBag())->with('coupling.class-rank', 0.01);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -168,10 +159,10 @@ final class ClassRankRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // All 100 classes have rank 0.01, below warning threshold 0.02
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -184,8 +175,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/ImportantClass.php'), 10);
 
         // 0.03 is above warning (0.02) but below error (0.05)
-        $targetBag = (new MetricBag())->with('classRank', 0.03);
-        $normalBag = (new MetricBag())->with('classRank', 0.005);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.005);
 
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
@@ -198,16 +189,16 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Only the target class exceeds the warning threshold
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('ClassRank is 0.0300', $violations[0]->message);
-        self::assertStringContainsString('scaled for 100 classes', $violations[0]->message);
-        self::assertEqualsWithDelta(0.03, $violations[0]->metricValue, 0.001);
-        self::assertSame('coupling.class-rank', $violations[0]->ruleName);
-        self::assertSame('coupling.class-rank', $violations[0]->violationCode);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('ClassRank is 0.0300', $findings[0]->message);
+        self::assertStringContainsString('scaled for 100 classes', $findings[0]->message);
+        self::assertEqualsWithDelta(0.03, $findings[0]->metricValue, 0.001);
+        self::assertSame('coupling.class-rank', $findings[0]->ruleName);
+        self::assertSame('coupling.class-rank', $findings[0]->code);
     }
 
     #[Test]
@@ -220,8 +211,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/CriticalHub.php'), 10);
 
         // 0.08 is above error threshold (0.05)
-        $targetBag = (new MetricBag())->with('classRank', 0.08);
-        $normalBag = (new MetricBag())->with('classRank', 0.005);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.08);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.005);
 
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
@@ -234,11 +225,11 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertEqualsWithDelta(0.08, $violations[0]->metricValue, 0.001);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertEqualsWithDelta(0.08, $findings[0]->metricValue, 0.001);
     }
 
     #[Test]
@@ -257,8 +248,8 @@ final class ClassRankRuleTest extends TestCase
         $targetPath = SymbolPath::forClass('App', 'TestClass');
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('test.php'), 1);
 
-        $targetBag = (new MetricBag())->with('classRank', $classRank);
-        $normalBag = (new MetricBag())->with('classRank', 0.001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', $classRank);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
 
         // Use 100 classes so scale factor = 1.0
         $classes = $this->createDummyClasses(99);
@@ -272,19 +263,19 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        // Filter to just the target class violations
-        $targetViolations = array_values(array_filter(
-            $violations,
+        // Filter to just the target class findings
+        $targetFindings = array_values(array_filter(
+            $findings,
             static fn($v) => $v->symbolPath === $targetPath,
         ));
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $targetViolations);
+            self::assertCount(0, $targetFindings);
         } else {
-            self::assertCount(1, $targetViolations);
-            self::assertSame($expectedSeverity, $targetViolations[0]->severity);
+            self::assertCount(1, $targetFindings);
+            self::assertSame($expectedSeverity, $targetFindings[0]->severity);
         }
     }
 
@@ -339,8 +330,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/Hub.php'), 10);
 
         // 0.015 would be below unscaled warning (0.02), but above scaled warning (0.01)
-        $targetBag = (new MetricBag())->with('classRank', 0.015);
-        $normalBag = (new MetricBag())->with('classRank', 0.001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.015);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
 
         $classes = $this->createDummyClasses(399);
         $classes[] = $targetInfo;
@@ -353,15 +344,15 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        $targetViolations = array_values(array_filter(
-            $violations,
+        $targetFindings = array_values(array_filter(
+            $findings,
             static fn($v) => $v->symbolPath === $targetPath,
         ));
 
-        self::assertCount(1, $targetViolations);
-        self::assertSame(Severity::Warning, $targetViolations[0]->severity);
+        self::assertCount(1, $targetFindings);
+        self::assertSame(Severity::Warning, $targetFindings[0]->severity);
     }
 
     #[Test]
@@ -375,9 +366,9 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/SmallHub.php'), 10);
 
         // 0.03 would normally be a warning with default thresholds,
-        // but with 25 classes, scaled warning = 0.04, so no violation
-        $targetBag = (new MetricBag())->with('classRank', 0.03);
-        $normalBag = (new MetricBag())->with('classRank', 0.001);
+        // but with 25 classes, scaled warning = 0.04, so no finding
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
 
         $classes = $this->createDummyClasses(24);
         $classes[] = $targetInfo;
@@ -390,14 +381,14 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        $targetViolations = array_values(array_filter(
-            $violations,
+        $targetFindings = array_values(array_filter(
+            $findings,
             static fn($v) => $v->symbolPath === $targetPath,
         ));
 
-        self::assertCount(0, $targetViolations);
+        self::assertCount(0, $targetFindings);
     }
 
     #[Test]
@@ -411,8 +402,8 @@ final class ClassRankRuleTest extends TestCase
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/MegaHub.php'), 10);
 
         // 0.02 would normally just be a warning, but with 1600 classes it's an error
-        $targetBag = (new MetricBag())->with('classRank', 0.02);
-        $normalBag = (new MetricBag())->with('classRank', 0.0001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.02);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.0001);
 
         $classes = $this->createDummyClasses(1599);
         $classes[] = $targetInfo;
@@ -425,15 +416,15 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        $targetViolations = array_values(array_filter(
-            $violations,
+        $targetFindings = array_values(array_filter(
+            $findings,
             static fn($v) => $v->symbolPath === $targetPath,
         ));
 
-        self::assertCount(1, $targetViolations);
-        self::assertSame(Severity::Error, $targetViolations[0]->severity);
+        self::assertCount(1, $targetFindings);
+        self::assertSame(Severity::Error, $targetFindings[0]->severity);
     }
 
     #[Test]
@@ -444,8 +435,8 @@ final class ClassRankRuleTest extends TestCase
         $targetPath = SymbolPath::forClass('App', 'Hub');
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/Hub.php'), 10);
 
-        $targetBag = (new MetricBag())->with('classRank', 0.03);
-        $normalBag = (new MetricBag())->with('classRank', 0.001);
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03);
+        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001);
 
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
@@ -458,15 +449,15 @@ final class ClassRankRuleTest extends TestCase
             ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        $targetViolations = array_values(array_filter(
-            $violations,
+        $targetFindings = array_values(array_filter(
+            $findings,
             static fn($v) => $v->symbolPath === $targetPath,
         ));
 
-        self::assertCount(1, $targetViolations);
-        self::assertStringContainsString('scaled for 100 classes', $targetViolations[0]->message);
+        self::assertCount(1, $targetFindings);
+        self::assertStringContainsString('scaled for 100 classes', $targetFindings[0]->message);
     }
 
     // --- Options tests ---
@@ -557,13 +548,13 @@ final class ClassRankRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn($this->createDummyClasses(100));
         $repository->method('allDeclarations')->willReturn([$first, $second]);
-        $repository->method('get')->willReturn((new MetricBag())->with('classRank', 0.03));
+        $repository->method('get')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03));
 
-        $violations = (new ClassRankRule(new ClassRankOptions()))
+        $findings = (new ClassRankRule(new ClassRankOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

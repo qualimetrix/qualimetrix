@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -41,19 +40,11 @@ final class MethodCountRuleTest extends TestCase
     }
 
     #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new MethodCountRule(new MethodCountOptions());
-
-        self::assertSame(RuleCategory::Size, $rule->getCategory());
-    }
-
-    #[Test]
     public function itRequiresMethodCount(): void
     {
         $rule = new MethodCountRule(new MethodCountOptions());
 
-        self::assertSame(['methodCount'], $rule->requires());
+        self::assertSame(['size.method-count'], $rule->requires());
     }
 
     #[Test]
@@ -115,7 +106,7 @@ final class MethodCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('methodCount', 5);
+        $metricBag = (new MetricBag())->with('size.method-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -136,7 +127,7 @@ final class MethodCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('methodCount', 15);
+        $metricBag = (new MetricBag())->with('size.method-count', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -145,14 +136,14 @@ final class MethodCountRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Method count is 15, exceeds threshold of 10. Consider splitting into smaller focused classes', $violations[0]->message);
-        self::assertSame(15, $violations[0]->metricValue);
-        self::assertSame('size.method-count', $violations[0]->ruleName);
-        self::assertSame('size.method-count', $violations[0]->violationCode);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('Method count is 15, exceeds threshold of 10. Consider splitting into smaller focused classes', $findings[0]->message);
+        self::assertSame(15, $findings[0]->metricValue);
+        self::assertSame('size.method-count', $findings[0]->ruleName);
+        self::assertSame('size.method-count', $findings[0]->code);
     }
 
     #[Test]
@@ -163,7 +154,7 @@ final class MethodCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        $metricBag = (new MetricBag())->with('methodCount', 25);
+        $metricBag = (new MetricBag())->with('size.method-count', 25);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -172,11 +163,11 @@ final class MethodCountRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('Method count is 25, exceeds threshold of 20. Consider splitting into smaller focused classes', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame('Method count is 25, exceeds threshold of 20. Consider splitting into smaller focused classes', $findings[0]->message);
     }
 
     #[Test]
@@ -192,7 +183,7 @@ final class MethodCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Test', 'TestClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 10);
 
-        $metricBag = (new MetricBag())->with('methodCount', $methodCount);
+        $metricBag = (new MetricBag())->with('size.method-count', $methodCount);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -201,13 +192,13 @@ final class MethodCountRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -263,13 +254,13 @@ final class MethodCountRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('methodCount', 15));
+        $repository->method('get')->willReturn((new MetricBag())->with('size.method-count', 15));
 
-        $violations = (new MethodCountRule(new MethodCountOptions(warning: 10, error: 20)))
+        $findings = (new MethodCountRule(new MethodCountOptions(warning: 10, error: 20)))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

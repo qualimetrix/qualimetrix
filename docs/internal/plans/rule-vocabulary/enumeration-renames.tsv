@@ -1,0 +1,250 @@
+old	kind	new	step	src	tests	presets	config	baseline	website_docs	benchmarks	finding_gate
+annotation.invalid-threshold	channel	?		2	5	0	0	0	17	0	1
+annotation.unresolved-directive	channel	?		5	10	0	0	0	29	0	1
+annotation.unsupported-threshold	channel	?		5	5	0	0	0	17	0	1
+annotation.unused-directive	channel	?		9	7	0	0	0	26	0	1
+architecture.circular-dependency	channel	?		9	29	0	2	0	39	0	1
+architecture.coverage	channel	?		18	70	0	0	0	43	0	1
+architecture.empty-template	channel	?		9	10	0	0	0	27	0	1
+architecture.layer-violation	channel	?		26	104	0	3	0	79	0	1
+architecture.pending-layer-matched	channel	?		8	10	0	0	0	25	0	1
+architecture.potential-shadow	channel	?		13	8	0	0	0	32	0	1
+architecture.unassigned-class	channel	?		25	17	0	0	0	21	0	2
+architecture.unreachable-layer	channel	?		15	21	0	0	0	41	0	1
+code-smell.boolean-argument	channel	?		3	22	1	2	29	34	0	1
+code-smell.constructor-overinjection	channel	?		11	7	2	2	6	27	0	1
+code-smell.count-in-loop	channel	?		1	5	0	0	0	12	0	1
+code-smell.debug-code	channel	?		1	37	0	0	0	13	0	1
+code-smell.empty-catch	channel	?		4	6	0	0	0	16	0	1
+code-smell.error-suppression	channel	?		1	10	1	2	2	17	0	1
+code-smell.eval	channel	?		1	23	0	0	0	16	0	8
+code-smell.exit	channel	?		1	7	0	0	0	16	0	1
+code-smell.goto	channel	?		2	114	0	0	0	12	0	3
+code-smell.identical-subexpression	channel	?		2	5	0	0	0	13	0	1
+code-smell.long-parameter-list	channel	?		17	53	2	2	3	33	0	11
+code-smell.superglobals	channel	?		1	5	1	0	0	12	0	1
+code-smell.unreachable-code	channel	?		8	36	0	1	0	23	0	1
+code-smell.unused-private	channel	?		2	6	0	0	0	15	0	3
+cohesion.lcom	channel	?		41	150	2	2	0	31	0	4
+complexity.cognitive	channel	?		24	79	2	2	31	48	0	9
+complexity.cyclomatic	channel	?		37	621	2	2	55	120	0	9
+complexity.npath	channel	?		22	92	2	2	12	38	0	8
+complexity.wmc	channel	?		20	85	2	2	11	31	0	4
+coupling.cbo	channel	?		66	295	2	4	7	104	0	6
+coupling.class-rank	channel	?		25	97	0	2	2	26	0	28
+coupling.distance	channel	?		29	65	2	2	2	32	0	29
+coupling.instability	channel	?		32	87	2	4	8	48	0	8
+design.data-class	channel	?		13	13	1	1	10	32	0	3
+design.god-class	channel	?		13	16	1	2	2	35	0	7
+design.inheritance	channel	?		6	9	2	2	0	20	0	3
+design.noc	channel	?		15	32	2	2	0	20	0	3
+design.type-coverage.param	channel	?		10	53	2	1	1	23	0	3
+design.type-coverage.property	channel	?		10	24	2	1	1	22	0	4
+design.type-coverage.return	channel	?		10	31	2	1	0	22	0	4
+duplication.code-duplication	channel	?		14	53	0	2	12	35	0	4
+maintainability.index	channel	?		11	45	2	2	0	27	0	3
+security.command-injection	channel	?		3	5	0	0	0	13	0	1
+security.hardcoded-credentials	channel	?		6	31	0	0	0	15	0	1
+security.sensitive-parameter	channel	?		5	19	0	0	0	13	0	1
+security.sql-injection	channel	?		3	6	0	0	0	13	0	1
+security.xss	channel	?		4	17	0	0	0	13	0	1
+size.class-count	channel	?		26	87	2	1	5	29	0	4
+size.method-count	channel	?		24	151	2	2	0	50	0	3
+size.property-count	channel	?		20	35	2	2	0	24	0	3
+code-smell.is-vo-constructor	metric-key	?		1	25	0	0	0	0	0	1
+code-smell.parameter-count	metric-key	?		2	53	0	0	0	0	0	0
+code-smell.unreachable-code	metric-key	?		8	36	0	1	0	23	0	1
+code-smell.unreachable-code.first-line	metric-key	?		2	9	0	0	0	0	0	0
+code-smell.unused-private.constant	metric-key	?		1	13	0	0	0	0	0	0
+code-smell.unused-private.method	metric-key	?		1	42	0	0	0	0	0	0
+code-smell.unused-private.property	metric-key	?		1	20	0	0	0	0	0	0
+code-smell.unused-private.total	metric-key	?		1	20	0	0	0	0	0	0
+cohesion.lcc	metric-key	?		7	44	0	0	0	6	0	0
+cohesion.lcom	metric-key	?		41	150	2	2	0	31	0	4
+cohesion.pure-method-count	metric-key	?		3	8	0	0	0	2	0	0
+cohesion.tcc	metric-key	?		21	85	0	0	0	10	0	0
+complexity.ccn	metric-key	?		42	290	0	0	0	4	0	0
+complexity.cognitive	metric-key	?		24	79	2	2	31	48	0	9
+complexity.npath	metric-key	?		22	92	2	2	12	38	0	8
+complexity.wmc	metric-key	?		20	85	2	2	11	31	0	4
+coupling.abstractness	metric-key	?		16	39	0	0	0	0	0	0
+coupling.ca	metric-key	?		8	67	0	0	0	2	0	0
+coupling.cbo	metric-key	?		66	295	2	4	7	104	0	6
+coupling.cbo-app	metric-key	?		7	12	0	0	0	12	0	0
+coupling.ce	metric-key	?		12	81	0	0	0	8	0	0
+coupling.ce-framework	metric-key	?		6	11	0	0	0	6	0	0
+coupling.ce-packages	metric-key	?		7	8	0	0	0	4	0	0
+coupling.class-rank	metric-key	?		25	97	0	2	2	26	0	28
+coupling.distance	metric-key	?		29	65	2	2	2	32	0	29
+coupling.instability	metric-key	?		32	87	2	4	8	48	0	8
+coupling.rfc	metric-key	?		6	44	0	0	0	0	0	0
+coupling.rfc-external	metric-key	?		1	15	0	0	0	0	0	0
+coupling.rfc-own	metric-key	?		1	15	0	0	0	0	0	0
+design.dit	metric-key	?		9	90	0	0	0	0	0	0
+design.is-abstract	metric-key	?		1	5	0	0	0	0	0	0
+design.is-data-class	metric-key	?		1	4	0	0	0	0	0	0
+design.is-exception	metric-key	?		1	6	0	0	0	0	0	0
+design.is-interface	metric-key	?		1	5	0	0	0	0	0	0
+design.is-promoted-properties-only	metric-key	?		1	8	0	0	0	0	0	0
+design.is-readonly	metric-key	?		1	31	0	0	0	0	0	0
+design.noc	metric-key	?		15	32	2	2	0	20	0	3
+design.type-coverage.param	metric-key	?		10	53	2	1	1	23	0	3
+design.type-coverage.param.total	metric-key	?		2	15	0	0	0	1	0	0
+design.type-coverage.param.typed	metric-key	?		2	9	0	0	0	0	0	0
+design.type-coverage.pct	metric-key	?		13	25	0	0	0	2	0	0
+design.type-coverage.property	metric-key	?		10	24	2	1	1	22	0	4
+design.type-coverage.property.total	metric-key	?		2	10	0	0	0	0	0	0
+design.type-coverage.property.typed	metric-key	?		2	7	0	0	0	0	0	0
+design.type-coverage.return	metric-key	?		10	31	2	1	0	22	0	4
+design.type-coverage.return.total	metric-key	?		2	9	0	0	0	0	0	0
+design.type-coverage.return.typed	metric-key	?		2	3	0	0	0	0	0	0
+design.woc	metric-key	?		3	12	0	0	0	0	0	0
+maintainability.halstead.bugs	metric-key	?		2	4	0	0	0	0	0	0
+maintainability.halstead.difficulty	metric-key	?		2	5	0	0	0	0	0	0
+maintainability.halstead.effort	metric-key	?		2	4	0	0	0	0	0	0
+maintainability.halstead.time	metric-key	?		2	4	0	0	0	0	0	0
+maintainability.halstead.volume	metric-key	?		6	37	0	0	0	2	0	0
+maintainability.mi	metric-key	?		12	133	0	0	0	0	0	0
+security.hardcoded-credentials	metric-key	?		6	31	0	0	0	15	0	1
+security.sensitive-parameter	metric-key	?		5	19	0	0	0	13	0	1
+size.abstract-class-count	metric-key	?		8	11	0	0	0	0	0	0
+size.class-count	metric-key	?		26	87	2	1	5	29	0	4
+size.class-loc	metric-key	?		2	31	0	0	0	0	0	0
+size.cloc	metric-key	?		5	20	0	0	0	0	0	0
+size.enum-count	metric-key	?		12	18	0	0	0	0	0	0
+size.function-count	metric-key	?		7	10	0	0	0	0	0	0
+size.getter-count	metric-key	?		7	13	0	0	0	0	0	0
+size.implementing-enum-count	metric-key	?		13	9	0	0	0	0	0	0
+size.interface-count	metric-key	?		13	17	0	0	0	0	0	0
+size.lloc	metric-key	?		8	18	0	0	0	3	0	0
+size.loc	metric-key	?		11	193	0	0	0	5	0	0
+size.method-count	metric-key	?		24	151	2	2	0	50	0	3
+size.method-count.private	metric-key	?		4	6	0	0	0	0	0	0
+size.method-count.protected	metric-key	?		4	6	0	0	0	0	0	0
+size.method-count.public	metric-key	?		4	8	0	0	0	0	0	0
+size.method-count.total	metric-key	?		5	17	0	0	0	0	0	0
+size.method-statement-count	metric-key	?		2	30	0	0	0	4	0	0
+size.promoted-property-count	metric-key	?		5	5	0	0	0	0	0	0
+size.property-count	metric-key	?		20	35	2	2	0	24	0	3
+size.property-count.private	metric-key	?		5	10	0	0	0	0	0	0
+size.property-count.protected	metric-key	?		5	7	0	0	0	0	0	0
+size.property-count.public	metric-key	?		6	11	0	0	0	0	0	0
+size.setter-count	metric-key	?		5	11	0	0	0	0	0	0
+size.symbol-class-count	metric-key	?		1	0	0	0	0	0	0	0
+size.symbol-method-count	metric-key	?		6	3	0	0	0	2	0	0
+size.trait-count	metric-key	?		11	13	0	0	0	0	0	0
+annotation.directive	producer	?		4	3	0	0	0	23	0	1
+architecture.circular-dependency	producer	?		9	29	0	2	0	39	0	1
+architecture.layer-violation	producer	?		26	104	0	3	0	79	0	1
+architecture.unassigned-class	producer	?		25	17	0	0	0	21	0	2
+code-smell.boolean-argument	producer	?		3	22	1	2	29	34	0	1
+code-smell.constructor-overinjection	producer	?		11	7	2	2	6	27	0	1
+code-smell.count-in-loop	producer	?		1	5	0	0	0	12	0	1
+code-smell.debug-code	producer	?		1	37	0	0	0	13	0	1
+code-smell.empty-catch	producer	?		4	6	0	0	0	16	0	1
+code-smell.error-suppression	producer	?		1	10	1	2	2	17	0	1
+code-smell.eval	producer	?		1	23	0	0	0	16	0	8
+code-smell.exit	producer	?		1	7	0	0	0	16	0	1
+code-smell.goto	producer	?		2	114	0	0	0	12	0	3
+code-smell.identical-subexpression	producer	?		2	5	0	0	0	13	0	1
+code-smell.long-parameter-list	producer	?		17	53	2	2	3	33	0	11
+code-smell.superglobals	producer	?		1	5	1	0	0	12	0	1
+code-smell.unreachable-code	producer	?		8	36	0	1	0	23	0	1
+code-smell.unused-private	producer	?		2	6	0	0	0	15	0	3
+cohesion.lcom	producer	?		41	150	2	2	0	31	0	4
+complexity.cognitive	producer	?		24	79	2	2	31	48	0	9
+complexity.cyclomatic	producer	?		37	621	2	2	55	120	0	9
+complexity.npath	producer	?		22	92	2	2	12	38	0	8
+complexity.wmc	producer	?		20	85	2	2	11	31	0	4
+computed	producer	?		87	90	0	1	0	24	0	11
+coupling.cbo	producer	?		66	295	2	4	7	104	0	6
+coupling.class-rank	producer	?		25	97	0	2	2	26	0	28
+coupling.distance	producer	?		29	65	2	2	2	32	0	29
+coupling.instability	producer	?		32	87	2	4	8	48	0	8
+design.data-class	producer	?		13	13	1	1	10	32	0	3
+design.god-class	producer	?		13	16	1	2	2	35	0	7
+design.inheritance	producer	?		6	9	2	2	0	20	0	3
+design.noc	producer	?		15	32	2	2	0	20	0	3
+design.type-coverage.param	producer	?		10	53	2	1	1	23	0	3
+design.type-coverage.property	producer	?		10	24	2	1	1	22	0	4
+design.type-coverage.return	producer	?		10	31	2	1	0	22	0	4
+duplication.code-duplication	producer	?		14	53	0	2	12	35	0	4
+health.cohesion	producer	?		38	117	0	2	30	36	0	18
+health.complexity	producer	?		49	175	0	1	0	22	0	21
+health.coupling	producer	?		39	38	0	0	0	13	0	18
+health.maintainability	producer	?		16	28	0	0	0	13	0	18
+health.overall	producer	?		109	140	0	0	0	20	0	18
+health.typing	producer	?		21	53	0	1	1	16	0	18
+maintainability.index	producer	?		11	45	2	2	0	27	0	3
+security.command-injection	producer	?		3	5	0	0	0	13	0	1
+security.hardcoded-credentials	producer	?		6	31	0	0	0	15	0	1
+security.sensitive-parameter	producer	?		5	19	0	0	0	13	0	1
+security.sql-injection	producer	?		3	6	0	0	0	13	0	1
+security.xss	producer	?		4	17	0	0	0	13	0	1
+size.class-count	producer	?		26	87	2	1	5	29	0	4
+size.method-count	producer	?		24	151	2	2	0	50	0	3
+size.property-count	producer	?		20	35	2	2	0	24	0	3
+#
+# ROW COUNTS: 52 channel, 51 producer, 82 metric-key
+#
+# HOW THIS WAS PRODUCED: `php scripts/generate-rename-enumeration.php`.
+# - `channel` rows: 52 keys from
+#   `ChannelDeclarationRegistryInterface::staticDeclarations()` on the
+#   production container (the same oracle
+#   `ChannelDeclarationFixtureDriftTest` uses) — never regex over rule files,
+#   because a rule can name its own channel through an inherited constant.
+# - `producer` rows: 51 names from
+#   `RuleExecutionInterface::allRules()` (`RuleMetadata::name`).
+# - `metric-key` rows: 82 values, `ReflectionClass(MetricName::class)->getConstants()`.
+#   `MetricName` is a plain final class with `public const string` members,
+#   not a backed enum — reflecting its constants is the equivalent measurement.
+# Occurrence columns (src, tests, presets, config, baseline, website_docs, benchmarks, finding_gate) count WHOLE-IDENTIFIER matches of the
+# search string (the channel's `violationCode` half for `channel` rows, the
+# name itself for `producer` and `metric-key` rows) — not files. A match must
+# not be immediately preceded or followed by a word character, `.` or `-`, so
+# a short name like "design.type-coverage" does not also count every
+# occurrence of "design.type-coverage.property" (see PLAN.md, "Карта
+# сопоставляет имя, а не подстроку", for why that prefix collision matters).
+#
+# BOUNDARY OF THE SET: every file under the eight surfaces above, minus
+# generated/vendored noise (src/Reporting/Template/{node_modules,dist},
+# benchmarks/vendor, __pycache__) and the three preset YAML files, which are
+# counted once, under `presets`, not again under `src`.
+#
+# THE `new` AND `step` COLUMNS ARE DECISIONS, NOT MEASUREMENTS. This script
+# never invents either: an unfilled row keeps `?` and an empty `step`. Both
+# survive every later regeneration (merged back in by `old`+`kind`). When the row
+# they were recorded against stops being measured there are two cases, and they
+# are told apart by measurement rather than by assertion: if every name the
+# decision promised APPEARED in this measurement, the rename has landed and the
+# row retires into enumeration-renames-executed.tsv; otherwise the script fails
+# instead of quietly dropping the decision. A target that existed before this
+# measurement cannot have appeared, so it forbids retirement — that is what
+# stops a collapse from retiring the half that was lost. A decided row must name
+# the step that makes the decision, and a step must not name an undecided row:
+# `--emit-maps=<step>` renders one step's decisions as map rows, and refuses a
+# step that has already landed, whose maps are in git.
+#
+# WHAT THIS METHOD DOES NOT SEE:
+#  - a name assembled at runtime (string concatenation, a value read from
+#    `RuleMetadata::name` in code and stored under a different local
+#    variable) is invisible to whole-identifier text matching, in exactly the
+#    same way `enumeration-consumers.tsv` and `enumeration-rules.tsv` already
+#    warn about grep-based extraction;
+#  - `computed.*`/`health.*` beyond the six built-in health dimensions is
+#    open-ended by construction — a user's own `computed_metrics:` entries in
+#    their own qmx.yaml are not, and cannot be, enumerated here (same
+#    boundary `enumeration-rules.tsv` names for `computed.health`);
+#  - occurrence counts are OVERSTATED by prose that mentions a name in running
+#    text without meaning "this literal identifier is written here" (a
+#    website doc sentence that happens to contain the words), and
+#    UNDERSTATED by string concatenation that assembles the identifier from
+#    parts (`'design.' . 'type-coverage'`) or by a fixture line that
+#    round-trips the name through a different serialization (e.g. escaped
+#    slashes in a JSON string spanning what a plain-text regex reads as two
+#    tokens);
+#  - a channel's `ruleName` half is not counted on its own: for the channels
+#    where `ruleName` differs from `violationCode` (the diagnostics on
+#    `architecture.layer-violation` and `annotation.directive`), the
+#    `ruleName` half's occurrences show up in the corresponding `producer`
+#    row instead, because the two strings are identical text.

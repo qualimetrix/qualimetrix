@@ -13,15 +13,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use RuntimeException;
-use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Throwable;
 
 class ComputedMetricEvaluator
 {
-    private readonly ExpressionLanguage $expressionLanguage;
+    private readonly ComputedMetricExpression $expression;
     private readonly ComputedMetricDependencyGraphCalculator $dependencyGraphCalculator;
 
     public function __construct(
@@ -29,9 +28,8 @@ class ComputedMetricEvaluator
         private readonly ProfilerInterface $profiler,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
-        $this->expressionLanguage = new ExpressionLanguage();
-        $this->dependencyGraphCalculator = new ComputedMetricDependencyGraphCalculator();
-        $this->registerMathFunctions();
+        $this->expression = new ComputedMetricExpression();
+        $this->dependencyGraphCalculator = new ComputedMetricDependencyGraphCalculator($this->expression);
     }
 
     public function evaluate(MetricRepositoryInterface $repo, int $filesAnalyzed): void
@@ -69,7 +67,7 @@ class ComputedMetricEvaluator
     private function evaluateAtLevel(
         MetricRepositoryInterface $repo,
         ComputedMetricDefinition $definition,
-        SymbolType $level,
+        SymbolLevel $level,
         string $formula,
     ): void {
         $symbols = $this->getSymbolsForLevel($repo, $level);
@@ -81,7 +79,7 @@ class ComputedMetricEvaluator
             $variables = $this->buildVariableMap($metricBag);
 
             try {
-                $result = $this->expressionLanguage->evaluate($formula, $variables);
+                $result = $this->expression->evaluate($formula, $variables);
             } catch (Throwable $e) {
                 $this->logger->warning('Computed metric evaluation failed', [
                     'metric' => $definition->name,
@@ -120,8 +118,8 @@ class ComputedMetricEvaluator
     /**
      * Validates that all required formula variables exist in the metric repository.
      *
-     * Variables protected by null-coalescing (`??`) are intentionally optional and skipped.
-     * References to other computed metrics (`health__*`, `computed__*`) are validated
+     * Keys guarded by null-coalescing (`??`) are intentionally optional and skipped.
+     * References to other computed metrics (`health.*`, `computed.*`) are validated
      * separately by `ComputedMetricFormulaValidator` and also skipped here.
      *
      * @param list<array{SymbolPath, ?RelativePath, ?int}> $symbols
@@ -131,7 +129,7 @@ class ComputedMetricEvaluator
     private function validateFormulaVariables(
         MetricRepositoryInterface $repo,
         ComputedMetricDefinition $definition,
-        SymbolType $level,
+        SymbolLevel $level,
         string $formula,
         array $symbols,
     ): void {
@@ -152,7 +150,7 @@ class ComputedMetricEvaluator
             throw new RuntimeException(\sprintf(
                 'Computed metric "%s" at level "%s" references unknown metrics: %s. Check the formula: %s',
                 $definition->name,
-                $this->levelKeyFor($level),
+                $level->value,
                 implode(', ', $unknownVars),
                 $formula,
             ));
@@ -170,8 +168,8 @@ class ComputedMetricEvaluator
     {
         $allKnownKeys = [];
         foreach ($symbols as [$symbolPath]) {
-            foreach ($repo->get($symbolPath)->all() as $key => $value) {
-                $allKnownKeys[str_replace('.', '__', $key)] = true;
+            foreach (array_keys($repo->get($symbolPath)->all()) as $key) {
+                $allKnownKeys[$key] = true;
             }
         }
 
@@ -189,28 +187,18 @@ class ComputedMetricEvaluator
     private function findUnknownVariables(array $requiredVars, array $allKnownKeys): array
     {
         $unknownVars = [];
-        foreach ($requiredVars as $var) {
+        foreach ($requiredVars as $key) {
             // Skip computed metric references — validated by ComputedMetricFormulaValidator
-            if (str_starts_with($var, 'health__') || str_starts_with($var, 'computed__')) {
+            if (str_starts_with($key, 'health.') || str_starts_with($key, 'computed.')) {
                 continue;
             }
 
-            if (!isset($allKnownKeys[$var])) {
-                $unknownVars[] = str_replace('__', '.', $var);
+            if (!isset($allKnownKeys[$key])) {
+                $unknownVars[] = $key;
             }
         }
 
         return $unknownVars;
-    }
-
-    private function levelKeyFor(SymbolType $level): string
-    {
-        return match ($level) {
-            SymbolType::Class_ => 'class',
-            SymbolType::Namespace_ => 'namespace',
-            SymbolType::Project => 'project',
-            default => $level->value,
-        };
     }
 
     /**
@@ -223,108 +211,7 @@ class ComputedMetricEvaluator
      */
     private function extractRequiredFormulaVariables(string $formula): array
     {
-        $allVars = $this->extractFormulaVariables($formula);
-        $optionalVars = $this->extractNullCoalescingVariables($formula);
-
-        $required = [];
-        foreach ($allVars as $var) {
-            if (!isset($optionalVars[$var])) {
-                $required[] = $var;
-            }
-        }
-
-        return $required;
-    }
-
-    /**
-     * Extracts all variable-like tokens from a formula, excluding known functions and EL keywords.
-     *
-     * @return list<string>
-     */
-    private function extractFormulaVariables(string $formula): array
-    {
-        if (preg_match_all('/\b([a-zA-Z_][a-zA-Z0-9_]*)\b/', $formula, $matches) === false) {
-            return [];
-        }
-
-        $excluded = array_flip([...self::KNOWN_FUNCTIONS, ...self::EL_KEYWORDS]);
-
-        $variables = [];
-        $seen = [];
-        foreach ($matches[1] as $token) {
-            if (isset($excluded[$token]) || isset($seen[$token])) {
-                continue;
-            }
-            $variables[] = $token;
-            $seen[$token] = true;
-        }
-
-        return $variables;
-    }
-
-    /**
-     * Extracts variables that appear on the left side of `??` (null-coalescing).
-     *
-     * Matches patterns like `(var ?? fallback)` and `var ?? fallback`.
-     *
-     * @return array<string, true>
-     */
-    private function extractNullCoalescingVariables(string $formula): array
-    {
-        $optional = [];
-
-        // Match: identifier followed by optional whitespace and ??
-        if (preg_match_all('/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\?\?/', $formula, $matches) !== 0) {
-            foreach ($matches[1] as $var) {
-                $optional[$var] = true;
-            }
-        }
-
-        return $optional;
-    }
-
-    /** @var list<string> */
-    private const array KNOWN_FUNCTIONS = [
-        'min', 'max', 'abs', 'sqrt', 'log', 'log10', 'clamp',
-    ];
-
-    /** @var list<string> */
-    private const array EL_KEYWORDS = [
-        'true', 'false', 'null', 'not', 'and', 'or', 'in', 'matches',
-    ];
-
-    /**
-     * @return list<array{SymbolPath, ?RelativePath, ?int}>
-     */
-    private function getSymbolsForLevel(MetricRepositoryInterface $repo, SymbolType $level): array
-    {
-        return match ($level) {
-            SymbolType::Project => [[SymbolPath::forProject(), null, null]],
-            SymbolType::Namespace_ => array_map(
-                static fn(string $ns) => [SymbolPath::forNamespace($ns), null, null],
-                $repo->getNamespaces(),
-            ),
-            SymbolType::Class_ => array_map(
-                static fn($info) => [$info->symbolPath, $info->file, $info->line],
-                iterator_to_array($repo->all(SymbolType::Class_), false),
-            ),
-            default => [],
-        };
-    }
-
-    /**
-     * @return array<string, int|float|null>
-     */
-    private function buildVariableMap(MetricBag $bag): array
-    {
-        $variables = [];
-        foreach ($bag->all() as $key => $value) {
-            // Replace . with __ for ExpressionLanguage compatibility
-            $elKey = str_replace('.', '__', $key);
-            $variables[$elKey] = $value;
-        }
-
-        return $variables;
+        return $this->expression->requiredKeysOf($formula);
     }
 
     /**
@@ -348,22 +235,31 @@ class ComputedMetricEvaluator
         return $sorted;
     }
 
-    private function registerMathFunctions(): void
+    /**
+     * @return list<array{SymbolPath, ?RelativePath, ?int}>
+     */
+    private function getSymbolsForLevel(MetricRepositoryInterface $repo, SymbolLevel $level): array
     {
-        $phpFunctions = ['min', 'max', 'abs', 'sqrt', 'log', 'log10'];
-        foreach ($phpFunctions as $fn) {
-            $this->expressionLanguage->register(
-                $fn,
-                static fn(mixed ...$args) => \sprintf('%s(%s)', $fn, implode(', ', $args)),
-                static fn(array $values, mixed ...$args) => $fn(...$args),
-            );
-        }
-
-        // clamp(value, min, max)
-        $this->expressionLanguage->register(
-            'clamp',
-            static fn(mixed $value, mixed $min, mixed $max) => \sprintf('max(%s, min(%s, %s))', $min, $max, $value),
-            static fn(array $values, mixed $value, mixed $min, mixed $max) => max($min, min($max, $value)),
-        );
+        return match ($level) {
+            SymbolLevel::Project => [[SymbolPath::forProject(), null, null]],
+            SymbolLevel::Namespace_ => array_map(
+                static fn(string $ns) => [SymbolPath::forNamespace($ns), null, null],
+                $repo->getNamespaces(),
+            ),
+            SymbolLevel::Class_ => array_map(
+                static fn($info) => [$info->symbolPath, $info->file, $info->line],
+                iterator_to_array($repo->all(SymbolLevel::Class_), false),
+            ),
+            SymbolLevel::Callable, SymbolLevel::File => [],
+        };
     }
+
+    /**
+     * @return array{m: MetricLookup}
+     */
+    private function buildVariableMap(MetricBag $bag): array
+    {
+        return ['m' => new MetricLookup($bag->all())];
+    }
+
 }

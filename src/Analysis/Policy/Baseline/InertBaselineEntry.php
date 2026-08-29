@@ -59,7 +59,7 @@ final readonly class InertBaselineEntry
     ): self {
         return new self(
             subjectKey: $identity->subjectKey,
-            channelKey: $identity->channel->toKey(),
+            channelKey: $identity->channel->code,
             identity: $identity,
             selector: $identity->selector(),
             reason: $reason,

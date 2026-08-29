@@ -44,9 +44,13 @@ final readonly class ThresholdOverride
      * mean one thing. A per-symbol override of several rules is written as
      * several annotations.
      *
-     * Note the asymmetry with `@qmx-ignore`, which addresses a *channel*:
-     * `@qmx-threshold coupling.cbo` is the rule, `@qmx-ignore coupling.cbo.class`
-     * is the channel, and neither spelling has to guess which was meant.
+     * Note the asymmetry with `@qmx-ignore`, which addresses a *channel* and
+     * may narrow it to one level: `@qmx-threshold coupling.cbo` is the rule,
+     * `@qmx-ignore coupling.cbo:class` is the channel at the class level, and
+     * neither spelling has to guess which was meant. A threshold takes no
+     * level either (ADR 0024 §2) — a per-level boundary is a nested
+     * configuration key, and the pair form is captured and refused here so it
+     * cannot silently retune the whole rule.
      */
     public function matches(string $ruleName): bool
     {

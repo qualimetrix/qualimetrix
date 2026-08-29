@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\GithubActionsFormatter;
@@ -55,14 +55,14 @@ final class GithubActionsFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsWarningViolation(): void
+    public function itFormatsWarningFinding(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity 15 exceeds warning threshold 10',
                 severity: Severity::Warning,
                 metricValue: 15,
@@ -81,14 +81,14 @@ final class GithubActionsFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsErrorViolation(): void
+    public function itFormatsErrorFinding(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity 25 exceeds error threshold 20',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -107,14 +107,14 @@ final class GithubActionsFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itUsesNoticeCommandForInfoViolation(): void
+    public function itUsesNoticeCommandForInfoFinding(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 7),
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
                 ruleName: 'architecture.coverage',
-                violationCode: 'architecture.coverage',
+                code: 'architecture.coverage',
                 message: 'Class not assigned to a layer',
                 severity: Severity::Info,
             ))
@@ -129,22 +129,22 @@ final class GithubActionsFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsMultipleViolations(): void
+    public function itFormatsMultipleFindings(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'size.class-count',
-                violationCode: 'size.class-count',
+                code: 'size.class-count',
                 message: 'Too many classes',
                 severity: Severity::Warning,
             ))
@@ -165,11 +165,11 @@ final class GithubActionsFormatterTest extends TestCase
     public function itEscapesSpecialCharactersInMessage(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Test.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'Test'),
                 ruleName: 'test-rule',
-                violationCode: 'test-rule',
+                code: 'test-rule',
                 message: "100% coverage\ris\nnot enough",
                 severity: Severity::Warning,
             ))
@@ -188,11 +188,11 @@ final class GithubActionsFormatterTest extends TestCase
     public function itIncludesFilePathInOutput(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/OrderService.php'), 55),
                 symbolPath: SymbolPath::forMethod('App\Service', 'OrderService', 'process'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'Test message',
                 severity: Severity::Warning,
             ))
@@ -210,11 +210,11 @@ final class GithubActionsFormatterTest extends TestCase
     public function itIncludesLineNumberInOutput(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Test.php'), 99),
                 symbolPath: SymbolPath::forClass('App', 'Test'),
                 ruleName: 'test',
-                violationCode: 'test',
+                code: 'test',
                 message: 'Test message',
                 severity: Severity::Warning,
             ))
@@ -229,14 +229,14 @@ final class GithubActionsFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itUsesViolationCodeAsTitle(): void
+    public function itUsesCodeAsTitle(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Test.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Test'),
                 ruleName: 'complexity',
-                violationCode: 'complexity.method',
+                code: 'complexity.method',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -251,14 +251,14 @@ final class GithubActionsFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsViolationWithoutLine(): void
+    public function itFormatsFindingWithoutLine(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php')),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
-                violationCode: 'size.namespace',
+                code: 'size.namespace',
                 message: 'Namespace too large',
                 severity: Severity::Warning,
             ))
@@ -277,11 +277,11 @@ final class GithubActionsFormatterTest extends TestCase
     public function itEscapesSpecialCharactersInPropertyValues(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/path:with,special/File.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'Test'),
                 ruleName: 'test-rule',
-                violationCode: 'test:rule,name',
+                code: 'test:rule,name',
                 message: 'Test message',
                 severity: Severity::Warning,
             ))
@@ -300,11 +300,11 @@ final class GithubActionsFormatterTest extends TestCase
     public function itIncludesTheAcceptedLevelInTheMessageOnABreach(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation((self::violation(
+            ->addFinding((self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity 31 exceeds threshold 25',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -323,14 +323,14 @@ final class GithubActionsFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itFormatsArchitecturalViolationWithoutFile(): void
+    public function itFormatsArchitecturalFindingWithoutFile(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'architecture.circular',
-                violationCode: 'architecture.circular',
+                code: 'architecture.circular',
                 message: 'Circular dependency detected',
                 severity: Severity::Error,
             ))
@@ -346,21 +346,20 @@ final class GithubActionsFormatterTest extends TestCase
     }
 
     /**
-     * Builds a violation fixture with an explicit declaration or aggregate
+     * Builds a finding fixture with an explicit declaration or aggregate
      * subject, preserving the production contract without hiding it behind a
      * legacy fallback.
      *
      * @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations
      */
-    private static function violation(
+    private static function finding(
         \Qualimetrix\Analysis\Finding\Contract\Location $location,
         \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
         string $ruleName,
-        string $violationCode,
+        string $code,
         string $message,
         \Qualimetrix\Analysis\Finding\Contract\Severity $severity,
         int|float|null $metricValue = null,
-        ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null,
         array $relatedLocations = [],
         ?string $recommendation = null,
         int|float|null $threshold = null,
@@ -369,7 +368,7 @@ final class GithubActionsFormatterTest extends TestCase
         ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
-    ): Violation {
+    ): Finding {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File,
             \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
@@ -377,16 +376,15 @@ final class GithubActionsFormatterTest extends TestCase
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: $message,
             severity: $severity,
             metricValue: $metricValue,
-            level: $level,
             relatedLocations: $relatedLocations,
             recommendation: $recommendation,
             threshold: $threshold,

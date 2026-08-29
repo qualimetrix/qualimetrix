@@ -6,14 +6,15 @@ namespace Qualimetrix\Tests\Analysis\Run\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
@@ -74,8 +75,14 @@ final class RuleProducerPreparationTest extends TestCase
         self::assertSame(0, $participant->inspectCalls);
     }
 
+    /**
+     * Every producer that reads the policy has to be off, not just the first
+     * one. Asking about one of two is exactly the bug the split introduced:
+     * `--only-rule=architecture.unassigned-class` left the policy unprepared
+     * and the rule reached an unprepared collector.
+     */
     #[Test]
-    public function itResetsArchitecturePreparationWithoutDoingWorkWhenLayerViolationRuleIsDisabled(): void
+    public function itResetsArchitecturePreparationWithoutDoingWorkWhenEveryLayerPolicyProducerIsDisabled(): void
     {
         $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
         $architecture->expects(self::never())->method('prepare');
@@ -85,12 +92,31 @@ final class RuleProducerPreparationTest extends TestCase
 
         $this->preparation(
             architecture: $architecture,
-            selection: new RuleSelection(disabled: [LayerPolicyPreparationInterface::PRODUCER_RULE_NAME]),
+            selection: new RuleSelection(disabled: LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES),
         )->prepareArchitecture(
             self::createStub(DependencyGraphInterface::class),
             [],
             $profiler,
         );
+    }
+
+    /**
+     * @param list<string> $only
+     */
+    #[Test]
+    #[TestWith([[LayerPolicyPreparationInterface::PRODUCER_RULE_NAME]])]
+    #[TestWith([[LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME]])]
+    public function itPreparesArchitecturePolicyForEitherOfItsProducersAlone(array $only): void
+    {
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture->expects(self::once())->method('prepare')->with($graph, []);
+        $architecture->expects(self::never())->method('reset');
+
+        $this->preparation(
+            architecture: $architecture,
+            selection: new RuleSelection(only: $only),
+        )->prepareArchitecture($graph, [], self::createStub(ProfilerInterface::class));
     }
 
     #[Test]
@@ -134,7 +160,7 @@ final class RuleProducerPreparationTest extends TestCase
             public function channelsProducedBy(string $producerRuleName): array
             {
                 return $producerRuleName === LayerPolicyPreparationInterface::PRODUCER_RULE_NAME
-                    ? [new ViolationChannel('architecture.coverage', 'architecture.coverage')]
+                    ? [new FindingChannel('architecture.coverage')]
                     : [];
             }
         };

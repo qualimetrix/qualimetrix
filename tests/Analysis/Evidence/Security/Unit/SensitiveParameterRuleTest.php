@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterOptions;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -29,7 +28,6 @@ final class SensitiveParameterRuleTest extends TestCase
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
         self::assertSame('security.sensitive-parameter', $rule->getName());
-        self::assertSame(RuleCategory::Security, $rule->getCategory());
         self::assertStringContainsString('SensitiveParameter', $rule->getDescription());
     }
 
@@ -38,25 +36,25 @@ final class SensitiveParameterRuleTest extends TestCase
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
-        self::assertSame(['security.sensitiveParameter'], $rule->requires());
+        self::assertSame(['security.sensitive-parameter'], $rule->requires());
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenDisabled(): void
+    public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions(enabled: false));
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 1, 'paramName' => 'password'])
-                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 2, 'paramName' => 'password']),
+                ->withEntry('security.sensitive-parameter', ['subjectKind' => 'file', 'line' => 1, 'paramName' => 'password'])
+                ->withEntry('security.sensitive-parameter', ['subjectKind' => 'file', 'line' => 2, 'paramName' => 'password']),
         );
 
         self::assertCount(0, $rule->analyze($context));
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenNoFindings(): void
+    public function itReturnsNoFindingsWhenNoFindings(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
@@ -66,42 +64,42 @@ final class SensitiveParameterRuleTest extends TestCase
     }
 
     #[Test]
-    public function itCreatesViolationForSingleFinding(): void
+    public function itCreatesFindingForSingleFinding(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 12, 'paramName' => 'password']),
+                ->withEntry('security.sensitive-parameter', ['subjectKind' => 'file', 'line' => 12, 'paramName' => 'password']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(12, $violations[0]->location->line);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('security.sensitive-parameter', $violations[0]->ruleName);
-        self::assertStringContainsString('SensitiveParameter', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(12, $findings[0]->location->line);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('security.sensitive-parameter', $findings[0]->ruleName);
+        self::assertStringContainsString('SensitiveParameter', $findings[0]->message);
     }
 
     #[Test]
-    public function itCreatesMultipleViolationsForMultipleFindings(): void
+    public function itCreatesMultipleFindingsForMultipleFindings(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 5, 'paramName' => 'password'])
-                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 10, 'paramName' => 'password'])
-                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 22, 'paramName' => 'password']),
+                ->withEntry('security.sensitive-parameter', ['subjectKind' => 'file', 'line' => 5, 'paramName' => 'password'])
+                ->withEntry('security.sensitive-parameter', ['subjectKind' => 'file', 'line' => 10, 'paramName' => 'password'])
+                ->withEntry('security.sensitive-parameter', ['subjectKind' => 'file', 'line' => 22, 'paramName' => 'password']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(3, $violations);
-        self::assertSame(5, $violations[0]->location->line);
-        self::assertSame(10, $violations[1]->location->line);
-        self::assertSame(22, $violations[2]->location->line);
+        self::assertCount(3, $findings);
+        self::assertSame(5, $findings[0]->location->line);
+        self::assertSame(10, $findings[1]->location->line);
+        self::assertSame(22, $findings[2]->location->line);
     }
 
     #[Test]

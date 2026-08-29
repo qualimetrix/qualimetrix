@@ -12,12 +12,11 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(ErrorSuppressionRule::class)]
 final class ErrorSuppressionRuleTest extends TestCase
@@ -29,7 +28,6 @@ final class ErrorSuppressionRuleTest extends TestCase
 
         self::assertSame('code-smell.error-suppression', $rule->getName());
         self::assertSame('Detects usage of error suppression operator (@)', $rule->getDescription());
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
     #[Test]
@@ -47,7 +45,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions(enabled: false));
 
@@ -60,7 +58,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function noSmellsProducesNoViolations(): void
+    public function noSmellsProducesNoFindings(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
@@ -71,7 +69,7 @@ final class ErrorSuppressionRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -81,7 +79,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function smellDetectedProducesViolation(): void
+    public function smellDetectedProducesFinding(): void
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
@@ -94,19 +92,19 @@ final class ErrorSuppressionRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(8, $violations[0]->location->line);
-        self::assertSame(22, $violations[1]->location->line);
-        self::assertSame('code-smell.error-suppression', $violations[0]->ruleName);
-        self::assertSame(1.0, $violations[0]->metricValue);
+        self::assertCount(2, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(8, $findings[0]->location->line);
+        self::assertSame(22, $findings[1]->location->line);
+        self::assertSame('code-smell.error-suppression', $findings[0]->ruleName);
+        self::assertSame(1.0, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -122,15 +120,15 @@ final class ErrorSuppressionRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame('Error suppression (@) on fopen() - handle errors explicitly', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame('Error suppression (@) on fopen() - handle errors explicitly', $findings[0]->message);
     }
 
     #[Test]
@@ -150,17 +148,17 @@ final class ErrorSuppressionRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        // fopen is allowed, so only exec and the no-function entry should produce violations
-        self::assertCount(2, $violations);
-        self::assertSame(20, $violations[0]->location->line);
-        self::assertSame(30, $violations[1]->location->line);
+        // fopen is allowed, so only exec and the no-function entry should produce findings
+        self::assertCount(2, $findings);
+        self::assertSame(20, $findings[0]->location->line);
+        self::assertSame(30, $findings[1]->location->line);
     }
 
     #[Test]
@@ -176,17 +174,17 @@ final class ErrorSuppressionRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         self::assertSame(
             'Error suppression operator (@) detected - handle errors explicitly',
-            $violations[0]->message,
+            $findings[0]->message,
         );
     }
 
@@ -206,14 +204,14 @@ final class ErrorSuppressionRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
     }
 
 }

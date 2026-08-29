@@ -7,26 +7,29 @@ namespace Qualimetrix\Tests\Infrastructure\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
-use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 
 #[CoversClass(KnownRuleNamesAdapter::class)]
 final class KnownRuleNamesAdapterTest extends TestCase
 {
+    /**
+     * The adapter hands back exactly what the container assembled, including a
+     * producer no rule class declares — deriving the list here again is what
+     * used to leave the classless half of the vocabulary unaddressable.
+     */
     #[Test]
-    public function itExtractsNamesFromRuleClasses(): void
+    public function itHandsBackTheInjectedNamesUnchanged(): void
     {
         $adapter = new KnownRuleNamesAdapter([
-            ComplexityRule::class,
-            ClassCountRule::class,
+            'complexity.cyclomatic',
+            'size.class-count',
+            'health.cohesion',
         ]);
 
-        $names = $adapter->getKnownRuleNames();
-
-        self::assertContains('complexity.cyclomatic', $names);
-        self::assertContains('size.class-count', $names);
-        self::assertCount(2, $names);
+        self::assertSame(
+            ['complexity.cyclomatic', 'size.class-count', 'health.cohesion'],
+            $adapter->getKnownRuleNames(),
+        );
     }
 
     #[Test]

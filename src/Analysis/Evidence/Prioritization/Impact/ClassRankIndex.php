@@ -10,7 +10,7 @@ use Qualimetrix\Core\Path\RelativePath;
  * Pre-computed index for fast classRank lookups.
  *
  * Built once by ClassRankResolver::buildIndex(), used for O(1) resolution
- * of namespace-level and file-level violations.
+ * of namespace-level and file-level findings.
  *
  * @qmx-ignore health.cohesion -- Lookup methods expose independent indexes of one rank snapshot.
  */
@@ -40,7 +40,7 @@ final readonly class ClassRankIndex
     /**
      * Returns the median classRank across all classes, or null if no classes have classRank.
      *
-     * Used as fallback when a violation's classRank cannot be resolved.
+     * Used as fallback when a finding's classRank cannot be resolved.
      */
     public function getMedianRank(): ?float
     {

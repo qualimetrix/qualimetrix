@@ -36,7 +36,7 @@ final class HealthScoreTest extends TestCase
     public function itConstructsWithDecomposition(): void
     {
         $item = new DecompositionItem(
-            metricKey: 'ccn.avg',
+            metricKey: 'complexity.ccn.avg',
             humanName: 'Cyclomatic (avg)',
             value: 3.5,
             goodValue: 'below 4',
@@ -54,6 +54,6 @@ final class HealthScoreTest extends TestCase
         );
 
         self::assertCount(1, $score->decomposition);
-        self::assertSame('ccn.avg', $score->decomposition[0]->metricKey);
+        self::assertSame('complexity.ccn.avg', $score->decomposition[0]->metricKey);
     }
 }

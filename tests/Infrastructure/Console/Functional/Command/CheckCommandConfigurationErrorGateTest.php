@@ -23,7 +23,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * list the projection returns, so every stage that could drop the finding
  * dropped the exit code with it — `--fail-on=none` plus a file-wide
  * `@qmx-ignore-file` turned a broken configuration into a green build with an
- * empty violation list.
+ * empty finding list.
  */
 final class CheckCommandConfigurationErrorGateTest extends TestCase
 {

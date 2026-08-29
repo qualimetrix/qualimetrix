@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -24,50 +24,50 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class SuppressionFilterTest extends TestCase
 {
     #[Test]
-    public function itFileLevelSuppressesAllMatchingViolationsInFile(): void
+    public function itFileLevelSuppressesAllMatchingFindingsInFile(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 1, SuppressionType::File),
         ]);
 
-        $violation1 = $this->createViolation('src/Foo.php', 10, 'complexity');
-        $violation2 = $this->createViolation('src/Foo.php', 100, 'complexity');
-        $violation3 = $this->createViolation('src/Foo.php', 50, 'coupling');
+        $finding1 = $this->createFinding('src/Foo.php', 10, 'complexity');
+        $finding2 = $this->createFinding('src/Foo.php', 100, 'complexity');
+        $finding3 = $this->createFinding('src/Foo.php', 50, 'coupling');
 
-        self::assertFalse($filter->shouldInclude($violation1), 'File suppression should suppress matching violation at line 10');
-        self::assertFalse($filter->shouldInclude($violation2), 'File suppression should suppress matching violation at line 100');
-        self::assertTrue($filter->shouldInclude($violation3), 'File suppression should not suppress non-matching violation');
+        self::assertFalse($filter->shouldInclude($finding1), 'File suppression should suppress matching violation at line 10');
+        self::assertFalse($filter->shouldInclude($finding2), 'File suppression should suppress matching violation at line 100');
+        self::assertTrue($filter->shouldInclude($finding3), 'File suppression should not suppress non-matching violation');
     }
 
     #[Test]
-    public function itSymbolLevelSuppressesViolationsAtOrAfterSuppressionLine(): void
+    public function itSymbolLevelSuppressesFindingsAtOrAfterSuppressionLine(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
-        $violationBefore = $this->createViolation('src/Foo.php', 5, 'complexity');
-        $violationAtLine = $this->createViolation('src/Foo.php', 10, 'complexity');
-        $violationAfter = $this->createViolation('src/Foo.php', 42, 'complexity');
+        $findingBefore = $this->createFinding('src/Foo.php', 5, 'complexity');
+        $findingAtLine = $this->createFinding('src/Foo.php', 10, 'complexity');
+        $findingAfter = $this->createFinding('src/Foo.php', 42, 'complexity');
 
-        self::assertFalse($filter->shouldInclude($violationBefore), 'Symbol suppression is exact-subject-bound, not line-bound');
-        self::assertFalse($filter->shouldInclude($violationAtLine), 'Symbol suppression should suppress violations at suppression line');
-        self::assertFalse($filter->shouldInclude($violationAfter), 'Symbol suppression should suppress violations after suppression line');
+        self::assertFalse($filter->shouldInclude($findingBefore), 'Symbol suppression is exact-subject-bound, not line-bound');
+        self::assertFalse($filter->shouldInclude($findingAtLine), 'Symbol suppression should suppress violations at suppression line');
+        self::assertFalse($filter->shouldInclude($findingAfter), 'Symbol suppression should suppress violations after suppression line');
     }
 
     #[Test]
-    public function itSymbolLevelDoesNotAffectViolationsBeforeSuppressionLine(): void
+    public function itSymbolLevelDoesNotAffectFindingsBeforeSuppressionLine(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 20, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
-        $violation = $this->createViolation('src/Foo.php', 5, 'complexity');
+        $finding = $this->createFinding('src/Foo.php', 5, 'complexity');
 
-        self::assertFalse($filter->shouldInclude($violation), 'Symbol suppression is exact-subject-bound, not line-bound');
+        self::assertFalse($filter->shouldInclude($finding), 'Symbol suppression is exact-subject-bound, not line-bound');
     }
 
     #[Test]
@@ -78,15 +78,15 @@ final class SuppressionFilterTest extends TestCase
             new Suppression('complexity', null, 10, SuppressionType::NextLine),
         ]);
 
-        $violationOnNextLine = $this->createViolation('src/Foo.php', 11, 'complexity');
-        $violationOnSameLine = $this->createViolation('src/Foo.php', 10, 'complexity');
-        $violationOnLinePlus2 = $this->createViolation('src/Foo.php', 12, 'complexity');
-        $violationBefore = $this->createViolation('src/Foo.php', 5, 'complexity');
+        $findingOnNextLine = $this->createFinding('src/Foo.php', 11, 'complexity');
+        $findingOnSameLine = $this->createFinding('src/Foo.php', 10, 'complexity');
+        $findingOnLinePlus2 = $this->createFinding('src/Foo.php', 12, 'complexity');
+        $findingBefore = $this->createFinding('src/Foo.php', 5, 'complexity');
 
-        self::assertFalse($filter->shouldInclude($violationOnNextLine), 'NextLine suppression should suppress violation on line+1');
-        self::assertTrue($filter->shouldInclude($violationOnSameLine), 'NextLine suppression should NOT suppress violation on same line');
-        self::assertTrue($filter->shouldInclude($violationOnLinePlus2), 'NextLine suppression should NOT suppress violation on line+2');
-        self::assertTrue($filter->shouldInclude($violationBefore), 'NextLine suppression should NOT suppress violation before suppression');
+        self::assertFalse($filter->shouldInclude($findingOnNextLine), 'NextLine suppression should suppress violation on line+1');
+        self::assertTrue($filter->shouldInclude($findingOnSameLine), 'NextLine suppression should NOT suppress violation on same line');
+        self::assertTrue($filter->shouldInclude($findingOnLinePlus2), 'NextLine suppression should NOT suppress violation on line+2');
+        self::assertTrue($filter->shouldInclude($findingBefore), 'NextLine suppression should NOT suppress violation before suppression');
     }
 
     #[Test]
@@ -97,9 +97,9 @@ final class SuppressionFilterTest extends TestCase
             new Suppression('complexity', null, 10, SuppressionType::NextLine),
         ]);
 
-        $violation = $this->createViolation('src/Foo.php', 12, 'complexity');
+        $finding = $this->createFinding('src/Foo.php', 12, 'complexity');
 
-        self::assertTrue($filter->shouldInclude($violation), 'NextLine suppression must not affect line+2');
+        self::assertTrue($filter->shouldInclude($finding), 'NextLine suppression must not affect line+2');
     }
 
     #[Test]
@@ -110,11 +110,11 @@ final class SuppressionFilterTest extends TestCase
             new Suppression('*', null, 1, SuppressionType::File),
         ]);
 
-        $violation1 = $this->createViolation('src/Foo.php', 42, 'complexity');
-        $violation2 = $this->createViolation('src/Foo.php', 50, 'coupling');
+        $finding1 = $this->createFinding('src/Foo.php', 42, 'complexity');
+        $finding2 = $this->createFinding('src/Foo.php', 50, 'coupling');
 
-        self::assertFalse($filter->shouldInclude($violation1));
-        self::assertFalse($filter->shouldInclude($violation2));
+        self::assertFalse($filter->shouldInclude($finding1));
+        self::assertFalse($filter->shouldInclude($finding2));
     }
 
     #[Test]
@@ -122,9 +122,9 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
 
-        $violation = $this->createViolation('src/Foo.php', 42, 'complexity');
+        $finding = $this->createFinding('src/Foo.php', 42, 'complexity');
 
-        self::assertTrue($filter->shouldInclude($violation), 'Violation should pass when no suppressions');
+        self::assertTrue($filter->shouldInclude($finding), 'Violation should pass when no suppressions');
     }
 
     #[Test]
@@ -135,59 +135,59 @@ final class SuppressionFilterTest extends TestCase
             new Suppression('complexity', null, 10, SuppressionType::File),
         ]);
 
-        $violation = $this->createViolation('src/Bar.php', 42, 'complexity');
+        $finding = $this->createFinding('src/Bar.php', 42, 'complexity');
 
-        self::assertTrue($filter->shouldInclude($violation));
+        self::assertTrue($filter->shouldInclude($finding));
     }
 
     #[Test]
-    public function itGetSuppressedViolations(): void
+    public function itGetSuppressedFindings(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
-        $violation1 = $this->createViolation('src/Foo.php', 42, 'complexity');
-        $violation2 = $this->createViolation('src/Foo.php', 50, 'coupling');
+        $finding1 = $this->createFinding('src/Foo.php', 42, 'complexity');
+        $finding2 = $this->createFinding('src/Foo.php', 50, 'coupling');
 
-        $suppressed = $filter->getSuppressedViolations([$violation1, $violation2]);
+        $suppressed = $filter->getSuppressedFindings([$finding1, $finding2]);
 
         self::assertCount(1, $suppressed);
-        self::assertSame($violation1, $suppressed[0]);
+        self::assertSame($finding1, $suppressed[0]);
     }
 
     #[Test]
-    public function itSuppressionMatchesViolationCodeWithAGroupSelector(): void
+    public function itSuppressionMatchesCodeWithAGroupSelector(): void
     {
         $filter = new SuppressionFilter();
-        // Suppress 'complexity' — should match all complexity.* violation codes
+        // Suppress 'complexity' — should match all complexity.* finding codes
         $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity.cyclomatic.*', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
-        $violation1 = new Violation(
+        $finding1 = new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             subject: $this->subject(),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic.callable',
             message: 'Test message',
             severity: Severity::Warning,
         );
 
-        $violation2 = new Violation(
+        $finding2 = new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 50),
             subject: $this->subject(),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'baz'),
             ruleName: 'coupling.distance',
-            violationCode: 'coupling.distance',
+            code: 'coupling.distance',
             message: 'Test message',
             severity: Severity::Error,
         );
 
-        self::assertFalse($filter->shouldInclude($violation1), 'complexity.cyclomatic.callable should be suppressed by complexity.cyclomatic.*');
-        self::assertTrue($filter->shouldInclude($violation2), 'coupling.distance should not be suppressed by complexity.cyclomatic.*');
+        self::assertFalse($filter->shouldInclude($finding1), 'complexity.cyclomatic.callable should be suppressed by complexity.cyclomatic.*');
+        self::assertTrue($filter->shouldInclude($finding2), 'coupling.distance should not be suppressed by complexity.cyclomatic.*');
     }
 
     #[Test]
@@ -198,21 +198,21 @@ final class SuppressionFilterTest extends TestCase
             new Suppression('health.cohesion', 'Structurally inapplicable', 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable, endLine: 50),
         ]);
 
-        $cohesion = new Violation(
+        $cohesion = new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 20),
             subject: $this->subject(),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'computed.health',
-            violationCode: 'health.cohesion',
+            code: 'health.cohesion',
             message: 'Cohesion health is low',
             severity: Severity::Error,
         );
-        $coupling = new Violation(
+        $coupling = new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 20),
             subject: $this->subject(),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'computed.health',
-            violationCode: 'health.coupling',
+            code: 'health.coupling',
             message: 'Coupling health is low',
             severity: Severity::Error,
         );
@@ -230,26 +230,26 @@ final class SuppressionFilterTest extends TestCase
             new Suppression('coupling', null, 20, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
-        $violation1 = $this->createViolation('src/Foo.php', 42, 'complexity');
-        $violation2 = $this->createViolation('src/Foo.php', 50, 'coupling');
-        $violation3 = $this->createViolation('src/Foo.php', 60, 'size');
+        $finding1 = $this->createFinding('src/Foo.php', 42, 'complexity');
+        $finding2 = $this->createFinding('src/Foo.php', 50, 'coupling');
+        $finding3 = $this->createFinding('src/Foo.php', 60, 'size');
 
-        self::assertFalse($filter->shouldInclude($violation1));
-        self::assertFalse($filter->shouldInclude($violation2));
-        self::assertTrue($filter->shouldInclude($violation3));
+        self::assertFalse($filter->shouldInclude($finding1));
+        self::assertFalse($filter->shouldInclude($finding2));
+        self::assertTrue($filter->shouldInclude($finding3));
     }
 
     #[Test]
-    public function itPassesNonSuppressedViolation(): void
+    public function itPassesNonSuppressedFinding(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
-        $violation = $this->createViolation('src/Foo.php', 42, 'coupling');
+        $finding = $this->createFinding('src/Foo.php', 42, 'coupling');
 
-        self::assertTrue($filter->shouldInclude($violation), 'Non-suppressed violation should pass through');
+        self::assertTrue($filter->shouldInclude($finding), 'Non-suppressed violation should pass through');
     }
 
     #[Test]
@@ -260,12 +260,12 @@ final class SuppressionFilterTest extends TestCase
             new Suppression('complexity', null, 1, SuppressionType::File),
         ]);
 
-        $violation = $this->createViolation('src/Foo.php', 10, 'complexity');
-        self::assertFalse($filter->shouldInclude($violation), 'Violation should be suppressed before clear');
+        $finding = $this->createFinding('src/Foo.php', 10, 'complexity');
+        self::assertFalse($filter->shouldInclude($finding), 'Violation should be suppressed before clear');
 
         $filter->clearSuppressions();
 
-        self::assertTrue($filter->shouldInclude($violation), 'Violation should pass after clearSuppressions');
+        self::assertTrue($filter->shouldInclude($finding), 'Violation should pass after clearSuppressions');
     }
 
     #[Test]
@@ -278,8 +278,8 @@ final class SuppressionFilterTest extends TestCase
             new Suppression('complexity', null, 1, SuppressionType::File),
         ]);
 
-        $fooViolation = $this->createViolation('src/Foo.php', 10, 'complexity');
-        self::assertFalse($filter->shouldInclude($fooViolation));
+        $fooFinding = $this->createFinding('src/Foo.php', 10, 'complexity');
+        self::assertFalse($filter->shouldInclude($fooFinding));
 
         // Second load: clear and load different suppressions
         $filter->clearSuppressions();
@@ -288,14 +288,14 @@ final class SuppressionFilterTest extends TestCase
         ]);
 
         // Old suppression from Foo.php should no longer apply
-        self::assertTrue($filter->shouldInclude($fooViolation), 'Old suppression for Foo.php should not persist after clear+reload');
+        self::assertTrue($filter->shouldInclude($fooFinding), 'Old suppression for Foo.php should not persist after clear+reload');
 
-        $barViolation = $this->createViolation('src/Bar.php', 10, 'coupling');
-        self::assertFalse($filter->shouldInclude($barViolation), 'New suppression for Bar.php should work');
+        $barFinding = $this->createFinding('src/Bar.php', 10, 'coupling');
+        self::assertFalse($filter->shouldInclude($barFinding), 'New suppression for Bar.php should work');
     }
 
     #[Test]
-    public function itSymbolSuppressionDoesNotSuppressNullLineViolation(): void
+    public function itSymbolSuppressionDoesNotSuppressNullLineFinding(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -303,21 +303,21 @@ final class SuppressionFilterTest extends TestCase
         ]);
 
         // Symbol suppression matches the exact bound subject independently of presentation line.
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), null),
             subject: $this->subject(),
             symbolPath: SymbolPath::forNamespace('App'),
             ruleName: 'coupling',
-            violationCode: 'coupling',
+            code: 'coupling',
             message: 'Test',
             severity: Severity::Warning,
         );
 
-        self::assertFalse($filter->shouldInclude($violation));
+        self::assertFalse($filter->shouldInclude($finding));
     }
 
     #[Test]
-    public function itSymbolSuppressionDoesNotAffectViolationsAfterSymbolEndLine(): void
+    public function itSymbolSuppressionDoesNotAffectFindingsAfterSymbolEndLine(): void
     {
         $filter = new SuppressionFilter();
         // Suppression on first class (lines 10-50), should NOT suppress second class (line 60)
@@ -325,13 +325,13 @@ final class SuppressionFilterTest extends TestCase
             new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable, endLine: 50),
         ]);
 
-        $violationInFirstClass = $this->createViolation('src/Foo.php', 30, 'complexity');
-        $violationInSecondClass = $this->createViolation('src/Foo.php', 60, 'complexity');
-        $violationAtEndLine = $this->createViolation('src/Foo.php', 50, 'complexity');
+        $findingInFirstClass = $this->createFinding('src/Foo.php', 30, 'complexity');
+        $findingInSecondClass = $this->createFinding('src/Foo.php', 60, 'complexity');
+        $findingAtEndLine = $this->createFinding('src/Foo.php', 50, 'complexity');
 
-        self::assertFalse($filter->shouldInclude($violationInFirstClass), 'Violation inside suppressed symbol should be suppressed');
-        self::assertFalse($filter->shouldInclude($violationAtEndLine), 'Violation at symbol end line should be suppressed');
-        self::assertFalse($filter->shouldInclude($violationInSecondClass), 'Symbol suppression is exact-subject-bound, not line-bound');
+        self::assertFalse($filter->shouldInclude($findingInFirstClass), 'Violation inside suppressed symbol should be suppressed');
+        self::assertFalse($filter->shouldInclude($findingAtEndLine), 'Violation at symbol end line should be suppressed');
+        self::assertFalse($filter->shouldInclude($findingInSecondClass), 'Symbol suppression is exact-subject-bound, not line-bound');
     }
 
     #[Test]
@@ -343,9 +343,9 @@ final class SuppressionFilterTest extends TestCase
             new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable, endLine: null),
         ]);
 
-        $violation = $this->createViolation('src/Foo.php', 999, 'complexity');
+        $finding = $this->createFinding('src/Foo.php', 999, 'complexity');
 
-        self::assertFalse($filter->shouldInclude($violation), 'Suppression without endLine should suppress until end of file');
+        self::assertFalse($filter->shouldInclude($finding), 'Suppression without endLine should suppress until end of file');
     }
 
     #[Test]
@@ -356,12 +356,12 @@ final class SuppressionFilterTest extends TestCase
         $sourceDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Source', 'call'), RelativePath::fromString('src/Source.php'), DeclarationOrdinal::fromRank(0));
         $targetSubject = MetricSubject::declaration($targetDeclaration);
         $sourceSubject = MetricSubject::declaration($sourceDeclaration);
-        $targetViolation = new Violation(
+        $targetFinding = new Finding(
             location: new Location(RelativePath::fromString('src/Source.php'), 42),
             subject: $targetSubject,
             symbolPath: $targetDeclaration->logical,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Target finding reported at its use site',
             severity: Severity::Warning,
         );
@@ -388,44 +388,44 @@ final class SuppressionFilterTest extends TestCase
             new Suppression('physical.file', null, 1, SuppressionType::File),
             new Suppression('physical.next', null, 10, SuppressionType::NextLine),
         ]);
-        self::assertFalse($filter->shouldInclude($targetViolation));
+        self::assertFalse($filter->shouldInclude($targetFinding));
 
         $filter->setSuppressions('src/Target.php', []);
-        self::assertTrue($filter->shouldInclude($targetViolation), 'A source control must not suppress a different target subject');
+        self::assertTrue($filter->shouldInclude($targetFinding), 'A source control must not suppress a different target subject');
 
         $filter->setSuppressions('src/Target.php', [$targetControl]);
-        self::assertFalse($filter->shouldInclude($targetViolation));
-        self::assertFalse($filter->shouldInclude(new Violation(
+        self::assertFalse($filter->shouldInclude($targetFinding));
+        self::assertFalse($filter->shouldInclude(new Finding(
             location: new Location(RelativePath::fromString('src/Source.php'), 42),
             subject: $targetSubject,
             symbolPath: $targetDeclaration->logical,
             ruleName: 'physical.file',
-            violationCode: 'physical.file',
+            code: 'physical.file',
             message: 'Physical file suppression',
             severity: Severity::Warning,
         )));
-        self::assertFalse($filter->shouldInclude(new Violation(
+        self::assertFalse($filter->shouldInclude(new Finding(
             location: new Location(RelativePath::fromString('src/Source.php'), 11),
             subject: $targetSubject,
             symbolPath: $targetDeclaration->logical,
             ruleName: 'physical.next',
-            violationCode: 'physical.next',
+            code: 'physical.next',
             message: 'Physical next-line suppression',
             severity: Severity::Warning,
         )));
 
         $filter->clearSuppressions();
-        self::assertTrue($filter->shouldInclude($targetViolation));
+        self::assertTrue($filter->shouldInclude($targetFinding));
     }
 
-    private function createViolation(string $file, int $line, string $violationCode): Violation
+    private function createFinding(string $file, int $line, string $code): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString($file), $line),
             subject: $this->subject(),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: $violationCode,
-            violationCode: $violationCode,
+            ruleName: $code,
+            code: $code,
             message: 'Test message',
             severity: Severity::Warning,
         );

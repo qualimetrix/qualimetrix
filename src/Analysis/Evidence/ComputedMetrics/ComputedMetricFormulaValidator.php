@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Core\Symbol\SymbolType;
-use Symfony\Component\ExpressionLanguage\ExpressionFunction;
-use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
 
 /**
@@ -16,22 +14,11 @@ use Symfony\Component\ExpressionLanguage\SyntaxError;
  */
 final class ComputedMetricFormulaValidator
 {
-    private readonly ExpressionLanguage $expressionLanguage;
-
-    /** @var list<string> */
-    private const array KNOWN_FUNCTIONS = [
-        'min', 'max', 'abs', 'sqrt', 'log', 'log10', 'clamp',
-    ];
-
-    /** @var list<string> */
-    private const array EL_KEYWORDS = [
-        'true', 'false', 'null', 'not', 'and', 'or', 'in', 'matches',
-    ];
+    private readonly ComputedMetricExpression $expression;
 
     public function __construct()
     {
-        $this->expressionLanguage = new ExpressionLanguage();
-        $this->registerMathFunctions();
+        $this->expression = new ComputedMetricExpression();
     }
 
     /**
@@ -63,18 +50,25 @@ final class ComputedMetricFormulaValidator
                     continue; // Coverage validation handles missing formulas
                 }
 
-                $variables = $this->extractFormulaVariables($formula);
-
                 try {
-                    $this->expressionLanguage->parse($formula, $variables);
+                    $this->expression->parse($formula);
                 } catch (SyntaxError $e) {
-                    $levelKey = $this->levelToString($level);
+                    $levelKey = $level->value;
 
                     throw new ComputedMetricConfigurationException(\sprintf(
                         'Invalid formula syntax for computed metric "%s" at level "%s": %s (formula: %s)',
                         $definition->name,
                         $levelKey,
                         $e->getMessage(),
+                        $formula,
+                    ));
+                }
+
+                if (!$this->expression->everyAccessIsALiteralIndex($formula)) {
+                    throw new ComputedMetricConfigurationException(\sprintf(
+                        'Computed metric "%s" reaches "m" by something other than a quoted metric key, which makes'
+                        . ' the key unverifiable. Write every access as m["<metric key>"]. Formula: %s',
+                        $definition->name,
                         $formula,
                     ));
                 }
@@ -93,7 +87,7 @@ final class ComputedMetricFormulaValidator
             foreach ($definition->levels as $level) {
                 $formula = $definition->getFormulaForLevel($level);
                 if ($formula === null) {
-                    $levelKey = $this->levelToString($level);
+                    $levelKey = $level->value;
 
                     throw new ComputedMetricConfigurationException(\sprintf(
                         'Computed metric "%s" has no formula for level "%s"',
@@ -165,7 +159,7 @@ final class ComputedMetricFormulaValidator
     }
 
     /**
-     * Validates that all formula references to health__* or computed__* correspond to existing definitions.
+     * Validates that all formula references to health.* or computed.* correspond to existing definitions.
      *
      * @param list<ComputedMetricDefinition> $definitions
      */
@@ -193,82 +187,13 @@ final class ComputedMetricFormulaValidator
     }
 
     /**
-     * Extracts variable-like tokens from a formula, excluding known functions and EL keywords.
-     *
-     * @return list<string>
-     */
-    private function extractFormulaVariables(string $formula): array
-    {
-        if (preg_match_all('/\b([a-zA-Z_][a-zA-Z0-9_]*)\b/', $formula, $matches) === false) {
-            return [];
-        }
-
-        $excluded = array_merge(self::KNOWN_FUNCTIONS, self::EL_KEYWORDS);
-        $excludedSet = array_flip($excluded);
-
-        $variables = [];
-        $seen = [];
-        foreach ($matches[1] as $token) {
-            if (isset($excludedSet[$token]) || isset($seen[$token])) {
-                continue;
-            }
-            $variables[] = $token;
-            $seen[$token] = true;
-        }
-
-        return $variables;
-    }
-
-    /**
-     * Extracts references to other computed metrics from a formula.
-     * Looks for variables matching health__* or computed__* and maps __ back to .
+     * The other computed metrics a formula reads.
      *
      * @return list<string>
      */
     private function extractComputedMetricReferences(string $formula): array
     {
-        $variables = $this->extractFormulaVariables($formula);
-        $refs = [];
-        foreach ($variables as $var) {
-            if (str_starts_with($var, 'health__') || str_starts_with($var, 'computed__')) {
-                $refs[] = str_replace('__', '.', $var);
-            }
-        }
-
-        return $refs;
+        return $this->expression->computedReferencesOf($formula);
     }
 
-    /**
-     * Registers math functions in ExpressionLanguage.
-     */
-    private function registerMathFunctions(): void
-    {
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('min'));
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('max'));
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('abs'));
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('sqrt'));
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('log'));
-        $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('log10'));
-
-        $this->expressionLanguage->addFunction(new ExpressionFunction(
-            'clamp',
-            static fn(string $value, string $min, string $max): string => \sprintf(
-                'max(%s, min(%s, %s))',
-                $min,
-                $max,
-                $value,
-            ),
-            static fn(array $arguments, float $value, float $min, float $max): float => max($min, min($max, $value)),
-        ));
-    }
-
-    private function levelToString(SymbolType $level): string
-    {
-        return match ($level) {
-            SymbolType::Class_ => 'class',
-            SymbolType::Namespace_ => 'namespace',
-            SymbolType::Project => 'project',
-            default => $level->value,
-        };
-    }
 }

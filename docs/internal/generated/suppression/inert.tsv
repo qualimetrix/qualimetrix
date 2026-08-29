@@ -1,0 +1,18 @@
+mechanism	suppressor
+rule-path-exclusion	complexity.cognitive: src/Analysis/Evidence/Coupling/*Visitor.php
+rule-path-exclusion	complexity.cognitive: src/Analysis/Evidence/Security/*Visitor.php
+rule-path-exclusion	complexity.cyclomatic: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
+rule-path-exclusion	complexity.cyclomatic: src/Analysis/Evidence/Coupling/*Visitor.php
+rule-path-exclusion	complexity.cyclomatic: src/Analysis/Evidence/Security/*Visitor.php
+rule-path-exclusion	complexity.npath: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
+rule-path-exclusion	complexity.npath: src/Analysis/Evidence/Coupling/*Visitor.php
+rule-path-exclusion	complexity.npath: src/Analysis/Evidence/Security/*Visitor.php
+rule-path-exclusion	complexity.wmc: src/Analysis/Evidence/Design/*Visitor.php
+rule-path-exclusion	complexity.wmc: src/Analysis/Evidence/Security/*Visitor.php
+rule-path-exclusion	coupling.cbo: src/Analysis/Evidence/Design/*Visitor.php
+rule-path-exclusion	coupling.cbo: src/Analysis/Evidence/Security/*Visitor.php
+rule-path-exclusion	coupling.instability: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
+rule-path-exclusion	duplication.code-duplication: src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
+rule-path-exclusion	duplication.code-duplication: src/Analysis/Evidence/Maintainability/*Options.php
+rule-path-exclusion	duplication.code-duplication: src/Analysis/Evidence/Security/*Options.php
+rule-path-exclusion	duplication.code-duplication: src/Analysis/Evidence/Size/*Options.php

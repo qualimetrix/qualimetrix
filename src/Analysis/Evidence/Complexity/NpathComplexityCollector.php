@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 /**
@@ -24,7 +24,7 @@ use SplFileInfo;
  * Unlike Cyclomatic Complexity (additive), NPath is multiplicative and grows exponentially.
  *
  * Metric format: npath:{FQN}
- * Example: npath:App\Service\UserService::calculate
+ * Example: complexity.npath:App\Service\UserService::calculate
  */
 final class NpathComplexityCollector extends AbstractCollector implements CallableMetricsProviderInterface
 {

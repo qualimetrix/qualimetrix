@@ -13,15 +13,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 /**
  * Collects Cyclomatic Complexity metrics for methods and functions.
  *
  * Metric format: ccn:{FQN}
- * Example: ccn:App\Service\UserService::calculate
+ * Example: complexity.ccn:App\Service\UserService::calculate
  */
 final class CyclomaticComplexityCollector extends AbstractCollector implements CallableMetricsProviderInterface
 {

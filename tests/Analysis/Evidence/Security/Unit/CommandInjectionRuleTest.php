@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule;
 use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -31,7 +30,6 @@ final class CommandInjectionRuleTest extends TestCase
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
         self::assertSame('security.command-injection', $rule->getName());
-        self::assertSame(RuleCategory::Security, $rule->getCategory());
         self::assertSame('Detects potential command injection vulnerabilities', $rule->getDescription());
     }
 
@@ -44,7 +42,7 @@ final class CommandInjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenDisabled(): void
+    public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions(enabled: false));
 
@@ -56,7 +54,7 @@ final class CommandInjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenNoFindings(): void
+    public function itReturnsNoFindingsWhenNoFindings(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
@@ -83,7 +81,7 @@ final class CommandInjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itCreatesViolationForSingleFinding(): void
+    public function itCreatesFindingForSingleFinding(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
@@ -92,26 +90,26 @@ final class CommandInjectionRuleTest extends TestCase
                 ->withEntry('security.command_injection', ['subjectKind' => 'file', 'line' => 20, 'superglobal' => '']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(20, $violations[0]->location->line);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('security.command-injection', $violations[0]->ruleName);
-        self::assertSame('Potential command injection — use escapeshellarg() before passing user input to shell commands', $violations[0]->message);
-        self::assertSame('file:src/Service/DeployService.php', $violations[0]->subject->toCanonical());
-        self::assertSame('src/Service/DeployService.php', $violations[0]->location->pathString());
-        self::assertTrue($violations[0]->location->precise);
-        self::assertSame(1.0, $violations[0]->metricValue);
-        self::assertSame('Use escapeshellarg() for arguments or avoid shell commands entirely.', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertSame(20, $findings[0]->location->line);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame('security.command-injection', $findings[0]->ruleName);
+        self::assertSame('Potential command injection — use escapeshellarg() before passing user input to shell commands', $findings[0]->message);
+        self::assertSame('file:src/Service/DeployService.php', $findings[0]->subject->toCanonical());
+        self::assertSame('src/Service/DeployService.php', $findings[0]->location->pathString());
+        self::assertTrue($findings[0]->location->precise);
+        self::assertSame(1.0, $findings[0]->metricValue);
+        self::assertSame('Use escapeshellarg() for arguments or avoid shell commands entirely.', $findings[0]->recommendation);
         self::assertSame(
             OccurrenceKey::semantic('command_injection', ['type' => 'command_injection', 'superglobal' => ''])->value,
-            $violations[0]->occurrenceKey?->value,
+            $findings[0]->occurrenceKey?->value,
         );
     }
 
     #[Test]
-    public function itCreatesMultipleViolationsForMultipleFindings(): void
+    public function itCreatesMultipleFindingsForMultipleFindings(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
@@ -121,15 +119,15 @@ final class CommandInjectionRuleTest extends TestCase
                 ->withEntry('security.command_injection', ['subjectKind' => 'file', 'line' => 30, 'superglobal' => '']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
-        self::assertSame(10, $violations[0]->location->line);
-        self::assertSame(30, $violations[1]->location->line);
+        self::assertCount(2, $findings);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertSame(30, $findings[1]->location->line);
     }
 
     #[Test]
-    public function itIncludesSuperglobalInViolationMessage(): void
+    public function itIncludesSuperglobalInFindingMessage(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
@@ -138,11 +136,11 @@ final class CommandInjectionRuleTest extends TestCase
                 ->withEntry('security.command_injection', ['subjectKind' => 'file', 'line' => 20, 'superglobal' => '_REQUEST']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('($_REQUEST)', $violations[0]->message);
-        self::assertStringContainsString('command injection', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('($_REQUEST)', $findings[0]->message);
+        self::assertStringContainsString('command injection', $findings[0]->message);
     }
 
     #[Test]

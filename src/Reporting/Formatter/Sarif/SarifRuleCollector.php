@@ -6,11 +6,11 @@ namespace Qualimetrix\Reporting\Formatter\Sarif;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentation;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 
 /**
- * Collects and describes SARIF rule entries from a set of violations.
+ * Collects and describes SARIF rule entries from a set of findings.
  *
  * Builds the rules array for the SARIF tool driver, including human-readable
  * names, descriptions, and documentation URLs. Both the description and the
@@ -26,7 +26,7 @@ final class SarifRuleCollector
     public const INFORMATION_URI = 'https://github.com/qualimetrix/qualimetrix';
 
     /**
-     * Site root, not `/rules/`: `computed.health` documents outside `rules/`
+     * Site root, not `/rules/`: the computed-metric family documents outside `rules/`
      * entirely (`reference/health-scores`), which no `/rules/`-rooted base
      * could ever address. See `docs/internal/plans/sarif-channel-descriptions.md`,
      * the "helpUri" section.
@@ -38,34 +38,34 @@ final class SarifRuleCollector
     ) {}
 
     /**
-     * Collects unique rules from violations.
+     * Collects unique rules from findings.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return list<array{id: string, name: string, shortDescription: array{text: string}, fullDescription: array{text: string}, helpUri: string, defaultConfiguration: array{level: string}}>
      */
-    public function collectRules(array $violations): array
+    public function collectRules(array $findings): array
     {
-        // Collect unique violation codes with their max severity
-        /** @var array<string, array{ruleName: string, maxSeverity: Severity}> $violationCodes */
-        $violationCodes = [];
+        // Collect unique finding codes with their max severity
+        /** @var array<string, array{ruleName: string, maxSeverity: Severity}> $codes */
+        $codes = [];
 
-        foreach ($violations as $violation) {
-            $code = $violation->violationCode;
+        foreach ($findings as $finding) {
+            $code = $finding->code;
 
-            if (!isset($violationCodes[$code])) {
-                $violationCodes[$code] = [
-                    'ruleName' => $violation->ruleName,
-                    'maxSeverity' => $violation->severity,
+            if (!isset($codes[$code])) {
+                $codes[$code] = [
+                    'ruleName' => $finding->ruleName,
+                    'maxSeverity' => $finding->severity,
                 ];
-            } elseif (self::severityRank($violation->severity) > self::severityRank($violationCodes[$code]['maxSeverity'])) {
-                $violationCodes[$code]['maxSeverity'] = $violation->severity;
+            } elseif (self::severityRank($finding->severity) > self::severityRank($codes[$code]['maxSeverity'])) {
+                $codes[$code]['maxSeverity'] = $finding->severity;
             }
         }
 
         $rules = [];
 
-        foreach ($violationCodes as $code => $info) {
+        foreach ($codes as $code => $info) {
             // Resolved once per code, not once per field: getRuleDescription()
             // and getHelpUri() each resolve presentationFor($code) again on their
             // own, which is the right thing for their public, independently
@@ -114,15 +114,15 @@ final class SarifRuleCollector
      * when the resolved description is empty — the same fallback for both,
      * since neither is a legitimate answer to show the user.
      */
-    public function getRuleDescription(string $violationCode): string
+    public function getRuleDescription(string $code): string
     {
-        return $this->describeFrom($this->presentation->presentationFor($violationCode), $violationCode);
+        return $this->describeFrom($this->presentation->presentationFor($code), $code);
     }
 
-    private function describeFrom(?ChannelPresentation $presentation, string $violationCode): string
+    private function describeFrom(?ChannelPresentation $presentation, string $code): string
     {
         if ($presentation === null) {
-            return ucfirst(str_replace(['.', '-'], ' ', $violationCode));
+            return ucfirst(str_replace(['.', '-'], ' ', $code));
         }
 
         return $presentation->description;
@@ -138,9 +138,9 @@ final class SarifRuleCollector
      * docblock documents. Falls back to the repository URL for unknown or
      * user-defined codes.
      */
-    public function getHelpUri(string $violationCode): string
+    public function getHelpUri(string $code): string
     {
-        return $this->helpUriFrom($this->presentation->presentationFor($violationCode));
+        return $this->helpUriFrom($this->presentation->presentationFor($code));
     }
 
     private function helpUriFrom(?ChannelPresentation $presentation): string

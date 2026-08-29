@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
-use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationMeta;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
@@ -34,7 +34,7 @@ final class MetricAggregatorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Add methods with CCN
-        $method1Metrics = (new MetricBag())->with('ccn', 5);
+        $method1Metrics = (new MetricBag())->with('complexity.ccn', 5);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('App\\Service', 'UserService', 'find'),
@@ -43,7 +43,7 @@ final class MetricAggregatorTest extends TestCase
             10,
         );
 
-        $method2Metrics = (new MetricBag())->with('ccn', 3);
+        $method2Metrics = (new MetricBag())->with('complexity.ccn', 3);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('App\\Service', 'UserService', 'save'),
@@ -57,18 +57,18 @@ final class MetricAggregatorTest extends TestCase
 
         // Check class-level aggregation
         $classMetrics = $repository->get(SymbolPath::forClass('App\\Service', 'UserService'));
-        self::assertSame(8, (int) $classMetrics->get('ccn.sum')); // 5 + 3
-        self::assertEquals(4.0, $classMetrics->get('ccn.avg')); // (5 + 3) / 2 - use assertEquals for int/float comparison
-        self::assertSame(5, (int) $classMetrics->get('ccn.max'));
-        self::assertSame(2, $classMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT)); // 2 methods in class
+        self::assertSame(8, (int) $classMetrics->get('complexity.ccn.sum')); // 5 + 3
+        self::assertEquals(4.0, $classMetrics->get('complexity.ccn.avg')); // (5 + 3) / 2 - use assertEquals for int/float comparison
+        self::assertSame(5, (int) $classMetrics->get('complexity.ccn.max'));
+        self::assertSame(2, $classMetrics->get(MetricName::SIZE_SYMBOL_METHOD_COUNT)); // 2 methods in class
 
         // Check namespace-level aggregation
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
         self::assertInstanceOf(MetricBag::class, $nsMetrics); // @phpstan-ignore staticMethod.alreadyNarrowedType
-        self::assertSame(2, $nsMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
-        self::assertSame(8, (int) $nsMetrics->get('ccn.sum')); // Sum of method values: 5 + 3
-        self::assertEquals(4.0, $nsMetrics->get('ccn.avg')); // Avg of method values: (5 + 3) / 2
-        self::assertSame(5, (int) $nsMetrics->get('ccn.max')); // Max of method values: max(5, 3)
+        self::assertSame(2, $nsMetrics->get(MetricName::SIZE_SYMBOL_METHOD_COUNT));
+        self::assertSame(8, (int) $nsMetrics->get('complexity.ccn.sum')); // Sum of method values: 5 + 3
+        self::assertEquals(4.0, $nsMetrics->get('complexity.ccn.avg')); // Avg of method values: (5 + 3) / 2
+        self::assertSame(5, (int) $nsMetrics->get('complexity.ccn.max')); // Max of method values: max(5, 3)
     }
 
     #[Test]
@@ -77,7 +77,7 @@ final class MetricAggregatorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Class with 3 methods
-        $method1 = (new MetricBag())->with('ccn', 2);
+        $method1 = (new MetricBag())->with('complexity.ccn', 2);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('App\\Service', 'OrderService', 'create'),
@@ -86,7 +86,7 @@ final class MetricAggregatorTest extends TestCase
             10,
         );
 
-        $method2 = (new MetricBag())->with('ccn', 5);
+        $method2 = (new MetricBag())->with('complexity.ccn', 5);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('App\\Service', 'OrderService', 'update'),
@@ -95,7 +95,7 @@ final class MetricAggregatorTest extends TestCase
             30,
         );
 
-        $method3 = (new MetricBag())->with('ccn', 8);
+        $method3 = (new MetricBag())->with('complexity.ccn', 8);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('App\\Service', 'OrderService', 'delete'),
@@ -111,12 +111,12 @@ final class MetricAggregatorTest extends TestCase
         $classMetrics = $repository->get(SymbolPath::forClass('App\\Service', 'OrderService'));
 
         // Method count
-        self::assertSame(3, $classMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
+        self::assertSame(3, $classMetrics->get(MetricName::SIZE_SYMBOL_METHOD_COUNT));
 
         // CCN aggregations
-        self::assertSame(15, (int) $classMetrics->get('ccn.sum')); // 2 + 5 + 8
-        self::assertEquals(5.0, $classMetrics->get('ccn.avg')); // (2 + 5 + 8) / 3
-        self::assertSame(8, (int) $classMetrics->get('ccn.max')); // max is 8
+        self::assertSame(15, (int) $classMetrics->get('complexity.ccn.sum')); // 2 + 5 + 8
+        self::assertEquals(5.0, $classMetrics->get('complexity.ccn.avg')); // (2 + 5 + 8) / 3
+        self::assertSame(8, (int) $classMetrics->get('complexity.ccn.max')); // max is 8
     }
 
     #[Test]
@@ -125,7 +125,7 @@ final class MetricAggregatorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Namespace 1
-        $method1 = (new MetricBag())->with('ccn', 4);
+        $method1 = (new MetricBag())->with('complexity.ccn', 4);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('App\\Service', 'ServiceA', 'execute'),
@@ -135,7 +135,7 @@ final class MetricAggregatorTest extends TestCase
         );
 
         // Namespace 2
-        $method2 = (new MetricBag())->with('ccn', 6);
+        $method2 = (new MetricBag())->with('complexity.ccn', 6);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('App\\Repository', 'RepoA', 'find'),
@@ -151,9 +151,9 @@ final class MetricAggregatorTest extends TestCase
         $projectMetrics = $repository->get(SymbolPath::forProject());
 
         self::assertInstanceOf(MetricBag::class, $projectMetrics); // @phpstan-ignore staticMethod.alreadyNarrowedType
-        self::assertSame(2, $projectMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
-        self::assertSame(10, (int) $projectMetrics->get('ccn.sum')); // 4 + 6
-        self::assertSame(6, (int) $projectMetrics->get('ccn.max'));
+        self::assertSame(2, $projectMetrics->get(MetricName::SIZE_SYMBOL_METHOD_COUNT));
+        self::assertSame(10, (int) $projectMetrics->get('complexity.ccn.sum')); // 4 + 6
+        self::assertSame(6, (int) $projectMetrics->get('complexity.ccn.max'));
     }
 
     #[Test]
@@ -179,8 +179,8 @@ final class MetricAggregatorTest extends TestCase
 
         // Add file-level metrics only (no methods)
         $fileMetrics = (new MetricBag())
-            ->with('loc', 50)
-            ->with('classCount', 1);
+            ->with('size.loc', 50)
+            ->with('size.class-count', 1);
         $repository->add(
             SymbolPath::forFile(RelativePath::fromString('src/Entity/User.php')),
             $fileMetrics,
@@ -203,9 +203,9 @@ final class MetricAggregatorTest extends TestCase
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Entity'));
 
         self::assertInstanceOf(MetricBag::class, $nsMetrics); // @phpstan-ignore staticMethod.alreadyNarrowedType
-        self::assertSame(0, $nsMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
+        self::assertSame(0, $nsMetrics->get(MetricName::SIZE_SYMBOL_METHOD_COUNT));
         // CCN aggregation won't have values since there are no methods
-        self::assertNull($nsMetrics->get('ccn.sum'));
+        self::assertNull($nsMetrics->get('complexity.ccn.sum'));
     }
 
     #[Test]
@@ -215,9 +215,9 @@ final class MetricAggregatorTest extends TestCase
 
         // Add file with LOC metrics
         $file1Metrics = (new MetricBag())
-            ->with('loc', 100)
-            ->with('lloc', 80)
-            ->with('cloc', 10);
+            ->with('size.loc', 100)
+            ->with('size.lloc', 80)
+            ->with('size.cloc', 10);
         $repository->add(
             SymbolPath::forFile(RelativePath::fromString('src/Service/ServiceA.php')),
             $file1Metrics,
@@ -240,9 +240,9 @@ final class MetricAggregatorTest extends TestCase
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
         // LOC metrics should be aggregated
-        self::assertSame(100, (int) $nsMetrics->get('loc.sum'));
-        self::assertSame(80, (int) $nsMetrics->get('lloc.sum'));
-        self::assertSame(10, (int) $nsMetrics->get('cloc.sum'));
+        self::assertSame(100, (int) $nsMetrics->get('size.loc.sum'));
+        self::assertSame(80, (int) $nsMetrics->get('size.lloc.sum'));
+        self::assertSame(10, (int) $nsMetrics->get('size.cloc.sum'));
     }
 
     #[Test]
@@ -252,8 +252,8 @@ final class MetricAggregatorTest extends TestCase
 
         // Add files with class counts
         $file1Metrics = (new MetricBag())
-            ->with('classCount', 2)
-            ->with('interfaceCount', 1);
+            ->with('size.class-count', 2)
+            ->with('size.interface-count', 1);
         $repository->add(
             SymbolPath::forFile(RelativePath::fromString('src/Service/Services.php')),
             $file1Metrics,
@@ -275,8 +275,8 @@ final class MetricAggregatorTest extends TestCase
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
-        self::assertSame(2, (int) $nsMetrics->get('classCount.sum'));
-        self::assertSame(1, (int) $nsMetrics->get('interfaceCount.sum'));
+        self::assertSame(2, (int) $nsMetrics->get('size.class-count.sum'));
+        self::assertSame(1, (int) $nsMetrics->get('size.interface-count.sum'));
     }
 
     #[Test]
@@ -330,7 +330,7 @@ final class MetricAggregatorTest extends TestCase
         // Should not have aggregated metrics since there are no methods
         $classResult = $repository->get(SymbolPath::forClass('App\\Service', 'EmptyClass'));
         // Original class metrics should be unchanged (no ccn.sum, etc.)
-        self::assertNull($classResult->get('ccn.sum'));
+        self::assertNull($classResult->get('complexity.ccn.sum'));
     }
 
     #[Test]
@@ -339,7 +339,7 @@ final class MetricAggregatorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Add class in global namespace (empty namespace)
-        $method = (new MetricBag())->with('ccn', 5);
+        $method = (new MetricBag())->with('complexity.ccn', 5);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('', 'GlobalClass', 'method'),
@@ -353,7 +353,7 @@ final class MetricAggregatorTest extends TestCase
 
         // Should aggregate to class in empty namespace
         $classMetrics = $repository->get(SymbolPath::forClass('', 'GlobalClass'));
-        self::assertSame(5, (int) $classMetrics->get('ccn.sum'));
+        self::assertSame(5, (int) $classMetrics->get('complexity.ccn.sum'));
     }
 
     #[Test]
@@ -372,7 +372,7 @@ final class MetricAggregatorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Add test data
-        $method = (new MetricBag())->with('ccn', 3);
+        $method = (new MetricBag())->with('complexity.ccn', 3);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('App', 'Test', 'method'),
@@ -385,7 +385,7 @@ final class MetricAggregatorTest extends TestCase
 
         // Should work same as with array
         $classMetrics = $repository->get(SymbolPath::forClass('App', 'Test'));
-        self::assertSame(3, (int) $classMetrics->get('ccn.sum'));
+        self::assertSame(3, (int) $classMetrics->get('complexity.ccn.sum'));
     }
 
     #[Test]
@@ -394,7 +394,7 @@ final class MetricAggregatorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Namespace 1 with 2 classes
-        $method1 = (new MetricBag())->with('ccn', 5);
+        $method1 = (new MetricBag())->with('complexity.ccn', 5);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('App\\Service', 'ServiceA', 'execute'),
@@ -403,7 +403,7 @@ final class MetricAggregatorTest extends TestCase
             10,
         );
 
-        $method2 = (new MetricBag())->with('ccn', 3);
+        $method2 = (new MetricBag())->with('complexity.ccn', 3);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('App\\Service', 'ServiceB', 'run'),
@@ -413,7 +413,7 @@ final class MetricAggregatorTest extends TestCase
         );
 
         // Namespace 2 with 1 class
-        $method3 = (new MetricBag())->with('ccn', 8);
+        $method3 = (new MetricBag())->with('complexity.ccn', 8);
         $this->addCallable(
             $repository,
             SymbolPath::forMethod('App\\Repository', 'UserRepo', 'find'),
@@ -427,18 +427,18 @@ final class MetricAggregatorTest extends TestCase
 
         // Check namespace 1
         $ns1Metrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
-        self::assertSame(2, $ns1Metrics->get(AggregationMeta::SYMBOL_CLASS_COUNT));
-        self::assertSame(8, (int) $ns1Metrics->get('ccn.sum')); // 5 + 3
+        self::assertSame(2, $ns1Metrics->get(MetricName::SIZE_SYMBOL_CLASS_COUNT));
+        self::assertSame(8, (int) $ns1Metrics->get('complexity.ccn.sum')); // 5 + 3
 
         // Check namespace 2
         $ns2Metrics = $repository->get(SymbolPath::forNamespace('App\\Repository'));
-        self::assertSame(1, $ns2Metrics->get(AggregationMeta::SYMBOL_CLASS_COUNT));
-        self::assertSame(8, (int) $ns2Metrics->get('ccn.sum'));
+        self::assertSame(1, $ns2Metrics->get(MetricName::SIZE_SYMBOL_CLASS_COUNT));
+        self::assertSame(8, (int) $ns2Metrics->get('complexity.ccn.sum'));
 
         // Check project level
         $projectMetrics = $repository->get(SymbolPath::forProject());
-        self::assertSame(3, $projectMetrics->get(AggregationMeta::SYMBOL_CLASS_COUNT));
-        self::assertSame(16, (int) $projectMetrics->get('ccn.sum')); // 8 + 8
+        self::assertSame(3, $projectMetrics->get(MetricName::SIZE_SYMBOL_CLASS_COUNT));
+        self::assertSame(16, (int) $projectMetrics->get('complexity.ccn.sum')); // 8 + 8
     }
 
     private function createAggregator(): MetricAggregator

@@ -54,7 +54,7 @@ describe('getHealthColor', () => {
   });
 
   it('falls back to mi.avg when health.overall is missing', () => {
-    const node = { metrics: { 'mi.avg': 75 } };
+    const node = { metrics: { 'maintainability.mi.avg': 75 } };
     const color = getHealthColor(node, 'health.overall', scale);
     expect(color).not.toBe('#888888');
   });

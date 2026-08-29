@@ -101,7 +101,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
             null,
             null,
             new LogicalClassPath(SymbolPath::forClass('One', 'Thing')),
-            MetricBag::fromArray(['ccn' => 2]),
+            MetricBag::fromArray(['complexity.ccn' => 2]),
             17,
         );
         $dependency = new Dependency(
@@ -125,14 +125,14 @@ final class FileProcessingResultWireFormatTest extends TestCase
             filePath: $path,
             payload: new SuccessfulFileProcessing(
                 fileBag: (new MetricBag())
-                    ->with('loc', 7)
+                    ->with('size.loc', 7)
                     ->withEntry('codeSmell.eval', ['subjectKind' => 'file', 'line' => 7]),
                 callableMetrics: [$callable],
-                classMetrics: ['class' => ['subject' => $subject, 'metrics' => MetricBag::fromArray(['wmc' => 4]), 'line' => 11, 'start' => 24]],
+                classMetrics: ['class' => ['subject' => $subject, 'metrics' => MetricBag::fromArray(['complexity.wmc' => 4]), 'line' => 11, 'start' => 24]],
                 namespaceMetrics: [
                     'namespace:One' => [
                         'symbolPath' => SymbolPath::forNamespace('One'),
-                        'metrics' => MetricBag::fromArray(['loc' => 3]),
+                        'metrics' => MetricBag::fromArray(['size.loc' => 3]),
                         'line' => 2,
                     ],
                 ],
@@ -148,11 +148,11 @@ final class FileProcessingResultWireFormatTest extends TestCase
         self::assertInstanceOf(FileProcessingResult::class, $restored);
         self::assertTrue($restored->isSuccessful());
         self::assertSame('src/X.php', $restored->filePath->value());
-        self::assertSame(7, $restored->fileBag()->get('loc'));
+        self::assertSame(7, $restored->fileBag()->get('size.loc'));
         self::assertSame(['subjectKind' => 'file', 'line' => 7], $restored->fileBag()->entries('codeSmell.eval')[0]);
         self::assertEquals($callable, $restored->callableMetrics()[0]);
-        self::assertSame(4, $restored->classMetrics()['class']['metrics']->get('wmc'));
-        self::assertSame(3, $restored->namespaceMetrics()['namespace:One']['metrics']->get('loc'));
+        self::assertSame(4, $restored->classMetrics()['class']['metrics']->get('complexity.wmc'));
+        self::assertSame(3, $restored->namespaceMetrics()['namespace:One']['metrics']->get('size.loc'));
         self::assertEquals($dependency, $restored->dependencies()[0]);
         self::assertEquals($suppression, $restored->suppressions()[0]);
         self::assertEquals($override, $restored->thresholdOverrides()[0]);
@@ -183,7 +183,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
     {
         $result = FileProcessingResult::success(
             filePath: RelativePath::fromString('src/X.php'),
-            payload: new SuccessfulFileProcessing(fileBag: MetricBag::fromArray(['loc' => 42])),
+            payload: new SuccessfulFileProcessing(fileBag: MetricBag::fromArray(['size.loc' => 42])),
         );
 
         $payload = igbinary_serialize($result);
@@ -193,6 +193,6 @@ final class FileProcessingResultWireFormatTest extends TestCase
 
         self::assertInstanceOf(FileProcessingResult::class, $restored);
         self::assertSame('src/X.php', $restored->filePath->value());
-        self::assertSame(42, $restored->fileBag()->get('loc'));
+        self::assertSame(42, $restored->fileBag()->get('size.loc'));
     }
 }

@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 
 /**
- * Options for {@see InlineDirectiveRule}.
+ * Options for {@see UnusedDirectiveRule}.
  *
  * There is deliberately no severity key for the three configuration-error
  * channels. Their acceptability makes them gate unconditionally, past

@@ -1,0 +1,26 @@
+exclude_paths: []
+computed_metrics:
+  health.complexity: { warning: 100, error: 100 }
+  health.cohesion: { warning: 100, error: 100 }
+  health.coupling: { warning: 100, error: 100 }
+  health.typing: { warning: 100, error: 100 }
+  health.maintainability: { warning: 100, error: 100 }
+  health.overall: { warning: 100, error: 100 }
+  # A user-defined computed metric that READS a metric key, and whose name has
+  # more than one word. Both properties were retired for exactly one step: Ш5e3
+  # replaced the grammar a formula addresses a key in, and it also changed how a
+  # leaf is spelled, and `recommendation` — derived from the leaf — is a compared
+  # field no declared delta may move. The reference of this step already speaks
+  # kebab and `m["..."]`, so both come back with no map row at all.
+  #
+  # What each one is here for. The formula is the only path through the config
+  # that exercises the `m["..."]` grammar on a USER metric: the six built-in
+  # dimensions above exercise it from product source. The multi-word name is the
+  # only place a computed metric's leaf is spelled by a user rather than by us.
+  computed.branch-load:
+    formula: 'clamp((m["complexity.ccn.avg"] ?? 0) * 10, 0, 100)'
+    description: "Branch load; the corpus' user-defined computed metric"
+    levels: [class, namespace, project]
+    warning: 0
+    error: 100
+    inverted: false

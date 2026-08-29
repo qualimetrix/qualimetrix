@@ -8,6 +8,7 @@ use PHPUnit\Framework\MockObject\Stub;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -61,10 +62,10 @@ trait MetricRepositoryTestHelper
             });
 
         $mock->method('all')
-            ->willReturnCallback(function (SymbolType $type) use ($namespaces, $classes): iterable {
-                return match ($type) {
-                    SymbolType::Namespace_ => $namespaces,
-                    SymbolType::Class_ => $classes,
+            ->willReturnCallback(function (SymbolLevel $level) use ($namespaces, $classes): iterable {
+                return match ($level) {
+                    SymbolLevel::Namespace_ => $namespaces,
+                    SymbolLevel::Class_ => $classes,
                     default => [],
                 };
             });

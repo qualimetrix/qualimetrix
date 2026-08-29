@@ -11,9 +11,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Computes Number of Children (NOC) metric from dependency graph.
@@ -51,14 +50,14 @@ final class NocCollector implements GlobalContextCollectorInterface
 
     public function provides(): array
     {
-        return [MetricName::STRUCTURE_NOC];
+        return [MetricName::DESIGN_NOC];
     }
 
     public function getMetricDefinitions(): array
     {
         return [
             new MetricDefinition(
-                name: MetricName::STRUCTURE_NOC,
+                name: MetricName::DESIGN_NOC,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
@@ -94,18 +93,18 @@ final class NocCollector implements GlobalContextCollectorInterface
 
             $noc = $children['count'];
 
-            $repository->addScalar($parentPath, MetricName::STRUCTURE_NOC, $noc);
+            $repository->addScalar($parentPath, MetricName::DESIGN_NOC, $noc);
         }
 
         // Step 3: Ensure all classes have NOC (even if 0)
         // Iterate all classes from repository and set NOC=0 if not set
-        foreach ($repository->all(SymbolType::Class_) as $classSymbol) {
+        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
             if (!$repository->has($classSymbol->symbolPath)) {
                 continue;
             }
 
-            if (!$repository->get($classSymbol->symbolPath)->has(MetricName::STRUCTURE_NOC)) {
-                $repository->addScalar($classSymbol->symbolPath, MetricName::STRUCTURE_NOC, 0);
+            if (!$repository->get($classSymbol->symbolPath)->has(MetricName::DESIGN_NOC)) {
+                $repository->addScalar($classSymbol->symbolPath, MetricName::DESIGN_NOC, 0);
             }
         }
     }

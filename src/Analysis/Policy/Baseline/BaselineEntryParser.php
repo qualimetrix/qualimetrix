@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 
 /**
  * Turns one decoded entry of a baseline file into either an applicable
@@ -21,11 +21,12 @@ use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
  * `check` reports.
  *
  * The channel declaration is consulted here rather than at comparison time
- * because both shape checks are facts about the *file*: a `magnitude`
- * channel whose entry stores no magnitudes, and an `occurrence` channel
- * whose entry stores some, are each unusable before any run is compared
- * against them. Catching them at load also means the reason survives into
- * the report with the line still in hand.
+ * because both shape checks are facts about the *file*: a channel whose
+ * direction says `magnitude` but whose entry stores no magnitudes, and one
+ * whose direction is absent (`occurrence`) but whose entry stores some, are
+ * each unusable before any run is compared against them. Catching them at
+ * load also means the reason survives into the report with the line still
+ * in hand.
  */
 final readonly class BaselineEntryParser
 {
@@ -85,13 +86,13 @@ final readonly class BaselineEntryParser
         $channel = self::readRequiredNonEmptyString(
             $raw,
             'channel',
-            '"channel" must be a non-empty string in the "ruleName#violationCode" form',
+            '"channel" must be a non-empty channel name',
         );
 
         try {
             return new BaselineIdentity(
                 $subjectKey,
-                ViolationChannel::fromKey($channel),
+                new FindingChannel($channel),
                 self::readOptionalNonEmptyString(
                     $raw,
                     'occurrence',
@@ -168,7 +169,7 @@ final readonly class BaselineEntryParser
         if ($declaration === null) {
             throw new BaselineEntryRejection(
                 InertEntryReason::UndeclaredChannel,
-                \sprintf('no rule declares the channel "%s"', $identity->channel->toKey()),
+                \sprintf('no rule declares the channel "%s"', $identity->channel->code),
             );
         }
 
@@ -183,7 +184,7 @@ final readonly class BaselineEntryParser
                 InertEntryReason::ConfigurationErrorChannel,
                 \sprintf(
                     'the channel "%s" reports a configuration error, which cannot be accepted as debt',
-                    $identity->channel->toKey(),
+                    $identity->channel->code,
                 ),
             );
         }
@@ -194,10 +195,15 @@ final readonly class BaselineEntryParser
             throw new BaselineEntryRejection(InertEntryReason::Malformed, $e->getMessage());
         }
 
-        if ($entry->shape() !== $declaration->shape) {
+        // The channel's own shape is not stored here — it moved to the
+        // producer (ADR 0031) — but `$declaration->direction` is null exactly
+        // when the producer declared `occurrence`, since registry assembly
+        // refuses any other combination. Comparing nullability against
+        // `$entry`'s self-derived shape is the same check as before.
+        if (($declaration->direction === null) !== ($entry->shape() === ChannelShape::Occurrence)) {
             throw new BaselineEntryRejection(InertEntryReason::ShapeMismatch, \sprintf(
                 'the channel declares shape "%s" but the entry stores %s',
-                $declaration->shape->value,
+                $declaration->direction === null ? 'occurrence' : 'magnitude',
                 $entry->shape() === ChannelShape::Magnitude ? 'magnitudes' : 'no magnitudes',
             ));
         }

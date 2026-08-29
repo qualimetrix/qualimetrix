@@ -10,11 +10,13 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Util\NamespaceMatcher;
+use Qualimetrix\Core\Util\PatternMatch;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
 #[CoversClass(NamespaceMatcher::class)]
+#[CoversClass(PatternMatch::class)]
 final class NamespaceMatcherTest extends TestCase
 {
     /**
@@ -31,7 +33,7 @@ final class NamespaceMatcherTest extends TestCase
         'src/Analysis/Evidence/Coupling/DistanceRule.php' => 1,
         'src/Analysis/Policy/Architecture/Layer/Expansion/TupleExtractor.php' => 1,
         'src/Analysis/Policy/Architecture/Layer/LayerCriteriaMatcher.php' => 1,
-        'src/Reporting/Filter/ViolationFilter.php' => 2,
+        'src/Reporting/Filter/FindingFilter.php' => 2,
     ];
 
     #[Test]
@@ -51,19 +53,64 @@ final class NamespaceMatcherTest extends TestCase
     }
 
     #[Test]
-    public function itMatchesReturnsFalseForEmptyPrefixes(): void
+    public function itMatchesReturnsNullForEmptyPrefixes(): void
     {
         $matcher = new NamespaceMatcher([]);
 
-        self::assertFalse($matcher->matches('App\\Entity\\User'));
+        self::assertNull($matcher->matches('App\\Entity\\User'));
     }
 
     #[Test]
-    public function itMatchesReturnsFalseForEmptyNamespace(): void
+    public function itMatchesReturnsNullForEmptyNamespace(): void
     {
         $matcher = new NamespaceMatcher(['App\\Entity']);
 
-        self::assertFalse($matcher->matches(''));
+        self::assertNull($matcher->matches(''));
+    }
+
+    #[Test]
+    public function itMatchesReturnsNullForZeroMatches(): void
+    {
+        $matcher = new NamespaceMatcher(['App\\DTO']);
+
+        self::assertNull($matcher->matches('App\\Entity\\User'));
+    }
+
+    #[Test]
+    public function itMatchesReturnsTheMatchedPatternForOneConfiguredPrefix(): void
+    {
+        $matcher = new NamespaceMatcher(['App\\Entity']);
+
+        $result = $matcher->matches('App\\Entity\\User');
+
+        self::assertInstanceOf(PatternMatch::class, $result);
+        self::assertSame('App\\Entity', $result->pattern);
+    }
+
+    #[Test]
+    public function itMatchesReturnsTheFirstMatchedPatternWhenSeveralPrefixesMatch(): void
+    {
+        $matcher = new NamespaceMatcher(['App\\*Repository', 'App\\Entity']);
+
+        $result = $matcher->matches('App\\UserRepository');
+
+        self::assertInstanceOf(PatternMatch::class, $result);
+        self::assertSame(
+            'App\\*Repository',
+            $result->pattern,
+            'The first pattern in configuration order must win when several patterns match.',
+        );
+    }
+
+    #[Test]
+    public function itMatchesReturnsTheNormalizedPatternWhenItHasATrailingBackslash(): void
+    {
+        $matcher = new NamespaceMatcher(['App\\Entity\\']);
+
+        $result = $matcher->matches('App\\Entity\\User');
+
+        self::assertInstanceOf(PatternMatch::class, $result);
+        self::assertSame('App\\Entity', $result->pattern);
     }
 
     /**
@@ -75,7 +122,7 @@ final class NamespaceMatcherTest extends TestCase
     {
         $matcher = new NamespaceMatcher($prefixes);
 
-        self::assertTrue($matcher->matches($namespace), $description);
+        self::assertNotNull($matcher->matches($namespace), $description);
     }
 
     /**
@@ -87,7 +134,7 @@ final class NamespaceMatcherTest extends TestCase
     {
         $matcher = new NamespaceMatcher($prefixes);
 
-        self::assertFalse($matcher->matches($namespace), $description);
+        self::assertNull($matcher->matches($namespace), $description);
     }
 
     /**
@@ -286,7 +333,7 @@ final class NamespaceMatcherTest extends TestCase
     #[Test]
     public function itNormalizesTrailingBackslashForInstancePatternsToo(): void
     {
-        self::assertTrue((new NamespaceMatcher(['App\\Entity\\']))->matches('App\\Entity\\User'));
+        self::assertNotNull((new NamespaceMatcher(['App\\Entity\\']))->matches('App\\Entity\\User'));
     }
 
     #[Test]

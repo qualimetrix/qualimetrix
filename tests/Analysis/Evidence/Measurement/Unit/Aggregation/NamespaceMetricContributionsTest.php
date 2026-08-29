@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
@@ -20,8 +19,8 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(NamespaceMetricContributions::class)]
 final class NamespaceMetricContributionsTest extends TestCase
@@ -31,21 +30,21 @@ final class NamespaceMetricContributionsTest extends TestCase
     {
         $repository = new InMemoryMetricRepository();
         $file = RelativePath::fromString('src/Multi.php');
-        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['loc' => 20]), $file, 1);
+        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['size.loc' => 20]), $file, 1);
         $repository->add(SymbolPath::forNamespace('One'), MetricBag::fromArray([
-            'loc' => 8,
-            'loc.count' => 1,
+            'size.loc' => 8,
+            'size.loc.count' => 1,
         ]), $file, 2);
 
-        $definition = new MetricDefinition('loc', SymbolLevel::File, [
+        $definition = new MetricDefinition('size.loc', SymbolLevel::File, [
             SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
             SymbolLevel::Project->value => [AggregationStrategy::Sum],
         ]);
-        $fileSymbols = array_values(iterator_to_array($repository->all(SymbolType::File)));
+        $fileSymbols = array_values(iterator_to_array($repository->all(SymbolLevel::File)));
         $namespaceSymbols = $repository->forNamespace('One');
 
         self::assertSame(
-            ['loc' => [8]],
+            ['size.loc' => [8]],
             NamespaceMetricContributions::collectValues(
                 $repository,
                 $namespaceSymbols,
@@ -55,7 +54,7 @@ final class NamespaceMetricContributionsTest extends TestCase
             ),
         );
         self::assertSame(
-            ['loc' => [20]],
+            ['size.loc' => [20]],
             NamespaceMetricContributions::collectValues(
                 $repository,
                 $namespaceSymbols,
@@ -75,7 +74,7 @@ final class NamespaceMetricContributionsTest extends TestCase
         $methodPath = DeclarationPath::of(SymbolPath::forMethod('One', 'Service', 'run'), $file, DeclarationOrdinal::fromRank(0));
         $functionPath = DeclarationPath::of(SymbolPath::forGlobalFunction('One', 'helper'), $file, DeclarationOrdinal::fromRank(0));
 
-        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['loc' => 20, 'tokens' => 30]), $file, 1);
+        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['size.loc' => 20, 'tokens' => 30]), $file, 1);
         $repository->addSubject(
             MetricSubject::declaration($classPath),
             MetricBag::fromArray(['classScore' => 7]),
@@ -101,8 +100,8 @@ final class NamespaceMetricContributionsTest extends TestCase
             MetricBag::fromArray(['callableScore' => 5]),
         ));
         $repository->add(SymbolPath::forNamespace('One'), MetricBag::fromArray([
-            'loc' => 8,
-            'loc.count' => 2,
+            'size.loc' => 8,
+            'size.loc.count' => 2,
             'tokens' => 6,
             'tokens.count' => 3,
         ]), $file, 2);
@@ -110,7 +109,7 @@ final class NamespaceMetricContributionsTest extends TestCase
         $definitions = [
             new MetricDefinition('callableScore', SymbolLevel::Callable),
             new MetricDefinition('classScore', SymbolLevel::Class_),
-            new MetricDefinition('loc', SymbolLevel::File, [
+            new MetricDefinition('size.loc', SymbolLevel::File, [
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
             ]),
             new MetricDefinition('tokens', SymbolLevel::File, [
@@ -121,12 +120,12 @@ final class NamespaceMetricContributionsTest extends TestCase
         self::assertSame([
             'callableScore' => [3, 5],
             'classScore' => [7],
-            'loc' => [8],
+            'size.loc' => [8],
             'tokens' => [2, 2, 2],
         ], NamespaceMetricContributions::collectValues(
             $repository,
             $repository->forNamespace('One'),
-            array_values(iterator_to_array($repository->all(SymbolType::File))),
+            array_values(iterator_to_array($repository->all(SymbolLevel::File))),
             $definitions,
             SymbolLevel::Namespace_,
         ));

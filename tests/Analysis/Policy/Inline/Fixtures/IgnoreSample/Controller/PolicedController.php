@@ -10,7 +10,7 @@ use Fixtures\IgnoreSample\Service\CustomerService;
 /**
  * Controller that violates the layered policy: it depends directly on
  * the Repository layer, which is forbidden. NO suppression tag here — the
- * test uses this class as the "control" group that proves a violation is
+ * test uses this class as the "control" group that proves a finding is
  * indeed emitted.
  */
 final class PolicedController

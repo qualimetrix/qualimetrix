@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 #[CoversClass(HealthFormulaExcluder::class)]
 final class HealthFormulaExcluderTest extends TestCase
@@ -80,9 +80,9 @@ final class HealthFormulaExcluderTest extends TestCase
 
         // Verify the formula contains normalized weights
         $formula = $overall->formulas['class'] ?? '';
-        self::assertStringContainsString('health__b', $formula);
-        self::assertStringContainsString('health__c', $formula);
-        self::assertStringNotContainsString('health__a', $formula);
+        self::assertStringContainsString('m["health.b"]', $formula);
+        self::assertStringContainsString('m["health.c"]', $formula);
+        self::assertStringNotContainsString('m["health.a"]', $formula);
 
         // Extract weights from formula and verify they sum to 1.0
         preg_match_all('/\*\s*([\d.]+)/', $formula, $matches);
@@ -113,7 +113,7 @@ final class HealthFormulaExcluderTest extends TestCase
 
         $formula = $overall->formulas['class'] ?? '';
         // Only 'c' remains, weight normalized to 1.0
-        self::assertStringContainsString('health__c', $formula);
+        self::assertStringContainsString('m["health.c"]', $formula);
         preg_match_all('/\*\s*([\d.]+)/', $formula, $matches);
         self::assertEqualsWithDelta(1.0, (float) $matches[1][0], 0.001);
     }
@@ -177,8 +177,8 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertArrayHasKey('namespace', $overall->formulas);
 
         // Neither should contain typing
-        self::assertStringNotContainsString('health__typing', $overall->formulas['class']);
-        self::assertStringNotContainsString('health__typing', $overall->formulas['namespace']);
+        self::assertStringNotContainsString('m["health.typing"]', $overall->formulas['class']);
+        self::assertStringNotContainsString('m["health.typing"]', $overall->formulas['namespace']);
     }
 
     #[Test]
@@ -203,20 +203,20 @@ final class HealthFormulaExcluderTest extends TestCase
     public function itThrowsExplicitlyForCustomNonWeightedOverallFormula(): void
     {
         // A user-defined `health.overall` formula that does not follow the canonical
-        // `(health__dim ?? 75) * weight` shape cannot be auto-renormalized. Refuse
+        // `(m["health.dim"] ?? 75) * weight` shape cannot be auto-renormalized. Refuse
         // explicitly instead of silently dropping the formula.
         $definitions = [
             new ComputedMetricDefinition(
                 name: 'health.a',
                 formulas: ['class' => 'clamp(100, 0, 100)'],
                 description: 'a',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
             ),
             new ComputedMetricDefinition(
                 name: 'health.overall',
-                formulas: ['class' => 'min(health__a, 50)'], // non-canonical
+                formulas: ['class' => 'min(m["health.a"], 50)'], // non-canonical
                 description: 'overall',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
                 inverted: true,
                 warningThreshold: 50.0,
                 errorThreshold: 30.0,
@@ -262,7 +262,7 @@ final class HealthFormulaExcluderTest extends TestCase
                 name: $name,
                 formulas: ['class' => 'clamp(100, 0, 100)'],
                 description: $name . ' description',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
                 inverted: true,
             );
         }
@@ -270,8 +270,7 @@ final class HealthFormulaExcluderTest extends TestCase
         // Build overall formula from weights
         $terms = [];
         foreach ($dimensionWeights as $dim => $weight) {
-            $varName = str_replace('.', '__', $dim);
-            $terms[] = \sprintf('(%s ?? 75) * %s', $varName, $weight);
+            $terms[] = \sprintf('(m["%s"] ?? 75) * %s', $dim, $weight);
         }
         $overallFormula = \sprintf('clamp(%s, 0, 100)', implode(' + ', $terms));
 
@@ -279,7 +278,7 @@ final class HealthFormulaExcluderTest extends TestCase
             name: 'health.overall',
             formulas: ['class' => $overallFormula],
             description: 'Overall health score (0-100, higher is better)',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 30.0,

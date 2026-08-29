@@ -15,8 +15,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrai
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -50,9 +50,9 @@ final class RfcCollector extends AbstractCollector implements DeclarationIndexAw
 
     private const NAME = 'rfc';
 
-    private const METRIC_RFC = MetricName::RFC_TOTAL;
-    private const METRIC_RFC_OWN = MetricName::RFC_OWN;
-    private const METRIC_RFC_EXTERNAL = MetricName::RFC_EXTERNAL;
+    private const METRIC_RFC = MetricName::COUPLING_RFC;
+    private const METRIC_RFC_OWN = MetricName::COUPLING_RFC_OWN;
+    private const METRIC_RFC_EXTERNAL = MetricName::COUPLING_RFC_EXTERNAL;
 
     public function __construct()
     {

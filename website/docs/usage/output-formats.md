@@ -1,6 +1,6 @@
 # Output Formats
 
-Qualimetrix supports 11 output formats (including the deprecated
+Qualimetrix supports 12 output formats (including the deprecated
 `text-verbose`). Choose the one that fits your workflow.
 
 ```bash
@@ -84,9 +84,9 @@ Compact, one-line-per-violation output. Compatible with GCC/Clang error format, 
 **Example output:**
 
 ```
-src/Service/UserService.php:42: error[complexity.cyclomatic.callable]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
+src/Service/UserService.php:42: error[complexity.cyclomatic]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
 src/Service/UserService.php:87: warning[size.method-count]: Class has 22 methods, max recommended is 20 (UserService)
-src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max allowed is 15 (OrderRepository)
+src/Repository/OrderRepository.php:15: error[coupling.cbo]: CBO is 18, max allowed is 15 (OrderRepository)
 
 3 error(s), 0 warning(s) in 45 file(s)
 ```
@@ -161,7 +161,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "label": "Poor",
             "reason": "high coupling",
             "violationCount": 15,
-            "classCount": 8,
+            "size.class-count": 8,
             "healthScores": {}
         }
     ],
@@ -183,12 +183,12 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "line": 42,
             "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "symbol": "App\\Service\\UserService::calculate",
-            "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
+            "channel": "complexity.cyclomatic",
             "occurrence": null,
             "edge": null,
             "namespace": "App\\Service",
             "rule": "complexity.cyclomatic",
-            "code": "complexity.cyclomatic.callable",
+            "code": "complexity.cyclomatic",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
             "recommendation": null,
@@ -287,9 +287,9 @@ Raw metric values for every symbol (file, class, callable, namespace). Unlike `j
             "file": "src/Service/UserService.php",
             "line": 1,
             "metrics": {
-                "loc": 150,
-                "lloc": 120,
-                "classCount": 1
+                "size.loc": 150,
+                "size.lloc": 120,
+                "size.class-count": 1
             }
         },
         {
@@ -298,14 +298,14 @@ Raw metric values for every symbol (file, class, callable, namespace). Unlike `j
             "file": "src/Service/UserService.php",
             "line": 10,
             "metrics": {
-                "methodCount": 8,
-                "propertyCount": 3,
-                "lcom4": 2,
-                "wmc": 35,
-                "ca": 5,
-                "ce": 12,
-                "cbo": 17,
-                "instability": 0.71
+                "size.method-count": 8,
+                "size.property-count": 3,
+                "cohesion.lcom": 2,
+                "complexity.wmc": 35,
+                "coupling.ca": 5,
+                "coupling.ce": 12,
+                "coupling.cbo": 17,
+                "coupling.instability": 0.71
             }
         },
         {
@@ -314,10 +314,10 @@ Raw metric values for every symbol (file, class, callable, namespace). Unlike `j
             "file": "src/Service/UserService.php",
             "line": 42,
             "metrics": {
-                "ccn": 15,
-                "cognitive": 22,
-                "halstead.volume": 384.5,
-                "loc": 35
+                "complexity.ccn": 15,
+                "complexity.cognitive": 22,
+                "maintainability.halstead.volume": 384.5,
+                "size.loc": 35
             }
         }
     ],
@@ -359,7 +359,7 @@ Checkstyle 3.0 XML: `<file name="...">` with nested `<error line="" severity="er
     <error line="42"
            severity="error"
            message="Cyclomatic complexity is 15, max allowed is 10"
-           source="qmx.complexity.cyclomatic.callable"/>
+           source="qmx.complexity.cyclomatic"/>
     <error line="87"
            severity="warning"
            message="Class has 22 methods, max recommended is 20"
@@ -403,7 +403,7 @@ SARIF 2.1.0 spec — `runs[].results[]` entries with `ruleId`, `level` (error/wa
             },
             "results": [
                 {
-                    "ruleId": "complexity.cyclomatic.callable",
+                    "ruleId": "complexity.cyclomatic",
                     "level": "error",
                     "message": {
                         "text": "Cyclomatic complexity is 15, max allowed is 10"
@@ -459,7 +459,7 @@ Array of objects with `description`, `check_name`, `fingerprint`, `severity` (cr
 [
     {
         "description": "Cyclomatic complexity is 15, max allowed is 10",
-        "check_name": "complexity.cyclomatic.callable",
+        "check_name": "complexity.cyclomatic",
         "fingerprint": "a1b2c3d4e5f6...",
         "severity": "critical",
         "location": {
@@ -502,7 +502,7 @@ Workflow command format: `::<level> file=<path>,line=<n>,title=<rule>::<message>
 
 ```
 ::warning file=src/Service/UserService.php,line=87,title=size.method-count::Class has 22 methods, max recommended is 20
-::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic.callable::Cyclomatic complexity is 15, max allowed is 10
+::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic::Cyclomatic complexity is 15, max allowed is 10
 ```
 
 **CI usage (GitHub Actions):**
@@ -585,6 +585,131 @@ xdg-open report.html  # Linux
 
 ---
 
+## suppressed
+
+Machine-readable JSON composition of what a run held back from its report and
+why. A separate format rather than a section of `json`: an ordinary `check`
+payload never changes shape for a feature you did not ask for, no matter which
+format you selected it with.
+
+**When to use:** Auditing why an expected finding is missing, reviewing what a
+`qmx.yaml` exclusion actually silences, spotting a dead `exclude_paths`/
+`exclude_namespaces` entry (a typo'd path, a file the project deleted).
+
+**Capture is armed the same way by two independent routes** — passing
+`--show-suppressed`, or selecting `--format=suppressed` itself, including via
+`format: suppressed` in `qmx.yaml`. Either route arms the same per-rule
+exclusion capture, so the counts each surface reports for that mechanism never
+disagree.
+
+**The two surfaces are not otherwise equivalent.** `--show-suppressed` on
+`--format=text` prints inline `@qmx-ignore` suppressions and per-rule
+exclusions as prose. Global `path-exclusion` and `namespace-exclusion` appear
+there only as `-v` counts, not per finding; `baseline` and `git-scope`
+removals are not listed at all; and there is no text equivalent of
+`neverMatched`. `suppressed` is the only surface that publishes all seven
+mechanisms as individual findings.
+
+**The composition is a multiset, not a set of findings.** One finding can be
+removed by more than one mechanism — for example, a finding an inline
+`@qmx-ignore` would suppress may already have been removed earlier by a
+namespace exclusion. There are seven mechanisms: `suppression` (inline
+`@qmx-ignore`/`@qmx-ignore-file`/`@qmx-ignore-next-line`), `path-exclusion` and
+`namespace-exclusion` (global `exclude_paths`/`exclude_namespaces`),
+`baseline` (the accepted-level ceiling), `git-scope` (`--report=git:*`
+narrowing), and the two halves of the per-rule exclusion ledger configured
+under `rules: {<rule-name>: {...}}` — `rule-namespace-exclusion` and
+`rule-path-exclusion`. `byMechanism` counts entries per mechanism; because the
+same finding can appear under more than one, those counts **do not sum** to
+the number of distinct findings suppressed — the format's own `note` field
+says so.
+
+A separate `neverMatched` list reports configured suppressors that excluded
+nothing this run: without it, a stale `exclude_paths` entry pointing at a
+deleted file is indistinguishable from one that was never written.
+
+**Top-level keys:** `meta`, `note`, `mechanisms` (all seven, always present),
+`byMechanism` (count per mechanism, including zero), `suppressed` (the
+multiset), `neverMatched`.
+
+<!-- llms:skip-begin -->
+**Example output (abbreviated, from this project's own self-analysis):**
+
+```json
+{
+    "meta": {
+        "version": "dev-main",
+        "package": "qmx",
+        "timestamp": "2026-08-29T09:14:02+00:00"
+    },
+    "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
+    "mechanisms": [
+        "suppression",
+        "path-exclusion",
+        "namespace-exclusion",
+        "baseline",
+        "git-scope",
+        "rule-namespace-exclusion",
+        "rule-path-exclusion"
+    ],
+    "byMechanism": {
+        "suppression": 12,
+        "path-exclusion": 0,
+        "namespace-exclusion": 0,
+        "baseline": 0,
+        "git-scope": 0,
+        "rule-namespace-exclusion": 58,
+        "rule-path-exclusion": 131
+    },
+    "suppressed": [
+        {
+            "mechanism": "suppression",
+            "suppressor": "src/Infrastructure/Ast/CachedFileParser.php:15",
+            "rule": "code-smell.empty-catch",
+            "channel": "code-smell.empty-catch",
+            "file": "src/Infrastructure/Ast/CachedFileParser.php",
+            "line": 73,
+            "symbol": "src/Infrastructure/Ast/CachedFileParser.php",
+            "severity": "error",
+            "message": "Log the exception or add a comment explaining why it is safe to ignore."
+        },
+        {
+            "mechanism": "rule-path-exclusion",
+            "suppressor": "code-smell.constructor-overinjection",
+            "rule": "code-smell.constructor-overinjection",
+            "channel": "code-smell.constructor-overinjection",
+            "file": "src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php",
+            "line": 28,
+            "symbol": "Qualimetrix\\Analysis\\Run\\Contract\\Collection\\SuccessfulFileProcessing::__construct",
+            "severity": "warning",
+            "message": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
+        }
+    ],
+    "neverMatched": [
+        {
+            "mechanism": "rule-path-exclusion",
+            "suppressor": "coupling.cbo: src/Analysis/Evidence/Design/*Visitor.php"
+        }
+    ]
+}
+```
+
+For the two ledger mechanisms (`rule-namespace-exclusion`,
+`rule-path-exclusion`), `suppressor` names the producer rule; for
+`path-exclusion`/`namespace-exclusion` it is the matched configured pattern;
+for `suppression` it is the directive's `file:line`; for `baseline` it is the
+accepted entry's description; for `git-scope` it is the configured git
+reference.
+<!-- llms:skip-end -->
+
+**Usage:**
+
+```bash
+bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
+```
+
+---
+
 ## Analysis coverage in every format
 
 Every discovered PHP file is classified as analyzed, intentionally excluded as
@@ -606,6 +731,7 @@ formatter instead of being replaced with command prose.
 | `checkstyle`   | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                   |
 | `github`       | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                        |
 | `html`         | Embedded `coverage` data; incomplete runs also show a visible warning banner                                   |
+| `suppressed`   | Not represented — this format publishes a suppression composition, not a `coverage` object                     |
 
 For `json` and `metrics`, each `failures[]` item has `path`, `kind` (`parse` or
 `processing`), and `message`. Human formats distinguish no discovered files,
@@ -626,6 +752,7 @@ generated-only input, complete analysis, and incomplete analysis.
 | `github`       | No          | No        | Flat list                    | GitHub Actions annotations |
 | `health`       | Good        | No        | Health dimensions            | Quick checks, CI           |
 | `html`         | Interactive | No        | Treemap hierarchy            | Reports, reviews           |
+| `suppressed`   | No          | Yes       | Flat multiset by mechanism   | Suppression auditing       |
 
 ### Exit codes
 

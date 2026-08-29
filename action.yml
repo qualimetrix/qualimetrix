@@ -18,7 +18,7 @@ inputs:
     description: 'Path to config file'
     required: false
   format:
-    description: 'Output format (text, json, sarif, gitlab, github)'
+    description: 'Output format (text, json, sarif, gitlab, github, suppressed)'
     required: false
     default: 'text'
   php-version:
@@ -109,6 +109,9 @@ runs:
           gitlab)
             OUTPUT_FILE="code-quality-report.json"
             ;;
+          suppressed)
+            OUTPUT_FILE="qmx-suppressed.json"
+            ;;
         esac
 
         echo "Running: $QMX_BIN check $ARGS"
@@ -116,9 +119,17 @@ runs:
         # Run analysis and capture exit code
         set +e
         if [ -n "$OUTPUT_FILE" ]; then
-          # For structured formats, write to file
-          $QMX_BIN check $ARGS > "$OUTPUT_FILE" 2>&1
+          # For structured formats, write only stdout to the artifact file.
+          # QMX can emit warnings (coverage, autoload) on stderr; merging them
+          # into the file would make the published JSON/SARIF unparsable.
+          STDERR_FILE=$(mktemp)
+          $QMX_BIN check $ARGS > "$OUTPUT_FILE" 2>"$STDERR_FILE"
           EXIT_CODE=$?
+          if [ -s "$STDERR_FILE" ]; then
+            echo "::warning::Qualimetrix reported diagnostics on stderr (kept out of $OUTPUT_FILE):"
+            cat "$STDERR_FILE"
+          fi
+          rm -f "$STDERR_FILE"
           OUTPUT=$(cat "$OUTPUT_FILE")
           echo "Output written to: $OUTPUT_FILE"
         else

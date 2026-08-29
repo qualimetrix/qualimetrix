@@ -46,7 +46,7 @@ final class SecurityPatternFindingTest extends TestCase
             $class->getMethods(ReflectionMethod::IS_PUBLIC),
         );
         sort($publicMethods);
-        self::assertSame(['fromEntry', 'toViolation'], $publicMethods);
+        self::assertSame(['fromEntry', 'toFinding'], $publicMethods);
         self::assertSame([], $class->getProperties(ReflectionProperty::IS_PUBLIC));
     }
 
@@ -64,7 +64,7 @@ final class SecurityPatternFindingTest extends TestCase
         $file = RelativePath::fromString('src/Controller.php');
         $fileSymbol = SymbolPath::forFile($file);
 
-        $violation = SecurityPatternFinding::fromEntry($entry, $file)->toViolation(
+        $finding = SecurityPatternFinding::fromEntry($entry, $file)->toFinding(
             $fileSymbol,
             'security.example',
             'example',
@@ -73,20 +73,20 @@ final class SecurityPatternFindingTest extends TestCase
             'Use a safe API.',
         );
 
-        self::assertSame($expectedSubject, $violation->subject->toCanonical());
-        self::assertSame($fileSymbol, $violation->symbolPath);
-        self::assertSame('src/Controller.php', $violation->location->pathString());
-        self::assertSame($expectedLine, $violation->location->line);
-        self::assertTrue($violation->location->precise);
-        self::assertSame('security.example', $violation->ruleName);
-        self::assertSame('security.example', $violation->violationCode);
-        self::assertSame($expectedSuperglobal === '' ? 'Potential vulnerability' : \sprintf('Potential vulnerability ($%s)', $expectedSuperglobal), $violation->message);
-        self::assertSame(Severity::Error, $violation->severity);
-        self::assertSame(1.0, $violation->metricValue);
-        self::assertSame('Use a safe API.', $violation->recommendation);
+        self::assertSame($expectedSubject, $finding->subject->toCanonical());
+        self::assertSame($fileSymbol, $finding->symbolPath);
+        self::assertSame('src/Controller.php', $finding->location->pathString());
+        self::assertSame($expectedLine, $finding->location->line);
+        self::assertTrue($finding->location->precise);
+        self::assertSame('security.example', $finding->ruleName);
+        self::assertSame('security.example', $finding->code);
+        self::assertSame($expectedSuperglobal === '' ? 'Potential vulnerability' : \sprintf('Potential vulnerability ($%s)', $expectedSuperglobal), $finding->message);
+        self::assertSame(Severity::Error, $finding->severity);
+        self::assertSame(1.0, $finding->metricValue);
+        self::assertSame('Use a safe API.', $finding->recommendation);
         self::assertSame(
             OccurrenceKey::semantic('example', ['type' => 'example', 'superglobal' => $expectedSuperglobal])->value,
-            $violation->occurrenceKey?->value,
+            $finding->occurrenceKey?->value,
         );
     }
 
@@ -245,11 +245,11 @@ final class SecurityPatternFindingTest extends TestCase
     public function itPreservesScalarCastsForLocationAndEvidence(): void
     {
         $file = RelativePath::fromString('src/Controller.php');
-        $violation = SecurityPatternFinding::fromEntry([
+        $finding = SecurityPatternFinding::fromEntry([
             'subjectKind' => 'file',
             'line' => 8.9,
             'superglobal' => 12,
-        ], $file)->toViolation(
+        ], $file)->toFinding(
             SymbolPath::forFile($file),
             'rule',
             'pattern',
@@ -258,12 +258,12 @@ final class SecurityPatternFindingTest extends TestCase
             null,
         );
 
-        self::assertSame('src/Controller.php', $violation->location->pathString());
-        self::assertSame(8, $violation->location->line);
-        self::assertSame('message ($12)', $violation->message);
+        self::assertSame('src/Controller.php', $finding->location->pathString());
+        self::assertSame(8, $finding->location->line);
+        self::assertSame('message ($12)', $finding->message);
         self::assertSame(
             OccurrenceKey::semantic('pattern', ['type' => 'pattern', 'superglobal' => '12'])->value,
-            $violation->occurrenceKey?->value,
+            $finding->occurrenceKey?->value,
         );
     }
 
@@ -273,11 +273,11 @@ final class SecurityPatternFindingTest extends TestCase
         $file = RelativePath::fromString('src/Controller.php');
         $fileSymbol = SymbolPath::forFile($file);
         $absent = SecurityPatternFinding::fromEntry(['subjectKind' => 'file', 'line' => 8], $file)
-            ->toViolation($fileSymbol, 'rule', 'pattern', Severity::Error, 'message', null);
+            ->toFinding($fileSymbol, 'rule', 'pattern', Severity::Error, 'message', null);
         $empty = SecurityPatternFinding::fromEntry(['subjectKind' => 'file', 'line' => 8, 'superglobal' => ''], $file)
-            ->toViolation($fileSymbol, 'rule', 'pattern', Severity::Error, 'message', null);
+            ->toFinding($fileSymbol, 'rule', 'pattern', Severity::Error, 'message', null);
         $get = SecurityPatternFinding::fromEntry(['subjectKind' => 'file', 'line' => 8, 'superglobal' => '_GET'], $file)
-            ->toViolation($fileSymbol, 'rule', 'pattern', Severity::Error, 'message', null);
+            ->toFinding($fileSymbol, 'rule', 'pattern', Severity::Error, 'message', null);
 
         self::assertSame($absent->occurrenceKey?->value, $empty->occurrenceKey?->value);
         self::assertNotSame($absent->occurrenceKey?->value, $get->occurrenceKey?->value);

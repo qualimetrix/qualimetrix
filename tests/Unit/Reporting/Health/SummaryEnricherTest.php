@@ -15,9 +15,9 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankResolver;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -53,7 +53,7 @@ final class SummaryEnricherTest extends TestCase
     public function itReturnsUnchangedReportWhenNoMetrics(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -79,18 +79,18 @@ final class SummaryEnricherTest extends TestCase
             ]),
         );
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('test.php'), 1),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'test',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [$violation, $violation],
+            findings: [$finding, $finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -101,7 +101,7 @@ final class SummaryEnricherTest extends TestCase
 
         $result = $this->enricher->enrich($report);
 
-        // complexity.cyclomatic = 30 min per violation, 2 violations = 60
+        // complexity.cyclomatic = 30 min per finding, 2 findings = 60
         self::assertSame(60, $result->techDebtMinutes);
     }
 
@@ -116,7 +116,7 @@ final class SummaryEnricherTest extends TestCase
             'health.coupling' => 52.0,
             'health.typing' => 35.0,
             'health.maintainability' => 22.0,
-            'classCount.sum' => 4,
+            'size.class-count.sum' => 4,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -131,18 +131,18 @@ final class SummaryEnricherTest extends TestCase
             ],
         );
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Payment/PaymentService.php'), 42),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Payment', 'PaymentService'), RelativePath::fromString('src/Payment/PaymentService.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App\\Payment', 'PaymentService'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'test',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [$violation],
+            findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -175,8 +175,8 @@ final class SummaryEnricherTest extends TestCase
             'health.coupling' => 35.0,
             'health.typing' => 20.0,
             'health.maintainability' => 15.0,
-            'methodCount' => 32,
-            'cbo' => 18,
+            'size.method-count' => 32,
+            'coupling.cbo' => 18,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -192,7 +192,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -208,8 +208,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame(28.0, $cls->healthOverall);
         self::assertSame('src/Service/PaymentService.php', $cls->file?->value());
         self::assertSame(0, $cls->classCount);
-        self::assertArrayHasKey('methodCount', $cls->metrics);
-        self::assertSame(32, $cls->metrics['methodCount']);
+        self::assertArrayHasKey('size.method-count', $cls->metrics);
+        self::assertSame(32, $cls->metrics['size.method-count']);
     }
 
     #[Test]
@@ -234,7 +234,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -260,18 +260,18 @@ final class SummaryEnricherTest extends TestCase
             ]),
         );
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('test.php'), 1),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'test',
-            violationCode: 'test',
+            code: 'test',
             message: 'test message',
             severity: Severity::Warning,
         );
 
         $report = new Report(
-            violations: [$violation],
+            findings: [$finding],
             filesAnalyzed: 42,
             filesSkipped: 3,
             duration: 5.5,
@@ -282,7 +282,7 @@ final class SummaryEnricherTest extends TestCase
 
         $result = $this->enricher->enrich($report);
 
-        self::assertCount(1, $result->violations);
+        self::assertCount(1, $result->findings);
         self::assertSame(42, $result->filesAnalyzed);
         self::assertSame(3, $result->filesSkipped);
         self::assertSame(5.5, $result->duration);
@@ -296,13 +296,13 @@ final class SummaryEnricherTest extends TestCase
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
-                'ccn.avg' => 5.0,
-                'loc' => 1000,
+                'complexity.ccn.avg' => 5.0,
+                'size.loc' => 1000,
             ]),
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -323,13 +323,13 @@ final class SummaryEnricherTest extends TestCase
             projectMetrics: MetricBag::fromArray([
                 'health.complexity' => 30.0,
                 'health.overall' => 50.0,
-                'ccn.avg' => 12.0,
-                'cognitive.avg' => 10.0,
+                'complexity.ccn.avg' => 12.0,
+                'complexity.cognitive.avg' => 10.0,
             ]),
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.5,
@@ -344,9 +344,9 @@ final class SummaryEnricherTest extends TestCase
         $complexity = $result->healthScores['complexity'];
         self::assertSame(30.0, $complexity->score);
         self::assertCount(2, $complexity->decomposition);
-        self::assertSame('ccn.avg', $complexity->decomposition[0]->metricKey);
+        self::assertSame('complexity.ccn.avg', $complexity->decomposition[0]->metricKey);
         self::assertSame(12.0, $complexity->decomposition[0]->value);
-        self::assertSame('cognitive.avg', $complexity->decomposition[1]->metricKey);
+        self::assertSame('complexity.cognitive.avg', $complexity->decomposition[1]->metricKey);
         self::assertSame(10.0, $complexity->decomposition[1]->value);
     }
 
@@ -354,7 +354,7 @@ final class SummaryEnricherTest extends TestCase
     public function itNullMetricsReturnsUnchangedReport(): void
     {
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -375,22 +375,22 @@ final class SummaryEnricherTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
                 'health.overall' => 72.0,
-                'loc.sum' => 5000,
+                'size.loc.sum' => 5000,
             ]),
         );
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location(RelativePath::fromString('test.php'), 1),
             subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'test',
             severity: Severity::Error,
         );
 
         $report = new Report(
-            violations: [$violation, $violation],
+            findings: [$finding, $finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -401,23 +401,23 @@ final class SummaryEnricherTest extends TestCase
 
         $result = $this->enricher->enrich($report);
 
-        // 2 violations * 30 min = 60 min total debt, 5000 LOC = 5 kLOC
+        // 2 findings * 30 min = 60 min total debt, 5000 LOC = 5 kLOC
         // debtPer1kLoc = 60 / 5 = 12.0
         self::assertSame(12.0, $result->debtPer1kLoc);
     }
 
     #[Test]
-    public function itDebtPer1kLocZeroWhenNoViolations(): void
+    public function itDebtPer1kLocZeroWhenNoFindings(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
                 'health.overall' => 85.0,
-                'loc.sum' => 10000,
+                'size.loc.sum' => 10000,
             ]),
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -441,7 +441,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -466,7 +466,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -488,13 +488,13 @@ final class SummaryEnricherTest extends TestCase
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
-                'ccn.avg' => 5.0,
-                'loc' => 1000,
+                'complexity.ccn.avg' => 5.0,
+                'size.loc' => 1000,
             ]),
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,

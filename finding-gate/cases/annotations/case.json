@@ -1,0 +1,23 @@
+{
+    "id": "annotations",
+    "description": "Seven deliberately broken inline @qmx directives: unresolved, unsupported, unparseable, unused, two equidistant-name ties (one within annotation.*, one against the design.*-type-coverage split) so the \"did you mean\" tie-break -- i.e. the channel universe's order -- reaches a published message, and a channel:level pair whose name resolves and whose level the channel never reports at.",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2"
+    ],
+    "channels": [
+        "annotation.invalid-threshold@file",
+        "annotation.unresolved-directive@file",
+        "annotation.unsupported-threshold@file",
+        "annotation.unused-directive@file"
+    ],
+    "explainSubjects": [
+        "file:src/Directives.php"
+    ]
+}

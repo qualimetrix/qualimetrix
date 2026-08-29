@@ -66,7 +66,7 @@ export function getHealthColor(node, metric, colorScale) {
 
   // Fallback: use clamp(mi.avg, 0, 100) if health.overall is missing
   if (score == null && metric === 'health.overall') {
-    score = node.metrics?.['mi.avg'];
+    score = node.metrics?.['maintainability.mi.avg'];
     if (score != null) {
       score = Math.max(0, Math.min(100, score));
     }

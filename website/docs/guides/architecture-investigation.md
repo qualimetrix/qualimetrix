@@ -284,13 +284,13 @@ bin/qmx check src/ --format=metrics --workers=1
 
 ### Most Useful JSON Fields
 
-| Field                                            | Purpose                                                           |
-| ------------------------------------------------ | ----------------------------------------------------------------- |
-| `health.*`                                       | Quick project health assessment across 5 dimensions               |
-| `worstNamespaces[].healthScores`                 | Identifies the worst dimension per namespace                      |
-| `worstClasses[].metrics.{cbo, tcc, wmc, mi.avg}` | Class-level diagnosis                                             |
-| `violationsMeta.byRule`                          | Violation distribution without needing all individual violations  |
-| `health.overall.directScore`                     | Distinguishes "this namespace is bad" from "its children are bad" |
+| Field                                                                                         | Purpose                                                           |
+| --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `health.*`                                                                                    | Quick project health assessment across 5 dimensions               |
+| `worstNamespaces[].healthScores`                                                              | Identifies the worst dimension per namespace                      |
+| `worstClasses[].metrics.{coupling.cbo, cohesion.tcc, complexity.wmc, maintainability.mi.avg}` | Class-level diagnosis                                             |
+| `violationsMeta.byRule`                                                                       | Violation distribution without needing all individual violations  |
+| `health.overall.directScore`                                                                  | Distinguishes "this namespace is bad" from "its children are bad" |
 
 !!! tip
     The base JSON caps violations at 50. Use `--namespace` for a specific scope to get all violations without truncation.

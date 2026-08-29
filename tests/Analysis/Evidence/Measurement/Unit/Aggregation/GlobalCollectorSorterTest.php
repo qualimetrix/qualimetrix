@@ -107,13 +107,13 @@ final class GlobalCollectorSorterTest extends TestCase
     public function itHandlesDottedMetricNames(): void
     {
         // Similar to real-world: abstractness requires classCount.sum from classCount provider
-        $classCount = $this->createCollector('classCount', [], ['classCount']);
-        $abstractness = $this->createCollector('abstractness', ['classCount.sum'], ['abstractness']);
+        $classCount = $this->createCollector('size.class-count', [], ['size.class-count']);
+        $abstractness = $this->createCollector('coupling.abstractness', ['size.class-count.sum'], ['coupling.abstractness']);
 
         $result = $this->sorter->sort([$abstractness, $classCount], []);
 
         $names = array_map(fn($c) => $c->getName(), $result);
-        self::assertSame(['classCount', 'abstractness'], $names);
+        self::assertSame(['size.class-count', 'coupling.abstractness'], $names);
     }
 
     #[Test]
@@ -124,26 +124,26 @@ final class GlobalCollectorSorterTest extends TestCase
         // - abstractness: provides abstractness, requires classCount.sum, etc.
         // - distance: provides distance, requires instability, abstractness
 
-        $coupling = $this->createCollector('coupling', [], ['ca', 'ce', 'instability']);
+        $coupling = $this->createCollector('coupling', [], ['coupling.ca', 'coupling.ce', 'coupling.instability']);
         $abstractness = $this->createCollector(
-            'abstractness',
-            ['classCount.sum', 'abstractClassCount.sum', 'interfaceCount.sum'],
-            ['abstractness'],
+            'coupling.abstractness',
+            ['size.class-count.sum', 'size.abstract-class-count.sum', 'size.interface-count.sum'],
+            ['coupling.abstractness'],
         );
-        $distance = $this->createCollector('distance', ['instability', 'abstractness'], ['distance']);
+        $distance = $this->createCollector('coupling.distance', ['coupling.instability', 'coupling.abstractness'], ['coupling.distance']);
 
         $result = $this->sorter->sort(
             [$distance, $abstractness, $coupling],
-            ['classCount', 'abstractClassCount', 'interfaceCount'],
+            ['size.class-count', 'size.abstract-class-count', 'size.interface-count'],
         );
 
         $names = array_map(fn($c) => $c->getName(), $result);
 
         // coupling and abstractness have no mutual dependency, can be in any order
         // but both must come before distance
-        $distanceIndex = array_search('distance', $names, true);
+        $distanceIndex = array_search('coupling.distance', $names, true);
         $couplingIndex = array_search('coupling', $names, true);
-        $abstractnessIndex = array_search('abstractness', $names, true);
+        $abstractnessIndex = array_search('coupling.abstractness', $names, true);
 
         self::assertLessThan($distanceIndex, $couplingIndex);
         self::assertLessThan($distanceIndex, $abstractnessIndex);
@@ -211,9 +211,9 @@ final class GlobalCollectorSorterTest extends TestCase
     public function itAcceptsMetricsProducedByEarlierPhases(): void
     {
         // classCount.sum comes from a file-level collector, not from a global one
-        $a = $this->createCollector('a', ['classCount.sum'], ['metricA']);
+        $a = $this->createCollector('a', ['size.class-count.sum'], ['metricA']);
 
-        $result = $this->sorter->sort([$a], ['classCount']);
+        $result = $this->sorter->sort([$a], ['size.class-count']);
 
         self::assertCount(1, $result);
         self::assertSame('a', $result[0]->getName());
@@ -227,7 +227,7 @@ final class GlobalCollectorSorterTest extends TestCase
         self::expectException(LogicException::class);
         self::expectExceptionMessage('Global collector "a" requires metric "unknownMetric", but no collector provides it');
 
-        $this->sorter->sort([$a], ['classCount']);
+        $this->sorter->sort([$a], ['size.class-count']);
     }
 
     #[Test]

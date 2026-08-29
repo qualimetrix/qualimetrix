@@ -8,19 +8,18 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -31,6 +30,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - Low CBO (<14): weakly coupled, easy to test
  * - Medium CBO (14-19): acceptable (warning)
  * - High CBO (>=20): tightly coupled, hard to isolate (error)
+ *
+ * @qmx-threshold coupling.cbo 23 -- Raw CBO 22, from declaring both its own channel (per-rule) and its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this hierarchical rule's dependencies; 23 gets one-edge headroom.
  */
 #[CliAlias('cbo-warning', 'class.warning')]
 #[CliAlias('cbo-error', 'class.error')]
@@ -42,6 +43,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     public const int REMEDIATION_MINUTES = 45;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;
@@ -50,11 +53,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public function getDescription(): string
     {
         return 'Checks CBO (Coupling Between Objects) at class and namespace levels';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Coupling;
     }
 
     /**
@@ -66,43 +64,43 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     }
 
     /**
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Class_, RuleLevel::Namespace_];
+        return [SymbolLevel::Class_, SymbolLevel::Namespace_];
     }
 
     /**
      * Analyzes at a specific level.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
+    public function analyzeLevel(SymbolLevel $level, AnalysisContext $context): array
     {
         if (!$this->options instanceof CboOptions) {
             return [];
         }
 
         return match ($level) {
-            RuleLevel::Class_ => $this->options->class->isEnabled() ? $this->analyzeClassLevel($context) : [],
-            RuleLevel::Namespace_ => $this->options->namespace->isEnabled() ? $this->analyzeNamespaceLevel($context) : [],
+            SymbolLevel::Class_ => $this->options->class->isEnabled() ? $this->analyzeClassLevel($context) : [],
+            SymbolLevel::Namespace_ => $this->options->namespace->isEnabled() ? $this->analyzeNamespaceLevel($context) : [],
             default => [],
         };
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
-        $violations = [];
+        $findings = [];
 
         foreach ($this->getSupportedLevels() as $level) {
-            $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
+            $findings = [...$findings, ...$this->analyzeLevel($level, $context)];
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -114,9 +112,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     }
 
     /**
-     * Both CBO channels report the raw CBO value (`(float) $cbo` — see
-     * {@see checkCbo()}) as `metricValue`, judged worse the higher it goes.
-     * {@see ClassCboOptions::getSeverity()} and
+     * Both levels of the channel report the raw CBO value (`(float) $cbo` —
+     * see {@see checkCbo()}) as `metricValue`, judged worse the higher it
+     * goes. {@see ClassCboOptions::getSeverity()} and
      * {@see NamespaceCboOptions::getSeverity()} delegate the `>= error`, then
      * `>= warning` comparisons for their respective levels.
      *
@@ -125,32 +123,31 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            (new ViolationChannel(self::NAME, self::NAME . '.namespace'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_, SymbolLevel::Namespace_),
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeClassLevel(AnalysisContext $context): array
     {
         if (!$this->options instanceof CboOptions) {
             return [];
         }
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $violation = $this->classViolation($classInfo, $context, $this->options->class);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->classFinding($classInfo, $context, $this->options->class);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function classViolation(SymbolInfo $info, AnalysisContext $context, ClassCboOptions $options): ?Violation
+    private function classFinding(SymbolInfo $info, AnalysisContext $context, ClassCboOptions $options): ?Finding
     {
         $subject = $info->subject ?? throw new LogicException('CBO class findings require an exact class declaration subject');
         if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
@@ -172,33 +169,32 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $info,
             $subject,
             $options,
-            RuleLevel::Class_,
             $context,
             ['applicationScope' => $applicationScope, 'frameworkCe' => $frameworkCe],
         );
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeNamespaceLevel(AnalysisContext $context): array
     {
         if (!$this->options instanceof CboOptions) {
             return [];
         }
-        $violations = [];
+        $findings = [];
 
-        foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
-            $violation = $this->namespaceViolation($nsInfo, $context, $this->options->namespace);
-            if ($violation !== null) {
-                $violations[] = $violation;
+        foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
+            $finding = $this->namespaceFinding($nsInfo, $context, $this->options->namespace);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function namespaceViolation(SymbolInfo $info, AnalysisContext $context, NamespaceCboOptions $options): ?Violation
+    private function namespaceFinding(SymbolInfo $info, AnalysisContext $context, NamespaceCboOptions $options): ?Finding
     {
         $subject = $info->subject ?? MetricSubject::aggregate($info->symbolPath);
         $metrics = $context->metrics->get($info->symbolPath);
@@ -213,7 +209,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $info,
             $subject,
             $options,
-            RuleLevel::Namespace_,
             $context,
             ['applicationScope' => false, 'frameworkCe' => null],
         );
@@ -229,10 +224,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         SymbolInfo $symbolInfo,
         MetricSubject $subject,
         ClassCboOptions|NamespaceCboOptions $options,
-        RuleLevel $level,
         AnalysisContext $context,
         array $presentation,
-    ): ?Violation {
+    ): ?Finding {
         /** @var ClassCboOptions|NamespaceCboOptions $options */
         $options = $this->getEffectiveOptions($context, $options, $subject);
         $metrics = $context->metrics->get($subject->toSymbolPath());
@@ -245,25 +239,23 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         }
 
         $threshold = $severity === Severity::Error ? $options->error : $options->warning;
-        $violationCode = self::NAME . ($level === RuleLevel::Namespace_ ? '.namespace' : '.class');
 
-        return new Violation(
+        return new Finding(
             location: new Location($symbolInfo->file, $symbolInfo->line),
             subject: $subject,
             symbolPath: $symbolInfo->symbolPath,
             ruleName: $this->getName(),
-            violationCode: $violationCode,
+            code: self::NAME,
             message: $this->buildMessage($cbo, $ca, $ce, $threshold, $presentation['applicationScope'], $presentation['frameworkCe']),
             severity: $severity,
             metricValue: (float) $cbo,
-            level: $level,
             recommendation: $this->buildRecommendation($cbo, $ca, $ce, $threshold, $symbolInfo->symbolPath, $context, $presentation['applicationScope']),
             threshold: $threshold,
         );
     }
 
     /**
-     * Determines coupling direction and builds a direction-aware violation message.
+     * Determines coupling direction and builds a direction-aware finding message.
      *
      * When $isAppScope is true, labels the metric as "CBO_APP" and appends
      * framework exclusion count so users understand the decomposition.

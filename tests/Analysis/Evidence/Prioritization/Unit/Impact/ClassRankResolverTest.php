@@ -12,9 +12,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankIndex;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankResolver;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -34,7 +34,7 @@ final class ClassRankResolverTest extends TestCase
     }
 
     #[Test]
-    public function resolveForMethodViolation(): void
+    public function resolveForMethodFinding(): void
     {
         $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05);
 
@@ -49,16 +49,16 @@ final class ClassRankResolverTest extends TestCase
             },
         );
 
-        $violation = $this->createViolation(
+        $finding = $this->createFinding(
             SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
         );
 
         $index = new ClassRankIndex([], [], null);
-        self::assertSame(0.05, $this->resolver->resolve($violation, $metrics, $index));
+        self::assertSame(0.05, $this->resolver->resolve($finding, $metrics, $index));
     }
 
     #[Test]
-    public function resolveForClassViolation(): void
+    public function resolveForClassFinding(): void
     {
         $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.12);
 
@@ -73,16 +73,16 @@ final class ClassRankResolverTest extends TestCase
             },
         );
 
-        $violation = $this->createViolation(
+        $finding = $this->createFinding(
             SymbolPath::forClass('App\Service', 'UserService'),
         );
 
         $index = new ClassRankIndex([], [], null);
-        self::assertSame(0.12, $this->resolver->resolve($violation, $metrics, $index));
+        self::assertSame(0.12, $this->resolver->resolve($finding, $metrics, $index));
     }
 
     #[Test]
-    public function resolveForNamespaceViolationReturnsMaxClassRank(): void
+    public function resolveForNamespaceFindingReturnsMaxClassRank(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
@@ -105,10 +105,10 @@ final class ClassRankResolverTest extends TestCase
             },
         );
 
-        $violation = $this->createViolation(SymbolPath::forNamespace('App\Service'));
+        $finding = $this->createFinding(SymbolPath::forNamespace('App\Service'));
 
         $index = $this->resolver->buildIndex($metrics);
-        self::assertSame(0.05, $this->resolver->resolve($violation, $metrics, $index));
+        self::assertSame(0.05, $this->resolver->resolve($finding, $metrics, $index));
     }
 
     #[Test]
@@ -133,14 +133,14 @@ final class ClassRankResolverTest extends TestCase
             },
         );
 
-        $violation = $this->createViolation(SymbolPath::forNamespace('App\Service'));
+        $finding = $this->createFinding(SymbolPath::forNamespace('App\Service'));
 
         $index = $this->resolver->buildIndex($metrics);
-        self::assertSame(0.08, $this->resolver->resolve($violation, $metrics, $index));
+        self::assertSame(0.08, $this->resolver->resolve($finding, $metrics, $index));
     }
 
     #[Test]
-    public function resolveForFileViolationReturnsMaxClassRankInFile(): void
+    public function resolveForFileFindingReturnsMaxClassRankInFile(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
@@ -163,10 +163,10 @@ final class ClassRankResolverTest extends TestCase
             },
         );
 
-        $violation = $this->createViolation(SymbolPath::forFile(RelativePath::fromString('src/target.php')));
+        $finding = $this->createFinding(SymbolPath::forFile(RelativePath::fromString('src/target.php')));
 
         $index = $this->resolver->buildIndex($metrics);
-        self::assertSame(0.07, $this->resolver->resolve($violation, $metrics, $index));
+        self::assertSame(0.07, $this->resolver->resolve($finding, $metrics, $index));
     }
 
     #[Test]
@@ -174,7 +174,7 @@ final class ClassRankResolverTest extends TestCase
     {
         // ADR 0015 Phase 1c regression pin: pre-migration, CouplingCollector added
         // class symbols with file='', which produced spurious $fileIndex[''] entries
-        // matched by violations with empty file path. After Phase 1c, the file is null
+        // matched by findings with empty file path. After Phase 1c, the file is null
         // (no inherent owning file for graph-derived metrics) and is skipped during
         // index building. Lookups for a file path that's not in the index now return null.
         $metrics = self::createStub(MetricRepositoryInterface::class);
@@ -200,7 +200,7 @@ final class ClassRankResolverTest extends TestCase
         self::assertSame(
             0.05,
             $this->resolver->resolve(
-                $this->createViolation(SymbolPath::forFile(RelativePath::fromString('src/WithFile.php'))),
+                $this->createFinding(SymbolPath::forFile(RelativePath::fromString('src/WithFile.php'))),
                 $metrics,
                 $index,
             ),
@@ -209,7 +209,7 @@ final class ClassRankResolverTest extends TestCase
         // A file lookup that has no entry — and the null-file class is NOT a fallback — returns null.
         self::assertNull(
             $this->resolver->resolve(
-                $this->createViolation(SymbolPath::forFile(RelativePath::fromString('src/Unknown.php'))),
+                $this->createFinding(SymbolPath::forFile(RelativePath::fromString('src/Unknown.php'))),
                 $metrics,
                 $index,
             ),
@@ -222,36 +222,36 @@ final class ClassRankResolverTest extends TestCase
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturn(new MetricBag());
 
-        $violation = $this->createViolation(
+        $finding = $this->createFinding(
             SymbolPath::forClass('App\Service', 'UserService'),
         );
 
         $index = new ClassRankIndex([], [], null);
-        self::assertNull($this->resolver->resolve($violation, $metrics, $index));
+        self::assertNull($this->resolver->resolve($finding, $metrics, $index));
     }
 
     #[Test]
-    public function resolveReturnsNullForProjectViolation(): void
+    public function resolveReturnsNullForProjectFinding(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
-        $violation = $this->createViolation(SymbolPath::forProject());
+        $finding = $this->createFinding(SymbolPath::forProject());
 
         $index = new ClassRankIndex([], [], null);
-        self::assertNull($this->resolver->resolve($violation, $metrics, $index));
+        self::assertNull($this->resolver->resolve($finding, $metrics, $index));
     }
 
     #[Test]
-    public function resolveReturnsNullForFunctionViolation(): void
+    public function resolveReturnsNullForFunctionFinding(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
-        $violation = $this->createViolation(
+        $finding = $this->createFinding(
             SymbolPath::forGlobalFunction('App\Utils', 'helper'),
         );
 
         $index = new ClassRankIndex([], [], null);
-        self::assertNull($this->resolver->resolve($violation, $metrics, $index));
+        self::assertNull($this->resolver->resolve($finding, $metrics, $index));
     }
 
     #[Test]
@@ -265,38 +265,38 @@ final class ClassRankResolverTest extends TestCase
         // Test NAN
         $metrics->method('get')->willReturn($nanMetrics);
 
-        $violation = $this->createViolation(
+        $finding = $this->createFinding(
             SymbolPath::forClass('App', 'NanClass'),
         );
 
         $index = new ClassRankIndex([], [], null);
-        self::assertNull($this->resolver->resolve($violation, $metrics, $index));
+        self::assertNull($this->resolver->resolve($finding, $metrics, $index));
 
         // Test INF with a fresh mock
         $metricsInf = self::createStub(MetricRepositoryInterface::class);
         $metricsInf->method('get')->willReturn($infMetrics);
 
-        $violationInf = $this->createViolation(
+        $findingInf = $this->createFinding(
             SymbolPath::forClass('App', 'InfClass'),
         );
 
         $indexInf = new ClassRankIndex([], [], null);
-        self::assertNull($this->resolver->resolve($violationInf, $metricsInf, $indexInf));
+        self::assertNull($this->resolver->resolve($findingInf, $metricsInf, $indexInf));
     }
 
-    private function createViolation(SymbolPath $symbolPath): Violation
+    private function createFinding(SymbolPath $symbolPath): Finding
     {
         $subject = match ($symbolPath->getType()) {
             SymbolType::File, SymbolType::Namespace_, SymbolType::Project => MetricSubject::aggregate($symbolPath),
             default => MetricSubject::declaration(DeclarationPath::of($symbolPath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0))),
         };
 
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString('test.php'), 1),
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: 'test.rule',
-            violationCode: 'test.rule',
+            code: 'test.rule',
             message: 'Test message',
             severity: Severity::Warning,
         );

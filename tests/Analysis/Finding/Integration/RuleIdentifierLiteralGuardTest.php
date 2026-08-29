@@ -7,13 +7,17 @@ namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -51,11 +55,28 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 final class RuleIdentifierLiteralGuardTest extends TestCase
 {
     /**
+     * The owner of every producer the computed-metric family declares without
+     * a class — the capability that declares them, computed the same way
+     * {@see capabilityRootFromClass()} computes a rule class's.
+     */
+    private const string COMPUTED_METRICS_CAPABILITY_ROOT = 'Analysis/Evidence/ComputedMetrics';
+
+    /**
      * Files legitimately allowed to hold a rule-name or channel-code literal
      * outside the capability that owns it, each with why it cannot be
      * derived instead. An entry with no argument is indistinguishable from
      * an oversight in six months — see
      * `dvizh-vr-workflow:agent-instructions` on decisions without reasons.
+     *
+     * **An argument is not enough on its own: the entry must still be
+     * earned.** This list once held `RuleCategory.php`, whose argument said
+     * deriving a display group from a producer name would make the name
+     * space's spelling a behavioural contract again. The enum was retired and
+     * the group became derived ({@see RuleFamily}); an allowance for a file
+     * that no longer exists would have sat here arguing against a decision
+     * already taken, and nothing would have failed. So
+     * {@see everyNamedFileStillEarnsItsEntry()} re-runs the check the
+     * entry suppresses and fails when it finds nothing left to suppress.
      *
      * @var array<string, string>
      */
@@ -73,16 +94,21 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     ];
 
     /**
-     * Non-PHP files carrying rule names or violation codes by hand — a
+     * Non-PHP files carrying rule names or finding codes by hand — a
      * fixture, a formatted-output example — have no owning capability to
      * check *ownership* against, but they still name something real: a
      * hand-spelled code that names no registered rule or channel is exactly
-     * the drift `fix(reporting): remove hand-spelled violation codes from
+     * the drift `fix(reporting): remove hand-spelled finding codes from
      * dev.html and docs` swept once by hand (severity suffixes mistaken for
      * sub-codes, a nonexistent `size.class-loc`, a stale
      * `size.method-count.class` — see `docs/internal/plans/sarif-channel-descriptions.md`,
      * package P6). Nothing stopped it from coming back the same way, so this
      * checks existence rather than ownership for exactly the files P6 swept.
+     *
+     * An entry here has to keep carrying such a code:
+     * {@see everyNamedFileStillEarnsItsEntry()} fails on a file the regexes
+     * read nothing out of, which otherwise passes this check by having
+     * nothing to check.
      *
      * @var list<string>
      */
@@ -97,39 +123,34 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     {
         $container = (new ContainerFactory())->create();
 
-        $ownerByRuleName = self::ownerByRuleName($container);
+        $ownerByProducer = self::ownerByProducer($container);
 
         $ruleExecution = $container->get(RuleExecutionInterface::class);
         \assert($ruleExecution instanceof RuleExecutionInterface);
         $registeredNames = array_map(static fn($metadata) => $metadata->name, $ruleExecution->allRules());
 
+        // Two halves, because a registered producer is no longer the same
+        // thing as a rule class. A name that is neither a class nor a declared
+        // classless producer means the two enumerations of "every registered
+        // rule" have drifted; a classless producer that names no capability
+        // owner would leave its literal unguarded everywhere.
         self::assertSame(
             [],
-            array_values(array_diff($registeredNames, array_keys($ownerByRuleName))),
-            'RuleExecutionInterface::allRules() names a rule that RuleRegistryInterface::getClasses() does not'
-            . ' — the two enumerations of "every registered rule" disagree.',
+            array_values(array_diff($registeredNames, array_keys($ownerByProducer))),
+            'RuleExecutionInterface::allRules() names a producer that is neither a registered rule class nor a'
+            . ' declared classless producer of the computed-metric family.',
         );
 
-        $universe = $container->get(ChannelUniverseInterface::class);
-        \assert($universe instanceof ChannelUniverseInterface);
+        self::assertSame(
+            [],
+            array_values(array_diff(array_keys($ownerByProducer), $registeredNames)),
+            'A rule class or a declared classless producer is missing from RuleExecutionInterface::allRules().',
+        );
 
-        $ownerByLiteral = $ownerByRuleName;
-
-        foreach ($universe->channels() as $channel) {
-            $producer = $universe->producerOf($channel->violationCode);
-            self::assertNotNull($producer, \sprintf('Channel "%s" names no producer.', $channel->violationCode));
-            self::assertArrayHasKey(
-                $producer,
-                $ownerByRuleName,
-                \sprintf('Channel "%s" is produced by "%s", which names no registered rule.', $channel->violationCode, $producer),
-            );
-            $ownerByLiteral[$channel->violationCode] ??= $ownerByRuleName[$producer];
-        }
-
-        self::assertNotEmpty($ownerByLiteral);
+        $ownerByLiteral = self::ownerByOwnedLiteral($container);
 
         $root = self::projectRoot();
-        $violations = [];
+        $findings = [];
 
         foreach (self::productionPhpFiles($root) as $absolutePath) {
             $relative = substr($absolutePath, \strlen($root) + 1);
@@ -138,29 +159,202 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
                 continue;
             }
 
-            $fileOwner = self::capabilityRootFromRelativePath($relative);
+            $findings = [...$findings, ...self::foreignLiterals($absolutePath, $relative, $ownerByLiteral)];
+        }
 
-            foreach (self::stringLiterals($absolutePath) as $literal) {
-                if (!isset($ownerByLiteral[$literal])) {
-                    continue;
-                }
+        self::assertSame([], $findings, "\n" . implode("\n", $findings));
+    }
 
-                $literalOwner = $ownerByLiteral[$literal];
+    /**
+     * Every file this guard names by hand must still be the file it was named
+     * for — on both lists, and for the same reason.
+     *
+     * A stale entry is invisible by construction. An allowance makes the guard
+     * skip its file, so an allowance for a deleted file, or for one that no
+     * longer holds a foreign literal, silently protects nothing while reading
+     * as a live argument. An existence-checked entry is the mirror image: the
+     * regexes read one shape of hand-spelled code, and a file that stopped
+     * carrying that shape — renamed, rewritten, or never carrying it at all —
+     * is checked against an empty set of literals and passes whatever it says.
+     * Adding `CHANGELOG.md` to that list is green without this check. That is
+     * the seam this project has now walked into twice: a package retires a
+     * subject and leaves the guard asserting about it.
+     */
+    #[Test]
+    public function everyNamedFileStillEarnsItsEntry(): void
+    {
+        $container = (new ContainerFactory())->create();
+        $ownerByLiteral = self::ownerByOwnedLiteral($container);
+        $root = self::projectRoot();
+        $stale = [];
 
-                if ($literalOwner === $fileOwner) {
-                    continue;
-                }
+        foreach (array_keys(self::ALLOWED_FILES) as $relative) {
+            $absolutePath = $root . '/' . $relative;
 
-                $violations[] = \sprintf(
-                    '%s holds literal "%s", which belongs to %s.',
+            if (!is_file($absolutePath)) {
+                $stale[] = \sprintf('%s is allowed but no longer exists.', $relative);
+
+                continue;
+            }
+
+            if (self::foreignLiterals($absolutePath, $relative, $ownerByLiteral) === []) {
+                $stale[] = \sprintf('%s is allowed but holds no literal owned by another capability.', $relative);
+            }
+        }
+
+        foreach (self::EXISTENCE_CHECKED_FILES as $relative) {
+            $absolutePath = $root . '/' . $relative;
+
+            if (!is_file($absolutePath)) {
+                $stale[] = \sprintf('%s is existence-checked but no longer exists.', $relative);
+
+                continue;
+            }
+
+            if (self::handSpelledIdentifierLiterals($absolutePath) === []) {
+                $stale[] = \sprintf(
+                    '%s is existence-checked but spells no rule name or finding code the check can read.',
                     $relative,
-                    $literal,
-                    $literalOwner,
                 );
             }
         }
 
-        self::assertSame([], $violations, "\n" . implode("\n", $violations));
+        self::assertSame([], $stale, "\n" . implode("\n", $stale));
+    }
+
+    /**
+     * The rule-name and channel-code literals in one file that belong to a
+     * capability other than the file's own, phrased as findings.
+     *
+     * @param array<string, string> $ownerByLiteral
+     *
+     * @return list<string>
+     */
+    private static function foreignLiterals(string $absolutePath, string $relative, array $ownerByLiteral): array
+    {
+        $fileOwner = self::capabilityRootFromRelativePath($relative);
+        $findings = [];
+
+        foreach (self::stringLiterals($absolutePath) as $literal) {
+            if (!isset($ownerByLiteral[$literal])) {
+                continue;
+            }
+
+            $literalOwner = $ownerByLiteral[$literal];
+
+            if ($literalOwner === $fileOwner) {
+                continue;
+            }
+
+            $findings[] = \sprintf(
+                '%s holds literal "%s", which belongs to %s.',
+                $relative,
+                $literal,
+                $literalOwner,
+            );
+        }
+
+        return $findings;
+    }
+
+    /**
+     * Rule names and channel codes alike, each mapped to the capability that
+     * owns it — the one place this map is built.
+     *
+     * Two questions read this map and they need different halves of it, so the
+     * split is explicit rather than incidental: whether a hand-spelled code
+     * names anything real is asked of the whole set, and whether a literal
+     * belongs to the file holding it is asked of
+     * {@see ownerByOwnedLiteral()}, which drops the names a metric key and a
+     * channel code share. Building each half separately from the container
+     * would be two enumerations of one thing, which is the drift this guard
+     * exists to catch.
+     *
+     * @return array<string, string>
+     */
+    private static function ownerByLiteral(ContainerBuilder $container): array
+    {
+        $ownerByProducer = self::ownerByProducer($container);
+
+        $universe = $container->get(ChannelUniverseInterface::class);
+        \assert($universe instanceof ChannelUniverseInterface);
+
+        $ownerByLiteral = $ownerByProducer;
+
+        foreach ($universe->channels() as $channel) {
+            $producer = $universe->producerOf($channel->code);
+            self::assertNotNull($producer, \sprintf('Channel "%s" names no producer.', $channel->code));
+            self::assertArrayHasKey(
+                $producer,
+                $ownerByProducer,
+                \sprintf('Channel "%s" is produced by "%s", which names no registered rule.', $channel->code, $producer),
+            );
+            $ownerByLiteral[$channel->code] ??= $ownerByProducer[$producer];
+        }
+
+        return $ownerByLiteral;
+    }
+
+    /**
+     * The same map, minus the literals a metric key and a channel code share.
+     *
+     * @return array<string, string>
+     */
+    private static function ownerByOwnedLiteral(ContainerBuilder $container): array
+    {
+        $owners = self::ownerByLiteral($container);
+
+        foreach (self::metricKeys() as $key) {
+            unset($owners[$key]);
+        }
+
+        return $owners;
+    }
+
+    /**
+     * The published metric keys, which this guard must not read as channel codes.
+     *
+     * Ш5e3 made a metric key and the channel checking it the same string on
+     * purpose: `size.method-count` is the key `SizeRule` thresholds and the
+     * code its finding carries, and Р7 keeps that so one thing has one name.
+     * The cost lands here. A literal that is both stops being evidence of a
+     * channel reference, so this guard no longer covers the names in the
+     * overlap — twenty-odd of the fifty-two — and a health catalog copying a
+     * channel code of another capability would pass. What it still covers is
+     * every channel whose name is not also a metric key: the whole
+     * `architecture.*`, `annotation.*`, `code-smell.*`, `duplication.*` and
+     * `security.*` families among them, i.e. the families the two measured
+     * drifts actually occurred in.
+     *
+     * Narrowing it further is possible in principle — a literal owned by the
+     * capability that owns the metric is fine, a literal elsewhere is not —
+     * but the two readings are the same string in the same file, so nothing
+     * measures which one was meant.
+     *
+     * @return list<string>
+     */
+    private static function metricKeys(): array
+    {
+        $constants = (new ReflectionClass(MetricName::class))->getConstants();
+
+        return array_values(array_filter($constants, static fn(mixed $value): bool => \is_string($value)));
+    }
+
+    /**
+     * Every registered producer — rule classes and the computed-metric
+     * family's classless names alike — mapped to its owning capability root.
+     *
+     * @return array<string, string>
+     */
+    private static function ownerByProducer(ContainerBuilder $container): array
+    {
+        $owners = self::ownerByRuleName($container);
+
+        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producerRuleName) {
+            $owners[$producerRuleName] ??= self::COMPUTED_METRICS_CAPABILITY_ROOT;
+        }
+
+        return $owners;
     }
 
     #[Test]
@@ -168,16 +362,10 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     {
         $container = (new ContainerFactory())->create();
 
-        $knownNames = array_keys(self::ownerByRuleName($container));
-
-        $universe = $container->get(ChannelUniverseInterface::class);
-        \assert($universe instanceof ChannelUniverseInterface);
-        $knownCodes = array_map(static fn($channel) => $channel->violationCode, $universe->channels());
-
-        $known = array_flip([...$knownNames, ...$knownCodes]);
+        $known = array_flip(array_keys(self::ownerByLiteral($container)));
 
         $root = self::projectRoot();
-        $violations = [];
+        $findings = [];
 
         foreach (self::EXISTENCE_CHECKED_FILES as $relative) {
             foreach (self::handSpelledIdentifierLiterals($root . '/' . $relative) as $literal) {
@@ -185,16 +373,16 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
                     continue;
                 }
 
-                $violations[] = \sprintf('%s holds "%s", which names no registered rule or channel.', $relative, $literal);
+                $findings[] = \sprintf('%s holds "%s", which names no registered rule or channel.', $relative, $literal);
             }
         }
 
-        self::assertSame([], $violations, "\n" . implode("\n", $violations));
+        self::assertSame([], $findings, "\n" . implode("\n", $findings));
     }
 
     /**
      * Extracts every value that a fixture or a formatted-output example
-     * spells as a rule name or a violation code, without requiring these
+     * spells as a rule name or a finding code, without requiring these
      * non-PHP files to parse as one well-formed document: `"rule"` /
      * `"ruleName"` / `"code"` / `"violationCode"` values, both halves of a
      * `"channel": "producer#code"` value, and the keys of a `"byRule": {...}`

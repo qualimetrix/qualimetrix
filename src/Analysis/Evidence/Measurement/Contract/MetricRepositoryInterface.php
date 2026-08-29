@@ -7,8 +7,8 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Mutable Measurement repository promise shared by collection, aggregation, and rules.
@@ -24,17 +24,22 @@ interface MetricRepositoryInterface
     /**
      * Returns metrics for any symbol.
      *
-     * All symbol levels (Method, Class, File, Namespace, Project) return MetricBag.
+     * All symbol levels (Callable, Class, File, Namespace, Project) return MetricBag.
      * Aggregated metrics use naming convention: {metric}.{strategy} (e.g., ccn.sum, loc.avg).
      */
     public function get(SymbolPath $symbol): MetricBag;
 
     /**
-     * Returns iterator over symbols of given type.
+     * Returns iterator over symbols measured at the given aggregation level.
+     *
+     * The key is the level, not the declaration kind: a caller asking for
+     * {@see SymbolLevel::Callable} gets methods and global functions in one
+     * enumeration, and reads the kind off each symbol when it needs it.
+     * That query is the same enumeration as {@see self::allCallables()}.
      *
      * @return iterable<SymbolInfo>
      */
-    public function all(SymbolType $type): iterable;
+    public function all(SymbolLevel $level): iterable;
 
     /**
      * Checks if metrics exist for given symbol.
@@ -68,7 +73,10 @@ interface MetricRepositoryInterface
     /** @return iterable<SymbolInfo> exact declaration subjects */
     public function allDeclarations(): iterable;
 
-    /** @return iterable<SymbolInfo> exact callable declaration subjects */
+    /**
+     * @return iterable<SymbolInfo> exact callable declaration subjects — the
+     *                              same enumeration as `all(SymbolLevel::Callable)`
+     */
     public function allCallables(): iterable;
 
     /** @return iterable<SymbolInfo> logical class subjects */

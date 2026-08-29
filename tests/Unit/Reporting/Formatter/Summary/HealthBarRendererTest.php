@@ -17,8 +17,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
@@ -479,7 +479,7 @@ final class HealthBarRendererTest extends TestCase
         // Parent namespace: flat score with 5 classes
         $parentBag = MetricBag::fromArray([
             'health.overall' => $flatScore,
-            'classCount.sum' => 5,
+            'size.class-count.sum' => 5,
         ]);
 
         // Calculate child score so the weighted average = overallScore
@@ -489,7 +489,7 @@ final class HealthBarRendererTest extends TestCase
 
         $childBag = MetricBag::fromArray([
             'health.overall' => $childScore,
-            'classCount.sum' => 5,
+            'size.class-count.sum' => 5,
         ]);
 
         $nsInfo = new SymbolInfo($nsPath, RelativePath::fromString('src/Service'), null);
@@ -497,7 +497,7 @@ final class HealthBarRendererTest extends TestCase
 
         $metrics = $this->createMock(MetricRepositoryInterface::class);
         $metrics->method('all')
-            ->with(SymbolType::Namespace_)
+            ->with(SymbolLevel::Namespace_)
             ->willReturn([$nsInfo, $childInfo]);
         $metrics->method('get')
             ->willReturnCallback(static fn(SymbolPath $path): MetricBag => match ($path->toCanonical()) {
@@ -507,7 +507,7 @@ final class HealthBarRendererTest extends TestCase
             });
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -530,7 +530,7 @@ final class HealthBarRendererTest extends TestCase
     private function createReport(array $healthScores = []): Report
     {
         return new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,

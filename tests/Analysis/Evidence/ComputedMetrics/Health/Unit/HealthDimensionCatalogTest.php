@@ -33,26 +33,26 @@ final class HealthDimensionCatalogTest extends TestCase
     #[Test]
     public function itGetDecompositionKnownDimension(): void
     {
-        self::assertSame(['ccn.avg', 'cognitive.avg', 'ccn.p95', 'cognitive.p95'], $this->provider->getDecomposition('health.complexity'));
-        self::assertSame(['tcc.avg', 'lcom.avg'], $this->provider->getDecomposition('health.cohesion'));
-        self::assertSame(['ce.avg', 'ce_packages.avg', 'distance.avg'], $this->provider->getDecomposition('health.coupling'));
-        self::assertSame(['typeCoverage.pct'], $this->provider->getDecomposition('health.typing'));
-        self::assertSame(['mi.avg', 'mi.p5', 'mi.min'], $this->provider->getDecomposition('health.maintainability'));
+        self::assertSame(['complexity.ccn.avg', 'complexity.cognitive.avg', 'complexity.ccn.p95', 'complexity.cognitive.p95'], $this->provider->getDecomposition('health.complexity'));
+        self::assertSame(['cohesion.tcc.avg', 'cohesion.lcom.avg'], $this->provider->getDecomposition('health.cohesion'));
+        self::assertSame(['coupling.ce.avg', 'coupling.ce-packages.avg', 'coupling.distance.avg'], $this->provider->getDecomposition('health.coupling'));
+        self::assertSame(['design.type-coverage.pct'], $this->provider->getDecomposition('health.typing'));
+        self::assertSame(['maintainability.mi.avg', 'maintainability.mi.p5', 'maintainability.mi.min'], $this->provider->getDecomposition('health.maintainability'));
         self::assertSame([], $this->provider->getDecomposition('health.overall'));
         self::assertSame(
             [
                 'primaryValue' => 12.0,
-                'contributorMetrics' => ['ccn.sum' => 12, 'cognitive.sum' => 8],
+                'contributorMetrics' => ['complexity.ccn.sum' => 12, 'complexity.cognitive.sum' => 8],
             ],
             $this->provider->selectContributorMetrics(
                 [
-                    ['classKey' => 'ccn.sum', 'direction' => 'lower'],
-                    ['classKey' => 'cognitive.sum', 'direction' => 'lower'],
+                    ['classKey' => 'complexity.ccn.sum', 'direction' => 'lower'],
+                    ['classKey' => 'complexity.cognitive.sum', 'direction' => 'lower'],
                     ['classKey' => 'missing', 'direction' => 'lower'],
                 ],
                 static fn(string $key): ?int => [
-                    'ccn.sum' => 12,
-                    'cognitive.sum' => 8,
+                    'complexity.ccn.sum' => 12,
+                    'complexity.cognitive.sum' => 8,
                 ][$key] ?? null,
             ),
         );

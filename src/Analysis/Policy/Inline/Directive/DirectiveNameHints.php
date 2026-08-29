@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 
 /**
  * What the author could have meant, when a directive names something the run
@@ -19,10 +19,10 @@ use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
  * no severity.
  *
  * Every answer is a reverse query against the universe rather than string
- * surgery on what was typed. Stripping `.class` off `coupling.cbo.class`
- * happens to give the right rule; stripping anything off `architecture.coverage`
- * does not, and two rules of the forty-one do not derive their channel codes
- * from their name at all.
+ * surgery on what was typed. There is no suffix to strip since a channel name
+ * carries no level: stripping anything off `architecture.coverage` gives a
+ * name that is not a rule, and two rules of the forty-one do not derive their
+ * channel codes from their name at all.
  */
 final readonly class DirectiveNameHints
 {
@@ -32,8 +32,15 @@ final readonly class DirectiveNameHints
      * How far a name may be from a real one and still be offered as a
      * suggestion. A list is useful only while it is short: past this,
      * "no close match" tells the author more than five unrelated names.
+     *
+     * Public because it is the radius the published channel order becomes
+     * observable within, and the guard that measures that
+     * ({@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest})
+     * has to read it rather than restate it: a raised radius with a stale
+     * literal beside it would leave the guard passing on a distance nothing
+     * uses any more.
      */
-    private const int SUGGESTION_DISTANCE = 5;
+    public const int SUGGESTION_DISTANCE = 5;
 
     public function __construct(
         private ChannelIdentityInterface $identity,
@@ -67,38 +74,6 @@ final readonly class DirectiveNameHints
     }
 
     /**
-     * The advice for a suppression written as an explicit
-     * `ruleName#violationCode` pair that addresses no channel.
-     *
-     * Both halves are exact, so the useful answer is *which half* is wrong.
-     * A violation code that exists under some other rule name is the common
-     * mistake — a report prints the channel code, not the pair — so it is
-     * answered with the pair the author should have written.
-     */
-    public function forChannelPair(string $ruleName, string $violationCode): string
-    {
-        $spellings = [];
-        foreach ($this->identity->channels() as $channel) {
-            if ($channel->violationCode === $violationCode) {
-                $spellings[] = $channel->toKey();
-            }
-        }
-
-        if ($spellings !== []) {
-            sort($spellings);
-
-            return \sprintf(
-                'No channel of rule "%s" carries the code "%s"; it is spelled: %s.',
-                $ruleName,
-                $violationCode,
-                implode(', ', $spellings),
-            );
-        }
-
-        return self::listOrNothing($this->nearestChannels($violationCode));
-    }
-
-    /**
      * The advice for a threshold naming no rule. A name that turns out to be
      * a *channel* is the common case — the report prints channel names — so
      * it is answered with the producing rule rather than a guess.
@@ -119,8 +94,8 @@ final readonly class DirectiveNameHints
         $codes = [];
 
         foreach ($this->identity->channels() as $channel) {
-            if ($this->identity->producerOf($channel->violationCode) === $ruleName) {
-                $codes[] = $channel->violationCode;
+            if ($this->identity->producerOf($channel->code) === $ruleName) {
+                $codes[] = $channel->code;
             }
         }
 
@@ -144,7 +119,7 @@ final readonly class DirectiveNameHints
     private function nearestChannels(string $name): array
     {
         $near = self::nearest($name, array_map(
-            static fn(ViolationChannel $channel): string => $channel->violationCode,
+            static fn(FindingChannel $channel): string => $channel->code,
             $this->identity->channels(),
         ));
 

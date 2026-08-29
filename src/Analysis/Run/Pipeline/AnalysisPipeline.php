@@ -15,9 +15,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
@@ -35,8 +36,8 @@ use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use SplFileInfo;
 
 /**
@@ -172,12 +173,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $this->logger->debug('Starting analysis phase');
 
         $profiler->start('rules', 'pipeline');
-        $violations = $this->executeRulesForRun($repository, $graph, $namespaceTree, $collectionResult);
+        $ruleExecution = $this->executeRulesForRun($repository, $graph, $namespaceTree, $collectionResult);
+        $findings = $this->reportedFindings($ruleExecution);
         $profiler->stop('rules');
 
         $analysisTime = microtime(true) - $phaseStartTime;
         $this->logger->info('Analysis completed', [
-            'violations' => \count($violations),
+            'violations' => \count($findings),
             'duration' => \sprintf('%.2fs', $analysisTime),
         ]);
 
@@ -194,7 +196,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
         $this->logger->info('Analysis complete', [
             'total_duration' => \sprintf('%.2fs', $duration),
-            'violations' => \count($violations),
+            'violations' => \count($findings),
             'files_analyzed' => $collectionResult->filesAnalyzed,
             'files_skipped' => $coverage->skippedFilesCount(),
         ]);
@@ -202,13 +204,14 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $profiler->stop('analysis');
 
         return new AnalysisResult(
-            violations: $violations,
+            findings: $findings,
             duration: $duration,
             metrics: $repository,
             coverage: $coverage,
             suppressions: $collectionResult->suppressions,
             namespaceTree: $namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,
+            ruleExecution: $ruleExecution,
         );
     }
 
@@ -220,29 +223,41 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         return $this->graphBuilder->build($dependencies, self::collectLogicalClassPaths($repository));
     }
 
-    /** @return list<Violation> */
     private function executeRulesForRun(
         MetricRepositoryInterface $repository,
         DependencyGraphInterface $graph,
         NamespaceTree $namespaceTree,
         CollectionPhaseOutput $collectionResult,
-    ): array {
+    ): RuleExecutionResult {
         $context = new AnalysisContext(
             metrics: $repository,
             dependencyGraph: $graph,
             namespaceTree: $namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,
         );
-        $violations = $this->ruleExecutor->execute($context);
 
-        // The directive-usage half of the inline-directive report can only be
-        // answered once every rule has produced its findings — a suppression
-        // is stale exactly when nothing it covers was reported. The channel
-        // identity and the wording stay with the owning capability; Run only
-        // decides when to ask.
-        $unused = $this->ruleProducerPreparation->auditInlineDirectives($violations);
+        return $this->ruleExecutor->execute($context);
+    }
 
-        return $unused === [] ? $violations : array_merge($violations, $unused);
+    /**
+     * What {@see AnalysisResult::$findings} carries: `$ruleExecution`'s published
+     * findings plus the directive-usage audit below, which is not part of rule
+     * execution proper and therefore not part of `$ruleExecution` itself.
+     *
+     * The directive-usage half of the inline-directive report can only be
+     * answered once every rule has produced its findings — a suppression is
+     * stale exactly when nothing it covers was reported. The channel identity
+     * and the wording stay with the owning capability; Run only decides when
+     * to ask.
+     *
+     * @return list<Finding>
+     */
+    private function reportedFindings(RuleExecutionResult $ruleExecution): array
+    {
+        $findings = $ruleExecution->published;
+        $unused = $this->ruleProducerPreparation->auditInlineDirectives($findings);
+
+        return $unused === [] ? $findings : array_merge($findings, $unused);
     }
 
     /** @return list<LogicalClassPath> */
@@ -324,7 +339,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     private static function collectClassPaths(MetricRepositoryInterface $repository): array
     {
         $paths = [];
-        foreach ($repository->all(SymbolType::Class_) as $classSymbol) {
+        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
             $paths[] = $classSymbol->symbolPath;
         }
 

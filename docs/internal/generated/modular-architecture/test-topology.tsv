@@ -1,6 +1,6 @@
 metric	count
-mapped_artifacts	705
+mapped_artifacts	737
 fixture_directories	102
-phpunit_classes	562
-phpunit_ids	7461
+phpunit_classes	591
+phpunit_ids	7730
 orphan_dispositions	28

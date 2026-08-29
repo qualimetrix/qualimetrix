@@ -7,7 +7,7 @@ Size metrics measure the amount of code, classes, and structural elements.
 ## Method Statement Count
 
 **Collector:** `MethodStatementCountCollector`
-**Provides:** `methodStatementCount`
+**Provides:** `size.method-statement-count`
 **Level:** Method/function/closure, aggregated to class, namespace, and project
 
 Counts executable statements plus control-flow statements and clauses. Container
@@ -24,16 +24,16 @@ Maintainability Index uses this metric as its method-size input. See
 ## LOC (Lines of Code)
 
 **Collector:** `LocCollector`
-**Provides:** `loc`, `lloc`, `cloc`
+**Provides:** `size.loc`, `size.lloc`, `size.cloc`
 **Level:** File (physical project totals) and namespace source spans
 
 ### Metrics
 
-| Metric | Description                                        |
-| ------ | -------------------------------------------------- |
-| `loc`  | Total number of lines in the file                  |
-| `lloc` | Logical lines (excluding blank lines and comments) |
-| `cloc` | Comment lines                                      |
+| Metric      | Description                                        |
+| ----------- | -------------------------------------------------- |
+| `size.loc`  | Total number of lines in the file                  |
+| `size.lloc` | Logical lines (excluding blank lines and comments) |
+| `size.cloc` | Comment lines                                      |
 
 ### What Is Counted
 
@@ -50,7 +50,7 @@ Maintainability Index uses this metric as its method-size input. See
 - Multi-line comments: `/* ... */`
 - DocBlocks: `/** ... */`
 
-> **Note:** `loc` is counted as the number of line breaks, so a trailing newline
+> **Note:** `size.loc` is counted as the number of line breaks, so a trailing newline
 > at end of file is counted as an extra line. This matches common line-count
 > definitions and may differ by +1 per file from `wc -l`.
 
@@ -86,18 +86,18 @@ class Calculator  // LLOC +1
 ## Class Count
 
 **Collector:** `ClassCountCollector`
-**Provides:** `classCount`, `abstractClassCount`, `interfaceCount`, `traitCount`, `enumCount`, `implementingEnumCount`, `functionCount`
+**Provides:** `size.class-count`, `size.abstract-class-count`, `size.interface-count`, `size.trait-count`, `size.enum-count`, `size.implementing-enum-count`, `size.function-count`
 **Level:** File totals with namespace-owned structural contributions
 
 ### Metrics
 
-| Metric                  | Description                                                          |
-| ----------------------- | -------------------------------------------------------------------- |
-| `classCount`            | Named classes (not anonymous)                                        |
-| `interfaceCount`        | Interfaces                                                           |
-| `traitCount`            | Traits                                                               |
-| `enumCount`             | Enums (PHP 8.1+)                                                     |
-| `implementingEnumCount` | Enums with an explicit `implements` clause (a subset of `enumCount`) |
+| Metric                         | Description                                                                |
+| ------------------------------ | -------------------------------------------------------------------------- |
+| `size.class-count`             | Named classes (not anonymous)                                              |
+| `size.interface-count`         | Interfaces                                                                 |
+| `size.trait-count`             | Traits                                                                     |
+| `size.enum-count`              | Enums (PHP 8.1+)                                                           |
+| `size.implementing-enum-count` | Enums with an explicit `implements` clause (a subset of `size.enum-count`) |
 
 ### What Is Counted
 
@@ -117,28 +117,28 @@ at project level.
 ```php
 <?php
 
-interface PaymentGateway { }  // interfaceCount +1
+interface PaymentGateway { }  // size.interface-count +1
 
-abstract class AbstractGateway implements PaymentGateway { }  // classCount +1
+abstract class AbstractGateway implements PaymentGateway { }  // size.class-count +1
 
-class StripeGateway extends AbstractGateway { }  // classCount +1
+class StripeGateway extends AbstractGateway { }  // size.class-count +1
 
-trait LoggerTrait { }  // traitCount +1
+trait LoggerTrait { }  // size.trait-count +1
 
-enum Status { case Active; }  // enumCount +1
+enum Status { case Active; }  // size.enum-count +1
 
-enum Currency implements PaymentGateway { case Eur; }  // enumCount +1, implementingEnumCount +1
+enum Currency implements PaymentGateway { case Eur; }  // size.enum-count +1, size.implementing-enum-count +1
 
 $anon = new class { };  // NOT counted
 
-// classCount = 2
-// interfaceCount = 1
-// traitCount = 1
-// enumCount = 2
-// implementingEnumCount = 1
+// size.class-count = 2
+// size.interface-count = 1
+// size.trait-count = 1
+// size.enum-count = 2
+// size.implementing-enum-count = 1
 ```
 
-> **Note:** `implementingEnumCount` counts only explicit `implements` clauses. The
+> **Note:** `size.implementing-enum-count` counts only explicit `implements` clauses. The
 > `UnitEnum` / `BackedEnum` interfaces every enum satisfies implicitly are not counted,
 > since they carry no author intent. Abstractness consumes this split: a bare literal
 > enumeration is neutral, an enum implementing a declared contract is concrete. See
@@ -149,20 +149,20 @@ $anon = new class { };  // NOT counted
 ## Property Count
 
 **Collector:** `MethodCountCollector`
-**Provides:** `propertyCount`, `propertyCountPublic`, `propertyCountProtected`, `propertyCountPrivate`, `promotedPropertyCount`
+**Provides:** `size.property-count`, `size.property-count.public`, `size.property-count.protected`, `size.property-count.private`, `size.promoted-property-count`
 **Level:** Class
 
 > **Note:** Property metrics are collected by `MethodCountCollector` in this capability, not by a separate collector.
 
 ### Metrics
 
-| Metric                   | Description                          |
-| ------------------------ | ------------------------------------ |
-| `propertyCount`          | Total number of properties           |
-| `propertyCountPublic`    | Public properties                    |
-| `propertyCountProtected` | Protected properties                 |
-| `propertyCountPrivate`   | Private properties                   |
-| `promotedPropertyCount`  | Constructor promoted properties (8+) |
+| Metric                          | Description                          |
+| ------------------------------- | ------------------------------------ |
+| `size.property-count`           | Total number of properties           |
+| `size.property-count.public`    | Public properties                    |
+| `size.property-count.protected` | Protected properties                 |
+| `size.property-count.private`   | Private properties                   |
+| `size.promoted-property-count`  | Constructor promoted properties (8+) |
 
 ### What Is Counted
 
@@ -179,20 +179,20 @@ $anon = new class { };  // NOT counted
 ```php
 class User
 {
-    public int $id;                              // propertyCountPublic +1
-    protected string $name;                      // propertyCountProtected +1
-    private string $email;                       // propertyCountPrivate +1
+    public int $id;                              // size.property-count.public +1
+    protected string $name;                      // size.property-count.protected +1
+    private string $email;                       // size.property-count.private +1
 
     public function __construct(
-        public string $username,                 // propertyCountPublic +1, promotedPropertyCount +1
+        public string $username,                 // size.property-count.public +1, size.promoted-property-count +1
     ) {}
 }
 
-// propertyCount = 4
-// propertyCountPublic = 2
-// propertyCountProtected = 1
-// propertyCountPrivate = 1
-// promotedPropertyCount = 1
+// size.property-count = 4
+// size.property-count.public = 2
+// size.property-count.protected = 1
+// size.property-count.private = 1
+// size.promoted-property-count = 1
 ```
 
 ### Interpretation
@@ -209,20 +209,20 @@ class User
 ## Method Count
 
 **Collector:** `MethodCountCollector`
-**Provides:** `methodCount`, `methodCountTotal`, `methodCountPublic`, `methodCountProtected`, `methodCountPrivate`, `getterCount`, `setterCount`
+**Provides:** `size.method-count`, `size.method-count.total`, `size.method-count.public`, `size.method-count.protected`, `size.method-count.private`, `size.getter-count`, `size.setter-count`
 **Level:** Class
 
 ### Metrics
 
-| Metric                 | Description                                   |
-| ---------------------- | --------------------------------------------- |
-| `methodCount`          | Methods excluding getters/setters             |
-| `methodCountTotal`     | All methods                                   |
-| `methodCountPublic`    | Public methods (excluding getters/setters)    |
-| `methodCountProtected` | Protected methods (excluding getters/setters) |
-| `methodCountPrivate`   | Private methods (excluding getters/setters)   |
-| `getterCount`          | Getters (`get*`, `is*`, `has*`)               |
-| `setterCount`          | Setters (`set*`)                              |
+| Metric                        | Description                                   |
+| ----------------------------- | --------------------------------------------- |
+| `size.method-count`           | Methods excluding getters/setters             |
+| `size.method-count.total`     | All methods                                   |
+| `size.method-count.public`    | Public methods (excluding getters/setters)    |
+| `size.method-count.protected` | Protected methods (excluding getters/setters) |
+| `size.method-count.private`   | Private methods (excluding getters/setters)   |
+| `size.getter-count`           | Getters (`get*`, `is*`, `has*`)               |
+| `size.setter-count`           | Setters (`set*`)                              |
 
 ### Getter/Setter Detection
 
@@ -239,20 +239,20 @@ class User
 ```php
 class User
 {
-    public function getName(): string { }      // getterCount +1
-    public function setName(string $name): void { }  // setterCount +1
-    public function isActive(): bool { }       // getterCount +1
-    public function hasPermission(): bool { }  // getterCount +1
+    public function getName(): string { }      // size.getter-count +1
+    public function setName(string $name): void { }  // size.setter-count +1
+    public function isActive(): bool { }       // size.getter-count +1
+    public function hasPermission(): bool { }  // size.getter-count +1
 
-    public function save(): void { }           // methodCountPublic +1
-    protected function validate(): bool { }    // methodCountProtected +1
-    private function hash(): string { }        // methodCountPrivate +1
+    public function save(): void { }           // size.method-count.public +1
+    protected function validate(): bool { }    // size.method-count.protected +1
+    private function hash(): string { }        // size.method-count.private +1
 }
 
-// methodCountTotal = 7
-// methodCount = 3 (save, validate, hash)
-// getterCount = 3
-// setterCount = 1
+// size.method-count.total = 7
+// size.method-count = 3 (save, validate, hash)
+// size.getter-count = 3
+// size.setter-count = 1
 ```
 
 ---
@@ -263,7 +263,7 @@ class User
 
 ```php
 new MetricDefinition(
-    name: 'loc', // 'lloc', 'cloc', 'classCount', 'interfaceCount', ...
+    name: 'size.loc', // 'size.lloc', 'size.cloc', 'size.class-count', 'size.interface-count', ...
     collectedAt: SymbolLevel::File,
     aggregations: [
         SymbolLevel::Namespace_->value => [Sum, Average],
@@ -272,13 +272,13 @@ new MetricDefinition(
 )
 ```
 
-**Aggregated names:** `loc.sum`, `loc.avg`, `classCount.sum`
+**Aggregated names:** `size.loc.sum`, `size.loc.avg`, `size.class-count.sum`
 
 ### Property Count, Method Count
 
 ```php
 new MetricDefinition(
-    name: 'propertyCount', // 'methodCount', ...
+    name: 'size.property-count', // 'size.method-count', ...
     collectedAt: SymbolLevel::Class_,
     aggregations: [
         SymbolLevel::Namespace_->value => [Sum, Average, Max],
@@ -287,7 +287,7 @@ new MetricDefinition(
 )
 ```
 
-**Aggregated names:** `propertyCount.sum`, `propertyCount.avg`, `methodCount.max`
+**Aggregated names:** `size.property-count.sum`, `size.property-count.avg`, `size.method-count.max`
 
 ---
 
@@ -317,13 +317,13 @@ Rule IDs remain stable. `MethodCountCollector` publishes the method/property
 metrics and the WOC input consumed by design policy, while WMC remains the
 Measurement aggregation of callable CCN.
 
-`woc` follows Lanza & Marinescu: functional public methods — neither accessor
+`design.woc` follows Lanza & Marinescu: functional public methods — neither accessor
 nor constructor — over all other public members, which are public methods
 (accessors included) plus public properties. Accessor-ness is decided by method
 name in `MethodCountVisitor`, so a public method whose body only forwards to a
 collaborator counts as functional. Only members declared by the class itself
 are counted. A class with no public members scores 100 rather than being left
-undefined. `methodCountTotal` moved to `MetricName::STRUCTURE_METHOD_COUNT_TOTAL`
+undefined. `size.method-count.total` moved to `MetricName::SIZE_METHOD_COUNT_TOTAL`
 so Design can require it without importing a Size constant.
 
 ## Structure
@@ -362,7 +362,7 @@ anonymous classes, methods, properties, thresholds, and property exclusions.
 - All 15 Size declarations remain in this flat leaf without a `Contract/` or
   role-based subdirectory.
 - `size.class-count`, `size.method-count`, and `size.property-count` and their
-  metric keys retain their existing behaviour. `woc` is the Lanza & Marinescu
+  metric keys retain their existing behaviour. `design.woc` is the Lanza & Marinescu
   ratio described above; WMC stays the Measurement aggregation of callable CCN.
 - The seven owned tests remain discovered and cover anonymous-class exclusion,
   LOC, statement, method, property, and class counts.

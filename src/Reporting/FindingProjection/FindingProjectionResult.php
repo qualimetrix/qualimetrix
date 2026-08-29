@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 
 /**
- * What the violation pipeline produced, and what each of its stages removed.
+ * What the finding pipeline produced, and what each of its stages removed.
  *
  * **Two lists of findings, and the difference between them is the point.**
- * `violations` is what the user is shown — everything the stages left,
- * including any report narrowing. `measuredViolations` is the set a baseline
+ * `findings` is what the user is shown — everything the stages left,
+ * including any report narrowing. `measuredFindings` is the set a baseline
  * measures (ADR 0017): the input to the baseline
  * stage, after `@qmx-ignore` and the exclusions and before git scope. Every
  * baseline operation reads the second one, capture included; feeding capture
@@ -33,9 +33,9 @@ use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 final readonly class FindingProjectionResult
 {
     /**
-     * @param list<Violation> $violations what the run reports, after every stage
-     * @param list<Violation> $measuredViolations the set a baseline measures — the baseline stage's input
-     * @param array<string, list<Violation>> $removedByStage what each stage removed, keyed by {@see ViolationFilterStage}'s value
+     * @param list<Finding> $findings what the run reports, after every stage
+     * @param list<Finding> $measuredFindings the set a baseline measures — the baseline stage's input
+     * @param array<string, list<Finding>> $removedByStage what each stage removed, keyed by {@see FindingFilterStage}'s value
      * @param list<BaselineEntry> $staleEntries entries whose identity the measured set did not hold (ADR 0017);
      *                                          reported, never acted on
      * @param list<InertBaselineEntry> $inertEntries every entry the loaded baseline could not apply, naming
@@ -46,8 +46,8 @@ final readonly class FindingProjectionResult
      *                                     the run — only to report a mismatch (ADR 0017)
      */
     public function __construct(
-        public array $violations,
-        public array $measuredViolations = [],
+        public array $findings,
+        public array $measuredFindings = [],
         public array $removedByStage = [],
         public array $staleEntries = [],
         public array $inertEntries = [],
@@ -57,14 +57,14 @@ final readonly class FindingProjectionResult
     /**
      * What the given stage took out of the run, in the order it saw it.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function removedBy(ViolationFilterStage $stage): array
+    public function removedBy(FindingFilterStage $stage): array
     {
         return $this->removedByStage[$stage->value] ?? [];
     }
 
-    public function removedCountBy(ViolationFilterStage $stage): int
+    public function removedCountBy(FindingFilterStage $stage): int
     {
         return \count($this->removedBy($stage));
     }

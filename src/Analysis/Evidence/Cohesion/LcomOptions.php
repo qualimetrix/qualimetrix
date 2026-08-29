@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * Options for LcomRule.
  *
  * LCOM4 (Lack of Cohesion of Methods) thresholds:
- * - LCOM4 <= 2: cohesive class (no violation)
+ * - LCOM4 <= 2: cohesive class (no finding)
  * - LCOM4 3-4: warning (class may have multiple responsibilities)
  * - LCOM4 >= 5: error (class clearly does too much, should be split)
  *

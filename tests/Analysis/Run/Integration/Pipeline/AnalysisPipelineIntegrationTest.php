@@ -35,16 +35,17 @@ use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
@@ -67,8 +68,8 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
@@ -176,10 +177,10 @@ final class AnalysisPipelineIntegrationTest extends TestCase
      * cycles in AnalysisContext.
      *
      * This test creates a circular dependency (A -> B -> A) and runs the full pipeline
-     * with CircularDependencyRule. It should produce violations but currently won't.
+     * with CircularDependencyRule. It should produce findings but currently won't.
      */
     #[Test]
-    public function circularDependencyRuleProducesViolationsForActualCycles(): void
+    public function circularDependencyRuleProducesFindingsForActualCycles(): void
     {
         // Arrange: A circular dependency A -> B -> A
         $dependencies = [
@@ -237,14 +238,14 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Act
         $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString('/tmp/src')));
 
-        // Assert: should find circular dependency violations
-        $circularViolations = array_filter(
-            $result->violations,
-            static fn(Violation $v): bool => $v->ruleName === CircularDependencyRule::NAME,
+        // Assert: should find circular dependency findings
+        $circularFindings = array_filter(
+            $result->findings,
+            static fn(Finding $v): bool => $v->ruleName === CircularDependencyRule::NAME,
         );
 
         self::assertNotEmpty(
-            $circularViolations,
+            $circularFindings,
             'CircularDependencyRule should produce violations when circular dependencies exist. '
             . 'Currently the pipeline never calls CircularDependencyDetector and never populates '
             . 'the $cycles property in AnalysisContext.',
@@ -331,30 +332,33 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         try {
             [$first] = $run($cyclicRoot, $architectureDocument);
-            self::assertNotEmpty(self::violationsNamed($first->violations, LayerViolationRule::NAME));
-            self::assertNotEmpty(self::violationsNamed($first->violations, CircularDependencyRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($first->findings, LayerViolationRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($first->findings, CircularDependencyRule::NAME));
 
             [$second] = $run($cleanRoot, new ConfigurationDocument([], AbsolutePath::fromString($fixtureRoot)));
-            self::assertSame([], self::violationsNamed($second->violations, LayerViolationRule::NAME));
-            self::assertSame([], self::violationsNamed($second->violations, CircularDependencyRule::NAME));
+            self::assertSame([], self::findingsNamed($second->findings, LayerViolationRule::NAME));
+            self::assertSame([], self::findingsNamed($second->findings, CircularDependencyRule::NAME));
 
             [$withoutCycles, $cycleDisabledSpans] = $run(
                 $cyclicRoot,
                 $architectureDocument,
                 CircularDependencyRule::NAME,
             );
-            self::assertNotEmpty(self::violationsNamed($withoutCycles->violations, LayerViolationRule::NAME));
-            self::assertSame([], self::violationsNamed($withoutCycles->violations, CircularDependencyRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($withoutCycles->findings, LayerViolationRule::NAME));
+            self::assertSame([], self::findingsNamed($withoutCycles->findings, CircularDependencyRule::NAME));
             self::assertArrayHasKey('architecture-prepare', $cycleDisabledSpans);
             self::assertArrayNotHasKey('cycles', $cycleDisabledSpans);
 
+            // Both producers of the layer policy, because the span is skipped
+            // only when nothing that reads the policy is selected — see
+            // LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES.
             [$withoutLayers, $architectureDisabledSpans] = $run(
                 $cyclicRoot,
                 $architectureDocument,
-                LayerViolationRule::NAME,
+                ...LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES,
             );
-            self::assertSame([], self::violationsNamed($withoutLayers->violations, LayerViolationRule::NAME));
-            self::assertNotEmpty(self::violationsNamed($withoutLayers->violations, CircularDependencyRule::NAME));
+            self::assertSame([], self::findingsNamed($withoutLayers->findings, LayerViolationRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($withoutLayers->findings, CircularDependencyRule::NAME));
             self::assertArrayNotHasKey('architecture-prepare', $architectureDisabledSpans);
             self::assertArrayHasKey('cycles', $architectureDisabledSpans);
         } finally {
@@ -396,13 +400,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $repository = new InMemoryMetricRepository();
         $repository->add(
             SymbolPath::forClass('App\Service', 'OrderService'),
-            (new MetricBag())->with('loc', 50),
+            (new MetricBag())->with('size.loc', 50),
             RelativePath::fromString('tmp/OrderService.php'),
             1,
         );
         $repository->add(
             SymbolPath::forClass('App\Service', 'PaymentService'),
-            (new MetricBag())->with('loc', 30),
+            (new MetricBag())->with('size.loc', 30),
             RelativePath::fromString('tmp/PaymentService.php'),
             1,
         );
@@ -422,7 +426,11 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $globalCollectorRunner = new MeasurementAggregationService([$couplingCollector], $compositeCollector, $this->profiler);
 
         $ruleExecutor = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
-        $ruleExecutor->method('execute')->willReturn([]);
+        $ruleExecutor->method('execute')->willReturn(new \Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult(
+            [],
+            [],
+            new \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats(),
+        ));
 
         $pipeline = $this->createPipelineWithGlobalCollectors(
             $dependencies,
@@ -440,7 +448,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             SymbolPath::forClass('App\Service', 'OrderService'),
         );
         self::assertNotNull(
-            $orderServiceBag->get('cbo'),
+            $orderServiceBag->get('coupling.cbo'),
             'Sanity check: class-level CBO should be computed by CouplingCollector',
         );
 
@@ -449,9 +457,9 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         // The CouplingCollector defines cbo aggregation at namespace level
         // with Sum, Average, Max strategies. These should produce cbo.sum, cbo.avg, cbo.max.
-        $cboSum = $namespaceBag->get('cbo.sum');
-        $cboAvg = $namespaceBag->get('cbo.avg');
-        $cboMax = $namespaceBag->get('cbo.max');
+        $cboSum = $namespaceBag->get('coupling.cbo.sum');
+        $cboAvg = $namespaceBag->get('coupling.cbo.avg');
+        $cboMax = $namespaceBag->get('coupling.cbo.max');
 
         self::assertNotNull(
             $cboSum,
@@ -652,7 +660,7 @@ PHP);
             function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // If we have a pre-populated repository, copy its data
                 if ($existingRepository !== null) {
-                    foreach ($existingRepository->all(SymbolType::Class_) as $info) {
+                    foreach ($existingRepository->all(SymbolLevel::Class_) as $info) {
                         $bag = $existingRepository->get($info->symbolPath);
                         $repository->add($info->symbolPath, $bag, $info->file, $info->line);
                     }
@@ -706,8 +714,8 @@ PHP);
         $orchestrator->method('collect')->willReturnCallback(
             function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // Copy pre-populated symbols into the pipeline's repository
-                foreach ([SymbolType::Class_, SymbolType::Namespace_] as $type) {
-                    foreach ($existingRepository->all($type) as $info) {
+                foreach ([SymbolLevel::Class_, SymbolLevel::Namespace_] as $level) {
+                    foreach ($existingRepository->all($level) as $info) {
                         $bag = $existingRepository->get($info->symbolPath);
                         $repository->add($info->symbolPath, $bag, $info->file, $info->line);
                     }
@@ -802,15 +810,15 @@ PHP);
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private static function violationsNamed(array $violations, string $ruleName): array
+    private static function findingsNamed(array $findings, string $ruleName): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $violation): bool => $violation->ruleName === $ruleName,
+            $findings,
+            static fn(Finding $finding): bool => $finding->ruleName === $ruleName,
         ));
     }
 

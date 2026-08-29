@@ -132,7 +132,9 @@ final class ThresholdValidatorWiringTest extends TestCase
     /**
      * Mirrors {@see RuleValidatorMapFactory::resolveValidator()} — walks
      * hierarchical Options to find a level-specific ThresholdAware
-     * implementation, matching {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline::ruleSupportsThresholdOverrides()}.
+     * implementation. Deliberately a second, hand-written walk: the point is
+     * that it agrees with the factory's, so deriving it from the factory would
+     * make the comparison vacuous.
      *
      * @param class-string $optionsClass
      */

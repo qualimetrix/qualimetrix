@@ -27,11 +27,11 @@ final class CboAggregateBreachTest extends TestCase
         try {
             $paths = [$project->root];
             $bare = $project->check($paths);
-            self::assertStringContainsString('coupling.cbo.class', $bare->getDisplay());
+            self::assertStringContainsString('coupling.cbo', $bare->getDisplay());
 
             $generated = $project->generate($paths);
             self::assertSame(Command::SUCCESS, $generated->getStatusCode(), $generated->getDisplay());
-            self::assertStringContainsString('coupling.cbo#coupling.cbo.class', (string) file_get_contents($project->baselinePath));
+            self::assertStringContainsString('coupling.cbo', (string) file_get_contents($project->baselinePath));
 
             file_put_contents(
                 $project->root . '/Other.php',
@@ -56,7 +56,7 @@ final class CboAggregateBreachTest extends TestCase
 
             self::assertSame(2, $checked->getStatusCode(), $checked->getDisplay());
             self::assertStringContainsString('1 error', $checked->getDisplay());
-            self::assertStringContainsString('coupling.cbo.class', $checked->getDisplay());
+            self::assertStringContainsString('coupling.cbo', $checked->getDisplay());
         } finally {
             $project->remove();
         }

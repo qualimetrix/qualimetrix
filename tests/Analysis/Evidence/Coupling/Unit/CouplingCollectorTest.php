@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -24,6 +23,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
@@ -54,7 +54,7 @@ final class CouplingCollectorTest extends TestCase
     #[Test]
     public function provides_returnsCouplingMetrics(): void
     {
-        self::assertSame(['ca', 'ce', 'cbo', 'instability', 'ce_packages', 'cbo_app', 'ce_framework'], $this->collector->provides());
+        self::assertSame(['coupling.ca', 'coupling.ce', 'coupling.cbo', 'coupling.instability', 'coupling.ce-packages', 'coupling.cbo-app', 'coupling.ce-framework'], $this->collector->provides());
     }
 
     #[Test]
@@ -66,7 +66,7 @@ final class CouplingCollectorTest extends TestCase
 
         // ca metric
         $ca = $definitions[0];
-        self::assertSame('ca', $ca->name);
+        self::assertSame('coupling.ca', $ca->name);
         self::assertSame(SymbolLevel::Class_, $ca->collectedAt);
         self::assertSame(
             [AggregationStrategy::Sum],
@@ -76,7 +76,7 @@ final class CouplingCollectorTest extends TestCase
 
         // ce metric
         $ce = $definitions[1];
-        self::assertSame('ce', $ce->name);
+        self::assertSame('coupling.ce', $ce->name);
         self::assertSame(SymbolLevel::Class_, $ce->collectedAt);
         self::assertSame(
             [
@@ -99,7 +99,7 @@ final class CouplingCollectorTest extends TestCase
 
         // cbo metric
         $cbo = $definitions[2];
-        self::assertSame('cbo', $cbo->name);
+        self::assertSame('coupling.cbo', $cbo->name);
         self::assertSame(SymbolLevel::Class_, $cbo->collectedAt);
         self::assertSame(
             [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
@@ -112,7 +112,7 @@ final class CouplingCollectorTest extends TestCase
 
         // instability metric
         $instability = $definitions[3];
-        self::assertSame('instability', $instability->name);
+        self::assertSame('coupling.instability', $instability->name);
         self::assertSame(SymbolLevel::Class_, $instability->collectedAt);
         self::assertSame(
             [AggregationStrategy::Average],
@@ -122,7 +122,7 @@ final class CouplingCollectorTest extends TestCase
 
         // ce_packages metric
         $cePackages = $definitions[4];
-        self::assertSame('ce_packages', $cePackages->name);
+        self::assertSame('coupling.ce-packages', $cePackages->name);
         self::assertSame(SymbolLevel::Class_, $cePackages->collectedAt);
         self::assertSame(
             [AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
@@ -135,7 +135,7 @@ final class CouplingCollectorTest extends TestCase
 
         // cbo_app metric
         $cboApp = $definitions[5];
-        self::assertSame('cbo_app', $cboApp->name);
+        self::assertSame('coupling.cbo-app', $cboApp->name);
         self::assertSame(SymbolLevel::Class_, $cboApp->collectedAt);
         self::assertSame(
             [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
@@ -148,7 +148,7 @@ final class CouplingCollectorTest extends TestCase
 
         // ce_framework metric
         $ceFramework = $definitions[6];
-        self::assertSame('ce_framework', $ceFramework->name);
+        self::assertSame('coupling.ce-framework', $ceFramework->name);
         self::assertSame(SymbolLevel::Class_, $ceFramework->collectedAt);
         self::assertSame(
             [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
@@ -179,9 +179,9 @@ final class CouplingCollectorTest extends TestCase
         $fooPath = SymbolPath::forClass('App', 'Foo');
         $fooMetrics = $repository->get($fooPath);
 
-        self::assertSame(0, $fooMetrics->get('ca'));
-        self::assertSame(2, $fooMetrics->get('ce'));
-        self::assertEqualsWithDelta(1.0, $fooMetrics->get('instability'), 0.001);
+        self::assertSame(0, $fooMetrics->get('coupling.ca'));
+        self::assertSame(2, $fooMetrics->get('coupling.ce'));
+        self::assertEqualsWithDelta(1.0, $fooMetrics->get('coupling.instability'), 0.001);
     }
 
     #[Test]
@@ -205,9 +205,9 @@ final class CouplingCollectorTest extends TestCase
         $barPath = SymbolPath::forClass('App', 'Bar');
         $barMetrics = $repository->get($barPath);
 
-        self::assertSame(2, $barMetrics->get('ca'));
-        self::assertSame(0, $barMetrics->get('ce'));
-        self::assertEqualsWithDelta(0.0, $barMetrics->get('instability'), 0.001);
+        self::assertSame(2, $barMetrics->get('coupling.ca'));
+        self::assertSame(0, $barMetrics->get('coupling.ce'));
+        self::assertEqualsWithDelta(0.0, $barMetrics->get('coupling.instability'), 0.001);
     }
 
     #[Test]
@@ -232,9 +232,9 @@ final class CouplingCollectorTest extends TestCase
         $servicePath = SymbolPath::forClass('App', 'Service');
         $serviceMetrics = $repository->get($servicePath);
 
-        self::assertSame(1, $serviceMetrics->get('ca'));
-        self::assertSame(2, $serviceMetrics->get('ce'));
-        self::assertEqualsWithDelta(0.666, $serviceMetrics->get('instability'), 0.01);
+        self::assertSame(1, $serviceMetrics->get('coupling.ca'));
+        self::assertSame(2, $serviceMetrics->get('coupling.ce'));
+        self::assertEqualsWithDelta(0.666, $serviceMetrics->get('coupling.instability'), 0.01);
     }
 
     #[Test]
@@ -258,9 +258,9 @@ final class CouplingCollectorTest extends TestCase
         $appNsPath = SymbolPath::forNamespace('App');
         $appNsMetrics = $repository->get($appNsPath);
 
-        self::assertSame(0, $appNsMetrics->get('ca'));
-        self::assertSame(2, $appNsMetrics->get('ce'));
-        self::assertEqualsWithDelta(1.0, $appNsMetrics->get('instability'), 0.001);
+        self::assertSame(0, $appNsMetrics->get('coupling.ca'));
+        self::assertSame(2, $appNsMetrics->get('coupling.ce'));
+        self::assertEqualsWithDelta(1.0, $appNsMetrics->get('coupling.instability'), 0.001);
     }
 
     #[Test]
@@ -283,9 +283,9 @@ final class CouplingCollectorTest extends TestCase
         $barPath = SymbolPath::forClass('App', 'Bar');
         $barMetrics = $repository->get($barPath);
 
-        self::assertSame(1, $barMetrics->get('ca'));
-        self::assertSame(0, $barMetrics->get('ce'));
-        self::assertEqualsWithDelta(0.0, $barMetrics->get('instability'), 0.001);
+        self::assertSame(1, $barMetrics->get('coupling.ca'));
+        self::assertSame(0, $barMetrics->get('coupling.ce'));
+        self::assertEqualsWithDelta(0.0, $barMetrics->get('coupling.instability'), 0.001);
     }
 
     #[Test]
@@ -300,16 +300,16 @@ final class CouplingCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $classMetrics = $repository->get(SymbolPath::forClass('App\\Isolated', 'Standalone'));
-        self::assertSame(0, $classMetrics->get('ca'));
-        self::assertSame(0, $classMetrics->get('ce'));
-        self::assertSame(0, $classMetrics->get('cbo'));
-        self::assertSame(0.0, $classMetrics->get('instability'));
+        self::assertSame(0, $classMetrics->get('coupling.ca'));
+        self::assertSame(0, $classMetrics->get('coupling.ce'));
+        self::assertSame(0, $classMetrics->get('coupling.cbo'));
+        self::assertSame(0.0, $classMetrics->get('coupling.instability'));
 
         $namespaceMetrics = $repository->get(SymbolPath::forNamespace('App\\Isolated'));
-        self::assertSame(0, $namespaceMetrics->get('ca'));
-        self::assertSame(0, $namespaceMetrics->get('ce'));
-        self::assertSame(0, $namespaceMetrics->get('cbo'));
-        self::assertSame(0.0, $namespaceMetrics->get('instability'));
+        self::assertSame(0, $namespaceMetrics->get('coupling.ca'));
+        self::assertSame(0, $namespaceMetrics->get('coupling.ce'));
+        self::assertSame(0, $namespaceMetrics->get('coupling.cbo'));
+        self::assertSame(0.0, $namespaceMetrics->get('coupling.instability'));
     }
 
     #[Test]
@@ -338,10 +338,10 @@ final class CouplingCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $metrics = $repository->get($source);
-        self::assertSame(1, $metrics->get('ce'));
-        self::assertSame(1, $metrics->get('cbo'));
-        self::assertSame(1, $metrics->get('cbo_app'));
-        self::assertSame(1, $metrics->get('ce_packages'));
+        self::assertSame(1, $metrics->get('coupling.ce'));
+        self::assertSame(1, $metrics->get('coupling.cbo'));
+        self::assertSame(1, $metrics->get('coupling.cbo-app'));
+        self::assertSame(1, $metrics->get('coupling.ce-packages'));
     }
 
     #[Test]
@@ -361,10 +361,10 @@ final class CouplingCollectorTest extends TestCase
         $globalPath = SymbolPath::forClass('', 'GlobalClass');
         $metrics = $repository->get($globalPath);
 
-        self::assertSame(0, $metrics->get('ca'));
-        self::assertSame(1, $metrics->get('ce'));
+        self::assertSame(0, $metrics->get('coupling.ca'));
+        self::assertSame(1, $metrics->get('coupling.ce'));
         // Global namespace source (topNs='') depends on Vendor (topNs='Vendor') → 1 package
-        self::assertSame(1, $metrics->get('ce_packages'));
+        self::assertSame(1, $metrics->get('coupling.ce-packages'));
     }
 
     #[Test]
@@ -389,9 +389,9 @@ final class CouplingCollectorTest extends TestCase
         $servicePath = SymbolPath::forClass('App', 'Service');
         $serviceMetrics = $repository->get($servicePath);
 
-        self::assertSame(1, $serviceMetrics->get('ca'));
-        self::assertSame(2, $serviceMetrics->get('ce'));
-        self::assertSame(3, $serviceMetrics->get('cbo'));
+        self::assertSame(1, $serviceMetrics->get('coupling.ca'));
+        self::assertSame(2, $serviceMetrics->get('coupling.ce'));
+        self::assertSame(3, $serviceMetrics->get('coupling.cbo'));
     }
 
     #[Test]
@@ -415,17 +415,17 @@ final class CouplingCollectorTest extends TestCase
         $aPath = SymbolPath::forClass('App', 'A');
         $aMetrics = $repository->get($aPath);
 
-        self::assertSame(1, $aMetrics->get('ca'));
-        self::assertSame(1, $aMetrics->get('ce'));
+        self::assertSame(1, $aMetrics->get('coupling.ca'));
+        self::assertSame(1, $aMetrics->get('coupling.ce'));
         // CBO should be 1 (union of {B} and {B}), not 2 (Ca+Ce)
-        self::assertSame(1, $aMetrics->get('cbo'));
+        self::assertSame(1, $aMetrics->get('coupling.cbo'));
 
         $bPath = SymbolPath::forClass('App', 'B');
         $bMetrics = $repository->get($bPath);
 
-        self::assertSame(1, $bMetrics->get('ca'));
-        self::assertSame(1, $bMetrics->get('ce'));
-        self::assertSame(1, $bMetrics->get('cbo'));
+        self::assertSame(1, $bMetrics->get('coupling.ca'));
+        self::assertSame(1, $bMetrics->get('coupling.ce'));
+        self::assertSame(1, $bMetrics->get('coupling.cbo'));
     }
 
     #[Test]
@@ -447,9 +447,9 @@ final class CouplingCollectorTest extends TestCase
         $barPath = SymbolPath::forClass('App', 'Bar');
         $barMetrics = $repository->get($barPath);
 
-        self::assertSame(1, $barMetrics->get('ca'));
-        self::assertSame(0, $barMetrics->get('ce'));
-        self::assertSame(1, $barMetrics->get('cbo'));
+        self::assertSame(1, $barMetrics->get('coupling.ca'));
+        self::assertSame(0, $barMetrics->get('coupling.ce'));
+        self::assertSame(1, $barMetrics->get('coupling.cbo'));
     }
 
     #[Test]
@@ -481,9 +481,9 @@ final class CouplingCollectorTest extends TestCase
         $servicePath = SymbolPath::forClass('App', 'Service');
         $serviceMetrics = $repository->get($servicePath);
 
-        self::assertSame(3, $serviceMetrics->get('ca'));
-        self::assertSame(4, $serviceMetrics->get('ce'));
-        self::assertSame(7, $serviceMetrics->get('cbo'));
+        self::assertSame(3, $serviceMetrics->get('coupling.ca'));
+        self::assertSame(4, $serviceMetrics->get('coupling.ce'));
+        self::assertSame(7, $serviceMetrics->get('coupling.cbo'));
     }
 
     #[Test]
@@ -507,10 +507,10 @@ final class CouplingCollectorTest extends TestCase
         $appNsPath = SymbolPath::forNamespace('App');
         $appNsMetrics = $repository->get($appNsPath);
 
-        self::assertSame(0, $appNsMetrics->get('ca'));
-        self::assertSame(2, $appNsMetrics->get('ce'));
+        self::assertSame(0, $appNsMetrics->get('coupling.ca'));
+        self::assertSame(2, $appNsMetrics->get('coupling.ce'));
         // CBO counts uniquely coupled namespaces (not classes): only Vendor
-        self::assertSame(1, $appNsMetrics->get('cbo'));
+        self::assertSame(1, $appNsMetrics->get('coupling.cbo'));
     }
 
     #[Test]
@@ -538,17 +538,17 @@ final class CouplingCollectorTest extends TestCase
         $aNsPath = SymbolPath::forNamespace('A');
         $aNsMetrics = $repository->get($aNsPath);
 
-        self::assertSame(1, $aNsMetrics->get('ca'));
-        self::assertSame(1, $aNsMetrics->get('ce'));
+        self::assertSame(1, $aNsMetrics->get('coupling.ca'));
+        self::assertSame(1, $aNsMetrics->get('coupling.ce'));
         // CBO should be 1 (union of {B} and {B}), not 2 (ca + ce)
-        self::assertSame(1, $aNsMetrics->get('cbo'));
+        self::assertSame(1, $aNsMetrics->get('coupling.cbo'));
 
         $bNsPath = SymbolPath::forNamespace('B');
         $bNsMetrics = $repository->get($bNsPath);
 
-        self::assertSame(1, $bNsMetrics->get('ca'));
-        self::assertSame(1, $bNsMetrics->get('ce'));
-        self::assertSame(1, $bNsMetrics->get('cbo'));
+        self::assertSame(1, $bNsMetrics->get('coupling.ca'));
+        self::assertSame(1, $bNsMetrics->get('coupling.ce'));
+        self::assertSame(1, $bNsMetrics->get('coupling.cbo'));
     }
 
     #[Test]
@@ -616,7 +616,7 @@ final class CouplingCollectorTest extends TestCase
         $fooPath = SymbolPath::forClass('App', 'Foo');
         $fooMetrics = $repository->get($fooPath);
 
-        self::assertSame(3, $fooMetrics->get('ce_packages'));
+        self::assertSame(3, $fooMetrics->get('coupling.ce-packages'));
     }
 
     #[Test]
@@ -638,7 +638,7 @@ final class CouplingCollectorTest extends TestCase
         $fooPath = SymbolPath::forClass('App\\Service', 'Foo');
         $fooMetrics = $repository->get($fooPath);
 
-        self::assertSame(1, $fooMetrics->get('ce_packages'));
+        self::assertSame(1, $fooMetrics->get('coupling.ce-packages'));
     }
 
     #[Test]
@@ -661,7 +661,7 @@ final class CouplingCollectorTest extends TestCase
         $fooPath = SymbolPath::forClass('App\\Service', 'Foo');
         $fooMetrics = $repository->get($fooPath);
 
-        self::assertSame(0, $fooMetrics->get('ce_packages'));
+        self::assertSame(0, $fooMetrics->get('coupling.ce-packages'));
     }
 
     #[Test]
@@ -682,7 +682,7 @@ final class CouplingCollectorTest extends TestCase
         $barPath = SymbolPath::forClass('App', 'Bar');
         $barMetrics = $repository->get($barPath);
 
-        self::assertSame(0, $barMetrics->get('ce_packages'));
+        self::assertSame(0, $barMetrics->get('coupling.ce-packages'));
     }
 
     // Framework CBO tests
@@ -713,11 +713,11 @@ final class CouplingCollectorTest extends TestCase
         $serviceMetrics = $repository->get($servicePath);
 
         // CBO = |{Symfony\Console, PhpParser\Node, App\Repository, App\Controller}| = 4
-        self::assertSame(4, $serviceMetrics->get('cbo'));
+        self::assertSame(4, $serviceMetrics->get('coupling.cbo'));
         // CBO_APP = |{App\Repository, App\Controller}| = 2 (framework deps excluded)
-        self::assertSame(2, $serviceMetrics->get('cbo_app'));
+        self::assertSame(2, $serviceMetrics->get('coupling.cbo-app'));
         // CE_FRAMEWORK = 2 (Symfony\Console, PhpParser\Node)
-        self::assertSame(2, $serviceMetrics->get('ce_framework'));
+        self::assertSame(2, $serviceMetrics->get('coupling.ce-framework'));
     }
 
     #[Test]
@@ -740,8 +740,8 @@ final class CouplingCollectorTest extends TestCase
         $serviceMetrics = $repository->get($servicePath);
 
         // When no framework namespaces configured, CBO_APP = CBO
-        self::assertSame($serviceMetrics->get('cbo'), $serviceMetrics->get('cbo_app'));
-        self::assertSame(0, $serviceMetrics->get('ce_framework'));
+        self::assertSame($serviceMetrics->get('coupling.cbo'), $serviceMetrics->get('coupling.cbo-app'));
+        self::assertSame(0, $serviceMetrics->get('coupling.ce-framework'));
     }
 
     #[Test]
@@ -767,7 +767,7 @@ final class CouplingCollectorTest extends TestCase
         $servicePath = SymbolPath::forClass('App', 'Service');
         $serviceMetrics = $repository->get($servicePath);
 
-        self::assertSame(3, $serviceMetrics->get('ce_framework'));
+        self::assertSame(3, $serviceMetrics->get('coupling.ce-framework'));
     }
 
     #[Test]
@@ -791,9 +791,9 @@ final class CouplingCollectorTest extends TestCase
         $serviceMetrics = $repository->get($servicePath);
 
         // CBO = 2 (both deps), CBO_APP = 1 (only PsrExtended), CE_FRAMEWORK = 1 (only Psr\Log)
-        self::assertSame(2, $serviceMetrics->get('cbo'));
-        self::assertSame(1, $serviceMetrics->get('cbo_app'));
-        self::assertSame(1, $serviceMetrics->get('ce_framework'));
+        self::assertSame(2, $serviceMetrics->get('coupling.cbo'));
+        self::assertSame(1, $serviceMetrics->get('coupling.cbo-app'));
+        self::assertSame(1, $serviceMetrics->get('coupling.ce-framework'));
     }
 
     #[Test]
@@ -820,8 +820,8 @@ final class CouplingCollectorTest extends TestCase
         $servicePath = SymbolPath::forClass('App', 'Service');
         $serviceMetrics = $repository->get($servicePath);
 
-        $ce = $serviceMetrics->get('ce');
-        $ceFramework = $serviceMetrics->get('ce_framework');
+        $ce = $serviceMetrics->get('coupling.ce');
+        $ceFramework = $serviceMetrics->get('coupling.ce-framework');
         // Ce_app (non-framework efferent) = Ce - Ce_framework
         self::assertSame(4, $ce);
         self::assertSame(2, $ceFramework);
@@ -851,10 +851,10 @@ final class CouplingCollectorTest extends TestCase
         $serviceMetrics = $repository->get($servicePath);
 
         // CBO = |{Symfony\Console, App\Other}| = 2
-        self::assertSame(2, $serviceMetrics->get('cbo'));
+        self::assertSame(2, $serviceMetrics->get('coupling.cbo'));
         // CBO_APP = |{App\Other}| = 1 (framework excluded)
-        self::assertSame(1, $serviceMetrics->get('cbo_app'));
-        self::assertSame(1, $serviceMetrics->get('ce_framework'));
+        self::assertSame(1, $serviceMetrics->get('coupling.cbo-app'));
+        self::assertSame(1, $serviceMetrics->get('coupling.ce-framework'));
     }
 
     private function dep(string $source, string $target): Dependency

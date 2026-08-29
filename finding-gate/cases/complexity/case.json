@@ -1,0 +1,49 @@
+{
+    "id": "complexity",
+    "description": "Branch-heavy methods, a class with disjoint method groups, and two global functions each declared beside a class with methods, so that the callable level interleaves the two declaration kinds and the publication order of format:metrics observes their grouping. Complexity, WMC, maintainability and cohesion thresholds floored.",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2",
+        "--rule-opt=complexity.cyclomatic:callable.warning=4",
+        "--rule-opt=complexity.cyclomatic:callable.error=8",
+        "--rule-opt=complexity.cyclomatic:class.max_warning=4",
+        "--rule-opt=complexity.cyclomatic:class.max_error=8",
+        "--rule-opt=complexity.cognitive:callable.warning=4",
+        "--rule-opt=complexity.cognitive:callable.error=8",
+        "--rule-opt=complexity.cognitive:class.max_warning=4",
+        "--rule-opt=complexity.cognitive:class.max_error=8",
+        "--rule-opt=complexity.npath:callable.warning=8",
+        "--rule-opt=complexity.npath:callable.error=32",
+        "--rule-opt=complexity.npath:class.enabled=true",
+        "--rule-opt=complexity.npath:class.max_warning=8",
+        "--rule-opt=complexity.npath:class.max_error=32",
+        "--rule-opt=complexity.wmc:warning=6",
+        "--rule-opt=complexity.wmc:error=12",
+        "--rule-opt=cohesion.lcom:warning=2",
+        "--rule-opt=cohesion.lcom:error=4",
+        "--rule-opt=cohesion.lcom:minMethods=2",
+        "--rule-opt=maintainability.index:warning=100",
+        "--rule-opt=maintainability.index:error=60"
+    ],
+    "channels": [
+        "cohesion.lcom@class",
+        "complexity.cognitive@callable",
+        "complexity.cognitive@class",
+        "complexity.cyclomatic@callable",
+        "complexity.cyclomatic@class",
+        "complexity.npath@callable",
+        "complexity.npath@class",
+        "complexity.wmc@class",
+        "maintainability.index@callable"
+    ],
+    "explainSubjects": [
+        "declaration:class:Corpus\\Complexity\\Router@src/Router.php",
+        "declaration:callable:Corpus\\Complexity\\Router::route@src/Router.php"
+    ]
+}

@@ -390,7 +390,7 @@ final readonly class BaselineWriter
         foreach ($baseline->entries as $entry) {
             $key = $this->portableKey($entry->identity->subjectKey, $projectRoot);
             $sort = self::orderingKey(
-                $entry->identity->channel->toKey(),
+                $entry->identity->channel->code,
                 $entry->identity->occurrenceKey,
                 $entry->identity->edge?->key(),
             );
@@ -444,7 +444,7 @@ final readonly class BaselineWriter
     {
         if ($entry->identity !== null) {
             return self::orderingKey(
-                $entry->identity->channel->toKey(),
+                $entry->identity->channel->code,
                 $entry->identity->occurrenceKey,
                 $entry->identity->edge?->key(),
             );

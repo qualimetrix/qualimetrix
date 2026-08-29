@@ -6,7 +6,17 @@ Definitions are resolved per analysis run and evaluated after raw metric
 aggregation. Reusing a process for multiple runs replaces the prior definition
 set atomically, so configuration from an earlier run cannot leak into the next.
 
-**Rule ID:** `computed.health`
+**Rule ID:** `computed` — user-defined computed metrics.
+
+Each built-in dimension is its own producer, and publishes its findings under
+its own rule ID:
+
+- **Rule ID:** `health.complexity`
+- **Rule ID:** `health.cohesion`
+- **Rule ID:** `health.coupling`
+- **Rule ID:** `health.typing`
+- **Rule ID:** `health.maintainability`
+- **Rule ID:** `health.overall`
 
 ---
 
@@ -70,9 +80,9 @@ Blends TCC (Tight Class Cohesion) and LCOM4. TCC is square-root-scaled to reward
 
 Uses hyperbolic decay (`K / (K + penalty)`) for smooth scoring.
 
-- **Class level** blends package-level (`ce_packages`) and dampened raw efferent coupling (`ce`).
-- **Namespace level** also relies on **efferent-only** signals: per-class average outgoing coupling (`ce.avg`, `ce_packages.avg`), worst-case class outlier (`ce.max`), and namespace-level outgoing breadth (`ce`), plus Distance from Main Sequence. Bidirectional CBO is intentionally avoided here because it conflates afferent (Ca) with efferent (Ce) and would unfairly penalize stable contracts namespaces (high Ca, low Ce by design).
-- **Project level** keeps bidirectional CBO aggregates (`cbo.avg`, `cbo.p95`, `cbo.max`): at project level Σ Ca = Σ Ce because every internal edge contributes to both sides, so CBO is symmetric and proportional to Ce.
+- **Class level** blends package-level (`coupling.ce-packages`) and dampened raw efferent coupling (`coupling.ce`).
+- **Namespace level** also relies on **efferent-only** signals: per-class average outgoing coupling (`coupling.ce.avg`, `coupling.ce-packages.avg`), worst-case class outlier (`coupling.ce.max`), and namespace-level outgoing breadth (`coupling.ce`), plus Distance from Main Sequence. Bidirectional CBO is intentionally avoided here because it conflates afferent (Ca) with efferent (Ce) and would unfairly penalize stable contracts namespaces (high Ca, low Ce by design).
+- **Project level** keeps bidirectional CBO aggregates (`coupling.cbo.avg`, `coupling.cbo.p95`, `coupling.cbo.max`): at project level Σ Ca = Σ Ce because every internal edge contributes to both sides, so CBO is symmetric and proportional to Ce.
 
 ### Typing
 
@@ -133,13 +143,21 @@ bin/qmx check src/ --exclude-health=typing
 
 Both paths produce the same result: the dimension is removed from the pipeline AND `health.overall` weights are renormalized across the remaining dimensions (the disabled dimension is not silently treated as a neutral 75-point contribution). If you override `health.overall` with a non-canonical formula (e.g. `min(...)` or a conditional), excluding dimensions will throw an explicit error — handle the disabled dimension via `??` fallbacks in your custom formula instead.
 
+!!! warning "Two switches that look alike, and do different things"
+    Each built-in dimension is its own producer, so it can be turned off two ways that read almost the same:
+
+    - `rules: { health.cohesion: { enabled: false } }` stops the `health.cohesion` producer from **publishing findings**. The dimension is still computed and still contributes to `health.overall`.
+    - `computed_metrics: { health.cohesion: { enabled: false } }` **removes the dimension itself** — this is the "Disabling a Dimension" switch above. `health.overall`'s weights are renormalized across what remains.
+
+    A dimension removed the second way leaves its producer with no channel at all. An `exclude_namespace_channels` key that used to address `health.cohesion` is then rejected: the key must name a channel the rule under it actually emits, and after removal it emits none.
+
 ### Overriding Formulas
 
 ```yaml
 computed_metrics:
   health.maintainability:
     # Same formula for all levels
-    formula: "clamp(mi__avg, 0, 100)"
+    formula: "clamp(m['maintainability.mi.avg'], 0, 100)"
 ```
 
 ```yaml
@@ -147,9 +165,9 @@ computed_metrics:
   health.maintainability:
     # Different formulas per level
     formulas:
-      class: "clamp(mi__avg, 0, 100)"
-      namespace: "clamp(mi__avg * 0.7 + mi__p5 * 0.3, 0, 100)"
-      project: "clamp(mi__avg * 0.7 + mi__p5 * 0.3, 0, 100)"
+      class: "clamp(m['maintainability.mi.avg'], 0, 100)"
+      namespace: "clamp(m['maintainability.mi.avg'] * 0.7 + m['maintainability.mi.p5'] * 0.3, 0, 100)"
+      project: "clamp(m['maintainability.mi.avg'] * 0.7 + m['maintainability.mi.p5'] * 0.3, 0, 100)"
 ```
 
 ### Custom Computed Metrics
@@ -157,7 +175,7 @@ computed_metrics:
 ```yaml
 computed_metrics:
   computed.code-density:
-    formula: "clamp((lloc ?? 0) / max(loc ?? 1, 1) * 100, 0, 100)"
+    formula: "clamp((m['size.lloc'] ?? 0) / max(m['size.loc'] ?? 1, 1) * 100, 0, 100)"
     description: "Ratio of logical to physical lines (higher = denser code)"
     levels: [class, namespace, project]
     warning: 80
@@ -166,53 +184,61 @@ computed_metrics:
 ```
 
 !!! note "Metric naming"
-    User-defined metrics can use any name except the reserved `health.*` prefix. The recommended convention is `computed.*`.
+    User-defined metrics can use any name except the reserved `health.*` prefix. The recommended convention is `computed.*`. Both prefixes require lower-case kebab-case segments after the dot (e.g. `computed.code-density`); underscores and upper-case letters are rejected.
 
 ### Available Variables
 
-Metric names use double underscores in formulas (dots are not allowed in Expression Language identifiers):
+Formulas read every metric through a single `m` array, indexed by the metric's real key: `m["complexity.ccn.avg"]`. There is no separate "variable name" to memorize — the key you see in `--format=metrics`/`--format=json` output is the key you index with.
 
-| Metric                     | Variable in formula        | Available at              |
-| -------------------------- | -------------------------- | ------------------------- |
-| `ccn.avg`                  | `ccn__avg`                 | class, namespace, project |
-| `ccn.max`                  | `ccn__max`                 | class, namespace, project |
-| `ccn.sum`                  | `ccn__sum`                 | namespace, project        |
-| `ccn.p95`                  | `ccn__p95`                 | namespace, project        |
-| `cognitive.avg`            | `cognitive__avg`           | class, namespace, project |
-| `cognitive.max`            | `cognitive__max`           | class, namespace, project |
-| `cognitive.sum`            | `cognitive__sum`           | namespace, project        |
-| `cognitive.p95`            | `cognitive__p95`           | namespace, project        |
-| `tcc`                      | `tcc`                      | class                     |
-| `tcc.avg`                  | `tcc__avg`                 | namespace, project        |
-| `lcom`                     | `lcom`                     | class                     |
-| `lcom.avg`                 | `lcom__avg`                | namespace, project        |
-| `cbo.avg`                  | `cbo__avg`                 | namespace, project        |
-| `cbo.max`                  | `cbo__max`                 | namespace, project        |
-| `cbo.p95`                  | `cbo__p95`                 | namespace, project        |
-| `ce`                       | `ce`                       | class, namespace          |
-| `ce.avg`                   | `ce__avg`                  | namespace, project        |
-| `ce.max`                   | `ce__max`                  | namespace, project        |
-| `ce.p95`                   | `ce__p95`                  | namespace, project        |
-| `ce_packages`              | `ce_packages`              | class                     |
-| `ce_packages.avg`          | `ce_packages__avg`         | namespace, project        |
-| `ce_packages.max`          | `ce_packages__max`         | namespace, project        |
-| `mi.avg`                   | `mi__avg`                  | class, namespace, project |
-| `mi.min`                   | `mi__min`                  | class, namespace, project |
-| `mi.p5`                    | `mi__p5`                   | namespace, project        |
-| `distance`                 | `distance`                 | namespace                 |
-| `distance.avg`             | `distance__avg`            | project                   |
-| `typeCoverage.pct`         | `typeCoverage__pct`        | class                     |
-| `methodCount`              | `methodCount`              | class                     |
-| `symbolMethodCount`        | `symbolMethodCount`        | namespace, project        |
-| `pureMethodCount_cohesion` | `pureMethodCount_cohesion` | class                     |
-| `health.complexity`        | `health__complexity`       | class, namespace, project |
+| Metric key                                | Available at              |
+| ----------------------------------------- | ------------------------- |
+| `complexity.ccn.avg`                      | class, namespace, project |
+| `complexity.ccn.max`                      | class, namespace, project |
+| `complexity.ccn.sum`                      | namespace, project        |
+| `complexity.ccn.p95`                      | namespace, project        |
+| `complexity.cognitive.avg`                | class, namespace, project |
+| `complexity.cognitive.max`                | class, namespace, project |
+| `complexity.cognitive.sum`                | namespace, project        |
+| `complexity.cognitive.p95`                | namespace, project        |
+| `cohesion.tcc`                            | class                     |
+| `cohesion.tcc.avg`                        | namespace, project        |
+| `cohesion.lcom`                           | class                     |
+| `cohesion.lcom.avg`                       | namespace, project        |
+| `coupling.cbo.avg`                        | namespace, project        |
+| `coupling.cbo.max`                        | namespace, project        |
+| `coupling.cbo.p95`                        | namespace, project        |
+| `coupling.ce`                             | class, namespace          |
+| `coupling.ce.avg`                         | namespace, project        |
+| `coupling.ce.max`                         | namespace, project        |
+| `coupling.ce-packages`                    | class                     |
+| `coupling.ce-packages.avg`                | namespace, project        |
+| `coupling.distance`                       | namespace                 |
+| `coupling.distance.avg`                   | project                   |
+| `maintainability.mi.avg`                  | class, namespace, project |
+| `maintainability.mi.min`                  | class, namespace, project |
+| `maintainability.mi.p5`                   | namespace, project        |
+| `design.type-coverage.pct`                | class                     |
+| `design.type-coverage.param.total.sum`    | namespace, project        |
+| `design.type-coverage.param.typed.sum`    | namespace, project        |
+| `design.type-coverage.return.total.sum`   | namespace, project        |
+| `design.type-coverage.return.typed.sum`   | namespace, project        |
+| `design.type-coverage.property.total.sum` | namespace, project        |
+| `design.type-coverage.property.typed.sum` | namespace, project        |
+| `size.method-count`                       | class                     |
+| `size.symbol-method-count`                | namespace, project        |
+| `cohesion.pure-method-count`              | class                     |
+| `health.complexity`                       | class, namespace, project |
+| `health.cohesion`                         | class, namespace, project |
+| `health.coupling`                         | class, namespace, project |
+| `health.typing`                           | class, namespace, project |
+| `health.maintainability`                  | namespace, project        |
 
-Common aggregation suffixes: `__avg`, `__min`, `__max`, `__sum`, `__p5`, `__p95`.
+Common aggregation suffixes on a key: `.avg`, `.min`, `.max`, `.sum`, `.p5`, `.p95`.
 
-This is not an exhaustive list — any metric collected by Qualimetrix can be referenced in formulas. Use `bin/qmx check src/ --format=metrics` to see all available metrics for your project.
+This is not an exhaustive list — any metric collected by Qualimetrix can be referenced in formulas by its key. Use `bin/qmx check src/ --format=metrics` to see all available metrics and their exact keys for your project.
 
 !!! warning "Unknown metric references"
-    If a formula references a metric that does not exist (e.g., a typo like `ccn__abg` instead of `ccn__avg`), Qualimetrix will report a clear error instead of silently returning zero. Always use the `??` operator to provide a default for metrics that may legitimately be absent: `(ccn__avg ?? 0)`.
+    If a formula references a metric key that does not exist (e.g., a typo like `m["complexity.ccn.abg"]` instead of `m["complexity.ccn.avg"]`), Qualimetrix will report a clear error instead of silently returning zero. Always use the `??` operator to provide a default for metrics that may legitimately be absent: `(m["complexity.ccn.avg"] ?? 0)`.
 
 ### Available Functions
 
@@ -229,4 +255,4 @@ This is not an exhaustive list — any metric collected by Qualimetrix can be re
 | `**`                     | Exponentiation                                       |
 
 !!! tip "Always use null coalescing"
-    Metrics may be missing for some symbols (e.g., a class with no methods has no `ccn`). Always provide defaults with `??`: `(ccn__avg ?? 1)` instead of `ccn__avg`.
+    Metrics may be missing for some symbols (e.g., a class with no methods has no `complexity.ccn`). Always provide defaults with `??`: `(m["complexity.ccn.avg"] ?? 1)` instead of `m["complexity.ccn.avg"]`.

@@ -11,11 +11,12 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -32,9 +33,9 @@ final class NamespaceExclusionFilterTest extends TestCase
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
-        $violation = $this->createViolation('App\\Entity', 'complexity.cyclomatic');
+        $finding = $this->createFinding('App\\Entity', 'complexity.cyclomatic');
 
-        self::assertFalse($filter->shouldInclude($violation), 'Violation matching excluded namespace should be suppressed');
+        self::assertFalse($filter->shouldInclude($finding), 'Violation matching excluded namespace should be suppressed');
     }
 
     #[Test]
@@ -42,9 +43,9 @@ final class NamespaceExclusionFilterTest extends TestCase
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
-        $violation = $this->createViolation('App\\Service', 'complexity.cyclomatic');
+        $finding = $this->createFinding('App\\Service', 'complexity.cyclomatic');
 
-        self::assertTrue($filter->shouldInclude($violation), 'Violation not matching excluded namespace should pass through');
+        self::assertTrue($filter->shouldInclude($finding), 'Violation not matching excluded namespace should pass through');
     }
 
     #[Test]
@@ -52,9 +53,9 @@ final class NamespaceExclusionFilterTest extends TestCase
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
-        $violation = $this->createViolation('App\\Entity', LayerViolationRule::NAME);
+        $finding = $this->createFinding('App\\Entity', LayerViolationRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($violation), 'architecture.* rules must not be silenced by exclude_namespaces');
+        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by exclude_namespaces');
     }
 
     #[Test]
@@ -62,9 +63,9 @@ final class NamespaceExclusionFilterTest extends TestCase
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
-        $violation = $this->createViolation('App\\Entity', CircularDependencyRule::NAME);
+        $finding = $this->createFinding('App\\Entity', CircularDependencyRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($violation), 'architecture.* rules must not be silenced by exclude_namespaces');
+        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by exclude_namespaces');
     }
 
     #[Test]
@@ -74,22 +75,22 @@ final class NamespaceExclusionFilterTest extends TestCase
 
         // architecture.coverage and friends are project-level (empty namespace) diagnostics,
         // but the exemption is driven purely by the rule-name prefix — verify it still applies.
-        $violation = $this->createViolation('App\\Entity', LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME);
+        $finding = $this->createFinding('App\\Entity', LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
 
-        self::assertTrue($filter->shouldInclude($violation));
+        self::assertTrue($filter->shouldInclude($finding));
     }
 
     #[Test]
-    public function itKeepsArchitectureRuleEvenWhenItIsAFileSymbolViolationInExcludedNamespace(): void
+    public function itKeepsArchitectureRuleEvenWhenItIsAFileSymbolFindingInExcludedNamespace(): void
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
-        // Occurrence-style violations carry a file symbol path; the architecture
+        // Occurrence-style findings carry a file symbol path; the architecture
         // exemption is decided before any namespace resolution, so it must hold
-        // even for a file-symbol violation whose subject declares an excluded namespace.
-        $violation = $this->createFileSymbolViolation('App\\Entity', LayerViolationRule::NAME);
+        // even for a file-symbol finding whose subject declares an excluded namespace.
+        $finding = $this->createFileSymbolFinding('App\\Entity', LayerViolationRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($violation), 'architecture.* rules must not be silenced by exclude_namespaces');
+        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by exclude_namespaces');
     }
 
     #[Test]
@@ -97,75 +98,75 @@ final class NamespaceExclusionFilterTest extends TestCase
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher([]), self::declaredFileScope());
 
-        $violation = $this->createViolation('App\\Entity', 'complexity.cyclomatic');
+        $finding = $this->createFinding('App\\Entity', 'complexity.cyclomatic');
 
-        self::assertTrue($filter->shouldInclude($violation), 'Empty NamespaceMatcher should not filter any violations');
+        self::assertTrue($filter->shouldInclude($finding), 'Empty NamespaceMatcher should not filter any violations');
     }
 
     #[Test]
-    public function itFiltersFileSymbolViolationWhoseSubjectNamespaceMatches(): void
+    public function itFiltersFileSymbolFindingWhoseSubjectNamespaceMatches(): void
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
-        $violation = $this->createFileSymbolViolation('App\\Entity', 'code-smell.eval');
+        $finding = $this->createFileSymbolFinding('App\\Entity', 'code-smell.eval');
 
-        self::assertFalse($filter->shouldInclude($violation), 'File-symbol violation whose declaration namespace matches should be suppressed');
+        self::assertFalse($filter->shouldInclude($finding), 'File-symbol violation whose declaration namespace matches should be suppressed');
     }
 
     #[Test]
-    public function itPassesFileSymbolViolationWhoseSubjectNamespaceDoesNotMatch(): void
+    public function itPassesFileSymbolFindingWhoseSubjectNamespaceDoesNotMatch(): void
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
-        $violation = $this->createFileSymbolViolation('App\\Service', 'code-smell.eval');
+        $finding = $this->createFileSymbolFinding('App\\Service', 'code-smell.eval');
 
-        self::assertTrue($filter->shouldInclude($violation), 'File-symbol violation whose declaration namespace does not match should pass through');
+        self::assertTrue($filter->shouldInclude($finding), 'File-symbol violation whose declaration namespace does not match should pass through');
     }
 
     #[Test]
-    public function itPassesFileSymbolViolationWithoutDeclaringNamespace(): void
+    public function itPassesFileSymbolFindingWithoutDeclaringNamespace(): void
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App']), self::declaredFileScope());
 
-        // A file-symbol violation with no declaration subject has no namespace
+        // A file-symbol finding with no declaration subject has no namespace
         // to resolve, so it cannot be matched by any namespace exclusion.
         $file = RelativePath::fromString('src/helpers.php');
-        $violation = new Violation(
+        $finding = new Finding(
             location: new Location($file, 10),
             symbolPath: SymbolPath::forFile($file),
             subject: MetricSubject::aggregate(SymbolPath::forFile($file)),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Test',
             severity: Severity::Warning,
         );
 
-        self::assertTrue($filter->shouldInclude($violation), 'File-symbol violation without a declaring namespace should not be filtered');
+        self::assertTrue($filter->shouldInclude($finding), 'File-symbol violation without a declaring namespace should not be filtered');
     }
 
-    private function createViolation(string $namespace, string $ruleName): Violation
+    private function createFinding(string $namespace, string $ruleName): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Entity/User.php'), 10),
             symbolPath: SymbolPath::forClass($namespace, 'User'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, 'User'), RelativePath::fromString('src/Entity/User.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: $ruleName,
-            violationCode: $ruleName,
+            code: $ruleName,
             message: 'Test',
             severity: Severity::Warning,
         );
     }
 
-    private function createFileSymbolViolation(string $subjectNamespace, string $ruleName): Violation
+    private function createFileSymbolFinding(string $subjectNamespace, string $ruleName): Finding
     {
         $file = RelativePath::fromString('src/Entity/User.php');
 
-        return new Violation(
+        return new Finding(
             location: new Location($file, 10),
             symbolPath: SymbolPath::forFile($file),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($subjectNamespace, 'User'), $file, DeclarationOrdinal::fromRank(0))),
             ruleName: $ruleName,
-            violationCode: $ruleName,
+            code: $ruleName,
             message: 'Test',
             severity: Severity::Warning,
         );
@@ -186,10 +187,10 @@ final class NamespaceExclusionFilterTest extends TestCase
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
         foreach (self::declaredProjectScopedChannelKeys() as $key) {
-            $channel = ViolationChannel::fromKey($key);
+            $channel = new FindingChannel($key);
 
             self::assertTrue(
-                $filter->shouldInclude($this->createChannelViolation($channel)),
+                $filter->shouldInclude($this->createChannelFinding($channel)),
                 \sprintf('%s is declared project-scoped and must survive exclude_namespaces', $key),
             );
         }
@@ -199,22 +200,22 @@ final class NamespaceExclusionFilterTest extends TestCase
     public function itFiltersAChannelNoCapabilityDeclaredProjectScoped(): void
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
-        $undeclared = new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation.invented');
+        $undeclared = new FindingChannel('architecture.layer-violation.invented');
 
         self::assertFalse(
-            $filter->shouldInclude($this->createChannelViolation($undeclared)),
+            $filter->shouldInclude($this->createChannelFinding($undeclared)),
             'Immunity follows the declaration, not the spelling of the rule name',
         );
     }
 
-    private function createChannelViolation(ViolationChannel $channel): Violation
+    private function createChannelFinding(FindingChannel $channel): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Entity/User.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Entity', 'User'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Entity', 'User'), RelativePath::fromString('src/Entity/User.php'), DeclarationOrdinal::fromRank(0))),
-            ruleName: $channel->ruleName,
-            violationCode: $channel->violationCode,
+            ruleName: $channel->code,
+            code: $channel->code,
             message: 'Test',
             severity: Severity::Warning,
         );

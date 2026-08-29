@@ -7,17 +7,16 @@ namespace Qualimetrix\Analysis\Evidence\Size;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Rule that checks number of classes per namespace.
@@ -33,6 +32,8 @@ final class ClassCountRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/size.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;
@@ -41,11 +42,6 @@ final class ClassCountRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks number of classes per namespace';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Size;
     }
 
     /**
@@ -76,12 +72,12 @@ final class ClassCountRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -89,9 +85,9 @@ final class ClassCountRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
-        foreach ($context->metrics->all(SymbolType::Namespace_) as $namespaceInfo) {
+        foreach ($context->metrics->all(SymbolLevel::Namespace_) as $namespaceInfo) {
             $subject = $namespaceInfo->subject
                 ?? MetricSubject::aggregate($namespaceInfo->symbolPath);
             // Skip parent namespaces — only analyze leaf namespaces
@@ -116,12 +112,12 @@ final class ClassCountRule extends AbstractRule
             if ($severity !== null) {
                 $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
 
-                $violations[] = new Violation(
+                $findings[] = new Finding(
                     location: new Location($namespaceInfo->file),
                     subject: $subject,
                     symbolPath: $namespaceInfo->symbolPath,
                     ruleName: $this->getName(),
-                    violationCode: self::NAME,
+                    code: self::NAME,
                     message: \sprintf('Class count is %d, exceeds threshold of %d. Consider splitting into sub-namespaces', $classCount, $threshold),
                     severity: $severity,
                     metricValue: $classCount,
@@ -131,7 +127,7 @@ final class ClassCountRule extends AbstractRule
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**

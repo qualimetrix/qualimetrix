@@ -5,25 +5,23 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use Psr\Log\LoggerInterface;
-
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
@@ -44,6 +42,8 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * - By default, uses ProjectNamespaceResolver to auto-detect project namespaces from composer.json
  * - Use `includeNamespaces` option to override auto-detection
  * - Use `exclude_namespaces` (universal per-rule option) to exclude specific namespaces
+ *
+ * @qmx-threshold coupling.cbo 23 -- Raw CBO 22, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 23 gets one-edge headroom.
  */
 #[CliAlias('distance-warning', 'max_distance_warning')]
 #[CliAlias('distance-error', 'max_distance_error')]
@@ -53,6 +53,8 @@ final class DistanceRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function __construct(
         RuleOptionsInterface $options,
         private readonly ?ProjectNamespaceResolverInterface $namespaceResolver = null,
@@ -71,11 +73,6 @@ final class DistanceRule extends AbstractRule
         return 'Checks distance from main sequence at namespace level';
     }
 
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Coupling;
-    }
-
     /**
      * @return list<string>
      */
@@ -85,7 +82,7 @@ final class DistanceRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -93,16 +90,16 @@ final class DistanceRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
         $totalNamespaces = 0;
         $analyzedNamespaces = 0;
 
-        foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
+        foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
             $result = $this->namespaceResult($nsInfo, $context);
             $totalNamespaces += (int) $result['present'];
             $analyzedNamespaces += (int) $result['projectMatched'];
-            if ($result['violation'] !== null) {
-                $violations[] = $result['violation'];
+            if ($result['finding'] !== null) {
+                $findings[] = $result['finding'];
             }
         }
 
@@ -115,11 +112,11 @@ final class DistanceRule extends AbstractRule
             );
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
-     * @return array{present: bool, projectMatched: bool, violation: ?Violation}
+     * @return array{present: bool, projectMatched: bool, finding: ?Finding}
      */
     private function namespaceResult(SymbolInfo $namespaceInfo, AnalysisContext $context): array
     {
@@ -127,21 +124,21 @@ final class DistanceRule extends AbstractRule
 
         $namespace = $namespaceInfo->symbolPath->namespace;
         if ($namespace === null) {
-            return ['present' => false, 'projectMatched' => false, 'violation' => null];
+            return ['present' => false, 'projectMatched' => false, 'finding' => null];
         }
 
         if (!$this->shouldAnalyzeNamespace($namespace)) {
-            return ['present' => true, 'projectMatched' => false, 'violation' => null];
+            return ['present' => true, 'projectMatched' => false, 'finding' => null];
         }
 
         return [
             'present' => true,
             'projectMatched' => true,
-            'violation' => $this->matchedNamespaceViolation($namespaceInfo, $context),
+            'finding' => $this->matchedNamespaceFinding($namespaceInfo, $context),
         ];
     }
 
-    private function matchedNamespaceViolation(SymbolInfo $info, AnalysisContext $context): ?Violation
+    private function matchedNamespaceFinding(SymbolInfo $info, AnalysisContext $context): ?Finding
     {
         \assert($this->options instanceof DistanceOptions);
 
@@ -165,12 +162,12 @@ final class DistanceRule extends AbstractRule
         $instability = (float) ($metrics->get(MetricName::COUPLING_INSTABILITY) ?? 0.0);
         $threshold = $severity === Severity::Error ? $effectiveOptions->maxDistanceError : $effectiveOptions->maxDistanceWarning;
 
-        return new Violation(
+        return new Finding(
             location: new Location($info->file, $info->line),
             subject: $subject,
             symbolPath: $info->symbolPath,
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf(
                 'Distance from main sequence is %.2f (A=%.2f, I=%.2f), exceeds threshold of %.2f. Balance abstractness and stability',
                 $distanceValue,
@@ -239,7 +236,7 @@ final class DistanceRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
         ];
     }
 

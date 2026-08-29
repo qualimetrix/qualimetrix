@@ -13,7 +13,7 @@ use Qualimetrix\Core\Path\RelativePath;
 /**
  * Pins the nullable-file behaviour introduced by ADR 0015 Phase 1a.
  *
- * Architecture-level violations (e.g. circular dependency, project-level
+ * Architecture-level findings (e.g. circular dependency, project-level
  * diagnostics) have no owning file. The pre-Phase-1a sentinel for "no file"
  * was the empty string `''`. After Phase 1a it is `Location::file === null`
  * with `isNone()` / `pathString() === ''` as the API surface.

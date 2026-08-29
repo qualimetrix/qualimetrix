@@ -8,10 +8,10 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
@@ -94,13 +94,13 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($pipeline, [], $options);
         self::assertSame(
             [
-                ViolationFilterStage::Suppression,
-                ViolationFilterStage::PathExclusion,
-                ViolationFilterStage::NamespaceExclusion,
-                ViolationFilterStage::Baseline,
-                ViolationFilterStage::GitScope,
+                FindingFilterStage::Suppression,
+                FindingFilterStage::PathExclusion,
+                FindingFilterStage::NamespaceExclusion,
+                FindingFilterStage::Baseline,
+                FindingFilterStage::GitScope,
             ],
-            array_map(ViolationFilterStage::from(...), array_keys($result->removedByStage)),
+            array_map(FindingFilterStage::from(...), array_keys($result->removedByStage)),
         );
     }
 
@@ -119,8 +119,8 @@ final class FindingProjectorTest extends TestCase
         ));
 
         self::assertSame(
-            [ViolationFilterStage::Suppression, ViolationFilterStage::Baseline],
-            array_map(ViolationFilterStage::from(...), array_keys($result->removedByStage)),
+            [FindingFilterStage::Suppression, FindingFilterStage::Baseline],
+            array_map(FindingFilterStage::from(...), array_keys($result->removedByStage)),
         );
     }
 
@@ -138,7 +138,7 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itDoesNotMeasureAFindingRemovedByAnIgnoreTag(): void
     {
-        $ignored = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
+        $ignored = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
 
         $pipeline = $this->createPipeline();
         $this->suppressions = [
@@ -150,14 +150,14 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($pipeline, [$ignored], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $ignored->subject->toCanonical() => [
-                    ['channel' => $ignored->channel()->toKey(), 'magnitudes' => [25]],
+                    ['channel' => $ignored->channel()->code, 'magnitudes' => [25]],
                 ],
             ]),
         ));
 
-        self::assertSame([], $result->measuredViolations);
-        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::Suppression));
-        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::Baseline));
+        self::assertSame([], $result->measuredFindings);
+        self::assertSame(1, $result->removedCountBy(FindingFilterStage::Suppression));
+        self::assertSame(0, $result->removedCountBy(FindingFilterStage::Baseline));
         self::assertSame(1, $result->staleEntryCount());
     }
 
@@ -169,7 +169,7 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itLetsAnIgnoreTagWinOverAnEntryThatWouldHaveAcceptedTheFinding(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
+        $finding = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
 
         $pipeline = $this->createPipeline();
         $this->suppressions = [
@@ -178,30 +178,30 @@ final class FindingProjectorTest extends TestCase
             ],
         ];
 
-        $result = $this->project($pipeline, [$violation], new FindingProjectionOptions(
+        $result = $this->project($pipeline, [$finding], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
-                $violation->subject->toCanonical() => [
-                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25]],
+                $finding->subject->toCanonical() => [
+                    ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
                 ],
             ]),
         ));
 
-        self::assertSame([], $result->violations);
-        self::assertSame([$violation], $result->removedBy(ViolationFilterStage::Suppression));
-        self::assertSame([], $result->removedBy(ViolationFilterStage::Baseline));
+        self::assertSame([], $result->findings);
+        self::assertSame([$finding], $result->removedBy(FindingFilterStage::Suppression));
+        self::assertSame([], $result->removedBy(FindingFilterStage::Baseline));
     }
 
     #[Test]
     public function itDoesNotMeasureAFindingRemovedByPathExclusion(): void
     {
-        $kept = $this->makeViolation('src/Service/UserService.php');
-        $excluded = $this->makeViolation('generated/Proxy.php');
+        $kept = $this->makeFinding('src/Service/UserService.php');
+        $excluded = $this->makeFinding('generated/Proxy.php');
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludePaths: ['generated']));
 
         $result = $this->project($pipeline, [$kept, $excluded], new FindingProjectionOptions());
 
-        self::assertSame([$kept], $result->measuredViolations);
+        self::assertSame([$kept], $result->measuredFindings);
     }
 
     /**
@@ -217,20 +217,20 @@ final class FindingProjectorTest extends TestCase
         // The real channel, not a synthesised descendant of it: immunity is a
         // property the capability declares per channel, so an invented
         // `architecture.layer-violation.callable` is correctly not immune.
-        $architecture = $this->makeViolation(
+        $architecture = $this->makeFinding(
             'src/Foo/Service.php',
             'App\\Foo',
             'Service',
             LayerViolationRule::NAME,
-            violationCode: LayerViolationRule::NAME,
+            code: LayerViolationRule::NAME,
         );
-        $ordinary = $this->makeViolation('src/Foo/Other.php', 'App\\Foo', 'Other');
+        $ordinary = $this->makeFinding('src/Foo/Other.php', 'App\\Foo', 'Other');
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludeNamespaces: ['App\\Foo']));
 
         $result = $this->project($pipeline, [$architecture, $ordinary], new FindingProjectionOptions());
 
-        self::assertSame([$architecture], $result->measuredViolations);
+        self::assertSame([$architecture], $result->measuredFindings);
     }
 
     /**
@@ -241,23 +241,23 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itMarksNothingStaleOnAGitScopedRun(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
+        $finding = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
 
         $baselinePath = $this->writeBaselineFile([
-            $violation->subject->toCanonical() => [
-                ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25]],
+            $finding->subject->toCanonical() => [
+                ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
             ],
         ]);
 
         // Nothing is staged, so the git-scope stage narrows the report to
         // nothing at all.
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions(
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
             baselinePath: $baselinePath,
             gitScope: $this->createGitScope(),
         ));
 
-        self::assertSame([$violation], $result->measuredViolations);
-        self::assertSame([], $result->violations);
+        self::assertSame([$finding], $result->measuredFindings);
+        self::assertSame([], $result->findings);
         self::assertSame(0, $result->staleEntryCount());
     }
 
@@ -266,18 +266,18 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itAcceptsAGroupItsEntryBounds(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
+        $finding = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
 
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions(
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
-                $violation->subject->toCanonical() => [
-                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25]],
+                $finding->subject->toCanonical() => [
+                    ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
                 ],
             ]),
         ));
 
-        self::assertSame([], $result->violations);
-        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::Baseline));
+        self::assertSame([], $result->findings);
+        self::assertSame(1, $result->removedCountBy(FindingFilterStage::Baseline));
     }
 
     /**
@@ -288,14 +288,14 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itReportsAMeasuredBreachAtErrorWithEveryMemberOfTheGroup(): void
     {
-        $first = $this->makeViolation(
+        $first = $this->makeFinding(
             'src/Service/UserService.php',
             'App\\Service',
             'UserService',
             'code-smell.goto',
             severity: Severity::Warning,
         );
-        $second = $this->makeViolation(
+        $second = $this->makeFinding(
             'src/Service/UserService.php',
             'App\\Service',
             'UserService',
@@ -306,18 +306,18 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($this->createPipeline(), [$first, $second], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $first->subject->toCanonical() => [
-                    ['channel' => $first->channel()->toKey(), 'count' => 1],
+                    ['channel' => $first->channel()->code, 'count' => 1],
                 ],
             ]),
         ));
 
-        self::assertCount(2, $result->violations);
+        self::assertCount(2, $result->findings);
         self::assertSame(
             [Severity::Error, Severity::Error],
-            array_map(static fn(Violation $v): Severity => $v->severity, $result->violations),
+            array_map(static fn(Finding $v): Severity => $v->severity, $result->findings),
         );
-        self::assertSame(1, $result->violations[0]->acceptedLevel?->count);
-        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::Baseline));
+        self::assertSame(1, $result->findings[0]->acceptedLevel?->count);
+        self::assertSame(0, $result->removedCountBy(FindingFilterStage::Baseline));
     }
 
     /**
@@ -328,7 +328,7 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itKeepsTheConfiguredSeverityWhenTheEntryCannotBeApplied(): void
     {
-        $violation = $this->makeViolation(
+        $finding = $this->makeFinding(
             'src/Service/UserService.php',
             'App\\Service',
             'UserService',
@@ -338,39 +338,39 @@ final class FindingProjectorTest extends TestCase
 
         // A magnitude list on an occurrence channel: the entry claims a
         // boundary the channel's findings cannot be compared against.
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions(
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
-                $violation->subject->toCanonical() => [
-                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [1]],
+                $finding->subject->toCanonical() => [
+                    ['channel' => $finding->channel()->code, 'magnitudes' => [1]],
                 ],
             ]),
         ));
 
-        self::assertCount(1, $result->violations);
-        self::assertSame(Severity::Warning, $result->violations[0]->severity);
-        self::assertNull($result->violations[0]->acceptedLevel);
+        self::assertCount(1, $result->findings);
+        self::assertSame(Severity::Warning, $result->findings[0]->severity);
+        self::assertNull($result->findings[0]->acceptedLevel);
     }
 
     #[Test]
     public function itSkipsTheBaselineStageWhenNoPathIsGiven(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php');
+        $finding = $this->makeFinding('src/Service/UserService.php');
 
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions());
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions());
 
-        self::assertSame([$violation], $result->violations);
-        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::Baseline));
+        self::assertSame([$finding], $result->findings);
+        self::assertSame(0, $result->removedCountBy(FindingFilterStage::Baseline));
     }
 
     #[Test]
     public function itSkipsTheBaselineStageWhenThePathIsEmpty(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php');
+        $finding = $this->makeFinding('src/Service/UserService.php');
 
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions(baselinePath: ''));
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(baselinePath: ''));
 
-        self::assertSame([$violation], $result->violations);
-        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::Baseline));
+        self::assertSame([$finding], $result->findings);
+        self::assertSame(0, $result->removedCountBy(FindingFilterStage::Baseline));
     }
 
     // -- Inert entries and baseline scope (ADR 0017) --
@@ -384,13 +384,13 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itCollectsInertEntriesFromTheLoadedBaseline(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php');
+        $finding = $this->makeFinding('src/Service/UserService.php');
         $subjectKey = self::subjectKey('App\\Nowhere', 'Ghost', 'src/Nowhere/Ghost.php');
 
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions(
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $subjectKey => [
-                    ['channel' => 'nonexistent.channel#nonexistent.channel', 'count' => 1],
+                    ['channel' => 'nonexistent.channel', 'count' => 1],
                 ],
             ]),
         ));
@@ -402,9 +402,9 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itHasNoInertEntriesWithoutABaseline(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php');
+        $finding = $this->makeFinding('src/Service/UserService.php');
 
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions());
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions());
 
         self::assertSame([], $result->inertEntries);
     }
@@ -417,9 +417,9 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itReportsTheLoadedBaselinesScope(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php');
+        $finding = $this->makeFinding('src/Service/UserService.php');
 
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions(
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([]),
         ));
 
@@ -429,9 +429,9 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itHasANullBaselineScopeWithoutABaseline(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php');
+        $finding = $this->makeFinding('src/Service/UserService.php');
 
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions());
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions());
 
         self::assertNull($result->baselineScope);
     }
@@ -443,22 +443,22 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itReportsAStaleEntryWithoutDisablingTheRestOfTheBaseline(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
+        $finding = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
         $otherSubjectKey = self::subjectKey('App\\Service', 'OtherClass', 'src/Service/OtherClass.php');
 
         $baselinePath = $this->writeBaselineFile([
-            $violation->subject->toCanonical() => [
-                ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25]],
+            $finding->subject->toCanonical() => [
+                ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
             ],
             $otherSubjectKey => [
-                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 3],
+                ['channel' => 'code-smell.goto', 'count' => 3],
             ],
         ]);
 
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions($baselinePath));
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions($baselinePath));
 
-        self::assertSame([], $result->violations);
-        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::Baseline));
+        self::assertSame([], $result->findings);
+        self::assertSame(1, $result->removedCountBy(FindingFilterStage::Baseline));
         self::assertSame(1, $result->staleEntryCount());
         self::assertSame($otherSubjectKey, $result->staleEntries[0]->identity->subjectKey);
     }
@@ -472,7 +472,7 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itKeepsApplyingSiblingEntriesWhenOneChannelOfASymbolIsRepaired(): void
     {
-        $stillFiring = $this->makeViolation(
+        $stillFiring = $this->makeFinding(
             'src/Service/UserService.php',
             'App\\Service',
             'UserService',
@@ -481,17 +481,17 @@ final class FindingProjectorTest extends TestCase
 
         $baselinePath = $this->writeBaselineFile([
             $stillFiring->subject->toCanonical() => [
-                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
-                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
+                ['channel' => $stillFiring->channel()->code, 'magnitudes' => [25]],
+                ['channel' => 'code-smell.goto', 'count' => 2],
             ],
         ]);
 
         $result = $this->project($this->createPipeline(), [$stillFiring], new FindingProjectionOptions($baselinePath));
 
-        self::assertSame([], $result->violations, 'The surviving entry must still suppress its finding.');
-        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::Baseline));
+        self::assertSame([], $result->findings, 'The surviving entry must still suppress its finding.');
+        self::assertSame(1, $result->removedCountBy(FindingFilterStage::Baseline));
         self::assertSame(1, $result->staleEntryCount());
-        self::assertStringContainsString('code-smell.goto', $result->staleEntries[0]->identity->channel->toKey());
+        self::assertStringContainsString('code-smell.goto', $result->staleEntries[0]->identity->channel->code);
     }
 
     // -- Suppression --
@@ -499,7 +499,7 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itRemovesAFindingCoveredByAnIgnoreTag(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php');
+        $finding = $this->makeFinding('src/Service/UserService.php');
 
         $pipeline = $this->createPipeline();
         $this->suppressions = [
@@ -508,10 +508,10 @@ final class FindingProjectorTest extends TestCase
             ],
         ];
 
-        $result = $this->project($pipeline, [$violation], new FindingProjectionOptions());
+        $result = $this->project($pipeline, [$finding], new FindingProjectionOptions());
 
-        self::assertSame([], $result->violations);
-        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::Suppression));
+        self::assertSame([], $result->findings);
+        self::assertSame(1, $result->removedCountBy(FindingFilterStage::Suppression));
     }
 
     // -- `--no-suppression-annotations`: report-only, never a wider set --
@@ -536,20 +536,20 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($pipeline, [$measured, $annotated], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $measured->subject->toCanonical() => [
-                    ['channel' => $measured->channel()->toKey(), 'count' => 1],
+                    ['channel' => $measured->channel()->code, 'count' => 1],
                 ],
             ]),
             annotationSuppressionDisabled: true,
         ));
 
-        self::assertSame([$annotated], $result->violations);
-        self::assertSame(Severity::Warning, $result->violations[0]->severity);
-        self::assertNull($result->violations[0]->acceptedLevel);
-        self::assertSame([$measured], $result->measuredViolations);
+        self::assertSame([$annotated], $result->findings);
+        self::assertSame(Severity::Warning, $result->findings[0]->severity);
+        self::assertNull($result->findings[0]->acceptedLevel);
+        self::assertSame([$measured], $result->measuredFindings);
         self::assertSame(0, $result->staleEntryCount());
         self::assertSame(
             [],
-            $result->removedBy(ViolationFilterStage::Suppression),
+            $result->removedBy(FindingFilterStage::Suppression),
             'Nothing was removed from the run, so the run must not report a suppression.',
         );
     }
@@ -565,7 +565,7 @@ final class FindingProjectorTest extends TestCase
 
         $baselinePath = $this->writeBaselineFile([
             $measured->subject->toCanonical() => [
-                ['channel' => $measured->channel()->toKey(), 'count' => 1],
+                ['channel' => $measured->channel()->code, 'count' => 1],
             ],
         ]);
 
@@ -584,8 +584,8 @@ final class FindingProjectorTest extends TestCase
             ),
         );
 
-        self::assertSame($applied->measuredViolations, $disabled->measuredViolations);
-        self::assertSame([$measured], $disabled->measuredViolations);
+        self::assertSame($applied->measuredFindings, $disabled->measuredFindings);
+        self::assertSame([$measured], $disabled->measuredFindings);
     }
 
     /**
@@ -605,10 +605,10 @@ final class FindingProjectorTest extends TestCase
 
         $result = $this->project($pipeline, [$measured, $annotated], $options);
 
-        self::assertSame([$measured], $result->measuredViolations);
+        self::assertSame([$measured], $result->measuredFindings);
         self::assertSame(
-            [ViolationFilterStage::Suppression],
-            array_map(ViolationFilterStage::from(...), array_keys($result->removedByStage)),
+            [FindingFilterStage::Suppression],
+            array_map(FindingFilterStage::from(...), array_keys($result->removedByStage)),
             'Suppression defines the set, so it is in the list whatever the flags say.',
         );
     }
@@ -631,7 +631,7 @@ final class FindingProjectorTest extends TestCase
             new FindingProjectionOptions(annotationSuppressionDisabled: true),
         );
 
-        self::assertSame([$measured, $annotated], $result->violations);
+        self::assertSame([$measured, $annotated], $result->findings);
     }
 
     /**
@@ -643,9 +643,9 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itStillExcludesRestoredFindingsByPathAndNamespace(): void
     {
-        $kept = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', line: 21);
-        $byPath = $this->makeViolation('generated/Proxy.php', 'App\\Generated', 'Proxy', line: 21);
-        $byNamespace = $this->makeViolation('src/Entity/User.php', 'App\\Entity', 'User', line: 21);
+        $kept = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService', line: 21);
+        $byPath = $this->makeFinding('generated/Proxy.php', 'App\\Generated', 'Proxy', line: 21);
+        $byNamespace = $this->makeFinding('src/Entity/User.php', 'App\\Entity', 'User', line: 21);
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludePaths: ['generated']));
         $this->suppressions = [
@@ -659,10 +659,10 @@ final class FindingProjectorTest extends TestCase
             annotationSuppressionDisabled: true,
         ));
 
-        self::assertSame([$kept], $result->violations);
-        self::assertSame([$byPath], $result->removedBy(ViolationFilterStage::PathExclusion));
-        self::assertSame([$byNamespace], $result->removedBy(ViolationFilterStage::NamespaceExclusion));
-        self::assertSame([], $result->measuredViolations);
+        self::assertSame([$kept], $result->findings);
+        self::assertSame([$byPath], $result->removedBy(FindingFilterStage::PathExclusion));
+        self::assertSame([$byNamespace], $result->removedBy(FindingFilterStage::NamespaceExclusion));
+        self::assertSame([], $result->measuredFindings);
     }
 
     /**
@@ -684,8 +684,8 @@ final class FindingProjectorTest extends TestCase
             ),
         );
 
-        self::assertSame([], $result->violations);
-        self::assertSame([$measured], $result->measuredViolations);
+        self::assertSame([], $result->findings);
+        self::assertSame([$measured], $result->measuredFindings);
     }
 
     // -- Path exclusion --
@@ -693,37 +693,37 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itRemovesFindingsUnderAnExcludedPathGivenOnTheCommandLine(): void
     {
-        $kept = $this->makeViolation('src/Service/UserService.php');
-        $excluded = $this->makeViolation('vendor/library/SomeClass.php');
+        $kept = $this->makeFinding('src/Service/UserService.php');
+        $excluded = $this->makeFinding('vendor/library/SomeClass.php');
 
         $options = new FindingProjectionOptions(excludePaths: ['vendor']);
 
         $result = $this->project($this->createPipeline(), [$kept, $excluded], $options);
 
-        self::assertSame([$kept], $result->violations);
-        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::PathExclusion));
+        self::assertSame([$kept], $result->findings);
+        self::assertSame(1, $result->removedCountBy(FindingFilterStage::PathExclusion));
     }
 
     #[Test]
     public function itRemovesFindingsUnderAnExcludedPathGivenInConfiguration(): void
     {
-        $kept = $this->makeViolation('src/Service/UserService.php');
-        $excluded = $this->makeViolation('generated/Proxy.php');
+        $kept = $this->makeFinding('src/Service/UserService.php');
+        $excluded = $this->makeFinding('generated/Proxy.php');
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludePaths: ['generated']));
 
         $result = $this->project($pipeline, [$kept, $excluded], new FindingProjectionOptions());
 
-        self::assertSame([$kept], $result->violations);
-        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::PathExclusion));
+        self::assertSame([$kept], $result->findings);
+        self::assertSame(1, $result->removedCountBy(FindingFilterStage::PathExclusion));
     }
 
     #[Test]
     public function itMergesConfiguredAndCommandLinePathExclusions(): void
     {
-        $kept = $this->makeViolation('src/Service/UserService.php');
-        $configured = $this->makeViolation('generated/Proxy.php');
-        $flagged = $this->makeViolation('vendor/library/SomeClass.php');
+        $kept = $this->makeFinding('src/Service/UserService.php');
+        $configured = $this->makeFinding('generated/Proxy.php');
+        $flagged = $this->makeFinding('vendor/library/SomeClass.php');
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludePaths: ['generated']));
 
@@ -731,19 +731,19 @@ final class FindingProjectorTest extends TestCase
 
         $result = $this->project($pipeline, [$kept, $configured, $flagged], $options);
 
-        self::assertSame([$kept], $result->violations);
-        self::assertSame(2, $result->removedCountBy(ViolationFilterStage::PathExclusion));
+        self::assertSame([$kept], $result->findings);
+        self::assertSame(2, $result->removedCountBy(FindingFilterStage::PathExclusion));
     }
 
     #[Test]
     public function itRunsNoPathExclusionStageWhenNoPatternIsConfigured(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php');
+        $finding = $this->makeFinding('src/Service/UserService.php');
 
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions());
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions());
 
-        self::assertSame([$violation], $result->violations);
-        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::PathExclusion));
+        self::assertSame([$finding], $result->findings);
+        self::assertSame(0, $result->removedCountBy(FindingFilterStage::PathExclusion));
     }
 
     // -- Namespace exclusion --
@@ -751,29 +751,29 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itRemovesFindingsInAnExcludedNamespace(): void
     {
-        $kept = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
-        $excluded = $this->makeViolation('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
+        $kept = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $excluded = $this->makeFinding('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludeNamespaces: ['App\\Generated']));
 
         $result = $this->project($pipeline, [$kept, $excluded], new FindingProjectionOptions());
 
-        self::assertSame([$kept], $result->violations);
-        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
+        self::assertSame([$kept], $result->findings);
+        self::assertSame(1, $result->removedCountBy(FindingFilterStage::NamespaceExclusion));
     }
 
     #[Test]
     public function itRemovesFindingsInChildNamespacesOfAnExcludedOne(): void
     {
-        $kept = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
-        $excluded = $this->makeViolation('src/Generated/Sub/Proxy.php', 'App\\Generated\\Sub', 'Proxy');
+        $kept = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $excluded = $this->makeFinding('src/Generated/Sub/Proxy.php', 'App\\Generated\\Sub', 'Proxy');
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludeNamespaces: ['App\\Generated']));
 
         $result = $this->project($pipeline, [$kept, $excluded], new FindingProjectionOptions());
 
-        self::assertSame([$kept], $result->violations);
-        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
+        self::assertSame([$kept], $result->findings);
+        self::assertSame(1, $result->removedCountBy(FindingFilterStage::NamespaceExclusion));
     }
 
     #[Test]
@@ -781,12 +781,12 @@ final class FindingProjectorTest extends TestCase
     {
         $path = RelativePath::fromString('src/helpers.php');
         $symbol = SymbolPath::forFile($path);
-        $fileLevel = new Violation(
+        $fileLevel = new Finding(
             location: new Location($path, 10),
             subject: MetricSubject::aggregate($symbol),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'CCN too high',
             severity: Severity::Error,
         );
@@ -795,16 +795,16 @@ final class FindingProjectorTest extends TestCase
 
         $result = $this->project($pipeline, [$fileLevel], new FindingProjectionOptions());
 
-        self::assertSame([$fileLevel], $result->violations);
-        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
+        self::assertSame([$fileLevel], $result->findings);
+        self::assertSame(0, $result->removedCountBy(FindingFilterStage::NamespaceExclusion));
     }
 
     #[Test]
     public function itMergesConfiguredAndCommandLineNamespaceExclusions(): void
     {
-        $kept = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
-        $configured = $this->makeViolation('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
-        $flagged = $this->makeViolation('src/Entity/User.php', 'App\\Entity', 'User');
+        $kept = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $configured = $this->makeFinding('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
+        $flagged = $this->makeFinding('src/Entity/User.php', 'App\\Entity', 'User');
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludeNamespaces: ['App\\Generated']));
 
@@ -812,42 +812,42 @@ final class FindingProjectorTest extends TestCase
 
         $result = $this->project($pipeline, [$kept, $configured, $flagged], $options);
 
-        self::assertSame([$kept], $result->violations);
-        self::assertSame(2, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
+        self::assertSame([$kept], $result->findings);
+        self::assertSame(2, $result->removedCountBy(FindingFilterStage::NamespaceExclusion));
     }
 
     #[Test]
     public function itRunsNoNamespaceExclusionStageWhenNoPrefixIsConfigured(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php');
+        $finding = $this->makeFinding('src/Service/UserService.php');
 
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions());
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions());
 
-        self::assertSame([$violation], $result->violations);
-        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
+        self::assertSame([$finding], $result->findings);
+        self::assertSame(0, $result->removedCountBy(FindingFilterStage::NamespaceExclusion));
     }
 
     #[Test]
-    public function itKeepsArchitectureRuleViolationsInExcludedNamespaces(): void
+    public function itKeepsArchitectureRuleFindingsInExcludedNamespaces(): void
     {
         // The real channel, not a synthesised descendant of it: immunity is a
         // property the capability declares per channel, so an invented
         // `architecture.layer-violation.callable` is correctly not immune.
-        $architecture = $this->makeViolation(
+        $architecture = $this->makeFinding(
             'src/Foo/Service.php',
             'App\\Foo',
             'Service',
             LayerViolationRule::NAME,
-            violationCode: LayerViolationRule::NAME,
+            code: LayerViolationRule::NAME,
         );
-        $ordinary = $this->makeViolation('src/Foo/Other.php', 'App\\Foo', 'Other');
+        $ordinary = $this->makeFinding('src/Foo/Other.php', 'App\\Foo', 'Other');
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludeNamespaces: ['App\\Foo']));
 
         $result = $this->project($pipeline, [$architecture, $ordinary], new FindingProjectionOptions());
 
-        self::assertSame([$architecture], $result->violations);
-        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
+        self::assertSame([$architecture], $result->findings);
+        self::assertSame(1, $result->removedCountBy(FindingFilterStage::NamespaceExclusion));
     }
 
     // -- Git scope --
@@ -855,12 +855,12 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itRunsNoGitScopeStageWhenTheRunIsNotScoped(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php');
+        $finding = $this->makeFinding('src/Service/UserService.php');
 
-        $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions());
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions());
 
-        self::assertSame([$violation], $result->violations);
-        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::GitScope));
+        self::assertSame([$finding], $result->findings);
+        self::assertSame(0, $result->removedCountBy(FindingFilterStage::GitScope));
     }
 
     // -- Helper methods --
@@ -873,12 +873,12 @@ final class FindingProjectorTest extends TestCase
      * Warning severity, so a promotion to Error is visible as a change of
      * severity rather than as a no-op.
      *
-     * @return array{Violation, Violation} the measured one, then the annotated one
+     * @return array{Finding, Finding} the measured one, then the annotated one
      */
     private function makeAnnotatedPair(): array
     {
         return [
-            $this->makeViolation(
+            $this->makeFinding(
                 'src/Service/UserService.php',
                 'App\\Service',
                 'UserService',
@@ -886,7 +886,7 @@ final class FindingProjectorTest extends TestCase
                 severity: Severity::Warning,
                 line: 10,
             ),
-            $this->makeViolation(
+            $this->makeFinding(
                 'src/Service/UserService.php',
                 'App\\Service',
                 'UserService',
@@ -916,7 +916,7 @@ final class FindingProjectorTest extends TestCase
         return $pipeline;
     }
 
-    private function makeViolation(
+    private function makeFinding(
         string $file,
         string $namespace = 'App',
         string $class = 'TestClass',
@@ -924,17 +924,17 @@ final class FindingProjectorTest extends TestCase
         int|float|null $metricValue = null,
         Severity $severity = Severity::Error,
         int $line = 10,
-        ?string $violationCode = null,
-    ): Violation {
+        ?string $code = null,
+    ): Finding {
         $path = RelativePath::fromString($file);
         $symbol = SymbolPath::forClass($namespace, $class);
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, $line),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: $ruleName,
-            violationCode: $violationCode ?? ($ruleName === 'code-smell.goto' ? $ruleName : $ruleName . '.callable'),
+            code: $code ?? $ruleName,
             message: 'CCN too high',
             severity: $severity,
             metricValue: $metricValue,
@@ -955,10 +955,10 @@ final class FindingProjectorTest extends TestCase
         );
     }
 
-    /** @param list<Violation> $violations */
+    /** @param list<Finding> $findings */
     private function project(
         FindingProjector $projector,
-        array $violations,
+        array $findings,
         FindingProjectionOptions $options,
     ): FindingProjectionResult {
         $options = new FindingProjectionOptions(
@@ -969,7 +969,7 @@ final class FindingProjectorTest extends TestCase
             gitScope: $options->gitScope,
         );
 
-        return $projector->project($violations, $this->suppressions, $options);
+        return $projector->project($findings, $this->suppressions, $options);
     }
 
     /**

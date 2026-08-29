@@ -1,0 +1,542 @@
+# Everything that depends on the name of the `computed.health` producer,
+# re-derived fresh for Ш5d on 2026-08-25 by SEVEN independent reference
+# channels, in the `channel` column below. This is an independent
+# re-derivation of the question already asked once in
+# enumeration-producer-name-consumers.tsv (66 rows, four "assumption kind"
+# views over named-method call sites, dated before Ш5a-c). That file is NOT
+# reproduced here — its rows describe what each call site ASSUMES about the
+# name; this file describes WHERE the name (as constant, literal, or a
+# generic mechanism that happens to key on it) actually shows up, walked by
+# different means. The two disagree in scope by design: see DISAGREEMENT
+# WITH THE PRIOR SNAPSHOT below.
+#
+# EXCLUDED BY TASK SCOPE: scripts/finding-gate-controls/** (another agent is
+# working there) and .claude/worktrees/** (git-ignored, not part of this
+# repository — verified with `git status --porcelain --ignored=matching --
+# .claude/worktrees`, confirms `.claude/worktrees/` is a top-level ignore
+# rule, and `git ls-files | grep -c '^\.claude/worktrees'` = 0).
+#
+# CHANNEL 1 — constant-symbol (31 rows). Every appearance of the SYMBOLS
+# `ComputedMetricChannelFamily::PRODUCER_RULE_NAME` or `ComputedMetricRule::NAME`.
+#   git grep -n "ComputedMetricChannelFamily::PRODUCER_RULE_NAME\|ComputedMetricRule::NAME" -- . ':!scripts/finding-gate-controls/**'
+#   Does NOT see: any site that holds the same value through `self::NAME` from
+#   inside ComputedMetricRule itself (that symbol text never appears) — see
+#   CHANNEL 3; any site that receives the value through a variable already
+#   extracted elsewhere (e.g. a DI-injected `$computedMetricRuleName` argument
+#   consumed downstream of ChannelDeclarationCompilerPass.php:171 - this channel
+#   sees the injection site, not every consumer of the injected constructor
+#   argument); any site keyed by RuleNameReader::read() over the tagged rule
+#   CLASS rather than by this symbol name - see CHANNEL 6.
+#
+# CHANNEL 2 — literal-string (305 rows). Every appearance of the bare text
+# `computed.health`, repo-wide.
+#   git grep -n "computed\.health" -- . ':!scripts/finding-gate-controls/**'
+#   Does NOT see: `self::NAME`, `$ruleName`, or any other symbol/variable that
+#   RESOLVES to the string at runtime without spelling it — see CHANNELS 1, 3,
+#   4, 5, 6; a value assembled by concatenation where the literal appears
+#   fragmented across expressions (none found, but the method cannot rule that
+#   out); the string inside a compiled/serialized artifact this repository does
+#   not track (e.g. a consumer's own cache).
+#   Sub-classified in the `role` column by directory heuristic (test-literal,
+#   doc-plan-self, doc-plan-other, doc-website, doc-adr, src-comment,
+#   tooling-doc-comment, component-readme, doc-changelog, doc-tool,
+#   config-real, generated-inventory, constant-declaration, test-comment,
+#   doc-internal-other) plus a crude "is this a comment" heuristic (leading
+#   `//`, `*`, `#`, or `/**`) for tests/ and src/. The heuristic is textual,
+#   not semantic — it can misfile an edge case; none were found in a manual
+#   skim of the src/ and constant-declaration rows (12 lines), which is the
+#   only bucket where misfiling would matter for Ш5d.
+#
+# CHANNEL 3 — self-reference-undetected (3 rows). `self::NAME` sites inside
+# `ComputedMetricRule.php` itself: `getName()`'s return value and the profiler
+# SPAN NAME (`'rule.' . self::NAME . '.' . $definition->name`, passed to
+# `ProfilerInterface::start()`). Found by reading the profiler wiring in
+# ComputedMetricRule.php after noticing CHANNELS 1-2 return nothing for
+# "profiler span name" despite the task naming that surface explicitly:
+#   sed -n '40,96p' src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php
+#   grep -n "self::NAME" src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php
+#   This is the channel that PROVES channels 1 and 2 alone miss real sites even
+#   inside the file that DEFINES the constant, matching the task's warning that
+#   a classification step without its own "how obtained" line is where past
+#   rounds lost completeness.
+#   Does NOT see: any other rule class's `self::NAME`/`static::NAME` (irrelevant
+#   to computed.health by construction) or a hypothetical second span built
+#   from a different expression (this was found by reading one file end to end,
+#   not by a pattern general enough to catch a sibling case elsewhere).
+#
+# CHANNEL 4 — producer-resolution-call (23 rows). Call and declaration sites of
+# `ChannelIdentityInterface::producerOf()` and
+# `RuleChannelRegistryInterface::channelsProducedBy()` — the two methods every
+# producer's name (including computed.health) is resolved or looked up
+# THROUGH at runtime, with no literal string or named constant at the call
+# site itself.
+#   git grep -n "producerOf(" -- 'src/**' ':!scripts/finding-gate-controls/**'
+#   git grep -n "channelsProducedBy(" -- 'src/**' ':!scripts/finding-gate-controls/**'
+#   `role` column: code | doc | interface-declaration | component-readme.
+#   Does NOT see: test call sites of the same two methods (tests/ was excluded
+#   from this grep on purpose — CHANNELS 1-2 already carry the test rows that
+#   pass 'computed.health' as the literal argument to these same methods, and
+#   listing the call site twice under two channels would double the count
+#   without adding information); any caller reached through an interface
+#   variable typed only as `ChannelIdentityInterface` where the method name
+#   itself is spelled differently at the call site (none found, by inspection
+#   of the two interface's known implementors: ChannelUniverse is the only one
+#   in production `src/`).
+#
+# CHANNEL 5 — rulename-field-read (9 rows). Every read of `Finding::$ruleName`
+# in `src/Reporting/**` — the field every computed-family finding carries the
+# producer name in today.
+#   git grep -n '\->ruleName\b' -- 'src/Reporting/**'
+#   Does NOT see: `Finding::$ruleName` reads outside `src/Reporting/` (the
+#   Policy/Baseline and Finding-execution reads are already covered by
+#   CHANNELS 1, 2 and 4, which is why this channel is scoped to Reporting only
+#   — widening it would recount those); a formatter that reads `$ruleName`
+#   under a different local variable name without the literal `->ruleName`
+#   token (grep is syntactic).
+#   CROSS-CHECK, same channel: `GitLabCodeQualityFormatter`, `CheckstyleFormatter`,
+#   `TextFormatter`, and SARIF's own per-result payload (as opposed to its
+#   separate rule-descriptor collection, which IS in this channel) were checked
+#   by hand and found to read `Finding::$code` only, never `$ruleName` — filed
+#   below as `checked-no-dependency` (CHANNEL 7) so the absence is a recorded
+#   fact, not a silent gap.
+#
+# CHANNEL 6 — generic-key-by-rule-class (11 rows). `RuleNameReader::read($ruleClass)`
+# call sites: a generic mechanism that keys a map by whatever rule class it is
+# given, with `ComputedMetricRule` one un-named member of that set — no literal
+# string, no named constant, no method name mentioning "producer" at the site.
+#   git grep -n "RuleNameReader::read" -- 'src/**' ':!scripts/finding-gate-controls/**'
+#   (Two `::getClasses()` hits from the same broader grep were manually
+#   excluded: `Cycle::getClasses()` in CircularDependency is an unrelated
+#   method on an unrelated type that happens to share a name.)
+#   Does NOT see: a map built by iterating tagged services directly by
+#   container tag rather than by calling this one reader function (none found,
+#   but compiler passes that assemble maps without going through
+#   `RuleNameReader` at all would be invisible to this grep — CHANNEL 1's
+#   ChannelDeclarationCompilerPass:171 DI-argument injection is the boundary
+#   case already caught there instead).
+#
+# CHANNEL 7 — checked-no-dependency (5 rows). Places the task's own checklist
+# names (SARIF/GitLab fingerprints, the baseline) that were checked by hand
+# and found to carry NO dependency on the producer name at all, recorded so
+# the absence reads as evidence, not omission:
+#   - GitLabCodeQualityFormatter, CheckstyleFormatter, TextFormatter: all key
+#     off `Finding::$code`, never `$ruleName` (see CHANNEL 5's cross-check);
+#   - SarifFormatter's per-result `ruleId`/`ruleIndex`/`partialFingerprints`:
+#     off `$code` too; only the separate SarifRuleCollector rule-DESCRIPTOR
+#     phase (in CHANNEL 5) touches `$ruleName`;
+#   - qmx-baseline.json (all 178 subject keys, read directly with
+#     `python3 -c "import json; ..."` and grepped for the literal): every entry
+#     is `{channel, occurrence, count}` where `channel` is the bare code
+#     (e.g. `health.cohesion`) — post-Ш5b's collapse of channel identity to
+#     "code only" already removed the producer name from this artifact's data;
+#     the DEPENDENCY that remains is CHANNEL 4's `producerOf()` calls in
+#     `BaselineMigrator.php:131` and `BoundaryExplanationService.php:353`,
+#     which resolve the producer at explain/migrate time rather than storing it.
+#   Not obtained by a single command — each is a targeted read, listed as its
+#   own row with the command/method in its `snippet` field.
+#
+# DISAGREEMENT WITH THE PRIOR SNAPSHOT
+# The prior enumeration-producer-name-consumers.tsv counted 66 rows across
+# four "assumption kind" views (33 named-method, 12 config/CLI/directive, 9
+# precondition, 12 report/artifact). This file's CHANNELS 1+3+4+5+6
+# (code/declaration sites only, excluding pure prose) sum to 31+3+23+9+11 = 77
+# rows — MORE, not because the prior count was wrong (it counted distinct
+# ASSUMPTIONS a call site makes, sometimes several per line, and deliberately
+# excluded test files and doc prose), but because this re-derivation walks by
+# SYMBOL and by LITERAL rather than by assumption, and lands on a different
+# — overlapping, not identical — set of lines. The two are not directly
+# diffable row-for-row; the fact that neither is a subset of the other is
+# itself the finding the task asked this method to surface.
+#
+# GRAND TOTAL: 387 rows (305 literal-string + 31 constant-symbol +
+# 3 self-reference-undetected + 23 producer-resolution-call +
+# 9 rulename-field-read + 11 generic-key-by-rule-class +
+# 5 checked-no-dependency).
+channel	file	line	role	snippet
+literal-string	CHANGELOG.md	33	doc-changelog	- A computed metric may no longer take a name that a registered rule or a declared channel already has. `computed_metrics: { computed.health: ... }` was accepte
+literal-string	CHANGELOG.md	244	doc-changelog	- `--only-rule` now selects the full finding channel instead of assuming a rule name prefixes its `violationCode`. `--only-rule=computed.health`, `--only-rule=h
+literal-string	docs/adr/0024-channel-identity-and-selector-semantics.md	134	doc-adr	of a rule name becomes harmless, so `computed.health → Maintainability` stops
+literal-string	docs/adr/0025-channel-selectors-in-configuration-keys.md	115	doc-adr	sits under a rule name, so `computed.health#health.cohesion` says under
+literal-string	docs/adr/0025-channel-selectors-in-configuration-keys.md	116	doc-adr	`computed.health` exactly what `health.cohesion` says.
+literal-string	docs/adr/0029-channel-presentation-join.md	118	doc-adr	`rules/cohesion.md`) and `computed.health` (documented at
+literal-string	docs/adr/0031-channel-shape-is-a-producer-property.md	20	doc-adr	direction either. That argument does not survive `computed.health`:
+literal-string	docs/adr/0031-channel-shape-is-a-producer-property.md	27	doc-adr	`computed.health` — every dimension it emits is a real measured value — so only
+literal-string	docs/adr/README.md	74	doc-adr	- [0031 — Channel Shape Is a Producer Property](0031-channel-shape-is-a-producer-property.md) — `ChannelShape` moves off `ChannelDeclaration` onto the producer 
+literal-string	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	1604	doc-internal-other	channel computed.health#health.cohesion,
+literal-string	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	1615	doc-internal-other	channel computed.health#health.cohesion,
+literal-string	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	3373	doc-internal-other	| class `LongParameterListRule`, `computed.health#health.cohesion`                                                 | 30, LCOM4 3 | revert the real enabled guard
+literal-string	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	3434	doc-internal-other	`computed.health#health.cohesion` finding for the class and no fresh CCN,
+literal-string	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	3516	doc-internal-other	assert project computed.health#health.coupling >= frozen floor 48.0
+literal-string	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	3562	doc-internal-other	| `declaration:class:Qualimetrix\\Analysis\\Collection\\CollectionOrchestrator@src/Analysis/Collection/CollectionOrchestrator.php:1050` / `computed.health#healt
+literal-string	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	3910	doc-internal-other	channel computed.health#health.cohesion,
+literal-string	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	3916	doc-internal-other	channel computed.health#health.cohesion,
+literal-string	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	2888	generated-inventory	- Qualimetrix\Tests\Analysis\Evidence\Prioritization\Unit\Debt\RemediationTimeRegistryTest::itReturnsTheInjectedBaseMinutesForKnownRule"computed.health"
+literal-string	docs/internal/plans/baseline-compaction/enumeration-identity.md	117	doc-plan-other	представлено `computed.health#health.cohesion` и `#health.typing`.
+literal-string	docs/internal/plans/channel-identity-substrate.md	249	doc-plan-other	безобидной корреляцией: на ней никто не матчится, поэтому расхождение у `computed.health → Maintainability`
+literal-string	docs/internal/plans/diff-mode-new-only.md	56	doc-plan-other	| 4   | Health-показатель — `computed.health` с `violationCode` из шести встроенных `Core\ComputedMetric\HealthDimension` (шкала 0–100)                         
+literal-string	docs/internal/plans/diff-mode-new-only.md	1180	doc-plan-other	| 26  | Новое `computed.health` на namespace                                   | Новое (агрегатный ключ, файла нет)                                             
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	252	doc-plan-other	| PHPUnit/qmx/baseline             | `phpunit.xml.dist`, `qmx.yaml`, `qmx-baseline.json`. In qmx, rewrite the long-parameter exclusion from the old concrete gra
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	275	doc-plan-other	| `Baseline\BaselineEntryParser`                                             | `BaselineEntryParser.php:1122 -> :1149`        | `computed.health#health.cohesion
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	276	doc-plan-other	| `Core\Rule\AnalysisContext`                                                | `AnalysisContext.php:371 -> :398`              | `computed.health#health.cohesion
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	277	doc-plan-other	| `Infrastructure\Console\Command\Debug\LayerAssignmentCommand`              | `LayerAssignmentCommand.php:2368 -> :2389`     | `computed.health#health.cohesion
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	278	doc-plan-other	| `Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator` | `ArchitectureConfigurator.php:2972 -> :2993`   | `computed.health#health.cohesion
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	279	doc-plan-other	| `Infrastructure\DependencyInjection\Configurator\OutputConfigurator`       | `OutputConfigurator.php:4432 -> :4453`         | `computed.health#health.cohesion
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	280	doc-plan-other	| `Metrics\Coupling\AbstractnessCollector`                                   | `AbstractnessCollector.php:849 -> :876`        | `computed.health#health.cohesion
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	281	doc-plan-other	| `Metrics\Coupling\ClassRankCollector`                                      | `ClassRankCollector.php:883 -> :910`           | `computed.health#health.cohesion
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	283	doc-plan-other	| `Metrics\Coupling\DistanceCollector`                                       | `DistanceCollector.php:856 -> :883`            | `computed.health#health.cohesion
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	284	doc-plan-other	| `Metrics\Structure\DitGlobalCollector`                                     | `DitGlobalCollector.php:1064 -> :1118`         | `computed.health#health.cohesion
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	299	doc-plan-other	| `Analysis\Pipeline\MetricEnricher` / `computed.health#health.maintainability`                                     | `MetricEnricher.php:1544 -> :1571`       |
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	300	doc-plan-other	| `Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator` / `computed.health#health.maintainability` | `AnalysisConfigurator.php:2363 -> :2384` |
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	307	doc-plan-other	| old `Analysis\Collection\Dependency\Export` namespace / `computed.health#health.cohesion` | 46.7 resolves after P2-C dead-surface cleanup; no GraphProjection 
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	322	doc-plan-other	Existing `NamespaceMatcher` syntax already gives an exact root-only glob: `[Q]ualimetrix\Analysis\Evidence\DependencyModel` matches the root (`YES`) and does no
+literal-string	docs/internal/plans/modular-architecture/p2-dependency-model.md	383	doc-plan-other	- The DependencyModel root-only qmx exclusions use exactly `[Q]ualimetrix\Analysis\Evidence\DependencyModel` for `coupling.distance.exclude_namespaces` and `com
+literal-string	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md	1012	doc-plan-other	| 22  | `declaration:class:Qualimetrix\Analysis\Aggregator\ClassToNamespaceAggregator@src/Analysis/Aggregator/ClassToNamespaceAggregator.php:306`               
+literal-string	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md	1014	doc-plan-other	| 24  | `declaration:class:Qualimetrix\Analysis\Collection\Dependency\CycleMemberLabels@src/Analysis/Collection/Dependency/CycleMemberLabels.php:1620`          
+literal-string	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md	1017	doc-plan-other	| 27  | `declaration:class:Qualimetrix\Analysis\Pipeline\MetricEnricher@src/Analysis/Pipeline/MetricEnricher.php:1571`                                          
+literal-string	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md	1019	doc-plan-other	| 29  | `declaration:class:Qualimetrix\Configuration\Loader\YamlConfigLoader@src/Configuration/Loader/YamlConfigLoader.php:270`                                 
+literal-string	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md	1020	doc-plan-other	| 30  | `declaration:class:Qualimetrix\Configuration\Pipeline\Stage\CliStage@src/Configuration/Pipeline/Stage/CliStage.php:413`                                 
+literal-string	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md	1021	doc-plan-other	| 31  | `declaration:class:Qualimetrix\Configuration\RuleOptionsFactory@src/Configuration/RuleOptionsFactory.php:732`                                           
+literal-string	docs/internal/plans/modular-architecture/p5-computed-metrics.md	117	doc-plan-other	the single `computed.health` producer name. Exact consumer
+literal-string	docs/internal/plans/modular-architecture/p5-computed-metrics.md	748	doc-plan-other	| `Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract`                  | `computed.health#health.cohesion`     | navigation-only union of independently own
+literal-string	docs/internal/plans/modular-architecture/p5-computed-metrics.md	749	doc-plan-other	| `Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition`       | `computed.health#health.cohesion`     | immutable definition values plus their nar
+literal-string	docs/internal/plans/modular-architecture/p5-computed-metrics.md	750	doc-plan-other	| `Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract`           | `computed.health#health.cohesion`     | navigation-only union of Health contract s
+literal-string	docs/internal/plans/modular-architecture/p5-computed-metrics.md	751	doc-plan-other	| `Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown` | `computed.health#health.cohesion`     | two independently consumed concrete query 
+literal-string	docs/internal/plans/modular-architecture/p5-computed-metrics.md	752	doc-plan-other	| `Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender`           | `computed.health#health.cohesion`     | evidence value, reason projection and offe
+literal-string	docs/internal/plans/modular-architecture/p5-computed-metrics.md	1130	doc-plan-other	`computed.health#health.cohesion`; and boolean argument =
+literal-string	docs/internal/plans/modular-architecture/p5-computed-metrics.md	1165	doc-plan-other	`computed.health#health.maintainability` at immutable offset 2002 / raw value
+literal-string	docs/internal/plans/modular-architecture/p6-finding-policy.md	1087	doc-plan-other	| `ns:Qualimetrix\Core\Rule`; `computed.health#health.cohesion`                                                                                                 
+literal-string	docs/internal/plans/modular-architecture/p6-finding-policy.md	1091	doc-plan-other	| same accepted class identity; `computed.health#health.cohesion`                                                                                               
+literal-string	docs/internal/plans/modular-architecture/p6-finding-policy.md	1093	doc-plan-other	| `ns:Qualimetrix\Infrastructure\Git`; `computed.health#health.cohesion`                                                                                        
+literal-string	docs/internal/plans/modular-architecture/p6-finding-policy.md	1119	doc-plan-other	| `computed.health.exclude_namespace_channels.health.cohesion`     | add exact `[Q]ualimetrix\Analysis\Evidence\Prioritization`                                 
+literal-string	docs/internal/plans/modular-architecture/p6-finding-policy.md	1225	doc-plan-other	| `qmx.yaml`, `computed.health.exclude_namespace_channels.health.cohesion`                     | add exact `[Q]ualimetrix\Infrastructure\Git`                   
+literal-string	docs/internal/plans/modular-architecture/p6/p6-production-ledger.md	416	doc-plan-other	| `qmx.yaml`                                                                     | exact `[Q]ualimetrix\Infrastructure\Git` under `computed.health.exclude_names
+literal-string	docs/internal/plans/rule-vocabulary/FACTS.md	18	doc-plan-self	| `computed.health#health.*`                 | 6+N   | the producing rule class, unrelated to the code             |
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	52	doc-plan-self	- **Все шесть каналов `computed.health#health.*` мультиуровневые, и каждый — на
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	722	doc-plan-self	доказывается шаг**: у производителя `computed.health` направление вычисляется на
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	729	doc-plan-self	Поэтому переезжает **только форма**: у `computed.health` она однородна (всегда
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	850	doc-plan-self	- `computed.health` как имя производителя исчезает. Встроенные метрики здоровья
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	856	doc-plan-self	`computed.health#health.X` становится `health.X#health.X`. Решение владельца,
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	906	doc-plan-self	// направление НЕ переезжает на производителя: у computed.health оно поканальное
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	1566	doc-plan-self	`computed.health` разобран в Р3.
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	1758	doc-plan-self	`computed.health#health.*` и пользовательского `computed.health#computed.branch_load`
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	1761	doc-plan-self	`computed.health` — это **запись решения о расщеплении**, а не строка карты:
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	1794	doc-plan-self	не предсказание.** `computed_metrics: { computed.health: … }` принимается и даёт
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	1795	doc-plan-self	канал `computed.health#computed.health` — пять находок в прогоне. Требование Р5
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	1815	doc-plan-self	забором, потому что `computed.health` им уже принимается.
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	1847	doc-plan-self	| Ш5d   | Ш5  | предмет D: `computed.health` расщепляется на `health.*` и `computed.*`, три стража переформулированы на две половины, runtime-производитель полу
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	2031	doc-plan-self	переезжает — контрпример `computed.health` в Р3.
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	2102	doc-plan-self	| Перечисление Р1 не содержало своего свидетеля        | claude-r2-16                                                                                           
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	2266	doc-plan-self	`computed.health` с направлением по метрике — его опровергает.
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	2271	doc-plan-self	| Утверждение о множестве собрано по одному виду мест            | r7-claude-01                                   | Р3 переписана: переезжает форма, направление
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	2469	doc-plan-self	`computed_metrics: { computed.health: … }` принимается и даёт канал
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	2470	doc-plan-self	`computed.health#computed.health`. Тест пишется против этого входа, а не против
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	2555	doc-plan-self	`computed.health`, и сами `health.*`. Вывод для него — не «объявить дельту», а
+literal-string	docs/internal/plans/rule-vocabulary/PLAN.md	3066	doc-plan-self	Единственное расхождение — `computed.health` (категория `maintainability`,
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	36	doc-plan-self	computed.health#health.cohesion	class namespace project	YES	no	C1 C2 C6	both
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	37	doc-plan-self	computed.health#health.complexity	class namespace project	YES	no	C6	both
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	38	doc-plan-self	computed.health#health.coupling	class namespace project	YES	no	C6	both
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	39	doc-plan-self	computed.health#health.maintainability	class namespace project	YES	no	C6	both
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	40	doc-plan-self	computed.health#health.overall	class namespace project	YES	no	C6	both
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	41	doc-plan-self	computed.health#health.typing	class namespace project	YES	no	C2 C6	both
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-channel-shapes.tsv	59	doc-plan-self	computed.health	(run-time, one per user-defined computed-metric name; none in this project's own qmx.yaml)	magnitude	varies-per-metric(inverted flag)	varies-per
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-channel-shapes.tsv	80	doc-plan-self	#    (42 producers, including computed.health with zero static rows) as the
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-channel-shapes.tsv	98	doc-plan-self	#   a computed metric: computed.health's real channel set is resolved from
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	2	doc-plan-self	1	src/Analysis/Finding/ChannelPresentationView.php	78	ChannelPresentationView::presentationFor	throws-on-unknown	$docsPageByRule built by ChannelDeclarationComp
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	8	doc-plan-self	1	src/Reporting/Formatter/Sarif/SarifRuleCollector.php	58	SarifRuleCollector::collectRules	emits-producer-name	the finding's own ruleName is copied into the des
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	10	doc-plan-self	1	src/Infrastructure/Rule/ChannelUniverse.php	129	ChannelUniverse::ruleNames	assumes-closed-set	array_keys($thresholdOverrideSupportByRule) - one key per tagged
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	11	doc-plan-self	1	src/Infrastructure/Rule/ChannelUniverse.php	134	ChannelUniverse::hasRule	keyed-by-rule-class-constant	isset() on the same compile-time map	false for a user pr
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	13	doc-plan-self	1	src/Infrastructure/Rule/ChannelUniverse.php	167	ChannelUniverse::producerOf	assumes-closed-set	static map is consulted FIRST; the catalog answers only on a mi
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	15	doc-plan-self	1	src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php	76	RemediationTimeRegistry::getBaseMinutes	throws-on-unknown	$minutesByRule built by Cha
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	25	doc-plan-self	1	src/Analysis/Finding/Contract/Rule/RuleSelector.php	171	RuleSelector::selectorMatchesProducer	keyed-by-rule-class-constant	channelsProducedBy($producerRuleNam
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	30	doc-plan-self	1	src/Infrastructure/Console/Command/RulesCommand.php	50	RulesCommand::execute	assumes-closed-set	RuleExecutionInterface::allRules()	wrong output: qmx rules und
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	43	doc-plan-self	3	src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetricChannelFamily.php	9	ComputedMetricChannelFamily::PRODUCER_RULE_NAME	single-constant-famil
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	53	doc-plan-self	4	src/Infrastructure/DependencyInjection/CompilerPass/RuleRegistryCompilerPass.php	69	RuleRegistryCompilerPass::validateNoDuplicateNames	assumes-closed-set	uniq
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	54	doc-plan-self	4	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php	100	BaselineConfiguredThresholds::resolve	assumes-closed-set	iterates ruleRegistry->getCla
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	57	doc-plan-self	4	src/Analysis/Policy/Baseline/BaselineMigrator.php	124	BaselineMigrator::(v5 pair carry-over)	keyed-by-producer-half-of-the-channel	pairKey(subjectKey, channel
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	58	doc-plan-self	4	src/Reporting/Formatter/Json/JsonViolationSection.php	87	JsonViolationSection::(finding row)	emits-producer-name	'rule' => $violation->ruleName	the published 
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-renames.tsv	148	doc-plan-self	computed.health	producer	health.cohesion|health.complexity|health.coupling|health.maintainability|health.overall|health.typing|computed.*	Ш5d	15	144	0	1	0	14	0	
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-renames.tsv	220	doc-plan-self	#    boundary `enumeration-rules.tsv` names for `computed.health`);
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv	24	doc-plan-self	computed.health	computed/health	Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	health.complexity health.cohesion health.coupling health.typing health.
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv	50	doc-plan-self	# held 41: the missing producer was `computed.health` / ComputedMetricRule,
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv	54	doc-plan-self	# omission mattered: `computed.health` is the single producer the whole level
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv	58	doc-plan-self	#  - `channels` for computed.health is open-ended by construction: six built-in
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	1	doc-plan-self	# RUNTIME channels: the `computed.health#*` half of the channel universe, which
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	3	doc-plan-self	# and enumeration-renames.tsv therefore does not list. Its `computed.health`
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	26	doc-plan-self	# channel, so `computed.health#health.X` becomes `health.X#health.X` and
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	27	doc-plan-self	# `computed.health#computed.<name>` becomes `computed.<name>#computed.<name>`.
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	39	doc-plan-self	computed.health#health.cohesion	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.cohesion#health.cohesion	Ш5
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	40	doc-plan-self	computed.health#health.complexity	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.complexity#health.complexity	Ш5
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	41	doc-plan-self	computed.health#health.coupling	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.coupling#health.coupling	Ш5
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	42	doc-plan-self	computed.health#health.maintainability	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.maintainability#health.maintainability	Ш5
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	43	doc-plan-self	computed.health#health.overall	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.overall#health.overall	Ш5
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	44	doc-plan-self	computed.health#health.typing	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.typing#health.typing	Ш5
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	45	doc-plan-self	computed.health#computed.branch_load	corpus-observed	finding-gate/cases/health/qmx.yaml	computed.branch_load#computed.branch_load	Ш5
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-step5-file-sets.tsv	34	doc-plan-self	subject	D	computed.health splits into health.* and computed.*	169	55	47	13	33	0	16	5	column 2 of docs/internal/plans/rule-vocabulary/enumeration-producer-name-c
+literal-string	docs/internal/plans/rule-vocabulary/enumeration-step5-file-sets.tsv	2336	doc-plan-self	#    producer-name enumeration plus the literal 'computed.health'; neither reaches
+literal-string	docs/internal/plans/sarif-channel-descriptions.md	75	doc-plan-other	- The `computed.health` branch infers inversion from `metricValue < threshold`
+literal-string	docs/internal/plans/sarif-channel-descriptions.md	207	doc-plan-other	- `computed.health` is documented at `website/docs/reference/health-scores.md`,
+literal-string	docs/internal/plans/sarif-channel-descriptions.md	220	doc-plan-other	- `DOCS_BASE_URI` currently ends in `/rules/`. It cannot: `computed.health`'s
+literal-string	docs/internal/plans/sarif-channel-descriptions.md	290	doc-plan-other	`rules/{prefix}` — `cohesion.lcom` after P0, and `computed.health` at
+literal-string	docs/internal/plans/sarif-channel-descriptions.md	327	doc-plan-other	judgement: the ratchet holds a live `computed.health#health.cohesion` entry at
+literal-string	docs/internal/plans/sarif-channel-descriptions.md	407	doc-plan-other	`computed.health` heuristic is replaced by `ComputedMetricDefinition::$inverted`,
+literal-string	docs/internal/plans/sarif-channel-descriptions.md	408	doc-plan-other	reached through the declaration registry, and the literal `'computed.health'` by
+literal-string	docs/internal/plans/sarif-channel-descriptions.md	431	doc-plan-other	`'computed.health'` literal are gone. Every registered rule declares its
+literal-string	docs/internal/plans/sarif-channel-descriptions.md	465	doc-plan-other	`computed.health`) are named assertions rather than incidental passes.
+literal-string	docs/internal/plans/sarif-channel-descriptions.md	497	doc-plan-other	`computed.health` is documented outside `/rules/` entirely, so no category
+literal-string	finding-gate/README.md	554	doc-tool	measured, the seven `computed.health` channels are the only ones firing at more
+literal-string	qmx.yaml	1606	config-real	computed.health:
+literal-string	scripts/generate-rename-enumeration.php	876	tooling-doc-comment	#    boundary `enumeration-rules.tsv` names for `computed.health`);
+literal-string	scripts/generate-rename-enumeration.php	994	tooling-doc-comment	* `ChannelUniverse` resolves every `computed.health#<name>` channel from the
+literal-string	scripts/generate-rename-enumeration.php	1152	tooling-doc-comment	# RUNTIME channels: the `computed.health#*` half of the channel universe, which
+literal-string	scripts/generate-rename-enumeration.php	1154	tooling-doc-comment	# and enumeration-renames.tsv therefore does not list. Its `computed.health`
+literal-string	scripts/generate-rename-enumeration.php	1177	tooling-doc-comment	# channel, so `computed.health#health.X` becomes `health.X#health.X` and
+literal-string	scripts/generate-rename-enumeration.php	1178	tooling-doc-comment	# `computed.health#computed.<name>` becomes `computed.<name>#computed.<name>`.
+literal-string	src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetricChannelFamily.php	9	constant-declaration	public const string PRODUCER_RULE_NAME = 'computed.health';
+literal-string	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	28	src-comment	* @qmx-ignore health.cohesion -- Composition root: `subjects`, `numbering`, `lexicalScope`, and `callableMetadata` are four independent collaborators bundled he
+literal-string	src/Analysis/Finding/Contract/ChannelDeclaration.php	20	src-comment	* see {@see ChannelShape}'s own docblock for why (`computed.health`: one
+literal-string	src/Analysis/Finding/Contract/ChannelShape.php	16	src-comment	* `computed.health` is why the two are not one type — its direction is
+literal-string	src/Analysis/Finding/Contract/Rule/RuleCategory.php	20	src-comment	* the first segment of a rule name (and `computed.health` disagreeing with
+literal-string	src/Analysis/Finding/Contract/Rule/RuleDocsPageReader.php	31	src-comment	* - `computed.health` documents at `reference/health-scores.md`, entirely
+literal-string	src/Analysis/Finding/README.md	44	component-readme	`getOptionsClass()` already is. `computed.health` is why direction stayed on
+literal-string	src/Analysis/Finding/RuleExecution.php	99	src-comment	// producer-level selectors such as `computed.health`.
+literal-string	src/Core/README.md	434	component-readme	`--only-rule=computed.health` therefore selects every channel produced by that
+literal-string	src/Core/README.md	436	component-readme	still starts its `computed.health` producer.
+literal-string	src/Core/README.md	465	component-readme	`computed.health` disagreeing with `Maintainability`) is a harmless
+literal-string	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php	52	src-comment	* `computed.health` — whose channels are entirely run-time — would otherwise
+literal-string	src/Infrastructure/Rule/ChannelUniverse.php	243	src-comment	* Reachable today, not hypothetically: `computed_metrics: { computed.health:
+literal-string	src/Reporting/Formatter/Sarif/SarifRuleCollector.php	29	src-comment	* Site root, not `/rules/`: `computed.health` documents outside `rules/`
+literal-string	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricFindingBuilderTest.php	229	test-literal	self::assertSame('computed.health', $findings[0]->ruleName);
+literal-string	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleTest.php	41	test-literal	self::assertSame('computed.health', $rule->getName());
+literal-string	tests/Analysis/Evidence/Prioritization/Support/StubRemediationMinutes.php	90	test-literal	'computed.health' => 15,
+literal-string	tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php	270	test-literal	'A rule name exists whether or not the rule declares channels — computed.health declares none at all.',
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	429	test-literal	$finding = $this->createFinding('computed.health', code: 'health.complexity');
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	430	test-literal	$rule = $this->createRule('computed.health', [$finding]);
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	433	test-literal	$this->createConfiguredProvider(new RuleSelection(only: ['computed.health'])),
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	443	test-literal	$complexity = $this->createFinding('computed.health', code: 'health.complexity');
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	444	test-literal	$cohesion = $this->createFinding('computed.health', code: 'health.cohesion');
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	445	test-literal	$rule = $this->createRule('computed.health', [$complexity, $cohesion]);
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	454	test-literal	self::assertSame(['computed.health'], array_map(
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	684	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	689	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	693	test-literal	$rule = $this->createRule('computed.health', [$cohesion, $coupling]);
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	697	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	722	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	730	test-literal	ruleName: 'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	735	test-literal	$rule = $this->createRule('computed.health', [$namespaceCohesion, $classCohesion]);
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	739	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	758	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	766	test-literal	ruleName: 'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	771	test-literal	$rule = $this->createRule('computed.health', [$namespaceCohesion, $projectCohesion]);
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	774	test-literal	$exclusionProvider->setChannelExclusions('computed.health', 'health.*', ['*']);
+literal-string	tests/Analysis/Finding/Unit/RuleExecutorTest.php	1101	test-literal	if ($producerRuleName !== 'computed.health') {
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	38	test-literal	$configuration->configureNamespaceChannelExclusions('computed.health', [
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	43	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	48	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	155	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	161	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	166	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	185	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	186	test-literal	'computed.health#health.cohesion',
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	191	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	233	test-literal	$this->provider->setChannelExclusions('computed.health', 'health.*', ['App\\Metrics']);
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	236	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	241	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	251	test-literal	$this->provider->setChannelExclusions('computed.health', 'health', ['App\\Metrics']);
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	254	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	263	test-literal	$this->provider->setChannelExclusions('computed.health', 'health.cohesion', ['App\\Metrics']);
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	267	test-literal	self::assertSame([], $this->provider->getChannelExclusions('computed.health'));
+literal-string	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	269	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1027	test-literal	'computed.health' => [
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1035	test-literal	$this->factory->create('computed.health', TestRuleOptions::class);
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1038	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1043	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1053	test-literal	'computed.health' => [
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1061	test-literal	$this->factory->create('computed.health', TestRuleOptions::class);
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1068	test-literal	'computed.health' => [
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1076	test-literal	$this->factory->create('computed.health', TestRuleOptions::class);
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1083	test-literal	'computed.health' => [
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1091	test-literal	$this->factory->create('computed.health', TestRuleOptions::class);
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1098	test-literal	'computed.health' => [
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1106	test-literal	$this->factory->create('computed.health', TestRuleOptions::class);
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1113	test-literal	'computed.health' => [
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1121	test-literal	$this->factory->create('computed.health', TestRuleOptions::class);
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1128	test-literal	'computed.health' => [
+literal-string	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	1136	test-literal	$this->factory->create('computed.health', TestRuleOptions::class);
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	28	test-literal	'computed.health' => [
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	47	test-literal	self::assertTrue($this->selector->isProducerEnabled('computed.health', ['computed.health'], []));
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	49	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	52	test-literal	['computed.health'],
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	60	test-literal	self::assertTrue($this->selector->isProducerEnabled('computed.health', ['health.complexity'], []));
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	62	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	69	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	99	test-literal	self::assertTrue($this->selector->isProducerEnabled('computed.health', [$fullSelector], []));
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	101	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	108	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	127	test-literal	self::assertTrue($this->selector->isProducerEnabled('computed.health', [], [$pair]));
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	129	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	136	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	143	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	160	test-literal	self::assertTrue($this->selector->isProducerEnabled('computed.health', [$pair], []));
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	162	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	169	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	225	test-literal	['computed.health' => ['health.complexity', 'health.cohesion']],
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	230	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	245	test-literal	['computed.health' => ['health.complexity']],
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	250	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	260	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	261	test-literal	['computed.health'],
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	262	test-literal	['computed.health'],
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	270	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	275	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	282	test-literal	'computed.health',
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	293	test-literal	$producers = ['computed.health', 'architecture.layer-violation'];
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	308	test-literal	$producers = ['computed.health'];
+literal-string	tests/Analysis/Finding/Unit/RuleSelectorTest.php	310	test-literal	self::assertTrue($selector->matchesKnownIn('computed.health', $producers, $snapshotA));
+literal-string	tests/Analysis/Policy/Baseline/Functional/BaselineCommandFailureReportingTest.php	360	test-literal	$staticChannels = new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+literal-string	tests/Analysis/Policy/Baseline/Functional/BaselineCommandFailureReportingTest.php	390	test-literal	$staticChannels = new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+literal-string	tests/Analysis/Policy/Baseline/Functional/BaselineMeasuredSetSeamTest.php	200	test-literal	$selectors = ['computed.health', self::COMPUTED_CHANNEL, 'health.*'];
+literal-string	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php	133	test-literal	$recorded = self::findingOn('computed.health', 'health.overall', self::someClass(), 55.0);
+literal-string	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php	134	test-literal	$improved = self::findingOn('computed.health', 'health.overall', self::someClass(), 61.0);
+literal-string	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php	135	test-literal	$worsened = self::findingOn('computed.health', 'health.overall', self::someClass(), 54.9);
+literal-string	tests/Analysis/Policy/Inline/Unit/Directive/DirectiveAddressabilityTest.php	138	test-literal	'computed.health',
+literal-string	tests/Analysis/Policy/Inline/Unit/Directive/InlineDirectivePolicyTest.php	305	test-literal	'computed.health',
+literal-string	tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php	205	test-literal	ruleName: 'computed.health',
+literal-string	tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php	214	test-literal	ruleName: 'computed.health',
+literal-string	tests/Analysis/Run/Support/Pipeline/TestPipelineBuilder.php	232	test-literal	new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([])),
+literal-string	tests/Functional/Console/LayerAssignmentCommandTest.php	507	test-literal	foreach (['computed.health', 'health.complexity', 'health.complexity'] as $selector) {
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandConfigErrorExitCodeTest.php	141	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandInputValidationTest.php	37	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandInputValidationTest.php	73	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandInputValidationTest.php	228	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandInputValidationTest.php	250	test-literal	foreach (['computed.health', 'health.complexity', 'health.complexity', 'computed.a'] as $selector) {
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandPathInputTest.php	62	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandPathInputTest.php	79	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandPathInputTest.php	96	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandPathInputTest.php	113	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandPathInputTest.php	131	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	49	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	120	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	176	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	293	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	313	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	336	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	357	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	376	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	397	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	462	test-comment	// Do NOT disable computed.health — test full pipeline
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	503	test-literal	computed.health:
+literal-string	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	515	test-literal	'--only-rule' => ['computed.health'],
+literal-string	tests/Infrastructure/Console/Integration/RuleExclusionStatsWiringTest.php	122	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+literal-string	tests/Infrastructure/Console/Integration/RuleExclusionStatsWiringTest.php	176	test-literal	'--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+literal-string	tests/Infrastructure/Console/Integration/RuntimeConfigurationIsolationTest.php	363	test-literal	$channels->channelsProducedBy('computed.health'),
+literal-string	tests/Infrastructure/Console/Unit/ChannelExclusionKeyValidatorTest.php	132	test-literal	'computed.health',
+literal-string	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	64	test-literal	foreach (['computed.health', 'health.complexity', 'health.complexity'] as $selector) {
+literal-string	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	105	test-literal	'computed.health' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
+literal-string	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	114	test-literal	'computed.health' => ['exclude_namespace_channels' => ['health' => ['App\\Legacy']]],
+literal-string	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	140	test-literal	'computed.health' => [
+literal-string	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	151	test-literal	'computed.health' => ['exclude_namespace_channels' => ['health.complexity:file' => ['App\\Legacy']]],
+literal-string	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	238	test-literal	self::channelExclusion('computed.health#health.complexity'),
+literal-string	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	258	test-literal	'computed.health' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
+literal-string	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	359	test-literal	'computed.health' => ['exclude_namespace_channels' => [$key => ['App\\Legacy']]],
+literal-string	tests/Infrastructure/Console/Unit/RuntimeConfiguratorTest.php	122	test-literal	'computed.health',
+literal-string	tests/Infrastructure/Unit/ChannelUniverseTest.php	340	test-comment	* measured rather than invented — `computed_metrics: { computed.health: … }`
+literal-string	tests/Infrastructure/Unit/ChannelUniverseTest.php	350	test-literal	$this->expectExceptionMessage('Computed metric "computed.health" is named after a registered rule');
+literal-string	tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php	68	test-comment	// computed.health is a synthetic rule — not listed in default-thresholds.md
+literal-string	tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php	72	test-literal	'computed.health',
+literal-string	tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php	234	test-comment	// (tcc/lcc are inputs to other rules; computed.health is synthetic).
+literal-string	tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php	236	test-literal	$sourceOnly = ['computed.health'];
+literal-string	tests/Unit/RuleVocabulary/RenameEnumerationRetirementTest.php	100	test-literal	['computed.health' . "\t" . 'producer' => ['new' => 'health.one|computed.*', 'step' => 'Ш5']],
+literal-string	tests/Unit/RuleVocabulary/RenameEnumerationRetirementTest.php	103	test-literal	['producer' => ['computed.health' => true]],
+literal-string	tests/Unit/RuleVocabulary/RenameEnumerationRetirementTest.php	152	test-literal	$executed = [['old' => 'computed.health', 'kind' => 'producer', 'new' => 'health.one|computed.*', 'step' => 'Ш5']];
+literal-string	website/docs/getting-started/configuration.md	236	doc-website	computed.health:
+literal-string	website/docs/getting-started/configuration.ru.md	230	doc-website	computed.health:
+literal-string	website/docs/reference/health-scores.md	9	doc-website	**Rule ID:** `computed.health`
+literal-string	website/docs/reference/health-scores.ru.md	10	doc-website	**Rule ID:** `computed.health`
+literal-string	website/docs/reference/remediation-time.md	110	doc-website	| Computed Metric | `computed.health` | 15      |
+literal-string	website/docs/reference/remediation-time.ru.md	110	doc-website	| Computed Metric | `computed.health` | 15     |
+literal-string	website/docs/usage/cli-options.md	556	doc-website	# Select one channel emitted by the computed.health producer
+literal-string	website/docs/usage/cli-options.md	558	doc-website	bin/qmx check src/ --only-rule=computed.health#health.complexity
+literal-string	website/docs/usage/cli-options.ru.md	554	doc-website	# Выбрать один канал, который создаёт правило computed.health
+literal-string	website/docs/usage/cli-options.ru.md	556	doc-website	bin/qmx check src/ --only-rule=computed.health#health.complexity
+constant-symbol	docs/internal/plans/channel-identity-substrate.md	279	doc-internal-other	`LayerPolicyPreparationInterface::PRODUCER_RULE_NAME`, `ComputedMetricChannelFamily::PRODUCER_RULE_NAME` (P0
+constant-symbol	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	43	doc-plan-self	3	src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetricChannelFamily.php	9	ComputedMetricChannelFamily::PRODUCER_RULE_NAME	single-constant-famil
+constant-symbol	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	62	doc-plan-self	1	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	210	ChannelUniverseCoverageTest::everyRegisteredRuleIsAddressableIncludingOnesThatDeclareNo
+constant-symbol	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv	53	doc-plan-self	# ComputedMetricChannelFamily::PRODUCER_RULE_NAME rather than a literal. The
+constant-symbol	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	23	doc-plan-self	#   `ComputedMetricChannelFamily::PRODUCER_RULE_NAME`.
+constant-symbol	scripts/generate-rename-enumeration.php	1009	tooling-doc-comment	* {@see ComputedMetricChannelFamily::PRODUCER_RULE_NAME} rather than spelled
+constant-symbol	scripts/generate-rename-enumeration.php	1022	tooling-doc-comment	$producer = ComputedMetricChannelFamily::PRODUCER_RULE_NAME;
+constant-symbol	scripts/generate-rename-enumeration.php	1174	tooling-doc-comment	#   `ComputedMetricChannelFamily::PRODUCER_RULE_NAME`.
+constant-symbol	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	24	src-code-literal	public const string NAME = ComputedMetricChannelFamily::PRODUCER_RULE_NAME;
+constant-symbol	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php	171	src-code-literal	->setArgument('$computedMetricRuleName', ComputedMetricChannelFamily::PRODUCER_RULE_NAME);
+constant-symbol	tests/Analysis/Evidence/Prioritization/Unit/Debt/RemediationTimeRegistryTest.php	194	test-literal	ComputedMetricChannelFamily::PRODUCER_RULE_NAME
+constant-symbol	tests/Analysis/Evidence/Prioritization/Unit/Debt/RemediationTimeRegistryTest.php	201	test-literal	$finding = $this->createFinding(ComputedMetricChannelFamily::PRODUCER_RULE_NAME, metricValue: 30, threshold: 50);
+constant-symbol	tests/Analysis/Evidence/Prioritization/Unit/Debt/RemediationTimeRegistryTest.php	213	test-literal	ComputedMetricChannelFamily::PRODUCER_RULE_NAME
+constant-symbol	tests/Analysis/Evidence/Prioritization/Unit/Debt/RemediationTimeRegistryTest.php	220	test-literal	$finding = $this->createFinding(ComputedMetricChannelFamily::PRODUCER_RULE_NAME, metricValue: 100, threshold: 50);
+constant-symbol	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	224	test-literal	$universe->hasRule(ComputedMetricRule::NAME),
+constant-symbol	tests/Analysis/Policy/Baseline/Functional/BaselineRunBeforeLoadTest.php	284	test-literal	return new ChannelUniverse([], [], [], ComputedMetricRule::NAME, $catalog);
+constant-symbol	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	74	test-literal	array_map(static fn($channel): string => $channel->code, $snapshot->channelsProducedBy(ComputedMetricRule::NAME)),
+constant-symbol	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	313	test-literal	$static = new ChannelUniverse([], [], [], ComputedMetricRule::NAME, new ResolvedComputedMetricDefinitions([]));
+constant-symbol	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	329	test-literal	self::assertFalse($selector->isProducerEnabled(ComputedMetricRule::NAME, [], $disabled));
+constant-symbol	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	368	test-literal	$static = new ChannelUniverse([], [], [], ComputedMetricRule::NAME, new ResolvedComputedMetricDefinitions([]));
+constant-symbol	tests/Infrastructure/Unit/ChannelUniverseTest.php	136	test-literal	$channels = $this->universe()->channelsProducedBy(ComputedMetricRule::NAME);
+constant-symbol	tests/Infrastructure/Unit/ChannelUniverseTest.php	168	test-literal	self::assertSame(ComputedMetricRule::NAME, $universe->producerOf('health.cohesion'));
+constant-symbol	tests/Infrastructure/Unit/ChannelUniverseTest.php	179	test-literal	ComputedMetricRule::NAME => false,
+constant-symbol	tests/Infrastructure/Unit/ChannelUniverseTest.php	182	test-literal	self::assertSame(['coupling.cbo', 'code-smell.eval', ComputedMetricRule::NAME], $universe->ruleNames());
+constant-symbol	tests/Infrastructure/Unit/ChannelUniverseTest.php	270	test-literal	$candidate->channelsProducedBy(ComputedMetricRule::NAME),
+constant-symbol	tests/Infrastructure/Unit/ChannelUniverseTest.php	277	test-literal	ComputedMetricRule::NAME,
+constant-symbol	tests/Infrastructure/Unit/ChannelUniverseTest.php	347	test-literal	$universe = $this->universe(thresholdSupport: [ComputedMetricRule::NAME => false]);
+constant-symbol	tests/Infrastructure/Unit/ChannelUniverseTest.php	353	test-literal	$this->definition(ComputedMetricRule::NAME, false),
+constant-symbol	tests/Infrastructure/Unit/ChannelUniverseTest.php	377	test-literal	$universe = $this->universe(thresholdSupport: [ComputedMetricRule::NAME => false]);
+constant-symbol	tests/Infrastructure/Unit/ChannelUniverseTest.php	383	test-literal	self::assertSame(ComputedMetricRule::NAME, $snapshot->producerOf('computed.branch_load'));
+constant-symbol	tests/Infrastructure/Unit/ChannelUniverseTest.php	400	test-literal	ComputedMetricRule::NAME,
+self-reference-undetected	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	50	src-code-self-name	return self::NAME;
+self-reference-undetected	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	89	src-code-self-name	\$spanName = 'rule.' . self::NAME . '.' . \$definition->name;
+self-reference-undetected	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	90	src-code-self-name	\$profiler->start(\$spanName, 'rule.' . self::NAME);
+producer-resolution-call	src/Analysis/Finding/ChannelPresentationView.php	16	doc	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Finding/ChannelPresentationView.php	62	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Finding/Contract/ChannelIdentityInterface.php	29	doc	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Finding/Contract/ChannelIdentityInterface.php	63	interface-declaration	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Finding/Contract/ChannelPresentationInterface.php	16	doc	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Finding/Contract/FindingChannel.php	28	doc	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Finding/README.md	92	component-readme	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Policy/Baseline/BaselineMigrator.php	131	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Policy/Baseline/BoundaryExplanationService.php	353	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Policy/Inline/Directive/DirectiveNameHints.php	83	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Policy/Inline/Directive/DirectiveNameHints.php	97	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php	318	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Core/README.md	562	component-readme	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Core/README.md	438	component-readme	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php	60	doc	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Infrastructure/Rule/ChannelUniverse.php	161	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Infrastructure/Rule/ChannelUniverse.php	173	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Infrastructure/Rule/ChannelUniverse.php	114	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Finding/Contract/Rule/RuleChannelRegistryInterface.php	21	interface-declaration	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Finding/Contract/Rule/RuleSelector.php	229	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Finding/Contract/Rule/RuleSelector.php	243	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Analysis/Finding/Rule/InMemoryRuleChannelRegistry.php	26	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+producer-resolution-call	src/Infrastructure/Console/ChannelExclusionKeyValidator.php	87	code	producerOf()/channelsProducedBy() consults the producer name generically, computed family included by construction
+rulename-field-read	src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	96	code	Finding::\$ruleName published/consumed as the 'rule' field or a grouping/sort key
+rulename-field-read	src/Reporting/Formatter/Json/JsonFindingSection.php	59	code	Finding::\$ruleName published/consumed as the 'rule' field or a grouping/sort key
+rulename-field-read	src/Reporting/Formatter/Json/JsonFindingSection.php	87	code	Finding::\$ruleName published/consumed as the 'rule' field or a grouping/sort key
+rulename-field-read	src/Reporting/Formatter/Json/JsonFormatter.php	129	code	Finding::\$ruleName published/consumed as the 'rule' field or a grouping/sort key
+rulename-field-read	src/Reporting/Formatter/Sarif/SarifRuleCollector.php	58	code	Finding::\$ruleName published/consumed as the 'rule' field or a grouping/sort key
+rulename-field-read	src/Reporting/Formatter/Support/DebtBreakdownRenderer.php	31	code	Finding::\$ruleName published/consumed as the 'rule' field or a grouping/sort key
+rulename-field-read	src/Reporting/Formatter/Support/FindingSorter.php	53	code	Finding::\$ruleName published/consumed as the 'rule' field or a grouping/sort key
+rulename-field-read	src/Reporting/Formatter/Support/FindingSorter.php	81	code	Finding::\$ruleName published/consumed as the 'rule' field or a grouping/sort key
+rulename-field-read	src/Reporting/README.md	581	component-readme	Finding::\$ruleName published/consumed as the 'rule' field or a grouping/sort key
+generic-key-by-rule-class	src/Analysis/Finding/RuleConfiguration/RuleOptionsParserFactory.php	28	code	RuleNameReader::read($ruleClass) keys a map by the tagged rule class name; ComputedMetricRule is one of the tagged classes, so its NAME (computed.health) is one such key without a literal or constant reference at this site
+generic-key-by-rule-class	src/Analysis/Policy/Inline/Contract/RuleValidatorMapFactory.php	52	code	RuleNameReader::read($ruleClass) keys a map by the tagged rule class name; ComputedMetricRule is one of the tagged classes, so its NAME (computed.health) is one such key without a literal or constant reference at this site
+generic-key-by-rule-class	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php	131	code	RuleNameReader::read($ruleClass) keys a map by the tagged rule class name; ComputedMetricRule is one of the tagged classes, so its NAME (computed.health) is one such key without a literal or constant reference at this site
+generic-key-by-rule-class	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php	152	code	RuleNameReader::read($ruleClass) keys a map by the tagged rule class name; ComputedMetricRule is one of the tagged classes, so its NAME (computed.health) is one such key without a literal or constant reference at this site
+generic-key-by-rule-class	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php	127	code	RuleNameReader::read($ruleClass) keys a map by the tagged rule class name; ComputedMetricRule is one of the tagged classes, so its NAME (computed.health) is one such key without a literal or constant reference at this site
+generic-key-by-rule-class	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php	245	code	RuleNameReader::read($ruleClass) keys a map by the tagged rule class name; ComputedMetricRule is one of the tagged classes, so its NAME (computed.health) is one such key without a literal or constant reference at this site
+generic-key-by-rule-class	src/Infrastructure/DependencyInjection/CompilerPass/RuleOptionsCompilerPass.php	62	code	RuleNameReader::read($ruleClass) keys a map by the tagged rule class name; ComputedMetricRule is one of the tagged classes, so its NAME (computed.health) is one such key without a literal or constant reference at this site
+generic-key-by-rule-class	src/Infrastructure/DependencyInjection/CompilerPass/RuleOptionsCompilerPass.php	138	code	RuleNameReader::read($ruleClass) keys a map by the tagged rule class name; ComputedMetricRule is one of the tagged classes, so its NAME (computed.health) is one such key without a literal or constant reference at this site
+generic-key-by-rule-class	src/Infrastructure/DependencyInjection/CompilerPass/RuleRegistryCompilerPass.php	70	code	RuleNameReader::read($ruleClass) keys a map by the tagged rule class name; ComputedMetricRule is one of the tagged classes, so its NAME (computed.health) is one such key without a literal or constant reference at this site
+generic-key-by-rule-class	src/Infrastructure/Rule/KnownRuleNamesAdapter.php	37	code	RuleNameReader::read($ruleClass) keys a map by the tagged rule class name; ComputedMetricRule is one of the tagged classes, so its NAME (computed.health) is one such key without a literal or constant reference at this site
+generic-key-by-rule-class	src/Infrastructure/Rule/RuleRegistry.php	53	code	RuleNameReader::read($ruleClass) keys a map by the tagged rule class name; ComputedMetricRule is one of the tagged classes, so its NAME (computed.health) is one such key without a literal or constant reference at this site
+checked-no-dependency	src/Reporting/Formatter/GitLabCodeQualityFormatter.php	30-52	negative-finding	GitLab Code Quality fingerprint/check_name key off Finding::$code, never $ruleName - zero producer-name dependency
+checked-no-dependency	src/Reporting/Formatter/CheckstyleFormatter.php	114	negative-finding	Checkstyle source attribute keys off Finding::$code, never $ruleName
+checked-no-dependency	src/Reporting/Formatter/TextFormatter.php	127	negative-finding	Text formatter prints Finding::$code, never $ruleName
+checked-no-dependency	src/Reporting/Formatter/Sarif/SarifFormatter.php	113-119	negative-finding	SARIF per-result ruleId/ruleIndex/partialFingerprints key off Finding::\$code; only the separate rule-DESCRIPTOR phase (SarifRuleCollector, already in rulename-field-read) touches \$ruleName
+checked-no-dependency	qmx-baseline.json	(all 178 subject keys)	negative-finding	post-Ш5b baseline entries store only {channel, occurrence, count} where channel is the bare code (e.g. 'health.cohesion'); no entry contains the producer name as data - confirmed by direct read, zero string hits for 'computed.health'

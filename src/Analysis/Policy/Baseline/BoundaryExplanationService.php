@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use InvalidArgumentException;
-
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 
 /**
  * Builds a {@see BoundaryExplanation} for `bin/qmx baseline:explain`, as
@@ -31,7 +32,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * `Configuration` layer itself.
  *
  * Annotation ownership is resolved by exact typed subject. A current
- * violation is the first source even when its occurrence or dependency edge
+ * finding is the first source even when its occurrence or dependency edge
  * differs from the baseline identity; the repository supplies the same exact
  * subject when no current finding does. Logical projections never invent a
  * declaration subject.
@@ -39,45 +40,55 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final readonly class BoundaryExplanationService
 {
     /**
-     * @param list<Violation> $measuredViolations the measured set (ADR 0017) this run produced —
-     *                                            both the "currently compared" magnitudes of
-     *                                            ADR 0017 and the first exact typed subject for
-     *                                            annotation ownership come from here
+     * @param ChannelIdentityInterface $channels the registry edge from a channel to the rule
+     *                                           that produces it — a channel is one name now,
+     *                                           and `@qmx-threshold` addresses the producing
+     *                                           rule, so the two are joined here rather than
+     *                                           read off two halves of a key
+     */
+    public function __construct(
+        private ChannelIdentityInterface $channels,
+    ) {}
+
+    /**
+     * @param list<Finding> $measuredFindings the measured set (ADR 0017) this run produced —
+     *                                        both the "currently compared" magnitudes of
+     *                                        ADR 0017 and the first exact typed subject for
+     *                                        annotation ownership come from here
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile per-file
      *                                                                         `@qmx-threshold`
      *                                                                         overrides — read
      *                                                                         straight off
      *                                                                         `AnalysisResult::$thresholdOverrides`
-     * @param array<string, int|float> $configuredThresholds the rule's `qmx.yaml`-configured
-     *                                                       boundary, keyed by
-     *                                                       {@see ViolationChannel::toKey()};
-     *                                                       a channel absent from this map
-     *                                                       reports {@see EffectiveBoundary::$configuredThreshold}
-     *                                                       as `null`
+     * @param array<string, array<string, int|float>> $configuredThresholds the rule's `qmx.yaml`-configured
+     *                                                                      boundary, keyed by channel name;
+     *                                                                      a channel absent from this map
+     *                                                                      reports {@see EffectiveBoundary::$configuredThreshold}
+     *                                                                      as `null`
      * @param ?MetricRepositoryInterface $symbolLocations the run's measured exact subjects;
      *                                                    repository evidence is the fallback
-     *                                                    when no current violation has that
+     *                                                    when no current finding has that
      *                                                    canonical subject
      */
     public function explain(
         string $subjectKey,
-        ?ViolationChannel $channelFilter,
+        ?FindingChannel $channelFilter,
         ?Baseline $baseline,
-        array $measuredViolations,
+        array $measuredFindings,
         array $thresholdOverridesByFile,
         array $configuredThresholds,
         ?MetricRepositoryInterface $symbolLocations = null,
     ): BoundaryExplanation {
-        $identities = self::relevantIdentities($subjectKey, $channelFilter, $baseline, $measuredViolations);
+        $identities = self::relevantIdentities($subjectKey, $channelFilter, $baseline, $measuredFindings);
         $repositoryIndex = self::repositoryIndex($symbolLocations);
         $repositoryRecord = self::repositoryRecord($subjectKey, $repositoryIndex);
 
         $boundaries = [];
         foreach ($identities as $identity) {
-            $boundaries[] = self::explainIdentity(
+            $boundaries[] = $this->explainIdentity(
                 $identity,
                 $baseline,
-                $measuredViolations,
+                $measuredFindings,
                 $thresholdOverridesByFile,
                 $configuredThresholds,
                 $repositoryRecord,
@@ -87,23 +98,23 @@ final readonly class BoundaryExplanationService
         return new BoundaryExplanation(
             $subjectKey,
             $boundaries,
-            self::statusFor($subjectKey, $baseline, $measuredViolations, $repositoryRecord),
+            self::statusFor($subjectKey, $baseline, $measuredFindings, $repositoryRecord),
         );
     }
 
     /**
-     * @param list<Violation> $measuredViolations
+     * @param list<Finding> $measuredFindings
      * @param ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} $repositoryRecord
      */
     private static function statusFor(
         string $symbolKey,
         ?Baseline $baseline,
-        array $measuredViolations,
+        array $measuredFindings,
         ?array $repositoryRecord,
     ): BoundaryExplanationStatus {
         if ($repositoryRecord !== null || array_any(
-            $measuredViolations,
-            static fn(Violation $violation): bool => $violation->subject->toCanonical() === $symbolKey,
+            $measuredFindings,
+            static fn(Finding $finding): bool => $finding->subject->toCanonical() === $symbolKey,
         )) {
             return BoundaryExplanationStatus::Current;
         }
@@ -130,15 +141,15 @@ final readonly class BoundaryExplanationService
      * something to say about a channel that simply is not breaching right
      * now.
      *
-     * @param list<Violation> $measuredViolations
+     * @param list<Finding> $measuredFindings
      *
      * @return list<BaselineIdentity>
      */
     private static function relevantIdentities(
         string $symbolKey,
-        ?ViolationChannel $channelFilter,
+        ?FindingChannel $channelFilter,
         ?Baseline $baseline,
-        array $measuredViolations,
+        array $measuredFindings,
     ): array {
         /** @var array<string, BaselineIdentity> $byKey */
         $byKey = [];
@@ -159,12 +170,12 @@ final readonly class BoundaryExplanationService
             }
         }
 
-        foreach ($measuredViolations as $violation) {
-            if ($violation->subject->toCanonical() !== $symbolKey) {
+        foreach ($measuredFindings as $finding) {
+            if ($finding->subject->toCanonical() !== $symbolKey) {
                 continue;
             }
 
-            $identity = BaselineIdentity::forViolation($violation);
+            $identity = BaselineIdentity::forFinding($finding);
 
             if ($channelFilter !== null && !$identity->channel->equals($channelFilter)) {
                 continue;
@@ -182,37 +193,61 @@ final readonly class BoundaryExplanationService
     }
 
     /**
-     * @param list<Violation> $measuredViolations
+     * @param list<Finding> $measuredFindings
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile
-     * @param array<string, int|float> $configuredThresholds
+     * @param array<string, array<string, int|float>> $configuredThresholds
      * @param ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} $repositoryRecord
      */
-    private static function explainIdentity(
+    private function explainIdentity(
         BaselineIdentity $identity,
         ?Baseline $baseline,
-        array $measuredViolations,
+        array $measuredFindings,
         array $thresholdOverridesByFile,
         array $configuredThresholds,
         ?array $repositoryRecord,
     ): EffectiveBoundary {
-        $baselineSource = self::baselineSourceFor($identity, $baseline, $measuredViolations);
-        $configuredThreshold = $configuredThresholds[$identity->channel->toKey()] ?? null;
+        $baselineSource = self::baselineSourceFor($identity, $baseline, $measuredFindings);
 
-        $subject = self::subjectForIdentity($identity, $measuredViolations, $repositoryRecord);
+        $subject = self::subjectForIdentity($identity, $measuredFindings, $repositoryRecord);
+        $configuredThreshold = self::configuredThresholdFor(
+            $configuredThresholds[$identity->channel->code] ?? [],
+            $subject,
+        );
         $annotation = $subject !== null
-            ? self::annotationFor($identity->channel, $thresholdOverridesByFile, $subject)
+            ? $this->annotationFor($identity->channel, $thresholdOverridesByFile, $subject)
             : null;
 
         return new EffectiveBoundary($identity, $baselineSource, $configuredThreshold, $annotation);
     }
 
     /**
-     * @param list<Violation> $measuredViolations
+     * The boundary a channel is judged against **at the level of the subject
+     * being explained**.
+     *
+     * A channel reports at more than one level now, so the level is what
+     * chooses between its boundaries. When the subject could not be resolved
+     * at all there is nothing to choose with, and a channel with one boundary
+     * still has an unambiguous answer; a channel with two does not, and
+     * printing either would be a guess printed as a fact.
+     *
+     * @param array<string, int|float> $byLevel
+     */
+    private static function configuredThresholdFor(array $byLevel, ?MetricSubject $subject): int|float|null
+    {
+        if ($subject !== null) {
+            return $byLevel[SymbolLevelProjection::ofDeclaration($subject->toSymbolPath()->getType())->value] ?? null;
+        }
+
+        return \count($byLevel) === 1 ? reset($byLevel) : null;
+    }
+
+    /**
+     * @param list<Finding> $measuredFindings
      */
     private static function baselineSourceFor(
         BaselineIdentity $identity,
         ?Baseline $baseline,
-        array $measuredViolations,
+        array $measuredFindings,
     ): ?EffectiveBoundaryBaselineSource {
         $entry = $baseline?->findByIdentity($identity);
 
@@ -221,9 +256,9 @@ final readonly class BoundaryExplanationService
         }
 
         $group = [];
-        foreach ($measuredViolations as $violation) {
-            if (BaselineIdentity::forViolation($violation)->key() === $identity->key()) {
-                $group[] = $violation;
+        foreach ($measuredFindings as $finding) {
+            if (BaselineIdentity::forFinding($finding)->key() === $identity->key()) {
+                $group[] = $finding;
             }
         }
 
@@ -232,13 +267,13 @@ final readonly class BoundaryExplanationService
         if ($entry->magnitudes !== null) {
             $currentMagnitudes = [];
 
-            foreach ($group as $violation) {
-                if ($violation->metricValue === null) {
+            foreach ($group as $finding) {
+                if ($finding->metricValue === null) {
                     continue;
                 }
 
                 try {
-                    $currentMagnitudes[] = BaselineEntry::normalizeMagnitude($violation->metricValue);
+                    $currentMagnitudes[] = BaselineEntry::normalizeMagnitude($finding->metricValue);
                 } catch (InvalidArgumentException) {
                     // Not finite: not a boundary, left out of the current reading.
                     continue;
@@ -274,8 +309,8 @@ final readonly class BoundaryExplanationService
         }
 
         $projectedSources = [$repository->allLogicalClasses()];
-        foreach (SymbolType::cases() as $type) {
-            $projectedSources[] = $repository->all($type);
+        foreach (SymbolLevel::cases() as $level) {
+            $projectedSources[] = $repository->all($level);
         }
 
         foreach ($projectedSources as $symbols) {
@@ -310,17 +345,23 @@ final readonly class BoundaryExplanationService
     /**
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile
      */
-    private static function annotationFor(
-        ViolationChannel $channel,
+    private function annotationFor(
+        FindingChannel $channel,
         array $thresholdOverridesByFile,
         MetricSubject $subject,
     ): ?ThresholdOverride {
+        $producer = $this->channels->producerOf($channel->code);
+
+        if ($producer === null) {
+            return null;
+        }
+
         $matches = [];
         foreach ($thresholdOverridesByFile as $overrides) {
             $matches = [...$matches, ...array_values(array_filter(
                 $overrides,
                 static fn(ThresholdOverride $override): bool => $override->subject->toCanonical() === $subject->toCanonical()
-                    && $override->matches($channel->ruleName),
+                    && $override->matches($producer),
             ))];
         }
 
@@ -340,17 +381,17 @@ final readonly class BoundaryExplanationService
     }
 
     /**
-     * @param list<Violation> $measuredViolations
+     * @param list<Finding> $measuredFindings
      * @param ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} $repositoryRecord
      */
     private static function subjectForIdentity(
         BaselineIdentity $identity,
-        array $measuredViolations,
+        array $measuredFindings,
         ?array $repositoryRecord,
     ): ?MetricSubject {
-        foreach ($measuredViolations as $violation) {
-            if ($violation->subject->toCanonical() === $identity->subjectKey) {
-                return $violation->subject;
+        foreach ($measuredFindings as $finding) {
+            if ($finding->subject->toCanonical() === $identity->subjectKey) {
+                return $finding->subject;
             }
         }
 

@@ -49,7 +49,7 @@ export function collectNamespacesWithMetrics(node) {
       instability,
       abstractness,
       distance: child.metrics?.distance ?? Math.abs(abstractness + instability - 1),
-      loc: child.metrics?.['loc.sum'] ?? 0,
+      loc: child.metrics?.['size.loc.sum'] ?? 0,
     });
   }
 

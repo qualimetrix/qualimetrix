@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\Group;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
@@ -28,15 +28,15 @@ use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
  * Verifies that {@code @qmx-ignore architecture.layer-violation} on a source
  * declaration does not drop a finding attributed to an owned target through
  * the same {@see SuppressionFilter} that handles complexity / coupling rules.
- * Architecture violations retain the source use-site location and display,
+ * Architecture findings retain the source use-site location and display,
  * but declaration controls follow their projected target subject.
  *
  * Suppression filtering happens AFTER the analysis pipeline:
- * {@see AnalysisPipelineInterface::analyze()} emits the raw violation
+ * {@see AnalysisPipelineInterface::analyze()} emits the raw finding
  * set together with per-file suppression tags; the filter layer is
  * responsible for applying them. This test runs the analysis pipeline,
  * loads its emitted suppressions into a fresh {@see SuppressionFilter},
- * and verifies the policy works end-to-end on architecture violations
+ * and verifies the policy works end-to-end on architecture findings
  * specifically.
  *
  * The fixture pairs two controllers: one carries the source suppression tag,
@@ -71,12 +71,12 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
         $analysisResult = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         // Sanity: AnalysisPipeline must surface BOTH controllers as raw
-        // violations — suppression is applied downstream, not inside the
+        // findings — suppression is applied downstream, not inside the
         // pipeline. If only one fires here, the fixture is broken, not the
         // suppression filter.
         $rawSources = array_map(
-            static fn(Violation $v): string => $v->symbolPath->toString(),
-            $this->filterByRule($analysisResult->violations, LayerViolationRule::NAME),
+            static fn(Finding $v): string => $v->symbolPath->toString(),
+            $this->filterByRule($analysisResult->findings, LayerViolationRule::NAME),
         );
         self::assertNotEmpty(
             array_filter($rawSources, static fn(string $s): bool => str_contains($s, 'PolicedController')),
@@ -89,10 +89,10 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
         );
 
         $suppressionFilter = new SuppressionFilter();
-        $filtered = $suppressionFilter->apply($analysisResult->violations, $analysisResult->suppressions)->retained;
+        $filtered = $suppressionFilter->apply($analysisResult->findings, $analysisResult->suppressions)->retained;
 
         $filteredSources = array_map(
-            static fn(Violation $v): string => $v->symbolPath->toString(),
+            static fn(Finding $v): string => $v->symbolPath->toString(),
             $this->filterByRule($filtered, LayerViolationRule::NAME),
         );
 
@@ -108,10 +108,10 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
             . implode(', ', $filteredSources),
         );
 
-        foreach ($this->filterByRule($filtered, LayerViolationRule::NAME) as $violation) {
+        foreach ($this->filterByRule($filtered, LayerViolationRule::NAME) as $finding) {
             self::assertStringContainsString(
                 'CustomerRepository',
-                $violation->subject->toSymbolPath()->toString(),
+                $finding->subject->toSymbolPath()->toString(),
                 'The owned target declaration must own the finding identity.',
             );
         }
@@ -132,15 +132,15 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function filterByRule(array $violations, string $ruleName): array
+    private function filterByRule(array $findings, string $ruleName): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $v): bool => $v->ruleName === $ruleName,
+            $findings,
+            static fn(Finding $v): bool => $v->ruleName === $ruleName,
         ));
     }
 }

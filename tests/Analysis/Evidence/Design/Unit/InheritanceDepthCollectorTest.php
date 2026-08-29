@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector;
 use Qualimetrix\Analysis\Evidence\Design\InheritanceDepthVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use RuntimeException;
 use SplFileInfo;
 
@@ -39,7 +39,7 @@ final class InheritanceDepthCollectorTest extends TestCase
     {
         $provides = $this->collector->provides();
 
-        self::assertContains('dit', $provides);
+        self::assertContains('design.dit', $provides);
     }
 
     #[Test]
@@ -57,7 +57,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('dit:App\NoParent'));
+        self::assertSame(0, $metrics->get('design.dit:App\NoParent'));
     }
 
     #[Test]
@@ -76,7 +76,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Extends Exception (standard PHP) = DIT 1
-        self::assertSame(1, $metrics->get('dit:App\MyException'));
+        self::assertSame(1, $metrics->get('design.dit:App\MyException'));
     }
 
     #[Test]
@@ -94,7 +94,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('dit:App\MyClass'));
+        self::assertSame(1, $metrics->get('design.dit:App\MyClass'));
     }
 
     #[Test]
@@ -116,8 +116,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('dit:App\Parent_'));
-        self::assertSame(1, $metrics->get('dit:App\Child'));
+        self::assertSame(0, $metrics->get('design.dit:App\Parent_'));
+        self::assertSame(1, $metrics->get('design.dit:App\Child'));
     }
 
     #[Test]
@@ -143,9 +143,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('dit:App\GrandParent_'));
-        self::assertSame(1, $metrics->get('dit:App\Parent_'));
-        self::assertSame(2, $metrics->get('dit:App\Child'));
+        self::assertSame(0, $metrics->get('design.dit:App\GrandParent_'));
+        self::assertSame(1, $metrics->get('design.dit:App\Parent_'));
+        self::assertSame(2, $metrics->get('design.dit:App\Child'));
     }
 
     #[Test]
@@ -164,10 +164,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('dit:App\A'));
-        self::assertSame(1, $metrics->get('dit:App\B'));
-        self::assertSame(2, $metrics->get('dit:App\C'));
-        self::assertSame(3, $metrics->get('dit:App\D'));
+        self::assertSame(0, $metrics->get('design.dit:App\A'));
+        self::assertSame(1, $metrics->get('design.dit:App\B'));
+        self::assertSame(2, $metrics->get('design.dit:App\C'));
+        self::assertSame(3, $metrics->get('design.dit:App\D'));
     }
 
     #[Test]
@@ -186,7 +186,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // RuntimeException is standard PHP = DIT 1
-        self::assertSame(1, $metrics->get('dit:App\MyRuntimeException'));
+        self::assertSame(1, $metrics->get('design.dit:App\MyRuntimeException'));
     }
 
     #[Test]
@@ -208,11 +208,11 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('dit:App\Base'));
-        self::assertSame(1, $metrics->get('dit:App\BranchA'));
-        self::assertSame(1, $metrics->get('dit:App\BranchB'));
-        self::assertSame(2, $metrics->get('dit:App\LeafA'));
-        self::assertSame(2, $metrics->get('dit:App\LeafB'));
+        self::assertSame(0, $metrics->get('design.dit:App\Base'));
+        self::assertSame(1, $metrics->get('design.dit:App\BranchA'));
+        self::assertSame(1, $metrics->get('design.dit:App\BranchB'));
+        self::assertSame(2, $metrics->get('design.dit:App\LeafA'));
+        self::assertSame(2, $metrics->get('design.dit:App\LeafB'));
     }
 
     #[Test]
@@ -227,8 +227,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('dit:GlobalParent'));
-        self::assertSame(1, $metrics->get('dit:GlobalChild'));
+        self::assertSame(0, $metrics->get('design.dit:GlobalParent'));
+        self::assertSame(1, $metrics->get('design.dit:GlobalChild'));
     }
 
     #[Test]
@@ -251,7 +251,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Only Factory should have metrics
-        self::assertSame(0, $metrics->get('dit:App\Factory'));
+        self::assertSame(0, $metrics->get('design.dit:App\Factory'));
     }
 
     #[Test]
@@ -283,8 +283,8 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         // Should only contain metrics from second file
-        self::assertNull($metrics->get('dit:App\First'));
-        self::assertSame(0, $metrics->get('dit:App\Second'));
+        self::assertNull($metrics->get('design.dit:App\First'));
+        self::assertSame(0, $metrics->get('design.dit:App\Second'));
     }
 
     #[Test]
@@ -295,7 +295,7 @@ PHP;
         self::assertCount(1, $definitions);
 
         $def = $definitions[0];
-        self::assertSame('dit', $def->name);
+        self::assertSame('design.dit', $def->name);
         self::assertSame(SymbolLevel::Class_, $def->collectedAt);
 
         $namespaceStrategies = $def->getStrategiesForLevel(SymbolLevel::Namespace_);
@@ -327,7 +327,7 @@ PHP;
 
         // PHPUnit\Framework\TestCase exists and has some depth
         // We just check it's >= 1 (extends something)
-        $dit = $metrics->get('dit:App\MyTestCase');
+        $dit = $metrics->get('design.dit:App\MyTestCase');
         self::assertIsInt($dit);
         self::assertGreaterThanOrEqual(1, $dit);
     }
@@ -351,8 +351,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('dit:App\MyException'));
-        self::assertSame(1, $metrics->get('dit:App\MyRuntimeException'));
+        self::assertSame(1, $metrics->get('design.dit:App\MyException'));
+        self::assertSame(1, $metrics->get('design.dit:App\MyRuntimeException'));
     }
 
     #[Test]
@@ -370,8 +370,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('dit:App\Base'));
-        self::assertSame(1, $metrics->get('dit:App\Child'));
+        self::assertSame(0, $metrics->get('design.dit:App\Base'));
+        self::assertSame(1, $metrics->get('design.dit:App\Child'));
     }
 
     #[Test]
@@ -388,8 +388,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('dit:App\MyDateTime'));
-        self::assertSame(1, $metrics->get('dit:App\MyDateTimeImmutable'));
+        self::assertSame(1, $metrics->get('design.dit:App\MyDateTime'));
+        self::assertSame(1, $metrics->get('design.dit:App\MyDateTimeImmutable'));
     }
 
     #[Test]
@@ -406,8 +406,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('dit:App\MyFileInfo'));
-        self::assertSame(1, $metrics->get('dit:App\MyIterator'));
+        self::assertSame(1, $metrics->get('design.dit:App\MyFileInfo'));
+        self::assertSame(1, $metrics->get('design.dit:App\MyIterator'));
     }
 
     #[Test]
@@ -426,7 +426,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // SplStack is a standard PHP class = DIT 1
-        self::assertSame(1, $metrics->get('dit:App\MyStack'));
+        self::assertSame(1, $metrics->get('design.dit:App\MyStack'));
     }
 
     #[Test]
@@ -454,7 +454,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        $dit = $metrics->get('dit:App\MyException');
+        $dit = $metrics->get('design.dit:App\MyException');
         self::assertIsInt($dit);
         // DitTestCustomException extends RuntimeException extends Exception
         // So: 1 (for extending DitTestCustomException) + reflectionDit(DitTestCustomException)
@@ -486,9 +486,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // App\Exception is NOT standard — it's a user class with DIT 0
-        self::assertSame(0, $metrics->get('dit:App\Exception'));
+        self::assertSame(0, $metrics->get('design.dit:App\Exception'));
         // MyException extends App\Exception (not standard) — DIT 1
-        self::assertSame(1, $metrics->get('dit:App\MyException'));
+        self::assertSame(1, $metrics->get('design.dit:App\MyException'));
     }
 
     #[Test]
@@ -511,8 +511,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('dit:App\Domain\Error'));
-        self::assertSame(1, $metrics->get('dit:App\Domain\MyError'));
+        self::assertSame(0, $metrics->get('design.dit:App\Domain\Error'));
+        self::assertSame(1, $metrics->get('design.dit:App\Domain\MyError'));
     }
 
     #[Test]
@@ -529,7 +529,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('dit:MyException'));
+        self::assertSame(1, $metrics->get('design.dit:MyException'));
     }
 
     #[Test]

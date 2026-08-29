@@ -21,7 +21,7 @@ final class WorstOffenderEvidenceTest extends TestCase
         $evidence = new WorstOffenderEvidence(
             violationCount: 8,
             classCount: 1,
-            metrics: ['ccn.avg' => 12.5, 'cbo' => 15],
+            metrics: ['complexity.ccn.avg' => 12.5, 'coupling.cbo' => 15],
             healthScores: ['health.complexity' => 35.0, 'health.coupling' => 25.0],
             violationDensity: 2.5,
         );
@@ -35,7 +35,7 @@ final class WorstOffenderEvidenceTest extends TestCase
         );
 
         self::assertSame('src/Service/UserService.php', $offender->file?->value());
-        self::assertSame(['ccn.avg' => 12.5, 'cbo' => 15], $offender->metrics);
+        self::assertSame(['complexity.ccn.avg' => 12.5, 'coupling.cbo' => 15], $offender->metrics);
         self::assertSame(['health.complexity' => 35.0, 'health.coupling' => 25.0], $offender->healthScores);
         self::assertSame(2.5, $offender->violationDensity);
     }

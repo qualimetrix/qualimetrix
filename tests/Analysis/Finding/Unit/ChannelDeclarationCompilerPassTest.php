@@ -13,14 +13,19 @@ use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -56,21 +61,21 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $declarations = $definition->getArgument('$staticDeclarations');
 
         self::assertSame(
-            ['code-smell.goto#code-smell.goto', 'maintainability.index#maintainability.index'],
+            ['code-smell.goto', 'maintainability.index'],
             array_keys($declarations),
         );
         self::assertEquals(
-            ChannelDeclaration::occurrence(),
-            $declarations['code-smell.goto#code-smell.goto'],
+            ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            $declarations['code-smell.goto'],
         );
         self::assertEquals(
-            ChannelDeclaration::magnitude(WorseDirection::Lower),
-            $declarations['maintainability.index#maintainability.index'],
+            ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
+            $declarations['maintainability.index'],
         );
         self::assertSame(
             [
-                'code-smell.goto' => ['code-smell.goto#code-smell.goto'],
-                'maintainability.index' => ['maintainability.index#maintainability.index'],
+                'code-smell.goto' => ['code-smell.goto'],
+                'maintainability.index' => ['maintainability.index'],
             ],
             $container->getDefinition(ChannelUniverse::class)
                 ->getArgument('$staticChannelKeysByProducer'),
@@ -78,7 +83,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function itPairsAViolationCodeWithTheDeclaringRulesOwnName(): void
+    public function itPairsACodeWithTheDeclaringRulesOwnName(): void
     {
         $container = new ContainerBuilder();
         self::registerUniverse($container);
@@ -91,7 +96,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $declarations = $container->getDefinition(ChannelUniverse::class)
             ->getArgument('$staticDeclarations');
 
-        self::assertArrayHasKey('complexity.cyclomatic#complexity.cyclomatic.callable', $declarations);
+        self::assertArrayHasKey('complexity.cyclomatic', $declarations);
     }
 
     #[Test]
@@ -102,6 +107,9 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $container->register(LayerViolationRule::class)
             ->setClass(LayerViolationRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(LayerDeclarationValidator::class)
+            ->setClass(LayerDeclarationValidator::class)
+            ->addTag(ConfigurationValidatorCompilerPass::TAG);
 
         (new ChannelDeclarationCompilerPass())->process($container);
 
@@ -109,17 +117,17 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ->getArgument('$staticChannelKeysByProducer');
 
         self::assertContains(
-            'architecture.coverage#architecture.coverage',
+            'architecture.coverage',
             $channelsByProducer[LayerViolationRule::NAME],
         );
     }
 
     /**
-     * `architecture.coverage` is emitted by {@see LayerViolationRule} under
-     * its own identity, distinct from the rule's own `NAME`
-     * (`architecture.layer-violation`) — it inherits the same rule's
-     * declared `REMEDIATION_MINUTES` rather than needing a constant of its
-     * own on a class that does not exist.
+     * `architecture.coverage` is emitted by {@see LayerDeclarationValidator}
+     * under its own identity, distinct from the producer rule's `NAME`
+     * (`architecture.layer-violation`) — it inherits that rule's declared
+     * `REMEDIATION_MINUTES` rather than needing a constant of its own on a
+     * class that does not exist.
      */
     #[Test]
     public function itAttributesRemediationMinutesToADiagnosticsOwnChannelName(): void
@@ -129,6 +137,9 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $container->register(LayerViolationRule::class)
             ->setClass(LayerViolationRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(LayerDeclarationValidator::class)
+            ->setClass(LayerDeclarationValidator::class)
+            ->addTag(ConfigurationValidatorCompilerPass::TAG);
         $container->register(RemediationTimeRegistry::class)
             ->setClass(RemediationTimeRegistry::class)
             ->setArguments(['$declarations' => null, '$minutesByRule' => []]);
@@ -155,20 +166,23 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         self::assertFalse($container->hasDefinition(ChannelUniverse::class));
     }
 
+    /**
+     * Refused rather than skipped: a producer that contributes nothing to the
+     * universe and says so nowhere is the one integrity failure in this pass
+     * that used to be silent.
+     */
     #[Test]
-    public function itSkipsServicesWithNullClass(): void
+    public function itThrowsOnATaggedServiceWithNoClass(): void
     {
         $container = new ContainerBuilder();
         self::registerUniverse($container);
         $container->register('rule.null_class')
             ->addTag(RuleRegistryCompilerPass::TAG);
 
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('names no class');
+
         (new ChannelDeclarationCompilerPass())->process($container);
-
-        $declarations = $container->getDefinition(ChannelUniverse::class)
-            ->getArgument('$staticDeclarations');
-
-        self::assertSame([], $declarations);
     }
 
     #[Test]
@@ -184,7 +198,73 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ->addTag(RuleRegistryCompilerPass::TAG);
 
         self::expectException(LogicException::class);
-        self::expectExceptionMessage('Duplicate channel declaration for "code-smell.goto#code-smell.goto"');
+        self::expectExceptionMessage('Duplicate channel declaration for "code-smell.goto"');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    /**
+     * ADR 0031 / Р3: shape moved off {@see ChannelDeclaration} onto the
+     * producer. Registry assembly is the one place left that can catch a
+     * producer whose declared {@see ChannelShape} disagrees with the
+     * direction its own channel carries.
+     */
+    #[Test]
+    public function itThrowsWhenAProducersDeclaredShapeDisagreesWithItsChannelDirection(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleWithShapeMismatch::class)
+            ->setClass(FixtureRuleWithShapeMismatch::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('carries no direction, but producer "fixture.shape-mismatch" declares shape "magnitude"');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    /**
+     * The display family is derived from a producer's name rather than
+     * declared beside it, so a name with no first segment would reach
+     * `qmx rules` as an empty group heading. Refused at container build
+     * instead — the listing has no way to ask about a producer it is already
+     * printing.
+     */
+    #[Test]
+    public function itThrowsWhenAProducerNameIsMalformed(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleWithoutAFamily::class)
+            ->setClass(FixtureRuleWithoutAFamily::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Producer ".orphan" is not a well-formed name');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    /**
+     * A validator borrows its producer rule's name (ADR 0030); ADR 0031 adds
+     * that the two must also agree on what their shared producer's findings
+     * mean for baseline purposes.
+     */
+    #[Test]
+    public function itThrowsWhenTwoClassesUnderOneProducerNameDeclareDifferentShapes(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleForShapeAgreement::class)
+            ->setClass(FixtureRuleForShapeAgreement::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(FixtureValidatorWithDisagreeingShape::class)
+            ->setClass(FixtureValidatorWithDisagreeingShape::class)
+            ->addTag(ConfigurationValidatorCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('declares shape "magnitude" for producer "fixture.shape-agreement", but the rule declares "occurrence"');
 
         (new ChannelDeclarationCompilerPass())->process($container);
     }
@@ -279,9 +359,9 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
         return 'Fixture rule with no channelDeclarations() method, for the compiler pass "declares nothing" case.';
     }
 
-    public function getCategory(): RuleCategory
+    public static function shape(): ChannelShape
     {
-        return RuleCategory::CodeSmell;
+        return ChannelShape::Occurrence;
     }
 
     /**
@@ -293,7 +373,7 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
     }
 
     /**
-     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -306,6 +386,169 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
     public static function getOptionsClass(): string
     {
         return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+}
+
+/**
+ * @internal
+ *
+ * Declares one `magnitude` channel while claiming `occurrence` — the
+ * per-channel half of the shape guarantee
+ * {@see ChannelDeclarationCompilerPassTest::itThrowsWhenAProducersDeclaredShapeDisagreesWithItsChannelDirection()}
+ * exercises.
+ */
+final class FixtureRuleWithShapeMismatch implements RuleInterface
+{
+    public const string NAME = 'fixture.shape-mismatch';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 5;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule whose declared shape disagrees with its channel.';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Magnitude;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+
+    /**
+     * Occurrence — no direction — while {@see shape()} above claims
+     * `magnitude`. Registry assembly must refuse this, not silently trust
+     * the constant.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+    }
+}
+
+/**
+ * @internal
+ *
+ * A rule and a validator that share one producer name but disagree on
+ * {@see ConfigurationValidatorInterface::shape()} —
+ * {@see ChannelDeclarationCompilerPassTest::itThrowsWhenTwoClassesUnderOneProducerNameDeclareDifferentShapes()}.
+ */
+final class FixtureRuleForShapeAgreement implements RuleInterface
+{
+    public const string NAME = 'fixture.shape-agreement';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 5;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule half of a mismatched producer pair.';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+
+    /**
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)];
+    }
+}
+
+/** @internal Declares `magnitude`, disagreeing with {@see FixtureRuleForShapeAgreement::shape()}. */
+final class FixtureValidatorWithDisagreeingShape implements ConfigurationValidatorInterface
+{
+    public static function producerRuleName(): string
+    {
+        return FixtureRuleForShapeAgreement::NAME;
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Magnitude;
+    }
+
+    /**
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            'fixture.diagnostic' => ChannelDeclaration::magnitude(
+                WorseDirection::Higher,
+                SymbolLevel::Project,
+            ),
+        ];
+    }
+
+    public function validate(AnalysisContext $context): array
+    {
+        return [];
     }
 }
 
@@ -334,5 +577,61 @@ final class FixtureOptionsWithNoChannelDeclarations implements RuleOptionsInterf
     public function getSeverity(int|float $value): ?Severity
     {
         return null;
+    }
+}
+
+/**
+ * @internal
+ *
+ * A name whose first dot-separated segment is empty — the one shape
+ * {@see RuleFamily} cannot answer for, and therefore the shape
+ * {@see ChannelDeclarationCompilerPassTest::itThrowsWhenAProducerNameIsMalformed()}
+ * requires the container build to refuse.
+ */
+final class FixtureRuleWithoutAFamily implements RuleInterface
+{
+    public const string NAME = '.orphan';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 15;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule whose name has no non-empty first segment.';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
     }
 }

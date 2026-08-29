@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
@@ -14,7 +15,10 @@ use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Git\GitScope;
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\CoverageFailure;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
+use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
+use Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\ReportBuilder;
@@ -24,10 +28,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Handles formatting and output of analysis results.
+ *
+ * @qmx-threshold code-smell.constructor-overinjection warning=9 error=9 -- Raw 8 gets one-edge
+ *                headroom: `RuleConfigurationInterface` is the eighth collaborator, added so this
+ *                class can build {@see \Qualimetrix\Reporting\FindingProjection\SuppressionComposition}
+ *                (Ш6) without a second, separately-wired service reaching the same per-rule
+ *                exclusion predicates {@see \Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder}
+ *                needs.
  */
 final class ResultPresenter
 {
     private readonly DiagnosticOutput $diagnosticOutput;
+    private readonly SuppressionCompositionBuilder $suppressionCompositionBuilder;
 
     public function __construct(
         private readonly FormatterRegistryInterface $formatterRegistry,
@@ -35,19 +47,21 @@ final class ResultPresenter
         private readonly SummaryEnricher $summaryEnricher,
         private readonly ProfilePresenter $profilePresenter,
         private readonly ExitCodeResolver $exitCodeResolver,
-        private readonly ViolationFilter $violationFilter,
+        private readonly FindingFilter $findingFilter,
         private readonly FormatterContextFactory $formatterContextFactory,
+        private readonly RuleConfigurationInterface $ruleConfiguration,
     ) {
         $this->diagnosticOutput = new DiagnosticOutput();
+        $this->suppressionCompositionBuilder = new SuppressionCompositionBuilder();
     }
 
     /**
      * Outputs formatted results and returns exit code.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      */
     public function presentResults(
-        array $violations,
+        array $findings,
         AnalysisResult $analysisResult,
         InputInterface $input,
         OutputInterface $output,
@@ -55,6 +69,8 @@ final class ResultPresenter
         OutputFormat $outputFormat,
         ExitPolicy $exitPolicy,
         ?GitScope $reportScope = null,
+        ?FindingProjectionResult $filterResult = null,
+        ?FindingProjectionOptions $projectionOptions = null,
     ): int {
         $profiler = $this->profiler;
         $profiler->start('reporting', 'pipeline');
@@ -79,20 +95,37 @@ final class ResultPresenter
         );
 
         // Apply --namespace/--class drill-down filter centrally (all formatters benefit)
-        $filteredViolations = $this->violationFilter->filterViolations($violations, $context);
+        $filteredFindings = $this->findingFilter->filterFindings($findings, $context);
 
-        // Build and output report with filtered violations
+        // Build and output report with filtered findings
         $coverage = $this->reportCoverage($analysisResult->coverage, $projectRoot);
 
-        $report = ReportBuilder::create()
-            ->addViolations($filteredViolations)
+        $reportBuilder = ReportBuilder::create()
+            ->addFindings($filteredFindings)
             ->filesAnalyzed($analysisResult->filesAnalyzed)
             ->filesSkipped($analysisResult->filesSkipped)
             ->duration($analysisResult->duration)
             ->metrics($analysisResult->metrics)
             ->namespaceTree($analysisResult->namespaceTree)
-            ->coverage($coverage)
-            ->build();
+            ->coverage($coverage);
+
+        $showSuppressed = $input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true;
+        if (
+            ($format === 'suppressed' || $showSuppressed)
+            && $filterResult !== null
+            && $projectionOptions !== null
+            && $analysisResult->ruleExecution !== null
+        ) {
+            $reportBuilder->suppressionComposition($this->suppressionCompositionBuilder->build(
+                $filterResult,
+                $analysisResult->ruleExecution,
+                $this->ruleConfiguration,
+                $projectionOptions,
+                $analysisResult->suppressions,
+            ));
+        }
+
+        $report = $reportBuilder->build();
         $report = $this->summaryEnricher->enrich($report);
         $formattedOutput = $formatter->format($report, $context);
 
@@ -100,7 +133,7 @@ final class ResultPresenter
 
         $profiler->stop('reporting');
 
-        return $this->exitCodeResolver->resolve($violations, $coverage, $exitPolicy);
+        return $this->exitCodeResolver->resolve($findings, $coverage, $exitPolicy);
     }
 
     private function reportCoverage(AnalysisCoverage $coverage, AbsolutePath $projectRoot): ReportCoverage

@@ -76,7 +76,7 @@ an uncovered project class fail even when it has no dependency edges.
 Every test, support file, and fixture directory is governed by the same
 manifest; `test-topology.tsv` in the generated directory reports how many of
 each. Self-analysis runs against the versioned v13 root baseline, whose
-243 groups across 183 subjects are checked against the file itself by
+230 groups across 174 subjects are checked against the file itself by
 `DocumentationConsistencyTest`, and the current dogfood result is zero findings.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
@@ -99,7 +99,7 @@ mutable state only inside the owner that needs a per-container store.
 ```
 Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
                 |                        |              |               |
-             MetricBag[]          AggregatedMetrics  Violation[]      Output
+             MetricBag[]          AggregatedMetrics  Finding[]        Output
 ```
 
 | Phase         | % of time | Parallel             |
@@ -114,10 +114,10 @@ Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
 
 ### 3. Collector/Rule Separation
 
-| Component     | State             | Task                            |
-| ------------- | ----------------- | ------------------------------- |
-| **Collector** | Stateful per-file | AST traversal -> MetricBag      |
-| **Rule**      | Stateless         | MetricRepository -> Violation[] |
+| Component     | State             | Task                          |
+| ------------- | ----------------- | ----------------------------- |
+| **Collector** | Stateful per-file | AST traversal -> MetricBag    |
+| **Rule**      | Stateless         | MetricRepository -> Finding[] |
 
 **Collectors** gather metrics (one metric = one AST pass).
 **Rules** analyze pre-computed metrics (do NOT perform AST traversal).
@@ -134,7 +134,7 @@ SymbolPath::forFile('src/Service/UserService.php');
 ```
 
 Used for:
-- Identifying violations
+- Identifying findings
 - Baseline (ignoring known issues)
 - Accessing metrics via MetricRepository
 - Dependency graph (class and namespace coupling)

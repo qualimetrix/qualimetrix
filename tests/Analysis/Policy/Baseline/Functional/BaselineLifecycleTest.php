@@ -93,7 +93,7 @@ final class BaselineLifecycleTest extends TestCase
             $generated = $project->generate($paths);
             self::assertSame(Command::SUCCESS, $generated->getStatusCode(), $generated->getDisplay());
 
-            $captured = self::aggregateForChannel($project->baselinePath, 'duplication.code-duplication#duplication.code-duplication');
+            $captured = self::aggregateForChannel($project->baselinePath, 'duplication.code-duplication');
             self::assertSame(2, $captured['count']);
             self::assertSame([11, 15], $captured['magnitudes']);
 
@@ -102,7 +102,7 @@ final class BaselineLifecycleTest extends TestCase
             $currentBaseline = $project->root . '/after-repair.json';
             $measured = $project->generateAt($currentBaseline, $paths);
             self::assertSame(Command::SUCCESS, $measured->getStatusCode(), $measured->getDisplay());
-            $survivor = self::aggregateForChannel($currentBaseline, 'duplication.code-duplication#duplication.code-duplication');
+            $survivor = self::aggregateForChannel($currentBaseline, 'duplication.code-duplication');
             self::assertSame(1, $survivor['count']);
             self::assertSame([15], $survivor['magnitudes']);
 

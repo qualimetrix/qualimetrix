@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/only-rules",
+    "description": "Corpus case: a single rule selected through only_rules",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\OnlyRules\\": "src/"
+        }
+    }
+}

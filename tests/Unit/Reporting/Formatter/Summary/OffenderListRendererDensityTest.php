@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\Worst
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
@@ -27,7 +27,7 @@ final class OffenderListRendererDensityTest extends TestCase
     protected function setUp(): void
     {
         $this->renderer = new OffenderListRenderer(
-            new ViolationFilter(),
+            new FindingFilter(),
             new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
         );
     }
@@ -49,7 +49,7 @@ final class OffenderListRendererDensityTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -86,7 +86,7 @@ final class OffenderListRendererDensityTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -122,7 +122,7 @@ final class OffenderListRendererDensityTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -145,7 +145,7 @@ final class OffenderListRendererDensityTest extends TestCase
     #[Test]
     public function itReordersOffendersWhenRankingByDensity(): void
     {
-        // Class A: 5 violations, 100 LOC => density = 5.0 (highest density)
+        // Class A: 5 findings, 100 LOC => density = 5.0 (highest density)
         $offenderA = new WorstOffender(
             symbolPath: SymbolPath::forClass('App', 'SmallBad'),
             file: RelativePath::fromString('a.php'),
@@ -159,7 +159,7 @@ final class OffenderListRendererDensityTest extends TestCase
             ),
         );
 
-        // Class B: 10 violations, 1000 LOC => density = 1.0 (lower density but more violations)
+        // Class B: 10 findings, 1000 LOC => density = 1.0 (lower density but more findings)
         $offenderB = new WorstOffender(
             symbolPath: SymbolPath::forClass('App', 'BigBad'),
             file: RelativePath::fromString('b.php'),
@@ -174,7 +174,7 @@ final class OffenderListRendererDensityTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -228,7 +228,7 @@ final class OffenderListRendererDensityTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -282,7 +282,7 @@ final class OffenderListRendererDensityTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,

@@ -14,8 +14,8 @@ use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 #[CoversClass(TccLccCollector::class)]
@@ -42,9 +42,9 @@ final class TccLccCollectorTest extends TestCase
         $provides = $this->collector->provides();
 
         self::assertCount(3, $provides);
-        self::assertContains('tcc', $provides);
-        self::assertContains('lcc', $provides);
-        self::assertContains('pureMethodCount_cohesion', $provides);
+        self::assertContains('cohesion.tcc', $provides);
+        self::assertContains('cohesion.lcc', $provides);
+        self::assertContains('cohesion.pure-method-count', $provides);
     }
 
     #[Test]
@@ -63,8 +63,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Empty class has no public instance methods — TCC/LCC not emitted
-        self::assertNull($metrics->get('tcc:App\EmptyClass'));
-        self::assertNull($metrics->get('lcc:App\EmptyClass'));
+        self::assertNull($metrics->get('cohesion.tcc:App\EmptyClass'));
+        self::assertNull($metrics->get('cohesion.lcc:App\EmptyClass'));
     }
 
     #[Test]
@@ -89,8 +89,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Single public instance method — TCC/LCC not emitted (needs >= 2 methods)
-        self::assertNull($metrics->get('tcc:App\SingleMethod'));
-        self::assertNull($metrics->get('lcc:App\SingleMethod'));
+        self::assertNull($metrics->get('cohesion.tcc:App\SingleMethod'));
+        self::assertNull($metrics->get('cohesion.lcc:App\SingleMethod'));
     }
 
     #[Test]
@@ -126,8 +126,8 @@ PHP;
 
         // All methods share $data property
         // TCC = LCC = 1.0
-        self::assertSame(1.0, $metrics->get('tcc:App\CohesiveClass'));
-        self::assertSame(1.0, $metrics->get('lcc:App\CohesiveClass'));
+        self::assertSame(1.0, $metrics->get('cohesion.tcc:App\CohesiveClass'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc:App\CohesiveClass'));
     }
 
     #[Test]
@@ -165,8 +165,8 @@ PHP;
 
         // No methods share properties
         // TCC = LCC = 0.0
-        self::assertSame(0.0, $metrics->get('tcc:App\GodClass'));
-        self::assertSame(0.0, $metrics->get('lcc:App\GodClass'));
+        self::assertSame(0.0, $metrics->get('cohesion.tcc:App\GodClass'));
+        self::assertSame(0.0, $metrics->get('cohesion.lcc:App\GodClass'));
     }
 
     #[Test]
@@ -204,11 +204,11 @@ PHP;
 
         // Direct: m1-m2 (via $a), m2-m3 (via $b)
         // TCC = 2/3 ≈ 0.667
-        self::assertSame(0.667, $metrics->get('tcc:App\TransitiveExample'));
+        self::assertSame(0.667, $metrics->get('cohesion.tcc:App\TransitiveExample'));
 
         // Transitive: m1 reaches m3 via m2
         // LCC = 3/3 = 1.0
-        self::assertSame(1.0, $metrics->get('lcc:App\TransitiveExample'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc:App\TransitiveExample'));
     }
 
     #[Test]
@@ -245,8 +245,8 @@ PHP;
         // Only public methods counted: publicMethod1, publicMethod2
         // Both share $shared
         // TCC = LCC = 1.0
-        self::assertSame(1.0, $metrics->get('tcc:App\WithPrivateMethods'));
-        self::assertSame(1.0, $metrics->get('lcc:App\WithPrivateMethods'));
+        self::assertSame(1.0, $metrics->get('cohesion.tcc:App\WithPrivateMethods'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc:App\WithPrivateMethods'));
     }
 
     #[Test]
@@ -284,8 +284,8 @@ PHP;
         // Only public methods counted: publicMethod1, publicMethod2
         // They use different properties
         // TCC = LCC = 0.0
-        self::assertSame(0.0, $metrics->get('tcc:App\WithProtectedMethods'));
-        self::assertSame(0.0, $metrics->get('lcc:App\WithProtectedMethods'));
+        self::assertSame(0.0, $metrics->get('cohesion.tcc:App\WithProtectedMethods'));
+        self::assertSame(0.0, $metrics->get('cohesion.lcc:App\WithProtectedMethods'));
     }
 
     #[Test]
@@ -319,8 +319,8 @@ PHP;
         // Only concrete public methods counted
         // Both share $shared
         // TCC = LCC = 1.0
-        self::assertSame(1.0, $metrics->get('tcc:App\AbstractClass'));
-        self::assertSame(1.0, $metrics->get('lcc:App\AbstractClass'));
+        self::assertSame(1.0, $metrics->get('cohesion.tcc:App\AbstractClass'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc:App\AbstractClass'));
     }
 
     #[Test]
@@ -341,8 +341,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Interfaces are skipped entirely — cohesion metrics are not applicable
-        self::assertNull($metrics->get('tcc:App\MyInterface'));
-        self::assertNull($metrics->get('lcc:App\MyInterface'));
+        self::assertNull($metrics->get('cohesion.tcc:App\MyInterface'));
+        self::assertNull($metrics->get('cohesion.lcc:App\MyInterface'));
     }
 
     #[Test]
@@ -372,11 +372,11 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Factory has 1 public instance method — TCC/LCC not emitted
-        self::assertNull($metrics->get('tcc:App\Factory'));
-        self::assertNull($metrics->get('lcc:App\Factory'));
+        self::assertNull($metrics->get('cohesion.tcc:App\Factory'));
+        self::assertNull($metrics->get('cohesion.lcc:App\Factory'));
         // Anonymous class should not appear
-        self::assertNull($metrics->get('tcc:'));
-        self::assertNull($metrics->get('lcc:'));
+        self::assertNull($metrics->get('cohesion.tcc:'));
+        self::assertNull($metrics->get('cohesion.lcc:'));
     }
 
     #[Test]
@@ -397,8 +397,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Both methods share $data
-        self::assertSame(1.0, $metrics->get('tcc:GlobalClass'));
-        self::assertSame(1.0, $metrics->get('lcc:GlobalClass'));
+        self::assertSame(1.0, $metrics->get('cohesion.tcc:GlobalClass'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc:GlobalClass'));
     }
 
     #[Test]
@@ -427,12 +427,12 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // First: single method — TCC/LCC not emitted
-        self::assertNull($metrics->get('tcc:App\First'));
-        self::assertNull($metrics->get('lcc:App\First'));
+        self::assertNull($metrics->get('cohesion.tcc:App\First'));
+        self::assertNull($metrics->get('cohesion.lcc:App\First'));
 
         // Second: two methods, no shared properties = 0.0
-        self::assertSame(0.0, $metrics->get('tcc:App\Second'));
-        self::assertSame(0.0, $metrics->get('lcc:App\Second'));
+        self::assertSame(0.0, $metrics->get('cohesion.tcc:App\Second'));
+        self::assertSame(0.0, $metrics->get('cohesion.lcc:App\Second'));
     }
 
     #[Test]
@@ -470,10 +470,10 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         // Should only contain metrics from second file (but Second has 1 method => not emitted)
-        self::assertNull($metrics->get('tcc:App\First'));
-        self::assertNull($metrics->get('lcc:App\First'));
-        self::assertNull($metrics->get('tcc:App\Second'));
-        self::assertNull($metrics->get('lcc:App\Second'));
+        self::assertNull($metrics->get('cohesion.tcc:App\First'));
+        self::assertNull($metrics->get('cohesion.lcc:App\First'));
+        self::assertNull($metrics->get('cohesion.tcc:App\Second'));
+        self::assertNull($metrics->get('cohesion.lcc:App\Second'));
     }
 
     #[Test]
@@ -485,7 +485,7 @@ PHP;
 
         // Check TCC definition
         $tccDef = $definitions[0];
-        self::assertSame('tcc', $tccDef->name);
+        self::assertSame('cohesion.tcc', $tccDef->name);
         self::assertSame(SymbolLevel::Class_, $tccDef->collectedAt);
 
         $namespaceStrategies = $tccDef->getStrategiesForLevel(SymbolLevel::Namespace_);
@@ -494,12 +494,12 @@ PHP;
 
         // Check LCC definition
         $lccDef = $definitions[1];
-        self::assertSame('lcc', $lccDef->name);
+        self::assertSame('cohesion.lcc', $lccDef->name);
         self::assertSame(SymbolLevel::Class_, $lccDef->collectedAt);
 
         // Check pureMethodCount definition
         $pureDef = $definitions[2];
-        self::assertSame('pureMethodCount_cohesion', $pureDef->name);
+        self::assertSame('cohesion.pure-method-count', $pureDef->name);
         self::assertSame(SymbolLevel::Class_, $pureDef->collectedAt);
         self::assertSame([], $pureDef->getStrategiesForLevel(SymbolLevel::Namespace_));
     }
@@ -532,8 +532,8 @@ PHP;
 
         // method1 uses $static, method2 has dynamic access (ignored)
         // They don't share properties = TCC/LCC = 0.0
-        self::assertSame(0.0, $metrics->get('tcc:App\DynamicAccess'));
-        self::assertSame(0.0, $metrics->get('lcc:App\DynamicAccess'));
+        self::assertSame(0.0, $metrics->get('cohesion.tcc:App\DynamicAccess'));
+        self::assertSame(0.0, $metrics->get('cohesion.lcc:App\DynamicAccess'));
     }
 
     #[Test]
@@ -558,7 +558,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // TCC = 2/3 = 0.6666... should be rounded to 0.667
-        self::assertSame(0.667, $metrics->get('tcc:App\RoundingTest'));
+        self::assertSame(0.667, $metrics->get('cohesion.tcc:App\RoundingTest'));
     }
 
     #[Test]
@@ -600,10 +600,10 @@ PHP;
 
         // Most pairs share properties, but getWidth-getHeight don't
         // TCC ≈ 0.833
-        self::assertSame(0.833, $metrics->get('tcc:App\Rectangle'));
+        self::assertSame(0.833, $metrics->get('cohesion.tcc:App\Rectangle'));
         // All reachable via transitive closure
         // LCC = 1.0
-        self::assertSame(1.0, $metrics->get('lcc:App\Rectangle'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc:App\Rectangle'));
     }
 
     #[Test]
@@ -647,10 +647,10 @@ PHP;
 
         self::assertSame('App', $class->declarationPath->logical->namespace);
         self::assertSame('TestClass', $class->declarationPath->logical->type);
-        self::assertSame(1.0, $class->metrics->get('tcc'));
-        self::assertSame(1.0, $class->metrics->get('lcc'));
+        self::assertSame(1.0, $class->metrics->get('cohesion.tcc'));
+        self::assertSame(1.0, $class->metrics->get('cohesion.lcc'));
         // Both methods access $prop → 0 pure methods
-        self::assertSame(0, $class->metrics->get('pureMethodCount_cohesion'));
+        self::assertSame(0, $class->metrics->get('cohesion.pure-method-count'));
     }
 
     #[Test]
@@ -686,8 +686,8 @@ PHP;
 
         // Static method excluded from TCC/LCC — it can't access $this properties.
         // Only getData and setData counted, both share $data => TCC/LCC = 1.0
-        self::assertSame(1.0, $metrics->get('tcc:App\WithStatic'));
-        self::assertSame(1.0, $metrics->get('lcc:App\WithStatic'));
+        self::assertSame(1.0, $metrics->get('cohesion.tcc:App\WithStatic'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc:App\WithStatic'));
     }
 
     #[Test]
@@ -731,8 +731,8 @@ PHP;
         // With fix: 2 instance methods counted, no shared properties => TCC = 0.0
         // The key difference: NP (total pairs) = C(2,2)=1 not C(4,2)=6,
         // so adding property connections later would have different impact.
-        self::assertSame(0.0, $metrics->get('tcc:App\StaticInflation'));
-        self::assertSame(0.0, $metrics->get('lcc:App\StaticInflation'));
+        self::assertSame(0.0, $metrics->get('cohesion.tcc:App\StaticInflation'));
+        self::assertSame(0.0, $metrics->get('cohesion.lcc:App\StaticInflation'));
     }
 
     #[Test]
@@ -753,8 +753,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // All methods are static => 0 public instance methods => TCC/LCC not emitted
-        self::assertNull($metrics->get('tcc:App\AllStatic'));
-        self::assertNull($metrics->get('lcc:App\AllStatic'));
+        self::assertNull($metrics->get('cohesion.tcc:App\AllStatic'));
+        self::assertNull($metrics->get('cohesion.lcc:App\AllStatic'));
     }
 
     #[Test]
@@ -777,8 +777,8 @@ PHP;
 
         // All-static utility class: zero public instance methods => TCC/LCC not emitted.
         // Prevents misleading TCC=1.0 for classes like Illuminate\Support\Str.
-        self::assertNull($metrics->get('tcc:App\StringHelper'));
-        self::assertNull($metrics->get('lcc:App\StringHelper'));
+        self::assertNull($metrics->get('cohesion.tcc:App\StringHelper'));
+        self::assertNull($metrics->get('cohesion.lcc:App\StringHelper'));
     }
 
     #[Test]
@@ -814,8 +814,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Both methodA and methodB access $sharedProp => connected => TCC/LCC = 1.0
-        self::assertSame(1.0, $metrics->get('tcc:App\OuterClass'));
-        self::assertSame(1.0, $metrics->get('lcc:App\OuterClass'));
+        self::assertSame(1.0, $metrics->get('cohesion.tcc:App\OuterClass'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc:App\OuterClass'));
     }
 
     #[Test]
@@ -855,8 +855,8 @@ PHP;
         // typically access all instance variables, creating artificial connections.
         // Without __construct: getA uses $a, getB uses $b — no shared properties.
         // TCC = 0/1 = 0.0, LCC = 0/1 = 0.0
-        self::assertSame(0.0, $metrics->get('tcc:App\WithConstructor'));
-        self::assertSame(0.0, $metrics->get('lcc:App\WithConstructor'));
+        self::assertSame(0.0, $metrics->get('cohesion.tcc:App\WithConstructor'));
+        self::assertSame(0.0, $metrics->get('cohesion.lcc:App\WithConstructor'));
     }
 
     #[Test]
@@ -892,8 +892,8 @@ PHP;
 
         // __destruct is excluded. Only getResource and setResource counted.
         // Both share $resource => TCC/LCC = 1.0
-        self::assertSame(1.0, $metrics->get('tcc:App\WithDestructor'));
-        self::assertSame(1.0, $metrics->get('lcc:App\WithDestructor'));
+        self::assertSame(1.0, $metrics->get('cohesion.tcc:App\WithDestructor'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc:App\WithDestructor'));
     }
 
     #[Test]
@@ -939,8 +939,8 @@ PHP;
         // Without constructor exclusion, __construct would share properties
         // with all methods, giving TCC = 1.0 — a false picture of cohesion.
         // With exclusion: 3 methods, each using a different property => TCC = 0.0
-        self::assertSame(0.0, $metrics->get('tcc:App\InflationCheck'));
-        self::assertSame(0.0, $metrics->get('lcc:App\InflationCheck'));
+        self::assertSame(0.0, $metrics->get('cohesion.tcc:App\InflationCheck'));
+        self::assertSame(0.0, $metrics->get('cohesion.lcc:App\InflationCheck'));
     }
 
     #[Test]
@@ -970,8 +970,8 @@ PHP;
         // Class has 2 public instance methods but zero declared instance properties.
         // TCC is structurally undefined — there are no properties to share between methods.
         // Emitting TCC=0.0 would falsely suggest low cohesion.
-        self::assertNull($metrics->get('tcc:App\Stateless'));
-        self::assertNull($metrics->get('lcc:App\Stateless'));
+        self::assertNull($metrics->get('cohesion.tcc:App\Stateless'));
+        self::assertNull($metrics->get('cohesion.lcc:App\Stateless'));
     }
 
     #[Test]
@@ -1004,8 +1004,8 @@ PHP;
 
         // Class has 2 public instance methods but only static properties (no instance ones).
         // Instance property count is 0 — TCC structurally undefined, not emitted.
-        self::assertNull($metrics->get('tcc:App\Registry'));
-        self::assertNull($metrics->get('lcc:App\Registry'));
+        self::assertNull($metrics->get('cohesion.tcc:App\Registry'));
+        self::assertNull($metrics->get('cohesion.lcc:App\Registry'));
     }
 
     #[Test]
@@ -1040,8 +1040,8 @@ PHP;
 
         // Enums cannot have instance properties, so TCC is always 0.0 — misleading.
         // They should be excluded entirely, just like interfaces.
-        self::assertNull($metrics->get('tcc:App\Status'));
-        self::assertNull($metrics->get('lcc:App\Status'));
+        self::assertNull($metrics->get('cohesion.tcc:App\Status'));
+        self::assertNull($metrics->get('cohesion.lcc:App\Status'));
     }
 
     #[Test]
@@ -1087,12 +1087,12 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Enum should not produce metrics
-        self::assertNull($metrics->get('tcc:App\Color'));
-        self::assertNull($metrics->get('lcc:App\Color'));
+        self::assertNull($metrics->get('cohesion.tcc:App\Color'));
+        self::assertNull($metrics->get('cohesion.lcc:App\Color'));
 
         // Class after enum should still work correctly
-        self::assertSame(1.0, $metrics->get('tcc:App\Palette'));
-        self::assertSame(1.0, $metrics->get('lcc:App\Palette'));
+        self::assertSame(1.0, $metrics->get('cohesion.tcc:App\Palette'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc:App\Palette'));
     }
 
     #[Test]
@@ -1123,8 +1123,8 @@ PHP;
 
         // Both __construct and __destruct are excluded from TCC/LCC tracking.
         // 0 tracked methods => TCC/LCC not emitted
-        self::assertNull($metrics->get('tcc:App\OnlyLifecycle'));
-        self::assertNull($metrics->get('lcc:App\OnlyLifecycle'));
+        self::assertNull($metrics->get('cohesion.tcc:App\OnlyLifecycle'));
+        self::assertNull($metrics->get('cohesion.lcc:App\OnlyLifecycle'));
     }
 
     #[Test]
@@ -1159,8 +1159,8 @@ PHP;
 
         // Promoted constructor properties count as instance properties.
         // Class has 2 public methods accessing separate promoted props => TCC = 0.0
-        self::assertSame(0.0, $metrics->get('tcc:App\OrderService'));
-        self::assertSame(0.0, $metrics->get('lcc:App\OrderService'));
+        self::assertSame(0.0, $metrics->get('cohesion.tcc:App\OrderService'));
+        self::assertSame(0.0, $metrics->get('cohesion.lcc:App\OrderService'));
     }
 
     #[Test]
@@ -1192,8 +1192,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Both methods access the same promoted property => TCC = 1.0
-        self::assertSame(1.0, $metrics->get('tcc:App\UserService'));
-        self::assertSame(1.0, $metrics->get('lcc:App\UserService'));
+        self::assertSame(1.0, $metrics->get('cohesion.tcc:App\UserService'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc:App\UserService'));
     }
 
     #[Test]
@@ -1221,7 +1221,7 @@ PHP;
 
         // 5 public methods, 4 access no properties → pureMethodCount = 4
         // (analyze accesses $this->threshold, so it's not pure)
-        self::assertSame(4, $metrics->get('pureMethodCount_cohesion:App\DistanceRule'));
+        self::assertSame(4, $metrics->get('cohesion.pure-method-count:App\DistanceRule'));
     }
 
     #[Test]
@@ -1246,7 +1246,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('pureMethodCount_cohesion:App\Rectangle'));
+        self::assertSame(0, $metrics->get('cohesion.pure-method-count:App\Rectangle'));
     }
 
     #[Test]
@@ -1268,7 +1268,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertNull($metrics->get('pureMethodCount_cohesion:App\SingleMethod'));
+        self::assertNull($metrics->get('cohesion.pure-method-count:App\SingleMethod'));
     }
 
     #[Test]

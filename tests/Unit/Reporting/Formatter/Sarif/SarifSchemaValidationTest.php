@@ -9,9 +9,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
@@ -55,32 +55,32 @@ final class SarifSchemaValidationTest extends TestCase
     }
 
     #[Test]
-    public function reportWithMixedSeverityViolations_conformsToSarif2_1_0Schema(): void
+    public function reportWithMixedSeverityFindings_conformsToSarif2_1_0Schema(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/OrderService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'OrderService', 'processOrder'),
                 ruleName: 'cohesion.lcom',
-                violationCode: 'cohesion.lcom',
+                code: 'cohesion.lcom',
                 message: 'LCOM4 of 8 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 8,
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Controller/HomeController.php'), 15),
                 symbolPath: SymbolPath::forClass('App\\Controller', 'HomeController'),
                 ruleName: 'architecture.coverage',
-                violationCode: 'architecture.coverage',
+                code: 'architecture.coverage',
                 message: 'Class is not assigned to a layer',
                 severity: Severity::Info,
             ))
@@ -102,11 +102,11 @@ final class SarifSchemaValidationTest extends TestCase
     {
         // Exercises the relatedLocations branch (duplication detector shape).
         $report = ReportBuilder::create()
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
                 symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php')),
                 ruleName: 'duplication.code-duplication',
-                violationCode: 'duplication.code-duplication',
+                code: 'duplication.code-duplication',
                 message: 'Duplicated code block (20 lines, 3 occurrences)',
                 severity: Severity::Warning,
                 metricValue: 20,
@@ -115,11 +115,11 @@ final class SarifSchemaValidationTest extends TestCase
                     new Location(RelativePath::fromString('src/Service/PaymentService.php'), 88),
                 ],
             ))
-            ->addViolation(self::violation(
+            ->addFinding(self::finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace('App'),
                 ruleName: 'architecture.circular-dependency',
-                violationCode: 'architecture.circular-dependency',
+                code: 'architecture.circular-dependency',
                 message: 'Circular dependency detected',
                 severity: Severity::Error,
             ))
@@ -142,11 +142,11 @@ final class SarifSchemaValidationTest extends TestCase
         // The accepted level rides in message.text (ADR 0017); confirms that
         // appending it doesn't break schema conformance.
         $report = ReportBuilder::create()
-            ->addViolation((self::violation(
+            ->addFinding((self::finding(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                code: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity of 31 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -210,21 +210,20 @@ final class SarifSchemaValidationTest extends TestCase
     }
 
     /**
-     * Builds a violation fixture with an explicit declaration or aggregate
+     * Builds a finding fixture with an explicit declaration or aggregate
      * subject, preserving the production contract without hiding it behind a
      * legacy fallback.
      *
      * @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations
      */
-    private static function violation(
+    private static function finding(
         \Qualimetrix\Analysis\Finding\Contract\Location $location,
         \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
         string $ruleName,
-        string $violationCode,
+        string $code,
         string $message,
         \Qualimetrix\Analysis\Finding\Contract\Severity $severity,
         int|float|null $metricValue = null,
-        ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null,
         array $relatedLocations = [],
         ?string $recommendation = null,
         int|float|null $threshold = null,
@@ -233,7 +232,7 @@ final class SarifSchemaValidationTest extends TestCase
         ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
-    ): Violation {
+    ): Finding {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File,
             \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
@@ -241,16 +240,15 @@ final class SarifSchemaValidationTest extends TestCase
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: $message,
             severity: $severity,
             metricValue: $metricValue,
-            level: $level,
             relatedLocations: $relatedLocations,
             recommendation: $recommendation,
             threshold: $threshold,

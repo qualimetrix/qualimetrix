@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Options for rules that operate on multiple levels of hierarchy.
@@ -18,17 +19,17 @@ interface HierarchicalRuleOptionsInterface extends RuleOptionsInterface
      *
      * @throws InvalidArgumentException if level is not supported
      */
-    public function forLevel(RuleLevel $level): LevelOptionsInterface;
+    public function forLevel(SymbolLevel $level): LevelOptionsInterface;
 
     /**
      * Checks if a specific level is enabled.
      */
-    public function isLevelEnabled(RuleLevel $level): bool;
+    public function isLevelEnabled(SymbolLevel $level): bool;
 
     /**
      * Returns all supported levels for this rule.
      *
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array;
 }

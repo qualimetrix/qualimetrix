@@ -202,20 +202,16 @@ bin/qmx check src/ --rule-opt="design.inheritance:error=7"
 
 ---
 
-## Type Coverage
+## Parameter Type Coverage
 
-**Rule ID:** `design.type-coverage`
+**Rule ID:** `design.type-coverage.param`
 
 <!-- llms:skip-begin -->
 ### What it measures
 
-Checks the percentage of type declarations in a class. Produces up to three violations per class:
+The percentage of method and function parameters in a class that carry a type declaration.
 
-- **Parameter type coverage** -- percentage of method parameters with type declarations
-- **Return type coverage** -- percentage of methods with return type declarations
-- **Property type coverage** -- percentage of properties with type declarations
-
-Unlike most rules, this one uses **inverted thresholds**: lower values are worse. A warning is reported when coverage drops below the warning threshold, and an error when it drops below the error threshold.
+Like the two rules below, this one uses **inverted thresholds**: lower values are worse. A warning is reported when coverage drops below the warning threshold, and an error when it drops below the error threshold. A class with no parameters at all has nothing to type and is never reported.
 
 **How to read the value:**
 
@@ -225,16 +221,17 @@ Unlike most rules, this one uses **inverted thresholds**: lower values are worse
 | 50--79%  | Moderate type coverage |
 | 80--100% | Good type coverage     |
 
+!!! info "Three rules, not one"
+    Parameters, return types and properties used to be three channels of a single `design.type-coverage` rule, tuned by one set of options. They are now three rules with a threshold, a suppression and a baseline entry each, because a codebase usually types them at different speeds — see the [migration note](../changelog.md).
+
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Thresholds
 
-| Aspect    | Warning (below) | Error (below) |
-| --------- | --------------- | ------------- |
-| Parameter | 80%             | 50%           |
-| Return    | 80%             | 50%           |
-| Property  | 80%             | 50%           |
+| Warning (below) | Error (below) |
+| --------------- | ------------- |
+| 80%             | 50%           |
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -243,24 +240,18 @@ Unlike most rules, this one uses **inverted thresholds**: lower values are worse
 ```php
 class LegacyService
 {
-    private $cache;       // no type -> reduces property coverage
-    public $debug = true; // no type -> reduces property coverage
-
-    // No return type -> reduces return coverage
     // $data has no type -> reduces parameter coverage
     public function process($data)
     {
         // ...
     }
 
-    public function reset(): void
+    public function reset(int $attempts): void
     {
-        // has return type -- good
+        // typed -- good
     }
 }
-// Parameter coverage: 0% (0 of 1 typed) -> Error
-// Return coverage: 50% (1 of 2 typed) -> Warning
-// Property coverage: 0% (0 of 2 typed) -> Error
+// Parameter coverage: 50% (1 of 2 typed) -> Warning
 ```
 
 <!-- llms:skip-end -->
@@ -268,25 +259,17 @@ class LegacyService
 <!-- llms:skip-begin -->
 ### How to fix
 
-Add type declarations:
+Add type declarations to the parameters:
 
 ```php
-class LegacyService
+public function process(array $data)
 {
-    private CacheInterface $cache;
-    public bool $debug = true;
-
-    public function process(array $data): Result
-    {
-        // ...
-    }
-
-    public function reset(): void { /* ... */ }
+    // ...
 }
 ```
 
 !!! tip
-    Start by adding types to new code and gradually add types to existing code during refactoring. PHP 8.0+ supports union types (`string|int`) and PHP 8.1+ supports intersection types (`Countable&Iterator`) for complex cases.
+    Start by typing new code and add types to existing code during refactoring. PHP 8.0+ supports union types (`string|int`) and PHP 8.1+ intersection types (`Countable&Iterator`) for the awkward cases.
 
 <!-- llms:skip-end -->
 
@@ -295,18 +278,140 @@ class LegacyService
 ```yaml
 # qmx.yaml
 rules:
-  design.type-coverage:
-    param_warning: 80
-    param_error: 50
-    return_warning: 80
-    return_error: 50
-    property_warning: 80
-    property_error: 50
+  design.type-coverage.param:
+    warning: 80
+    error: 50
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="design.type-coverage:param_warning=90"
-bin/qmx check src/ --rule-opt="design.type-coverage:param_error=60"
+bin/qmx check src/ --rule-opt="design.type-coverage.param:warning=90"
+bin/qmx check src/ --param-type-coverage-error=60
+```
+
+---
+
+## Return Type Coverage
+
+**Rule ID:** `design.type-coverage.return`
+
+<!-- llms:skip-begin -->
+### What it measures
+
+The percentage of methods and functions in a class that declare a return type. Inverted thresholds, exactly as for [parameter type coverage](#parameter-type-coverage): lower is worse.
+
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### Thresholds
+
+| Warning (below) | Error (below) |
+| --------------- | ------------- |
+| 80%             | 50%           |
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### Example
+
+```php
+class LegacyService
+{
+    // No return type -> reduces return coverage
+    public function process(array $data)
+    {
+        // ...
+    }
+
+    public function reset(): void
+    {
+        // has a return type -- good
+    }
+}
+// Return coverage: 50% (1 of 2 typed) -> Warning
+```
+
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### How to fix
+
+Declare what the method returns; use `void` when it returns nothing and `never` when it always throws or exits.
+
+<!-- llms:skip-end -->
+
+### Configuration
+
+```yaml
+# qmx.yaml
+rules:
+  design.type-coverage.return:
+    warning: 80
+    error: 50
+```
+
+```bash
+bin/qmx check src/ --rule-opt="design.type-coverage.return:warning=90"
+bin/qmx check src/ --return-type-coverage-error=60
+```
+
+---
+
+## Property Type Coverage
+
+**Rule ID:** `design.type-coverage.property`
+
+<!-- llms:skip-begin -->
+### What it measures
+
+The percentage of declared properties in a class that carry a type. Inverted thresholds, exactly as for [parameter type coverage](#parameter-type-coverage): lower is worse.
+
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### Thresholds
+
+| Warning (below) | Error (below) |
+| --------------- | ------------- |
+| 80%             | 50%           |
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### Example
+
+```php
+class LegacyService
+{
+    private $cache;                 // no type -> reduces property coverage
+    public bool $debug = true;      // typed -- good
+}
+// Property coverage: 50% (1 of 2 typed) -> Warning
+```
+
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
+### How to fix
+
+Type the properties, and prefer constructor promotion for the ones a constructor assigns:
+
+```php
+public function __construct(private readonly CacheInterface $cache) {}
+```
+
+<!-- llms:skip-end -->
+
+### Configuration
+
+```yaml
+# qmx.yaml
+rules:
+  design.type-coverage.property:
+    warning: 80
+    error: 50
+```
+
+```bash
+bin/qmx check src/ --rule-opt="design.type-coverage.property:warning=90"
+bin/qmx check src/ --property-type-coverage-error=60
 ```
 
 ---

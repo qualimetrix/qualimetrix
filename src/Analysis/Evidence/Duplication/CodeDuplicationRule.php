@@ -5,23 +5,23 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Duplication;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Detects duplicated code blocks across files.
  *
- * Generates one violation per duplicate block, pointing to the primary location.
+ * Generates one finding per duplicate block, pointing to the primary location.
  * Related locations (other copies) are included in the message.
  */
 final class CodeDuplicationRule extends AbstractRule
@@ -30,6 +30,8 @@ final class CodeDuplicationRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/duplication.md';
 
     public const int REMEDIATION_MINUTES = 15;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function __construct(
         RuleOptionsInterface $options,
         private readonly DuplicationResultProvider $resultProvider,
@@ -47,11 +49,6 @@ final class CodeDuplicationRule extends AbstractRule
         return 'Detects duplicated code blocks';
     }
 
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Duplication;
-    }
-
     public function requires(): array
     {
         return [];
@@ -63,13 +60,13 @@ final class CodeDuplicationRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($this->resultProvider->all() as $block) {
-            $violations[] = $this->createViolation($context, $block);
+            $findings[] = $this->createFinding($context, $block);
         }
 
-        return $violations;
+        return $findings;
     }
 
     public static function getOptionsClass(): string
@@ -84,7 +81,7 @@ final class CodeDuplicationRule extends AbstractRule
      * {@see CodeDuplicationOptions::getSeverity()}'s `$value >=
      * $this->error` (line 58) / `$value >= $this->warning` (line 62).
      * Emission itself is unconditional — every `DuplicateBlock` produces a
-     * `Violation` regardless of size (`$severity ?? Severity::Warning` at
+     * `Finding` regardless of size (`$severity ?? Severity::Warning` at
      * line 102 is only ever a fallback) — but that does not change the
      * direction question: the threshold comparison genuinely gates
      * *severity*, and severity is monotone in `$block->lines`, so `higher`
@@ -96,11 +93,11 @@ final class CodeDuplicationRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
         ];
     }
 
-    private function createViolation(AnalysisContext $context, DuplicateBlock $block): Violation
+    private function createFinding(AnalysisContext $context, DuplicateBlock $block): Finding
     {
         $primary = $block->primaryLocation();
         $related = $block->relatedLocations();
@@ -127,21 +124,21 @@ final class CodeDuplicationRule extends AbstractRule
         $severity = $this->getEffectiveSeverity($context, $this->options, $subject, $block->lines);
 
         // Build related locations for SARIF support
-        $relatedViolationLocations = array_map(
+        $relatedFindingLocations = array_map(
             static fn($loc) => new Location($loc->file, $loc->startLine, precise: true),
             $related,
         );
 
-        return new Violation(
+        return new Finding(
             location: new Location($primary->file, $primary->startLine, precise: true),
             subject: $subject,
             symbolPath: $projectPath,
             ruleName: $this->getName(),
-            violationCode: $this->getName(),
+            code: $this->getName(),
             message: $message,
             severity: $severity ?? Severity::Warning,
             metricValue: $block->lines,
-            relatedLocations: $relatedViolationLocations,
+            relatedLocations: $relatedFindingLocations,
             recommendation: 'Extract duplicated code into a shared method or class.',
             occurrenceKey: OccurrenceKey::semantic(self::NAME, ['contentHash' => $block->contentHash]),
         );

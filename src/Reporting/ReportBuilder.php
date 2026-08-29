@@ -7,8 +7,9 @@ namespace Qualimetrix\Reporting;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 
 /**
  * Builder for creating Report instances.
@@ -16,9 +17,9 @@ use Qualimetrix\Analysis\Finding\Contract\Violation;
 final class ReportBuilder
 {
     /**
-     * @var list<Violation>
+     * @var list<Finding>
      */
-    private array $violations = [];
+    private array $findings = [];
 
     private int $filesAnalyzed = 0;
     private int $filesSkipped = 0;
@@ -26,6 +27,7 @@ final class ReportBuilder
     private ?MetricRepositoryInterface $metrics = null;
     private ?NamespaceTree $namespaceTree = null;
     private ?ReportCoverage $coverage = null;
+    private ?SuppressionComposition $suppressionComposition = null;
 
     /**
      * Creates a new builder instance.
@@ -36,24 +38,24 @@ final class ReportBuilder
     }
 
     /**
-     * Adds a single violation.
+     * Adds a single finding.
      */
-    public function addViolation(Violation $violation): self
+    public function addFinding(Finding $finding): self
     {
-        $this->violations[] = $violation;
+        $this->findings[] = $finding;
 
         return $this;
     }
 
     /**
-     * Adds multiple violations.
+     * Adds multiple findings.
      *
-     * @param iterable<Violation> $violations
+     * @param iterable<Finding> $findings
      */
-    public function addViolations(iterable $violations): self
+    public function addFindings(iterable $findings): self
     {
-        foreach ($violations as $violation) {
-            $this->violations[] = $violation;
+        foreach ($findings as $finding) {
+            $this->findings[] = $finding;
         }
 
         return $this;
@@ -135,6 +137,17 @@ final class ReportBuilder
     }
 
     /**
+     * Attaches what the `suppressed` format publishes. Left unset on every
+     * ordinary run — see {@see Report::$suppressionComposition}.
+     */
+    public function suppressionComposition(SuppressionComposition $composition): self
+    {
+        $this->suppressionComposition = $composition;
+
+        return $this;
+    }
+
+    /**
      * Builds the Report instance.
      */
     public function build(): Report
@@ -143,8 +156,8 @@ final class ReportBuilder
         $warningCount = 0;
         $infoCount = 0;
 
-        foreach ($this->violations as $violation) {
-            match ($violation->severity) {
+        foreach ($this->findings as $finding) {
+            match ($finding->severity) {
                 Severity::Error => $errorCount++,
                 Severity::Warning => $warningCount++,
                 Severity::Info => $infoCount++,
@@ -152,7 +165,7 @@ final class ReportBuilder
         }
 
         return new Report(
-            violations: $this->violations,
+            findings: $this->findings,
             filesAnalyzed: $this->filesAnalyzed,
             filesSkipped: $this->filesSkipped,
             duration: $this->duration,
@@ -162,6 +175,7 @@ final class ReportBuilder
             namespaceTree: $this->namespaceTree,
             infoCount: $infoCount,
             coverage: $this->coverage,
+            suppressionComposition: $this->suppressionComposition,
         );
     }
 }

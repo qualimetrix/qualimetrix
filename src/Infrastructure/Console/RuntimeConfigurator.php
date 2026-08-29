@@ -62,7 +62,8 @@ final class RuntimeConfigurator
         $frameworkNamespaces = $this->analysisRuntimeConfigurator->resolveCoupling($document);
         $lcomConfiguration = $this->analysisRuntimeConfigurator->resolveLcom($findingConfiguration);
         $runtimeLimits = $this->resolveRuntimeLimits($document);
-        $capture = $input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true;
+        $capture = ($input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true)
+            || $this->resolveFormat($document) === 'suppressed';
         $channels = $this->analysisRuntimeConfigurator->resolveRuleChannels(
             $input,
             $findingConfiguration,
@@ -82,7 +83,7 @@ final class RuntimeConfigurator
             $channels,
         );
         if ($capture) {
-            $this->analysisRuntimeConfigurator->captureExcludedViolations();
+            $this->analysisRuntimeConfigurator->captureExcludedFindings();
         }
 
         // These are fallible process/output effects. Failure aborts before
@@ -123,6 +124,35 @@ final class RuntimeConfigurator
         }
 
         return new RuntimeLimits($value);
+    }
+
+    /**
+     * Resolves the effective `--format`/`format:` value without a second
+     * service dependency: {@see \Qualimetrix\Reporting\Configuration\OutputFormatResolver}
+     * reads the identical contribution list, and duplicating the two-line
+     * read here is cheaper than wiring a Reporting contract into this class
+     * for one string.
+     *
+     * The per-rule exclusion ledger's `--show-suppressed`-gated capture
+     * (decision (д), Ш6) must also arm for `--format=suppressed` /
+     * `format: suppressed`: the format's payload reads
+     * {@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats::$excludedFindings},
+     * and that field is opt-in precisely because most runs never display it.
+     * Without this, selecting the format through `qmx.yaml` alone —
+     * {@see \Qualimetrix\Reporting\Configuration\OutputFormatResolver} is fed
+     * by both `qmx.yaml` and the CLI — would silently report an empty ledger
+     * half.
+     */
+    private function resolveFormat(ConfigurationDocument $document): ?string
+    {
+        $value = null;
+        foreach ($document->contributions(ConfigSchema::FORMAT) as $contribution) {
+            if (\is_string($contribution)) {
+                $value = $contribution;
+            }
+        }
+
+        return $value;
     }
 
     /**

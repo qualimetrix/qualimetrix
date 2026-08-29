@@ -19,7 +19,6 @@ use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
@@ -28,10 +27,13 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -41,8 +43,10 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\LayerVerdicts;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder;
 
 #[CoversClass(LayerViolationRule::class)]
@@ -66,22 +70,27 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function metadataMatchesContract(): void
     {
-        $rule = $this->buildRule(new LayerViolationOptions());
+        $options = new LayerViolationOptions();
+        $rule = new LayerViolationRule($options, new LayerEvidenceCollector($options, new UnassignedClassOptions(), $this->processor));
 
         self::assertSame('architecture.layer-violation', $rule->getName());
-        self::assertSame(RuleCategory::Architecture, $rule->getCategory());
         self::assertSame([], $rule->requires());
         self::assertSame(LayerViolationOptions::class, LayerViolationRule::getOptionsClass());
+        // Two aliases, not three: the unassigned-class gate went with the
+        // producer that owns it.
         self::assertSame([
             'layer-violation' => 'enabled',
             'layer-violation-severity' => 'severity',
-            'layer-violation-unassigned-class' => 'unassigned_class',
         ], CliAliasReader::read(LayerViolationRule::class));
+        self::assertSame(
+            ['architecture.layer-violation'],
+            array_keys(LayerViolationRule::channelDeclarations()),
+        );
         self::assertStringContainsString('layer', strtolower($rule->getDescription()));
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions(enabled: false));
 
@@ -100,20 +109,55 @@ final class LayerViolationRuleTest extends TestCase
         self::assertSame([], $rule->analyze($this->buildContext($graph, $arch)));
     }
 
+    /**
+     * The shared walk memoises per context, so an answer given before the run
+     * primed the policy would be pinned for the rest of that run — both
+     * verdicts silently reporting nothing. Refusing the state is what keeps
+     * the memo honest; the second half is the part that goes red if the refusal
+     * is replaced by a `return null`.
+     */
     #[Test]
-    public function nullArchitectureReturnsNoViolations(): void
+    public function anUnpreparedPolicyIsRefusedInsteadOfMemoisedAsAbsentEvidence(): void
     {
-        $rule = $this->buildRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions(severity: Severity::Error));
+
+        $arch = $this->buildArchitecture(
+            layers: [
+                'controller' => ['App\\Controller'],
+                'repository' => ['App\\Repository'],
+            ],
+            allow: ['controller' => []],
+        );
+
+        $repo = new InMemoryMetricRepository();
+        $this->registerClass($repo, 'App\\Controller', 'UserController');
+        $this->registerClass($repo, 'App\\Repository', 'UserRepository');
 
         $graph = $this->buildGraph([
             $this->buildDependency('App\\Controller', 'UserController', 'App\\Repository', 'UserRepository'),
         ]);
 
-        self::assertSame([], $rule->analyze($this->buildContext($graph, null)));
+        $context = $this->buildContext($graph, null, $repo);
+
+        try {
+            $rule->analyze($context);
+            self::fail('An unprepared ArchitecturePolicy must be refused, not answered with absent evidence.');
+        } catch (LogicException $exception) {
+            self::assertStringContainsString('unprepared ArchitecturePolicy', $exception->getMessage());
+        }
+
+        ProcessorBuilder::prepared($arch, $graph, $repo, $this->processor);
+
+        self::assertNotSame(
+            [],
+            $this->filterByRule($rule->analyze($context), LayerViolationRule::NAME),
+            'The refusal must leave nothing memoised: once the run prepares the policy, the same context has to'
+            . ' yield the real verdict.',
+        );
     }
 
     #[Test]
-    public function emptyArchitectureReturnsNoViolations(): void
+    public function emptyArchitectureReturnsNoFindings(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -143,14 +187,14 @@ final class LayerViolationRuleTest extends TestCase
         );
 
         // No classes either → no diagnostics.
-        $violations = $rule->analyze($this->buildContext(null, $arch));
+        $findings = $rule->analyze($this->buildContext(null, $arch));
         // unreachable-layer fires because the controller layer matched nothing.
-        self::assertCount(1, $violations);
-        self::assertSame(LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, $violations[0]->ruleName);
+        self::assertCount(1, $findings);
+        self::assertSame(LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, $findings[0]->ruleName);
     }
 
     #[Test]
-    public function allowedEdgeProducesNoViolation(): void
+    public function allowedEdgeProducesNoFinding(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -170,14 +214,14 @@ final class LayerViolationRuleTest extends TestCase
             $this->buildDependency('App\\Controller', 'UserController', 'App\\Service', 'UserService'),
         ]);
 
-        $violations = $rule->analyze($this->buildContext($graph, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext($graph, $arch, $repo));
 
-        // No layer violations; no unreachable-layer (both layers had hits); no shadow.
-        self::assertSame([], $violations);
+        // No layer findings; no unreachable-layer (both layers had hits); no shadow.
+        self::assertSame([], $findings);
     }
 
     #[Test]
-    public function forbiddenEdgeProducesViolationWithExpectedFields(): void
+    public function forbiddenEdgeProducesFindingWithExpectedFields(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions(severity: Severity::Error));
 
@@ -206,27 +250,27 @@ final class LayerViolationRuleTest extends TestCase
             $this->dependency($source, $target, DependencyType::New_, $location),
         ]);
 
-        $violations = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
+        $findings = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
 
-        self::assertCount(1, $violations);
-        $violation = $violations[0];
+        self::assertCount(1, $findings);
+        $finding = $findings[0];
 
-        self::assertSame('architecture.layer-violation', $violation->ruleName);
-        self::assertSame(Severity::Error, $violation->severity);
-        self::assertSame($source, $violation->symbolPath);
+        self::assertSame('architecture.layer-violation', $finding->ruleName);
+        self::assertSame(Severity::Error, $finding->severity);
+        self::assertSame($source, $finding->symbolPath);
         self::assertSame(
             $this->findDeclarationSubject($repo, $target)->toCanonical(),
-            $violation->subject->toCanonical(),
+            $finding->subject->toCanonical(),
         );
-        self::assertNotNull($violation->occurrenceKey);
-        self::assertSame($location, $violation->location);
-        self::assertSame($target, $violation->dependencyTarget);
-        self::assertSame(DependencyType::New_, $violation->dependencyType);
-        self::assertStringContainsString('Layer "controller" must not depend on layer "repository"', $violation->message);
-        self::assertStringContainsString('App\\Controller\\UserController', $violation->message);
-        self::assertStringContainsString('App\\Repository\\UserRepository', $violation->message);
+        self::assertNotNull($finding->occurrenceKey);
+        self::assertSame($location, $finding->location);
+        self::assertSame($target, $finding->dependencyTarget);
+        self::assertSame(DependencyType::New_, $finding->dependencyType);
+        self::assertStringContainsString('Layer "controller" must not depend on layer "repository"', $finding->message);
+        self::assertStringContainsString('App\\Controller\\UserController', $finding->message);
+        self::assertStringContainsString('App\\Repository\\UserRepository', $finding->message);
 
-        $recommendation = $violation->recommendation;
+        $recommendation = $finding->recommendation;
         self::assertNotNull($recommendation);
         self::assertStringContainsString('Allowed targets for layer "controller": service', $recommendation);
         self::assertStringContainsString('Dep data: {', $recommendation);
@@ -274,10 +318,10 @@ final class LayerViolationRuleTest extends TestCase
             $this->buildDependency('App\\Controller', 'UserController', 'App\\Service', 'UserService'),
         ]);
 
-        $violations = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
+        $findings = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
 
-        self::assertCount(1, $violations);
-        $recommendation = $violations[0]->recommendation;
+        self::assertCount(1, $findings);
+        $recommendation = $findings[0]->recommendation;
         self::assertNotNull($recommendation);
         self::assertStringContainsString('Allowed targets for layer "controller": *-repository', $recommendation);
         self::assertStringNotContainsString('not allowed to depend on any', $recommendation);
@@ -306,10 +350,10 @@ final class LayerViolationRuleTest extends TestCase
             $this->buildDependency('App\\Core', 'Kernel', 'App\\Service', 'UserService'),
         ]);
 
-        $violations = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
+        $findings = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
 
-        self::assertCount(1, $violations);
-        $recommendation = $violations[0]->recommendation;
+        self::assertCount(1, $findings);
+        $recommendation = $findings[0]->recommendation;
         self::assertNotNull($recommendation);
         self::assertStringContainsString(
             'Layer "core" is not allowed to depend on any other declared layer.',
@@ -318,7 +362,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function eachUseSiteProducesItsOwnViolation(): void
+    public function eachUseSiteProducesItsOwnFinding(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -342,12 +386,12 @@ final class LayerViolationRuleTest extends TestCase
             $this->dependency($source, $target, DependencyType::TypeHint, new Location(RelativePath::fromString('a.php'), 20)),
         ]);
 
-        $violations = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
+        $findings = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
 
-        self::assertCount(2, $violations);
-        self::assertSame(10, $violations[0]->location->line);
-        self::assertSame(20, $violations[1]->location->line);
-        self::assertNotSame($violations[0]->occurrenceKey?->value, $violations[1]->occurrenceKey?->value);
+        self::assertCount(2, $findings);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertSame(20, $findings[1]->location->line);
+        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
     }
 
     #[Test]
@@ -363,7 +407,7 @@ final class LayerViolationRuleTest extends TestCase
         $this->registerClass($repository, 'App\\Repository', 'Repository');
         $source = SymbolPath::forClass('App\\Controller', 'Controller');
         $target = SymbolPath::forClass('App\\Repository', 'Repository');
-        $violations = $this->filterByRule(
+        $findings = $this->filterByRule(
             $rule->analyze($this->buildContext($this->buildGraph([
                 $this->dependency($source, $target, DependencyType::New_, new Location(RelativePath::fromString('src/Controller.php'), 10)),
                 $this->dependency($source, $target, DependencyType::New_, new Location(RelativePath::fromString('src/Controller.php'), 20)),
@@ -371,11 +415,11 @@ final class LayerViolationRuleTest extends TestCase
             LayerViolationRule::NAME,
         );
 
-        self::assertCount(2, $violations);
-        self::assertSame($violations[0]->occurrenceKey?->value, $violations[1]->occurrenceKey?->value);
+        self::assertCount(2, $findings);
+        self::assertSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
         self::assertSame([10, 20], array_map(
-            static fn(\Qualimetrix\Analysis\Finding\Contract\Violation $violation): ?int => $violation->location->line,
-            $violations,
+            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): ?int => $finding->location->line,
+            $findings,
         ));
     }
 
@@ -395,17 +439,17 @@ final class LayerViolationRuleTest extends TestCase
             new Location(RelativePath::fromString('src/Controller.php'), 12),
         );
 
-        $violations = $this->filterByRule(
+        $findings = $this->filterByRule(
             $rule->analyze($this->buildContext($this->buildGraph([$dependency]), $architecture)),
             LayerViolationRule::NAME,
         );
 
-        self::assertCount(1, $violations);
-        self::assertSame(MetricSubject::declaration($dependency->source)->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertCount(1, $findings);
+        self::assertSame(MetricSubject::declaration($dependency->source)->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
     #[Test]
-    public function itProjectsOneViolationToTheOwnedTargetDeclaration(): void
+    public function itProjectsOneFindingToTheOwnedTargetDeclaration(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
         $architecture = $this->buildArchitecture([
@@ -417,14 +461,14 @@ final class LayerViolationRuleTest extends TestCase
         $targetSubject = $this->registerClass($repository, 'App\\Repository', 'Repository');
         $dependency = $this->buildDependency('App\\Controller', 'Controller', 'App\\Repository', 'Repository');
 
-        $violations = $this->filterByRule(
+        $findings = $this->filterByRule(
             $rule->analyze($this->buildContext($this->buildGraph([$dependency]), $architecture, $repository)),
             LayerViolationRule::NAME,
         );
 
-        self::assertCount(1, $violations);
-        self::assertSame($targetSubject->toCanonical(), $violations[0]->subject->toCanonical());
-        self::assertSame($dependency->sourceLogical(), $violations[0]->symbolPath);
+        self::assertCount(1, $findings);
+        self::assertSame($targetSubject->toCanonical(), $findings[0]->subject->toCanonical());
+        self::assertSame($dependency->sourceLogical(), $findings[0]->symbolPath);
     }
 
     #[Test]
@@ -446,17 +490,17 @@ final class LayerViolationRuleTest extends TestCase
             new Dependency($secondSource, $target, DependencyType::New_, new Location(RelativePath::fromString('src/ControllerSecond.php'), 5)),
         ];
 
-        $violations = $this->filterByRule(
+        $findings = $this->filterByRule(
             $rule->analyze($this->buildContext($this->buildGraph($dependencies), $architecture)),
             LayerViolationRule::NAME,
         );
         self::assertSame([$firstSubject->toCanonical(), $secondSubject->toCanonical()], array_map(
-            static fn(\Qualimetrix\Analysis\Finding\Contract\Violation $violation): string => $violation->subject->toCanonical(),
-            $violations,
+            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->subject->toCanonical(),
+            $findings,
         ));
 
         $filter = new SuppressionFilter();
-        $result = $filter->apply($violations, ['src/ControllerFirst.php' => [new Suppression(
+        $result = $filter->apply($findings, ['src/ControllerFirst.php' => [new Suppression(
             rule: LayerViolationRule::NAME,
             reason: 'Only the first exact source declaration is accepted.',
             line: 1,
@@ -465,8 +509,8 @@ final class LayerViolationRuleTest extends TestCase
             controlScope: ControlScope::Class_,
         )]]);
         self::assertSame([false, true], array_map(
-            static fn($violation): bool => \in_array($violation, $result->retained, true),
-            $violations,
+            static fn($finding): bool => \in_array($finding, $result->retained, true),
+            $findings,
         ));
     }
 
@@ -484,17 +528,17 @@ final class LayerViolationRuleTest extends TestCase
         $first = $this->registerClass($repository, 'App\\Repository', 'Repository', 'src/RepositoryFirst.php', 10);
         $dependency = $this->buildDependency('App\\Controller', 'Controller', 'App\\Repository', 'Repository');
 
-        $violations = $this->filterByRule(
+        $findings = $this->filterByRule(
             $rule->analyze($this->buildContext($this->buildGraph([$dependency]), $architecture, $repository)),
             LayerViolationRule::NAME,
         );
 
-        self::assertCount(2, $violations);
+        self::assertCount(2, $findings);
         self::assertSame(
             [$first->toCanonical(), $second->toCanonical()],
-            array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\Violation $violation): string => $violation->subject->toCanonical(), $violations),
+            array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->subject->toCanonical(), $findings),
         );
-        self::assertNotSame($violations[0]->occurrenceKey?->value, $violations[1]->occurrenceKey?->value);
+        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
     }
 
     #[Test]
@@ -519,20 +563,20 @@ final class LayerViolationRuleTest extends TestCase
             $this->buildDependency('App\\Controller', 'SecondController', 'App\\Repository', 'Repository'),
         ];
 
-        $violations = $this->filterByRule(
+        $findings = $this->filterByRule(
             $rule->analyze($this->buildContext($this->buildGraph($dependencies), $architecture, $repository)),
             LayerViolationRule::NAME,
         );
 
-        self::assertCount(4, $violations);
+        self::assertCount(4, $findings);
         self::assertSame([
             'class:App\\Controller\\FirstController|' . $firstTarget->toCanonical(),
             'class:App\\Controller\\FirstController|' . $secondTarget->toCanonical(),
             'class:App\\Controller\\SecondController|' . $firstTarget->toCanonical(),
             'class:App\\Controller\\SecondController|' . $secondTarget->toCanonical(),
         ], array_map(
-            static fn(\Qualimetrix\Analysis\Finding\Contract\Violation $violation): string => $violation->symbolPath->toCanonical() . '|' . $violation->subject->toCanonical(),
-            $violations,
+            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->symbolPath->toCanonical() . '|' . $finding->subject->toCanonical(),
+            $findings,
         ));
     }
 
@@ -601,24 +645,24 @@ final class LayerViolationRuleTest extends TestCase
             recommendation: 'Policy recommendation.',
         );
 
-        $fallbackViolations = $fallback->toViolations();
-        $oneViolations = $one->toViolations();
-        $manyViolations = $many->toViolations();
+        $fallbackFindings = $fallback->toFindings();
+        $oneFindings = $one->toFindings();
+        $manyFindings = $many->toFindings();
 
-        self::assertSame(MetricSubject::declaration($dependency->source)->toCanonical(), $fallbackViolations[0]->subject->toCanonical());
+        self::assertSame(MetricSubject::declaration($dependency->source)->toCanonical(), $fallbackFindings[0]->subject->toCanonical());
         self::assertSame([$first->toCanonical()], array_map(
-            static fn(\Qualimetrix\Analysis\Finding\Contract\Violation $violation): string => $violation->subject->toCanonical(),
-            $oneViolations,
+            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->subject->toCanonical(),
+            $oneFindings,
         ));
         self::assertSame([$first->toCanonical(), $second->toCanonical()], array_map(
-            static fn(\Qualimetrix\Analysis\Finding\Contract\Violation $violation): string => $violation->subject->toCanonical(),
-            $manyViolations,
+            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->subject->toCanonical(),
+            $manyFindings,
         ));
-        self::assertNotSame($manyViolations[0]->occurrenceKey?->value, $manyViolations[1]->occurrenceKey?->value);
-        self::assertSame($dependency->location, $manyViolations[0]->location);
-        self::assertSame($target, $manyViolations[0]->dependencyTarget);
-        self::assertSame(DependencyType::New_, $manyViolations[0]->dependencyType);
-        self::assertStringContainsString('Layer "controller" must not depend on layer "repository"', $manyViolations[0]->message);
+        self::assertNotSame($manyFindings[0]->occurrenceKey?->value, $manyFindings[1]->occurrenceKey?->value);
+        self::assertSame($dependency->location, $manyFindings[0]->location);
+        self::assertSame($target, $manyFindings[0]->dependencyTarget);
+        self::assertSame(DependencyType::New_, $manyFindings[0]->dependencyType);
+        self::assertStringContainsString('Layer "controller" must not depend on layer "repository"', $manyFindings[0]->message);
 
         $sameEdgeAtAnotherLocation = new LayerViolationFinding(
             dependency: $this->dependency(
@@ -634,10 +678,10 @@ final class LayerViolationRuleTest extends TestCase
             severity: Severity::Warning,
             recommendation: 'Policy recommendation.',
         );
-        $sameEdgeViolation = $sameEdgeAtAnotherLocation->toViolations()[0];
+        $sameEdgeFinding = $sameEdgeAtAnotherLocation->toFindings()[0];
 
-        self::assertSame($oneViolations[0]->occurrenceKey?->value, $sameEdgeViolation->occurrenceKey?->value);
-        self::assertSame(24, $sameEdgeViolation->location->line);
+        self::assertSame($oneFindings[0]->occurrenceKey?->value, $sameEdgeFinding->occurrenceKey?->value);
+        self::assertSame(24, $sameEdgeFinding->location->line);
     }
 
     #[Test]
@@ -658,11 +702,11 @@ final class LayerViolationRuleTest extends TestCase
             DependencyType::New_,
             new Location(RelativePath::fromString('src/Controller.php'), 11),
         );
-        $violations = $this->filterByRule(
+        $findings = $this->filterByRule(
             $rule->analyze($this->buildContext($this->buildGraph([$dependency]), $architecture, $repository)),
             LayerViolationRule::NAME,
         );
-        self::assertCount(2, $violations);
+        self::assertCount(2, $findings);
 
         $filter = new SuppressionFilter();
         $suppressions = ['src/source.php' => [new Suppression(
@@ -673,8 +717,8 @@ final class LayerViolationRuleTest extends TestCase
             subject: $sourceSubject,
             controlScope: ControlScope::Class_,
         )]];
-        $result = $filter->apply($violations, $suppressions);
-        self::assertSame([true, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $violations));
+        $result = $filter->apply($findings, $suppressions);
+        self::assertSame([true, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
 
         $suppressions['src/RepositoryOne.php'] = [new Suppression(
             rule: LayerViolationRule::NAME,
@@ -684,8 +728,8 @@ final class LayerViolationRuleTest extends TestCase
             subject: $firstTargetSubject,
             controlScope: ControlScope::Class_,
         )];
-        $result = $filter->apply($violations, $suppressions);
-        self::assertSame([false, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $violations));
+        $result = $filter->apply($findings, $suppressions);
+        self::assertSame([false, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
 
         $suppressions['src/Controller.php'] = [new Suppression(
             rule: LayerViolationRule::NAME,
@@ -693,8 +737,8 @@ final class LayerViolationRuleTest extends TestCase
             line: 10,
             type: SuppressionType::NextLine,
         )];
-        $result = $filter->apply($violations, $suppressions);
-        self::assertSame([false, false], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $violations));
+        $result = $filter->apply($findings, $suppressions);
+        self::assertSame([false, false], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
     }
 
     #[Test]
@@ -714,9 +758,9 @@ final class LayerViolationRuleTest extends TestCase
             $this->buildDependency('Other\\Vendor', 'Helper', 'App\\Repository', 'UserRepository'),
         ]);
 
-        $violations = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
+        $findings = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     #[Test]
@@ -737,9 +781,9 @@ final class LayerViolationRuleTest extends TestCase
             $this->buildDependency('App\\Service', 'Foo', 'App\\Service', 'Bar'),
         ]);
 
-        $violations = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
+        $findings = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
     }
 
     // -------------------------------------------------------------------------
@@ -760,9 +804,9 @@ final class LayerViolationRuleTest extends TestCase
         $repo = new InMemoryMetricRepository();
         $this->registerClass($repo, 'App\\Service', 'UserService');
 
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $unreachable = $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        $unreachable = $this->filterByRule($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(1, $unreachable);
         self::assertSame(Severity::Error, $unreachable[0]->severity);
         self::assertStringContainsString('Layer "controller" was never matched', $unreachable[0]->message);
@@ -789,9 +833,9 @@ final class LayerViolationRuleTest extends TestCase
         $this->registerClass($repo, 'App\\Controller', 'UserController');
         $this->registerClass($repo, 'App\\Service', 'UserService');
 
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $unreachable = $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        $unreachable = $this->filterByRule($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(1, $unreachable);
         self::assertStringContainsString('Layer "controller"', $unreachable[0]->message);
     }
@@ -834,9 +878,9 @@ final class LayerViolationRuleTest extends TestCase
             ),
         ]);
 
-        $violations = $rule->analyze($this->buildContext($graph, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext($graph, $arch, $repo));
 
-        $layerViolations = $this->filterByRule($violations, LayerViolationRule::NAME);
+        $layerViolations = $this->filterByRule($findings, LayerViolationRule::NAME);
         self::assertCount(1, $layerViolations, 'layer-violation must still fire for the disallowed edge.');
         self::assertStringContainsString(
             'Layer "infrastructure" must not depend on layer "vendor-clickhouse"',
@@ -844,8 +888,8 @@ final class LayerViolationRuleTest extends TestCase
         );
 
         $unreachableLayerNames = array_map(
-            static fn(\Qualimetrix\Analysis\Finding\Contract\Violation $v): string => self::extractLayerName($v->message),
-            $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $v): string => self::extractLayerName($v->message),
+            $this->filterByRule($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
         );
 
         self::assertNotContains(
@@ -883,9 +927,9 @@ final class LayerViolationRuleTest extends TestCase
         $this->registerClass($repo, 'App\\Dto', 'UserDto');
 
         // No dependency graph (no outgoing deps from DTO).
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $unreachable = $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        $unreachable = $this->filterByRule($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertSame([], $unreachable, 'DTO-only layer with no outgoing deps must NOT trigger unreachable-layer (hit counting is over classes, not graph edges).');
     }
 
@@ -913,9 +957,9 @@ final class LayerViolationRuleTest extends TestCase
         $this->registerClass($repo, 'App\\Service', 'Foo');
         $this->registerClass($repo, 'App\\Service', 'Bar');
 
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertCount(1, $shadow);
         self::assertSame(Severity::Error, $shadow[0]->severity);
         self::assertStringContainsString('"any-foo"', $shadow[0]->message);
@@ -943,9 +987,9 @@ final class LayerViolationRuleTest extends TestCase
         $this->registerClass($repo, 'App\\Domain', 'OrderService');
         $this->registerClass($repo, 'App\\Domain', 'OrderRepository');
 
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertCount(1, $shadow);
         self::assertStringContainsString('"svc-suffix"', $shadow[0]->message);
         self::assertStringContainsString('"domain"', $shadow[0]->message);
@@ -966,9 +1010,9 @@ final class LayerViolationRuleTest extends TestCase
             allow: [],
         );
 
-        $violations = $rule->analyze($this->buildContext(null, $arch, new InMemoryMetricRepository()));
+        $findings = $rule->analyze($this->buildContext(null, $arch, new InMemoryMetricRepository()));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertSame([], $shadow);
     }
 
@@ -989,9 +1033,9 @@ final class LayerViolationRuleTest extends TestCase
         $this->registerClass($repo, 'App\\Controller', 'UserController');
         $this->registerClass($repo, 'App\\Service', 'UserService');
 
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertSame([], $shadow);
     }
 
@@ -1016,9 +1060,9 @@ final class LayerViolationRuleTest extends TestCase
             $this->registerClass($repo, 'App\\Service', $name);
         }
 
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertCount(1, $shadow);
 
         $message = $shadow[0]->message;
@@ -1053,9 +1097,9 @@ final class LayerViolationRuleTest extends TestCase
             $this->registerClass($repo, 'App\\Service', $name);
         }
 
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow = $this->filterByRule($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertCount(1, $shadow);
         self::assertStringNotContainsString('...and', $shadow[0]->message);
     }
@@ -1091,8 +1135,8 @@ final class LayerViolationRuleTest extends TestCase
         $run1 = $rule->analyze($this->buildContext(null, $arch, $repo1));
         $run2 = $rule->analyze($this->buildContext(null, $arch, $repo2));
 
-        $shadow1 = $this->filterByRule($run1, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
-        $shadow2 = $this->filterByRule($run2, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow1 = $this->filterByRule($run1, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow2 = $this->filterByRule($run2, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
 
         $msgs1 = array_map(static fn($v) => $v->message, $shadow1);
         $msgs2 = array_map(static fn($v) => $v->message, $shadow2);
@@ -1119,9 +1163,9 @@ final class LayerViolationRuleTest extends TestCase
         $this->registerClass($repo, 'App\\Http', 'Kernel');
         $this->registerClass($repo, 'App\\Domain', 'Customer');
 
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        self::assertSame([], $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->filterByRule($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
     }
 
     #[Test]
@@ -1144,9 +1188,9 @@ final class LayerViolationRuleTest extends TestCase
         $this->registerClass($repo, 'App\\Service', 'Billing');
         $this->registerClass($repo, 'App\\Other', 'Widget');
 
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
 
-        self::assertSame([], $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->filterByRule($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
     }
 
     #[Test]
@@ -1168,7 +1212,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $shadow = $this->filterByRule(
             $rule->analyze($this->buildContext(null, $arch, $repo)),
-            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         );
 
         self::assertCount(1, $shadow);
@@ -1196,7 +1240,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $shadow = $this->filterByRule(
             $rule->analyze($this->buildContext(null, $arch, $repo)),
-            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         );
 
         self::assertCount(1, $shadow);
@@ -1225,7 +1269,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $shadow = $this->filterByRule(
             $rule->analyze($this->buildContext(null, $arch, $repo)),
-            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         );
 
         self::assertCount(1, $shadow);
@@ -1243,9 +1287,9 @@ final class LayerViolationRuleTest extends TestCase
 
         $arch = $this->buildArchitectureWithEmptyTemplates(['domain-{module}']);
 
-        $violations = $rule->analyze($this->buildContext(null, $arch));
+        $findings = $rule->analyze($this->buildContext(null, $arch));
 
-        $emptyTemplate = $this->filterByRule($violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplate = $this->filterByRule($findings, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(1, $emptyTemplate);
         self::assertSame(Severity::Error, $emptyTemplate[0]->severity);
         self::assertStringContainsString('domain-{module}', $emptyTemplate[0]->message);
@@ -1273,18 +1317,18 @@ final class LayerViolationRuleTest extends TestCase
         $this->registerClass($repo1, 'App\\Service', 'Foo');
 
         $run1 = $rule->analyze($this->buildContext(null, $arch, $repo1));
-        $shadow1 = $this->filterByRule($run1, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow1 = $this->filterByRule($run1, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertCount(1, $shadow1, 'First analyze() should produce one shadow diagnostic.');
         self::assertStringContainsString('1 class(es)', $shadow1[0]->message);
 
         // Context 2: empty repo — must NOT carry any state from run 1.
         $run2 = $rule->analyze($this->buildContext(null, $arch, new InMemoryMetricRepository()));
-        $shadow2 = $this->filterByRule($run2, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        $shadow2 = $this->filterByRule($run2, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertSame([], $shadow2, 'Second analyze() with empty context must produce zero shadow diagnostics — hit counter/shadow evidence must not leak.');
 
         // unreachable-layer for the second run fires on BOTH layers (no classes
         // means no hits anywhere).
-        $unreachable2 = $this->filterByRule($run2, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        $unreachable2 = $this->filterByRule($run2, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(2, $unreachable2, 'Both layers must be reported unreachable on the empty second run.');
     }
 
@@ -1346,7 +1390,7 @@ final class LayerViolationRuleTest extends TestCase
             recommendation: 'Move the dependency behind an allowed boundary.',
         );
 
-        self::assertSame($location, $finding->toViolations()[0]->location);
+        self::assertSame($location, $finding->toFindings()[0]->location);
     }
 
     #[Test]
@@ -1385,7 +1429,7 @@ final class LayerViolationRuleTest extends TestCase
             recommendation: 'Move the dependency behind an allowed boundary.',
         );
 
-        $findingLocation = $finding->toViolations()[0]->location;
+        $findingLocation = $finding->toFindings()[0]->location;
 
         self::assertNotSame($location, $findingLocation);
         self::assertSame('src/Controller.php', $findingLocation->file?->value());
@@ -1430,7 +1474,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Layer violation findings require an exact dependency location.');
-        $finding->toViolations();
+        $finding->toFindings();
     }
 
     /**
@@ -1474,9 +1518,9 @@ final class LayerViolationRuleTest extends TestCase
      * Tests call {@see buildContext()} next to prime the processor with the
      * architecture under test.
      */
-    private function buildRule(LayerViolationOptions $options): LayerViolationRule
+    private function buildRule(LayerViolationOptions $options): LayerVerdicts
     {
-        return new LayerViolationRule($options, $this->processor);
+        return new LayerVerdicts($options, $this->processor);
     }
 
     /**
@@ -1504,7 +1548,7 @@ final class LayerViolationRuleTest extends TestCase
 
     /**
      * Registers a class symbol in the metric repository so that
-     * `metrics->all(SymbolType::Class_)` yields it.
+     * `metrics->all(SymbolLevel::Class_)` yields it.
      */
     private function registerClass(
         InMemoryMetricRepository $repo,
@@ -1537,15 +1581,15 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     /**
-     * @param list<\Qualimetrix\Analysis\Finding\Contract\Violation> $violations
+     * @param list<\Qualimetrix\Analysis\Finding\Contract\Finding> $findings
      *
-     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
-    private function filterByRule(array $violations, string $ruleName): array
+    private function filterByRule(array $findings, string $ruleName): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(\Qualimetrix\Analysis\Finding\Contract\Violation $v): bool => $v->ruleName === $ruleName,
+            $findings,
+            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $v): bool => $v->ruleName === $ruleName,
         ));
     }
 }

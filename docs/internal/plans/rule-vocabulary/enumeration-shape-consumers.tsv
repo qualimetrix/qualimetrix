@@ -1,0 +1,96 @@
+path	symbol_or_site	reads_or_writes	has_producer_at_hand(yes|no|unclear)	how_found(serena|grep)
+src/Analysis/Finding/Contract/ChannelShape.php	ChannelShape (enum declaration)	declares	yes	serena
+src/Analysis/Finding/Contract/ChannelDeclaration.php	ChannelDeclaration::__construct ($shape param + two invariant checks)	writes	yes	serena
+src/Analysis/Finding/Contract/ChannelDeclaration.php	ChannelDeclaration::magnitude (factory)	writes	yes	serena
+src/Analysis/Finding/Contract/ChannelDeclaration.php	ChannelDeclaration::occurrence (factory)	writes	yes	serena
+src/Analysis/Finding/Contract/ChannelDeclaration.php	ChannelDeclaration::asConfigurationError (wither, reclassifies configurationError only, shape passthrough)	writes	yes	serena
+src/Analysis/Finding/Contract/ChannelDeclaration.php	ChannelDeclaration::isLowerWorse (reads $direction, entangled with shape==magnitude)	reads	yes	serena
+src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php	ChannelDeclarationCompilerPass::collectRuleChannels	writes (assembles per-channel map keyed by producer)	yes	serena
+src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php	ChannelDeclarationCompilerPass::collectValidatorChannels (calls ->asConfigurationError())	writes	yes	serena
+src/Infrastructure/Rule/ChannelUniverse.php	ChannelUniverse::declarationFor (computed-metric branch: always constructs ChannelDeclaration::magnitude at run time)	writes	yes	serena
+src/Analysis/Policy/Inline/Directive/InlineDirectiveRule.php	InlineDirectiveRule::channelDeclarations	writes	yes	serena
+src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	InlineDirectiveValidator::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php	CircularDependencyRule::channelDeclarations	writes	yes	serena
+src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	LayerViolationRule::channelDeclarations	writes	yes	serena
+src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassSummary.php	UnassignedClassSummary::unassignedClassChannel	writes	yes	serena
+src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php	LayerDeclarationValidator::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php	AbstractCodeSmellRule::channelDeclarations (base for 9 leaf rules)	writes	yes	serena
+src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php	IdenticalSubExpressionRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php	ConstructorOverinjectionRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	LongParameterListRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php	UnreachableCodeRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php	UnusedPrivateRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Cohesion/LcomRule.php	LcomRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	CognitiveComplexityRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Complexity/ComplexityRule.php	ComplexityRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Complexity/NpathComplexityRule.php	NpathComplexityRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Complexity/WmcRule.php	WmcRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Coupling/CboRule.php	CboRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Coupling/DistanceRule.php	DistanceRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Coupling/InstabilityRule.php	InstabilityRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Coupling/ClassRankRule.php	ClassRankRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Design/DataClassRule.php	DataClassRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Design/GodClassRule.php	GodClassRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Design/InheritanceRule.php	InheritanceRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Design/NocRule.php	NocRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Design/TypeCoverageRule.php	TypeCoverageRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Maintainability/MaintainabilityRule.php	MaintainabilityRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Duplication/CodeDuplicationRule.php	CodeDuplicationRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Size/ClassCountRule.php	ClassCountRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Size/MethodCountRule.php	MethodCountRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Size/PropertyCountRule.php	PropertyCountRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php	AbstractSecurityPatternRule::channelDeclarations (base for 3 leaf rules)	writes	yes	serena
+src/Analysis/Evidence/Security/HardcodedCredentialsRule.php	HardcodedCredentialsRule::channelDeclarations	writes	yes	serena
+src/Analysis/Evidence/Security/SensitiveParameterRule.php	SensitiveParameterRule::channelDeclarations	writes	yes	serena
+src/Analysis/Policy/Baseline/BaselineEntryParser.php	BaselineEntryParser::parseEntry ($entry->shape() !== $declaration->shape; $declaration from declarations->declarationFor($identity->channel))	reads	yes	serena
+src/Analysis/Policy/Baseline/BaselineUpdater.php	BaselineUpdater::reconcile ($declaration->shape !== $entry->shape(); $declaration from declarations->declarationFor($entry->identity->channel))	reads	yes	serena
+src/Analysis/Policy/Baseline/Filter/BaselineCeilingStage.php	BaselineCeilingStage::judge ($declaration->shape === ChannelShape::Occurrence; $declaration from declarations->declarationFor($identity->channel))	reads	yes	serena
+src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php	RemediationTimeRegistry::overshootRatio (declarationFor($violation->channel())?->isLowerWorse() — direction, entangled with shape==magnitude)	reads	yes	serena
+src/Analysis/Policy/Baseline/BaselineEntry.php	BaselineEntry::shape (derives ChannelShape from own $magnitudes===null, never consults a registry)	reads (self-derived, not asked of a producer)	unclear — carries $this->identity->channel but by design infers shape from stored data instead of looking it up	serena
+src/Analysis/Finding/Contract/AcceptedLevel.php	AcceptedLevel::shape (derives ChannelShape from own $magnitudes===null; object holds no channel/producer identity at all)	reads (self-derived)	no — structurally has no channel or producer reference, only magnitudes+count	serena
+src/Reporting/Formatter/Support/AcceptedLevelNarrator.php	AcceptedLevelNarrator::describe (static, reads $violation->acceptedLevel->shape())	reads	unclear — receives a Violation (carries ruleName/violationCode) but is a static helper with no registry dependency wired in; the channel's own ruleName is not always the true producer (see architecture.layer-violation row)	serena
+src/Reporting/Formatter/Json/JsonViolationSection.php	JsonViolationSection::formatAcceptedLevel (reads $accepted->shape()->value for the JSON report's `acceptedLevel.shape` field)	reads	unclear — class has $violation (ruleName/violationCode) but only RemediationTimeRegistry + a sanitizer injected, no ChannelDeclarationRegistryInterface	serena
+#
+# HOW THIS WAS PRODUCED
+#
+# `mcp__serena__find_referencing_symbols` was called 3 times against
+# production symbols, plus 2 more against the two `->shape()`-returning
+# methods that the first pass surfaced as needing their own check:
+#   1. ChannelShape (the enum) in src/Analysis/Finding/Contract/ChannelShape.php
+#   2. ChannelDeclaration::magnitude in src/Analysis/Finding/Contract/ChannelDeclaration.php
+#   3. ChannelDeclaration::occurrence in src/Analysis/Finding/Contract/ChannelDeclaration.php
+#   4. BaselineEntry::shape in src/Analysis/Policy/Baseline/BaselineEntry.php
+#   5. AcceptedLevel::shape in src/Analysis/Finding/Contract/AcceptedLevel.php
+# One more (`ChannelDeclaration::isLowerWorse`) was run to trace the
+# direction-reading consumer (RemediationTimeRegistry) that shares the same
+# "magnitude-only" entanglement as shape. `mcp__serena__find_implementations`
+# located every ConfigurationValidatorInterface implementer (2 production:
+# LayerDeclarationValidator, InlineDirectiveValidator). A supplementary grep
+# for `->shape\b|->shape(` across src/ (excluding tests) returned exactly the
+# same 6 file:line hits the Serena searches already covered — no consumer
+# was found by grep that Serena missed.
+#
+# WHAT THIS METHOD DOES NOT SEE
+#
+# - Test-only readers/writers (ChannelDeclarationTest, AcceptedLevelTest,
+#   BaselineEntryTest, ChannelDeclarationFixtureDriftTest,
+#   StubChannelDeclarationRegistry, and the Fixture*/Stamp*/*Validator classes
+#   inside ChannelDeclarationReaderTest and
+#   ConfigurationErrorClassificationTopologyTest) are excluded from this
+#   table: they read/write the same symbols but are not part of the shipped
+#   product and are never tagged into the production container.
+# - A consumer that reaches shape only through a *string* comparison (e.g.
+#   `'magnitude'`/`'occurrence'` literals bypassing the enum) is invisible to
+#   a symbol-reference search; none was found by the supplementary grep for
+#   the literal `.shape` accessor pattern, but a grep for the bare string
+#   values `'magnitude'`/`'occurrence'` was not run, so a config-file or
+#   serialized-form literal (e.g. inside a baseline JSON file on disk) is not
+#   ruled out — those are data, not code, and out of this enumeration's scope.
+# - Reflection-based or dynamically dispatched calls to `channelDeclarations()`
+#   itself are covered (ChannelDeclarationReader::read uses reflection to
+#   invoke it, and is itself not a shape reader — it validates the returned
+#   array's *type*, never inspects `->shape`), but a hypothetical future
+#   producer that builds its ChannelDeclaration through a variable static
+#   method name or callable array would not be caught by this search, the
+#   same limit the project's own ConfigurationErrorClassificationTopologyTest
+#   already documents for `asConfigurationError()`.

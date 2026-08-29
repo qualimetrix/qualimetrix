@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 #[CoversClass(CognitiveComplexityCollector::class)]
@@ -37,7 +37,7 @@ final class CognitiveComplexityCollectorTest extends TestCase
     #[Test]
     public function itProvides(): void
     {
-        self::assertSame(['cognitive'], $this->collector->provides());
+        self::assertSame(['complexity.cognitive'], $this->collector->provides());
     }
 
     #[Test]
@@ -59,7 +59,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('cognitive:App\Service\Calculator::add'));
+        self::assertSame(0, $metrics->get('complexity.cognitive:App\Service\Calculator::add'));
     }
 
     #[Test]
@@ -85,7 +85,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Cognitive = +1 (if)
-        self::assertSame(1, $metrics->get('cognitive:App\Test::check'));
+        self::assertSame(1, $metrics->get('complexity.cognitive:App\Test::check'));
     }
 
     #[Test]
@@ -113,7 +113,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Cognitive = +1 (outer if) + +2 (inner if with nesting) = 3
-        self::assertSame(3, $metrics->get('cognitive:App\Test::nested'));
+        self::assertSame(3, $metrics->get('complexity.cognitive:App\Test::nested'));
     }
 
     #[Test]
@@ -144,7 +144,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Cognitive = +1 (first if) + 1 (logical &&) + 1 (second if) + 1 (logical ||) = 4
-        self::assertSame(4, $metrics->get('cognitive:App\BooleanTest::check'));
+        self::assertSame(4, $metrics->get('complexity.cognitive:App\BooleanTest::check'));
     }
 
     #[Test]
@@ -176,7 +176,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Cognitive = +1 (switch, not per case)
-        self::assertSame(1, $metrics->get('cognitive:App\SwitchTest::dayName'));
+        self::assertSame(1, $metrics->get('complexity.cognitive:App\SwitchTest::dayName'));
     }
 
     #[Test]
@@ -205,7 +205,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Cognitive = +1 (first catch) + +1 (second catch) = 2
-        self::assertSame(2, $metrics->get('cognitive:App\ExceptionTest::risky'));
+        self::assertSame(2, $metrics->get('complexity.cognitive:App\ExceptionTest::risky'));
     }
 
     #[Test]
@@ -228,7 +228,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Cognitive = +1 (ternary)
-        self::assertSame(1, $metrics->get('cognitive:App\TernaryTest::max'));
+        self::assertSame(1, $metrics->get('complexity.cognitive:App\TernaryTest::max'));
     }
 
     #[Test]
@@ -251,7 +251,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Cognitive = +1 (??)
-        self::assertSame(1, $metrics->get('cognitive:App\NullCoalescingTest::getName'));
+        self::assertSame(1, $metrics->get('complexity.cognitive:App\NullCoalescingTest::getName'));
     }
 
     #[Test]
@@ -274,7 +274,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Cognitive = +1 (if)
-        self::assertSame(1, $metrics->get('cognitive:App\Utils\validate'));
+        self::assertSame(1, $metrics->get('complexity.cognitive:App\Utils\validate'));
     }
 
     #[Test]
@@ -294,7 +294,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Cognitive = +1 (if)
-        self::assertSame(1, $metrics->get('cognitive:globalHelper'));
+        self::assertSame(1, $metrics->get('complexity.cognitive:globalHelper'));
     }
 
     #[Test]
@@ -322,10 +322,10 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Method itself: Cognitive = +1 (closure B1 lambda increment)
-        self::assertSame(1, $metrics->get('cognitive:App\ClosureTest::withClosure'));
+        self::assertSame(1, $metrics->get('complexity.cognitive:App\ClosureTest::withClosure'));
 
         // Closure: Cognitive = +1 (if)
-        self::assertSame(1, $metrics->get('cognitive:App\ClosureTest::{closure#1}'));
+        self::assertSame(1, $metrics->get('complexity.cognitive:App\ClosureTest::{closure#1}'));
     }
 
     #[Test]
@@ -356,9 +356,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('cognitive:App\MultiMethod::simple'));
-        self::assertSame(1, $metrics->get('cognitive:App\MultiMethod::withIf'));
-        self::assertSame(1, $metrics->get('cognitive:App\MultiMethod::withLoop'));
+        self::assertSame(0, $metrics->get('complexity.cognitive:App\MultiMethod::simple'));
+        self::assertSame(1, $metrics->get('complexity.cognitive:App\MultiMethod::withIf'));
+        self::assertSame(1, $metrics->get('complexity.cognitive:App\MultiMethod::withLoop'));
     }
 
     #[Test]
@@ -401,8 +401,8 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         // Should only contain metrics from second file
-        self::assertNull($metrics->get('cognitive:App\First::method'));
-        self::assertSame(0, $metrics->get('cognitive:App\Second::otherMethod'));
+        self::assertNull($metrics->get('complexity.cognitive:App\First::method'));
+        self::assertSame(0, $metrics->get('complexity.cognitive:App\Second::otherMethod'));
     }
 
     #[Test]
@@ -453,7 +453,7 @@ PHP;
         // Cognitive = +1 (if empty) + 1 (foreach) + 2 (if validate) + 1 (&&)
         //           + 1 (??) + 2 (if value) + 1 (||) + 1 (ternary) + 2 (first catch) + 2 (second catch)
         //           = 14
-        self::assertSame(14, $metrics->get('cognitive:App\Service\ComplexService::process'));
+        self::assertSame(14, $metrics->get('complexity.cognitive:App\Service\ComplexService::process'));
     }
 
     #[Test]
@@ -474,7 +474,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Cognitive = +1 (if) + 1 (recursive call) = 2
-        self::assertSame(2, $metrics->get('cognitive:factorial'));
+        self::assertSame(2, $metrics->get('complexity.cognitive:factorial'));
     }
 
     #[Test]
@@ -485,7 +485,7 @@ PHP;
         self::assertCount(1, $definitions);
 
         $cognitiveDefinition = $definitions[0];
-        self::assertSame('cognitive', $cognitiveDefinition->name);
+        self::assertSame('complexity.cognitive', $cognitiveDefinition->name);
         self::assertSame(SymbolLevel::Callable, $cognitiveDefinition->collectedAt);
 
         // Check Class_ level aggregations

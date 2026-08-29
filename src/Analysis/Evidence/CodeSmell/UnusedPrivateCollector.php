@@ -38,9 +38,9 @@ final class UnusedPrivateCollector extends AbstractCollector implements Declarat
 
     private const NAME = 'unused-private';
 
-    public const string ENTRY_METHOD = MetricName::STRUCTURE_UNUSED_PRIVATE_METHOD;
-    public const string ENTRY_PROPERTY = MetricName::STRUCTURE_UNUSED_PRIVATE_PROPERTY;
-    public const string ENTRY_CONSTANT = MetricName::STRUCTURE_UNUSED_PRIVATE_CONSTANT;
+    public const string ENTRY_METHOD = MetricName::CODE_SMELL_UNUSED_PRIVATE_METHOD;
+    public const string ENTRY_PROPERTY = MetricName::CODE_SMELL_UNUSED_PRIVATE_PROPERTY;
+    public const string ENTRY_CONSTANT = MetricName::CODE_SMELL_UNUSED_PRIVATE_CONSTANT;
 
     public function __construct()
     {
@@ -61,7 +61,7 @@ final class UnusedPrivateCollector extends AbstractCollector implements Declarat
             self::ENTRY_METHOD,
             self::ENTRY_PROPERTY,
             self::ENTRY_CONSTANT,
-            MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL,
+            MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL,
         ];
     }
 
@@ -109,7 +109,7 @@ final class UnusedPrivateCollector extends AbstractCollector implements Declarat
         $unusedConstants = $data->getUnusedConstants();
 
         $bag = $bag->with(
-            MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL . ':' . $classFqn,
+            MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL . ':' . $classFqn,
             \count($unusedMethods) + \count($unusedProperties) + \count($unusedConstants),
         );
 
@@ -127,7 +127,7 @@ final class UnusedPrivateCollector extends AbstractCollector implements Declarat
         $unusedConstants = $data->getUnusedConstants();
 
         $bag = (new MetricBag())->with(
-            MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL,
+            MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL,
             \count($unusedMethods) + \count($unusedProperties) + \count($unusedConstants),
         );
 

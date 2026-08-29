@@ -7,12 +7,13 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -46,13 +47,13 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $emptyTemplates = $this->filterByRule($analysis->violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplates = $this->filterByRule($analysis->findings, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertSame([], $emptyTemplates, 'A non-typo template should expand and not raise empty-template.');
 
         // Customer depends on Logger (shared) — under allow rules
         // `domain-Order -> shared` this is permitted; ensure no layer-violation
         // fires for the expanded layer pair.
-        $allowedEdges = $this->filterByRule($analysis->violations, LayerViolationRule::NAME);
+        $allowedEdges = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
         self::assertSame([], $allowedEdges, 'Allowed edge under expanded names must not produce violations.');
     }
 
@@ -68,7 +69,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $emptyTemplates = $this->filterByRule($analysis->violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplates = $this->filterByRule($analysis->findings, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(1, $emptyTemplates, 'A typo template must emit exactly one empty-template diagnostic.');
         self::assertSame(Severity::Error, $emptyTemplates[0]->severity);
         self::assertStringContainsString('noop-{module}', $emptyTemplates[0]->message);
@@ -136,7 +137,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($configFits);
 
-        $emptyTemplates = $this->filterByRule($analysis->violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplates = $this->filterByRule($analysis->findings, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(
             1,
             $emptyTemplates,
@@ -157,16 +158,16 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $layerViolations = $this->filterByRule($analysis->violations, LayerViolationRule::NAME);
+        $layerViolations = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
         self::assertNotEmpty($layerViolations, 'Expected the Customer -> Logger edge to violate the empty allow list.');
 
-        $messages = array_map(static fn(Violation $v): string => $v->message, $layerViolations);
-        $orderViolations = array_filter(
+        $messages = array_map(static fn(Finding $v): string => $v->message, $layerViolations);
+        $orderFindings = array_filter(
             $messages,
             static fn(string $m): bool => str_contains($m, 'domain-Order'),
         );
         self::assertNotEmpty(
-            $orderViolations,
+            $orderFindings,
             'Violation messages must reference the expanded layer name "domain-Order" (concrete), not the template "domain-{module}".',
         );
     }
@@ -222,15 +223,15 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function filterByRule(array $violations, string $ruleName): array
+    private function filterByRule(array $findings, string $ruleName): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $v): bool => $v->ruleName === $ruleName,
+            $findings,
+            static fn(Finding $v): bool => $v->ruleName === $ruleName,
         ));
     }
 }

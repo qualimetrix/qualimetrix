@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity;
 
 use FilesystemIterator;
+use PhpParser\NodeVisitor;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
 use SplFileInfo;
 
 /**
@@ -29,6 +31,28 @@ final class TraversalCompletenessTest extends TestCase
         'STOP_TRAVERSAL',
         'REMOVE_NODE',
     ];
+
+    /**
+     * The names above are php-parser's, and a guard that searches for a name
+     * nobody uses any more searches for nothing while still reporting green.
+     * Both halves of that are checked here: the constants exist on the visitor
+     * contract, and the scan has files to read at all.
+     */
+    #[Test]
+    public function theForbiddenNamesAreTheVisitorContractsOwnAndTheScanReadsFiles(): void
+    {
+        $declared = array_keys((new ReflectionClass(NodeVisitor::class))->getConstants());
+
+        foreach (self::FORBIDDEN as $constant) {
+            self::assertContains(
+                $constant,
+                $declared,
+                \sprintf('%s no longer declares %s, so searching for it guards nothing.', NodeVisitor::class, $constant),
+            );
+        }
+
+        self::assertNotSame([], self::sourceFiles(), 'The scanned source tree is empty.');
+    }
 
     #[Test]
     public function itFindsNoTraversalControlReturnInProductionVisitors(): void

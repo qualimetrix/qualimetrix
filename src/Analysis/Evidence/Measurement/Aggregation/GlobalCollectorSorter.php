@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 
 /**
  * Sorts GlobalContextCollectors in topological order based on their dependencies.
@@ -149,7 +150,7 @@ final class GlobalCollectorSorter
 
         foreach ($collectors as $collector) {
             foreach ($collector->requires() as $metric) {
-                if (isset($available[$metric]) || isset($available[$this->getBaseMetric($metric)])) {
+                if (isset($available[$metric]) || isset($available[MetricName::base($metric)])) {
                     continue;
                 }
 
@@ -176,8 +177,8 @@ final class GlobalCollectorSorter
         $required = [];
 
         foreach ($collector->requires() as $metric) {
-            // Handle dotted metric names (e.g., 'classCount.sum' → 'classCount')
-            $baseMetric = $this->getBaseMetric($metric);
+            // Handle dotted metric names (e.g., 'size.class-count.sum' → 'size.class-count')
+            $baseMetric = MetricName::base($metric);
 
             if (isset($providers[$metric])) {
                 $required[$providers[$metric]] = true;
@@ -187,22 +188,6 @@ final class GlobalCollectorSorter
         }
 
         return array_keys($required);
-    }
-
-    /**
-     * Extracts base metric name from a potentially dotted name.
-     *
-     * 'classCount.sum' → 'classCount'
-     * 'instability' → 'instability'
-     */
-    private function getBaseMetric(string $metric): string
-    {
-        $dotPos = strpos($metric, '.');
-        if ($dotPos !== false) {
-            return substr($metric, 0, $dotPos);
-        }
-
-        return $metric;
     }
 
     /**

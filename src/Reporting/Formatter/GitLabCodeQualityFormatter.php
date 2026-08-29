@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter;
 
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -23,23 +23,23 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
     {
         $issues = [];
 
-        foreach ($report->violations as $violation) {
+        foreach ($report->findings as $finding) {
             $issues[] = [
                 // The Code Climate spec has no field for the accepted level, so
                 // a measured breach (ADR 0017) carries it in the free-text
                 // description — the fingerprint below still hashes the
-                // unmodified $violation->message, so it stays stable across
+                // unmodified $finding->message, so it stays stable across
                 // the run where a breach first appears.
-                'description' => $violation->message . $this->formatBreachSuffix($violation),
-                'check_name' => $violation->violationCode,
-                'fingerprint' => $this->generateFingerprint($violation),
-                'severity' => $this->mapSeverity($violation->severity),
+                'description' => $finding->message . $this->formatBreachSuffix($finding),
+                'check_name' => $finding->code,
+                'fingerprint' => $this->generateFingerprint($finding),
+                'severity' => $this->mapSeverity($finding->severity),
                 'location' => [
-                    'path' => $violation->location->file === null
+                    'path' => $finding->location->file === null
                         ? '_project'
-                        : $context->relativizePath($violation->location->file),
+                        : $context->relativizePath($finding->location->file),
                     'lines' => [
-                        'begin' => $violation->location->file === null ? 1 : ($violation->location->line ?? 1),
+                        'begin' => $finding->location->file === null ? 1 : ($finding->location->line ?? 1),
                     ],
                 ],
             ];
@@ -76,9 +76,9 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
      * Locations and messages are presentation data. They must not participate
      * in the identity GitLab uses to track a finding across revisions.
      */
-    private function generateFingerprint(Violation $violation): string
+    private function generateFingerprint(Finding $finding): string
     {
-        return md5($violation->getFingerprint());
+        return md5($finding->getFingerprint());
     }
 
     /**
@@ -98,9 +98,9 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
     /**
      * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
      */
-    private function formatBreachSuffix(Violation $violation): string
+    private function formatBreachSuffix(Finding $finding): string
     {
-        $breach = AcceptedLevelNarrator::describe($violation);
+        $breach = AcceptedLevelNarrator::describe($finding);
 
         return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 
+use FilesystemIterator;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
@@ -14,6 +15,7 @@ use PhpParser\Node\Expr\List_;
 use PhpParser\Node\Expr\Match_;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\Expr\Throw_;
 use PhpParser\Node\Expr\Variable;
@@ -28,20 +30,25 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionParameter;
 use RuntimeException;
+use SplFileInfo;
 
 /**
  * Closes the seam {@see ChannelCoverageTest} and
  * {@see \Qualimetrix\Tests\Integration\Infrastructure\Rule\ChannelDeclarationFixtureDriftTest}
  * cannot: both compare the **declared** set against itself (the fixture) or
  * against a 12-case hand-written corpus — neither reads what a rule actually
- * *emits*. A rule whose `violationCode:` argument drifts from its
+ * *emits*. A rule whose `code:` argument drifts from its
  * `channelDeclarations()` entry (e.g. `self::NAME . '.method'` in one place,
  * `self::NAME . '.methods'` in the other, both hand-typed) passes both of
  * those guards, because the fixture was transcribed from the declaration,
@@ -49,13 +56,13 @@ use RuntimeException;
  *
  * This guard parses every rule class's own source with `nikic/php-parser`
  * (already a project dependency; this project is itself a static analyser),
- * finds every `new Violation(...)` construction, and resolves its
- * `ruleName:`/`violationCode:` argument expressions where they are built
+ * finds every `new Finding(...)` construction, and resolves its
+ * `ruleName:`/`code:` argument expressions where they are built
  * from constants:
  *
  * - a string literal;
  * - `self::CONST` (bound to the class whose source declares the
- *   `new Violation(...)` — the abstract base, for the ~12 rules whose
+ *   `new Finding(...)` — the abstract base, for the ~12 rules whose
  *   emission is inherited) and `static::CONST` (bound to the concrete rule
  *   class under test, matching PHP's own late-static-binding rule — verified
  *   empirically: `ReflectionMethod::invoke(null)` on a static method
@@ -76,7 +83,7 @@ use RuntimeException;
  * - a local variable, resolved by finding its assignment(s) in the same
  *   method — including a `[$code, $hint] = match (...) { ... }`
  *   destructuring assignment, resolved per-arm at the destructured index
- *   (`design.type-coverage`'s `.param`/`.return`/`.property` split).
+ *   (`coupling.cbo`'s class/namespace split).
  *
  * **What this deliberately does not do**: trace values across function
  * calls (beyond the one `$this->method()` hop described above), or reason
@@ -121,16 +128,16 @@ final class ChannelEmissionStaticGuardTest extends TestCase
         foreach (self::ruleClasses() as $ruleClass) {
             foreach (self::findEmissionSites($ruleClass) as $site) {
                 $ruleNames = self::resolveArgOrRecordFailure($site, 'ruleName', $ruleClass, $skipList, $usedSkipEntries, $failures);
-                $violationCodes = self::resolveArgOrRecordFailure($site, 'violationCode', $ruleClass, $skipList, $usedSkipEntries, $failures);
+                $codes = self::resolveArgOrRecordFailure($site, 'code', $ruleClass, $skipList, $usedSkipEntries, $failures);
 
-                if ($ruleNames === null || $violationCodes === null) {
+                if ($ruleNames === null || $codes === null) {
                     continue;
                 }
 
                 foreach ($ruleNames as $ruleName) {
-                    foreach ($violationCodes as $violationCode) {
-                        $channel = new ViolationChannel($ruleName, $violationCode);
-                        $key = $channel->toKey();
+                    foreach ($codes as $code) {
+                        $channel = new FindingChannel($code);
+                        $key = $channel->code;
 
                         if ($registry->declarationFor($channel) === null && !\in_array($key, $excludedKeys, true)) {
                             $failures[] = \sprintf(
@@ -162,7 +169,296 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     }
 
     /**
-     * @param array{declaringClass: class-string, method: string, args: array<string, Expr>, methodNode: ClassMethod} $site
+     * The floor the guard above lacks.
+     *
+     * `everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded()` reports
+     * only on sites it found: with a detector that matches nothing it asserts
+     * twice on empty arrays and reports PASS. Measured, that is not a
+     * hypothetical — `src/` holds dozens of constructions, and a detector
+     * naming the pre-rename class name would have inspected none of them.
+     *
+     * So the number of constructions the parser sees is checked against the
+     * same number counted by a second, deliberately dumber route: PHP's own
+     * tokenizer, walking `T_NEW` followed by a name. Neither route can be the
+     * other's oracle — one is `nikic/php-parser` plus the guard's own
+     * predicate, the other is `token_get_all()` — and both are compared per
+     * file, so a detector that stops matching is a red test rather than a
+     * silent zero.
+     *
+     * The second half of the accounting is where the construction lives. A
+     * construction reached by no rule class is outside the guard's promise
+     * entirely, and that is a fact worth naming rather than one worth
+     * discovering later: every such file is listed in
+     * {@see self::delegatedEmitters()} with a reason, a listed file that
+     * constructs nothing fails as loudly as an unlisted one that does, and a
+     * file the traversal *does* reach must have every one of its constructions
+     * inspected — not merely one.
+     */
+    #[Test]
+    public function everyFindingConstructionInSourceIsInspectedOrDeclaredDelegated(): void
+    {
+        $byTokens = self::constructionCountsByToken();
+        $byParser = self::constructionCountsByParser();
+
+        self::assertSame(
+            $byParser,
+            $byTokens,
+            'The guard\'s php-parser detector and an independent token scan disagree about where'
+            . ' a finding is constructed. Either the detector no longer matches the construction'
+            . ' idiom, or the token scan has to be taught the new one — a disagreement is never'
+            . ' the safe direction, because the detector matching nothing is what makes this'
+            . ' guard pass on an empty set.',
+        );
+
+        self::assertNotSame(
+            [],
+            $byTokens,
+            'No finding construction was found anywhere in src/. Findings are still published, so the'
+            . ' construction idiom moved (a factory, a named constructor) and this guard now inspects'
+            . ' nothing. Teach both routes the new idiom.',
+        );
+
+        $inspectedSites = [];
+
+        foreach (self::ruleClasses() as $ruleClass) {
+            foreach (self::findEmissionSites($ruleClass) as $site) {
+                $inspectedSites[$site['file']][$site['line']] = true;
+            }
+        }
+
+        $delegated = self::delegatedEmitters();
+        $failures = [];
+
+        foreach ($byTokens as $file => $constructions) {
+            if (isset($delegated[$file])) {
+                continue;
+            }
+
+            $inspected = \count($inspectedSites[$file] ?? []);
+
+            if ($inspected === $constructions) {
+                continue;
+            }
+
+            $failures[] = \sprintf(
+                '%s constructs %d finding(s) but the guard inspected %d of them — reachable from no rule'
+                . ' class, or reached only past a construction it stopped at. Name it in delegatedEmitters()'
+                . ' with the reason, or make it reachable.',
+                $file,
+                $constructions,
+                $inspected,
+            );
+        }
+
+        foreach ($delegated as $file => $reason) {
+            if (!isset($byTokens[$file])) {
+                $failures[] = \sprintf(
+                    '%s is named in delegatedEmitters() ("%s") but constructs no finding — the file moved,'
+                    . ' was renamed, or stopped emitting. Remove the entry.',
+                    $file,
+                    $reason,
+                );
+            }
+        }
+
+        self::assertSame([], $failures, "\n" . implode("\n", $failures));
+    }
+
+    /**
+     * The two argument names the resolver reads are the constructor's own.
+     *
+     * A stale argument-name literal fails loudly today — a missing argument is
+     * recorded as a failure — but only as long as the argument is *named* at
+     * the emission site. Asserting the names against the constructor keeps the
+     * two spellings from drifting apart in the first place, and says which
+     * literal is wrong when they do.
+     */
+    #[Test]
+    public function theResolvedArgumentNamesAreTheFindingConstructorsOwn(): void
+    {
+        $constructor = (new ReflectionClass(Finding::class))->getConstructor();
+        self::assertNotNull($constructor);
+
+        $parameters = array_map(
+            static fn(ReflectionParameter $parameter): string => $parameter->getName(),
+            $constructor->getParameters(),
+        );
+
+        foreach (['ruleName', 'code'] as $argName) {
+            self::assertContains(
+                $argName,
+                $parameters,
+                \sprintf(
+                    'The guard resolves the "%s" argument of a finding construction, but the constructor has no'
+                    . ' such parameter — the resolver reads an argument name that can never be present.',
+                    $argName,
+                ),
+            );
+        }
+    }
+
+    /**
+     * Files that construct a finding outside any rule class's own inheritance
+     * chain, and are therefore outside this guard's promise, mapped to why.
+     *
+     * An entry is a statement that these channels are covered elsewhere or not
+     * at all — not that they need no cover.
+     *
+     * @return array<string, string>
+     */
+    private static function delegatedEmitters(): array
+    {
+        return [
+            'src/Analysis/Evidence/CodeSmell/CodeSmellFinding.php' =>
+                'AbstractCodeSmellRule hands a collected entry to this value object, which builds the finding;'
+                . ' the resolver follows constructions declared on a rule chain, not one method call further.',
+            'src/Analysis/Evidence/Security/SecurityPatternFinding.php' =>
+                'The same shape for AbstractSecurityPatternRule.',
+            'src/Analysis/Evidence/ComputedMetrics/Finding/ComputedMetricFindingBuilder.php' =>
+                'ComputedMetricRule delegates construction to this builder, and a computed channel is named by'
+                . ' user configuration rather than by a constant this resolver could read.',
+            'src/Analysis/Policy/Architecture/LayerViolation/LayerViolationFinding.php' =>
+                'LayerViolationRule delegates to this value object.',
+            'src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassSummary.php' =>
+                'UnassignedClassRule delegates to this summary.',
+            'src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php' =>
+                'Reached from LayerDeclarationValidator, a configuration validator rather than a rule, so no'
+                . ' rule class chain leads here at all.',
+            'src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php' =>
+                'A configuration validator, like the one above.',
+            'src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php' =>
+                'Policy state consulted by UnusedDirectiveRule; the construction sits on the policy, not on the'
+                . ' rule chain.',
+        ];
+    }
+
+    /**
+     * Every `new <Finding>` in `src/`, counted with PHP's tokenizer.
+     *
+     * Deliberately independent of `nikic/php-parser` and of the guard's own
+     * predicate: an oracle that shares the machinery it checks proves that the
+     * machinery agrees with itself.
+     *
+     * @return array<string, int> relative path => constructions, files without one omitted
+     */
+    private static function constructionCountsByToken(): array
+    {
+        $shortName = self::shortNameOf(Finding::class);
+        $counts = [];
+
+        foreach (self::sourceFiles() as $relative => $absolute) {
+            $tokens = token_get_all(self::contentsOf($absolute));
+            $count = 0;
+            $afterNew = false;
+
+            foreach ($tokens as $token) {
+                if (\is_array($token) && \in_array($token[0], [\T_WHITESPACE, \T_COMMENT, \T_DOC_COMMENT], true)) {
+                    continue;
+                }
+
+                if (\is_array($token) && $token[0] === \T_NEW) {
+                    $afterNew = true;
+
+                    continue;
+                }
+
+                if ($afterNew
+                    && \is_array($token)
+                    && \in_array($token[0], [\T_STRING, \T_NAME_QUALIFIED, \T_NAME_FULLY_QUALIFIED], true)
+                ) {
+                    $segments = explode('\\', $token[1]);
+
+                    if (end($segments) === $shortName) {
+                        ++$count;
+                    }
+                }
+
+                $afterNew = false;
+            }
+
+            if ($count > 0) {
+                $counts[$relative] = $count;
+            }
+        }
+
+        ksort($counts);
+
+        return $counts;
+    }
+
+    /**
+     * The same count, taken with the parser and the very predicate the guard
+     * resolves emission sites with.
+     *
+     * @return array<string, int>
+     */
+    private static function constructionCountsByParser(): array
+    {
+        $finder = new NodeFinder();
+        $counts = [];
+
+        foreach (self::sourceFiles() as $relative => $absolute) {
+            /** @var list<New_> $newNodes */
+            $newNodes = $finder->findInstanceOf(self::parsedFile($absolute), New_::class);
+            $count = 0;
+
+            foreach ($newNodes as $new) {
+                if (self::isFindingConstruction($new)) {
+                    ++$count;
+                }
+            }
+
+            if ($count > 0) {
+                $counts[$relative] = $count;
+            }
+        }
+
+        ksort($counts);
+
+        return $counts;
+    }
+
+    /**
+     * @return array<string, string> relative path => absolute path
+     */
+    private static function sourceFiles(): array
+    {
+        $root = self::projectRoot();
+        $files = [];
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/src', FilesystemIterator::SKIP_DOTS));
+
+        foreach ($iterator as $file) {
+            \assert($file instanceof SplFileInfo);
+
+            if ($file->isFile() && $file->getExtension() === 'php') {
+                $files[substr($file->getPathname(), \strlen($root) + 1)] = $file->getPathname();
+            }
+        }
+
+        ksort($files);
+
+        return $files;
+    }
+
+    /** @param class-string $class */
+    private static function relativeFileOf(string $class): string
+    {
+        $file = (new ReflectionClass($class))->getFileName();
+
+        if ($file === false) {
+            throw new RuntimeException(\sprintf('%s has no source file.', $class));
+        }
+
+        return substr($file, \strlen(self::projectRoot()) + 1);
+    }
+
+    private static function projectRoot(): string
+    {
+        return \dirname(__DIR__, 4);
+    }
+
+    /**
+     * @param array{declaringClass: class-string, method: string, file: string, line: int, args: array<string, Expr>, methodNode: ClassMethod} $site
      * @param class-string $ruleClass
      * @param array<string, string> $skipList
      * @param array<string, true> $usedSkipEntries
@@ -182,7 +478,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
 
         if ($expr === null) {
             $failures[] = \sprintf(
-                '%s::%s() constructs a Violation with no "%s" argument.',
+                '%s::%s() constructs a Finding with no "%s" argument.',
                 $site['declaringClass'],
                 $site['method'],
                 $argName,
@@ -239,21 +535,21 @@ final class ChannelEmissionStaticGuardTest extends TestCase
 
     /**
      * Walks from the concrete rule class upward through its ancestors until
-     * one of them textually contains a `new Violation(...)` construction —
+     * one of them textually contains a `new Finding(...)` construction —
      * the emission may be inherited (AbstractCodeSmellRule,
      * AbstractSecurityPatternRule) rather than declared on the concrete
      * class itself.
      *
      * @param class-string $ruleClass
      *
-     * @return list<array{declaringClass: class-string, method: string, args: array<string, Expr>, methodNode: ClassMethod}>
+     * @return list<array{declaringClass: class-string, method: string, file: string, line: int, args: array<string, Expr>, methodNode: ClassMethod}>
      */
     private static function findEmissionSites(string $ruleClass): array
     {
         $current = $ruleClass;
 
         while ($current !== false && $current !== AbstractRule::class) {
-            $sites = self::findViolationSitesDeclaredOn($current);
+            $sites = self::findFindingSitesDeclaredOn($current);
 
             if ($sites !== []) {
                 return $sites;
@@ -268,9 +564,9 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     /**
      * @param class-string $class
      *
-     * @return list<array{declaringClass: class-string, method: string, args: array<string, Expr>, methodNode: ClassMethod}>
+     * @return list<array{declaringClass: class-string, method: string, file: string, line: int, args: array<string, Expr>, methodNode: ClassMethod}>
      */
-    private static function findViolationSitesDeclaredOn(string $class): array
+    private static function findFindingSitesDeclaredOn(string $class): array
     {
         $classNode = self::findClassNode($class);
 
@@ -286,7 +582,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             $newNodes = $finder->findInstanceOf($method, New_::class);
 
             foreach ($newNodes as $new) {
-                if (!self::isViolationConstruction($new)) {
+                if (!self::isFindingConstruction($new)) {
                     continue;
                 }
 
@@ -300,6 +596,8 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 $sites[] = [
                     'declaringClass' => $class,
                     'method' => $method->name->toString(),
+                    'file' => self::relativeFileOf($class),
+                    'line' => $new->getStartLine(),
                     'args' => $args,
                     'methodNode' => $method,
                 ];
@@ -309,9 +607,28 @@ final class ChannelEmissionStaticGuardTest extends TestCase
         return $sites;
     }
 
-    private static function isViolationConstruction(New_ $new): bool
+    /**
+     * The construction the resolver looks for, named by reflection rather than
+     * spelled out.
+     *
+     * A literal here is the guard's silent failure mode, not a cosmetic detail:
+     * with a stale short name nothing matches, every rule yields zero emission
+     * sites, and both assertions of the main test compare empty arrays. The
+     * short name now comes from the class itself, so a rename cannot leave this
+     * detector behind, and
+     * {@see self::everyFindingConstructionInSourceIsInspectedOrDeclaredDelegated}
+     * measures the detector against an independent count so a detector that
+     * matches nothing is loud rather than green.
+     */
+    private static function isFindingConstruction(New_ $new): bool
     {
-        return $new->class instanceof Name && $new->class->getLast() === 'Violation';
+        return $new->class instanceof Name && $new->class->getLast() === self::shortNameOf(Finding::class);
+    }
+
+    /** @param class-string $class */
+    private static function shortNameOf(string $class): string
+    {
+        return (new ReflectionClass($class))->getShortName();
     }
 
     /**
@@ -348,17 +665,22 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     private static function parsedFile(string $file): array
     {
         if (!isset(self::$astCache[$file])) {
-            $contents = file_get_contents($file);
-
-            if ($contents === false) {
-                throw new RuntimeException(\sprintf('Could not read %s.', $file));
-            }
-
             $parser = (new ParserFactory())->createForHostVersion();
-            self::$astCache[$file] = $parser->parse($contents) ?? [];
+            self::$astCache[$file] = $parser->parse(self::contentsOf($file)) ?? [];
         }
 
         return self::$astCache[$file];
+    }
+
+    private static function contentsOf(string $file): string
+    {
+        $contents = file_get_contents($file);
+
+        if ($contents === false) {
+            throw new RuntimeException(\sprintf('Could not read %s.', $file));
+        }
+
+        return $contents;
     }
 
     /**
@@ -419,6 +741,10 @@ final class ChannelEmissionStaticGuardTest extends TestCase
 
         if ($expr instanceof MethodCall) {
             return self::resolveMethodCall($expr, $staticClass);
+        }
+
+        if ($expr instanceof StaticCall) {
+            return self::resolveStaticCall($expr, $staticClass);
         }
 
         if ($expr instanceof Variable && \is_string($expr->name)) {
@@ -483,8 +809,53 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             return null;
         }
 
-        $methodName = $expr->name->toString();
+        return self::resolveNoArgCall($expr->name->toString(), $staticClass);
+    }
 
+    /**
+     * The same for `static::methodName()` (no args), and **only** for it.
+     *
+     * A rule family whose shared base builds the finding reaches its own name
+     * through a static hook rather than through `$this`, because the base also
+     * needs it in `channelDeclarations()`, which is static. `static::` is late
+     * static binding, so resolving it against the concrete rule under test is
+     * PHP's own rule and the guard follows it exactly.
+     *
+     * `self::` is deliberately **not** accepted. PHP binds it to the class
+     * whose source contains the call and ignores an override, so resolving it
+     * the same way would let the guard check the subclass's name while the
+     * runtime publishes the base's — a guard reporting a channel that is never
+     * emitted, and missing the one that is. Refusing it makes the guard
+     * stricter than the code rather than more permissive: an emission written
+     * with `self::` fails here as unresolvable, which is a failure, not a
+     * shrug. (Measured: with a base `emit()` returning `self::n()` and a child
+     * overriding `n()`, PHP prints the base's value while reflection's
+     * declaring class is the child.)
+     *
+     * @param class-string $staticClass
+     *
+     * @return ?list<string>
+     */
+    private static function resolveStaticCall(StaticCall $expr, string $staticClass): ?array
+    {
+        if (!$expr->class instanceof Name || $expr->class->toString() !== 'static') {
+            return null;
+        }
+
+        if (!$expr->name instanceof Identifier || $expr->args !== []) {
+            return null;
+        }
+
+        return self::resolveNoArgCall($expr->name->toString(), $staticClass);
+    }
+
+    /**
+     * @param class-string $staticClass
+     *
+     * @return ?list<string>
+     */
+    private static function resolveNoArgCall(string $methodName, string $staticClass): ?array
+    {
         try {
             $declaringClass = (new ReflectionClass($staticClass))->getMethod($methodName)->getDeclaringClass()->getName();
         } catch (ReflectionException) {

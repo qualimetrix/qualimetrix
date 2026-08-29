@@ -30,13 +30,15 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 ## Design Rules
 
-| Rule                    | ID                     | Minutes |
-| ----------------------- | ---------------------- | ------- |
-| DIT (Inheritance Depth) | `design.inheritance`   | 30      |
-| NOC                     | `design.noc`           | 20      |
-| Type Coverage           | `design.type-coverage` | 15      |
-| Data Class              | `design.data-class`    | 30      |
-| God Class               | `design.god-class`     | 120     |
+| Rule                    | ID                              | Minutes |
+| ----------------------- | ------------------------------- | ------- |
+| DIT (Inheritance Depth) | `design.inheritance`            | 30      |
+| NOC                     | `design.noc`                    | 20      |
+| Parameter Type Coverage | `design.type-coverage.param`    | 15      |
+| Return Type Coverage    | `design.type-coverage.return`   | 15      |
+| Property Type Coverage  | `design.type-coverage.property` | 15      |
+| Data Class              | `design.data-class`             | 30      |
+| God Class               | `design.god-class`              | 120     |
 
 ## Size Rules
 
@@ -93,6 +95,7 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 | --------------------- | ---------------------------------- | ------- |
 | Circular Dependencies | `architecture.circular-dependency` | 120     |
 | Layer Violations      | `architecture.layer-violation`     | 15      |
+| Unassigned Classes    | `architecture.unassigned-class`    | 15      |
 
 ## Annotation Rules
 
@@ -102,9 +105,20 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 ## Computed Metrics
 
-| Rule            | ID                | Minutes |
-| --------------- | ----------------- | ------- |
-| Computed Metric | `computed.health` | 15      |
+Every producer of this family shares the same base estimate, because it is one
+rule serving seven producers — see [Health Scores](health-scores.md) for why
+the six built-in health dimensions are producers of their own while every
+user-defined metric shares one, `computed`.
+
+| Rule                    | ID                       | Minutes |
+| ----------------------- | ------------------------ | ------- |
+| Health: Complexity      | `health.complexity`      | 15      |
+| Health: Cohesion        | `health.cohesion`        | 15      |
+| Health: Coupling        | `health.coupling`        | 15      |
+| Health: Typing          | `health.typing`          | 15      |
+| Health: Maintainability | `health.maintainability` | 15      |
+| Health: Overall         | `health.overall`         | 15      |
+| Computed Metric         | `computed`               | 15      |
 
 ## Why These Values Differ From Default Thresholds
 

@@ -10,8 +10,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use ReflectionClass;
 use ReflectionException;
 
@@ -45,7 +45,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
 
     public function provides(): array
     {
-        return [MetricName::STRUCTURE_DIT];
+        return [MetricName::DESIGN_DIT];
     }
 
     public function getMetricDefinitions(): array
@@ -65,7 +65,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
         /** @var array<string, int> $ditCache */
         $ditCache = [];
 
-        foreach ($repository->all(SymbolType::Class_) as $classSymbol) {
+        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
             $classFqn = $this->symbolPathToFqn($classSymbol->symbolPath);
             if ($classFqn === null) {
                 continue;
@@ -73,7 +73,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
 
             $dit = $this->calculateDit($classFqn, $parentMap, $ditCache);
 
-            $repository->addScalar($classSymbol->symbolPath, MetricName::STRUCTURE_DIT, $dit);
+            $repository->addScalar($classSymbol->symbolPath, MetricName::DESIGN_DIT, $dit);
         }
     }
 

@@ -15,7 +15,7 @@ final readonly class HealthContributor
     /**
      * @param string $className Short class name (without namespace)
      * @param string $symbolPath Canonical symbol path for drill-down
-     * @param array<string, float|int> $metricValues Metric key => value pairs (e.g., ['tcc' => 30.0, 'lcom' => 5])
+     * @param array<string, float|int> $metricValues Metric key => value pairs (e.g., ['cohesion.tcc' => 30.0, 'cohesion.lcom' => 5])
      */
     public function __construct(
         public string $className,

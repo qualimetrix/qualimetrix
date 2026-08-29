@@ -7,17 +7,17 @@ namespace Qualimetrix\Analysis\Evidence\Design;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -35,6 +35,8 @@ final class InheritanceRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/design.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;
@@ -45,21 +47,16 @@ final class InheritanceRule extends AbstractRule
         return 'Checks Depth of Inheritance Tree (deep hierarchies increase complexity)';
     }
 
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Design;
-    }
-
     /**
      * @return list<string>
      */
     public function requires(): array
     {
-        return [MetricName::STRUCTURE_DIT];
+        return [MetricName::DESIGN_DIT];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -67,7 +64,7 @@ final class InheritanceRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Inheritance findings require an exact class declaration subject');
@@ -75,7 +72,7 @@ final class InheritanceRule extends AbstractRule
                 continue;
             }
             $metrics = $context->metrics->get($subject->toSymbolPath());
-            $dit = $metrics->get(MetricName::STRUCTURE_DIT);
+            $dit = $metrics->get(MetricName::DESIGN_DIT);
 
             if ($dit === null) {
                 continue;
@@ -84,21 +81,21 @@ final class InheritanceRule extends AbstractRule
             $ditValue = (int) $dit;
             /** @var InheritanceOptions $effectiveOptions */
             $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
-            $violation = $this->violationForClass($classInfo, $subject, $ditValue, $effectiveOptions);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->findingForClass($classInfo, $subject, $ditValue, $effectiveOptions);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function violationForClass(
+    private function findingForClass(
         SymbolInfo $classInfo,
         MetricSubject $subject,
         int $ditValue,
         InheritanceOptions $options,
-    ): ?Violation {
+    ): ?Finding {
         if ($ditValue >= $options->error) {
             $severity = Severity::Error;
             $threshold = $options->error;
@@ -109,12 +106,12 @@ final class InheritanceRule extends AbstractRule
             return null;
         }
 
-        return new Violation(
+        return new Finding(
             location: new Location($classInfo->file, $classInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf(
                 'DIT (Depth of Inheritance) is %d, exceeds threshold of %d. Prefer composition over deep inheritance',
                 $ditValue,
@@ -146,7 +143,7 @@ final class InheritanceRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
         ];
     }
 

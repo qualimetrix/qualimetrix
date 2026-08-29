@@ -70,7 +70,7 @@ src/
 ├── Core/              # Cross-cutting primitives (no dependencies)
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
 │   ├── Configuration/       # ordered configuration document resolution
-│   ├── Finding/             # rule language, execution, violations and filtering
+│   ├── Finding/             # rule language, execution, findings and filtering
 │   ├── Evidence/
 │   │   ├── DependencyModel/     # graph model plus P3 extraction/traversal contract
 │   │   ├── Duplication/         # detection, result and rule; implements the Run-owned FileSet port
@@ -175,7 +175,7 @@ the command into the Architecture slice would force the slice to depend on
 - **Architecture**: Layer Policy Enforcement (multi-criterion membership, template layers, `exclude:`, `relations:` whitelist — deptrac replacement), Circular Dependency Detection, Dependency Graph Export (DOT)
 - **Code Smell**: Boolean Argument, Debug Code, Empty Catch, eval, exit/die, goto, Superglobals, Error Suppression, Count in Loop, Long Parameter List, Unreachable Code, Identical Sub-expression
 - **Security**: Hardcoded Credentials, SQL Injection, XSS, Command Injection, Sensitive Parameter Detection
-- **Computed Metrics**: 6 built-in health scores (complexity, cohesion, coupling, design, maintainability, overall), user-definable metrics via Symfony Expression Language formulas, per-level formulas, threshold-based violations
+- **Computed Metrics**: 6 built-in health scores (complexity, cohesion, coupling, design, maintainability, overall), user-definable metrics via Symfony Expression Language formulas, per-level formulas, threshold-based findings
 
 ### Infrastructure
 - **Parallel Processing**: Multi-worker file processing via amphp/parallel
@@ -284,7 +284,7 @@ public function analyze(AnalysisContext $context): array {
 ```
 Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
                 |                        |              |               |
-             MetricBag[]          AggregatedMetrics  Violation[]      Output
+             MetricBag[]          AggregatedMetrics  Finding[]        Output
 ```
 
 - **Discovery** — finding PHP files for analysis
@@ -295,7 +295,7 @@ Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
 ### 4. SymbolPath for Identification
 
 ```php
-// Use MetricSubject for exact declaration metrics and violations
+// Use MetricSubject for exact declaration metrics and findings
 $subject = MetricSubject::declaration($declarationPath);
 
 // SymbolPath remains the logical identity for named symbols and aggregates
@@ -521,6 +521,10 @@ composer docs:check     # mkdocs --strict build of website/ (broken links, nav g
 composer test           # PHPUnit
 composer phpstan        # PHPStan level 8
 
+# Finding equivalence between two revisions of the product
+composer gate -- --reference=<git-ref>           # compare findings; GREEN 0, PARTIAL 2, RED 1, cannot-run 3
+composer gate:controls -- --reference=<git-ref>  # prove the gate is red under each planted breakage
+
 # HTML report (run when modifying src/Reporting/Template/)
 composer test:js        # JS tests for HTML report (vitest)
 composer build:js       # Rebuild HTML report JS bundle
@@ -587,18 +591,47 @@ redirected stdout is never evidence of success.
 
 **Commit granularity:** Split large changes into logical commits when it improves changelog readability. Each commit should represent one coherent change (e.g., separate "rename command" from "update documentation"). Avoid monolithic commits that bundle unrelated changes — they make changelogs harder to generate and git history harder to navigate.
 
+### Proving a rename changed nothing else
+
+Run the gate for any change that renames a channel, a rule, a metric key or a
+published finding field, and for any change to how a finding is published.
+`composer gate -- --reference=<the commit the change starts from>` checks out that
+commit, runs both binaries over the current corpus and compares findings, the
+eleven formats, exit codes, `qmx rules`, `baseline:explain`, the generated
+baseline and the suppressed report. Corpus, maps, normalization list and
+equivalence tuple live in `finding-gate/`; its README holds the case schema and
+the surface list.
+
+- Declare every intended rename as a row in `finding-gate/maps/`. An undeclared
+  rename is red, and a declared rename that translated nothing is red too.
+- Add a channel and its corpus fixture together, in the case that owns its
+  family, and name it in that case's `channels`.
+- Never point a corpus case at project code. The corpus is external because the
+  project analyses itself: a case reading `src/` moves the gate's input with the
+  same step it is measuring.
+- A GREEN run whose reference has the same product code proves the normalization
+  list is complete, not that a step is safe. Proof of a step needs the previous
+  step's commit as the reference.
+- `PARTIAL` is not evidence of anything: it means `--cases` or
+  `--incomplete-corpus` narrowed the run. Do not cite it as green.
+- Re-run `composer gate:controls` after changing the comparator itself. A gate
+  that proved itself before the rewrite says nothing about the rewritten one.
+- `--derive-normalization` and `--derive-tuple` regenerate their tracked files.
+  Do not hand-edit either: a row that no measurement produced is a claim about
+  nondeterminism that nothing checks.
+
 ### Self-Analysis: Interpreting Results
 
 Run `bin/qmx check src/` after modifying metric collection or aggregation logic to catch regressions.
 
-**How to interpret violations:**
+**How to interpret findings:**
 - **Invariant test failure** (e.g., parent.sum ≠ Σ children): **Bug** — fix immediately, add regression test
 - **Golden file test failure after intentional algorithm change**: Update expected values in `tests/Analysis/Evidence/Measurement/Integration/Aggregation/GoldenFileAggregationTest.php` after verifying new values are correct
-- **Coupling violations** (high CBO, circular dependencies): **Architecture issue** — evaluate refactoring vs. threshold adjustment
-- **Complexity violations** (CCN > threshold): **Code quality signal** — normal for complex algorithms, investigate only if unexpected
+- **Coupling findings** (high CBO, circular dependencies): **Architecture issue** — evaluate refactoring vs. threshold adjustment
+- **Complexity findings** (CCN > threshold): **Code quality signal** — normal for complex algorithms, investigate only if unexpected
 - **Health score regression** vs `composer benchmark:check`: May indicate **formula bug** if changes touched computed metrics
 
-### Dogfooding: Violation Management Strategy
+### Dogfooding: Finding Management Strategy
 
 We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` and the
 versioned root `qmx-baseline.json`. That file is a v11 ratchet snapshot for
@@ -648,7 +681,7 @@ The project maintains a `CHANGELOG.md` following the [Keep a Changelog](https://
 - `Breaking` — backward-incompatible changes
 
 **Style:**
-- Write from the user's perspective: "`exclude_paths` option for violation suppression" not "Implemented ExcludePathFilter class"
+- Write from the user's perspective: "`exclude_paths` option for finding suppression" not "Implemented ExcludePathFilter class"
 - Aggregate related commits into a single entry
 - Keep entries concise (one line each)
 
@@ -710,6 +743,7 @@ Key rules:
 - [src/Analysis/Policy/Baseline/README.md](src/Analysis/Policy/Baseline/README.md) — baseline persistence and acceptance policy
 - [src/Analysis/Policy/Inline/README.md](src/Analysis/Policy/Inline/README.md) — `@qmx-ignore` suppression and inline controls
 - [src/Infrastructure/README.md](src/Infrastructure/README.md) — CLI, DI, caching
+- [finding-gate/README.md](finding-gate/README.md) — the finding-equivalence gate: corpus case schema, compared surfaces, maps, normalization
 
 ### Architecture Decision Records (in docs/adr/)
 - [docs/adr/README.md](docs/adr/README.md) — ADR format and index

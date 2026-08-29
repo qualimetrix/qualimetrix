@@ -1,0 +1,131 @@
+category	path	site	current_value	expected_shift_on_split	how_found
+rule_counter_test	tests/Analysis/Finding/Integration/RuleRemediationMinutesCoverageTest.php	line 29, `private const int REGISTERED_RULE_COUNT = 42;`	42	45 (+2 from design.type-coverage → 3 rules, +1 from architecture.unassigned-class extracted out of LayerViolationRule)	grep for `REGISTERED_RULE_COUNT\s*=` across tests/, cross-checked against `bin/qmx rules --no-ansi` ("42 rules available")
+rule_counter_test	tests/Analysis/Finding/Integration/RuleDocsPageCoverageTest.php	line 31, `private const int REGISTERED_RULE_COUNT = 42;`	42	45 (same arithmetic as above)	grep for `REGISTERED_RULE_COUNT\s*=`
+channel_counter_test	tests/Analysis/Finding/Integration/ChannelPresentationCoverageTest.php	line 32, `private const int DECLARED_CHANNEL_COUNT = 57;`	57	57, unchanged — the split moves 4 pre-existing channels (`design.type-coverage.{param,return,property}`, `architecture.unassigned-class`) to new producers, it does not add or remove a channel	grep for `DECLARED_CHANNEL_COUNT\s*=`; verified by reading FACTS.md ("57 statically declared") and confirming both target rules declare `channelDeclarations()` themselves (not merged/collapsed)
+channel_counter_test	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	line 63, `private const int DECLARED_CHANNEL_COUNT = 57;`	57	57, unchanged (same reasoning as ChannelPresentationCoverageTest)	grep for `DECLARED_CHANNEL_COUNT\s*=`
+ancestor_channel_counter_test	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	line 72, `private const int CHANNELS_DECLARED_BY_AN_ANCESTOR = 12;`	12	12, unchanged — both `TypeCoverageRule::channelDeclarations()` and `LayerViolationRule::channelDeclarations()` are declared on the rule class itself, not inherited from an abstract ancestor, so they are not part of this set today and the 3+1 replacement rules only stay out of it if they follow the same pattern	read `channelsDeclaredByAnAncestor()` helper (lines 286-305) which filters by `getMethod('channelDeclarations')->getDeclaringClass()->getName() === $ruleClass`; grepped both rule files for `channelDeclarations` to confirm neither is inherited
+channel_counter_test	tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php	line 46, `private const int UNIVERSE_CHANNEL_COUNT = 57;`	57	57, unchanged (SARIF descriptor count tracks the channel universe, not the rule count)	grep for `UNIVERSE_CHANNEL_COUNT\s*=`
+producer_identity_assertion	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	lines 165-171, `foreach (['param', 'property', 'return'] as $facet) { self::assertSame(TypeCoverageRule::NAME, $universe->producerOf('design.type-coverage.' . $facet), $facet); }`	1 producer name (`TypeCoverageRule::NAME`) asserted for all 3 facets	3 distinct producer classes/NAMEs, one per facet (e.g. a param-rule, a return-rule, a property-rule) — the loop collapses to 3 separate `assertSame` lines, or a facet=>class map	read the test body directly (`itResolvesTheProducerOfEveryChannelIncludingHardWays` — method around line 145-179); this is the single most direct machine proof that the split changes producer identity, not just a count
+cli_alias_count_assertion	tests/Analysis/Evidence/Design/Unit/TypeCoverageRuleTest.php	lines 71-81, `itGetsCliAliases()` — `self::assertSame([... 6 entries ...], CliAliasReader::read(TypeCoverageRule::class))`	1 array, 6 entries (param/return/property × warning/error) on one rule class	3 arrays of 2 entries each, one per new rule class (`type-coverage-param-{warning,error}`, etc.) — the CLI flag strings themselves may or may not survive the rename, but the array is split 6 → 2+2+2 regardless	read the test method body directly
+cli_alias_count_assertion	tests/Analysis/Policy/Architecture/Unit/LayerViolationRuleTest.php	lines 78-84, `metadataMatchesContract()` — `self::assertSame(['layer-violation' => 'enabled', 'layer-violation-severity' => 'severity', 'layer-violation-unassigned-class' => 'unassigned_class'], CliAliasReader::read(LayerViolationRule::class))`	1 array, 3 entries	2 entries left on `LayerViolationRule` (`enabled`, `severity`); the `unassigned_class` alias moves to the new rule's own `CliAliasReader::read()` assertion	read the test method body directly
+fixture_snapshot	tests/Analysis/Finding/Fixtures/Channels/declared.txt	109 lines total; line 60 `architecture.layer-violation#architecture.layer-violation ...`, line 63 `architecture.unassigned-class#architecture.unassigned-class magnitude:higher project`, lines 97-99 `design.type-coverage#design.type-coverage.{param,property,return} magnitude:lower class`	4 of 109 lines carry the left-half rule name that changes	same 109 lines, but the left half of 4 lines changes from `architecture.layer-violation` → new rule name (1 line) and `design.type-coverage` → 3 new rule names (3 lines); total line count is unaffected because these are pre-existing channels, not new ones	`wc -l`, then grep for the 3 target channel names in the fixture; consumed by `ChannelDeclarationFixtureDriftTest`/`ChannelUniverseCoverageTest`
+fixture_snapshot	tests/Analysis/Finding/Fixtures/Channels/order.txt	69 lines total; lines 45-47 `design.type-coverage.{param,return,property}`, lines 57-58 `architecture.layer-violation`, `architecture.unassigned-class`	5 of 69 lines named directly (channel names only, no left half)	CORRECTED after round-7 review: the three `design.type-coverage.*` codes ARE renamed (see enumeration-renames.tsv), so both their text and their relative position change; line count stays 69. Order is producer-registration-order-derived per this fixture's own docblock, so splitting one producer into three moves these lines even apart from the rename — the publication order of the three new rules is a decision the step must make, not a consequence of the configurator's glob	`wc -l`, grep for target channel names; consumed by `ChannelOrderFixtureDriftTest`
+manual_registry	src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php	lines 117-126, `private const array GROUPS = [...]` — key `'design.type-coverage' => ['' => [3 shape rows for param/return/property]]`	1 registry key covering all 3 facets with 3 shape rows	3 registry keys, one per new rule name, each with 1 shape row (bare `warning`/`error`/`threshold` — the `param_`/`return_`/`property_` prefixes are only needed today because one Options class owns all three facets); forgetting to split this key means `--rule-opt=<new-name>:warning=N` silently fails to parse for the new rules	read the file directly; confirmed hand-maintained (not derived) by its own docblock ("hand-maintained mirror of every ThresholdParser::parse() call site") — the drift guard that would catch a missed edit is `RuleThresholdKeyGroupRegistryDriftTest.php` (self-deriving from reflection, not itself a numeric assertion, but the enforcement mechanism)
+manual_registry	src/Infrastructure/DependencyInjection/Configurator/ArchitectureConfigurator.php	lines 36, 89-116 — `LAYER_VIOLATION_RULE` constant + `registerLayerVerdicts()`, which builds ONE shared `Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::LAYER_VIOLATION_RULE))` fed to both `LAYER_EVIDENCE_COLLECTOR` and `LAYER_DECLARATION_VALIDATOR`	1 options-service reference shared by 2 wired services, sourced from 1 rule's options	if `unassigned-class` becomes its own rule with its own Options class, `LayerEvidenceCollector`/`LayerDeclarationValidator` need either a second options reference wired in, or `UnassignedClassSummary`'s production path needs to move off `LayerDeclarationValidator` entirely into the new rule — either way this method's argument count/wiring changes; this is the site the docblock above it (lines 89-104) explicitly warns is load-bearing for channel publication order	read the file directly; the class's own docblock explains why the two services share one options reference, which is precisely the assumption the split breaks
+manual_registry	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php	`unassigned_class` option field (backs `--layer-violation-unassigned-class` / `unassigned_class` config key)	1 option field on `LayerViolationOptions`, read by `LayerEvidenceCollector`	moves to a new `UnassignedClassOptions` class (or equivalent) owned by the new rule; every reader of `LayerViolationOptions::$unassignedClass` (`LayerEvidenceCollector`, `LayerDeclarationValidator`) needs repointing	`grep -rn unassigned_class src/Analysis/Policy/Architecture` (referenced from ArchitectureConfigurator finding above)
+gate_case_registry	finding-gate/cases/design/case.json	lines 37-39, `"channels": [..., "design.type-coverage#design.type-coverage.param", "design.type-coverage#design.type-coverage.property", "design.type-coverage#design.type-coverage.return", ...]`	3 of N array entries carry the pre-split left half	same 3 entries, left half renamed to whichever of the 3 new rules owns each facet; per finding-gate/README a declared rename that translates nothing is red, so these 3 lines must land in `finding-gate/maps/` as declared renames, not just be edited in place	grep for `type-coverage` in finding-gate/
+gate_case_registry	finding-gate/cases/layers/case.json	line 21, `"architecture.unassigned-class#architecture.unassigned-class"` inside the `"channels"` array	1 of N array entries	CORRECTED after round-7 review: NOTHING in this line is renamed. Both halves of `architecture.unassigned-class#architecture.unassigned-class` already spell the diagnostic's own name, so making it a producer of its own leaves the channel key untouched and needs no finding-gate/maps/ row	grep for `unassigned-class` in finding-gate/
+baseline_entry	qmx-baseline.json	2 of 243 total `"channel"` entries: line 516 `{"channel":"design.type-coverage#design.type-coverage.param","magnitudes":[75]}` (subject `DelegatingLogger`), line 520 `{"channel":"design.type-coverage#design.type-coverage.property","magnitudes":[50]}` (subject `FileLogger`)	2 entries with the pre-split left half; 0 entries for `design.type-coverage.return`, 0 for `architecture.unassigned-class`, 0 for `architecture.layer-violation` itself, 0 for `annotation.unused-directive`	same 2 entries after regeneration, left half renamed to the new owning rule; baseline is a ratchet snapshot keyed by `channel` field (per FACTS.md "Baseline key composition"), so an undeclared rename here reads as a brand-new, unaccepted finding and turns the ratchet red until `baseline:generate` is rerun or the entry is hand-migrated	`grep -n "design.type-coverage\|architecture.unassigned-class\|architecture.layer-violation\|annotation.unused-directive" qmx-baseline.json`; total entry count via `grep -c '"channel"' qmx-baseline.json` = 243
+preset_config	src/Analysis/Configuration/Preset/strict.yaml	lines 74-80, `design.type-coverage: {param_warning: 90, param_error: 70, return_warning: 90, return_error: 70, property_warning: 90, property_error: 70}`	1 rule key, 6 threshold keys	3 rule keys (one per new rule), 2 threshold keys each (`warning`/`error`, no facet prefix needed once each rule owns exactly one facet) — same 6 values total, redistributed	grep for `type-coverage` across `src/Analysis/Configuration/Preset/*.yaml`
+preset_config	src/Analysis/Configuration/Preset/legacy.yaml	lines 73-79, same shape as strict.yaml with values 30/10 throughout	1 rule key, 6 threshold keys	3 rule keys, 2 threshold keys each — same reasoning as strict.yaml	same grep
+preset_config	src/Analysis/Configuration/Preset/ci.yaml	whole file (4 non-comment lines: `failOn: error`)	0 references to either rule	0, unaffected — verified so this isn't silently missed	grep for `type-coverage\|layer-violation\|unassigned-class` in ci.yaml, no hits
+cli_output_doc	src/Infrastructure/Console/Command/RulesCommand.php	line 76, `\sprintf('<info>%d rules available</info>', \count($rules))`	derived from `\count($rules)` at runtime, no literal	self-adjusting — will print 45 once both rules register; not itself an edit site, listed because every hardcoded "42 rules available" string elsewhere is a snapshot OF this line's current output	read the file; cross-referenced against every `rules available` occurrence found by `grep -rn "rules available" src/ tests/ website/ docs/`
+cli_output_doc	website/docs/usage/cli-options.md	line 835, example transcript `4 rules available`	4	unaffected — this is a `--only-rule` example subset (a worked CLI example), not a total-rule-count assertion; confirmed by reading surrounding context, not a site to touch	grep for "rules available" in website/, read surrounding lines
+cli_output_doc	website/docs/usage/cli-options.ru.md	line 834, example transcript `4 rules available`	4	unaffected, same reasoning as the EN page	same grep, RU counterpart
+website_doc	website/docs/reference/default-thresholds.md	lines 46-48 (3 rows, rule-id column = `design.type-coverage`), line 102 (1 row, rule-id column = `architecture.unassigned-class`, prose names `architecture.layer-violation` as the owning rule and CLI flag `--layer-violation-unassigned-class`), lines 219-226 (YAML snippet showing `design.type-coverage:` with 3 shorthand keys)	4 table rows + 1 code snippet reference the pre-split rule id	3 rows keep their facet but change rule-id to the new owning rule (param/return/property no longer share one id); the unassigned-class row's rule-id and CLI-flag prose change to the new rule's name; the YAML snippet becomes 3 snippets (or 1 combined) under the 3 new keys	grep for `type-coverage\|unassigned-class` in the file
+website_doc	website/docs/reference/default-thresholds.ru.md	lines 46-48, 102 (same structure, Russian prose)	same 4 rows	same shift, RU counterpart	same grep
+website_doc	website/docs/rules/design.md	line 207 (`**Rule ID:** \`design.type-coverage\``), line 298 (YAML example key), lines 308-309 (2 `--rule-opt` CLI examples)	1 rule-id heading + 1 YAML key + 2 CLI examples, covering all 3 facets under one page section	page restructures into 3 rule sections (or 3 subsections under one page, per `RuleDocsPageReader`/`DOCS_PAGE` constant convention — each new rule class still needs exactly one `DOCS_PAGE` value, so if the 3 stay on `rules/design.md` the file just gets 3 rule-id anchors instead of 1)	grep for `type-coverage` in the file
+website_doc	website/docs/rules/design.ru.md	lines 207, 298, 308-309 (same structure)	same as EN	same shift, RU counterpart	same grep
+website_doc	website/docs/rules/architecture.md	line 591 (`### Unassigned-class gate { #unassigned-class }`), line 593, 622, 629, 754, 771, 854 (7 references total, including the CLI flag `--layer-violation-unassigned-class` and the enumerated list of layer-violation's "seven channels")	1 rule page section describing unassigned-class as one of layer-violation's 7 sibling channels; line 854 literally counts "seven channels" and lists 6 siblings by name	unassigned-class moves to its own rule page/section; layer-violation's sibling count drops from 7 to 6 (the enumerated list at line 854 must drop one name), and the CLI flag prefix `--layer-violation-*` no longer applies to it	grep for `unassigned-class` in the file; line 854 read directly for the "seven channels" / 6-name enumeration
+website_doc	website/docs/rules/architecture.ru.md	lines 593, 595, 625, 632, 757, 774, 857 (same structure, RU prose, "семь каналов" / 6-name list at line 857)	same as EN	same shift: layer-violation's channel count drops from 7 to 6 in the enumerated prose, RU counterpart	same grep
+website_doc	website/docs/rules/index.md	line 50 (summary table row, rule-id `design.type-coverage`), line 219 (Design family bullet list: `design.inheritance, design.noc, design.type-coverage, design.data-class, design.god-class`)	1 table row covering 3 facets; 1 family-list entry (1 of 5 named rules)	table becomes 3 rows (or stays 1 conceptual row with 3 rule-id badges); family-list entry becomes 3 entries (5 named rules → 7 in the Design family bullet, unless architecture also needs listing — architecture isn't in this bullet, unaffected there)	grep for `type-coverage` in the file
+website_doc	website/docs/rules/index.ru.md	lines 50, 219 (same structure)	same as EN	same shift, RU counterpart	same grep
+website_doc	website/docs/usage/cli-options.md	lines 650-655 (6 rows, `design.type-coverage` rule-id column, 6 distinct CLI flags), line 701 (1 row, `architecture.layer-violation` rule-id column, `--layer-violation-unassigned-class` flag)	6 rows for one rule id + 1 row for the unassigned-class flag under layer-violation's id	6 rows redistribute their rule-id column across 3 new rule names (2 rows each); the 1 unassigned-class row's rule-id column changes to the new rule's name and the flag itself likely loses the `layer-violation-` prefix	grep for `type-coverage\|unassigned-class` in the file
+website_doc	website/docs/usage/cli-options.ru.md	lines 649-654, 700 (same structure)	same as EN	same shift, RU counterpart	same grep
+website_doc	website/docs/usage/baseline.md	line 165, table row: `design.type-coverage` \| `design.type-coverage.param, design.type-coverage.property, design.type-coverage.return`	1 row listing all 3 channels under 1 rule-id	3 rows, one per new rule, each listing its single channel	grep for `type-coverage` in the file
+website_doc	website/docs/usage/baseline.ru.md	line 165 (same structure)	same as EN	same shift, RU counterpart	same grep
+website_doc	website/docs/getting-started/configuration.md	line 197, YAML example key `design.type-coverage:`	1 example key	3 example keys (or the example is dropped/simplified) — the "dedicated shorthand keys" prose one line above also needs to stop describing 3 facets under 1 key	grep for `type-coverage` in the file
+website_doc	website/docs/getting-started/configuration.ru.md	line 196, prose sentence naming `design.type-coverage` and its 3 shorthand keys	1 sentence naming 1 rule + 3 keys	sentence splits into 3 (or is restructured to name 3 rules), RU counterpart	grep for `type-coverage` in the file
+website_doc	website/docs/reference/remediation-time.md	line 37, table row `Type Coverage` \| `design.type-coverage` \| `15`	1 row, 1 rule-id, 1 minute value	3 rows, one per new rule (each still needs its own `REMEDIATION_MINUTES` constant per rule, enforced by `RuleRemediationMinutesReader`/`RuleRemediationMinutesCoverageTest`); values may all stay 15 or diverge per new rule's actual effort	grep for `type-coverage` in the file
+website_doc	website/docs/reference/remediation-time.ru.md	line 37 (same structure)	same as EN	same shift, RU counterpart	same grep
+website_doc	website/docs/guides/architecture-investigation.md	line 264, prose: "consider disabling type-coverage rules to focus on structural issues"	says "rules" already, plural — not an exact-name reference	unaffected in substance, but any exact `--disable-rule=design.type-coverage` example nearby (none found on this line) would need to become 3 `--disable-rule` flags	grep for `type-coverage` in the file; no exact rule-id literal present on this line, no RU counterpart exists for this file (checked, none found)
+#
+# HOW THIS WAS PRODUCED
+#
+# 1. Baseline facts re-verified, not trusted from the task prompt or FACTS.md:
+#      bin/qmx rules --no-ansi | grep "rules available"      -> 42 rules available
+#      grep -c '"channel"' qmx-baseline.json                 -> 243 baseline entries
+#    FACTS.md's own count is 57 statically declared + 6 built-in health = 63
+#    total, not 64 as the task prompt asserted; the task explicitly said to
+#    check this, so the 64 in the prompt is not reproduced anywhere in this file.
+#
+# 2. Counter tests (category rule_counter_test / channel_counter_test /
+#    ancestor_channel_counter_test): started from grep -rlE
+#    'allRules\(\)|staticDeclarations\(\)|->channels\(\)|ChannelUniverse|Coverage|Drift'
+#    tests/ --include=*.php, narrowed to files with "coverage|drift|universe"
+#    in their own name, then grepped each candidate for
+#    'REGISTERED_RULE_COUNT\s*=|DECLARED_CHANNEL_COUNT\s*=|UNIVERSE_CHANNEL_COUNT\s*=|CHANNELS_DECLARED_BY_AN_ANCESTOR\s*='
+#    to pull the exact constant + value. A second broad pass,
+#    grep -rnE '(const|assertCount\(|assertSame\()[^;]*\b(4[0-3]|5[6-9]|6[0-4])\b'
+#    tests/ --include=*.php | grep -iE 'rule|channel|universe|group|threshold|
+#    presentation|descriptor|remediation|docs', turned up no sixth counter test
+#    — confirming the plan's "five" is complete, not just repeating it.
+#
+# 3. Producer-identity and CLI-alias assertions (categories
+#    producer_identity_assertion / cli_alias_count_assertion): found by reading
+#    ChannelUniverseCoverageTest, TypeCoverageRuleTest and LayerViolationRuleTest
+#    directly after the grep passes above surfaced them as touching the target
+#    rule classes (`grep -rn "TypeCoverageRule\b\|LayerViolationRule\b" tests/`).
+#
+# 4. Fixture snapshots: `find tests -path "*Fixtures*" -iname "*channel*"`,
+#    then `wc -l` and grep for the four target channel codes inside each file.
+#
+# 5. Manual registries (category manual_registry): grep -rln
+#    "TypeCoverageRule\|LayerViolationRule" src/ to find every production
+#    consumer outside the rule's own file, then read each hit. Confirmed
+#    ChannelPresentationView / ComputedMetricChannelPresentation / the SARIF
+#    formatter carry NO manual per-rule literal (auto-derived from
+#    ChannelUniverse, so not listed here) by grepping them for the four target
+#    channel names and getting no hits — an explicit negative check, not an
+#    omission. RuleThresholdKeyGroupRegistry and ArchitectureConfigurator were
+#    confirmed hand-maintained by reading their own docblocks, which say so.
+#
+# 6. Gate case registry: grep -rln "type-coverage\|unassigned-class"
+#    finding-gate/, then read the two matching case.json files' "channels"
+#    arrays directly.
+#
+# 7. Baseline entries: grep -n for all four target channel names in
+#    qmx-baseline.json, read the surrounding lines for the subject key.
+#
+# 8. Presets: grep -n "type-coverage\|layer-violation\|unassigned-class"
+#    src/Analysis/Configuration/Preset/*.yaml (3 files: strict, legacy, ci),
+#    read the matching blocks directly. qmx.yaml / qmx.yaml.example were
+#    checked (they reference layer-violation too) but excluded — the task's
+#    point 6 scopes this to the three *shipped presets*, not this repo's own
+#    dogfooding config, which is a separate consumer already tracked by
+#    `composer gate`.
+#
+# 9. Website docs: grep -rln "type-coverage" / "unassigned-class"
+#    website/docs/, then grep -n the same terms inside each matching file
+#    (EN and RU pairs) to get exact line numbers, then read enough surrounding
+#    context in architecture.md/.ru.md to catch the "seven channels" /
+#    6-name enumeration that a plain grep for the two target terms would not
+#    have flagged as a count in its own right.
+#
+# WHAT THIS METHOD DOES NOT SEE
+#
+#  - Anything expressed as a computed expression rather than a literal
+#    (e.g. RulesCommandWiringTest's `\count($ruleClasses)`, or
+#    RuleThresholdKeyGroupRegistryDriftTest's fully-reflective expectations)
+#    is invisible to a grep for literal numbers, and rightly so — those sites
+#    self-adjust and were confirmed (not assumed) self-adjusting by reading
+#    them, not merely by their absence from the numeric grep.
+#  - website/site/**/*.html (the built mkdocs output) was excluded from every
+#    grep on purpose: it is generated by `composer docs:check`/mkdocs build,
+#    never hand-edited, and regenerates from the .md sources listed above.
+#  - A grep for the two exact rule names or channel codes cannot see a count
+#    stated only in prose without repeating the name (e.g. a hypothetical
+#    "these three metrics" with no rule-id nearby) — none were found this way,
+#    but the method cannot prove their absence, only that grep found none.
+#  - `docs/internal/modular-architecture-manifest.json` and the generated
+#    modular-architecture TSVs were not inspected: splitting a rule into three
+#    classes in the same existing namespace (Analysis/Evidence/Design or
+#    Analysis/Policy/Architecture/LayerViolation) does not add a namespace, so
+#    the manifest's namespace-level counts are expected to be unaffected —
+#    this is an inference from ADR 0022's namespace-per-owner model, not a
+#    grep-verified fact, and should be re-checked once the new classes' exact
+#    target namespace is chosen.
+#  - CHANGELOG.md and any git-tracked release notes were not searched; a
+#    breaking rename of `design.type-coverage`/`architecture.unassigned-class`
+#    needs a Breaking entry per AGENTS.md, but that entry has no "current
+#    numeric value" to enumerate here.

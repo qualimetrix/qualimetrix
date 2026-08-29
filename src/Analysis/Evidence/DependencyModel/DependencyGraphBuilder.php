@@ -43,8 +43,8 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
             $this->computeParentNamespaceCouplings(
                 $dependencies,
                 $parentNamespaces,
-                $namespaceCouplings['ce'],
-                $namespaceCouplings['ca'],
+                $namespaceCouplings['coupling.ce'],
+                $namespaceCouplings['coupling.ca'],
             );
         }
 
@@ -54,8 +54,8 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
             $indexes['byTarget'],
             array_values($indexes['classes']),
             array_values($canonicalNamespaceMap),
-            $namespaceCouplings['ce'],
-            $namespaceCouplings['ca'],
+            $namespaceCouplings['coupling.ce'],
+            $namespaceCouplings['coupling.ca'],
             $this->computeClassCe($indexes['bySource']),
             $this->computeClassCa($indexes['byTarget']),
         );
@@ -170,7 +170,7 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
      * @param list<Dependency> $dependencies
      * @param array<string, SymbolPath> $namespaceMap
      *
-     * @return array{ce: array<string, StringSet>, ca: array<string, StringSet>}
+     * @return array{'coupling.ce': array<string, StringSet>, 'coupling.ca': array<string, StringSet>}
      */
     private function computeNamespaceCouplings(array $dependencies, array $namespaceMap): array
     {
@@ -206,7 +206,7 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
             }
         }
 
-        return ['ce' => $ce, 'ca' => $ca];
+        return ['coupling.ce' => $ce, 'coupling.ca' => $ca];
     }
 
     /**

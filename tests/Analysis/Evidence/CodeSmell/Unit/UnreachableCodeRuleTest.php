@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -44,19 +43,11 @@ final class UnreachableCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function itGetCategory(): void
-    {
-        $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
-
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
-    }
-
-    #[Test]
     public function itRequires(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
-        self::assertSame(['unreachableCode'], $rule->requires());
+        self::assertSame(['code-smell.unreachable-code'], $rule->requires());
     }
 
     #[Test]
@@ -118,7 +109,7 @@ final class UnreachableCodeRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('unreachableCode', 0);
+        $metricBag = (new MetricBag())->with('code-smell.unreachable-code', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -139,8 +130,8 @@ final class UnreachableCodeRuleTest extends TestCase
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())
-            ->with('unreachableCode', 2)
-            ->with('unreachableCode.firstLine', 15);
+            ->with('code-smell.unreachable-code', 2)
+            ->with('code-smell.unreachable-code.first-line', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -148,15 +139,15 @@ final class UnreachableCodeRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(15, $violations[0]->location->line);
-        self::assertSame('Found 2 unreachable statement(s) after terminal statement (return/throw/exit/break/continue). Dead code should be removed', $violations[0]->message);
-        self::assertSame(2, $violations[0]->metricValue);
-        self::assertSame('code-smell.unreachable-code', $violations[0]->ruleName);
-        self::assertSame('code-smell.unreachable-code', $violations[0]->violationCode);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(15, $findings[0]->location->line);
+        self::assertSame('Found 2 unreachable statement(s) after terminal statement (return/throw/exit/break/continue). Dead code should be removed', $findings[0]->message);
+        self::assertSame(2, $findings[0]->metricValue);
+        self::assertSame('code-smell.unreachable-code', $findings[0]->ruleName);
+        self::assertSame('code-smell.unreachable-code', $findings[0]->code);
     }
 
     #[Test]
@@ -167,7 +158,7 @@ final class UnreachableCodeRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('unreachableCode', 1);
+        $metricBag = (new MetricBag())->with('code-smell.unreachable-code', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -175,10 +166,10 @@ final class UnreachableCodeRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(10, $violations[0]->location->line);
+        self::assertCount(1, $findings);
+        self::assertSame(10, $findings[0]->location->line);
     }
 
     #[Test]
@@ -194,12 +185,12 @@ final class UnreachableCodeRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('unreachableCode', 1));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('code-smell.unreachable-code', 1));
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame(1, $violations[0]->location->line);
+        self::assertCount(1, $findings);
+        self::assertSame(1, $findings[0]->location->line);
     }
 
     #[Test]
@@ -215,7 +206,7 @@ final class UnreachableCodeRuleTest extends TestCase
         self::assertSame(2, $options->warning);
         self::assertSame(3, $options->error);
 
-        // 1 unreachable statement — no violation with custom thresholds
+        // 1 unreachable statement — no finding with custom thresholds
         self::assertNull($options->getSeverity(1));
         // 2 — warning
         self::assertSame(Severity::Warning, $options->getSeverity(2));

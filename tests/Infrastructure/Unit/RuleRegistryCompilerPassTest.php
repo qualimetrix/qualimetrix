@@ -11,8 +11,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
@@ -136,9 +136,9 @@ final class FixtureNamelessRule implements RuleInterface
         return 'Rule fixture without a NAME constant';
     }
 
-    public function getCategory(): RuleCategory
+    public static function shape(): ChannelShape
     {
-        return RuleCategory::Complexity;
+        return ChannelShape::Occurrence;
     }
 
     public function requires(): array

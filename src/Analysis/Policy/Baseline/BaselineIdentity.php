@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 
 /**
  * What a baseline entry is *about*: the exact typed subject, the channel,
  * optional semantic occurrence, and — when the finding carries one — the
  * logical dependency edge.
  *
- * Every violation in a run maps onto exactly one identity, and the set of
- * violations sharing an identity is the *group* an entry bounds. Nothing
+ * Every finding in a run maps onto exactly one identity, and the set of
+ * findings sharing an identity is the *group* an entry bounds. Nothing
  * about a finding's magnitude, severity, message or line takes part: those
  * change for reasons that are not debt getting worse.
  *
@@ -30,8 +30,8 @@ final readonly class BaselineIdentity
      * printable separator could occur inside a component and would let two
      * different identities produce one key.
      *
-     * A violation emitted by a rule can never carry this byte — `SymbolPath`,
-     * rule names and violation codes are all built from source identifiers —
+     * A finding emitted by a rule can never carry this byte — `SymbolPath`,
+     * rule names and finding codes are all built from source identifiers —
      * but an identity assembled from a baseline *file* takes its components
      * from arbitrary JSON strings, and a JSON string may spell any code point.
      * So the property is **enforced by the constructor** rather than assumed:
@@ -48,7 +48,7 @@ final readonly class BaselineIdentity
      */
     public function __construct(
         public string $subjectKey,
-        public ViolationChannel $channel,
+        public FindingChannel $channel,
         public ?string $occurrenceKey = null,
         public ?BaselineEdge $edge = null,
     ) {
@@ -58,7 +58,7 @@ final readonly class BaselineIdentity
 
         foreach ([
             'subject key' => $subjectKey,
-            'channel' => $channel->toKey(),
+            'channel' => $channel->code,
             'occurrence key' => $occurrenceKey ?? '',
             'edge' => $edge?->key() ?? '',
         ] as $part => $value) {
@@ -74,21 +74,21 @@ final readonly class BaselineIdentity
     /**
      * The identity of a finding as emitted.
      */
-    public static function forViolation(Violation $violation): self
+    public static function forFinding(Finding $finding): self
     {
         $edge = null;
 
-        if ($violation->dependencyTarget !== null) {
+        if ($finding->dependencyTarget !== null) {
             $edge = new BaselineEdge(
-                $violation->dependencyTarget->toCanonical(),
-                $violation->dependencyType,
+                $finding->dependencyTarget->toCanonical(),
+                $finding->dependencyType,
             );
         }
 
         return new self(
-            $violation->subject->toCanonical(),
-            $violation->channel(),
-            $violation->occurrenceKey?->value,
+            $finding->subject->toCanonical(),
+            $finding->channel(),
+            $finding->occurrenceKey?->value,
             $edge,
         );
     }
@@ -100,7 +100,7 @@ final readonly class BaselineIdentity
     public function key(): string
     {
         return $this->subjectKey
-            . self::KEY_SEPARATOR . $this->channel->toKey()
+            . self::KEY_SEPARATOR . $this->channel->code
             . self::KEY_SEPARATOR . ($this->occurrenceKey ?? '')
             . self::KEY_SEPARATOR . ($this->edge?->key() ?? '');
     }
@@ -124,7 +124,7 @@ final readonly class BaselineIdentity
      */
     public function describe(): string
     {
-        $description = $this->subjectKey . ' ' . $this->channel->toKey();
+        $description = $this->subjectKey . ' ' . $this->channel->code;
 
         if ($this->occurrenceKey !== null) {
             $description .= ' [' . $this->occurrenceKey . ']';

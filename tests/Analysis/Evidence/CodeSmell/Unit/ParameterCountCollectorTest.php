@@ -17,9 +17,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 #[CoversClass(ParameterCountCollector::class)]
@@ -42,7 +42,7 @@ final class ParameterCountCollectorTest extends TestCase
     #[Test]
     public function itProvidesExpectedMetricKeys(): void
     {
-        self::assertSame(['parameterCount', 'isVoConstructor'], $this->collector->provides());
+        self::assertSame(['code-smell.parameter-count', 'code-smell.is-vo-constructor'], $this->collector->provides());
     }
 
     #[Test]
@@ -63,7 +63,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('parameterCount:App\Service\Calculator::reset'));
+        self::assertSame(0, $metrics->get('code-smell.parameter-count:App\Service\Calculator::reset'));
     }
 
     #[Test]
@@ -85,7 +85,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('parameterCount:App\Service\Calculator::add'));
+        self::assertSame(3, $metrics->get('code-smell.parameter-count:App\Service\Calculator::add'));
     }
 
     #[Test]
@@ -109,7 +109,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(4, $metrics->get('parameterCount:App\Service\UserService::__construct'));
+        self::assertSame(4, $metrics->get('code-smell.parameter-count:App\Service\UserService::__construct'));
     }
 
     #[Test]
@@ -128,7 +128,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('parameterCount:App\Utils\formatName'));
+        self::assertSame(2, $metrics->get('code-smell.parameter-count:App\Utils\formatName'));
     }
 
     #[Test]
@@ -149,7 +149,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('parameterCount:App\Logger::log'));
+        self::assertSame(2, $metrics->get('code-smell.parameter-count:App\Logger::log'));
     }
 
     #[Test]
@@ -170,7 +170,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('parameterCount:App\Config::setup'));
+        self::assertSame(3, $metrics->get('code-smell.parameter-count:App\Config::setup'));
     }
 
     #[Test]
@@ -199,9 +199,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('parameterCount:App\Service::noParams'));
-        self::assertSame(1, $metrics->get('parameterCount:App\Service::oneParam'));
-        self::assertSame(3, $metrics->get('parameterCount:App\Service::threeParams'));
+        self::assertSame(0, $metrics->get('code-smell.parameter-count:App\Service::noParams'));
+        self::assertSame(1, $metrics->get('code-smell.parameter-count:App\Service::oneParam'));
+        self::assertSame(3, $metrics->get('code-smell.parameter-count:App\Service::threeParams'));
     }
 
     #[Test]
@@ -243,8 +243,8 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         // Should only contain metrics from second file
-        self::assertNull($metrics->get('parameterCount:App\First::method'));
-        self::assertSame(1, $metrics->get('parameterCount:App\Second::otherMethod'));
+        self::assertNull($metrics->get('code-smell.parameter-count:App\First::method'));
+        self::assertSame(1, $metrics->get('code-smell.parameter-count:App\Second::otherMethod'));
     }
 
     #[Test]
@@ -255,7 +255,7 @@ PHP;
         self::assertCount(2, $definitions);
 
         $definition = $definitions[0];
-        self::assertSame('parameterCount', $definition->name);
+        self::assertSame('code-smell.parameter-count', $definition->name);
         self::assertSame(SymbolLevel::Callable, $definition->collectedAt);
 
         // Check Class_ level aggregations
@@ -280,7 +280,7 @@ PHP;
 
         // Check isVoConstructor metric definition
         $voDefinition = $definitions[1];
-        self::assertSame('isVoConstructor', $voDefinition->name);
+        self::assertSame('code-smell.is-vo-constructor', $voDefinition->name);
         self::assertSame(SymbolLevel::Callable, $voDefinition->collectedAt);
     }
 
@@ -300,7 +300,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('parameterCount:App\Contracts\ServiceInterface::execute'));
+        self::assertSame(2, $metrics->get('code-smell.parameter-count:App\Contracts\ServiceInterface::execute'));
     }
 
     #[Test]
@@ -319,7 +319,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(3, $metrics->get('parameterCount:App\AbstractHandler::handle'));
+        self::assertSame(3, $metrics->get('code-smell.parameter-count:App\AbstractHandler::handle'));
     }
 
     #[Test]
@@ -343,8 +343,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(4, $metrics->get('parameterCount:App\Dto\UserDto::__construct'));
-        self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\UserDto::__construct'));
+        self::assertSame(4, $metrics->get('code-smell.parameter-count:App\Dto\UserDto::__construct'));
+        self::assertSame(1, $metrics->get('code-smell.is-vo-constructor:App\Dto\UserDto::__construct'));
     }
 
     #[Test]
@@ -367,7 +367,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\Point::__construct'));
+        self::assertSame(1, $metrics->get('code-smell.is-vo-constructor:App\Dto\Point::__construct'));
     }
 
     #[Test]
@@ -389,8 +389,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('parameterCount:App\Service\UserService::__construct'));
-        self::assertNull($metrics->get('isVoConstructor:App\Service\UserService::__construct'));
+        self::assertSame(2, $metrics->get('code-smell.parameter-count:App\Service\UserService::__construct'));
+        self::assertNull($metrics->get('code-smell.is-vo-constructor:App\Service\UserService::__construct'));
     }
 
     #[Test]
@@ -412,7 +412,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertNull($metrics->get('isVoConstructor:App\Dto\MixedDto::__construct'));
+        self::assertNull($metrics->get('code-smell.is-vo-constructor:App\Dto\MixedDto::__construct'));
     }
 
     #[Test]
@@ -436,7 +436,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertNull($metrics->get('isVoConstructor:App\Dto\ValidatedDto::__construct'));
+        self::assertNull($metrics->get('code-smell.is-vo-constructor:App\Dto\ValidatedDto::__construct'));
     }
 
     #[Test]
@@ -460,7 +460,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertNull($metrics->get('isVoConstructor:App\Dto\ChildDto::__construct'));
+        self::assertNull($metrics->get('code-smell.is-vo-constructor:App\Dto\ChildDto::__construct'));
     }
 
     #[Test]
@@ -483,7 +483,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\ConfigDto::__construct'));
+        self::assertSame(1, $metrics->get('code-smell.is-vo-constructor:App\Dto\ConfigDto::__construct'));
     }
 
     #[Test]
@@ -506,8 +506,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\SomeDto::__construct'));
-        self::assertNull($metrics->get('isVoConstructor:App\Dto\SomeDto::process'));
+        self::assertSame(1, $metrics->get('code-smell.is-vo-constructor:App\Dto\SomeDto::__construct'));
+        self::assertNull($metrics->get('code-smell.is-vo-constructor:App\Dto\SomeDto::process'));
     }
 
     #[Test]
@@ -529,7 +529,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\BaseDto::__construct'));
+        self::assertSame(1, $metrics->get('code-smell.is-vo-constructor:App\Dto\BaseDto::__construct'));
     }
 
     #[Test]
@@ -548,8 +548,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // No constructor means no parameterCount and no voConstructor metrics
-        self::assertNull($metrics->get('parameterCount:App\Dto\EmptyDto::__construct'));
-        self::assertNull($metrics->get('isVoConstructor:App\Dto\EmptyDto::__construct'));
+        self::assertNull($metrics->get('code-smell.parameter-count:App\Dto\EmptyDto::__construct'));
+        self::assertNull($metrics->get('code-smell.is-vo-constructor:App\Dto\EmptyDto::__construct'));
     }
 
     #[Test]
@@ -568,9 +568,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('parameterCount:App\Dto\NoParamDto::__construct'));
+        self::assertSame(0, $metrics->get('code-smell.parameter-count:App\Dto\NoParamDto::__construct'));
         // Zero-param constructor is not a VO constructor (no promoted properties)
-        self::assertNull($metrics->get('isVoConstructor:App\Dto\NoParamDto::__construct'));
+        self::assertNull($metrics->get('code-smell.is-vo-constructor:App\Dto\NoParamDto::__construct'));
     }
 
     #[Test]
@@ -599,12 +599,12 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Methods of Outer should have correct FQN with class context preserved
-        self::assertSame(3, $metrics->get('parameterCount:App\Outer::before'));
-        self::assertSame(0, $metrics->get('parameterCount:App\Outer::factory'));
-        self::assertSame(2, $metrics->get('parameterCount:App\Outer::after'));
+        self::assertSame(3, $metrics->get('code-smell.parameter-count:App\Outer::before'));
+        self::assertSame(0, $metrics->get('code-smell.parameter-count:App\Outer::factory'));
+        self::assertSame(2, $metrics->get('code-smell.parameter-count:App\Outer::after'));
 
         // Anonymous class methods should NOT appear in metrics
-        self::assertNull($metrics->get('parameterCount:App\Outer::inner'));
+        self::assertNull($metrics->get('code-smell.parameter-count:App\Outer::inner'));
     }
 
     // -- getCallablesWithMetrics() per-symbol propagation ----------------------
@@ -636,8 +636,8 @@ PHP;
         $methodsWithMetrics = $this->collectMethodsWithMetrics($code);
         $construct = $this->findCallableWithMetrics($methodsWithMetrics, 'UserDto', '__construct');
 
-        self::assertSame(3, $construct->metrics->get('parameterCount'));
-        self::assertSame(1, $construct->metrics->get('isVoConstructor'));
+        self::assertSame(3, $construct->metrics->get('code-smell.parameter-count'));
+        self::assertSame(1, $construct->metrics->get('code-smell.is-vo-constructor'));
     }
 
     #[Test]
@@ -660,8 +660,8 @@ PHP;
         $methodsWithMetrics = $this->collectMethodsWithMetrics($code);
         $construct = $this->findCallableWithMetrics($methodsWithMetrics, 'UserService', '__construct');
 
-        self::assertSame(2, $construct->metrics->get('parameterCount'));
-        self::assertNull($construct->metrics->get('isVoConstructor'));
+        self::assertSame(2, $construct->metrics->get('code-smell.parameter-count'));
+        self::assertNull($construct->metrics->get('code-smell.is-vo-constructor'));
     }
 
     #[Test]
@@ -688,8 +688,8 @@ PHP;
         $methodsWithMetrics = $this->collectMethodsWithMetrics($code);
         $withName = $this->findCallableWithMetrics($methodsWithMetrics, 'UserDto', 'withName');
 
-        self::assertSame(1, $withName->metrics->get('parameterCount'));
-        self::assertNull($withName->metrics->get('isVoConstructor'));
+        self::assertSame(1, $withName->metrics->get('code-smell.parameter-count'));
+        self::assertNull($withName->metrics->get('code-smell.is-vo-constructor'));
     }
 
     /**

@@ -6,13 +6,12 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Base class for code smell rules.
@@ -25,6 +24,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * For rules that whitelist individual occurrences (e.g. allowed boolean
  * prefixes, allowed @-suppressed functions) the options class must
  * implement {@see EntryFilteringOptionsInterface}.
+ *
+ * @qmx-threshold coupling.cbo 22 -- Declaring the levels a channel reports at costs every rule one edge onto SymbolLevel; this base sat exactly on the inclusive warning threshold of 20 before it. Raw CBO 21 now, after ADR 0031 (rule-vocabulary Ш4c) added one more constant-typed dependency (ChannelShape) that every subclass answering shape() through this base needs; 22 gets one-edge headroom again.
  */
 abstract class AbstractCodeSmellRule extends AbstractRule
 {
@@ -67,15 +68,21 @@ abstract class AbstractCodeSmellRule extends AbstractRule
         return static::DESCRIPTION;
     }
 
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::CodeSmell;
-    }
-
     public static function getOptionsClass(): string
     {
         return CodeSmellOptions::class;
     }
+
+    /**
+     * Shared by every subclass that inherits {@see channelDeclarations()}
+     * below unchanged — a fixed `1.0` occurrence marker is never a magnitude.
+     * The code-smell rules that report a real measured magnitude
+     * (`ConstructorOverinjectionRule`, `LongParameterListRule`,
+     * `UnreachableCodeRule`, `UnusedPrivateRule`) extend `AbstractRule`
+     * directly instead, precisely so this default cannot apply to them by
+     * accident.
+     */
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
 
     /**
      * Every subclass that does not override {@see analyze()} emits its
@@ -93,14 +100,14 @@ abstract class AbstractCodeSmellRule extends AbstractRule
      * (every subclass of this base is occurrence-shaped); if one starts
      * overriding `analyze()` to emit a real magnitude, it must also override
      * this method, or the drift guard will catch the mismatch against
-     * `tests/Fixtures/Channels/declared.txt`.
+     * `tests/Analysis/Finding/Fixtures/Channels/declared.txt`.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(static::NAME, static::NAME))->toKey() => ChannelDeclaration::occurrence(),
+            static::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable),
         ];
     }
 
@@ -115,7 +122,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -123,10 +130,10 @@ abstract class AbstractCodeSmellRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
         $type = static::SMELL_TYPE;
 
-        foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
+        foreach ($context->metrics->all(SymbolLevel::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
             $entries = $metrics->entries("codeSmell.{$type}");
 
@@ -136,7 +143,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
                 }
 
                 $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
-                $violations[] = CodeSmellFinding::fromEntry($entry, $file)->toViolation(
+                $findings[] = CodeSmellFinding::fromEntry($entry, $file)->toFinding(
                     $fileInfo->symbolPath,
                     static::NAME,
                     static::SMELL_TYPE,
@@ -147,11 +154,11 @@ abstract class AbstractCodeSmellRule extends AbstractRule
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
-     * Filters entries before violation creation.
+     * Filters entries before finding creation.
      *
      * Default behaviour: when the options class implements
      * {@see EntryFilteringOptionsInterface}, the entry's `extra` value is
@@ -173,7 +180,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     }
 
     /**
-     * Builds the violation message for a single entry.
+     * Builds the finding message for a single entry.
      *
      * Default behaviour: when MESSAGE_TEMPLATE_WITH_EXTRA is set and the
      * entry carries a non-empty `extra` value, sprintf-format it (with a

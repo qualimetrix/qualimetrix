@@ -18,7 +18,7 @@ use InvalidArgumentException;
  *   for a suffix, {@code 'App\\Domain\\AggregateRoot'} for an extends FQN).
  *
  * The {@see describe()} helper renders a human-readable label used by the
- * violation message and the debug command: {@code "pattern \"App\\Service\""}
+ * finding message and the debug command: {@code "pattern \"App\\Service\""}
  * etc.
  */
 final readonly class MatchedCriterion
@@ -36,7 +36,7 @@ final readonly class MatchedCriterion
     }
 
     /**
-     * Renders the criterion as a short label, used in violation messages.
+     * Renders the criterion as a short label, used in finding messages.
      */
     public function describe(): string
     {

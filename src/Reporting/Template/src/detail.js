@@ -109,7 +109,7 @@ function renderNodeSummary(node) {
 
   const items = [];
 
-  const loc = node.metrics?.['loc.sum'];
+  const loc = node.metrics?.['size.loc.sum'];
   if (loc != null) items.push(['Lines of Code', loc.toLocaleString()]);
 
   const violations = node.violationCountTotal;
@@ -239,7 +239,7 @@ function renderWorstClasses(node, metric) {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${escapeHtml(cls.name)}</td>` +
       `<td>${Math.round(cls.metrics[metric] ?? 0)}</td>` +
-      `<td>${cls.metrics['loc.sum'] ?? 0}</td>` +
+      `<td>${cls.metrics['size.loc.sum'] ?? 0}</td>` +
       `<td>${cls.violationCountTotal}</td>`;
     tbody.appendChild(tr);
   }

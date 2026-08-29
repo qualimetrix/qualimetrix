@@ -7,11 +7,12 @@ namespace Qualimetrix\Analysis\Policy\Inline\Contract\Suppression;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Represents a suppression tag from docblock.
  *
- * Example: `@qmx-ignore complexity.cyclomatic.callable -- Reason why it's ignored`
+ * Example: `@qmx-ignore complexity.cyclomatic -- Reason why it's ignored`
  *
  * `$rule` keeps the authored text; what it actually filters on is
  * {@see SuppressionTarget}, derived from it once here.
@@ -59,20 +60,15 @@ final readonly class Suppression
     /**
      * Checks whether this suppression addresses the given channel.
      *
-     * The directive addresses a **channel**, fully qualified: an exact
-     * `violationCode`, the explicit `ruleName#violationCode` pair, or `X.*`
-     * for the strict descendants of `X`. A rule name is not a channel —
-     * `@qmx-ignore coupling.instability` no longer covers
-     * `coupling.instability.class`. The one form that filters on nothing is
-     * `@qmx-ignore *` (and a bare `@qmx-ignore-file`), see
-     * {@see SuppressionTarget}.
-     *
-     * Both halves are taken, not just the code, because the pair form is
-     * meaningless without the rule name — reading only the code would make
-     * `a#x` and `b#x` the same directive.
+     * The directive addresses a **channel**, by its own name: an exact name,
+     * or `X.*` for the strict descendants of `X`. A level is addressed beside
+     * the name — `@qmx-ignore coupling.cbo:namespace` silences the namespace
+     * aggregate and leaves the class findings of the same channel reported.
+     * The one form that filters on nothing is `@qmx-ignore *` (and a bare
+     * `@qmx-ignore-file`), see {@see SuppressionTarget}.
      */
-    public function matches(string $ruleName, string $violationCode): bool
+    public function matches(string $code, ?SymbolLevel $level): bool
     {
-        return $this->target->matches($ruleName, $violationCode);
+        return $this->target->matches($code, $level);
     }
 }

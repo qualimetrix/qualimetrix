@@ -19,9 +19,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Builds health scores and offender projections from measured evidence.
@@ -44,15 +44,15 @@ final readonly class HealthSummaryBuilder
         $this->offenderBuilder = new WorstOffenderBuilder();
     }
 
-    /** @param list<Violation> $violations */
+    /** @param list<Finding> $findings */
     public function build(
         MetricRepositoryInterface $metrics,
         NamespaceTree $tree,
-        array $violations,
+        array $findings,
     ): HealthSummary {
         $healthScores = $this->buildHealthScores($metrics);
-        $worstNamespaces = $this->buildWorstOffenders($metrics, $violations, SymbolType::Namespace_, self::DEFAULT_TOP_NAMESPACES, $tree);
-        $worstClasses = $this->buildWorstOffenders($metrics, $violations, SymbolType::Class_, self::DEFAULT_TOP_CLASSES, $tree);
+        $worstNamespaces = $this->buildWorstOffenders($metrics, $findings, SymbolLevel::Namespace_, self::DEFAULT_TOP_NAMESPACES, $tree);
+        $worstClasses = $this->buildWorstOffenders($metrics, $findings, SymbolLevel::Class_, self::DEFAULT_TOP_CLASSES, $tree);
 
         return new HealthSummary(
             healthScores: $healthScores,
@@ -93,7 +93,7 @@ final readonly class HealthSummaryBuilder
                             'primaryValue' => $selection['primaryValue'],
                             'contributorMetrics' => $selection['contributorMetrics'],
                         ];
-                    }, iterator_to_array($metrics->all(SymbolType::Class_), false)),
+                    }, iterator_to_array($metrics->all(SymbolLevel::Class_), false)),
                     $inputs[0]['direction'],
                 );
 
@@ -177,9 +177,9 @@ final readonly class HealthSummaryBuilder
     private function buildTypingDecomposition(MetricBag $metrics): array
     {
         $components = [
-            ['label' => 'Parameter types', 'typed' => MetricName::agg(MetricName::TYPE_COVERAGE_PARAM_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::TYPE_COVERAGE_PARAM_TOTAL, AggregationStrategy::Sum)],
-            ['label' => 'Return types', 'typed' => MetricName::agg(MetricName::TYPE_COVERAGE_RETURN_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::TYPE_COVERAGE_RETURN_TOTAL, AggregationStrategy::Sum)],
-            ['label' => 'Property types', 'typed' => MetricName::agg(MetricName::TYPE_COVERAGE_PROPERTY_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::TYPE_COVERAGE_PROPERTY_TOTAL, AggregationStrategy::Sum)],
+            ['label' => 'Parameter types', 'typed' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL, AggregationStrategy::Sum)],
+            ['label' => 'Return types', 'typed' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_RETURN_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL, AggregationStrategy::Sum)],
+            ['label' => 'Property types', 'typed' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL, AggregationStrategy::Sum)],
         ];
 
         $items = [];
@@ -208,14 +208,14 @@ final readonly class HealthSummaryBuilder
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return list<WorstOffender>
      */
     private function buildWorstOffenders(
         MetricRepositoryInterface $repository,
-        array $violations,
-        SymbolType $symbolType,
+        array $findings,
+        SymbolLevel $level,
         int $limit,
         NamespaceTree $tree,
     ): array {
@@ -224,7 +224,7 @@ final readonly class HealthSummaryBuilder
         /** @var list<array{score: float, info: \Qualimetrix\Core\Symbol\SymbolInfo}> $candidates */
         $candidates = [];
 
-        foreach ($repository->all($symbolType) as $symbolInfo) {
+        foreach ($repository->all($level) as $symbolInfo) {
             $metrics = $repository->get($symbolInfo->symbolPath);
             $healthOverall = $metrics->get(HealthDimension::Overall->value);
 
@@ -235,7 +235,7 @@ final readonly class HealthSummaryBuilder
             $scoreValue = (float) $healthOverall;
 
             // Skip namespaces with no direct classes (e.g., root namespace containers like "PHPUnit")
-            if ($symbolType === SymbolType::Namespace_) {
+            if ($level === SymbolLevel::Namespace_) {
                 $classCountInNs = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
 
                 if ($classCountInNs === 0) {
@@ -250,7 +250,7 @@ final readonly class HealthSummaryBuilder
         usort($candidates, static fn(array $a, array $b): int => ($a['score'] <=> $b['score']) !== 0 ? ($a['score'] <=> $b['score'])
                 : ($a['info']->symbolPath->toCanonical() <=> $b['info']->symbolPath->toCanonical()));
 
-        $violationCounts = $this->countViolationsPerSymbol($violations, $symbolType, $tree);
+        $violationCounts = $this->countFindingsPerSymbol($findings, $level, $tree);
 
         $offenders = [];
 
@@ -263,11 +263,11 @@ final readonly class HealthSummaryBuilder
 
             $symbolCanonical = $symbolInfo->symbolPath->toCanonical();
             $violationCount = $violationCounts[$symbolCanonical] ?? 0;
-            $classCount = $symbolType === SymbolType::Namespace_
+            $classCount = $level === SymbolLevel::Namespace_
                 ? (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0)
                 : 0;
 
-            $notableMetrics = $this->getNotableMetrics($metrics, $symbolType);
+            $notableMetrics = $this->getNotableMetrics($metrics, $level);
 
             $offender = $this->offenderBuilder->build(
                 [
@@ -275,7 +275,7 @@ final readonly class HealthSummaryBuilder
                     'overall' => $scoreValue,
                     'dimensionScores' => $perDimensionScores,
                     'loc' => $metrics->get(
-                        $symbolType === SymbolType::Namespace_
+                        $level === SymbolLevel::Namespace_
                             ? MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)
                             : MetricName::SIZE_CLASS_LOC,
                     ),
@@ -317,29 +317,29 @@ final readonly class HealthSummaryBuilder
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return array<string, int>
      */
-    private function countViolationsPerSymbol(array $violations, SymbolType $symbolType, NamespaceTree $tree): array
+    private function countFindingsPerSymbol(array $findings, SymbolLevel $level, NamespaceTree $tree): array
     {
         $counts = [];
 
-        foreach ($violations as $violation) {
-            if ($symbolType === SymbolType::Class_) {
-                // Count violations by class
+        foreach ($findings as $finding) {
+            if ($level === SymbolLevel::Class_) {
+                // Count findings by class
                 $classPath = SymbolPath::forClass(
-                    $violation->symbolPath->namespace ?? '',
-                    $violation->symbolPath->type ?? '',
+                    $finding->symbolPath->namespace ?? '',
+                    $finding->symbolPath->type ?? '',
                 );
 
-                if ($violation->symbolPath->type !== null) {
+                if ($finding->symbolPath->type !== null) {
                     $key = $classPath->toCanonical();
                     $counts[$key] = ($counts[$key] ?? 0) + 1;
                 }
-            } elseif ($symbolType === SymbolType::Namespace_) {
-                // Count violations by namespace, walking up the hierarchy via NamespaceTree
-                $ns = $violation->symbolPath->namespace;
+            } elseif ($level === SymbolLevel::Namespace_) {
+                // Count findings by namespace, walking up the hierarchy via NamespaceTree
+                $ns = $finding->symbolPath->namespace;
 
                 if ($ns !== null && $ns !== '') {
                     $nsPath = SymbolPath::forNamespace($ns);
@@ -361,17 +361,17 @@ final readonly class HealthSummaryBuilder
     /**
      * @return array<string, int|float>
      */
-    private function getNotableMetrics(MetricBag $metrics, SymbolType $symbolType): array
+    private function getNotableMetrics(MetricBag $metrics, SymbolLevel $level): array
     {
         $notable = [];
-        $keys = $symbolType === SymbolType::Class_
+        $keys = $level === SymbolLevel::Class_
             ? [
-                MetricName::STRUCTURE_METHOD_COUNT,
-                MetricName::STRUCTURE_PROPERTY_COUNT,
+                MetricName::SIZE_METHOD_COUNT,
+                MetricName::SIZE_PROPERTY_COUNT,
                 MetricName::COUPLING_CBO,
                 MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Average),
                 MetricName::COHESION_TCC,
-                MetricName::STRUCTURE_WMC,
+                MetricName::COMPLEXITY_WMC,
                 MetricName::agg(MetricName::MAINTAINABILITY_MI, AggregationStrategy::Average),
                 MetricName::SIZE_LOC,
             ]

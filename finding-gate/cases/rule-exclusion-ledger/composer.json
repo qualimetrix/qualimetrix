@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/rule-exclusion-ledger",
+    "description": "Corpus case: fixtures silenced through per-rule exclude_namespaces and exclude_paths",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\RuleExclusionLedger\\": "src/"
+        }
+    }
+}

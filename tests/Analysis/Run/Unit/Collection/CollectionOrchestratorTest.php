@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFacto
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
@@ -41,6 +40,7 @@ use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionMethod;
 use RuntimeException;
@@ -101,13 +101,13 @@ final class CollectionOrchestratorTest extends TestCase
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/file1.php'),
                 payload: new SuccessfulFileProcessing(
-                    fileBag: MetricBag::fromArray(['loc' => 50]),
+                    fileBag: MetricBag::fromArray(['size.loc' => 50]),
                 ),
             ),
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/file2.php'),
                 payload: new SuccessfulFileProcessing(
-                    fileBag: MetricBag::fromArray(['loc' => 100]),
+                    fileBag: MetricBag::fromArray(['size.loc' => 100]),
                 ),
             ),
         ];
@@ -133,8 +133,8 @@ final class CollectionOrchestratorTest extends TestCase
 
         self::assertTrue($repository->has($fileSymbol1));
         self::assertTrue($repository->has($fileSymbol2));
-        self::assertSame(50, $repository->get($fileSymbol1)->get('loc'));
-        self::assertSame(100, $repository->get($fileSymbol2)->get('loc'));
+        self::assertSame(50, $repository->get($fileSymbol1)->get('size.loc'));
+        self::assertSame(100, $repository->get($fileSymbol2)->get('size.loc'));
     }
 
     #[Test]
@@ -149,7 +149,7 @@ final class CollectionOrchestratorTest extends TestCase
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/valid.php'),
                 payload: new SuccessfulFileProcessing(
-                    fileBag: MetricBag::fromArray(['loc' => 50]),
+                    fileBag: MetricBag::fromArray(['size.loc' => 50]),
                 ),
             ),
             FileProcessingResult::failure(
@@ -177,7 +177,7 @@ final class CollectionOrchestratorTest extends TestCase
     {
         $files = [new SplFileInfo('/tmp/test.php')];
         $symbolPath = SymbolPath::forMethod('App', 'Service', 'calculate');
-        $methodBag = MetricBag::fromArray(['ccn' => 5]);
+        $methodBag = MetricBag::fromArray(['complexity.ccn' => 5]);
 
         $processingResults = [
             FileProcessingResult::success(
@@ -197,7 +197,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertTrue($repository->has($symbolPath));
-        self::assertSame(5, $repository->get($symbolPath)->get('ccn'));
+        self::assertSame(5, $repository->get($symbolPath)->get('complexity.ccn'));
     }
 
     #[Test]
@@ -205,7 +205,7 @@ final class CollectionOrchestratorTest extends TestCase
     {
         $files = [new SplFileInfo('/tmp/test.php')];
         $symbolPath = SymbolPath::forClass('App', 'Service');
-        $classBag = MetricBag::fromArray(['wmc' => 25]);
+        $classBag = MetricBag::fromArray(['complexity.wmc' => 25]);
 
         $processingResults = [
             FileProcessingResult::success(
@@ -234,7 +234,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertTrue($repository->has($symbolPath));
-        self::assertSame(25, $repository->get($symbolPath)->get('wmc'));
+        self::assertSame(25, $repository->get($symbolPath)->get('complexity.wmc'));
     }
 
     #[Test]
@@ -251,9 +251,9 @@ final class CollectionOrchestratorTest extends TestCase
         );
 
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
-        $derivedCollector->method('provides')->willReturn(['typeCoverage.pct']);
+        $derivedCollector->method('provides')->willReturn(['design.type-coverage.pct']);
         $derivedCollector->method('getMetricDefinitions')->willReturn([
-            new MetricDefinition('typeCoverage.pct', SymbolLevel::Class_),
+            new MetricDefinition('design.type-coverage.pct', SymbolLevel::Class_),
         ]);
         $extractor = new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]));
 
@@ -262,19 +262,19 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: $file,
                 payload: new SuccessfulFileProcessing(
                     fileBag: MetricBag::fromArray([
-                        'typeCoverage.pct:' . $firstSubject->toCanonical() => 100.0,
-                        'typeCoverage.pct:' . $secondSubject->toCanonical() => 50.0,
+                        'design.type-coverage.pct:' . $firstSubject->toCanonical() => 100.0,
+                        'design.type-coverage.pct:' . $secondSubject->toCanonical() => 50.0,
                     ]),
                     classMetrics: [
                         $firstSubject->toCanonical() => [
                             'subject' => $firstSubject,
-                            'metrics' => MetricBag::fromArray(['typeCoverage.paramTotal' => 2]),
+                            'metrics' => MetricBag::fromArray(['design.type-coverage.param.total' => 2]),
                             'line' => 5,
                             'start' => 5,
                         ],
                         $secondSubject->toCanonical() => [
                             'subject' => $secondSubject,
-                            'metrics' => MetricBag::fromArray(['typeCoverage.paramTotal' => 2]),
+                            'metrics' => MetricBag::fromArray(['design.type-coverage.param.total' => 2]),
                             'line' => 20,
                             'start' => 20,
                         ],
@@ -296,8 +296,8 @@ final class CollectionOrchestratorTest extends TestCase
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
-        self::assertSame(100.0, $repository->getSubject($firstSubject)->get('typeCoverage.pct'));
-        self::assertSame(50.0, $repository->getSubject($secondSubject)->get('typeCoverage.pct'));
+        self::assertSame(100.0, $repository->getSubject($firstSubject)->get('design.type-coverage.pct'));
+        self::assertSame(50.0, $repository->getSubject($secondSubject)->get('design.type-coverage.pct'));
     }
 
     #[Test]
@@ -413,7 +413,7 @@ final class CollectionOrchestratorTest extends TestCase
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/good.php'),
                 payload: new SuccessfulFileProcessing(
-                    fileBag: MetricBag::fromArray(['loc' => 50]),
+                    fileBag: MetricBag::fromArray(['size.loc' => 50]),
                 ),
             ),
             FileProcessingResult::failure(RelativePath::fromString('tmp/bad1.php'), 'Syntax error'),
@@ -421,7 +421,7 @@ final class CollectionOrchestratorTest extends TestCase
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/good2.php'),
                 payload: new SuccessfulFileProcessing(
-                    fileBag: MetricBag::fromArray(['loc' => 75]),
+                    fileBag: MetricBag::fromArray(['size.loc' => 75]),
                 ),
             ),
         ];
@@ -465,7 +465,7 @@ final class CollectionOrchestratorTest extends TestCase
         $suppression = new Suppression('complexity', 'fixture', 7, SuppressionType::File);
         $secondSuppression = new Suppression('design', 'second fixture', 17, SuppressionType::NextLine);
         $override = new ThresholdOverride('complexity.cyclomatic', 12, 20, 8, $subject, ControlScope::Class_);
-        $secondOverride = new ThresholdOverride('design.type-coverage', 95, 80, 18, $subject, ControlScope::Class_);
+        $secondOverride = new ThresholdOverride('design.type-coverage.param', 95, 80, 18, $subject, ControlScope::Class_);
         $diagnostic = new ThresholdDiagnostic(9, $subject, 'invalid fixture threshold');
         $secondDiagnostic = new ThresholdDiagnostic(19, $subject, 'second invalid fixture threshold');
         $dependencies = [
@@ -484,7 +484,7 @@ final class CollectionOrchestratorTest extends TestCase
             FileProcessingResult::success(
                 filePath: $path,
                 payload: new SuccessfulFileProcessing(
-                    fileBag: MetricBag::fromArray(['loc' => 12]),
+                    fileBag: MetricBag::fromArray(['size.loc' => 12]),
                     dependencies: $dependencies,
                     suppressions: [$suppression],
                     thresholdOverrides: [$override],
@@ -494,7 +494,7 @@ final class CollectionOrchestratorTest extends TestCase
             FileProcessingResult::success(
                 filePath: $emptyControlsPath,
                 payload: new SuccessfulFileProcessing(
-                    fileBag: MetricBag::fromArray(['loc' => 3]),
+                    fileBag: MetricBag::fromArray(['size.loc' => 3]),
                 ),
             ),
             FileProcessingResult::failure(
@@ -505,7 +505,7 @@ final class CollectionOrchestratorTest extends TestCase
             FileProcessingResult::success(
                 filePath: $secondPath,
                 payload: new SuccessfulFileProcessing(
-                    fileBag: MetricBag::fromArray(['loc' => 8]),
+                    fileBag: MetricBag::fromArray(['size.loc' => 8]),
                     dependencies: [$secondDependency],
                     suppressions: [$secondSuppression],
                     thresholdOverrides: [$secondOverride],
@@ -701,9 +701,9 @@ final class CollectionOrchestratorTest extends TestCase
     {
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
-        $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('provides')->willReturn(['maintainability.mi']);
         $derivedCollector->method('getMetricDefinitions')->willReturn([
-            new MetricDefinition('mi', SymbolLevel::Callable),
+            new MetricDefinition('maintainability.mi', SymbolLevel::Callable),
         ]);
 
         $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
@@ -711,13 +711,13 @@ final class CollectionOrchestratorTest extends TestCase
         $files = [new SplFileInfo('/tmp/test.php')];
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'calculate');
 
-        $callable = $this->callable($methodSymbol, MetricBag::fromArray(['ccn' => 5, 'loc' => 20]), 15, 'tmp/test.php');
+        $callable = $this->callable($methodSymbol, MetricBag::fromArray(['complexity.ccn' => 5, 'size.loc' => 20]), 15, 'tmp/test.php');
 
         // File bag contains base metrics plus the declaration-scoped derived metric.
         $fileBag = MetricBag::fromArray([
-            'ccn:App\Service::calculate' => 5,
-            'loc:App\Service::calculate' => 20,
-            $this->derivedKey('mi', $callable) => 85.5,
+            'complexity.ccn:App\Service::calculate' => 5,
+            'size.loc:App\Service::calculate' => 20,
+            $this->derivedKey('maintainability.mi', $callable) => 85.5,
         ]);
 
         $processingResults = [
@@ -748,7 +748,7 @@ final class CollectionOrchestratorTest extends TestCase
         // Verify that derived metric was added to method symbol
         self::assertTrue($repository->has($methodSymbol));
         $methodBag = $repository->get($methodSymbol);
-        self::assertSame(85.5, $methodBag->get('mi'));
+        self::assertSame(85.5, $methodBag->get('maintainability.mi'));
     }
 
     #[Test]
@@ -756,7 +756,7 @@ final class CollectionOrchestratorTest extends TestCase
     {
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
-        $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('provides')->willReturn(['maintainability.mi']);
 
         $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
 
@@ -764,7 +764,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         // File bag contains derived metric for method that doesn't exist
         $fileBag = MetricBag::fromArray([
-            'mi:App\NonExistent::method' => 85.5,
+            'maintainability.mi:App\NonExistent::method' => 85.5,
         ]);
 
         $processingResults = [
@@ -802,7 +802,7 @@ final class CollectionOrchestratorTest extends TestCase
     {
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
-        $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('provides')->willReturn(['maintainability.mi']);
 
         $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
 
@@ -810,10 +810,10 @@ final class CollectionOrchestratorTest extends TestCase
 
         // File bag contains invalid FQNs
         $fileBag = MetricBag::fromArray([
-            'mi:InvalidFqn' => 85.5, // no ::
-            'mi:123Invalid::method' => 90.0, // starts with digit
-            'mi:' => 80.0, // empty FQN
-            'mi:::double' => 75.0, // invalid format
+            'maintainability.mi:InvalidFqn' => 85.5, // no ::
+            'maintainability.mi:123Invalid::method' => 90.0, // starts with digit
+            'maintainability.mi:' => 80.0, // empty FQN
+            'maintainability.mi:::double' => 75.0, // invalid format
         ]);
 
         $processingResults = [
@@ -849,9 +849,9 @@ final class CollectionOrchestratorTest extends TestCase
     {
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
-        $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('provides')->willReturn(['maintainability.mi']);
         $derivedCollector->method('getMetricDefinitions')->willReturn([
-            new MetricDefinition('mi', SymbolLevel::Callable),
+            new MetricDefinition('maintainability.mi', SymbolLevel::Callable),
         ]);
 
         $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
@@ -859,11 +859,11 @@ final class CollectionOrchestratorTest extends TestCase
         $files = [new SplFileInfo('/tmp/test.php')];
         $methodSymbol = SymbolPath::forMethod('', 'SimpleClass', 'method');
 
-        $callable = $this->callable($methodSymbol, MetricBag::fromArray(['ccn' => 3]), 10, 'tmp/test.php');
+        $callable = $this->callable($methodSymbol, MetricBag::fromArray(['complexity.ccn' => 3]), 10, 'tmp/test.php');
 
         // File bag contains the declaration-scoped derived metric for a class without namespace.
         $fileBag = MetricBag::fromArray([
-            $this->derivedKey('mi', $callable) => 85.5,
+            $this->derivedKey('maintainability.mi', $callable) => 85.5,
         ]);
 
         $processingResults = [
@@ -894,17 +894,17 @@ final class CollectionOrchestratorTest extends TestCase
         // Verify that derived metric was added
         self::assertTrue($repository->has($methodSymbol));
         $methodBag = $repository->get($methodSymbol);
-        self::assertSame(85.5, $methodBag->get('mi'));
+        self::assertSame(85.5, $methodBag->get('maintainability.mi'));
     }
 
     #[Test]
     public function itIgnoresNonDerivedMetricsWithColonFormat(): void
     {
-        // Create mock derived collector that provides 'mi'
+        // Create mock derived collector that provides 'maintainability.mi'
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
-        $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('provides')->willReturn(['maintainability.mi']);
         $derivedCollector->method('getMetricDefinitions')->willReturn([
-            new MetricDefinition('mi', SymbolLevel::Callable),
+            new MetricDefinition('maintainability.mi', SymbolLevel::Callable),
         ]);
 
         $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
@@ -915,9 +915,9 @@ final class CollectionOrchestratorTest extends TestCase
 
         // File bag contains aggregate-looking keys and one declaration-scoped derived metric.
         $fileBag = MetricBag::fromArray([
-            'ccn:App\Service::method' => 5, // not a derived metric
-            'loc:App\Service::method' => 20, // not a derived metric
-            $this->derivedKey('mi', $callable) => 85.5,
+            'complexity.ccn:App\Service::method' => 5, // not a derived metric
+            'size.loc:App\Service::method' => 20, // not a derived metric
+            $this->derivedKey('maintainability.mi', $callable) => 85.5,
         ]);
 
         $processingResults = [
@@ -945,13 +945,13 @@ final class CollectionOrchestratorTest extends TestCase
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
-        // Only 'mi' should be added as derived metric
+        // Only 'maintainability.mi' should be added as derived metric
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'method');
         $methodBag = $repository->get($methodSymbol);
 
-        self::assertTrue($methodBag->has('mi'));
-        self::assertFalse($methodBag->has('ccn')); // base metrics not added via derived path
-        self::assertFalse($methodBag->has('loc'));
+        self::assertTrue($methodBag->has('maintainability.mi'));
+        self::assertFalse($methodBag->has('complexity.ccn')); // base metrics not added via derived path
+        self::assertFalse($methodBag->has('size.loc'));
     }
 
     #[Test]
@@ -959,7 +959,7 @@ final class CollectionOrchestratorTest extends TestCase
     {
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
-        $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('provides')->willReturn(['maintainability.mi']);
 
         $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
 
@@ -1015,7 +1015,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         // File bag contains metrics with colon format
         $fileBag = MetricBag::fromArray([
-            'ccn:App\Service::method' => 5,
+            'complexity.ccn:App\Service::method' => 5,
         ]);
 
         $processingResults = [
@@ -1023,7 +1023,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: $fileBag,
-                    callableMetrics: [$this->callable($methodSymbol, MetricBag::fromArray(['ccn' => 5]), 10, 'tmp/test.php')],
+                    callableMetrics: [$this->callable($methodSymbol, MetricBag::fromArray(['complexity.ccn' => 5]), 10, 'tmp/test.php')],
                 ),
             ),
         ];
@@ -1045,7 +1045,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         // Verify that method metrics were registered normally
         self::assertTrue($repository->has($methodSymbol));
-        self::assertSame(5, $repository->get($methodSymbol)->get('ccn'));
+        self::assertSame(5, $repository->get($methodSymbol)->get('complexity.ccn'));
     }
 
     #[Test]
@@ -1053,9 +1053,9 @@ final class CollectionOrchestratorTest extends TestCase
     {
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
-        $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('provides')->willReturn(['maintainability.mi']);
         $derivedCollector->method('getMetricDefinitions')->willReturn([
-            new MetricDefinition('mi', SymbolLevel::Callable),
+            new MetricDefinition('maintainability.mi', SymbolLevel::Callable),
         ]);
 
         $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
@@ -1064,11 +1064,11 @@ final class CollectionOrchestratorTest extends TestCase
         // PHP allows Unicode in identifiers (0x7f-0xff range)
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'calculate');
 
-        $callable = $this->callable($methodSymbol, MetricBag::fromArray(['ccn' => 3]), 10, 'tmp/test.php');
+        $callable = $this->callable($methodSymbol, MetricBag::fromArray(['complexity.ccn' => 3]), 10, 'tmp/test.php');
 
         // File bag contains a declaration-scoped derived metric.
         $fileBag = MetricBag::fromArray([
-            $this->derivedKey('mi', $callable) => 85.5,
+            $this->derivedKey('maintainability.mi', $callable) => 85.5,
         ]);
 
         $processingResults = [
@@ -1099,7 +1099,7 @@ final class CollectionOrchestratorTest extends TestCase
         // Verify that derived metric was added for method with non-ASCII identifiers
         self::assertTrue($repository->has($methodSymbol));
         $methodBag = $repository->get($methodSymbol);
-        self::assertSame(85.5, $methodBag->get('mi'));
+        self::assertSame(85.5, $methodBag->get('maintainability.mi'));
     }
 
     #[Test]

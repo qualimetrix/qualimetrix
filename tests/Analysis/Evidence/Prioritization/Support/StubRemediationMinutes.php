@@ -44,7 +44,9 @@ final class StubRemediationMinutes
             // Design
             'design.inheritance' => 30,
             'design.noc' => 20,
-            'design.type-coverage' => 15,
+            'design.type-coverage.param' => 15,
+            'design.type-coverage.return' => 15,
+            'design.type-coverage.property' => 15,
             'cohesion.lcom' => 45,
             'design.data-class' => 30,
             'design.god-class' => 120,
@@ -85,15 +87,16 @@ final class StubRemediationMinutes
             'architecture.layer-violation' => 15,
             'annotation.directive' => 15,
             'duplication.code-duplication' => 15,
-            'computed.health' => 15,
+            'computed' => 15,
 
-            // Sub-diagnostic identities emitted by LayerViolationRule and
-            // InlineDirectiveRule/InlineDirectivePolicy under their own
+            'architecture.unassigned-class' => 15,
+
+            // Sub-diagnostic identities emitted by LayerDeclarationValidator
+            // and UnusedDirectiveRule/InlineDirectivePolicy under their own
             // ruleName, distinct from the producing class's own NAME — see
             // ChannelDeclarationCompilerPass, which inherits the producer's
             // minutes for these at container-build time.
             'architecture.coverage' => 15,
-            'architecture.unassigned-class' => 15,
             'architecture.unreachable-layer' => 15,
             'architecture.potential-shadow' => 15,
             'architecture.empty-template' => 15,

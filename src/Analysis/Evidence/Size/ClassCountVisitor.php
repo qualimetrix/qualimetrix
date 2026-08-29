@@ -24,7 +24,7 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
 {
     private string $currentNamespace = '';
 
-    /** @var array<string, array{line: int, classCount: int, abstractClassCount: int, interfaceCount: int, traitCount: int, enumCount: int, implementingEnumCount: int, functionCount: int}> */
+    /** @var array<string, array{line: int, 'size.class-count': int, 'size.abstract-class-count': int, 'size.interface-count': int, 'size.trait-count': int, 'size.enum-count': int, 'size.implementing-enum-count': int, 'size.function-count': int}> */
     private array $namespaceCounts = [];
     private int $classCount = 0;
     private int $abstractClassCount = 0;
@@ -61,11 +61,11 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
             $this->ensureNamespace($this->currentNamespace, $node->getStartLine());
             ++$this->classCount;
             $counts = $this->namespaceCounts[$this->currentNamespace];
-            ++$counts['classCount'];
+            ++$counts['size.class-count'];
 
             if ($node->isAbstract()) {
                 ++$this->abstractClassCount;
-                ++$counts['abstractClassCount'];
+                ++$counts['size.abstract-class-count'];
             }
             $this->namespaceCounts[$this->currentNamespace] = $counts;
 
@@ -76,7 +76,7 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
             $this->ensureNamespace($this->currentNamespace, $node->getStartLine());
             ++$this->interfaceCount;
             $counts = $this->namespaceCounts[$this->currentNamespace];
-            ++$counts['interfaceCount'];
+            ++$counts['size.interface-count'];
             $this->namespaceCounts[$this->currentNamespace] = $counts;
 
             return null;
@@ -86,7 +86,7 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
             $this->ensureNamespace($this->currentNamespace, $node->getStartLine());
             ++$this->traitCount;
             $counts = $this->namespaceCounts[$this->currentNamespace];
-            ++$counts['traitCount'];
+            ++$counts['size.trait-count'];
             $this->namespaceCounts[$this->currentNamespace] = $counts;
 
             return null;
@@ -96,11 +96,11 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
             $this->ensureNamespace($this->currentNamespace, $node->getStartLine());
             ++$this->enumCount;
             $counts = $this->namespaceCounts[$this->currentNamespace];
-            ++$counts['enumCount'];
+            ++$counts['size.enum-count'];
 
             if ($node->implements !== []) {
                 ++$this->implementingEnumCount;
-                ++$counts['implementingEnumCount'];
+                ++$counts['size.implementing-enum-count'];
             }
             $this->namespaceCounts[$this->currentNamespace] = $counts;
 
@@ -111,7 +111,7 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
             $this->ensureNamespace($this->currentNamespace, $node->getStartLine());
             ++$this->functionCount;
             $counts = $this->namespaceCounts[$this->currentNamespace];
-            ++$counts['functionCount'];
+            ++$counts['size.function-count'];
             $this->namespaceCounts[$this->currentNamespace] = $counts;
 
             return null;
@@ -146,7 +146,7 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
     }
 
     /**
-     * @return array<string, array{line: int, classCount: int, abstractClassCount: int, interfaceCount: int, traitCount: int, enumCount: int, implementingEnumCount: int, functionCount: int}>
+     * @return array<string, array{line: int, 'size.class-count': int, 'size.abstract-class-count': int, 'size.interface-count': int, 'size.trait-count': int, 'size.enum-count': int, 'size.implementing-enum-count': int, 'size.function-count': int}>
      */
     public function getNamespaceCounts(): array
     {
@@ -157,13 +157,13 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
     {
         $this->namespaceCounts[$namespace] ??= [
             'line' => $line,
-            'classCount' => 0,
-            'abstractClassCount' => 0,
-            'interfaceCount' => 0,
-            'traitCount' => 0,
-            'enumCount' => 0,
-            'implementingEnumCount' => 0,
-            'functionCount' => 0,
+            'size.class-count' => 0,
+            'size.abstract-class-count' => 0,
+            'size.interface-count' => 0,
+            'size.trait-count' => 0,
+            'size.enum-count' => 0,
+            'size.implementing-enum-count' => 0,
+            'size.function-count' => 0,
         ];
     }
 

@@ -18,10 +18,10 @@ final class MetricBagTest extends TestCase
     {
         $bag = (new MetricBag())
             ->with('complexity', 5)
-            ->with('loc', 100.5);
+            ->with('size.loc', 100.5);
 
         self::assertSame(5, $bag->get('complexity'));
-        self::assertSame(100.5, $bag->get('loc'));
+        self::assertSame(100.5, $bag->get('size.loc'));
     }
 
     #[Test]
@@ -46,20 +46,20 @@ final class MetricBagTest extends TestCase
     #[Test]
     public function itRequireReturnsExistingMetric(): void
     {
-        $bag = (new MetricBag())->with('ccn', 7);
+        $bag = (new MetricBag())->with('complexity.ccn', 7);
 
-        self::assertSame(7, $bag->require('ccn'));
+        self::assertSame(7, $bag->require('complexity.ccn'));
     }
 
     #[Test]
     public function itRequireThrowsForMissingMetric(): void
     {
-        $bag = (new MetricBag())->with('loc', 100);
+        $bag = (new MetricBag())->with('size.loc', 100);
 
         self::expectException(RuntimeException::class);
-        self::expectExceptionMessage('Required metric "ccn" not found');
+        self::expectExceptionMessage('Required metric "complexity.ccn" not found');
 
-        $bag->require('ccn');
+        $bag->require('complexity.ccn');
     }
 
     #[Test]
@@ -87,10 +87,10 @@ final class MetricBagTest extends TestCase
     {
         $bag = (new MetricBag())
             ->with('complexity', 5)
-            ->with('loc', 100);
+            ->with('size.loc', 100);
 
         self::assertSame(
-            ['complexity' => 5, 'loc' => 100],
+            ['complexity' => 5, 'size.loc' => 100],
             $bag->all(),
         );
     }
@@ -100,28 +100,28 @@ final class MetricBagTest extends TestCase
     {
         $bag1 = (new MetricBag())
             ->with('complexity', 5)
-            ->with('loc', 100);
+            ->with('size.loc', 100);
 
         $bag2 = (new MetricBag())
-            ->with('npath', 10)
-            ->with('loc', 200); // Override
+            ->with('complexity.npath', 10)
+            ->with('size.loc', 200); // Override
 
         $merged = $bag1->merge($bag2);
 
         self::assertSame(5, $merged->get('complexity'));
-        self::assertSame(200, $merged->get('loc')); // Value from $bag2
-        self::assertSame(10, $merged->get('npath'));
+        self::assertSame(200, $merged->get('size.loc')); // Value from $bag2
+        self::assertSame(10, $merged->get('complexity.npath'));
     }
 
     #[Test]
     public function itMergeDoesNotModifyOriginalBags(): void
     {
         $bag1 = (new MetricBag())->with('complexity', 5);
-        $bag2 = (new MetricBag())->with('loc', 100);
+        $bag2 = (new MetricBag())->with('size.loc', 100);
 
         $bag1->merge($bag2);
 
-        self::assertFalse($bag1->has('loc'));
+        self::assertFalse($bag1->has('size.loc'));
         self::assertFalse($bag2->has('complexity'));
     }
 
@@ -130,12 +130,12 @@ final class MetricBagTest extends TestCase
     {
         $bag = (new MetricBag())
             ->with('complexity', 5)
-            ->with('loc', 100);
+            ->with('size.loc', 100);
 
         $prefixed = $bag->withPrefix('method.');
 
         self::assertSame(5, $prefixed->get('method.complexity'));
-        self::assertSame(100, $prefixed->get('method.loc'));
+        self::assertSame(100, $prefixed->get('method.size.loc'));
         self::assertNull($prefixed->get('complexity'));
     }
 
@@ -144,14 +144,14 @@ final class MetricBagTest extends TestCase
     {
         $bag = (new MetricBag())
             ->with('complexity', 5)
-            ->with('loc', 100.5);
+            ->with('size.loc', 100.5);
 
         $serialized = serialize($bag);
         /** @var MetricBag $unserialized */
         $unserialized = unserialize($serialized);
 
         self::assertSame(5, $unserialized->get('complexity'));
-        self::assertSame(100.5, $unserialized->get('loc'));
+        self::assertSame(100.5, $unserialized->get('size.loc'));
     }
 
     #[Test]
@@ -159,13 +159,13 @@ final class MetricBagTest extends TestCase
     {
         $bag = MetricBag::fromArray([
             'complexity' => 5,
-            'loc' => 100.5,
+            'size.loc' => 100.5,
         ]);
 
         self::assertSame(5, $bag->get('complexity'));
-        self::assertSame(100.5, $bag->get('loc'));
+        self::assertSame(100.5, $bag->get('size.loc'));
         self::assertSame(
-            ['complexity' => 5, 'loc' => 100.5],
+            ['complexity' => 5, 'size.loc' => 100.5],
             $bag->all(),
         );
     }

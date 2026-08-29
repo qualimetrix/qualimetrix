@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(SuppressionExtractor::class)]
@@ -160,10 +161,45 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity.cyclomatic#complexity.cyclomatic.callable', $suppressions[0]->rule);
-        self::assertSame(
-            'complexity.cyclomatic#complexity.cyclomatic.callable',
-            (string) $suppressions[0]->target()->exactChannel(),
+        // The separator is still inside the grammar of a directive target, so
+        // the retired spelling is extracted rather than skipped — which is what
+        // lets it be refused by name instead of silently addressing nothing.
+        self::assertTrue($suppressions[0]->target()->usesRetiredChannelPair());
+        self::assertNull($suppressions[0]->target()->selector());
+    }
+
+    /**
+     * The directive target is captured whole, level and all.
+     *
+     * Red on the unfixed pattern: without `:` in the target character class
+     * the match stops at the separator, so `coupling.cbo:namespace` arrives as
+     * `coupling.cbo` and silences **every** level of the channel — a
+     * suppression quietly broader than the one that was written, which is the
+     * one outcome worse than either a match or a refusal.
+     */
+    #[Test]
+    public function itKeepsTheLevelHalfOfAChannelLevelPair(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @qmx-ignore coupling.cbo:namespace -- levelled
+             */
+            DOC,
+            10,
+            10,
         );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('coupling.cbo:namespace', $suppressions[0]->rule);
+        self::assertSame('levelled', $suppressions[0]->reason);
+        self::assertTrue($suppressions[0]->matches('coupling.cbo', SymbolLevel::Namespace_));
+        self::assertFalse($suppressions[0]->matches('coupling.cbo', SymbolLevel::Class_));
     }
 
     #[Test]

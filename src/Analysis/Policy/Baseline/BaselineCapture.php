@@ -52,7 +52,7 @@ final readonly class BaselineCapture
         $channels = [];
 
         foreach ($this->uncaptured as $group) {
-            $channels[$group->identity->channel->toKey()] = true;
+            $channels[$group->identity->channel->code] = true;
         }
 
         $keys = array_keys($channels);

@@ -23,7 +23,7 @@ final class CallableWithMetricsTest extends TestCase
     #[Test]
     public function itKeepsTheFinalMethodIdentityAndClassOwner(): void
     {
-        $metrics = (new MetricBag())->with('ccn', 5);
+        $metrics = (new MetricBag())->with('complexity.ccn', 5);
 
         $declaration = DeclarationPath::of(SymbolPath::forMethod('App\\Service', 'UserService', 'calculate'), RelativePath::fromString('src/UserService.php'), DeclarationOrdinal::fromRank(0));
         $method = new CallableWithMetrics(
@@ -44,7 +44,7 @@ final class CallableWithMetricsTest extends TestCase
     #[Test]
     public function itKeepsAFunctionOutsideClassAggregation(): void
     {
-        $metrics = (new MetricBag())->with('ccn', 2);
+        $metrics = (new MetricBag())->with('complexity.ccn', 2);
 
         $method = new CallableWithMetrics(
             declarationPath: DeclarationPath::of(SymbolPath::forGlobalFunction('App\\Utils', 'helper'), RelativePath::fromString('src/Functions.php'), DeclarationOrdinal::fromRank(0)),
@@ -62,7 +62,7 @@ final class CallableWithMetricsTest extends TestCase
     #[Test]
     public function itRequiresSyntaxForAnAnonymousCallable(): void
     {
-        $metrics = (new MetricBag())->with('ccn', 1);
+        $metrics = (new MetricBag())->with('complexity.ccn', 1);
 
         $method = new CallableWithMetrics(
             declarationPath: DeclarationPath::of(SymbolPath::forGlobalFunction('', '{closure#1}'), RelativePath::fromString('src/Functions.php'), DeclarationOrdinal::fromRank(0)),
@@ -80,7 +80,7 @@ final class CallableWithMetricsTest extends TestCase
     #[Test]
     public function itRejectsInvalidAnonymousSyntax(): void
     {
-        $metrics = (new MetricBag())->with('ccn', 7);
+        $metrics = (new MetricBag())->with('complexity.ccn', 7);
 
         $this->expectException(InvalidArgumentException::class);
 

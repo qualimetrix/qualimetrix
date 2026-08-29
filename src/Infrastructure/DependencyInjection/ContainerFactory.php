@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FileSetInspectionParticipantCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass;
@@ -132,6 +133,13 @@ final class ContainerFactory
             ->addTag(RuleCompilerPass::TAG)
             ->setLazy(true);
 
+        // The second producer kind. Lazy for the same reason rules are: a
+        // validator reaches into its capability's run state, which does not
+        // exist until the run prepares it.
+        $container->registerForAutoconfiguration('Qualimetrix\\Analysis\\Finding\\Contract\\ConfigurationValidatorInterface')
+            ->addTag(ConfigurationValidatorCompilerPass::TAG)
+            ->setLazy(true);
+
         // Autoconfigure: all collector interfaces get auto-tagged
         $container->registerForAutoconfiguration(MetricCollectorInterface::class)
             ->addTag(CollectorCompilerPass::TAG);
@@ -169,6 +177,7 @@ final class ContainerFactory
         $container->addCompilerPass(new FileSetInspectionParticipantCompilerPass());
         $container->addCompilerPass(new RuleRegistryCompilerPass());
         $container->addCompilerPass(new ChannelDeclarationCompilerPass());
+        $container->addCompilerPass(new ConfigurationValidatorCompilerPass());
         $container->addCompilerPass(new ThresholdValidatorMapCompilerPass());
         // RuleOptionsCompilerPass MUST run AFTER autoconfiguration (TYPE_OPTIMIZE)
         // but BEFORE RuleCompilerPass. Using TYPE_BEFORE_REMOVING with high priority.

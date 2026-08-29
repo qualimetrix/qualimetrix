@@ -8,19 +8,18 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -32,6 +31,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * Classes/namespaces with high instability are fragile — they depend on many
  * other components, so changes in dependencies may break them.
+ *
+ * @qmx-threshold coupling.cbo 21 -- Raw CBO 20, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 21 gets one-edge headroom.
  */
 #[CliAlias('instability-class-warning', 'class.max_warning')]
 #[CliAlias('instability-class-error', 'class.max_error')]
@@ -43,6 +44,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;
@@ -51,11 +54,6 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     public function getDescription(): string
     {
         return 'Checks instability at class and namespace levels';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Coupling;
     }
 
     /**
@@ -67,19 +65,19 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     }
 
     /**
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Class_, RuleLevel::Namespace_];
+        return [SymbolLevel::Class_, SymbolLevel::Namespace_];
     }
 
     /**
      * Analyzes at a specific level.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
+    public function analyzeLevel(SymbolLevel $level, AnalysisContext $context): array
     {
         if (!$this->options instanceof InstabilityOptions) {
             return [];
@@ -91,26 +89,26 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         }
 
         return match ($level) {
-            RuleLevel::Class_ => $this->analyzeClassLevel($context),
-            RuleLevel::Namespace_ => $this->analyzeNamespaceLevel($context),
+            SymbolLevel::Class_ => $this->analyzeClassLevel($context),
+            SymbolLevel::Namespace_ => $this->analyzeNamespaceLevel($context),
             default => [],
         };
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
-        $violations = [];
+        $findings = [];
 
         foreach ($this->getSupportedLevels() as $level) {
             if ($this->options instanceof InstabilityOptions && $this->options->isLevelEnabled($level)) {
-                $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
+                $findings = [...$findings, ...$this->analyzeLevel($level, $context)];
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -122,28 +120,27 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     }
 
     /**
-     * Both instability channels report the instability value
+     * Both levels of the channel report the instability value
      * (`$instabilityValue` — see {@see analyzeClassLevel()} and
      * {@see analyzeNamespaceLevel()}) as `metricValue`, judged worse the
      * higher it goes: {@see ClassInstabilityOptions::getSeverity()}'s
      * `$instability >= $this->maxError` (line 61) / `$instability >=
-     * $this->maxWarning` (line 65) for the class channel, and
+     * $this->maxWarning` (line 65) at the class level, and
      * {@see NamespaceInstabilityOptions::getSeverity()}'s `$instability >=
      * $this->maxError` (line 62) / `$instability >= $this->maxWarning`
-     * (line 66) for the namespace channel.
+     * (line 66) at the namespace level.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            (new ViolationChannel(self::NAME, self::NAME . '.namespace'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_, SymbolLevel::Namespace_),
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeClassLevel(AnalysisContext $context): array
     {
@@ -152,23 +149,23 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         }
         $classOptions = $this->options->class;
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $violation = $this->classViolation($classInfo, $context, $classOptions);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->classFinding($classInfo, $context, $classOptions);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function classViolation(
+    private function classFinding(
         SymbolInfo $classInfo,
         AnalysisContext $context,
         ClassInstabilityOptions $options,
-    ): ?Violation {
+    ): ?Finding {
         $subject = $classInfo->subject ?? throw new LogicException('Instability class findings require an exact class declaration subject');
         if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
             return null;
@@ -196,12 +193,12 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
         $threshold = $severity === Severity::Error ? $effectiveOptions->maxError : $effectiveOptions->maxWarning;
 
-        return new Violation(
+        return new Finding(
             location: new Location($classInfo->file, $classInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME . '.class',
+            code: self::NAME,
             message: \sprintf(
                 'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                 $instabilityValue,
@@ -211,14 +208,13 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             ),
             severity: $severity,
             metricValue: $instabilityValue,
-            level: RuleLevel::Class_,
             recommendation: \sprintf('Instability: %.2f (threshold: %.2f) — package is highly unstable', $instabilityValue, $threshold),
             threshold: $threshold,
         );
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeNamespaceLevel(AnalysisContext $context): array
     {
@@ -227,9 +223,9 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         }
         $namespaceOptions = $this->options->namespace;
 
-        $violations = [];
+        $findings = [];
 
-        foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
+        foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
             $subject = $nsInfo->subject ?? MetricSubject::aggregate($nsInfo->symbolPath);
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
@@ -263,12 +259,12 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
 
                 $threshold = $severity === Severity::Error ? $effectiveNsOptions->maxError : $effectiveNsOptions->maxWarning;
 
-                $violations[] = new Violation(
+                $findings[] = new Finding(
                     location: new Location($nsInfo->file, $nsInfo->line),
                     subject: $subject,
                     symbolPath: $nsInfo->symbolPath,
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.namespace',
+                    code: self::NAME,
                     message: \sprintf(
                         'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,
@@ -278,14 +274,13 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                     ),
                     severity: $severity,
                     metricValue: $instabilityValue,
-                    level: RuleLevel::Namespace_,
                     recommendation: \sprintf('Instability: %.2f (threshold: %.2f) — package is highly unstable', $instabilityValue, $threshold),
                     threshold: $threshold,
                 );
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**

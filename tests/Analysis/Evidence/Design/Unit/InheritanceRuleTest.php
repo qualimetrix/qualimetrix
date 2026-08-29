@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -44,19 +43,11 @@ final class InheritanceRuleTest extends TestCase
     }
 
     #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new InheritanceRule(new InheritanceOptions());
-
-        self::assertSame(RuleCategory::Design, $rule->getCategory());
-    }
-
-    #[Test]
     public function itRequiresDit(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
-        self::assertSame(['dit'], $rule->requires());
+        self::assertSame(['design.dit'], $rule->requires());
     }
 
     #[Test]
@@ -115,7 +106,7 @@ final class InheritanceRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/DeepClass.php'), 10);
 
         // DIT of 5 is at warning threshold (5) but below error (7)
-        $metricBag = (new MetricBag())->with('dit', 5);
+        $metricBag = (new MetricBag())->with('design.dit', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -124,15 +115,15 @@ final class InheritanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('DIT (Depth of Inheritance) is 5', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 4', $violations[0]->message);
-        self::assertStringContainsString('Prefer composition over deep inheritance', $violations[0]->message);
-        self::assertSame(5, $violations[0]->metricValue);
-        self::assertSame('design.inheritance', $violations[0]->ruleName);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('DIT (Depth of Inheritance) is 5', $findings[0]->message);
+        self::assertStringContainsString('exceeds threshold of 4', $findings[0]->message);
+        self::assertStringContainsString('Prefer composition over deep inheritance', $findings[0]->message);
+        self::assertSame(5, $findings[0]->metricValue);
+        self::assertSame('design.inheritance', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -144,7 +135,7 @@ final class InheritanceRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/VeryDeepClass.php'), 10);
 
         // DIT of 8 is above error threshold (7)
-        $metricBag = (new MetricBag())->with('dit', 8);
+        $metricBag = (new MetricBag())->with('design.dit', 8);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -153,15 +144,15 @@ final class InheritanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(8, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(8, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function itProducesNoViolationForShallowDit(): void
+    public function itProducesNoFindingForShallowDit(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
@@ -169,7 +160,7 @@ final class InheritanceRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/ShallowClass.php'), 10);
 
         // DIT of 2 is normal (below warning threshold 5)
-        $metricBag = (new MetricBag())->with('dit', 2);
+        $metricBag = (new MetricBag())->with('design.dit', 2);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -178,9 +169,9 @@ final class InheritanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -191,7 +182,7 @@ final class InheritanceRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
-        // No 'dit' metric
+        // No 'design.dit' metric
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -201,9 +192,9 @@ final class InheritanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     // Options tests
@@ -258,7 +249,7 @@ final class InheritanceRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('dit', $dit);
+        $metricBag = (new MetricBag())->with('design.dit', $dit);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -267,13 +258,13 @@ final class InheritanceRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -309,13 +300,13 @@ final class InheritanceRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('dit', 5));
+        $repository->method('get')->willReturn((new MetricBag())->with('design.dit', 5));
 
-        $violations = (new InheritanceRule(new InheritanceOptions()))
+        $findings = (new InheritanceRule(new InheritanceOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

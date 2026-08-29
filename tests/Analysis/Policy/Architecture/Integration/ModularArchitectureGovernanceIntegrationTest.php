@@ -104,6 +104,111 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         }
     }
 
+    /**
+     * Ш5e2b's precedent, generalized into a standing guard: `currentSuite()`
+     * is a closed literal enumeration per directory, so a PHPUnit test class
+     * whose directory nobody added there is classified `none` and silently
+     * never runs under `composer test` -- the exact shape that let
+     * SuppressedFormatterTest.php (5 methods) and
+     * tests/Reporting/Unit/OutputFormatResolverTest.php (1 method, dormant
+     * since the modular-architecture migration) sit green in `composer
+     * check` without executing. This plants a real, untracked test class
+     * under a directory no `<testsuite>` in phpunit.xml.dist covers and
+     * asserts `generate-modular-architecture-test-inventory.php --check`
+     * names it and fails -- proving the guard added to `validateInventory()`
+     * actually bites rather than only reading well.
+     */
+    #[Test]
+    public function itFailsWhenAPhpunitTestClassHasNoConfiguredSuite(): void
+    {
+        $directory = $this->root() . '/tests/Reporting/Formatter/Suppressed/UnwiredLevelProbe';
+        $probePath = $directory . '/GuardProbeTest.php';
+        self::assertDirectoryDoesNotExist($directory, 'a leftover probe directory would corrupt this test and the real inventory');
+
+        mkdir($directory);
+        file_put_contents($probePath, <<<'PHP'
+            <?php
+
+            declare(strict_types=1);
+
+            namespace Qualimetrix\Tests\Reporting\Formatter\Suppressed\UnwiredLevelProbe;
+
+            use PHPUnit\Framework\Attributes\Test;
+            use PHPUnit\Framework\TestCase;
+
+            final class GuardProbeTest extends TestCase
+            {
+                #[Test]
+                public function itIsNeverActuallyRun(): void
+                {
+                    self::assertTrue(true);
+                }
+            }
+
+            PHP);
+
+        try {
+            [$exitCode, $output] = $this->runProcess([
+                \PHP_BINARY,
+                $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+                '--check',
+            ]);
+
+            self::assertNotSame(0, $exitCode, $output);
+            self::assertStringContainsString('classified as suite "none"', $output);
+            self::assertStringContainsString('tests/Reporting/Formatter/Suppressed/UnwiredLevelProbe/GuardProbeTest.php', $output);
+        } finally {
+            unlink($probePath);
+            rmdir($directory);
+        }
+    }
+
+    /**
+     * The map disagreement Ш5e2b guarded against is one-directional: a
+     * phpunit.xml.dist <directory> currentSuite() cannot place. This proves
+     * the opposite direction bites too -- a currentSuite() literal with no
+     * matching <directory> declared for that suite, the shape that let
+     * `tests/Architecture/Unit/` and `tests/Architecture/Integration/` sit in
+     * the classifier for a directory that was never created, and let
+     * `tests/Infrastructure/Console/Functional/` claim suite Functional while
+     * phpunit.xml.dist actually runs it under the recursive Infrastructure
+     * directory. It perturbs the real phpunit.xml.dist by dropping one
+     * declared <directory> the classifier still names, runs the real
+     * inventory script's `--check` against the real tree, and restores the
+     * file in `finally` regardless of outcome.
+     */
+    #[Test]
+    public function itFailsWhenACurrentSuiteLiteralHasNoDeclaredDirectory(): void
+    {
+        $configurationPath = $this->root() . '/phpunit.xml.dist';
+        $original = file_get_contents($configurationPath);
+        self::assertIsString($original);
+
+        $needle = "            <directory>tests/Analysis/Policy/Baseline/Functional</directory>\n";
+        self::assertStringContainsString($needle, $original, 'fixture assumes this declared <directory> line is present verbatim');
+        $perturbed = str_replace($needle, '', $original, $replacements);
+        self::assertSame(1, $replacements);
+
+        try {
+            file_put_contents($configurationPath, $perturbed);
+
+            [$exitCode, $output] = $this->runProcess([
+                \PHP_BINARY,
+                $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+                '--check',
+            ]);
+
+            self::assertNotSame(0, $exitCode, $output);
+            self::assertStringContainsString(
+                'tests/Analysis/Policy/Baseline/Functional is suite Functional in currentSuite()'
+                . ' but is not declared under that <testsuite> in phpunit.xml.dist',
+                $output,
+            );
+        } finally {
+            file_put_contents($configurationPath, $original);
+        }
+    }
+
     #[Test]
     public function itPublishesTheReviewedTopologyEvidenceAndRejectsProductionToTestImports(): void
     {

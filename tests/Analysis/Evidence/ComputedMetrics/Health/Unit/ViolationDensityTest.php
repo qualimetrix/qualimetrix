@@ -16,9 +16,9 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCa
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -28,7 +28,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Report;
 
 /**
- * Tests violation density computation in worst offenders.
+ * Tests finding density computation in worst offenders.
  */
 #[CoversClass(HealthSummaryBuilder::class)]
 #[CoversClass(WorstOffender::class)]
@@ -48,12 +48,12 @@ final class ViolationDensityTest extends TestCase
     #[Test]
     public function itClassDensityComputedCorrectly(): void
     {
-        // 200-line class with 10 violations => density = 10/200*100 = 5.0
+        // 200-line class with 10 findings => density = 10/200*100 = 5.0
         $classSymbol = SymbolPath::forClass('App\\Service', 'HeavyService');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 30.0,
             'health.complexity' => 25.0,
-            'classLoc' => 200,
+            'size.class-loc' => 200,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -62,10 +62,10 @@ final class ViolationDensityTest extends TestCase
             classMetrics: ['class:App\\Service\\HeavyService' => $classMetrics],
         );
 
-        $violations = $this->createViolationsForClass('App\\Service', 'HeavyService', 10);
+        $findings = $this->createFindingsForClass('App\\Service', 'HeavyService', 10);
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -83,13 +83,13 @@ final class ViolationDensityTest extends TestCase
     #[Test]
     public function itNamespaceDensityUsesLocSum(): void
     {
-        // Namespace with 1000 total LOC and 5 violations => density = 5/1000*100 = 0.5
+        // Namespace with 1000 total LOC and 5 findings => density = 5/1000*100 = 0.5
         $nsSymbol = SymbolPath::forNamespace('App\\Payment');
         $nsMetrics = MetricBag::fromArray([
             'health.overall' => 40.0,
             'health.complexity' => 35.0,
-            'classCount.sum' => 3,
-            'loc.sum' => 1000,
+            'size.class-count.sum' => 3,
+            'size.loc.sum' => 1000,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -98,10 +98,10 @@ final class ViolationDensityTest extends TestCase
             namespaceMetrics: ['ns:App\\Payment' => $nsMetrics],
         );
 
-        $violations = $this->createViolationsForClass('App\\Payment', 'PaymentService', 5);
+        $findings = $this->createFindingsForClass('App\\Payment', 'PaymentService', 5);
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -117,13 +117,13 @@ final class ViolationDensityTest extends TestCase
     }
 
     #[Test]
-    public function itDensityZeroWhenNoViolations(): void
+    public function itDensityZeroWhenNoFindings(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'CleanService');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 80.0,
             'health.complexity' => 75.0,
-            'classLoc' => 500,
+            'size.class-loc' => 500,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -133,7 +133,7 @@ final class ViolationDensityTest extends TestCase
         );
 
         $report = new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -155,7 +155,7 @@ final class ViolationDensityTest extends TestCase
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 50.0,
             'health.complexity' => 45.0,
-            'classLoc' => 0,
+            'size.class-loc' => 0,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -164,10 +164,10 @@ final class ViolationDensityTest extends TestCase
             classMetrics: ['class:App\\Service\\EmptyClass' => $classMetrics],
         );
 
-        $violations = $this->createViolationsForClass('App\\Service', 'EmptyClass', 3);
+        $findings = $this->createFindingsForClass('App\\Service', 'EmptyClass', 3);
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -189,7 +189,7 @@ final class ViolationDensityTest extends TestCase
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 50.0,
             'health.complexity' => 45.0,
-            // No 'loc' metric
+            // No 'size.loc' metric
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -198,10 +198,10 @@ final class ViolationDensityTest extends TestCase
             classMetrics: ['class:App\\Service\\NoLocClass' => $classMetrics],
         );
 
-        $violations = $this->createViolationsForClass('App\\Service', 'NoLocClass', 2);
+        $findings = $this->createFindingsForClass('App\\Service', 'NoLocClass', 2);
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -219,12 +219,12 @@ final class ViolationDensityTest extends TestCase
     #[Test]
     public function itDensityRoundedToOneDecimal(): void
     {
-        // 300-line class with 7 violations => density = 7/300*100 = 2.333... => 2.3
+        // 300-line class with 7 findings => density = 7/300*100 = 2.333... => 2.3
         $classSymbol = SymbolPath::forClass('App\\Service', 'OddClass');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 35.0,
             'health.complexity' => 30.0,
-            'classLoc' => 300,
+            'size.class-loc' => 300,
         ]);
 
         $metrics = $this->createMetricRepository(
@@ -233,10 +233,10 @@ final class ViolationDensityTest extends TestCase
             classMetrics: ['class:App\\Service\\OddClass' => $classMetrics],
         );
 
-        $violations = $this->createViolationsForClass('App\\Service', 'OddClass', 7);
+        $findings = $this->createFindingsForClass('App\\Service', 'OddClass', 7);
 
         $report = new Report(
-            violations: $violations,
+            findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -270,31 +270,31 @@ final class ViolationDensityTest extends TestCase
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function createViolationsForClass(string $namespace, string $class, int $count): array
+    private function createFindingsForClass(string $namespace, string $class, int $count): array
     {
-        $violations = [];
+        $findings = [];
         for ($i = 0; $i < $count; $i++) {
-            $violations[] = new Violation(
+            $findings[] = new Finding(
                 location: new Location(RelativePath::fromString("src/{$class}.php"), $i + 1),
                 subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString("src/{$class}.php"), DeclarationOrdinal::fromRank(0))),
                 symbolPath: SymbolPath::forClass($namespace, $class),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.callable',
+                code: 'complexity.cyclomatic',
                 message: "test violation {$i}",
                 severity: Severity::Error,
             );
         }
 
-        return $violations;
+        return $findings;
     }
 
     private function summarize(Report $report): HealthSummary
     {
         $metrics = $report->metrics ?? throw new LogicException('Metrics are required.');
 
-        return $this->builder->build($metrics, new NamespaceTree($metrics->getNamespaces()), $report->violations);
+        return $this->builder->build($metrics, new NamespaceTree($metrics->getNamespaces()), $report->findings);
     }
 
 }

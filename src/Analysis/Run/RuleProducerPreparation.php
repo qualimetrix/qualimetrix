@@ -6,10 +6,10 @@ namespace Qualimetrix\Analysis\Run;
 
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -41,11 +41,23 @@ final readonly class RuleProducerPreparation
         ProfilerInterface $profiler,
     ): void {
         $selection = $this->ruleConfiguration->selection();
-        if (!$this->ruleSelector->isProducerEnabled(
-            LayerPolicyPreparationInterface::PRODUCER_RULE_NAME,
-            $selection->only,
-            $selection->disabled,
-        )) {
+        $enabled = false;
+
+        // Every producer that reads the prepared policy, not just the first
+        // one: `architecture.unassigned-class` used to be a channel of the
+        // layer-violation rule and so was covered by asking about that rule
+        // alone. As a producer of its own it is not, and asking about one of
+        // two left `--only-rule=architecture.unassigned-class` reaching an
+        // unprepared policy. The list is the capability's, not the run's.
+        foreach (LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES as $producerRuleName) {
+            if ($this->ruleSelector->isProducerEnabled($producerRuleName, $selection->only, $selection->disabled)) {
+                $enabled = true;
+
+                break;
+            }
+        }
+
+        if (!$enabled) {
             $this->layerPolicyPreparation->reset();
 
             return;
@@ -108,13 +120,13 @@ final readonly class RuleProducerPreparation
      * The second question about the same directives, asked once the findings
      * exist: which of them silenced nothing.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function auditInlineDirectives(array $violations): array
+    public function auditInlineDirectives(array $findings): array
     {
-        return $this->inlineDirectivePolicy->auditDirectiveUsage($violations);
+        return $this->inlineDirectivePolicy->auditDirectiveUsage($findings);
     }
 
     /**

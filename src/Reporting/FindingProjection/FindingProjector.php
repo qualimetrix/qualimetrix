@@ -6,12 +6,12 @@ namespace Qualimetrix\Reporting\FindingProjection;
 
 use Closure;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterInterface;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
@@ -21,7 +21,7 @@ use Qualimetrix\Core\Util\PathMatcher;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 
 /**
- * @qmx-ignore coupling.instability.class -- Finding projection intentionally composes the six ordered policy operations across Finding, Inline, Baseline, and Git contracts; its two callers and fifteen outgoing types are the reviewed Reporting orchestration boundary.
+ * @qmx-ignore coupling.instability:class -- Finding projection intentionally composes the six ordered policy operations across Finding, Inline, Baseline, and Git contracts; its two callers and fifteen outgoing types are the reviewed Reporting orchestration boundary.
  */
 final readonly class FindingProjector
 {
@@ -33,26 +33,26 @@ final readonly class FindingProjector
     ) {}
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      * @param array<string, list<Suppression>> $suppressions
      */
-    public function project(array $violations, array $suppressions, FindingProjectionOptions $options): FindingProjectionResult
+    public function project(array $findings, array $suppressions, FindingProjectionOptions $options): FindingProjectionResult
     {
-        $unfilterable = $this->configurationErrors($violations);
-        $violations = $this->filterableFindings($violations);
+        $unfilterable = $this->configurationErrors($findings);
+        $findings = $this->filterableFindings($findings);
 
-        $annotation = $this->annotationSuppression->apply($violations, $suppressions);
-        $violations = $annotation->retained;
+        $annotation = $this->annotationSuppression->apply($findings, $suppressions);
+        $findings = $annotation->retained;
         $restored = $annotation->suppressed;
-        $removed = [ViolationFilterStage::Suppression->value => $options->annotationSuppressionDisabled ? [] : $restored];
+        $removed = [FindingFilterStage::Suppression->value => $options->annotationSuppressionDisabled ? [] : $restored];
 
         foreach ($this->exclusionStages($options) as $stage) {
-            $outcome = $stage->apply($violations);
-            $violations = $outcome->violations;
+            $outcome = $stage->apply($findings);
+            $findings = $outcome->findings;
             $removed[$stage->stage()->value] = $outcome->removed;
             if ($restored !== []) {
                 $restoredOutcome = $stage->apply(array_values($restored));
-                $restored = $restoredOutcome->violations;
+                $restored = $restoredOutcome->findings;
                 $removed[$stage->stage()->value] = array_values([
                     ...$removed[$stage->stage()->value],
                     ...$restoredOutcome->removed,
@@ -60,22 +60,22 @@ final readonly class FindingProjector
             }
         }
 
-        $measured = $violations;
+        $measured = $findings;
         $stale = [];
         $inert = [];
         $baselineScope = null;
         if ($options->baselinePath !== null && $options->baselinePath !== '') {
             $stage = new BaselineCeilingStage($this->baselineLoader->load($options->baselinePath), $this->declarations);
-            $ceiling = $stage->judgeAll($violations);
-            $violations = $ceiling->result->violations;
-            $removed[ViolationFilterStage::Baseline->value] = $ceiling->result->removed;
+            $ceiling = $stage->judgeAll($findings);
+            $findings = $ceiling->result->findings;
+            $removed[FindingFilterStage::Baseline->value] = $ceiling->result->removed;
             $stale = $ceiling->staleEntries;
             $inert = $ceiling->inertEntries;
             $baselineScope = $stage->baselineScope();
         }
 
         if ($options->annotationSuppressionDisabled) {
-            $violations = array_values([...$violations, ...$restored]);
+            $findings = array_values([...$findings, ...$restored]);
         }
 
         if ($options->gitScope !== null) {
@@ -87,35 +87,35 @@ final readonly class FindingProjector
             $filter = new class (
                 $pathSet,
                 $namespaceSet,
-                static fn(Violation $violation): bool => !$fileScope->isFileScoped($violation->channel()),
-            ) implements ViolationFilterInterface {
+                static fn(Finding $finding): bool => !$fileScope->isFileScoped($finding->channel()),
+            ) implements FindingFilterInterface {
                 /**
                  * @param array<string, true> $paths
                  * @param array<string, true> $namespaces
-                 * @param Closure(Violation): bool $isProjectScoped
+                 * @param Closure(Finding): bool $isProjectScoped
                  */
                 public function __construct(
                     private array $paths,
                     private array $namespaces,
                     private Closure $isProjectScoped,
                 ) {}
-                public function shouldInclude(Violation $violation): bool
+                public function shouldInclude(Finding $finding): bool
                 {
-                    if (($this->isProjectScoped)($violation)) {
+                    if (($this->isProjectScoped)($finding)) {
                         return true;
                     }
 
-                    return isset($this->paths[$violation->location->pathString()])
-                        || ($violation->symbolPath->namespace !== null && isset($this->namespaces[$violation->symbolPath->namespace]));
+                    return isset($this->paths[$finding->location->pathString()])
+                        || ($finding->symbolPath->namespace !== null && isset($this->namespaces[$finding->symbolPath->namespace]));
                 }
             };
-            $outcome = (new PredicateFilterStage(ViolationFilterStage::GitScope, $filter))->apply(array_values($violations));
-            $violations = $outcome->violations;
-            $removed[ViolationFilterStage::GitScope->value] = $outcome->removed;
+            $outcome = (new PredicateFilterStage(FindingFilterStage::GitScope, $filter))->apply(array_values($findings));
+            $findings = $outcome->findings;
+            $removed[FindingFilterStage::GitScope->value] = $outcome->removed;
         }
 
         return new FindingProjectionResult(
-            array_values([...$violations, ...$unfilterable]),
+            array_values([...$findings, ...$unfilterable]),
             array_values($measured),
             array_map(array_values(...), $removed),
             $stale,
@@ -127,8 +127,8 @@ final readonly class FindingProjector
     /**
      * The findings no stage of this projection is allowed to see.
      *
-     * A channel declaring
-     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError}
+     * A channel declared by a
+     * {@see \Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface}
      * reports that the tool cannot do what the configuration asked. That is
      * not a judgement about the code, so it is not something a user is
      * entitled to filter out — and the promise is that *nothing* filters it:
@@ -141,41 +141,41 @@ final readonly class FindingProjector
      * remembered it. And a guard that merely keeps the exit code non-zero
      * still lets the finding vanish from the report — the user then sees a
      * red build with no stated cause. Withheld findings rejoin the reported
-     * set at the end, where {@see FindingProjectionResult::$violations} is the
+     * set at the end, where {@see FindingProjectionResult::$findings} is the
      * list `check` gates on.
      *
      * They are deliberately absent from the measured set: a baseline can
      * never accept one, so recording one would only ever produce an inert
      * entry.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function configurationErrors(array $violations): array
+    private function configurationErrors(array $findings): array
     {
-        return array_values(array_filter($violations, $this->isConfigurationError(...)));
+        return array_values(array_filter($findings, $this->isConfigurationError(...)));
     }
 
     /**
      * The complement of {@see configurationErrors()} — everything the stages
      * below are allowed to act on.
      *
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function filterableFindings(array $violations): array
+    private function filterableFindings(array $findings): array
     {
         return array_values(array_filter(
-            $violations,
-            fn(Violation $violation): bool => !$this->isConfigurationError($violation),
+            $findings,
+            fn(Finding $finding): bool => !$this->isConfigurationError($finding),
         ));
     }
 
-    private function isConfigurationError(Violation $violation): bool
+    private function isConfigurationError(Finding $finding): bool
     {
-        return $this->declarations->declarationFor($violation->channel())?->isConfigurationError() === true;
+        return $this->declarations->declarationFor($finding->channel())?->isConfigurationError() === true;
     }
 
     /**
@@ -194,7 +194,7 @@ final readonly class FindingProjector
      * `--report=git:staged` turned a gate the user had switched on into a
      * green build.
      *
-     * Deliberately not a guard on "the violation carries no location": that
+     * Deliberately not a guard on "the finding carries no location": that
      * is an observation about one emission site, and reading scope out of it
      * would reintroduce exactly the derived-from-a-convention rule
      * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope}
@@ -211,14 +211,14 @@ final readonly class FindingProjector
         $stages = [];
         if ($options->excludePaths !== []) {
             $stages[] = new PredicateFilterStage(
-                ViolationFilterStage::PathExclusion,
+                FindingFilterStage::PathExclusion,
                 new PathExclusionFilter(new PathMatcher(array_values($options->excludePaths)), $fileScope),
             );
         }
         $matcher = new NamespaceMatcher(array_values($options->excludeNamespaces));
         if (!$matcher->isEmpty()) {
             $stages[] = new PredicateFilterStage(
-                ViolationFilterStage::NamespaceExclusion,
+                FindingFilterStage::NamespaceExclusion,
                 new NamespaceExclusionFilter($matcher, $fileScope),
             );
         }

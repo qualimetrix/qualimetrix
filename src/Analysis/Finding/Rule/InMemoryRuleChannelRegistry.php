@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Rule;
 
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 
 /**
  * Immutable channel registry for explicitly supplied producer declarations.
@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 final readonly class InMemoryRuleChannelRegistry implements RuleChannelRegistryInterface
 {
     /**
-     * @param array<string, list<ViolationChannel>> $channelsByProducer
+     * @param array<string, list<FindingChannel>> $channelsByProducer
      */
     public function __construct(
         private array $channelsByProducer = [],

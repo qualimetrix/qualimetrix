@@ -8,11 +8,11 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final class CallableToClassAggregator implements AggregationPhaseInterface
 {
@@ -64,10 +64,10 @@ final class CallableToClassAggregator implements AggregationPhaseInterface
             $methodBag = AggregationHelper::applyAggregations($methodValues, $callableDefinitions, SymbolLevel::Class_);
             $ccnSum = $methodBag->get(MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Sum));
             if ($ccnSum !== null) {
-                $classBag = $classBag->with(MetricName::STRUCTURE_WMC, $ccnSum);
+                $classBag = $classBag->with(MetricName::COMPLEXITY_WMC, $ccnSum);
             }
 
-            $classBag = $classBag->with(AggregationMeta::SYMBOL_METHOD_COUNT, \count($callableInfos));
+            $classBag = $classBag->with(MetricName::SIZE_SYMBOL_METHOD_COUNT, \count($callableInfos));
 
             $repository->addSubject(
                 MetricSubject::logicalClass($logicalOwner),

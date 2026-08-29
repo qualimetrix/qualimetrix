@@ -13,18 +13,18 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\Wors
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter;
+use Qualimetrix\Reporting\Formatter\Json\JsonFindingSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
-use Qualimetrix\Reporting\Formatter\Json\JsonViolationSection;
 use Qualimetrix\Reporting\Formatter\MetricsJsonFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
@@ -41,7 +41,7 @@ use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresenta
  * value types as before the migration. The test does not commit a literal
  * golden file (the rest of the report contains volatile fields like
  * timestamps and versions); instead it pins the shape — keys, types, and
- * the sentinel values for "no file" violations.
+ * the sentinel values for "no file" findings.
  */
 #[CoversNothing]
 final class JsonShapePreservationTest extends TestCase
@@ -53,7 +53,7 @@ final class JsonShapePreservationTest extends TestCase
 
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
-            ->addViolations([self::fileViolation(), self::projectViolation()])
+            ->addFindings([self::fileFinding(), self::projectFinding()])
             ->build();
 
         $data = json_decode($formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
@@ -79,7 +79,7 @@ final class JsonShapePreservationTest extends TestCase
 
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
-            ->addViolations([self::fileViolation()])
+            ->addFindings([self::fileFinding()])
             ->build();
 
         $data = json_decode($formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
@@ -92,13 +92,13 @@ final class JsonShapePreservationTest extends TestCase
     }
 
     #[Test]
-    public function sarifFormatterOmitsLocationsForProjectViolations(): void
+    public function sarifFormatterOmitsLocationsForProjectFindings(): void
     {
         $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
 
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
-            ->addViolations([self::projectViolation()])
+            ->addFindings([self::projectFinding()])
             ->build();
 
         $data = json_decode($formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
@@ -134,67 +134,66 @@ final class JsonShapePreservationTest extends TestCase
         $formatter = new JsonFormatter(
             new DebtCalculator($registry),
             new JsonHealthSection(new HealthScoreResolver($healthScoreDrillDown), $sanitizer),
-            new JsonOffenderSection($worstClassDrillDown, new ViolationFilter(), $sanitizer),
-            new JsonViolationSection($registry, $sanitizer),
+            new JsonOffenderSection($worstClassDrillDown, new FindingFilter(), $sanitizer),
+            new JsonFindingSection($registry, $sanitizer),
         );
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Foo.php')),
             ruleName: 'r',
-            violationCode: 'r.edge',
+            code: 'r.edge',
             message: 'target only',
             severity: Severity::Warning,
             dependencyTarget: SymbolPath::forClass('App', 'Target'),
         );
 
         $data = json_decode($formatter->format(
-            ReportBuilder::create()->addViolation($violation)->build(),
+            ReportBuilder::create()->addFinding($finding)->build(),
             new FormatterContext(),
         ), true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(['target' => 'class:App\\Target'], $data['violations'][0]['edge']);
     }
 
-    private static function fileViolation(): Violation
+    private static function fileFinding(): Finding
     {
-        return self::violation(
+        return self::finding(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 17, true),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'Cyclomatic complexity: 12 (threshold: 10)',
             severity: Severity::Warning,
         );
     }
 
-    private static function projectViolation(): Violation
+    private static function projectFinding(): Finding
     {
-        return self::violation(
+        return self::finding(
             location: Location::none(),
             symbolPath: SymbolPath::forProject(),
             ruleName: 'architecture.circular-dependency',
-            violationCode: 'architecture.circular-dependency',
+            code: 'architecture.circular-dependency',
             message: 'cycle detected: A → B → A',
             severity: Severity::Error,
         );
     }
 
     /**
-     * Builds a violation fixture with an explicit declaration or aggregate
+     * Builds a finding fixture with an explicit declaration or aggregate
      * subject, preserving the production contract without hiding it behind a
      * legacy fallback.
      *
      * @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations
      */
-    private static function violation(
+    private static function finding(
         \Qualimetrix\Analysis\Finding\Contract\Location $location,
         \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
         string $ruleName,
-        string $violationCode,
+        string $code,
         string $message,
         \Qualimetrix\Analysis\Finding\Contract\Severity $severity,
         int|float|null $metricValue = null,
-        ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null,
         array $relatedLocations = [],
         ?string $recommendation = null,
         int|float|null $threshold = null,
@@ -203,7 +202,7 @@ final class JsonShapePreservationTest extends TestCase
         ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
-    ): Violation {
+    ): Finding {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File,
             \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
@@ -211,16 +210,15 @@ final class JsonShapePreservationTest extends TestCase
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: $message,
             severity: $severity,
             metricValue: $metricValue,
-            level: $level,
             relatedLocations: $relatedLocations,
             recommendation: $recommendation,
             threshold: $threshold,

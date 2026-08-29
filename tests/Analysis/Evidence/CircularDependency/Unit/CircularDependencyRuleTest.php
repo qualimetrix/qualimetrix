@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Cycle;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -46,15 +45,7 @@ final class CircularDependencyRuleTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsArchitectureCategory(): void
-    {
-        $rule = $this->rule(new CircularDependencyOptions());
-
-        self::assertSame(RuleCategory::Architecture, $rule->getCategory());
-    }
-
-    #[Test]
-    public function itGeneratesViolationForCycle(): void
+    public function itGeneratesFindingForCycle(): void
     {
         $cycles = [
             new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
@@ -67,13 +58,13 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame('architecture.circular-dependency', $violations[0]->ruleName);
-        self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $violations[0]->subject->toCanonical());
-        self::assertNotNull($violations[0]->occurrenceKey);
-        self::assertStringContainsString('Circular dependency (2 classes)', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame('architecture.circular-dependency', $findings[0]->ruleName);
+        self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $findings[0]->subject->toCanonical());
+        self::assertNotNull($findings[0]->occurrenceKey);
+        self::assertStringContainsString('Circular dependency (2 classes)', $findings[0]->message);
     }
 
     #[Test]
@@ -102,12 +93,12 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths(['App\\A', 'App\\C']), $this->paths(['App\\A', 'App\\C', 'App\\A'])),
         ]);
         $rule = $this->rule(new CircularDependencyOptions());
-        $violations = $rule->analyze(new AnalysisContext(
+        $findings = $rule->analyze(new AnalysisContext(
             metrics: new InMemoryMetricRepository(),
         ));
 
-        self::assertCount(2, $violations);
-        self::assertNotSame($violations[0]->occurrenceKey?->value, $violations[1]->occurrenceKey?->value);
+        self::assertCount(2, $findings);
+        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
     }
 
     #[Test]
@@ -124,10 +115,10 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -144,10 +135,10 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
     }
 
     #[Test]
@@ -165,10 +156,10 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Only the cycle with size 2 should be reported (size 5 exceeds max)
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
     }
 
     #[Test]
@@ -185,9 +176,9 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertEmpty($violations);
+        self::assertEmpty($findings);
     }
 
     #[Test]
@@ -199,9 +190,9 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertEmpty($violations);
+        self::assertEmpty($findings);
     }
 
     #[Test]
@@ -218,10 +209,10 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(3, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(3, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -277,11 +268,11 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('Break by introducing an interface', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('Break by introducing an interface', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -302,11 +293,11 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('extracting a shared abstraction layer', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('extracting a shared abstraction layer', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -327,12 +318,12 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertNotNull($violations[0]->recommendation);
-        self::assertStringContainsString('focus on the entry-point classes', $violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertNotNull($findings[0]->recommendation);
+        self::assertStringContainsString('focus on the entry-point classes', $findings[0]->recommendation);
     }
 
     #[Test]
@@ -349,12 +340,12 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertNotNull($violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertNotNull($findings[0]->recommendation);
 
-        $recommendation = $violations[0]->recommendation;
+        $recommendation = $findings[0]->recommendation;
         self::assertStringContainsString('Cycle data: {', $recommendation);
 
         // Extract JSON from recommendation
@@ -389,17 +380,17 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
 
         // The message used to read "Service → Service → Service".
         self::assertSame(
             'Circular dependency (2 classes): Billing\\Service → Orders\\Service → Billing\\Service',
-            $violations[0]->message,
+            $findings[0]->message,
         );
 
-        $recommendation = $violations[0]->recommendation;
+        $recommendation = $findings[0]->recommendation;
         self::assertNotNull($recommendation);
 
         $jsonStart = strpos($recommendation, 'Cycle data: ');
@@ -431,12 +422,12 @@ final class CircularDependencyRuleTest extends TestCase
             metrics: new InMemoryMetricRepository(),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertNotNull($violations[0]->recommendation);
+        self::assertCount(1, $findings);
+        self::assertNotNull($findings[0]->recommendation);
 
-        $recommendation = $violations[0]->recommendation;
+        $recommendation = $findings[0]->recommendation;
         $jsonStart = strpos($recommendation, 'Cycle data: ');
         self::assertIsInt($jsonStart);
         $jsonString = substr($recommendation, $jsonStart + \strlen('Cycle data: '));

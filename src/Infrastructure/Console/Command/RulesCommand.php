@@ -46,29 +46,20 @@ final class RulesCommand extends Command
         /** @var string|null $groupFilter */
         $groupFilter = $input->getOption('group');
 
-        $rules = [];
-        foreach ($this->ruleExecution->allRules() as $rule) {
-            $name = $rule->name;
-            $group = $rule->category->value;
+        if ($groupFilter !== null && !\in_array($groupFilter, $this->families(), true)) {
+            $output->writeln(\sprintf(
+                '<error>No rule group "%s". Groups: %s</error>',
+                $groupFilter,
+                implode(', ', $this->families()),
+            ));
 
-            if ($groupFilter !== null && $group !== $groupFilter) {
-                continue;
-            }
-
-            $rules[] = [
-                'name' => $name,
-                'group' => $group,
-                'description' => $rule->description,
-                'aliases' => $rule->aliases,
-            ];
+            return self::FAILURE;
         }
 
-        usort($rules, static fn(array $a, array $b): int => ($a['group'] <=> $b['group']) !== 0 ? ($a['group'] <=> $b['group']) : ($a['name'] <=> $b['name']));
+        $rules = $this->rulesIn($groupFilter);
 
         if ($rules === []) {
-            $output->writeln($groupFilter !== null
-                ? \sprintf('<comment>No rules found in group "%s"</comment>', $groupFilter)
-                : '<comment>No rules found</comment>');
+            $output->writeln('<comment>No rules found</comment>');
 
             return self::SUCCESS;
         }
@@ -86,14 +77,13 @@ final class RulesCommand extends Command
 
             $output->writeln(\sprintf('  %-40s %s', $rule['name'], $rule['description']));
 
-            if ($rule['aliases'] !== []) {
-                foreach ($rule['aliases'] as $alias => $optionName) {
-                    $output->writeln(\sprintf(
-                        '    <info>--%s</info> %s',
-                        $alias,
-                        \sprintf('<comment>(--rule-opt=%s:%s=...)</comment>', $rule['name'], $optionName),
-                    ));
-                }
+            foreach ($rule['aliases'] as $alias => $optionName) {
+                $output->writeln(\sprintf(
+                    '    <info>--%s</info> <comment>(--rule-opt=%s:%s=...)</comment>',
+                    $alias,
+                    $rule['name'],
+                    $optionName,
+                ));
             }
         }
 
@@ -103,4 +93,53 @@ final class RulesCommand extends Command
 
         return self::SUCCESS;
     }
+
+    /**
+     * The families the listing prints a heading for, sorted, so `--group` is
+     * judged against the same set the reader sees.
+     *
+     * @return list<string>
+     */
+    private function families(): array
+    {
+        $families = [];
+
+        foreach ($this->ruleExecution->allRules() as $rule) {
+            $families[$rule->family] = true;
+        }
+
+        $sorted = array_keys($families);
+        sort($sorted);
+
+        return $sorted;
+    }
+
+    /**
+     * @return list<array{name: string, group: string, description: string, aliases: array<string, string>}>
+     */
+    private function rulesIn(?string $groupFilter): array
+    {
+        $rules = [];
+
+        foreach ($this->ruleExecution->allRules() as $rule) {
+            if ($groupFilter !== null && $rule->family !== $groupFilter) {
+                continue;
+            }
+
+            $rules[] = [
+                'name' => $rule->name,
+                'group' => $rule->family,
+                'description' => $rule->description,
+                'aliases' => $rule->aliases,
+            ];
+        }
+
+        usort(
+            $rules,
+            static fn(array $a, array $b): int => [$a['group'], $a['name']] <=> [$b['group'], $b['name']],
+        );
+
+        return $rules;
+    }
+
 }

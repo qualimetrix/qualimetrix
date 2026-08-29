@@ -26,7 +26,7 @@ use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureViolation
  * validators → typed-VO path), binds the result on the shared
  * {@see ArchitecturePolicy}, runs the live pipeline against
  * the canonical {@code ArchitectureSample} fixture, and asserts the
- * normalised violation set matches a golden JSON snapshot.
+ * normalised finding set matches a golden JSON snapshot.
  *
  * Regenerate the snapshot with {@code QMX_GOLDEN_UPDATE=1} after an
  * intentional behaviour change.
@@ -43,7 +43,7 @@ final class Phase1ConfigCompatibilityTest extends TestCase
     private const string GOLDEN_WARN_PATH = __DIR__ . '/../Fixtures/Sample/phase1-compat-violations-warn.json';
 
     #[Test]
-    public function phase1ShapeYamlLoadsAndProducesPinnedViolationSet(): void
+    public function phase1ShapeYamlLoadsAndProducesPinnedFindingSet(): void
     {
         $this->runPhase1Scenario(self::phase1ConfigArray('ignore'), self::GOLDEN_IGNORE_PATH);
     }
@@ -51,7 +51,7 @@ final class Phase1ConfigCompatibilityTest extends TestCase
     #[Test]
     public function phase1ShapeWithCoverageWarnEmitsExpectedDiagnostic(): void
     {
-        // Coverage:warn keeps the same allow-list violations and adds the
+        // Coverage:warn keeps the same allow-list findings and adds the
         // coverage diagnostic if any classes fall outside layers. The fixture
         // is fully covered by the four layers, so the diagnostic must NOT
         // fire — yet the pipeline path is exercised.
@@ -79,7 +79,7 @@ final class Phase1ConfigCompatibilityTest extends TestCase
 
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
         $analysis = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
-        $actual = ArchitectureViolationProjector::project($analysis->violations);
+        $actual = ArchitectureViolationProjector::project($analysis->findings);
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {
             $payload = [

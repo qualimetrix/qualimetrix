@@ -1,0 +1,22 @@
+{
+    "id": "disabled-rule-duplication",
+    "description": "Auxiliary: the only case addressing an expensive producer through a level-qualified --disable-rule (duplication.code-duplication:project), so the union-by-producer stop condition (Ш5c') is exercised on the corpus rather than never seeing it.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2",
+        "--disable-rule=duplication.code-duplication:project"
+    ],
+    "channels": [
+        "code-smell.goto@callable"
+    ],
+    "explainSubjects": [
+        "declaration:callable:Corpus\\DisabledRuleDuplication\\Statements::run@src/Statements.php"
+    ]
+}

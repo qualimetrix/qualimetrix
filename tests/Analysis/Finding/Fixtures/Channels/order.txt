@@ -1,0 +1,71 @@
+# Tracked fixture: the ORDER in which the container yields the statically
+# declared channels, one violation code per line.
+#
+# Not sorted. The order is the order producers are registered with the
+# container, and it is published: a "did you mean" answer breaks ties between
+# names at equal Levenshtein distance by it, so the position of a channel in
+# this file is part of the text of a finding. Sorting this file, or letting a
+# producer kind be collected as a block, moves that text.
+#
+# Blank lines and '#' comments are ignored. Regenerate by hand only after a
+# deliberate decision about the published order — never to make a red run go
+# green.
+#
+# Two positions here are decisions rather than consequences. The three
+# type-coverage rules are named one by one in DesignConfigurator so that
+# param/return/property is the published order and not the alphabetical one a
+# glob would give. And architecture.unassigned-class sits after the five
+# declaration verdicts because keys group by producer: the verdicts are the
+# layer-violation producer's, and the unassigned-class rule is its own.
+code-smell.boolean-argument
+code-smell.constructor-overinjection
+code-smell.count-in-loop
+code-smell.debug-code
+code-smell.empty-catch
+code-smell.error-suppression
+code-smell.eval
+code-smell.exit
+code-smell.goto
+code-smell.identical-subexpression
+code-smell.long-parameter-list
+code-smell.superglobals
+code-smell.unreachable-code
+code-smell.unused-private
+cohesion.lcom
+complexity.cognitive
+complexity.cyclomatic
+complexity.npath
+complexity.wmc
+coupling.cbo
+coupling.class-rank
+coupling.distance
+coupling.instability
+design.data-class
+design.god-class
+design.inheritance
+design.noc
+design.type-coverage.param
+design.type-coverage.return
+design.type-coverage.property
+maintainability.index
+security.command-injection
+security.hardcoded-credentials
+security.sensitive-parameter
+security.sql-injection
+security.xss
+size.class-count
+size.method-count
+size.property-count
+architecture.layer-violation
+architecture.coverage
+architecture.unreachable-layer
+architecture.potential-shadow
+architecture.empty-template
+architecture.pending-layer-matched
+architecture.unassigned-class
+architecture.circular-dependency
+duplication.code-duplication
+annotation.unresolved-directive
+annotation.unsupported-threshold
+annotation.invalid-threshold
+annotation.unused-directive

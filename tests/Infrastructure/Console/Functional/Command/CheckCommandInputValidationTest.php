@@ -34,7 +34,7 @@ final class CheckCommandInputValidationTest extends TestCase
                 [
                     'paths' => ['tests/Fixtures/Ast/invalid_syntax.php'],
                     '--format' => 'json',
-                    '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+                    '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
                 ],
                 ['capture_stderr_separately' => true],
             );
@@ -70,7 +70,7 @@ final class CheckCommandInputValidationTest extends TestCase
                     'paths' => ['tests/Fixtures/Ast/empty_file.php'],
                     '--format' => 'json',
                     '--config' => $config,
-                    '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+                    '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
                 ],
                 ['capture_stderr_separately' => true],
             );
@@ -98,6 +98,94 @@ final class CheckCommandInputValidationTest extends TestCase
         self::assertSame(3, $tester->getStatusCode());
         self::assertSame('', $tester->getDisplay());
         self::assertStringContainsString('does not match any registered', $tester->getErrorOutput());
+    }
+
+    /**
+     * A selection selector left in the retired `rule#code` spelling is refused
+     * **by name**, with the name to write instead. Falling through to "matches
+     * nothing" would be true and useless: the text names a channel that used to
+     * exist under that exact spelling.
+     */
+    #[Test]
+    public function itRejectsASelectionSelectorInTheRetiredChannelPairForm(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                '--only-rule' => ['complexity.cyclomatic#complexity.cyclomatic'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString(
+            'Write "complexity.cyclomatic"',
+            $tester->getErrorOutput(),
+        );
+    }
+
+    /**
+     * The configuration and CLI seam of the one refusal point for an
+     * impossible `channel:level` pair, {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing}.
+     * The other seam is the inline directive one, checked by
+     * {@see \Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest}
+     * — both ask the same object, so the two families of directive cannot
+     * answer one mistake two ways.
+     */
+    #[Test]
+    public function itRejectsASelectionSelectorNamingALevelItsChannelDoesNotReportAt(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                '--disable-rule' => ['coupling.cbo:file'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('it does not report at level "file"', $tester->getErrorOutput());
+    }
+
+    /** A level a channel does declare is accepted, so the refusal above is not refusing every pair. */
+    #[Test]
+    public function itAcceptsASelectionSelectorNamingADeclaredLevel(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                '--disable-rule' => ['coupling.cbo:namespace'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertNotSame(3, $tester->getStatusCode(), $tester->getErrorOutput());
+    }
+
+    /** A level word outside the vocabulary is refused by the same one point. */
+    #[Test]
+    public function itRejectsASelectionSelectorWhoseLevelIsNotOne(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                '--disable-rule' => ['coupling.cbo:klass'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('names no level after ":"', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -137,7 +225,7 @@ final class CheckCommandInputValidationTest extends TestCase
             [
                 'paths' => ['tests/Fixtures/Ast/empty_file.php'],
                 '--format' => 'json',
-                '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+                '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
             ],
             ['capture_stderr_separately' => true],
         );
@@ -159,7 +247,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
         $tester = $this->tester();
         try {
-            foreach (['computed.health', 'health.complexity', 'computed.health#health.complexity', 'computed.a'] as $selector) {
+            foreach (['computed', 'health.complexity', 'health.*', 'computed.a'] as $selector) {
                 $tester->execute([
                     'paths' => ['tests/Fixtures/Ast/empty_file.php'],
                     '--format' => 'json',

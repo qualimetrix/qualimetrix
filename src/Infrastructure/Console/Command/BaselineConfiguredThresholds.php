@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionObject;
 use ReflectionProperty;
@@ -21,7 +21,20 @@ use Throwable;
 
 /**
  * The `qmx.yaml` half of what `baseline:explain` prints: the warning boundary
- * each channel is configured with, keyed by {@see ViolationChannel::toKey()}.
+ * each channel is configured with, keyed by channel name and then by the level
+ * the number applies at.
+ *
+ * **Why this class reads what levels a channel declares.** A channel reports at
+ * every level its declaration names, and the boundaries of two levels of one
+ * hierarchical rule are separate numbers, so a map keyed by the channel alone
+ * would have to pick one level and print the choice as a fact. The levels are
+ * therefore taken from the declaration — the authority on them — and every
+ * declared level gets its own row. Reading them here decides nothing about
+ * authored text: this class enumerates configuration, and the one place that
+ * rules on an authored `channel:level` pair is
+ * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing}.
+ * `ChannelLevelRefusalTopologyTest` holds that boundary, and pins this class as
+ * a reader that refuses nothing.
  *
  * **Why it lives here and not in `Baseline`.** `qmx.yaml`'s own architecture
  * section allows the `Baseline` layer to depend on `Core` and nothing else,
@@ -33,7 +46,7 @@ use Throwable;
  * **The warning boundary, not the error one.** It is the number at which a
  * channel starts reporting, which is the boundary a user compares a baseline
  * entry against; the error threshold answers a different question
- * (`bin/qmx rules` and the violation's own message carry it).
+ * (`bin/qmx rules` and the finding's own message carry it).
  *
  * **A channel whose options expose no such number is left out of the map, not
  * guessed.** {@see \Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary::$configuredThreshold}
@@ -41,10 +54,18 @@ use Throwable;
  * configured `0`. Two shapes are read, and both are conventions the codebase
  * actually holds rather than assumptions about it:
  *
- * - a hierarchical rule's channel names its level (`…#complexity.cyclomatic.callable`),
- *   so the level's own options object is asked;
- * - a multi-axis rule's channel names its axis (`…#design.type-coverage.return`),
- *   so a property named after that axis is preferred (`returnWarning`).
+ * - a hierarchical rule's options hold one object per level, so the object of
+ *   the level being resolved is asked. The level always comes from the
+ *   declaration, never parsed back out of the channel code: the code spells
+ *   the level today and will not always, and a reader of the name fails by
+ *   printing nothing rather than by failing. A level the declaration names and
+ *   the options do not support yields no row, which is a mismatch worth one
+ *   missing line and not a failure;
+ * - a multi-axis rule's channel names its axis, so a property named after that
+ *   axis is preferred. No channel names an axis since ADR 0030 gave each
+ *   type-coverage dimension its own rule — the branch is kept because what
+ *   selects it is the shape of the channel, not a list of rule names, and the
+ *   next multi-axis rule would otherwise resolve to the wrong number silently.
  *
  * Rules with neither resolve to nothing, correctly.
  *
@@ -84,7 +105,7 @@ final readonly class BaselineConfiguredThresholds
     ) {}
 
     /**
-     * @return array<string, int|float> channel key => configured warning boundary
+     * @return array<string, array<string, int|float>> channel key => level value => configured warning boundary
      */
     public function resolve(): array
     {
@@ -103,11 +124,18 @@ final readonly class BaselineConfiguredThresholds
                 continue;
             }
 
-            foreach (array_keys($declarations) as $channelKey) {
-                $threshold = self::thresholdFor($options, ViolationChannel::fromKey($channelKey));
+            foreach ($declarations as $channelKey => $declaration) {
+                foreach ($declaration->levels as $level) {
+                    $threshold = self::thresholdFor(
+                        $options,
+                        RuleNameReader::read($ruleClass),
+                        new FindingChannel($channelKey),
+                        $level,
+                    );
 
-                if ($threshold !== null) {
-                    $thresholds[$channelKey] = $threshold;
+                    if ($threshold !== null) {
+                        $thresholds[$channelKey][$level->value] = $threshold;
+                    }
                 }
             }
         }
@@ -131,16 +159,27 @@ final readonly class BaselineConfiguredThresholds
         }
     }
 
-    private static function thresholdFor(RuleOptionsInterface $options, ViolationChannel $channel): int|float|null
-    {
-        $axis = self::axisOf($channel);
-        $level = $axis !== null ? RuleLevel::tryFrom($axis) : null;
-
-        if ($level !== null && $options instanceof HierarchicalRuleOptionsInterface) {
+    /**
+     * The boundary one channel is judged against **at one level**.
+     *
+     * Resolved per level rather than per channel because a channel reports at
+     * more than one now, and a hierarchical rule's two levels have separate
+     * boundaries: one number keyed by the channel alone would have to pick a
+     * level and print the choice as a fact.
+     */
+    private static function thresholdFor(
+        RuleOptionsInterface $options,
+        string $declaringRuleName,
+        FindingChannel $channel,
+        SymbolLevel $level,
+    ): int|float|null {
+        if ($options instanceof HierarchicalRuleOptionsInterface) {
             $levelOptions = self::levelOptions($options, $level);
 
             return $levelOptions !== null ? self::readProperty($levelOptions, self::GENERIC_PROPERTIES) : null;
         }
+
+        $axis = self::axisOf($declaringRuleName, $channel);
 
         if ($axis !== null) {
             $onAxis = self::readProperty($options, [self::axisProperty($axis)]);
@@ -194,7 +233,7 @@ final readonly class BaselineConfiguredThresholds
         return $found;
     }
 
-    private static function levelOptions(HierarchicalRuleOptionsInterface $options, RuleLevel $level): ?LevelOptionsInterface
+    private static function levelOptions(HierarchicalRuleOptionsInterface $options, SymbolLevel $level): ?LevelOptionsInterface
     {
         try {
             return $options->forLevel($level);
@@ -206,26 +245,30 @@ final readonly class BaselineConfiguredThresholds
     }
 
     /**
-     * The part of the violation code that follows the rule name — the level
-     * or the axis the channel reports on, or `null` when the code is the rule
-     * name itself.
+     * The part of the channel name that follows the name of the rule that
+     * declared it — the level or the axis the channel reports on, or `null`
+     * when the channel is named after the rule itself.
+     *
+     * The declaring rule's name is passed in rather than read off the channel:
+     * a channel is one name now, and the name it is decomposed against is the
+     * name of the class whose `channelDeclarations()` this key came from. That
+     * is the same rule whose options are being read here, so the two halves of
+     * the decomposition come from one place instead of from a key that used to
+     * carry both. `ChannelDeclarationFixtureDriftTest` pins the invariant that a
+     * channel name is its declaring rule's name, optionally with a `.suffix`.
      *
      * This is a **structural decomposition of one channel**, not a selector
-     * match: it reads the two halves of a key the channel already declares
-     * (`ChannelDeclarationFixtureDriftTest` pins the invariant that a
-     * `violationCode` is its `ruleName`, optionally with a `.suffix`). It is
-     * therefore untouched by selectors becoming exact — there is no user text
-     * here deciding which channels are addressed.
+     * match: there is no user text here deciding which channels are addressed.
      */
-    private static function axisOf(ViolationChannel $channel): ?string
+    private static function axisOf(string $declaringRuleName, FindingChannel $channel): ?string
     {
-        $prefix = $channel->ruleName . '.';
+        $prefix = $declaringRuleName . '.';
 
-        if (!str_starts_with($channel->violationCode, $prefix)) {
+        if (!str_starts_with($channel->code, $prefix)) {
             return null;
         }
 
-        $axis = substr($channel->violationCode, \strlen($prefix));
+        $axis = substr($channel->code, \strlen($prefix));
 
         return $axis === '' ? null : $axis;
     }

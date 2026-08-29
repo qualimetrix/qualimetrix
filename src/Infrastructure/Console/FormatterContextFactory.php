@@ -62,9 +62,8 @@ final class FormatterContextFactory
         // Handle --all flag: alias for --format-opt=violations=all --detail=all
         $allFlag = (bool) $input->getOption('all');
         if ($allFlag) {
-            $existingViolations = $options['violations'] ?? '';
-            // Conflict: --all with explicit numeric violations limit
-            if ($existingViolations !== '' && $existingViolations !== 'all') {
+            $existingFindings = $options['violations'] ?? '';
+            if ($existingFindings !== '' && $existingFindings !== 'all') {
                 throw new InvalidArgumentException(
                     'Conflicting options: --all cannot be combined with --format-opt=violations=N. '
                     . 'Use either --all (show everything) or --format-opt=violations=N (explicit limit)',

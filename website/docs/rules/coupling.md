@@ -3,7 +3,7 @@
 Coupling rules measure how tightly your classes depend on each other. When classes are tightly coupled, changing one class can break many others. Loosely coupled code is easier to test (you can isolate a class), easier to change (fewer side effects), and easier to reuse.
 
 The same Coupling analysis also classifies configured framework dependencies for
-the `cbo_app` and `ce_framework` metrics. A later configuration source replaces
+the `coupling.cbo-app` and `coupling.ce-framework` metrics. A later configuration source replaces
 the earlier framework namespace list; an explicit empty list disables that
 classification for the run.
 
@@ -180,10 +180,10 @@ By default, CBO counts **all** dependencies equally: importing 50 `PhpParser\Nod
 
 Qualimetrix provides two supplementary metrics to distinguish them:
 
-| Metric         | Formula                                   | Purpose                   |
-| -------------- | ----------------------------------------- | ------------------------- |
-| `cbo_app`      | Ca_app + Ce_app (framework deps excluded) | Application-only coupling |
-| `ce_framework` | Count of efferent framework dependencies  | Informational             |
+| Metric                  | Formula                                   | Purpose                   |
+| ----------------------- | ----------------------------------------- | ------------------------- |
+| `coupling.cbo-app`      | Ca_app + Ce_app (framework deps excluded) | Application-only coupling |
+| `coupling.ce-framework` | Count of efferent framework dependencies  | Informational             |
 
 **Configuration:**
 
@@ -201,7 +201,7 @@ Namespace matching is boundary-aware: `Psr` matches `Psr\Log\LoggerInterface` bu
 
 **Using with the CBO rule:**
 
-Set `scope: application` to make the CBO rule check `cbo_app` instead of `cbo`:
+Set `scope: application` to make the CBO rule check `coupling.cbo-app` instead of `coupling.cbo`:
 
 ```yaml
 rules:
@@ -212,7 +212,7 @@ rules:
       error: 15
 ```
 
-When no `framework-namespaces` are configured, `cbo_app` equals `cbo` (no effect).
+When no `framework-namespaces` are configured, `coupling.cbo-app` equals `coupling.cbo` (no effect).
 
 ---
 

@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 #[CoversClass(TypeCoverageCollector::class)]
@@ -37,15 +37,15 @@ final class TypeCoverageCollectorTest extends TestCase
     public function itProvidesExpectedMetricKeys(): void
     {
         self::assertSame([
-            'typeCoverage.paramTotal',
-            'typeCoverage.paramTyped',
-            'typeCoverage.param',
-            'typeCoverage.returnTotal',
-            'typeCoverage.returnTyped',
-            'typeCoverage.return',
-            'typeCoverage.propertyTotal',
-            'typeCoverage.propertyTyped',
-            'typeCoverage.property',
+            'design.type-coverage.param.total',
+            'design.type-coverage.param.typed',
+            'design.type-coverage.param',
+            'design.type-coverage.return.total',
+            'design.type-coverage.return.typed',
+            'design.type-coverage.return',
+            'design.type-coverage.property.total',
+            'design.type-coverage.property.typed',
+            'design.type-coverage.property',
         ], $this->collector->provides());
     }
 
@@ -76,9 +76,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(100.0, $metrics->get('typeCoverage.param:App\Service\UserService'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.return:App\Service\UserService'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.property:App\Service\UserService'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.param:App\Service\UserService'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.return:App\Service\UserService'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.property:App\Service\UserService'));
     }
 
     #[Test]
@@ -108,9 +108,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0.0, $metrics->get('typeCoverage.param:App\Service\LegacyService'));
-        self::assertSame(0.0, $metrics->get('typeCoverage.return:App\Service\LegacyService'));
-        self::assertSame(0.0, $metrics->get('typeCoverage.property:App\Service\LegacyService'));
+        self::assertSame(0.0, $metrics->get('design.type-coverage.param:App\Service\LegacyService'));
+        self::assertSame(0.0, $metrics->get('design.type-coverage.return:App\Service\LegacyService'));
+        self::assertSame(0.0, $metrics->get('design.type-coverage.property:App\Service\LegacyService'));
     }
 
     #[Test]
@@ -133,9 +133,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 2 out of 3 params typed = 66.67%
-        self::assertSame(66.67, $metrics->get('typeCoverage.param:App\MixedService'));
+        self::assertSame(66.67, $metrics->get('design.type-coverage.param:App\MixedService'));
         // 0 out of 1 method has return type = 0%
-        self::assertSame(0.0, $metrics->get('typeCoverage.return:App\MixedService'));
+        self::assertSame(0.0, $metrics->get('design.type-coverage.return:App\MixedService'));
     }
 
     #[Test]
@@ -159,16 +159,16 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 3 params: 2 typed, 1 untyped = 66.67%
-        self::assertSame(66.67, $metrics->get('typeCoverage.param:App\ValueObject'));
+        self::assertSame(66.67, $metrics->get('design.type-coverage.param:App\ValueObject'));
 
         // 3 promoted properties: 2 typed, 1 untyped = 66.67%
-        self::assertSame(66.67, $metrics->get('typeCoverage.property:App\ValueObject'));
+        self::assertSame(66.67, $metrics->get('design.type-coverage.property:App\ValueObject'));
 
         // Totals
-        self::assertSame(3, $metrics->get('typeCoverage.paramTotal:App\ValueObject'));
-        self::assertSame(2, $metrics->get('typeCoverage.paramTyped:App\ValueObject'));
-        self::assertSame(3, $metrics->get('typeCoverage.propertyTotal:App\ValueObject'));
-        self::assertSame(2, $metrics->get('typeCoverage.propertyTyped:App\ValueObject'));
+        self::assertSame(3, $metrics->get('design.type-coverage.param.total:App\ValueObject'));
+        self::assertSame(2, $metrics->get('design.type-coverage.param.typed:App\ValueObject'));
+        self::assertSame(3, $metrics->get('design.type-coverage.property.total:App\ValueObject'));
+        self::assertSame(2, $metrics->get('design.type-coverage.property.typed:App\ValueObject'));
     }
 
     #[Test]
@@ -188,13 +188,13 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // No methods -> no param or return metrics
-        self::assertNull($metrics->get('typeCoverage.param:App\EmptyClass'));
-        self::assertNull($metrics->get('typeCoverage.return:App\EmptyClass'));
-        self::assertSame(0, $metrics->get('typeCoverage.paramTotal:App\EmptyClass'));
-        self::assertSame(0, $metrics->get('typeCoverage.returnTotal:App\EmptyClass'));
+        self::assertNull($metrics->get('design.type-coverage.param:App\EmptyClass'));
+        self::assertNull($metrics->get('design.type-coverage.return:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('design.type-coverage.param.total:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('design.type-coverage.return.total:App\EmptyClass'));
 
         // Property is typed
-        self::assertSame(100.0, $metrics->get('typeCoverage.property:App\EmptyClass'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.property:App\EmptyClass'));
     }
 
     #[Test]
@@ -215,8 +215,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertNull($metrics->get('typeCoverage.property:App\NoPropsClass'));
-        self::assertSame(0, $metrics->get('typeCoverage.propertyTotal:App\NoPropsClass'));
+        self::assertNull($metrics->get('design.type-coverage.property:App\NoPropsClass'));
+        self::assertSame(0, $metrics->get('design.type-coverage.property.total:App\NoPropsClass'));
     }
 
     #[Test]
@@ -243,9 +243,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Only getValue() counted for return types (not __construct)
-        self::assertSame(1, $metrics->get('typeCoverage.returnTotal:App\WithConstructor'));
-        self::assertSame(1, $metrics->get('typeCoverage.returnTyped:App\WithConstructor'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.return:App\WithConstructor'));
+        self::assertSame(1, $metrics->get('design.type-coverage.return.total:App\WithConstructor'));
+        self::assertSame(1, $metrics->get('design.type-coverage.return.typed:App\WithConstructor'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.return:App\WithConstructor'));
     }
 
     #[Test]
@@ -271,8 +271,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Only process() counted for return types (not __destruct)
-        self::assertSame(1, $metrics->get('typeCoverage.returnTotal:App\WithDestructor'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.return:App\WithDestructor'));
+        self::assertSame(1, $metrics->get('design.type-coverage.return.total:App\WithDestructor'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.return:App\WithDestructor'));
     }
 
     #[Test]
@@ -295,9 +295,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // __toString IS counted and has return type
-        self::assertSame(1, $metrics->get('typeCoverage.returnTotal:App\Stringable'));
-        self::assertSame(1, $metrics->get('typeCoverage.returnTyped:App\Stringable'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.return:App\Stringable'));
+        self::assertSame(1, $metrics->get('design.type-coverage.return.total:App\Stringable'));
+        self::assertSame(1, $metrics->get('design.type-coverage.return.typed:App\Stringable'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.return:App\Stringable'));
     }
 
     #[Test]
@@ -321,9 +321,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(100.0, $metrics->get('typeCoverage.param:App\NullableTest'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.return:App\NullableTest'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.property:App\NullableTest'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.param:App\NullableTest'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.return:App\NullableTest'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.property:App\NullableTest'));
     }
 
     #[Test]
@@ -347,9 +347,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(100.0, $metrics->get('typeCoverage.param:App\UnionTest'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.return:App\UnionTest'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.property:App\UnionTest'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.param:App\UnionTest'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.return:App\UnionTest'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.property:App\UnionTest'));
     }
 
     #[Test]
@@ -373,9 +373,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(100.0, $metrics->get('typeCoverage.param:App\MixedTypeTest'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.return:App\MixedTypeTest'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.property:App\MixedTypeTest'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.param:App\MixedTypeTest'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.return:App\MixedTypeTest'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.property:App\MixedTypeTest'));
     }
 
     #[Test]
@@ -397,9 +397,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 1 typed param out of 2 = 50%
-        self::assertSame(50.0, $metrics->get('typeCoverage.param:App\Contracts\ServiceInterface'));
+        self::assertSame(50.0, $metrics->get('design.type-coverage.param:App\Contracts\ServiceInterface'));
         // 1 typed return out of 2 = 50%
-        self::assertSame(50.0, $metrics->get('typeCoverage.return:App\Contracts\ServiceInterface'));
+        self::assertSame(50.0, $metrics->get('design.type-coverage.return:App\Contracts\ServiceInterface'));
     }
 
     #[Test]
@@ -437,11 +437,11 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         // First class should not be present
-        self::assertNull($metrics->get('typeCoverage.param:App\First'));
+        self::assertNull($metrics->get('design.type-coverage.param:App\First'));
 
         // Second class should be present
-        self::assertSame(0.0, $metrics->get('typeCoverage.param:App\Second'));
-        self::assertSame(0.0, $metrics->get('typeCoverage.return:App\Second'));
+        self::assertSame(0.0, $metrics->get('design.type-coverage.param:App\Second'));
+        self::assertSame(0.0, $metrics->get('design.type-coverage.return:App\Second'));
     }
 
     #[Test]
@@ -453,14 +453,14 @@ PHP;
 
         // Check that total metrics have Sum aggregation
         $paramTotal = $definitions[0];
-        self::assertSame('typeCoverage.paramTotal', $paramTotal->name);
+        self::assertSame('design.type-coverage.param.total', $paramTotal->name);
         self::assertSame(SymbolLevel::Class_, $paramTotal->collectedAt);
         self::assertContains(AggregationStrategy::Sum, $paramTotal->getStrategiesForLevel(SymbolLevel::Namespace_));
         self::assertContains(AggregationStrategy::Sum, $paramTotal->getStrategiesForLevel(SymbolLevel::Project));
 
         // Check that percentage metrics have no aggregation
         $paramPercent = $definitions[2];
-        self::assertSame('typeCoverage.param', $paramPercent->name);
+        self::assertSame('design.type-coverage.param', $paramPercent->name);
         self::assertSame(SymbolLevel::Class_, $paramPercent->collectedAt);
         self::assertEmpty($paramPercent->getStrategiesForLevel(SymbolLevel::Namespace_));
         self::assertEmpty($paramPercent->getStrategiesForLevel(SymbolLevel::Project));
@@ -489,8 +489,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Only process() counted for return types (not __clone)
-        self::assertSame(1, $metrics->get('typeCoverage.returnTotal:App\Cloneable'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.return:App\Cloneable'));
+        self::assertSame(1, $metrics->get('design.type-coverage.return.total:App\Cloneable'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.return:App\Cloneable'));
     }
 
     #[Test]
@@ -513,9 +513,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(100.0, $metrics->get('typeCoverage.param:App\Traits\LoggableTrait'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.return:App\Traits\LoggableTrait'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.property:App\Traits\LoggableTrait'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.param:App\Traits\LoggableTrait'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.return:App\Traits\LoggableTrait'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.property:App\Traits\LoggableTrait'));
     }
 
     #[Test]
@@ -540,7 +540,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(100.0, $metrics->get('typeCoverage.return:App\Enums\Status'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.return:App\Enums\Status'));
     }
 
     #[Test]
@@ -585,9 +585,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 3 typed + 1 untyped = 4 total, 3 typed = 75%
-        self::assertSame(4, $metrics->get('typeCoverage.propertyTotal:App\MultiProp'));
-        self::assertSame(3, $metrics->get('typeCoverage.propertyTyped:App\MultiProp'));
-        self::assertSame(75.0, $metrics->get('typeCoverage.property:App\MultiProp'));
+        self::assertSame(4, $metrics->get('design.type-coverage.property.total:App\MultiProp'));
+        self::assertSame(3, $metrics->get('design.type-coverage.property.typed:App\MultiProp'));
+        self::assertSame(75.0, $metrics->get('design.type-coverage.property:App\MultiProp'));
     }
 
     #[Test]
@@ -609,11 +609,11 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('typeCoverage.propertyTotal:App\Profile'));
-        self::assertSame(1, $metrics->get('typeCoverage.propertyTyped:App\Profile'));
-        self::assertSame(1, $metrics->get('typeCoverage.paramTotal:App\Profile'));
-        self::assertSame(1, $metrics->get('typeCoverage.paramTyped:App\Profile'));
-        self::assertSame(0, $metrics->get('typeCoverage.returnTotal:App\Profile'));
+        self::assertSame(1, $metrics->get('design.type-coverage.property.total:App\Profile'));
+        self::assertSame(1, $metrics->get('design.type-coverage.property.typed:App\Profile'));
+        self::assertSame(1, $metrics->get('design.type-coverage.param.total:App\Profile'));
+        self::assertSame(1, $metrics->get('design.type-coverage.param.typed:App\Profile'));
+        self::assertSame(0, $metrics->get('design.type-coverage.return.total:App\Profile'));
     }
 
     #[Test]
@@ -636,10 +636,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('typeCoverage.propertyTotal:App\Profile'));
-        self::assertSame(1, $metrics->get('typeCoverage.propertyTyped:App\Profile'));
-        self::assertSame(2, $metrics->get('typeCoverage.paramTotal:App\Profile'));
-        self::assertSame(2, $metrics->get('typeCoverage.paramTyped:App\Profile'));
+        self::assertSame(1, $metrics->get('design.type-coverage.property.total:App\Profile'));
+        self::assertSame(1, $metrics->get('design.type-coverage.property.typed:App\Profile'));
+        self::assertSame(2, $metrics->get('design.type-coverage.param.total:App\Profile'));
+        self::assertSame(2, $metrics->get('design.type-coverage.param.typed:App\Profile'));
     }
 
     #[Test]
@@ -662,14 +662,14 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 2 params, both typed
-        self::assertSame(2, $metrics->get('typeCoverage.paramTotal:App\ReadonlyVO'));
-        self::assertSame(2, $metrics->get('typeCoverage.paramTyped:App\ReadonlyVO'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.param:App\ReadonlyVO'));
+        self::assertSame(2, $metrics->get('design.type-coverage.param.total:App\ReadonlyVO'));
+        self::assertSame(2, $metrics->get('design.type-coverage.param.typed:App\ReadonlyVO'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.param:App\ReadonlyVO'));
 
         // 2 promoted properties (readonly without visibility), both typed
-        self::assertSame(2, $metrics->get('typeCoverage.propertyTotal:App\ReadonlyVO'));
-        self::assertSame(2, $metrics->get('typeCoverage.propertyTyped:App\ReadonlyVO'));
-        self::assertSame(100.0, $metrics->get('typeCoverage.property:App\ReadonlyVO'));
+        self::assertSame(2, $metrics->get('design.type-coverage.property.total:App\ReadonlyVO'));
+        self::assertSame(2, $metrics->get('design.type-coverage.property.typed:App\ReadonlyVO'));
+        self::assertSame(100.0, $metrics->get('design.type-coverage.property:App\ReadonlyVO'));
     }
 
     #[Test]
@@ -693,13 +693,13 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // 3 params: 2 typed (typed + readonlyOnly), 1 untyped
-        self::assertSame(3, $metrics->get('typeCoverage.paramTotal:App\ReadonlyMixed'));
-        self::assertSame(2, $metrics->get('typeCoverage.paramTyped:App\ReadonlyMixed'));
+        self::assertSame(3, $metrics->get('design.type-coverage.param.total:App\ReadonlyMixed'));
+        self::assertSame(2, $metrics->get('design.type-coverage.param.typed:App\ReadonlyMixed'));
 
         // 3 promoted properties: typed (public readonly), readonlyOnly (readonly), notPromotedButVisible (private)
-        self::assertSame(3, $metrics->get('typeCoverage.propertyTotal:App\ReadonlyMixed'));
+        self::assertSame(3, $metrics->get('design.type-coverage.property.total:App\ReadonlyMixed'));
         // 2 typed properties
-        self::assertSame(2, $metrics->get('typeCoverage.propertyTyped:App\ReadonlyMixed'));
+        self::assertSame(2, $metrics->get('design.type-coverage.property.typed:App\ReadonlyMixed'));
     }
 
     #[Test]

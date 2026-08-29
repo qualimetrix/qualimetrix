@@ -7,16 +7,16 @@ namespace Qualimetrix\Analysis\Evidence\Complexity;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Options for NpathComplexityRule (hierarchical).
  *
- * Supports method and class levels with separate thresholds.
+ * Supports callable and class levels with separate thresholds.
  */
 final readonly class NpathComplexityOptions implements HierarchicalRuleOptionsInterface, ShorthandOptionKeysInterface
 {
@@ -54,11 +54,13 @@ final readonly class NpathComplexityOptions implements HierarchicalRuleOptionsIn
         }
 
         // Handle hierarchical format: {callable: {...}, class: {...}}
-        $callableConfig = isset($config['callable']) && \is_array($config['callable'])
-            ? $config['callable']
+        $callableKey = SymbolLevel::Callable->value;
+        $classKey = SymbolLevel::Class_->value;
+        $callableConfig = isset($config[$callableKey]) && \is_array($config[$callableKey])
+            ? $config[$callableKey]
             : [];
-        $classConfig = isset($config['class']) && \is_array($config['class'])
-            ? $config['class']
+        $classConfig = isset($config[$classKey]) && \is_array($config[$classKey])
+            ? $config[$classKey]
             : [];
 
         return new self(
@@ -86,31 +88,31 @@ final readonly class NpathComplexityOptions implements HierarchicalRuleOptionsIn
         return $this->callable->getSeverity($value);
     }
 
-    public function forLevel(RuleLevel $level): LevelOptionsInterface
+    public function forLevel(SymbolLevel $level): LevelOptionsInterface
     {
         return match ($level) {
-            RuleLevel::Callable => $this->callable,
-            RuleLevel::Class_ => $this->class,
+            SymbolLevel::Callable => $this->callable,
+            SymbolLevel::Class_ => $this->class,
             default => throw new InvalidArgumentException(
                 \sprintf('Level %s is not supported by NpathComplexityRule', $level->value),
             ),
         };
     }
 
-    public function isLevelEnabled(RuleLevel $level): bool
+    public function isLevelEnabled(SymbolLevel $level): bool
     {
         return match ($level) {
-            RuleLevel::Callable => $this->callable->isEnabled(),
-            RuleLevel::Class_ => $this->class->isEnabled(),
+            SymbolLevel::Callable => $this->callable->isEnabled(),
+            SymbolLevel::Class_ => $this->class->isEnabled(),
             default => false,
         };
     }
 
     /**
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Callable, RuleLevel::Class_];
+        return [SymbolLevel::Callable, SymbolLevel::Class_];
     }
 }

@@ -1,0 +1,95 @@
+surface	case	occurrence_kind	count	example	changes_structurally_on_split(yes|no)	note
+baseline-explain	design	finding-field	3	"Channel: design.type-coverage#design.type-coverage.param" (3 separate channel blocks for subject Untyped)	no	each of the 3 sub-channels prints its own block; explain.2 (subject Order) has 0 occurrences — the rule does not fire for that subject in this corpus
+baseline-explain	layers	finding-field	1 each	"Channel: architecture.unassigned-class#architecture.unassigned-class" (subject project:); "Channel: architecture.layer-violation#architecture.layer-violation" (subject UserRepository)	no	each subject/channel gets its own block; the two producers never share a block
+baseline-file	design	finding-field	3	entries["declaration:class:...Untyped..."][1].channel = "design.type-coverage#design.type-coverage.param"	no	baseline entries carry only the full "rule#code" channel string, never a bare rule field; renaming is 1:1 per entry
+baseline-file	layers	finding-field	1	entries["project:"][0].channel = "architecture.unassigned-class#architecture.unassigned-class"	no	same shape as design; architecture.layer-violation also present as entries["declaration:class:...UserRepository..."][0].channel, 1 entry, no aggregate
+checkstyle	design	finding-field	3	source="qmx.design.type-coverage.param"	no	source attribute always carries the full suffixed code, never the bare rule name
+checkstyle	layers	finding-field	1 each	source="qmx.architecture.unassigned-class"; source="qmx.architecture.layer-violation"	no	one <error> per finding, already keyed by the full producer/channel name
+exit-code	design	prose	1	--fail-on=error -> exit 2 for every format run in this case	no	exit code reflects overall severity across all findings; it never names a producer, so a rule split cannot change it
+exit-code	layers	prose	1	--fail-on=error -> exit 2 for every format run in this case	no	same as design; not sensitive to which rule produced which finding
+github	design	finding-field	3	"::error file=src/Model/Untyped.php,line=5,title=design.type-coverage.param::..."	no	title always carries the full suffixed code
+github	layers	finding-field	1 each	"::error title=architecture.unassigned-class::..."; "::error title=architecture.layer-violation::..."	no	one line per finding, already keyed by the full producer name
+gitlab	design	finding-field	3	"check_name": "design.type-coverage.param"	no	check_name is always the full suffixed code
+gitlab	layers	finding-field	1 each	"check_name": "architecture.unassigned-class"; "check_name": "architecture.layer-violation"	no	one entry per finding, already keyed by the full producer name
+health	design	none-observed	0	(design.type-coverage does not appear anywhere in this format's output)	no	health format reports only computed-metric health dimensions, never rule/channel names
+health	layers	none-observed	0	(architecture.unassigned-class / architecture.layer-violation do not appear anywhere in this format's output)	no	same as design
+html	design	finding-field	3+3	embedded report-data JSON: tree...violations[n].ruleName = "design.type-coverage" (bare, x3); violations[n].violationCode = "design.type-coverage.param"/".return"/".property" (x3)	no	ruleName is bare and per-violation (1:1 rename); no pre-aggregated byRule structure ships in the static payload — see footer
+html	layers	finding-field	1 (layer-violation only)	tree...violations[0].ruleName = "architecture.layer-violation" for subject UserController	no	architecture.layer-violation appears once as expected (class-level finding); architecture.unassigned-class does NOT appear anywhere in the html payload — the root tree node's own violations array is always [] (project-level findings are not attached to the tree at all in this corpus), so this producer's html surface has zero occurrences to reason about either way
+json	design	aggregate-key	1	violationsMeta.byRule["design.type-coverage"] = 3	yes	one bare-rule key currently sums all 3 sub-channels; splitting into 3 rules turns this into 3 keys, each with its own (smaller) count
+json	design	finding-field	9	violations[6..8].rule = "design.type-coverage" (bare, x3); violations[6..8].code = "design.type-coverage.param"/".return"/".property" (x3); topIssues[7..9].rule = "design.type-coverage" (x3)	no	all of these are per-finding fields; renaming the producer changes each 1:1
+json	layers	aggregate-key	1 each	violationsMeta.byRule["architecture.unassigned-class"] = 1; violationsMeta.byRule["architecture.layer-violation"] = 1	no	both producers already own a separate byRule key; extracting unassigned-class into its own Rule class does not merge or split any key here — it is already structurally independent
+json	layers	finding-field	1 each	violations[].rule = "architecture.unassigned-class" (project:); violations[].rule = "architecture.layer-violation" (UserController)	no	already two independent per-finding values
+metrics	design	none-observed	0	(design.type-coverage does not appear anywhere in this format's output)	no	metrics format reports only measured metric keys (e.g. typeCoverage.paramTotal.sum), never rule/channel names
+metrics	layers	none-observed	0	(architecture.unassigned-class / architecture.layer-violation do not appear anywhere in this format's output)	no	same as design
+rules-snapshot	(tree-wide)	prose	1	"42 rules available" (first line of `bin/qmx rules`)	yes	this single count sums every top-level heading; it moves by +2 net for the type-coverage split (1 heading -> 3) and by +1 for the unassigned-class extraction (0 headings -> 1), assuming neither step also merges anything else
+rules-snapshot	design	inventory-entry	1	"design.type-coverage   Checks type coverage..." heading, followed by 6 --rule-opt option lines (param/return/property x warning/error)	yes	all 3 conceptual channels are folded under ONE inventory heading today; splitting into 3 rules turns this into 3 headings, each keeping only its own 2 option lines
+rules-snapshot	layers	inventory-entry	0 (currently absent)	no heading named "architecture.unassigned-class" anywhere in `bin/qmx rules`; it exists only as "--layer-violation-unassigned-class (--rule-opt=architecture.layer-violation:unassigned_class=...)", an option line nested under the "architecture.layer-violation" heading	yes	the plan's "own rule" for unassigned-class has zero inventory presence today — extracting it creates a brand-new top-level heading rather than renaming an existing one
+rules-snapshot	layers	inventory-entry	1	"architecture.layer-violation   Detects dependencies..." heading with 3 option lines (--layer-violation, --layer-violation-severity, --layer-violation-unassigned-class)	yes	layer-violation itself is not being split, but extracting unassigned-class removes one of its 3 option lines, shrinking this entry even though its own producer name is untouched
+sarif	design	finding-field	3	results[].ruleId = "design.type-coverage.param" / ".return" / ".property"	no	one result per finding, already keyed by the full suffixed code
+sarif	design	inventory-entry	3	runs[0].tool.driver.rules[] contains 3 descriptors, ids "design.type-coverage.param"/".return"/".property", each with identical shortDescription/fullDescription/helpUri text	no	SARIF already keys its rule descriptors by the full suffixed code, i.e. already at 3-way granularity; the descriptor COUNT does not change on split, only the (currently shared, generic) description text would presumably become facet-specific
+sarif	layers	finding-field	1 each	results[].ruleId = "architecture.unassigned-class"; results[].ruleId = "architecture.layer-violation"	no	one result per finding, already keyed by the full producer name
+sarif	layers	inventory-entry	1 each	rules[] descriptor id="architecture.unassigned-class"; rules[] descriptor id="architecture.layer-violation"	no	both already own an independent descriptor; extraction does not touch descriptor count or ids
+show-suppressed	design	finding-field	3	"src/Model/Untyped.php: error[design.type-coverage.param]: ..." (identical to plain --format=text — nothing is suppressed in this corpus)	no	suppression state does not change occurrence shape; same per-finding fields as the text surface
+show-suppressed	layers	finding-field	1 each	"[project]: error[architecture.unassigned-class]: ..."; "src/Controller/UserController.php: warning[architecture.layer-violation]: ..."	no	same as text surface; nothing suppressed in this corpus
+summary	design	finding-field	3	"topIssues" list: "8. [ERR] 2.26  src/Model/Untyped.php  [15min]\n     design.type-coverage.param: ..."	no	each top-issue line is keyed by the full suffixed code, one line per finding
+summary	layers	finding-field	1 each	"...architecture.unassigned-class: Unassigned declarations: ..."; "...architecture.layer-violation: Layer \"controller\" is not allowed..."	no	one top-issue line per finding, already independent
+text	design	finding-field	3	"src/Model/Untyped.php: error[design.type-coverage.param]: ..."	no	one line per finding, code is always the full suffixed string
+text	layers	finding-field	1 each	"[project]: error[architecture.unassigned-class]: ..."; "src/Controller/UserController.php: warning[architecture.layer-violation]: ..."	no	one line per finding, already independent
+text-verbose	design	aggregate-key	1	"Technical debt by rule:\n  design.type-coverage    ~45min   (3 violations)"	yes	one bare-rule line sums the 3 sub-channel findings into a single "(3 violations)" total; splitting into 3 rules turns this into 3 separate lines with their own (smaller) totals
+text-verbose	design	finding-field	3	"    Parameter type coverage: 0.0% (threshold: 50.0%) -- missing type declarations  [design.type-coverage.param]"	no	one violation block per finding, code is always the full suffixed string
+text-verbose	layers	aggregate-key	1 each	"Technical debt by rule:\n  architecture.layer-violation   ~15min  (1 violation)\n  architecture.unassigned-class  ~15min  (1 violation)"	no	each producer already owns its own "Technical debt by rule" line; extracting unassigned-class into its own Rule class does not merge or split any line here
+text-verbose	layers	finding-field	1 each	"    Unassigned declarations: ... [architecture.unassigned-class]"; "Dep data: {...}  [architecture.layer-violation]"	no	one violation block per finding, already independent
+#
+# HOW THIS WAS PRODUCED:
+# For each of the two corpus cases (finding-gate/cases/design, finding-gate/cases/layers),
+# from the case's own directory (`rm -rf .qmx-cache` before and after every invocation):
+#   bin/qmx check src --config=qmx.yaml <case.json "args"> \
+#     --workers=0 --no-cache --no-ansi --fail-on=error --format=<fmt>
+#   for fmt in summary text text-verbose json checkstyle sarif gitlab github metrics health html
+#   bin/qmx check src --config=qmx.yaml <args> --workers=0 --no-cache --no-ansi \
+#     --fail-on=error --format=text --show-suppressed
+#   bin/qmx baseline:generate <outfile>.baseline.json src --config=qmx.yaml <args> --no-ansi --force
+#     (no --workers, no --no-cache: baseline:generate does not accept --workers)
+#   bin/qmx baseline:explain <subject> src --config=qmx.yaml <args> \
+#     --baseline=<outfile>.baseline.json --no-ansi   (once per explainSubjects entry)
+# Once for the whole tree, from the repository root:
+#   bin/qmx rules --no-ansi
+# Every run's raw stdout/stderr/exit code was captured to files and inspected with grep -o
+# (occurrence counting) and small python scripts (structural JSON/embedded-JSON walks over
+# the json/sarif/html outputs and the baseline files) to tell a per-finding field from a
+# grouped/keyed aggregate. All commands run 2026-08-23 against HEAD 88f8dab6.
+#
+# WHAT THIS METHOD DOES NOT SEE:
+#  - the html surface's client-side JS (the compiled report bundle) may build its own
+#    "technical debt by rule" or similar grouped view from the per-violation ruleName field
+#    at render time in the browser; this method captures only the static HTML/JSON payload
+#    qmx writes to disk, never executes the bundle, so a browser-side aggregate-key is
+#    invisible here. If such a view exists, its grouping is a *third* aggregate-key surface
+#    beyond the two rows this file records (json.violationsMeta.byRule and text-verbose's
+#    "Technical debt by rule:"), reading straight from the same ruleName field.
+#  - the html surface additionally drops project-level findings from the tree entirely:
+#    the root tree node's own `violations` array is always empty, so a project-level
+#    producer (architecture.unassigned-class, architecture.coverage, and the other four
+#    project-scoped layers channels in this corpus) is invisible in the html payload
+#    regardless of any rename or split. This is a real, measured product gap, not a
+#    limitation of the measurement method — but it does mean this method cannot say
+#    anything about how a split of a project-level producer would show up in html, because
+#    nothing shows up there today.
+#  - a producer name assembled at runtime by string concatenation (rather than a literal in
+#    a template/format string) is invisible to a grep-based occurrence count; every count in
+#    this file comes from matching the literal producer names against captured stdout, so a
+#    dynamically-built label containing the same text would still be counted, but a label
+#    that differs from the literal producer name (e.g. a human-facing group title) would not.
+#  - only the two named producers (design.type-coverage, architecture.unassigned-class) plus
+#    the one control producer (architecture.layer-violation) were measured; no other channel
+#    in either corpus was checked for aggregate-key behaviour, so this file says nothing
+#    about whether some other producer already shows the same "one bare-rule key merges N
+#    sub-channels" shape that design.type-coverage does.
+#  - baseline:generate and baseline:explain were run once each per case with a fresh
+#    baseline (--force), not against a pre-existing baseline accepted at a stale level;
+#    the "accepted N; now N" framing seen in baseline-explain output was not exercised
+#    against a genuinely stale baseline, so a possible additional aggregate surface in a
+#    stale-vs-fresh diff was not probed.
+#  - the corpus is exactly the finding-gate `design` and `layers` cases as committed at
+#    HEAD 88f8dab6; a channel or field that only appears under different --rule-opt values,
+#    a different file layout, or a third case is not covered by this file.

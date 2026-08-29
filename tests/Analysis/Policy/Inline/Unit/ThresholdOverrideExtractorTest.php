@@ -58,6 +58,37 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(50, $overrides[0]->endLine);
     }
 
+    /**
+     * A threshold takes no level, and the pair is captured so that it can be
+     * *refused* by name rather than truncated.
+     *
+     * Red on the unfixed pattern: without `:` in the rule-pattern character
+     * class the match stops at the separator, so `coupling.cbo:class` arrives
+     * as `coupling.cbo` and retunes every level of the rule — a boundary moved
+     * where none was asked for. The refusal itself lives in
+     * {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability::problemWithThreshold()};
+     * what is checked here is that the text reaches it whole.
+     */
+    #[Test]
+    public function itCapturesAChannelLevelPairWholeInsteadOfTruncatingIt(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * @qmx-threshold coupling.cbo:class 30
+             */
+            DOC,
+            10,
+            50,
+        );
+
+        $overrides = $this->extract($node);
+
+        self::assertCount(1, $overrides);
+        self::assertSame('coupling.cbo:class', $overrides[0]->rulePattern);
+        self::assertFalse($overrides[0]->matches('coupling.cbo'), 'The truncated left half must not be retuned.');
+    }
+
     #[Test]
     public function itExtractsExplicitSyntaxBothValues(): void
     {

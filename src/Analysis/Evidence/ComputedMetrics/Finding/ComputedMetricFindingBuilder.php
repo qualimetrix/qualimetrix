@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -20,7 +20,7 @@ final class ComputedMetricFindingBuilder
         SymbolPath $symbolPath,
         Location $location,
         string $ruleName,
-    ): ?Violation {
+    ): ?Finding {
         $severity = $this->severity($definition, $value);
         if ($severity === null) {
             return null;
@@ -30,12 +30,12 @@ final class ComputedMetricFindingBuilder
         \assert($threshold !== null);
         $operator = $definition->inverted ? 'below' : 'above';
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $definition->name,
+            code: $definition->name,
             message: \sprintf('%s: %s = %.1f (%s threshold: %s %.1f)', $symbolPath->toString(), $definition->name, $value, $severity->value, $operator, $threshold),
             severity: $severity,
             metricValue: round($value, 1),
@@ -65,11 +65,27 @@ final class ComputedMetricFindingBuilder
         return null;
     }
 
-    private function recommendation(string $dimensionName, float $value, float $threshold): string
+    /**
+     * The metric's leaf, read as words.
+     *
+     * A separator inside the leaf is a word break, not a character to print:
+     * `computed.branch-load` reads "Branch load". It used to print the leaf
+     * verbatim, so the separator the name happened to use leaked into a
+     * sentence — and Ш5e3, which changed that separator from `_` to `-`, would
+     * have moved a published recommendation without renaming anything a reader
+     * addresses.
+     */
+    private static function title(string $dimensionName): string
     {
         $lastDot = strrpos($dimensionName, '.');
-        $segment = $lastDot !== false ? substr($dimensionName, $lastDot + 1) : $dimensionName;
-        $header = \sprintf('%s health: %.1f (threshold: %.1f)', ucfirst($segment), $value, $threshold);
+        $leaf = $lastDot !== false ? substr($dimensionName, $lastDot + 1) : $dimensionName;
+
+        return ucfirst(str_replace(['-', '_'], ' ', $leaf));
+    }
+
+    private function recommendation(string $dimensionName, float $value, float $threshold): string
+    {
+        $header = \sprintf('%s health: %.1f (threshold: %.1f)', self::title($dimensionName), $value, $threshold);
         $advice = match (true) {
             str_contains($dimensionName, 'complexity') => 'Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.',
             str_contains($dimensionName, 'cohesion') => 'Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.',

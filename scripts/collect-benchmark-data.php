@@ -138,16 +138,16 @@ foreach ($projects as $project) {
             ];
             // Extract relevant metrics
             $keys = [
-                'cbo.avg', 'cbo.max', 'cbo.sum', 'cbo.count',
-                'distance', 'instability', 'abstractness',
-                'ca', 'ce',
+                'coupling.cbo.avg', 'coupling.cbo.max', 'coupling.cbo.sum', 'coupling.cbo.count',
+                'coupling.distance', 'coupling.instability', 'coupling.abstractness',
+                'coupling.ca', 'coupling.ce',
                 'health.coupling', 'health.complexity', 'health.cohesion',
                 'health.typing', 'health.maintainability', 'health.overall',
-                'ccn.avg', 'ccn.max', 'cognitive.avg', 'cognitive.max',
-                'tcc.avg', 'lcom.avg', 'lcom.max',
-                'loc.sum', 'classCount.sum',
-                'abstractClassCount.sum', 'interfaceCount.sum', 'enumCount.sum',
-                'mi.avg',
+                'complexity.ccn.avg', 'complexity.ccn.max', 'complexity.cognitive.avg', 'complexity.cognitive.max',
+                'cohesion.tcc.avg', 'cohesion.lcom.avg', 'cohesion.lcom.max',
+                'size.loc.sum', 'size.class-count.sum',
+                'size.abstract-class-count.sum', 'size.interface-count.sum', 'size.enum-count.sum',
+                'maintainability.mi.avg',
             ];
             foreach ($keys as $key) {
                 if (isset($symbol['metrics'][$key])) {
@@ -158,9 +158,9 @@ foreach ($projects as $project) {
         } elseif ($symbol['type'] === 'class') {
             $classes[] = [
                 'name' => $symbol['name'],
-                'cbo' => $symbol['metrics']['cbo'] ?? null,
+                'coupling.cbo' => $symbol['metrics']['coupling.cbo'] ?? null,
                 'health.coupling' => $symbol['metrics']['health.coupling'] ?? null,
-                'loc' => $symbol['metrics']['loc'] ?? null,
+                'size.loc' => $symbol['metrics']['size.loc'] ?? null,
             ];
         }
     }
@@ -169,7 +169,7 @@ foreach ($projects as $project) {
     $distributions = [];
     $nsMetricKeys = ['health.coupling', 'health.complexity', 'health.cohesion',
         'health.typing', 'health.maintainability', 'health.overall',
-        'cbo.avg', 'distance', 'ccn.avg', 'cognitive.avg', 'tcc.avg', 'lcom.avg'];
+        'coupling.cbo.avg', 'coupling.distance', 'complexity.ccn.avg', 'complexity.cognitive.avg', 'cohesion.tcc.avg', 'cohesion.lcom.avg'];
 
     foreach ($nsMetricKeys as $key) {
         $values = array_filter(array_map(
@@ -182,7 +182,7 @@ foreach ($projects as $project) {
 
     // Class-level CBO distribution
     $classCboValues = array_filter(array_map(
-        fn($c) => $c['cbo'],
+        fn($c) => $c['coupling.cbo'],
         $classes,
     ), fn($v) => $v !== null);
     sort($classCboValues);
@@ -207,11 +207,11 @@ foreach ($projects as $project) {
             )),
             'cbo_avg_gt_20' => array_values(array_filter(
                 $namespaces,
-                fn($ns) => ($ns['metrics']['cbo.avg'] ?? 0) > 20,
+                fn($ns) => ($ns['metrics']['coupling.cbo.avg'] ?? 0) > 20,
             )),
             'class_cbo_gt_30' => array_values(array_filter(
                 $classes,
-                fn($c) => ($c['cbo'] ?? 0) > 30,
+                fn($c) => ($c['coupling.cbo'] ?? 0) > 30,
             )),
         ],
     ];

@@ -63,9 +63,9 @@ final class ContributorRankerTest extends TestCase
     public function itRanksClassesByPrimaryMetricDescendingForLowerIsBetter(): void
     {
         $result = $this->ranker->rank([
-            $this->candidate('App', 'ClassA', 5.0, ['ccn.sum' => 5]),
-            $this->candidate('App', 'ClassB', 15.0, ['ccn.sum' => 15]),
-            $this->candidate('App', 'ClassC', 10.0, ['ccn.sum' => 10]),
+            $this->candidate('App', 'ClassA', 5.0, ['complexity.ccn.sum' => 5]),
+            $this->candidate('App', 'ClassB', 15.0, ['complexity.ccn.sum' => 15]),
+            $this->candidate('App', 'ClassC', 10.0, ['complexity.ccn.sum' => 10]),
         ], 'lower');
 
         self::assertCount(3, $result);
@@ -78,8 +78,8 @@ final class ContributorRankerTest extends TestCase
     public function itRanksClassesByPrimaryMetricAscendingForHigherIsBetter(): void
     {
         $result = $this->ranker->rank([
-            $this->candidate('App', 'ClassA', 0.8, ['tcc' => 0.8]),
-            $this->candidate('App', 'ClassB', 0.2, ['tcc' => 0.2]),
+            $this->candidate('App', 'ClassA', 0.8, ['cohesion.tcc' => 0.8]),
+            $this->candidate('App', 'ClassB', 0.2, ['cohesion.tcc' => 0.2]),
         ], 'higher');
 
         self::assertCount(2, $result);
@@ -91,9 +91,9 @@ final class ContributorRankerTest extends TestCase
     public function itRespectsLimit(): void
     {
         $result = $this->ranker->rank([
-            $this->candidate('App', 'ClassA', 5.0, ['ccn.sum' => 5]),
-            $this->candidate('App', 'ClassB', 15.0, ['ccn.sum' => 15]),
-            $this->candidate('App', 'ClassC', 10.0, ['ccn.sum' => 10]),
+            $this->candidate('App', 'ClassA', 5.0, ['complexity.ccn.sum' => 5]),
+            $this->candidate('App', 'ClassB', 15.0, ['complexity.ccn.sum' => 15]),
+            $this->candidate('App', 'ClassC', 10.0, ['complexity.ccn.sum' => 10]),
         ], 'lower', limit: 2);
 
         self::assertCount(2, $result);
@@ -105,8 +105,8 @@ final class ContributorRankerTest extends TestCase
     public function itTiedPrimaryMetricSortsByCanonicalPath(): void
     {
         $result = $this->ranker->rank([
-            $this->candidate('App\Beta', 'Service', 10.0, ['ccn.sum' => 10]),
-            $this->candidate('App\Alpha', 'Service', 10.0, ['ccn.sum' => 10]),
+            $this->candidate('App\Beta', 'Service', 10.0, ['complexity.ccn.sum' => 10]),
+            $this->candidate('App\Alpha', 'Service', 10.0, ['complexity.ccn.sum' => 10]),
         ], 'lower');
 
         self::assertCount(2, $result);
@@ -118,12 +118,12 @@ final class ContributorRankerTest extends TestCase
     public function itContributorIncludesAllSelectedMetrics(): void
     {
         $result = $this->ranker->rank([
-            $this->candidate('App', 'Service', 12.0, ['ccn.sum' => 12, 'cognitive.sum' => 8]),
+            $this->candidate('App', 'Service', 12.0, ['complexity.ccn.sum' => 12, 'complexity.cognitive.sum' => 8]),
         ], 'lower');
 
         self::assertCount(1, $result);
         self::assertSame('Service', $result[0]->className);
-        self::assertSame(['ccn.sum' => 12, 'cognitive.sum' => 8], $result[0]->metricValues);
+        self::assertSame(['complexity.ccn.sum' => 12, 'complexity.cognitive.sum' => 8], $result[0]->metricValues);
     }
 
     /**

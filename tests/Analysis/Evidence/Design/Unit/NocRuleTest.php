@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
@@ -46,19 +45,11 @@ final class NocRuleTest extends TestCase
     }
 
     #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new NocRule(new NocOptions());
-
-        self::assertSame(RuleCategory::Design, $rule->getCategory());
-    }
-
-    #[Test]
     public function itRequiresNoc(): void
     {
         $rule = new NocRule(new NocOptions());
 
-        self::assertSame(['noc'], $rule->requires());
+        self::assertSame(['design.noc'], $rule->requires());
     }
 
     #[Test]
@@ -117,7 +108,7 @@ final class NocRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/LeafClass.php'), 10);
 
         // NOC of 0 means no children (should be skipped)
-        $metricBag = (new MetricBag())->with('noc', 0);
+        $metricBag = (new MetricBag())->with('design.noc', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -126,9 +117,9 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -140,7 +131,7 @@ final class NocRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/BaseService.php'), 10);
 
         // NOC of 12 is above warning threshold (10) but below error (15)
-        $metricBag = (new MetricBag())->with('noc', 12);
+        $metricBag = (new MetricBag())->with('design.noc', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -149,15 +140,15 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('NOC (Number of Children) is 12', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 10', $violations[0]->message);
-        self::assertStringContainsString('Consider using interfaces instead of inheritance', $violations[0]->message);
-        self::assertSame(12, $violations[0]->metricValue);
-        self::assertSame('design.noc', $violations[0]->ruleName);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('NOC (Number of Children) is 12', $findings[0]->message);
+        self::assertStringContainsString('exceeds threshold of 10', $findings[0]->message);
+        self::assertStringContainsString('Consider using interfaces instead of inheritance', $findings[0]->message);
+        self::assertSame(12, $findings[0]->metricValue);
+        self::assertSame('design.noc', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -169,7 +160,7 @@ final class NocRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/VeryPopularBase.php'), 10);
 
         // NOC of 20 is above error threshold (15)
-        $metricBag = (new MetricBag())->with('noc', 20);
+        $metricBag = (new MetricBag())->with('design.noc', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -178,15 +169,15 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(20, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(20, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function itProducesNoViolationForFewChildren(): void
+    public function itProducesNoFindingForFewChildren(): void
     {
         $rule = new NocRule(new NocOptions());
 
@@ -194,7 +185,7 @@ final class NocRuleTest extends TestCase
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/ReasonableBase.php'), 10);
 
         // NOC of 3 is normal (below warning threshold 7)
-        $metricBag = (new MetricBag())->with('noc', 3);
+        $metricBag = (new MetricBag())->with('design.noc', 3);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -203,9 +194,9 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -216,7 +207,7 @@ final class NocRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
-        // No 'noc' metric
+        // No 'design.noc' metric
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -226,9 +217,9 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -239,7 +230,7 @@ final class NocRuleTest extends TestCase
         self::assertNotNull($subject);
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('noc', 6));
+        $repository->method('get')->willReturn((new MetricBag())->with('design.noc', 6));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -247,13 +238,13 @@ final class NocRuleTest extends TestCase
             ],
         );
 
-        $violations = (new NocRule(new NocOptions(warning: 7, error: 15)))->analyze($context);
+        $findings = (new NocRule(new NocOptions(warning: 7, error: 15)))->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(6, $violations[0]->threshold);
-        self::assertSame('NOC (Number of Children) is 6, exceeds threshold of 6. Consider using interfaces instead of inheritance', $violations[0]->message);
-        self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(6, $findings[0]->threshold);
+        self::assertSame('NOC (Number of Children) is 6, exceeds threshold of 6. Consider using interfaces instead of inheritance', $findings[0]->message);
+        self::assertSame($subject->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
     // Options tests
@@ -308,7 +299,7 @@ final class NocRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
-        $metricBag = (new MetricBag())->with('noc', $noc);
+        $metricBag = (new MetricBag())->with('design.noc', $noc);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')
@@ -317,13 +308,13 @@ final class NocRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -359,13 +350,13 @@ final class NocRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('noc', 12));
+        $repository->method('get')->willReturn((new MetricBag())->with('design.noc', 12));
 
-        $violations = (new NocRule(new NocOptions()))
+        $findings = (new NocRule(new NocOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

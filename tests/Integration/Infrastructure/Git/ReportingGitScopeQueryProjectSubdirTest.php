@@ -7,9 +7,9 @@ namespace Qualimetrix\Tests\Integration\Infrastructure\Git;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -35,7 +35,7 @@ use Symfony\Component\Process\Process;
  * `{projectRoot}/src/Service.php`, each declaring a different namespace.
  * Swapping the absolute-path base inside `extractNamespace()` would silently
  * pick the wrong file — and therefore the wrong namespace — and the parent-
- * namespace violation assertion below would flip.
+ * namespace finding assertion below would flip.
  */
 #[CoversClass(ReportingGitScopeQuery::class)]
 final class ReportingGitScopeQueryProjectSubdirTest extends TestCase
@@ -99,34 +99,34 @@ final class ReportingGitScopeQueryProjectSubdirTest extends TestCase
 
         // The namespace we *expect* to be in the index — extracted from the
         // project file, not the top-level file.
-        $rightViolation = new Violation(
+        $rightFinding = new Finding(
             location: new Location(RelativePath::fromString('src/Other.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Right'),
             subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Right')),
             ruleName: 'size',
-            violationCode: 'size',
+            code: 'size',
             message: 'Namespace too large',
             severity: Severity::Warning,
         );
 
         // The namespace that would be picked up if extractNamespace had read
         // the top-level file instead. Must NOT be in the index.
-        $wrongViolation = new Violation(
+        $wrongFinding = new Finding(
             location: new Location(RelativePath::fromString('src/Other.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Wrong'),
             subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Wrong')),
             ruleName: 'size',
-            violationCode: 'size',
+            code: 'size',
             message: 'Namespace too large',
             severity: Severity::Warning,
         );
 
         self::assertTrue(
-            \in_array($rightViolation->symbolPath->namespace, $result->namespaces, true),
+            \in_array($rightFinding->symbolPath->namespace, $result->namespaces, true),
             'extractNamespace must read the project-root file (namespace App\\Right) — failure here means it read the git-toplevel file instead',
         );
         self::assertFalse(
-            \in_array($wrongViolation->symbolPath->namespace, $result->namespaces, true),
+            \in_array($wrongFinding->symbolPath->namespace, $result->namespaces, true),
             'top-level-file namespace (App\\Wrong) must not appear in the index when project root is a strict git subdir',
         );
     }
@@ -157,21 +157,21 @@ final class ReportingGitScopeQueryProjectSubdirTest extends TestCase
         $result = (new ReportingGitScopeQuery())->resolve(new GitScopeRequest('staged', $explicitRoot, true));
 
         // The request must resolve the staged projectB file and its namespace.
-        $explicit = new Violation(
+        $explicit = new Finding(
             location: new Location(RelativePath::fromString('src/Other.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\ExplicitRoot'),
             subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\ExplicitRoot')),
             ruleName: 'size',
-            violationCode: 'size',
+            code: 'size',
             message: 'Namespace too large',
             severity: Severity::Warning,
         );
-        $gitClientRoots = new Violation(
+        $gitClientRoots = new Finding(
             location: new Location(RelativePath::fromString('src/Other.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\GitClientRoot'),
             subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\GitClientRoot')),
             ruleName: 'size',
-            violationCode: 'size',
+            code: 'size',
             message: 'Namespace too large',
             severity: Severity::Warning,
         );

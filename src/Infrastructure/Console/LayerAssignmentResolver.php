@@ -14,8 +14,8 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use SplFileInfo;
 
 /** Resolves a debug layer assignment from the same collected project state as analysis. */
@@ -112,7 +112,7 @@ final readonly class LayerAssignmentResolver
     private function classPaths(MetricRepositoryInterface $repository): array
     {
         $classPaths = [];
-        foreach ($repository->all(SymbolType::Class_) as $classSymbol) {
+        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
             $classPaths[] = $classSymbol->symbolPath;
         }
 

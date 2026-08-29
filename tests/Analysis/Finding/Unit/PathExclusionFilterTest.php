@@ -11,11 +11,12 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -32,9 +33,9 @@ final class PathExclusionFilterTest extends TestCase
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
 
-        $violation = $this->createViolation('src/Entity/User.php');
+        $finding = $this->createFinding('src/Entity/User.php');
 
-        self::assertFalse($filter->shouldInclude($violation), 'Violation matching exclusion prefix should be suppressed');
+        self::assertFalse($filter->shouldInclude($finding), 'Violation matching exclusion prefix should be suppressed');
     }
 
     #[Test]
@@ -42,9 +43,9 @@ final class PathExclusionFilterTest extends TestCase
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
 
-        $violation = $this->createViolation('src/Entity/User.php', LayerViolationRule::NAME);
+        $finding = $this->createFinding('src/Entity/User.php', LayerViolationRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($violation), 'architecture.* rules must not be silenced by exclude_paths');
+        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by exclude_paths');
     }
 
     #[Test]
@@ -52,9 +53,9 @@ final class PathExclusionFilterTest extends TestCase
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
 
-        $violation = $this->createViolation('src/Entity/User.php', CircularDependencyRule::NAME);
+        $finding = $this->createFinding('src/Entity/User.php', CircularDependencyRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($violation), 'architecture.* rules must not be silenced by exclude_paths');
+        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by exclude_paths');
     }
 
     #[Test]
@@ -68,24 +69,24 @@ final class PathExclusionFilterTest extends TestCase
 
         foreach (
             [
-                LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-                LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-                LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
-                LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+                LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+                LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+                LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
             ] as $ruleName
         ) {
-            $violation = new Violation(
+            $finding = new Finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace(''),
                 subject: MetricSubject::aggregate(SymbolPath::forProject()),
                 ruleName: $ruleName,
-                violationCode: $ruleName,
+                code: $ruleName,
                 message: 'Test',
                 severity: Severity::Warning,
             );
 
             self::assertTrue(
-                $filter->shouldInclude($violation),
+                $filter->shouldInclude($finding),
                 \sprintf('%s must remain a no-op for file-less architecture diagnostics', $ruleName),
             );
         }
@@ -96,9 +97,9 @@ final class PathExclusionFilterTest extends TestCase
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
 
-        $violation = $this->createViolation('src/Service/UserService.php');
+        $finding = $this->createFinding('src/Service/UserService.php');
 
-        self::assertTrue($filter->shouldInclude($violation), 'Violation not matching exclusion prefix should pass through');
+        self::assertTrue($filter->shouldInclude($finding), 'Violation not matching exclusion prefix should pass through');
     }
 
     #[Test]
@@ -106,17 +107,17 @@ final class PathExclusionFilterTest extends TestCase
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src']), self::declaredFileScope());
 
-        $violation = new Violation(
+        $finding = new Finding(
             location: Location::none(),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service')),
             ruleName: 'test.rule',
-            violationCode: 'test.rule',
+            code: 'test.rule',
             message: 'Test',
             severity: Severity::Warning,
         );
 
-        self::assertTrue($filter->shouldInclude($violation), 'Violation with empty file path should never be filtered');
+        self::assertTrue($filter->shouldInclude($finding), 'Violation with empty file path should never be filtered');
     }
 
     #[Test]
@@ -124,9 +125,9 @@ final class PathExclusionFilterTest extends TestCase
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src/Metrics/*Visitor.php']), self::declaredFileScope());
 
-        $violation = $this->createViolation('src/Metrics/CboVisitor.php');
+        $finding = $this->createFinding('src/Metrics/CboVisitor.php');
 
-        self::assertFalse($filter->shouldInclude($violation), 'Violation matching glob pattern should be suppressed');
+        self::assertFalse($filter->shouldInclude($finding), 'Violation matching glob pattern should be suppressed');
     }
 
     #[Test]
@@ -134,19 +135,19 @@ final class PathExclusionFilterTest extends TestCase
     {
         $filter = new PathExclusionFilter(new PathMatcher([]), self::declaredFileScope());
 
-        $violation = $this->createViolation('src/Entity/User.php');
+        $finding = $this->createFinding('src/Entity/User.php');
 
-        self::assertTrue($filter->shouldInclude($violation), 'Empty PathMatcher should not filter any violations');
+        self::assertTrue($filter->shouldInclude($finding), 'Empty PathMatcher should not filter any violations');
     }
 
-    private function createViolation(string $file, string $ruleName = 'test.rule'): Violation
+    private function createFinding(string $file, string $ruleName = 'test.rule'): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass('App\\Entity', 'User'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Entity', 'User'), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))),
             ruleName: $ruleName,
-            violationCode: $ruleName,
+            code: $ruleName,
             message: 'Test',
             severity: Severity::Warning,
             metricValue: 5,
@@ -168,10 +169,10 @@ final class PathExclusionFilterTest extends TestCase
         $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
 
         foreach (self::declaredProjectScopedChannelKeys() as $key) {
-            $channel = ViolationChannel::fromKey($key);
+            $channel = new FindingChannel($key);
 
             self::assertTrue(
-                $filter->shouldInclude($this->createChannelViolation('src/Entity/User.php', $channel)),
+                $filter->shouldInclude($this->createChannelFinding('src/Entity/User.php', $channel)),
                 \sprintf('%s is declared project-scoped and must survive exclude_paths', $key),
             );
         }
@@ -181,22 +182,22 @@ final class PathExclusionFilterTest extends TestCase
     public function itFiltersAChannelNoCapabilityDeclaredProjectScoped(): void
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
-        $undeclared = new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation.invented');
+        $undeclared = new FindingChannel('architecture.layer-violation.invented');
 
         self::assertFalse(
-            $filter->shouldInclude($this->createChannelViolation('src/Entity/User.php', $undeclared)),
+            $filter->shouldInclude($this->createChannelFinding('src/Entity/User.php', $undeclared)),
             'Immunity follows the declaration, not the spelling of the rule name',
         );
     }
 
-    private function createChannelViolation(string $file, ViolationChannel $channel): Violation
+    private function createChannelFinding(string $file, FindingChannel $channel): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass('App\\Entity', 'User'),
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Entity', 'User'), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))),
-            ruleName: $channel->ruleName,
-            violationCode: $channel->violationCode,
+            ruleName: $channel->code,
+            code: $channel->code,
             message: 'Test',
             severity: Severity::Warning,
         );

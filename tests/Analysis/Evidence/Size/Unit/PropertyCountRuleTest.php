@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Size\PropertyCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\PropertyCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
@@ -31,14 +30,7 @@ final class PropertyCountRuleTest extends TestCase
     }
 
     #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new PropertyCountRule(new PropertyCountOptions());
-        self::assertSame(RuleCategory::Size, $rule->getCategory());
-    }
-
-    #[Test]
-    public function itProducesNoViolationBelowThreshold(): void
+    public function itProducesNoFindingBelowThreshold(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -46,9 +38,9 @@ final class PropertyCountRuleTest extends TestCase
         ));
 
         $context = $this->createContext(propertyCount: 8);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -60,11 +52,11 @@ final class PropertyCountRuleTest extends TestCase
         ));
 
         $context = $this->createContext(propertyCount: 12);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Property count is 12, exceeds threshold of 10. Consider splitting the class or using composition', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('Property count is 12, exceeds threshold of 10. Consider splitting the class or using composition', $findings[0]->message);
     }
 
     #[Test]
@@ -76,11 +68,11 @@ final class PropertyCountRuleTest extends TestCase
         ));
 
         $context = $this->createContext(propertyCount: 18);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertStringContainsString('Property count is 18, exceeds threshold of 15. Consider splitting the class or using composition', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertStringContainsString('Property count is 18, exceeds threshold of 15. Consider splitting the class or using composition', $findings[0]->message);
     }
 
     #[Test]
@@ -97,19 +89,19 @@ final class PropertyCountRuleTest extends TestCase
 
         // Above warning threshold
         $context = $this->createContext(propertyCount: 6);
-        $violations = $rule->analyze($context);
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
 
         // Above error threshold
         $context = $this->createContext(propertyCount: 10);
-        $violations = $rule->analyze($context);
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
-    public function itSetsCorrectSymbolPathOnViolation(): void
+    public function itSetsCorrectSymbolPathOnFinding(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -122,16 +114,16 @@ final class PropertyCountRuleTest extends TestCase
             class: 'User',
         );
 
-        $violations = $rule->analyze($context);
-        self::assertCount(1, $violations);
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
 
-        $symbolPath = $violations[0]->symbolPath;
+        $symbolPath = $findings[0]->symbolPath;
         self::assertSame('App\\Domain', $symbolPath->namespace);
         self::assertSame('User', $symbolPath->type);
     }
 
     #[Test]
-    public function itProducesNoViolationWhenPropertyCountIsNull(): void
+    public function itProducesNoFindingWhenPropertyCountIsNull(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -156,8 +148,8 @@ final class PropertyCountRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        $violations = $rule->analyze($context);
-        self::assertCount(0, $violations);
+        $findings = $rule->analyze($context);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -172,7 +164,7 @@ final class PropertyCountRuleTest extends TestCase
         self::assertNotNull($subject);
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('propertyCount', 12));
+        $repository->method('get')->willReturn((new MetricBag())->with('size.property-count', 12));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -180,13 +172,13 @@ final class PropertyCountRuleTest extends TestCase
             ],
         );
 
-        $violations = (new PropertyCountRule(new PropertyCountOptions(warning: 15, error: 20)))->analyze($context);
+        $findings = (new PropertyCountRule(new PropertyCountOptions(warning: 15, error: 20)))->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(12, $violations[0]->threshold);
-        self::assertSame('Property count is 12, exceeds threshold of 12. Consider splitting the class or using composition', $violations[0]->message);
-        self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(12, $findings[0]->threshold);
+        self::assertSame('Property count is 12, exceeds threshold of 12. Consider splitting the class or using composition', $findings[0]->message);
+        self::assertSame($subject->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
     #[Test]
@@ -200,27 +192,27 @@ final class PropertyCountRuleTest extends TestCase
 
         // At default warning (15) — triggers warning with >= comparison
         $context = $this->createContext(propertyCount: 15);
-        $violations = $rule->analyze($context);
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
 
         // Above default warning (15)
         $context = $this->createContext(propertyCount: 16);
-        $violations = $rule->analyze($context);
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
 
         // At default error (20) — triggers error with >= comparison
         $context = $this->createContext(propertyCount: 20);
-        $violations = $rule->analyze($context);
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
 
         // Above default error (20)
         $context = $this->createContext(propertyCount: 21);
-        $violations = $rule->analyze($context);
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -233,9 +225,9 @@ final class PropertyCountRuleTest extends TestCase
         ));
 
         $context = $this->createContext(propertyCount: 12, isReadonly: 1);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations, 'Readonly class should be excluded when excludeReadonly is true');
+        self::assertCount(0, $findings, 'Readonly class should be excluded when excludeReadonly is true');
     }
 
     #[Test]
@@ -248,10 +240,10 @@ final class PropertyCountRuleTest extends TestCase
         ));
 
         $context = $this->createContext(propertyCount: 12, isReadonly: 1);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations, 'Readonly class should NOT be excluded when excludeReadonly is false');
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings, 'Readonly class should NOT be excluded when excludeReadonly is false');
+        self::assertSame(Severity::Warning, $findings[0]->severity);
     }
 
     #[Test]
@@ -264,9 +256,9 @@ final class PropertyCountRuleTest extends TestCase
         ));
 
         $context = $this->createContext(propertyCount: 12, isPromotedOnly: 1);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations, 'Promoted-only class should be excluded when excludePromotedOnly is true');
+        self::assertCount(0, $findings, 'Promoted-only class should be excluded when excludePromotedOnly is true');
     }
 
     #[Test]
@@ -279,14 +271,14 @@ final class PropertyCountRuleTest extends TestCase
         ));
 
         $context = $this->createContext(propertyCount: 12, isPromotedOnly: 1);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations, 'Promoted-only class should NOT be excluded when excludePromotedOnly is false');
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $findings, 'Promoted-only class should NOT be excluded when excludePromotedOnly is false');
+        self::assertSame(Severity::Warning, $findings[0]->severity);
     }
 
     #[Test]
-    public function itProducesViolationsWhenBothFiltersDisabled(): void
+    public function itProducesFindingsWhenBothFiltersDisabled(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -297,9 +289,9 @@ final class PropertyCountRuleTest extends TestCase
 
         // Readonly + promoted-only class
         $context = $this->createContext(propertyCount: 12, isReadonly: 1, isPromotedOnly: 1);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations, 'Both filters disabled should produce violations');
+        self::assertCount(1, $findings, 'Both filters disabled should produce violations');
     }
 
     private function createContext(
@@ -310,14 +302,14 @@ final class PropertyCountRuleTest extends TestCase
         ?int $isPromotedOnly = null,
     ): AnalysisContext {
         $bag = (new MetricBag())
-            ->with('propertyCount', $propertyCount);
+            ->with('size.property-count', $propertyCount);
 
         if ($isReadonly !== null) {
-            $bag = $bag->with('isReadonly', $isReadonly);
+            $bag = $bag->with('design.is-readonly', $isReadonly);
         }
 
         if ($isPromotedOnly !== null) {
-            $bag = $bag->with('isPromotedPropertiesOnly', $isPromotedOnly);
+            $bag = $bag->with('design.is-promoted-properties-only', $isPromotedOnly);
         }
 
         $symbolPath = SymbolPath::forClass($namespace, $class);
@@ -346,16 +338,16 @@ final class PropertyCountRuleTest extends TestCase
         ]);
         $repository->method('get')->willReturn(
             (new MetricBag())
-                ->with('propertyCount', 12)
-                ->with('isReadonly', 0)
-                ->with('isPromotedPropertiesOnly', 0),
+                ->with('size.property-count', 12)
+                ->with('design.is-readonly', 0)
+                ->with('design.is-promoted-properties-only', 0),
         );
 
-        $violations = (new PropertyCountRule(new PropertyCountOptions(warning: 10, error: 15)))
+        $findings = (new PropertyCountRule(new PropertyCountOptions(warning: 10, error: 15)))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:class:App\\Service\\Twin@src/A.php',

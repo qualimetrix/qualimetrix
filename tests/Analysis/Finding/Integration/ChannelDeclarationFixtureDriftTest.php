@@ -7,22 +7,21 @@ namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use RuntimeException;
 
 /**
  * Drift guard between the production container's STATIC channel
- * declarations and the tracked fixture at `tests/Fixtures/Channels/declared.txt`.
+ * declarations and the tracked fixture at `tests/Analysis/Finding/Fixtures/Channels/declared.txt`.
  *
  * The fixture is the oracle, not this test's own expectations and not the
  * integration suite's coverage: a channel a rule declares but the fixture
@@ -53,7 +52,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                 $key,
                 $expected,
                 \sprintf(
-                    'Channel "%s" is statically declared in code but missing from tests/Fixtures/Channels/declared.txt.'
+                    'Channel "%s" is statically declared in code but missing from tests/Analysis/Finding/Fixtures/Channels/declared.txt.'
                     . ' Add a line for it — this fixture, not the test suite, is what the drift guard trusts.',
                     $key,
                 ),
@@ -76,7 +75,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                 $key,
                 $actual,
                 \sprintf(
-                    'tests/Fixtures/Channels/declared.txt lists "%s", but no rule declares it any more — remove the'
+                    'tests/Analysis/Finding/Fixtures/Channels/declared.txt lists "%s", but no rule declares it any more — remove the'
                     . ' stale line (or move it to excluded.txt if the channel now deliberately declares no baseline'
                     . ' support).',
                     $key,
@@ -87,74 +86,54 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
     /**
      * Structural invariant, independent of {@see ChannelEmissionStaticGuardTest}:
-     * the `violationCode` half of a declared key must either be the
-     * `ruleName` half verbatim, or that same string with a `.suffix`
-     * appended. This is what {@see ViolationChannel::fromKey()}'s own
-     * "full key, not a bare code" design implies but does not itself
-     * enforce, and it is exactly the shape a hand-typed declaration line
-     * can violate silently — a `ruleName` half misspelled relative to its
-     * own `violationCode` half would otherwise pass the drift guard above
-     * (which only compares declarations against the fixture, not against
-     * this shape) as long as the fixture line matches the wrong
-     * declaration.
+     * a declared channel name is either an emitting name verbatim, or such a
+     * name with one `.suffix` appended.
+     *
+     * An "emitting name" is a real rule's `NAME` constant, one of
+     * {@see LayerViolationRule}'s five `*_DIAGNOSTIC_NAME` constants, or one of
+     * the four inline-directive diagnostic names — the layer policy and the
+     * directive rule both emit under names other than their own `NAME`. A
+     * declared name that is neither addresses a channel no producer can ever
+     * emit, and the drift guard above cannot see it: that one only compares
+     * declarations against the fixture, so a typo consistent between the two
+     * passes it.
+     *
+     * This used to be two guards, because a key carried two halves and each
+     * needed its own check: the code had to be prefixed by the rule half, and
+     * the rule half had to name something real. A channel is one name now, so
+     * the two collapse into one — and the failure mode they were split over,
+     * "the two halves of one key disagree", stops existing rather than stops
+     * being checked.
      */
     #[Test]
-    public function everyDeclaredViolationCodeEqualsOrIsPrefixedByItsRuleName(): void
-    {
-        $violations = [];
-
-        foreach (self::realStaticDeclarations() as $key => $declaration) {
-            $channel = ViolationChannel::fromKey($key);
-
-            $matches = $channel->violationCode === $channel->ruleName
-                || str_starts_with($channel->violationCode, $channel->ruleName . '.');
-
-            if (!$matches) {
-                $violations[] = $key;
-            }
-        }
-
-        self::assertSame(
-            [],
-            $violations,
-            \sprintf(
-                'Declared key(s) whose violationCode is neither equal to nor prefixed by "<ruleName>.": %s',
-                implode(', ', $violations),
-            ),
-        );
-    }
-
-    /**
-     * Structural invariant: the `ruleName` half of every declared key must
-     * name something that actually emits under that name — either a real
-     * rule's `NAME` constant, or one of {@see LayerViolationRule}'s five
-     * `*_DIAGNOSTIC_NAME` constants (it emits those under names other than
-     * its own `NAME`). A `ruleName` half that matches neither would mean
-     * the declaration addresses a channel no rule class can ever produce —
-     * a typo this guard, unlike the drift guard above, can catch even when
-     * the typo is consistent between the fixture and the declaration.
-     */
-    #[Test]
-    public function everyDeclaredRuleNameHalfNamesARealRuleOrALayerViolationDiagnostic(): void
+    public function everyDeclaredChannelNameIsAnEmittingNameOrOneSuffixBelowIt(): void
     {
         $knownRuleNames = self::allRuleNames();
-        $violations = [];
+        $findings = [];
 
-        foreach (self::realStaticDeclarations() as $key => $declaration) {
-            $channel = ViolationChannel::fromKey($key);
+        foreach (array_keys(self::realStaticDeclarations()) as $key) {
+            $lastDot = strrpos($key, '.');
+            $parent = $lastDot === false ? null : substr($key, 0, $lastDot);
 
-            if (!\in_array($channel->ruleName, $knownRuleNames, true)) {
-                $violations[] = $key;
+            if (\in_array($key, $knownRuleNames, true)) {
+                continue;
             }
+
+            if ($parent !== null && \in_array($parent, $knownRuleNames, true)) {
+                continue;
+            }
+
+            $findings[] = $key;
         }
 
         self::assertSame(
             [],
-            $violations,
+            $findings,
             \sprintf(
-                'Declared key(s) whose ruleName half names neither a real rule\'s NAME nor a'
-                . ' LayerViolationRule diagnostic constant: %s',
-                implode(', ', $violations),
+                'Declared channel name(s) that name neither an emitting name (a rule\'s NAME, a'
+                . ' LayerViolationRule diagnostic constant, an inline-directive diagnostic) nor one'
+                . ' ".suffix" below such a name: %s',
+                implode(', ', $findings),
             ),
         );
     }
@@ -180,7 +159,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $configurationErrors = [];
 
         foreach (self::realStaticDeclarations() as $key => $declaration) {
-            if ($declaration->acceptability === ChannelAcceptability::ConfigurationError) {
+            if ($declaration->isConfigurationError()) {
                 $configurationErrors[] = $key;
             }
         }
@@ -189,27 +168,27 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
         self::assertSame(
             [
-                'annotation.invalid-threshold#annotation.invalid-threshold',
-                'annotation.unresolved-directive#annotation.unresolved-directive',
-                'annotation.unsupported-threshold#annotation.unsupported-threshold',
-                'architecture.coverage#architecture.coverage',
-                'architecture.empty-template#architecture.empty-template',
-                'architecture.pending-layer-matched#architecture.pending-layer-matched',
-                'architecture.potential-shadow#architecture.potential-shadow',
-                'architecture.unreachable-layer#architecture.unreachable-layer',
+                'annotation.invalid-threshold',
+                'annotation.unresolved-directive',
+                'annotation.unsupported-threshold',
+                'architecture.coverage',
+                'architecture.empty-template',
+                'architecture.pending-layer-matched',
+                'architecture.potential-shadow',
+                'architecture.unreachable-layer',
             ],
             $configurationErrors,
         );
 
         self::assertNotContains(
-            'architecture.layer-violation#architecture.layer-violation',
+            'architecture.layer-violation',
             $configurationErrors,
             'architecture.layer-violation reports a forbidden dependency edge — real code debt a project may'
             . ' ratchet down. It is not a configuration error and must stay baselineable.',
         );
 
         self::assertNotContains(
-            'annotation.unused-directive#annotation.unused-directive',
+            'annotation.unused-directive',
             $configurationErrors,
             'annotation.unused-directive reports a suppression that stopped firing — normal debt cleanup, not a'
             . ' mistake. Classifying it as a configuration error would fail every project that fixed a violation'
@@ -291,12 +270,11 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
             $names[] = RuleNameReader::read($ruleClass);
         }
 
-        $names[] = LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME;
-        $names[] = LayerViolationRule::UNASSIGNED_CLASS_DIAGNOSTIC_NAME;
-        $names[] = LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
-        $names[] = LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
-        $names[] = LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
-        $names[] = LayerViolationRule::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
+        $names[] = LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME;
+        $names[] = LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
+        $names[] = LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
+        $names[] = LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
+        $names[] = LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
 
         $names[] = InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME;
         $names[] = InlineDirectivePolicyInterface::UNSUPPORTED_THRESHOLD_NAME;
@@ -340,60 +318,102 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
             $parts = preg_split('/\s+/', $line);
             self::assertNotFalse($parts, \sprintf('Malformed fixture line: "%s".', $line));
-            self::assertContains(\count($parts), [2, 3], \sprintf('Malformed fixture line: "%s".', $line));
+            self::assertContains(\count($parts), [3, 4], \sprintf('Malformed fixture line: "%s".', $line));
 
             $channelKey = $parts[0];
-            $shapeSpec = $parts[1];
+            $directionSpec = $parts[1];
 
-            $declarations[$channelKey] = self::parseShapeSpec(
-                $shapeSpec,
+            $declarations[$channelKey] = self::parseDirectionSpec(
+                $directionSpec,
                 $channelKey,
-                self::parseAcceptabilitySpec($parts[2] ?? null, $channelKey),
+                self::parseAcceptabilitySpec($parts[3] ?? null, $channelKey),
+                self::parseLevelsSpec($parts[2], $channelKey),
             );
         }
 
         return $declarations;
     }
 
-    private static function parseShapeSpec(
-        string $shapeSpec,
+    /**
+     * ADR 0031: shape moved off the channel onto the producer, so this file
+     * — and this parser — knows only direction now. `-` means the channel
+     * carries none (its producer's declared {@see ChannelShape} is
+     * `occurrence`); `higher`/`lower` builds a `magnitude` declaration the
+     * same way the old `magnitude:<direction>` spec did.
+     *
+     * @param non-empty-list<SymbolLevel> $levels
+     */
+    private static function parseDirectionSpec(
+        string $directionSpec,
         string $channelKey,
-        ChannelAcceptability $acceptability,
+        bool $configurationError,
+        array $levels,
     ): ChannelDeclaration {
-        if ($shapeSpec === 'occurrence') {
-            return new ChannelDeclaration(ChannelShape::Occurrence, null, $acceptability);
-        }
+        $declaration = self::parseDirectionOnly($directionSpec, $channelKey, $levels);
 
-        if (str_starts_with($shapeSpec, 'magnitude:')) {
-            $direction = substr($shapeSpec, \strlen('magnitude:'));
-
-            return match ($direction) {
-                'higher' => new ChannelDeclaration(ChannelShape::Magnitude, WorseDirection::Higher, $acceptability),
-                'lower' => new ChannelDeclaration(ChannelShape::Magnitude, WorseDirection::Lower, $acceptability),
-                default => throw new RuntimeException(\sprintf(
-                    'Unknown direction "%s" for channel "%s" in the fixture.',
-                    $direction,
-                    $channelKey,
-                )),
-            };
-        }
-
-        throw new RuntimeException(\sprintf('Unknown shape spec "%s" for channel "%s" in the fixture.', $shapeSpec, $channelKey));
+        return $configurationError ? $declaration->asConfigurationError() : $declaration;
     }
 
     /**
-     * The optional third token. Absent means the ordinary case — a channel
+     * @param non-empty-list<SymbolLevel> $levels
+     */
+    private static function parseDirectionOnly(string $directionSpec, string $channelKey, array $levels): ChannelDeclaration
+    {
+        return match ($directionSpec) {
+            '-' => ChannelDeclaration::occurrence(...$levels),
+            'higher' => ChannelDeclaration::magnitude(WorseDirection::Higher, ...$levels),
+            'lower' => ChannelDeclaration::magnitude(WorseDirection::Lower, ...$levels),
+            default => throw new RuntimeException(\sprintf(
+                'Unknown direction "%s" for channel "%s" in the fixture.',
+                $directionSpec,
+                $channelKey,
+            )),
+        };
+    }
+
+    /**
+     * The third token: the levels the channel reports at.
+     *
+     * Required, and required to be non-empty, because a declaration cannot
+     * express "no level" — see {@see ChannelDeclaration}. A fixture line that
+     * omitted it would be a line the code could never produce.
+     *
+     * @return non-empty-list<SymbolLevel>
+     */
+    private static function parseLevelsSpec(string $spec, string $channelKey): array
+    {
+        $levels = [];
+
+        foreach (explode(',', $spec) as $value) {
+            $level = SymbolLevel::tryFrom($value);
+
+            if ($level === null) {
+                throw new RuntimeException(\sprintf(
+                    'Unknown level "%s" for channel "%s" in the fixture.',
+                    $value,
+                    $channelKey,
+                ));
+            }
+
+            $levels[] = $level;
+        }
+
+        return $levels;
+    }
+
+    /**
+     * The optional fourth token. Absent means the ordinary case — a channel
      * whose findings are acceptable as debt — so that the fixture reads as a
      * list of exceptions rather than repeating the default 47 times.
      */
-    private static function parseAcceptabilitySpec(?string $spec, string $channelKey): ChannelAcceptability
+    private static function parseAcceptabilitySpec(?string $spec, string $channelKey): bool
     {
         if ($spec === null) {
-            return ChannelAcceptability::AcceptableAsDebt;
+            return false;
         }
 
         if ($spec === 'config-error') {
-            return ChannelAcceptability::ConfigurationError;
+            return true;
         }
 
         throw new RuntimeException(\sprintf(

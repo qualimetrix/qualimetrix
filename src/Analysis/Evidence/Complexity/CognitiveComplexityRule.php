@@ -8,26 +8,27 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
- * Hierarchical rule that checks cognitive complexity at method and class levels.
+ * Hierarchical rule that checks cognitive complexity at callable and class levels.
  *
- * - Method level: checks individual method cognitive complexity
+ * - Callable level: checks the cognitive complexity of one method or global function
  * - Class level: checks maximum cognitive complexity among class methods
+ *
+ * @qmx-threshold coupling.cbo 21 -- Raw CBO 20, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 21 gets one-edge headroom.
  */
 #[CliAlias('cognitive-warning', 'callable.warning')]
 #[CliAlias('cognitive-error', 'callable.error')]
@@ -39,6 +40,8 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     public const string DOCS_PAGE = 'rules/complexity.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;
@@ -47,11 +50,6 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     public function getDescription(): string
     {
         return 'Checks cognitive complexity at method and class levels';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Complexity;
     }
 
     /**
@@ -63,19 +61,19 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     }
 
     /**
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Callable, RuleLevel::Class_];
+        return [SymbolLevel::Callable, SymbolLevel::Class_];
     }
 
     /**
      * Analyzes at a specific level.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
+    public function analyzeLevel(SymbolLevel $level, AnalysisContext $context): array
     {
         \assert($this->options instanceof CognitiveComplexityOptions);
 
@@ -85,28 +83,28 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         }
 
         return match ($level) {
-            RuleLevel::Callable => $this->analyzeMethodLevel($context),
-            RuleLevel::Class_ => $this->analyzeClassLevel($context),
+            SymbolLevel::Callable => $this->analyzeMethodLevel($context),
+            SymbolLevel::Class_ => $this->analyzeClassLevel($context),
             default => [],
         };
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
         \assert($this->options instanceof CognitiveComplexityOptions);
 
-        $violations = [];
+        $findings = [];
 
         foreach ($this->getSupportedLevels() as $level) {
             if ($this->options->isLevelEnabled($level)) {
-                $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
+                $findings = [...$findings, ...$this->analyzeLevel($level, $context)];
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -118,36 +116,35 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     }
 
     /**
-     * Both cognitive-complexity channels report the metric they check as
+     * Both levels of the channel report the metric they check as
      * `metricValue` (`$cognitiveValue` in {@see analyzeMethodLevel()},
      * `$maxCognitiveValue` in {@see analyzeClassLevel()}), judged worse the
      * higher it goes:
      * {@see MethodCognitiveComplexityOptions::getSeverity()}'s `$value >=
-     * $this->error` (line 48) / `$value >= $this->warning` (line 52) for the
-     * method channel, and
+     * $this->error` (line 48) / `$value >= $this->warning` (line 52) at the
+     * callable level, and
      * {@see ClassCognitiveComplexityOptions::getSeverity()}'s `$value >=
      * $this->maxError` (line 50) / `$value >= $this->maxWarning` (line 54)
-     * for the class channel.
+     * at the class level.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.callable'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeMethodLevel(AnalysisContext $context): array
     {
         \assert($this->options instanceof CognitiveComplexityOptions);
         $methodOptions = $this->options->callable;
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allCallables() as $methodInfo) {
             $subject = $methodInfo->subject ?? throw new LogicException('Cognitive complexity findings require an exact callable subject');
@@ -168,34 +165,33 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
                 $threshold = $severity === Severity::Error ? $effectiveMethodOptions->error : $effectiveMethodOptions->warning;
                 $breakdown = $this->formatBreakdown($metrics->entries('cognitive-complexity.increments'));
 
-                $violations[] = new Violation(
+                $findings[] = new Finding(
                     location: new Location($methodInfo->file, $methodInfo->line),
                     subject: $subject,
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.callable',
+                    code: self::NAME,
                     message: \sprintf('Cognitive complexity is %d, exceeds threshold of %d.%s Reduce nesting and break into smaller methods', $cognitiveValue, $threshold, $breakdown !== '' ? " {$breakdown}." : ''),
                     severity: $severity,
                     metricValue: $cognitiveValue,
-                    level: RuleLevel::Callable,
                     recommendation: \sprintf('Cognitive complexity: %d (threshold: %d)%s — deeply nested, hard to follow', $cognitiveValue, $threshold, $breakdown !== '' ? ". {$breakdown}" : ''),
                     threshold: $threshold,
                 );
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeClassLevel(AnalysisContext $context): array
     {
         \assert($this->options instanceof CognitiveComplexityOptions);
         $classOptions = $this->options->class;
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Cognitive complexity class findings require an exact declaration subject');
@@ -213,21 +209,21 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
 
             /** @var ClassCognitiveComplexityOptions $effectiveClassOptions */
             $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $subject);
-            $violation = $this->classViolation($classInfo, $subject, $maxCognitiveValue, $effectiveClassOptions);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->classFinding($classInfo, $subject, $maxCognitiveValue, $effectiveClassOptions);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function classViolation(
+    private function classFinding(
         SymbolInfo $classInfo,
         MetricSubject $subject,
         int $maximum,
         ClassCognitiveComplexityOptions $options,
-    ): ?Violation {
+    ): ?Finding {
         $severity = $options->getSeverity($maximum);
         if ($severity === null) {
             return null;
@@ -235,16 +231,15 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
 
         $threshold = $severity === Severity::Error ? $options->maxError : $options->maxWarning;
 
-        return new Violation(
+        return new Finding(
             location: new Location($classInfo->file, $classInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME . '.class',
+            code: self::NAME,
             message: \sprintf('Maximum method cognitive complexity is %d, exceeds threshold of %d. Refactor the most complex methods', $maximum, $threshold),
             severity: $severity,
             metricValue: $maximum,
-            level: RuleLevel::Class_,
             recommendation: \sprintf('Max cognitive complexity: %d (threshold: %d) — deeply nested, hard to follow', $maximum, $threshold),
             threshold: $threshold,
         );

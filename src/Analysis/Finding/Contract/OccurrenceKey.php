@@ -16,7 +16,7 @@ use InvalidArgumentException;
  * makes the same argument at 48 bits for a domain that addresses the entire
  * identity. Shortening is a breaking change to every consumer that persists
  * this value across runs — the baseline file, and, through
- * {@see \Qualimetrix\Analysis\Finding\Contract\Violation::getFingerprint()},
+ * {@see \Qualimetrix\Analysis\Finding\Contract\Finding::getFingerprint()},
  * GitLab and SARIF output — because a shorter value is a different value, not
  * a compressed version of the same one.
  */

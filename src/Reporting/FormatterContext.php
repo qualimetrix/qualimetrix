@@ -11,7 +11,7 @@ use Qualimetrix\Core\Path\RelativePath;
  *
  * Created by CheckCommand from CLI flags and OutputInterface state.
  *
- * @qmx-threshold coupling.cbo warning=30 error=30 -- Formatter context is the immutable Reporting input boundary that deliberately composes format, grouping, coverage, profile, projection, and path values; the inclusive threshold of 30 rejects one additional dependency.
+ * @qmx-threshold coupling.cbo warning=31 error=31 -- Formatter context is the immutable Reporting input boundary every formatter's `format(Report, FormatterContext)` signature depends on; the prior threshold of 30 reserved room for exactly one more dependent, and Ш6's `suppressed` formatter (`SuppressedFormatter`) is that one. The inclusive threshold of 31 again rejects one additional dependency beyond it.
  */
 final readonly class FormatterContext
 {
@@ -19,14 +19,14 @@ final readonly class FormatterContext
 
     /**
      * @param bool $useColor Whether to use ANSI colors (from OutputInterface::isDecorated())
-     * @param GroupBy $groupBy How to group violations in output
+     * @param GroupBy $groupBy How to group findings in output
      * @param array<string, string> $options Formatter-specific options from --format-opt
      * @param string $basePath Base directory for relativizing file paths in output (e.g., CWD)
-     * @param bool $scopedReporting Whether reporting is scoped (e.g., --report=git:main..HEAD). Metrics and health are always complete; only violations are filtered to scope.
+     * @param bool $scopedReporting Whether reporting is scoped (e.g., --report=git:main..HEAD). Metrics and health are always complete; only findings are filtered to scope.
      * @param string|null $namespace Namespace filter for drill-down, matched by NamespaceMatcher::matchesSingle(): boundary-aware prefix, or glob when the value contains * ? [
      * @param string|null $class Class filter for drill-down (exact FQCN match)
      * @param int $terminalWidth Terminal width for adaptive rendering (0 = use default 80)
-     * @param int|null $detailLimit Violation limit for --detail mode (null = off, 0 = all, N = limit)
+     * @param int|null $detailLimit Finding limit for --detail mode (null = off, 0 = all, N = limit)
      * @param bool $isGroupByExplicit Whether --group-by was explicitly set by the user
      * @param int $topIssuesLimit Number of top impact issues to show (0 = disabled)
      */
@@ -98,7 +98,7 @@ final readonly class FormatterContext
      * Renders a RelativePath as its wire-surface string; returns '' for null.
      *
      * Since Location::$file is already project-relative by construction (ADR 0015),
-     * formatters call this only to handle the null case (architectural violations
+     * formatters call this only to handle the null case (architectural findings
      * with no associated file) without scattering null-checks at every print site.
      * The basePath field is retained for SARIF's `%SRCROOT%` URI builder.
      */

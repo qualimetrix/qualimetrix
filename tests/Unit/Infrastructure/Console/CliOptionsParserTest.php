@@ -82,24 +82,24 @@ final class CliOptionsParserTest extends TestCase
     public function parseRuleOptions_normalizesFloatValues(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
-            'type-coverage-param-warning' => ['rule' => 'design.type-coverage', 'option' => 'paramWarning'],
+            'param-type-coverage-warning' => ['rule' => 'design.type-coverage.param', 'option' => 'warning'],
         ]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
-            new InputOption('type-coverage-param-warning', null, InputOption::VALUE_REQUIRED),
+            new InputOption('param-type-coverage-warning', null, InputOption::VALUE_REQUIRED),
         ]);
 
         $input = new ArrayInput([
-            '--type-coverage-param-warning' => '0.7',
+            '--param-type-coverage-warning' => '0.7',
         ], $definition);
 
         $result = $cliParser->parseRuleOptions($input);
 
-        self::assertArrayHasKey('design.type-coverage', $result);
-        self::assertSame(0.7, $result['design.type-coverage']['paramWarning']);
+        self::assertArrayHasKey('design.type-coverage.param', $result);
+        self::assertSame(0.7, $result['design.type-coverage.param']['warning']);
     }
 
     #[Test]

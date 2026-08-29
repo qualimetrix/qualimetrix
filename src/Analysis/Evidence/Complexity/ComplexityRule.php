@@ -8,26 +8,27 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
- * Hierarchical rule that checks complexity at method and class levels.
+ * Hierarchical rule that checks complexity at callable and class levels.
  *
- * - Method level: checks individual method CCN
+ * - Callable level: checks the CCN of one method or global function
  * - Class level: checks maximum CCN among class methods
+ *
+ * @qmx-threshold coupling.cbo 21 -- Raw CBO 20, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 21 gets one-edge headroom.
  */
 #[CliAlias('cyclomatic-warning', 'callable.warning')]
 #[CliAlias('cyclomatic-error', 'callable.error')]
@@ -39,6 +40,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     public const string DOCS_PAGE = 'rules/complexity.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;
@@ -47,11 +50,6 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     public function getDescription(): string
     {
         return 'Checks cyclomatic complexity at method and class levels';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Complexity;
     }
 
     /**
@@ -71,19 +69,19 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     /**
-     * @return list<RuleLevel>
+     * @return list<SymbolLevel>
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Callable, RuleLevel::Class_];
+        return [SymbolLevel::Callable, SymbolLevel::Class_];
     }
 
     /**
      * Analyzes at a specific level.
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
+    public function analyzeLevel(SymbolLevel $level, AnalysisContext $context): array
     {
         \assert($this->options instanceof ComplexityOptions);
 
@@ -93,28 +91,28 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         }
 
         return match ($level) {
-            RuleLevel::Callable => $this->analyzeMethodLevel($context),
-            RuleLevel::Class_ => $this->analyzeClassLevel($context),
+            SymbolLevel::Callable => $this->analyzeMethodLevel($context),
+            SymbolLevel::Class_ => $this->analyzeClassLevel($context),
             default => [],
         };
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
         \assert($this->options instanceof ComplexityOptions);
 
-        $violations = [];
+        $findings = [];
 
         foreach ($this->getSupportedLevels() as $level) {
             if ($this->options->isLevelEnabled($level)) {
-                $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
+                $findings = [...$findings, ...$this->analyzeLevel($level, $context)];
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
@@ -126,39 +124,35 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     /**
-     * `complexity.cyclomatic.callable` reports the method's raw CCN
-     * (`$ccnValue`, an `int`) as `metricValue` — see the emission at
-     * {@see analyzeMethodLevel()} — and is judged worse the higher it goes,
-     * per {@see MethodComplexityOptions::getSeverity()}'s `$value >=
-     * $this->error` (line 53) / `$value >= $this->warning` (line 57)
-     * comparisons. `complexity.cyclomatic.class` reports the class's maximum
-     * method CCN (`$maxCcnValue` — see {@see analyzeClassLevel()}), also
-     * higher-is-worse, per {@see ClassComplexityOptions::getSeverity()}'s
-     * `$value >= $this->maxError` (line 55) / `$value >= $this->maxWarning`
-     * (line 59).
-     *
-     * Keyed by the full channel key: the `ruleName` half is `self::NAME`,
-     * the `violationCode` half adds the `.callable`/`.class` suffix.
+     * One channel at two levels, and both report a raw CCN as `metricValue`
+     * judged worse the higher it goes: the method's own (`$ccnValue` — see
+     * {@see analyzeMethodLevel()}), per
+     * {@see MethodComplexityOptions::getSeverity()}'s `$value >= $this->error`
+     * (line 53) / `$value >= $this->warning` (line 57), and the maximum among
+     * a class's methods (`$maxCcnValue` — see {@see analyzeClassLevel()}), per
+     * {@see ClassComplexityOptions::getSeverity()}'s `$value >=
+     * $this->maxError` (line 55) / `$value >= $this->maxWarning` (line 59).
+     * One direction for both, which is why one declaration carries both
+     * levels.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.callable'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
-            (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeMethodLevel(AnalysisContext $context): array
     {
         \assert($this->options instanceof ComplexityOptions);
         $methodOptions = $this->options->callable;
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allCallables() as $methodInfo) {
             $subject = $methodInfo->subject ?? throw new LogicException('Cyclomatic complexity findings require an exact callable subject');
@@ -184,27 +178,26 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
                     $cognitive === null ? null : (int) $cognitive,
                 );
 
-                $violations[] = new Violation(
+                $findings[] = new Finding(
                     location: new Location($methodInfo->file, $methodInfo->line),
                     subject: $subject,
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.callable',
+                    code: self::NAME,
                     message: \sprintf('Cyclomatic complexity is %d, exceeds threshold of %d. Consider extracting methods or simplifying conditions', $ccnValue, $threshold),
                     severity: $severity,
                     metricValue: $ccnValue,
-                    level: RuleLevel::Callable,
                     recommendation: $recommendation,
                     threshold: $threshold,
                 );
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
     /**
-     * Builds recommendation text for callable-level CCN violations.
+     * Builds recommendation text for callable-level CCN findings.
      *
      * When CCN is high but cognitive complexity is low, this indicates
      * mechanical branching (e.g., switch/match statements) rather than
@@ -225,14 +218,14 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeClassLevel(AnalysisContext $context): array
     {
         \assert($this->options instanceof ComplexityOptions);
         $classOptions = $this->options->class;
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Cyclomatic complexity class findings require an exact declaration subject');
@@ -250,21 +243,21 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
             /** @var ClassComplexityOptions $effectiveClassOptions */
             $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $subject);
-            $violation = $this->classViolation($classInfo, $subject, $maxCcnValue, $effectiveClassOptions);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->classFinding($classInfo, $subject, $maxCcnValue, $effectiveClassOptions);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function classViolation(
+    private function classFinding(
         SymbolInfo $classInfo,
         MetricSubject $subject,
         int $maximum,
         ClassComplexityOptions $options,
-    ): ?Violation {
+    ): ?Finding {
         /** @var array{Severity, int}|null $projection */
         $projection = match (true) {
             $maximum >= $options->maxError => [Severity::Error, $options->maxError],
@@ -277,16 +270,15 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         }
         [$severity, $threshold] = $projection;
 
-        return new Violation(
+        return new Finding(
             location: new Location($classInfo->file, $classInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME . '.class',
+            code: self::NAME,
             message: \sprintf('Maximum method cyclomatic complexity is %d, exceeds threshold of %d. Refactor the most complex methods', $maximum, $threshold),
             severity: $severity,
             metricValue: $maximum,
-            level: RuleLevel::Class_,
             recommendation: \sprintf('Max cyclomatic complexity: %d (threshold: %d) — too many code paths', $maximum, $threshold),
             threshold: $threshold,
         );

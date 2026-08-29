@@ -1,0 +1,33 @@
+{
+    "id": "smells",
+    "description": "The code-smell family: statement smells, dead code, over-injection, error suppression, plus one deliberately suppressed eval.",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2"
+    ],
+    "channels": [
+        "code-smell.boolean-argument@callable",
+        "code-smell.constructor-overinjection@callable",
+        "code-smell.count-in-loop@callable",
+        "code-smell.debug-code@callable",
+        "code-smell.empty-catch@callable",
+        "code-smell.error-suppression@callable",
+        "code-smell.eval@callable",
+        "code-smell.exit@callable",
+        "code-smell.goto@callable",
+        "code-smell.identical-subexpression@callable",
+        "code-smell.long-parameter-list@callable",
+        "code-smell.unreachable-code@callable",
+        "code-smell.unused-private@class"
+    ],
+    "explainSubjects": [
+        "declaration:class:Corpus\\Smells\\Injection@src/Injection.php",
+        "declaration:callable:Corpus\\Smells\\Smells::report@src/Smells.php"
+    ]
+}

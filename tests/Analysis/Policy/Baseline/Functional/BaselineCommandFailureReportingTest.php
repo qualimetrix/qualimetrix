@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfig
 use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
@@ -41,9 +42,10 @@ use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
+use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
-use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
+use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
@@ -51,7 +53,6 @@ use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
 use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
-use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
@@ -61,7 +62,7 @@ use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
@@ -242,7 +243,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $pipeline->method('resolve')->willThrowException(ConfigLoadException::fileNotFound('qmx.yaml'));
         $baselineRun = new BaselineRun(
             $runtime,
-            self::withoutConstructor(MeasuredViolationSet::class),
+            self::withoutConstructor(MeasuredFindingSet::class),
             self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)),
             self::configurationInputAdapter($pipeline),
             self::createStub(RunConfigurationResolverInterface::class),
@@ -296,7 +297,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
 
         $command = new CheckCommand(
             self::createStub(AnalysisPipelineInterface::class),
-            self::withoutConstructor(ViolationFilterOrchestrator::class),
+            self::withoutConstructor(FindingFilterOrchestrator::class),
             self::runtimeConfigurator(),
             self::resultPresenter(),
             self::ruleInputValidator($rules),
@@ -357,7 +358,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $loggerFactory->method('create')->willReturn(new NullLogger());
         $architecture = self::createStub(ArchitecturePolicyConfiguratorInterface::class);
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
-        $staticChannels = new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+        $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
         $ruleSelector = new RuleSelector($staticChannels);
         $ruleInputValidator = new RuleInputValidator(
             $ruleRegistry,
@@ -387,7 +388,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
 
     private static function ruleInputValidator(RuleRegistryInterface $rules): RuleInputValidator
     {
-        $staticChannels = new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+        $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
 
         return new RuleInputValidator(
             $rules,
@@ -415,8 +416,9 @@ final class BaselineCommandFailureReportingTest extends TestCase
             self::withoutConstructor(SummaryEnricher::class),
             new ProfilePresenter($profile),
             new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
-            new ViolationFilter(),
+            new FindingFilter(),
             new FormatterContextFactory(),
+            self::createStub(RuleConfigurationInterface::class),
         );
     }
 }

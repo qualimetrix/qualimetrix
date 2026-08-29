@@ -49,7 +49,8 @@ use Symfony\Component\Finder\Finder;
  *   `ThresholdParser::parse()` call sites is located via
  *   `ReflectionClass::getFileName()` and its own source text is searched for
  *   the literal `ThresholdParser::parse(` call — occurrence COUNT included,
- *   so a path with N calls (e.g. `design.type-coverage`'s 3 dimensions) must
+ *   so a path with N calls (e.g. `code-smell.long-parameter-list`'s two
+ *   pairs) must
  *   have exactly N groups declared, not just "at least one".
  * - **Existence, both directions**: every discovered (rule, path) must have
  *   a registry entry ({@see everyThresholdParserCallSiteHasAMatchingRegistryEntry});

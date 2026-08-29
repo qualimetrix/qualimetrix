@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
+use Qualimetrix\Core\Symbol\SymbolLevel;
+
 /**
  * Explicit, hand-maintained catalog of `threshold` vs. `warning`/`error` key
  * groups for every rule that uses {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser}.
  *
  * {@see RuleOptionThresholdModeResolver} consults this registry FIRST when
  * deciding which keys belong together for a given rule — and, for
- * hierarchical rules, a given nesting path (`method`, `class`, `namespace`,
+ * hierarchical rules, a given nesting path (`callable`, `class`, `namespace`,
  * or `''` for the rule's own top level). Each entry mirrors the literal
  * `$warningKey`/`$errorKey`/`$thresholdKey`/`$legacyKeys` arguments already
  * passed to `ThresholdParser::parse()` at that rule's `Options::fromArray()`
@@ -49,8 +51,8 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
  * — most rules do, since bare `warning`/`error` and `max_`-prefixed
  * `warning`/`error` are by far the two most common spellings across the
  * codebase. Only write out a fresh literal group when the spelling is
- * actually unique to that rule (e.g. `max_distance_warning`, `vo_warning`,
- * `param_warning`). A rule with NO entry here falls back to
+ * actually unique to that rule (e.g. `max_distance_warning`,
+ * `vo_warning`). A rule with NO entry here falls back to
  * {@see RuleOptionThresholdModeResolver}'s suffix/prefix heuristic, which is
  * unreliable for non-bare key spellings (see that method's docblock) — every
  * rule known to this codebase at the time of writing has an entry, so the
@@ -101,7 +103,7 @@ final class RuleThresholdKeyGroupRegistry
     /**
      * `warningThreshold`/`errorThreshold`/`threshold` — legacy top-level
      * ALIASES for warning/error on `complexity.cyclomatic`/`cognitive`/
-     * `npath`'s method dimension, not a `max_`-style rename. Kept as its own
+     * `npath`'s callable dimension, not a `max_`-style rename. Kept as its own
      * constant (rather than folded into {@see BARE_PAIR}) precisely because
      * a plain suffix heuristic would otherwise misclassify `warningThreshold`
      * as a `threshold` marker (it ends in "Threshold") instead of a
@@ -115,15 +117,17 @@ final class RuleThresholdKeyGroupRegistry
      * @var array<string, array<string, list<ThresholdKeyGroupShape>>>
      */
     private const array GROUPS = [
-        // design.type-coverage — 3 independent, prefix-consistent dimensions
-        // (TypeCoverageOptions::fromArray()). Each prefix is unique to this
-        // rule, so no shared constant applies.
-        'design.type-coverage' => [
-            '' => [
-                ['warning' => ['param_warning'], 'error' => ['param_error'], 'threshold' => ['param_threshold']],
-                ['warning' => ['return_warning'], 'error' => ['return_error'], 'threshold' => ['return_threshold']],
-                ['warning' => ['property_warning'], 'error' => ['property_error'], 'threshold' => ['property_threshold']],
-            ],
+        // The three type-coverage dimensions — one rule each, flat and bare
+        // (TypeCoverageOptions::fromArray(), shared by all three). The prefix
+        // that used to distinguish them lives in the rule name now.
+        'design.type-coverage.param' => [
+            '' => [self::BARE_PAIR],
+        ],
+        'design.type-coverage.return' => [
+            '' => [self::BARE_PAIR],
+        ],
+        'design.type-coverage.property' => [
+            '' => [self::BARE_PAIR],
         ],
 
         // complexity.cyclomatic / complexity.cognitive / complexity.npath
@@ -137,18 +141,18 @@ final class RuleThresholdKeyGroupRegistry
         // it at all and fall through as unknown options.
         'complexity.cyclomatic' => [
             '' => [self::LEGACY_FLAT_ALIAS_PAIR],
-            'callable' => [self::BARE_PAIR],
-            'class' => [self::MAX_PREFIXED_PAIR],
+            SymbolLevel::Callable->value => [self::BARE_PAIR],
+            SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
         ],
         'complexity.cognitive' => [
             '' => [self::LEGACY_FLAT_ALIAS_PAIR],
-            'callable' => [self::BARE_PAIR],
-            'class' => [self::MAX_PREFIXED_PAIR],
+            SymbolLevel::Callable->value => [self::BARE_PAIR],
+            SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
         ],
         'complexity.npath' => [
             '' => [self::LEGACY_FLAT_ALIAS_PAIR],
-            'callable' => [self::BARE_PAIR],
-            'class' => [self::MAX_PREFIXED_PAIR],
+            SymbolLevel::Callable->value => [self::BARE_PAIR],
+            SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
         ],
 
         // coupling.cbo (CboOptions: hierarchical class/namespace, bare keys).
@@ -160,8 +164,8 @@ final class RuleThresholdKeyGroupRegistry
         // branch, this one does NOT disable a level).
         'coupling.cbo' => [
             '' => [self::BARE_PAIR],
-            'class' => [self::BARE_PAIR],
-            'namespace' => [self::BARE_PAIR],
+            SymbolLevel::Class_->value => [self::BARE_PAIR],
+            SymbolLevel::Namespace_->value => [self::BARE_PAIR],
         ],
 
         // coupling.instability (InstabilityOptions: hierarchical
@@ -170,8 +174,8 @@ final class RuleThresholdKeyGroupRegistry
         // uniformly to both levels.
         'coupling.instability' => [
             '' => [self::MAX_PREFIXED_PAIR],
-            'class' => [self::MAX_PREFIXED_PAIR],
-            'namespace' => [self::MAX_PREFIXED_PAIR],
+            SymbolLevel::Class_->value => [self::MAX_PREFIXED_PAIR],
+            SymbolLevel::Namespace_->value => [self::MAX_PREFIXED_PAIR],
         ],
 
         // coupling.distance (DistanceOptions) — flat, max_distance_* graduated

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanation;
@@ -109,7 +109,7 @@ final class BaselineExplainCommand extends BaselineCommand
             $subjectKey,
             $channel,
             $baseline,
-            $context->violations(),
+            $context->findings(),
             $context->result()->thresholdOverrides,
             $this->configuredThresholds->resolve(),
             $context->result()->metrics,
@@ -137,10 +137,10 @@ final class BaselineExplainCommand extends BaselineCommand
     }
 
     /**
-     * `false` when `--channel` was given but is not a channel key; `null`
+     * `false` when `--channel` was given but is not a channel name; `null`
      * when it was not given at all, which means "every channel".
      */
-    private function readChannel(InputInterface $input, OutputInterface $output): ViolationChannel|false|null
+    private function readChannel(InputInterface $input, OutputInterface $output): FindingChannel|false|null
     {
         $raw = $input->getOption('channel');
 
@@ -149,7 +149,7 @@ final class BaselineExplainCommand extends BaselineCommand
         }
 
         try {
-            return ViolationChannel::fromKey($raw);
+            return new FindingChannel($raw);
         } catch (InvalidArgumentException $e) {
             $output->writeln(\sprintf('<error>%s</error>', $e->getMessage()));
 
@@ -176,7 +176,7 @@ final class BaselineExplainCommand extends BaselineCommand
 
         foreach ($explanation->boundaries as $boundary) {
             $output->writeln('');
-            $output->writeln(\sprintf('  Channel: <info>%s</info>', $boundary->identity->channel->toKey()));
+            $output->writeln(\sprintf('  Channel: <info>%s</info>', $boundary->identity->channel->code));
 
             if ($boundary->identity->edge !== null) {
                 $output->writeln(\sprintf('    Edge: %s', $boundary->identity->edge->target));

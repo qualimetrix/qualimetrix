@@ -1,0 +1,63 @@
+# Every options class that accepts a `@qmx-threshold` override, classified by the
+# SHAPE OF THE DECISION its rule then makes. This is the population Ш7's seam —
+# "a threshold is a decision, not a number" — must either cover or exclude by name.
+#
+# Regenerate with:
+#   grep -rln ThresholdAwareOptionsInterface src/ --include='*Options.php'
+#   then, per class: the fields withOverride() assigns, and what getSeverity() does.
+#
+# ROW COUNT: 27 classes. 25 decide from one measured value against a pair of
+# bounds — the shape a seam can carry. 2 do not, and they are named here rather
+# than discovered later:
+#   - DataClassOptions: getSeverity() returns Warning unconditionally, ignoring
+#     its argument; the rule compares WOC and WMC separately. The override's two
+#     halves are bounds on two DIFFERENT metrics, so "warning" and "error" are
+#     axis names here, not levels.
+#   - GodClassOptions: getSeverity() is `$value > 0 ? Warning : null`, and its own
+#     comment says severity is decided inline in analyze() from matchedCount vs
+#     evaluableCount. The override moves `minCriteria`, a count of criteria, and
+#     the `error` half is ignored outright.
+#
+# WHY THE FIELD NAMES ARE NOT THE CLASSIFIER, stated because the first two
+# attempts used them and both were wrong. Six classes spell the pair
+# `maxWarning`/`maxError` rather than `warning`/`error`, which a name-based probe
+# calls "other" though they are ordinary pairs. And DataClassOptions assigns one
+# field from `warning` and one from `error`, which a shape-based probe calls an
+# ordinary pair though its two fields bound different measurements. Only reading
+# getSeverity() separates them.
+#
+# WHAT THIS METHOD DOES NOT SEE
+# - Rules that read effective options and compare fields themselves instead of
+#   calling getSeverity(): they are the reason the seam is needed, and this table
+#   classifies the options, not the call sites. The companion enumeration
+#   enumeration-override-consumers.tsv lists those.
+# - Whether a rule's own inline comparison agrees with its options class's
+#   getSeverity(). For the two exceptions above it demonstrably does not.
+options_class	threshold_fields	withOverride_maps	getSeverity	shape
+ClassCboOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+ClassCognitiveComplexityOptions	2	maxWarning<-warning,maxError<-error	one value against the pair	value-vs-pair
+ClassComplexityOptions	2	maxWarning<-warning,maxError<-error	one value against the pair	value-vs-pair
+ClassCountOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+ClassInstabilityOptions	3	maxWarning<-warning,maxError<-error	one value against the pair	value-vs-pair
+ClassNpathComplexityOptions	2	maxWarning<-warning,maxError<-error	one value against the pair	value-vs-pair
+ClassRankOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+CodeDuplicationOptions	4	warning<-warning,error<-error	one value against the pair	value-vs-pair
+ConstructorOverinjectionOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+DataClassOptions	3	wocThreshold<-warning,wmcThreshold<-error	returns Warning unconditionally	decided-in-rule
+DistanceOptions	3	maxDistanceWarning<-warning,maxDistanceError<-error	one value against the pair	value-vs-pair
+GodClassOptions	6	minCriteria<-warning	value>0, decided inline in analyze()	decided-in-rule
+InheritanceOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+LcomOptions	3	warning<-warning,error<-error	one value against the pair	value-vs-pair
+LongParameterListOptions	4	warning<-warning,error<-error	one value against the pair	value-vs-pair
+MaintainabilityOptions	3	warning<-warning,error<-error	one value against the pair	value-vs-pair
+MethodCognitiveComplexityOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+MethodComplexityOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+MethodCountOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+MethodNpathComplexityOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+NamespaceCboOptions	3	warning<-warning,error<-error	one value against the pair	value-vs-pair
+NamespaceInstabilityOptions	4	maxWarning<-warning,maxError<-error	one value against the pair	value-vs-pair
+NocOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+PropertyCountOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+TypeCoverageOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+UnreachableCodeOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair
+WmcOptions	2	warning<-warning,error<-error	one value against the pair	value-vs-pair

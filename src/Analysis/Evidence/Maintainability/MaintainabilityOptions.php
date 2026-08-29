@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * Options for MaintainabilityRule.
  *
  * Maintainability Index thresholds:
- * - MI >= 40: good maintainability (no violation)
+ * - MI >= 40: good maintainability (no finding)
  * - MI 20-39: moderate maintainability (warning)
  * - MI < 20: poor maintainability (error)
  *

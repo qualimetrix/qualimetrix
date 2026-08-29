@@ -10,7 +10,7 @@ use InvalidArgumentException;
  * Parses threshold configuration for rules with dual warning/error thresholds.
  *
  * Supports two configuration styles:
- * - Simple: `threshold: X` — sets both warning and error to X (all violations are errors)
+ * - Simple: `threshold: X` — sets both warning and error to X (all findings are errors)
  * - Graduated: `warning: X, error: Y` — separate thresholds for different severity levels
  *
  * Mixing `threshold` with `warning`/`error` is a configuration error.

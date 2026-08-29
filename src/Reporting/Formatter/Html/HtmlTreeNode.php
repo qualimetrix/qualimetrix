@@ -25,7 +25,7 @@ final class HtmlTreeNode
     public array $metrics = [];
 
     /** @var list<array{subject: string, ruleName: string, violationCode: string, message: string, recommendation: ?string, severity: string, metricValue: int|float|null, symbolPath: string, occurrence: ?string, file: string, line: int|null}> */
-    public array $violations = [];
+    public array $findings = [];
 
     public int $violationCountTotal = 0;
 
@@ -53,7 +53,7 @@ final class HtmlTreeNode
             'path' => $this->path,
             'type' => $this->type,
             'metrics' => (object) $this->metrics, // Force {} in JSON even when empty
-            'violations' => $this->violations,
+            'violations' => $this->findings,
             'violationCountTotal' => $this->violationCountTotal,
             'debtMinutes' => $this->debtMinutes,
         ];

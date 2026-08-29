@@ -8,17 +8,21 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionClass;
 use RuntimeException;
@@ -58,16 +62,17 @@ final class ChannelUniverseCoverageTest extends TestCase
      * pass by agreeing with itself on a smaller set. It is obtained, not
      * remembered: `grep -vc '^#\|^$' tests/Analysis/Finding/Fixtures/Channels/declared.txt`.
      */
-    private const int DECLARED_CHANNEL_COUNT = 57;
+    private const int DECLARED_CHANNEL_COUNT = 52;
 
     /**
-     * Nine subclasses of `AbstractCodeSmellRule` plus three of
-     * `AbstractSecurityPatternRule` declare their channel in the ancestor and
+     * Nine subclasses of `AbstractCodeSmellRule`, three of
+     * `AbstractSecurityPatternRule` and three of
+     * `AbstractTypeCoverageRule` declare their channel in the ancestor and
      * bind their own name through late static binding. A scan over
      * `*Rule.php` files does not see them, which is exactly why this count is
      * pinned separately from the total.
      */
-    private const int CHANNELS_DECLARED_BY_AN_ANCESTOR = 12;
+    private const int CHANNELS_DECLARED_BY_AN_ANCESTOR = 15;
 
     #[Test]
     public function everyDeclaredChannelHasAProducer(): void
@@ -76,9 +81,9 @@ final class ChannelUniverseCoverageTest extends TestCase
         $orphans = [];
 
         foreach (array_keys($universe->staticDeclarations()) as $key) {
-            $channel = ViolationChannel::fromKey($key);
+            $channel = new FindingChannel($key);
 
-            if ($universe->producerOf($channel->violationCode) === null) {
+            if ($universe->producerOf($channel->code) === null) {
                 $orphans[] = $key;
             }
         }
@@ -102,8 +107,8 @@ final class ChannelUniverseCoverageTest extends TestCase
 
         $witnessA = [];
         foreach (array_keys($universe->staticDeclarations()) as $key) {
-            $violationCode = ViolationChannel::fromKey($key)->violationCode;
-            $witnessA[$violationCode] = $universe->producerOf($violationCode);
+            $code = new FindingChannel($key)->code;
+            $witnessA[$code] = $universe->producerOf($code);
         }
         ksort($witnessA);
 
@@ -125,12 +130,12 @@ final class ChannelUniverseCoverageTest extends TestCase
         $universe = self::universe();
 
         $fromUniverse = array_map(
-            static fn(string $key): string => ViolationChannel::fromKey($key)->violationCode,
+            static fn(string $key): string => new FindingChannel($key)->code,
             array_keys($universe->staticDeclarations()),
         );
         sort($fromUniverse);
 
-        $fromFixture = self::violationCodesFromFixture();
+        $fromFixture = self::codesFromFixture();
         sort($fromFixture);
 
         self::assertSame($fromFixture, $fromUniverse);
@@ -149,32 +154,38 @@ final class ChannelUniverseCoverageTest extends TestCase
 
         // Sibling constants: four channels carrying rule names no class owns.
         foreach ([
-            LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
-            LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-            LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
         ] as $siblingCode) {
             self::assertSame(LayerViolationRule::NAME, $universe->producerOf($siblingCode), $siblingCode);
         }
 
-        // Ternary over the level, in CboRule.
-        self::assertSame(CboRule::NAME, $universe->producerOf('coupling.cbo.class'));
-        self::assertSame(CboRule::NAME, $universe->producerOf('coupling.cbo.namespace'));
+        // One channel reporting at two levels: the level used to be a suffix
+        // on the code, so `coupling.cbo` used to be a producer with no channel
+        // of its own name. It is one channel now, and the two levels are a
+        // declared property of it rather than two names.
+        self::assertSame(CboRule::NAME, $universe->producerOf(CboRule::NAME));
+        self::assertSame(
+            [SymbolLevel::Class_, SymbolLevel::Namespace_],
+            $universe->levelsOf(CboRule::NAME),
+        );
+        self::assertSame([], $universe->levelsOf('coupling.cbo.class'));
 
-        // match over string literals, in TypeCoverageRule.
+        // Three rules, three producers, and that is the point of the split:
+        // the facet used to be a suffix on one producer's channel code, and a
+        // reader had to know the rule to know which facet it was looking at.
         foreach (['param', 'property', 'return'] as $facet) {
-            self::assertSame(
-                TypeCoverageRule::NAME,
-                $universe->producerOf('design.type-coverage.' . $facet),
-                $facet,
-            );
+            $name = 'design.type-coverage.' . $facet;
+            self::assertSame($name, $universe->producerOf($name), $facet);
         }
 
         // Declaration in an abstract ancestor, resolved by late static binding.
         $inherited = self::channelsDeclaredByAnAncestor();
         self::assertCount(self::CHANNELS_DECLARED_BY_AN_ANCESTOR, $inherited);
-        foreach ($inherited as $violationCode => $expectedProducer) {
-            self::assertSame($expectedProducer, $universe->producerOf($violationCode), $violationCode);
+        foreach ($inherited as $code => $expectedProducer) {
+            self::assertSame($expectedProducer, $universe->producerOf($code), $code);
         }
     }
 
@@ -183,10 +194,12 @@ final class ChannelUniverseCoverageTest extends TestCase
     {
         $universe = self::universe();
 
-        // The reported channel a user copies into @qmx-threshold. It names no
-        // rule; the rule that owns its thresholds is the answer.
-        self::assertFalse($universe->hasRule('coupling.cbo.class'));
-        self::assertSame('coupling.cbo', $universe->producerOf('coupling.cbo.class'));
+        // The retired spelling a user may still have written down. Stripping
+        // its last segment would answer "coupling.cbo" and look like a working
+        // lookup; the registry answers that nothing carries the name, which is
+        // what lets the diagnostic say the level moved beside the name.
+        self::assertFalse($universe->hasChannel('coupling.cbo.class'));
+        self::assertNull($universe->producerOf('coupling.cbo.class'));
         self::assertTrue($universe->supportsThresholdOverride('coupling.cbo'));
 
         // Where suffix stripping would answer wrongly rather than merely fail:
@@ -196,12 +209,15 @@ final class ChannelUniverseCoverageTest extends TestCase
         self::assertFalse($universe->hasRule('architecture'));
         self::assertSame(
             LayerViolationRule::NAME,
-            $universe->producerOf(LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME),
+            $universe->producerOf(LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME),
         );
     }
 
+    /**
+     * The class half: one addressable name per registered rule class.
+     */
     #[Test]
-    public function everyRegisteredRuleIsAddressableIncludingOnesThatDeclareNoChannel(): void
+    public function everyRegisteredRuleClassIsAddressableIncludingOnesThatDeclareNoChannel(): void
     {
         $universe = self::universe();
 
@@ -213,7 +229,109 @@ final class ChannelUniverseCoverageTest extends TestCase
             $universe->hasRule(ComputedMetricRule::NAME),
             'The computed-metric producer declares no static channel at all, and must still be an addressable rule.',
         );
-        self::assertCount(\count(self::ruleClasses()), $universe->ruleNames());
+    }
+
+    /**
+     * The classless half, checked against the tracked fixture rather than
+     * against the family constant the registry is assembled from — a guard fed
+     * by the registry's own source would agree with any set, the empty one
+     * included.
+     */
+    #[Test]
+    public function everyClasslessProducerOfTheComputedFamilyIsAddressable(): void
+    {
+        $universe = self::universe();
+        $expected = self::computedProducersFromFixture();
+
+        foreach ($expected as $producerRuleName) {
+            self::assertTrue(
+                $universe->hasRule($producerRuleName),
+                \sprintf('Producer "%s" is not addressable, so no selector, option key or directive can name it.', $producerRuleName),
+            );
+        }
+
+        $classNames = array_map(RuleNameReader::read(...), self::ruleClasses());
+
+        self::assertSame(
+            array_values(array_diff($expected, $classNames)),
+            array_values(array_diff($universe->ruleNames(), $classNames)),
+            'The addressable names that no rule class declares must be exactly the family\'s classless producers.',
+        );
+    }
+
+    /**
+     * If this disappears, a producer of the computed-metric family could start
+     * contributing a build-time channel, and the run-time half would silently
+     * stop being the whole of its vocabulary: a name resolvable both statically
+     * and from the definition catalog makes `producerOf()` throw mid-run.
+     *
+     * This is the mechanism, not a restatement: the family declares no static
+     * channel because nothing collects one for it, and that is what is checked
+     * here — the alternative, a `CHANNEL_DECLARATIONS = []` constant on the
+     * family, would have been a claim no code reads.
+     */
+    #[Test]
+    public function noProducerOfTheComputedFamilyDeclaresAStaticChannel(): void
+    {
+        $universe = self::universe();
+        $family = array_flip(self::computedProducersFromFixture());
+        $owned = [];
+
+        foreach (array_keys($universe->staticDeclarations()) as $key) {
+            $producer = $universe->producerOf(new FindingChannel($key)->code);
+
+            if ($producer !== null && isset($family[$producer])) {
+                $owned[] = \sprintf('%s (declared by "%s")', $key, $producer);
+            }
+        }
+
+        self::assertSame(
+            [],
+            $owned,
+            'Every channel of the computed-metric family is a configured metric definition, resolved per run.'
+            . ' One reaching the static half would be addressable twice.',
+        );
+    }
+
+    /**
+     * The two halves add up, so a name cannot leave one and enter the other
+     * unnoticed.
+     */
+    #[Test]
+    public function theAddressableNamesAreTheRuleClassesPlusTheClasslessProducers(): void
+    {
+        $classNames = array_map(RuleNameReader::read(...), self::ruleClasses());
+        $classless = array_values(array_diff(self::computedProducersFromFixture(), $classNames));
+
+        self::assertCount(\count($classNames) + \count($classless), self::universe()->ruleNames());
+    }
+
+    /**
+     * The family constant and the dimension enum are two independent spellings
+     * of the same closed set; comparing them is why the constant is written out
+     * rather than mapped from the enum.
+     */
+    #[Test]
+    public function theFamilysHealthProducersAreExactlyTheDeclaredHealthDimensions(): void
+    {
+        self::assertSame(
+            array_map(static fn(HealthDimension $dimension): string => $dimension->value, HealthDimension::all()),
+            ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES,
+        );
+
+        self::assertSame(self::computedProducersFromFixture(), ComputedMetricChannelFamily::PRODUCER_RULE_NAMES);
+
+        self::assertSame(
+            ComputedMetricChannelFamily::OPEN_PRODUCER_RULE_NAME,
+            ComputedMetricChannelFamily::PRODUCER_RULE_NAMES[\count(ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES)] ?? null,
+            'The open producer must close the list: the fixture and the enum both order the six first.',
+        );
+    }
+
+    /** @return list<string> */
+    private static function computedProducersFromFixture(): array
+    {
+        return self::linesOfFixture('computed-producers.txt');
     }
 
     /**
@@ -251,7 +369,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * Witness B for the producer map: read off the rule registry, class by
      * class, without going through the compiler pass or the universe.
      *
-     * @return array<string, string> violation code => producing rule name
+     * @return array<string, string> finding code => producing rule name
      */
     private static function producersReadFromRuleClasses(): array
     {
@@ -261,7 +379,16 @@ final class ChannelUniverseCoverageTest extends TestCase
             $ruleName = RuleNameReader::read($ruleClass);
 
             foreach (array_keys(ChannelDeclarationReader::read($ruleClass)) as $key) {
-                $producers[ViolationChannel::fromKey($key)->violationCode] = $ruleName;
+                $producers[new FindingChannel($key)->code] = $ruleName;
+            }
+        }
+
+        // The second producer kind. A validator's channels are registered
+        // under its producer rule's name, so witness B has to read both
+        // registries or it enumerates a different universe than the pass did.
+        foreach (self::validatorClasses() as $validatorClass) {
+            foreach (array_keys($validatorClass::channelDeclarations()) as $key) {
+                $producers[new FindingChannel($key)->code] = $validatorClass::producerRuleName();
             }
         }
 
@@ -269,7 +396,7 @@ final class ChannelUniverseCoverageTest extends TestCase
     }
 
     /**
-     * @return array<string, string> violation code => producing rule name, for
+     * @return array<string, string> finding code => producing rule name, for
      *                               channels whose declaration lives in an abstract ancestor
      */
     private static function channelsDeclaredByAnAncestor(): array
@@ -288,7 +415,7 @@ final class ChannelUniverseCoverageTest extends TestCase
             }
 
             foreach (array_keys(ChannelDeclarationReader::read($ruleClass)) as $key) {
-                $inherited[ViolationChannel::fromKey($key)->violationCode] = RuleNameReader::read($ruleClass);
+                $inherited[new FindingChannel($key)->code] = RuleNameReader::read($ruleClass);
             }
         }
 
@@ -323,16 +450,29 @@ final class ChannelUniverseCoverageTest extends TestCase
     }
 
     /** @return list<string> */
-    private static function violationCodesFromFixture(): array
+    private static function codesFromFixture(): array
     {
-        $path = \dirname(__DIR__) . '/Fixtures/Channels/declared.txt';
+        return array_map(
+            static fn(string $key): string => new FindingChannel($key)->code,
+            self::linesOfFixture('declared.txt'),
+        );
+    }
+
+    /**
+     * The first whitespace-delimited word of every non-comment line.
+     *
+     * @return list<string>
+     */
+    private static function linesOfFixture(string $name): array
+    {
+        $path = \dirname(__DIR__) . '/Fixtures/Channels/' . $name;
         $contents = file_get_contents($path);
 
         if ($contents === false) {
             throw new RuntimeException(\sprintf('Could not read fixture file %s.', $path));
         }
 
-        $codes = [];
+        $values = [];
         foreach (explode("\n", $contents) as $line) {
             $line = trim($line);
 
@@ -342,10 +482,10 @@ final class ChannelUniverseCoverageTest extends TestCase
 
             $key = strtok($line, ' ');
             \assert(\is_string($key));
-            $codes[] = ViolationChannel::fromKey($key)->violationCode;
+            $values[] = $key;
         }
 
-        return $codes;
+        return $values;
     }
 
     /** @return list<class-string> */
@@ -353,6 +493,17 @@ final class ChannelUniverseCoverageTest extends TestCase
     {
         $registry = (new ContainerFactory())->create()->get(RuleRegistryInterface::class);
         \assert($registry instanceof RuleRegistryInterface);
+
+        return $registry->getClasses();
+    }
+
+    /**
+     * @return list<class-string<\Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface>>
+     */
+    private static function validatorClasses(): array
+    {
+        $registry = (new ContainerFactory())->create()->get(ConfigurationValidatorRegistry::class);
+        \assert($registry instanceof ConfigurationValidatorRegistry);
 
         return $registry->getClasses();
     }

@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -42,7 +41,6 @@ final class CodeDuplicationRuleTest extends TestCase
 
         self::assertSame('duplication.code-duplication', $rule->getName());
         self::assertSame('Detects duplicated code blocks', $rule->getDescription());
-        self::assertSame(RuleCategory::Duplication, $rule->getCategory());
     }
 
     #[Test]
@@ -52,7 +50,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = $this->createRule(new CodeDuplicationOptions(enabled: false));
 
@@ -73,7 +71,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function noDuplicatesProducesNoViolations(): void
+    public function noDuplicatesProducesNoFindings(): void
     {
         $rule = $this->createRule();
 
@@ -84,7 +82,7 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function duplicateBlockProducesViolation(): void
+    public function duplicateBlockProducesFinding(): void
     {
         $rule = $this->createRule();
 
@@ -104,11 +102,11 @@ final class CodeDuplicationRuleTest extends TestCase
             ],
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
 
-        $v = $violations[0];
+        $v = $findings[0];
         self::assertSame('duplication.code-duplication', $v->ruleName);
         self::assertSame('src/A.php', $v->location->pathString());
         self::assertSame(10, $v->location->line);
@@ -144,14 +142,14 @@ final class CodeDuplicationRuleTest extends TestCase
             ],
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         self::assertStringContainsString(
             ': "function processItems($items) { $result = [];"',
-            $violations[0]->message,
+            $findings[0]->message,
         );
-        self::assertStringContainsString('src/B.php:30-45', $violations[0]->message);
+        self::assertStringContainsString('src/B.php:30-45', $findings[0]->message);
     }
 
     #[Test]
@@ -176,12 +174,12 @@ final class CodeDuplicationRuleTest extends TestCase
             ],
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         // No hint means no quotes in the message
-        self::assertStringNotContainsString('"', $violations[0]->message);
-        self::assertStringContainsString('(16 lines, 2 occurrences) — also at', $violations[0]->message);
+        self::assertStringNotContainsString('"', $findings[0]->message);
+        self::assertStringContainsString('(16 lines, 2 occurrences) — also at', $findings[0]->message);
     }
 
     #[Test]
@@ -205,14 +203,14 @@ final class CodeDuplicationRuleTest extends TestCase
             ],
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
-    public function multipleBlocksProduceMultipleViolations(): void
+    public function multipleBlocksProduceMultipleFindings(): void
     {
         $rule = $this->createRule();
 
@@ -235,9 +233,9 @@ final class CodeDuplicationRuleTest extends TestCase
             ],
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(2, $violations);
+        self::assertCount(2, $findings);
     }
 
     #[Test]
@@ -262,12 +260,12 @@ final class CodeDuplicationRuleTest extends TestCase
             ],
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('3 occurrences', $violations[0]->message);
-        self::assertStringContainsString('b.php:5-14', $violations[0]->message);
-        self::assertStringContainsString('c.php:20-29', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('3 occurrences', $findings[0]->message);
+        self::assertStringContainsString('b.php:5-14', $findings[0]->message);
+        self::assertStringContainsString('c.php:20-29', $findings[0]->message);
     }
 
     #[Test]

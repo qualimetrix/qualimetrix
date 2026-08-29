@@ -9,9 +9,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\ReportBuilder;
@@ -41,47 +41,47 @@ final class ReportBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itAddsViolation(): void
+    public function itAddsFinding(): void
     {
-        $violation = $this->createViolation(Severity::Error);
+        $finding = $this->createFinding(Severity::Error);
 
         $report = ReportBuilder::create()
-            ->addViolation($violation)
+            ->addFinding($finding)
             ->build();
 
-        self::assertSame([$violation], $report->violations);
+        self::assertSame([$finding], $report->findings);
         self::assertSame(1, $report->errorCount);
         self::assertSame(0, $report->warningCount);
     }
 
     #[Test]
-    public function itAddsViolations(): void
+    public function itAddsFindings(): void
     {
-        $error = $this->createViolation(Severity::Error);
-        $warning = $this->createViolation(Severity::Warning);
+        $error = $this->createFinding(Severity::Error);
+        $warning = $this->createFinding(Severity::Warning);
 
         $report = ReportBuilder::create()
-            ->addViolations([$error, $warning])
+            ->addFindings([$error, $warning])
             ->build();
 
-        self::assertCount(2, $report->violations);
+        self::assertCount(2, $report->findings);
         self::assertSame(1, $report->errorCount);
         self::assertSame(1, $report->warningCount);
     }
 
     #[Test]
-    public function itAddsViolationsFromIterator(): void
+    public function itAddsFindingsFromIterator(): void
     {
-        $violations = new ArrayIterator([
-            $this->createViolation(Severity::Warning),
-            $this->createViolation(Severity::Warning),
+        $findings = new ArrayIterator([
+            $this->createFinding(Severity::Warning),
+            $this->createFinding(Severity::Warning),
         ]);
 
         $report = ReportBuilder::create()
-            ->addViolations($violations)
+            ->addFindings($findings)
             ->build();
 
-        self::assertCount(2, $report->violations);
+        self::assertCount(2, $report->findings);
         self::assertSame(2, $report->warningCount);
     }
 
@@ -118,18 +118,18 @@ final class ReportBuilderTest extends TestCase
     #[Test]
     public function itSupportsFluentInterface(): void
     {
-        $error = $this->createViolation(Severity::Error);
-        $warning = $this->createViolation(Severity::Warning);
+        $error = $this->createFinding(Severity::Error);
+        $warning = $this->createFinding(Severity::Warning);
 
         $report = ReportBuilder::create()
-            ->addViolation($error)
-            ->addViolation($warning)
+            ->addFinding($error)
+            ->addFinding($warning)
             ->filesAnalyzed(100)
             ->filesSkipped(10)
             ->duration(2.5)
             ->build();
 
-        self::assertCount(2, $report->violations);
+        self::assertCount(2, $report->findings);
         self::assertSame(100, $report->filesAnalyzed);
         self::assertSame(10, $report->filesSkipped);
         self::assertSame(2.5, $report->duration);
@@ -141,16 +141,16 @@ final class ReportBuilderTest extends TestCase
     public function itCalculatesViolationCountsCorrectly(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation($this->createViolation(Severity::Error))
-            ->addViolation($this->createViolation(Severity::Error))
-            ->addViolation($this->createViolation(Severity::Error))
-            ->addViolation($this->createViolation(Severity::Warning))
-            ->addViolation($this->createViolation(Severity::Warning))
+            ->addFinding($this->createFinding(Severity::Error))
+            ->addFinding($this->createFinding(Severity::Error))
+            ->addFinding($this->createFinding(Severity::Error))
+            ->addFinding($this->createFinding(Severity::Warning))
+            ->addFinding($this->createFinding(Severity::Warning))
             ->build();
 
         self::assertSame(3, $report->errorCount);
         self::assertSame(2, $report->warningCount);
-        self::assertSame(5, $report->getTotalViolations());
+        self::assertSame(5, $report->getTotalFindings());
     }
 
     #[Test]
@@ -173,26 +173,26 @@ final class ReportBuilderTest extends TestCase
         self::assertSame($metrics, $report->metrics);
     }
 
-    private function createViolation(Severity $severity): Violation
+    private function createFinding(Severity $severity): Finding
     {
-        return self::violation(
+        return self::finding(
             location: new Location(RelativePath::fromString('test.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'Test'),
             ruleName: 'test-rule',
-            violationCode: 'test-rule',
+            code: 'test-rule',
             message: 'Test message',
             severity: $severity,
         );
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
-        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+        return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
 }

@@ -9,27 +9,27 @@ final class HealthDimensionCatalog
     /** @var array<string, list<array{key: string, altKey: string|null, label: string, ideal: string, direction: string}>> */
     private const array INPUTS = [
         'health.complexity' => [
-            ['key' => 'ccn.avg', 'altKey' => 'ccn.sum', 'label' => 'CCN avg', 'ideal' => '1-3', 'direction' => 'lower'],
-            ['key' => 'cognitive.avg', 'altKey' => 'cognitive.sum', 'label' => 'Cognitive avg', 'ideal' => '0-4', 'direction' => 'lower'],
-            ['key' => 'ccn.p95', 'altKey' => null, 'label' => 'CCN p95', 'ideal' => '≤5', 'direction' => 'lower'],
-            ['key' => 'cognitive.p95', 'altKey' => null, 'label' => 'Cognitive p95', 'ideal' => '≤6', 'direction' => 'lower'],
+            ['key' => 'complexity.ccn.avg', 'altKey' => 'complexity.ccn.sum', 'label' => 'CCN avg', 'ideal' => '1-3', 'direction' => 'lower'],
+            ['key' => 'complexity.cognitive.avg', 'altKey' => 'complexity.cognitive.sum', 'label' => 'Cognitive avg', 'ideal' => '0-4', 'direction' => 'lower'],
+            ['key' => 'complexity.ccn.p95', 'altKey' => null, 'label' => 'CCN p95', 'ideal' => '≤5', 'direction' => 'lower'],
+            ['key' => 'complexity.cognitive.p95', 'altKey' => null, 'label' => 'Cognitive p95', 'ideal' => '≤6', 'direction' => 'lower'],
         ],
         'health.cohesion' => [
-            ['key' => 'tcc.avg', 'altKey' => 'tcc', 'label' => 'TCC', 'ideal' => '1.0', 'direction' => 'higher'],
-            ['key' => 'lcom.avg', 'altKey' => 'lcom', 'label' => 'LCOM', 'ideal' => '1', 'direction' => 'lower'],
+            ['key' => 'cohesion.tcc.avg', 'altKey' => 'cohesion.tcc', 'label' => 'TCC', 'ideal' => '1.0', 'direction' => 'higher'],
+            ['key' => 'cohesion.lcom.avg', 'altKey' => 'cohesion.lcom', 'label' => 'LCOM', 'ideal' => '1', 'direction' => 'lower'],
         ],
         'health.coupling' => [
-            ['key' => 'ce.avg', 'altKey' => 'ce', 'label' => 'Ce (avg)', 'ideal' => '0-3', 'direction' => 'lower'],
-            ['key' => 'ce_packages.avg', 'altKey' => 'ce_packages', 'label' => 'Ce packages', 'ideal' => '0-1', 'direction' => 'lower'],
-            ['key' => 'distance.avg', 'altKey' => 'distance', 'label' => 'Distance', 'ideal' => '0.0', 'direction' => 'lower'],
+            ['key' => 'coupling.ce.avg', 'altKey' => 'coupling.ce', 'label' => 'Ce (avg)', 'ideal' => '0-3', 'direction' => 'lower'],
+            ['key' => 'coupling.ce-packages.avg', 'altKey' => 'coupling.ce-packages', 'label' => 'Ce packages', 'ideal' => '0-1', 'direction' => 'lower'],
+            ['key' => 'coupling.distance.avg', 'altKey' => 'coupling.distance', 'label' => 'Distance', 'ideal' => '0.0', 'direction' => 'lower'],
         ],
         'health.typing' => [
-            ['key' => 'typeCoverage.pct', 'altKey' => null, 'label' => 'Coverage', 'ideal' => '100%', 'direction' => 'higher'],
+            ['key' => 'design.type-coverage.pct', 'altKey' => null, 'label' => 'Coverage', 'ideal' => '100%', 'direction' => 'higher'],
         ],
         'health.maintainability' => [
-            ['key' => 'mi.avg', 'altKey' => 'mi', 'label' => 'MI avg', 'ideal' => '82+', 'direction' => 'higher'],
-            ['key' => 'mi.p5', 'altKey' => null, 'label' => 'MI p5', 'ideal' => '≥65', 'direction' => 'higher'],
-            ['key' => 'mi.min', 'altKey' => null, 'label' => 'MI min', 'ideal' => '≥40', 'direction' => 'higher'],
+            ['key' => 'maintainability.mi.avg', 'altKey' => 'maintainability.mi', 'label' => 'MI avg', 'ideal' => '82+', 'direction' => 'higher'],
+            ['key' => 'maintainability.mi.p5', 'altKey' => null, 'label' => 'MI p5', 'ideal' => '≥65', 'direction' => 'higher'],
+            ['key' => 'maintainability.mi.min', 'altKey' => null, 'label' => 'MI min', 'ideal' => '≥40', 'direction' => 'higher'],
         ],
         'health.overall' => [],
     ];
@@ -127,17 +127,17 @@ final class HealthDimensionCatalog
     /** @return list<string> */
     public function notableClassMetrics(): array
     {
-        return ['methodCount', 'propertyCount', 'cbo', 'ccn.avg', 'tcc', 'wmc', 'mi.avg', 'loc'];
+        return ['size.method-count', 'size.property-count', 'coupling.cbo', 'complexity.ccn.avg', 'cohesion.tcc', 'complexity.wmc', 'maintainability.mi.avg', 'size.loc'];
     }
 
     public function classLocMetric(): string
     {
-        return 'classLoc';
+        return 'size.class-loc';
     }
 
     public function classCountMetric(): string
     {
-        return 'classCount.sum';
+        return 'size.class-count.sum';
     }
 
     public function getUnhealthyDimensionLabel(string $dimension): string

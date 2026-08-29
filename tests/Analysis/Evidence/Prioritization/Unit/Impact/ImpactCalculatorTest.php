@@ -13,9 +13,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankResolver;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -43,8 +43,8 @@ final class ImpactCalculatorTest extends TestCase
     #[Test]
     public function computeTopIssuesWithCorrectFormula(): void
     {
-        // Error violation with classRank=0.05, rule 'complexity.cyclomatic' (base=30min, no scaling)
-        $errorViolation = $this->createViolation(
+        // Error finding with classRank=0.05, rule 'complexity.cyclomatic' (base=30min, no scaling)
+        $errorFinding = $this->createFinding(
             'src/a.php',
             10,
             Severity::Error,
@@ -52,8 +52,8 @@ final class ImpactCalculatorTest extends TestCase
             'complexity.cyclomatic',
         );
 
-        // Warning violation with classRank=0.02, rule 'code-smell.debug-code' (base=5min, no scaling)
-        $warningViolation = $this->createViolation(
+        // Warning finding with classRank=0.02, rule 'code-smell.debug-code' (base=5min, no scaling)
+        $warningFinding = $this->createFinding(
             'src/b.php',
             20,
             Severity::Warning,
@@ -73,26 +73,26 @@ final class ImpactCalculatorTest extends TestCase
         );
 
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
-        $issues = $calculator->computeTopIssues([$errorViolation, $warningViolation], $metrics);
+        $issues = $calculator->computeTopIssues([$errorFinding, $warningFinding], $metrics);
 
         self::assertCount(2, $issues);
 
         // Error: 0.05 * 3 * 30 = 4.5
         self::assertEqualsWithDelta(4.5, $issues[0]->impactScore, 0.0001);
-        self::assertSame('complexity.cyclomatic', $issues[0]->violation->ruleName);
+        self::assertSame('complexity.cyclomatic', $issues[0]->finding->ruleName);
 
         // Warning: 0.02 * 1 * 5 = 0.1
         self::assertEqualsWithDelta(0.1, $issues[1]->impactScore, 0.0001);
-        self::assertSame('code-smell.debug-code', $issues[1]->violation->ruleName);
+        self::assertSame('code-smell.debug-code', $issues[1]->finding->ruleName);
     }
 
     #[Test]
     public function sortDescendingByImpact(): void
     {
-        // Three class violations with different classRanks, same rule
-        $v1 = $this->createViolation('src/a.php', 1, Severity::Warning, SymbolPath::forClass('App', 'Low'), 'code-smell.debug-code');
-        $v2 = $this->createViolation('src/b.php', 1, Severity::Warning, SymbolPath::forClass('App', 'High'), 'code-smell.debug-code');
-        $v3 = $this->createViolation('src/c.php', 1, Severity::Warning, SymbolPath::forClass('App', 'Mid'), 'code-smell.debug-code');
+        // Three class findings with different classRanks, same rule
+        $v1 = $this->createFinding('src/a.php', 1, Severity::Warning, SymbolPath::forClass('App', 'Low'), 'code-smell.debug-code');
+        $v2 = $this->createFinding('src/b.php', 1, Severity::Warning, SymbolPath::forClass('App', 'High'), 'code-smell.debug-code');
+        $v3 = $this->createFinding('src/c.php', 1, Severity::Warning, SymbolPath::forClass('App', 'Mid'), 'code-smell.debug-code');
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturnCallback(
@@ -109,17 +109,17 @@ final class ImpactCalculatorTest extends TestCase
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
         $issues = $calculator->computeTopIssues([$v1, $v2, $v3], $metrics);
 
-        self::assertSame('src/b.php', $issues[0]->violation->location->pathString()); // High
-        self::assertSame('src/c.php', $issues[1]->violation->location->pathString()); // Mid
-        self::assertSame('src/a.php', $issues[2]->violation->location->pathString()); // Low
+        self::assertSame('src/b.php', $issues[0]->finding->location->pathString()); // High
+        self::assertSame('src/c.php', $issues[1]->finding->location->pathString()); // Mid
+        self::assertSame('src/a.php', $issues[2]->finding->location->pathString()); // Low
     }
 
     #[Test]
     public function stableSecondarySortByFileAndLine(): void
     {
         // Same classRank and rule → same impact → secondary sort by file
-        $v1 = $this->createViolation('src/b.php', 10, Severity::Warning, SymbolPath::forClass('App', 'Same'), 'code-smell.debug-code');
-        $v2 = $this->createViolation('src/a.php', 5, Severity::Warning, SymbolPath::forClass('App', 'Same'), 'code-smell.debug-code');
+        $v1 = $this->createFinding('src/b.php', 10, Severity::Warning, SymbolPath::forClass('App', 'Same'), 'code-smell.debug-code');
+        $v2 = $this->createFinding('src/a.php', 5, Severity::Warning, SymbolPath::forClass('App', 'Same'), 'code-smell.debug-code');
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturn(
@@ -130,12 +130,12 @@ final class ImpactCalculatorTest extends TestCase
         $issues = $calculator->computeTopIssues([$v1, $v2], $metrics);
 
         // Same impact, sorted by file ascending: a.php before b.php
-        self::assertSame('src/a.php', $issues[0]->violation->location->pathString());
-        self::assertSame('src/b.php', $issues[1]->violation->location->pathString());
+        self::assertSame('src/a.php', $issues[0]->finding->location->pathString());
+        self::assertSame('src/b.php', $issues[1]->finding->location->pathString());
     }
 
     #[Test]
-    public function emptyViolationsReturnsEmpty(): void
+    public function emptyFindingsReturnsEmpty(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
@@ -148,9 +148,9 @@ final class ImpactCalculatorTest extends TestCase
     #[Test]
     public function classRankNullFallsBackToMedianOrZero(): void
     {
-        // Function-level violation → classRank resolves to null
+        // Function-level finding → classRank resolves to null
         // No classes exist → median is null → fallback 0.0
-        $violation = $this->createViolation(
+        $finding = $this->createFinding(
             'src/a.php',
             1,
             Severity::Warning,
@@ -163,7 +163,7 @@ final class ImpactCalculatorTest extends TestCase
         $metrics->method('get')->willReturn(new MetricBag());
 
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
-        $issues = $calculator->computeTopIssues([$violation], $metrics);
+        $issues = $calculator->computeTopIssues([$finding], $metrics);
 
         // null classRank, no median → 0.0 * 1 * 5 = 0.0
         self::assertSame(0.0, $issues[0]->impactScore);
@@ -173,23 +173,23 @@ final class ImpactCalculatorTest extends TestCase
     #[Test]
     public function classRankNullFallsBackToMedian(): void
     {
-        // Two class violations with classRanks 0.01 and 0.03 → median = 0.02
-        // One function violation (classRank = null) should use median 0.02
-        $classViolation1 = $this->createViolation(
+        // Two class findings with classRanks 0.01 and 0.03 → median = 0.02
+        // One function finding (classRank = null) should use median 0.02
+        $classFinding1 = $this->createFinding(
             'src/a.php',
             1,
             Severity::Warning,
             SymbolPath::forClass('App', 'ClassA'),
             'code-smell.debug-code',
         );
-        $classViolation2 = $this->createViolation(
+        $classFinding2 = $this->createFinding(
             'src/b.php',
             1,
             Severity::Warning,
             SymbolPath::forClass('App', 'ClassB'),
             'code-smell.debug-code',
         );
-        $funcViolation = $this->createViolation(
+        $funcFinding = $this->createFinding(
             'src/c.php',
             1,
             Severity::Warning,
@@ -214,14 +214,14 @@ final class ImpactCalculatorTest extends TestCase
 
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
         $issues = $calculator->computeTopIssues(
-            [$classViolation1, $classViolation2, $funcViolation],
+            [$classFinding1, $classFinding2, $funcFinding],
             $metrics,
         );
 
-        // Find the function violation in results
+        // Find the function finding in results
         $funcIssue = null;
         foreach ($issues as $issue) {
-            if ($issue->violation->location->pathString() === 'src/c.php') {
+            if ($issue->finding->location->pathString() === 'src/c.php') {
                 $funcIssue = $issue;
                 break;
             }
@@ -236,14 +236,14 @@ final class ImpactCalculatorTest extends TestCase
     #[Test]
     public function severityWeightsErrorTripleWarning(): void
     {
-        $errorViolation = $this->createViolation(
+        $errorFinding = $this->createFinding(
             'src/a.php',
             1,
             Severity::Error,
             SymbolPath::forClass('App', 'TestClass'),
             'code-smell.debug-code',
         );
-        $warningViolation = $this->createViolation(
+        $warningFinding = $this->createFinding(
             'src/b.php',
             1,
             Severity::Warning,
@@ -257,7 +257,7 @@ final class ImpactCalculatorTest extends TestCase
         );
 
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
-        $issues = $calculator->computeTopIssues([$errorViolation, $warningViolation], $metrics);
+        $issues = $calculator->computeTopIssues([$errorFinding, $warningFinding], $metrics);
 
         // Error: 0.1 * 3 * 5 = 1.5, Warning: 0.1 * 1 * 5 = 0.5
         self::assertSame(3, $issues[0]->severityWeight);
@@ -268,13 +268,13 @@ final class ImpactCalculatorTest extends TestCase
     #[Test]
     public function zeroDebtMinutesResultsInZeroImpact(): void
     {
-        // Use a violation with metricValue = threshold so scaling produces base time
+        // Use a finding with metricValue = threshold so scaling produces base time
         // But we need a rule with 0 base time — no such rule exists in the registry.
         // Instead, test that when debtMinutes is non-zero but classRank is 0.0,
         // impact is 0. Actually let's test the actual edge case:
-        // violation with metricValue <= threshold → base time (non-zero).
+        // finding with metricValue <= threshold → base time (non-zero).
         // The real test is: classRank=0 should produce impact=0.
-        $violation = $this->createViolation(
+        $finding = $this->createFinding(
             'src/a.php',
             1,
             Severity::Error,
@@ -288,26 +288,26 @@ final class ImpactCalculatorTest extends TestCase
         );
 
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
-        $issues = $calculator->computeTopIssues([$violation], $metrics);
+        $issues = $calculator->computeTopIssues([$finding], $metrics);
 
         // classRank=0.0, Error(3), debug-code(5) → 0.0 * 3 * 5 = 0.0
         self::assertSame(0.0, $issues[0]->impactScore);
         self::assertSame(0.0, $issues[0]->classRank);
     }
 
-    private function createViolation(
+    private function createFinding(
         string $file,
         int $line,
         Severity $severity,
         SymbolPath $symbolPath,
         string $rule = 'code-smell.debug-code',
-    ): Violation {
-        return new Violation(
+    ): Finding {
+        return new Finding(
             location: new Location(RelativePath::fromString($file), $line),
             subject: MetricSubject::declaration(DeclarationPath::of($symbolPath, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbolPath,
             ruleName: $rule,
-            violationCode: $rule,
+            code: $rule,
             message: 'Test message',
             severity: $severity,
         );

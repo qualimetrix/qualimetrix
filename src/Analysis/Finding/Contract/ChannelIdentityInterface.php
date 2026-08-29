@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * The identity half of the channel universe: which names exist, what each
@@ -26,9 +27,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
  * A channel's `ruleName` half is not necessarily a rule: the layer policy
  * emits channels under rule names no class declares as its own. That is
  * why {@see producerOf()} exists and why a "did you mean" suggestion must be
- * a reverse query here rather than a suffix stripped off the typed string —
- * stripping `.class` off `coupling.cbo.class` happens to work, and stripping
- * anything off `architecture.coverage` does not.
+ * a reverse query here rather than a suffix stripped off the typed string:
+ * no channel name carries a level any more, so there is no suffix to strip.
  */
 interface ChannelIdentityInterface
 {
@@ -47,20 +47,20 @@ interface ChannelIdentityInterface
      * Every channel of this configuration — the statically declared ones and
      * the computed-metric ones resolved from the configured definitions.
      *
-     * @return list<ViolationChannel>
+     * @return list<FindingChannel>
      */
     public function channels(): array;
 
-    public function hasChannel(string $violationCode): bool;
+    public function hasChannel(string $code): bool;
 
     /**
-     * The rule that produces the channel with this violation code, or `null`
+     * The rule that produces the channel with this finding code, or `null`
      * when no channel carries that code.
      *
      * The answer is the **producing rule**, which may differ from the
      * channel's own `ruleName` half.
      */
-    public function producerOf(string $violationCode): ?string;
+    public function producerOf(string $code): ?string;
 
     /**
      * Whether the rule declares that `@qmx-threshold` can retune it.
@@ -74,11 +74,27 @@ interface ChannelIdentityInterface
 
     /**
      * Resolves a selector into the concrete channels it addresses, by
-     * violation code: exactly one for an equality selector, the strict
+     * finding code: exactly one for an equality selector, the strict
      * descendants for the `X.*` form, and none when the selector covers
      * nothing.
      *
-     * @return list<ViolationChannel>
+     * @return list<FindingChannel>
      */
     public function expand(NameSelector $selector): array;
+
+    /**
+     * The levels a channel declares it reports at, or `[]` when no channel
+     * carries that name.
+     *
+     * A declared property of the name, like
+     * {@see supportsThresholdOverride()} — which is why it is answered here
+     * and not by resolving the whole declaration: the one caller that needs
+     * it, {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing},
+     * decides whether an authored `channel:level` pair can exist, and must
+     * not acquire the ability to read directions or acceptability along the
+     * way.
+     *
+     * @return list<SymbolLevel>
+     */
+    public function levelsOf(string $code): array;
 }

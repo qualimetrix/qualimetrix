@@ -24,16 +24,16 @@ use Qualimetrix\Analysis\Evidence\Measurement\DataBag;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use SplFileInfo;
 
 /**
  * Regression test: CodeSmellCollector stores per-occurrence entries via DataBag,
- * and AbstractCodeSmellRule creates per-occurrence violations with correct lines.
+ * and AbstractCodeSmellRule creates per-occurrence findings with correct lines.
  *
  * Previously, the collector only stored counts and the rule created a single
- * violation at line 1. This was fixed to propagate line numbers from the visitor.
+ * finding at line 1. This was fixed to propagate line numbers from the visitor.
  */
 #[CoversClass(CodeSmellCollector::class)]
 #[CoversClass(CodeSmellVisitor::class)]
@@ -153,7 +153,7 @@ PHP;
     }
 
     #[Test]
-    public function ruleShouldCreatePerOccurrenceViolationsWithCorrectLines(): void
+    public function ruleShouldCreatePerOccurrenceFindingsWithCorrectLines(): void
     {
         $rule = new EvalRule(new CodeSmellOptions());
 
@@ -167,21 +167,21 @@ PHP;
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        // Rule should create per-occurrence violations at actual lines
-        self::assertCount(2, $violations);
-        self::assertSame(5, $violations[0]->location->line);
-        self::assertSame(16, $violations[1]->location->line);
+        // Rule should create per-occurrence findings at actual lines
+        self::assertCount(2, $findings);
+        self::assertSame(5, $findings[0]->location->line);
+        self::assertSame(16, $findings[1]->location->line);
     }
 
     #[Test]
-    public function ruleCreatesSingleViolationWithCorrectLineForSingleOccurrence(): void
+    public function ruleCreatesSingleFindingWithCorrectLineForSingleOccurrence(): void
     {
         $rule = new EvalRule(new CodeSmellOptions());
 
@@ -193,23 +193,23 @@ PHP;
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(42, $violations[0]->location->line);
+        self::assertCount(1, $findings);
+        self::assertSame(42, $findings[0]->location->line);
     }
 
     #[Test]
-    public function collectorRecordsNoEntriesAndRuleEmitsNoViolationsWhenCodeIsClean(): void
+    public function collectorRecordsNoEntriesAndRuleEmitsNoFindingsWhenCodeIsClean(): void
     {
         // Fixture: clean PHP without any eval()/exit()/die() — the collector
         // must not record entries and the rule must not emit a spurious
-        // violation at line 1 (the original bug surfaced exactly there).
+        // finding at line 1 (the original bug surfaced exactly there).
         $code = <<<'PHP'
 <?php
 
@@ -254,23 +254,23 @@ PHP;
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metrics);
 
         $context = new AnalysisContext($repository);
 
-        // The rule must produce no violations — not a single spurious one
+        // The rule must produce no findings — not a single spurious one
         // at line 1, which was the original symptom.
         self::assertSame([], (new EvalRule(new CodeSmellOptions()))->analyze($context));
     }
 
     #[Test]
-    public function ruleEmitsNoViolationsWhenMetricBagHasNoEntriesForSmellType(): void
+    public function ruleEmitsNoFindingsWhenMetricBagHasNoEntriesForSmellType(): void
     {
         // Direct rule-level check: with an empty MetricBag (no entries at
         // all for the smell key) the rule must return an empty list — not
-        // a single placeholder violation at line 1.
+        // a single placeholder finding at line 1.
         $rule = new ExitRule(new CodeSmellOptions());
 
         $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/empty.php'));
@@ -280,14 +280,14 @@ PHP;
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertSame([], $violations);
+        self::assertSame([], $findings);
         self::assertSame(0, $metricBag->entryCount('codeSmell.exit'));
     }
 }

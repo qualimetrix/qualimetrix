@@ -9,10 +9,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\ExitPolicy;
@@ -37,12 +38,12 @@ final class ExitCodeResolverConfigurationErrorTest extends TestCase
     public function itFailsTheRunOnAConfigurationErrorWhateverFailOnSays(): void
     {
         $resolver = self::resolver();
-        $violations = [self::finding(Severity::Error)];
+        $findings = [self::finding(Severity::Error)];
 
         foreach ([null, new ExitPolicy(Severity::Warning), new ExitPolicy(Severity::Error), new ExitPolicy(false)] as $policy) {
             self::assertNotSame(
                 0,
-                $resolver->resolve($violations, null, $policy),
+                $resolver->resolve($findings, null, $policy),
                 'A configuration error must fail the run regardless of the fail_on setting, including "none".',
             );
         }
@@ -56,10 +57,10 @@ final class ExitCodeResolverConfigurationErrorTest extends TestCase
     #[Test]
     public function itStillHonoursFailOnForAnOrdinaryDebtFinding(): void
     {
-        $violations = [self::finding(Severity::Error, 'code-smell.goto')];
+        $findings = [self::finding(Severity::Error, 'code-smell.goto')];
 
-        self::assertSame(0, self::resolver()->resolve($violations, null, new ExitPolicy(false)));
-        self::assertNotSame(0, self::resolver()->resolve($violations, null, null));
+        self::assertSame(0, self::resolver()->resolve($findings, null, new ExitPolicy(false)));
+        self::assertNotSame(0, self::resolver()->resolve($findings, null, null));
     }
 
     /**
@@ -81,21 +82,21 @@ final class ExitCodeResolverConfigurationErrorTest extends TestCase
     {
         $registry = StubChannelDeclarationRegistry::withDefaults();
         $registry->declare(
-            self::CHANNEL . '#' . self::CHANNEL,
-            ChannelDeclaration::configurationError(),
+            self::CHANNEL,
+            ChannelDeclaration::occurrence(SymbolLevel::Class_)->asConfigurationError(),
         );
 
         return new ExitCodeResolver($registry);
     }
 
-    private static function finding(Severity $severity, string $channel = self::CHANNEL): Violation
+    private static function finding(Severity $severity, string $channel = self::CHANNEL): Finding
     {
-        return new Violation(
+        return new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: $channel,
-            violationCode: $channel,
+            code: $channel,
             message: 'finding',
             severity: $severity,
         );

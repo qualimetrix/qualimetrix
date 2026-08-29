@@ -11,6 +11,9 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
@@ -47,10 +50,17 @@ final readonly class RuleInputValidator
     ): RuleChannelRegistryInterface {
         $this->validateWorkers($input);
         $channels = $this->ruleChannelSnapshotFactory->snapshot($definitions);
-        $producers = array_map(
-            static fn(string $class): string => $class::NAME,
-            $this->ruleRegistry->getClasses(),
-        );
+
+        // The universe's own name set, not a second one read off rule classes:
+        // six producers of the computed-metric family have no class to read a
+        // NAME off, so a class-derived list would refuse selectors and option
+        // owners the run itself accepts.
+        $producers = $channels->ruleNames();
+
+        // The run's own universe, not the container's: a computed-metric
+        // channel declares its levels only once configuration has resolved, and
+        // this is the instance the run then reports through.
+        $this->ruleSelector->useDeclaredLevels($channels);
 
         $selection = $configuration->selection;
         $this->validateSelectionSelectors([...$selection->only, ...$selection->disabled], $producers, $channels);
@@ -64,19 +74,49 @@ final readonly class RuleInputValidator
      * `only_rules` / `disabled_rules` and their CLI twins: each addresses a
      * producer or one of its channels, and nothing else.
      *
+     * A level narrows a selector to one level of the channels it names, and a
+     * level a channel does not report at is refused by
+     * {@see ChannelLevelAddressing} — the one place that judgement is made,
+     * shared with the inline directives.
+     *
+     * The retired `rule#code` spelling is refused **first**, before the pair is
+     * judged at all: its `#` half is not a name, so the pair question would
+     * report that half as unparseable and never reach the spelling that was
+     * retired. Every seam reading this grammar refuses the two in that order.
+     *
      * @param list<string> $selectors
      * @param list<string> $producers
      */
     private function validateSelectionSelectors(
         array $selectors,
         array $producers,
-        RuleChannelRegistryInterface $channels,
+        ChannelUniverseInterface $channels,
     ): void {
+        $levels = new ChannelLevelAddressing($channels);
+
         foreach ($selectors as $selector) {
+            if (FindingChannel::isRetiredPairSpelling($selector)) {
+                throw new InvalidArgumentException(\sprintf(
+                    'Rule selector "%s" is written in the retired channel-pair form. %s',
+                    $selector,
+                    FindingChannel::retiredPairAdvice($selector),
+                ));
+            }
+
+            // The subject goes into the seam rather than in front of its answer:
+            // prefixing one sentence with another's subject is the defect
+            // r11-claude-07 named on the suppression seam, and it survived here.
+            $pairProblem = $levels->problemWith($selector, \sprintf('Rule selector "%s"', $selector));
+
+            if ($pairProblem !== null) {
+                throw new InvalidArgumentException($pairProblem);
+            }
+
             if ($selector === '' || !$this->ruleSelector->matchesKnownIn($selector, $producers, $channels)) {
                 throw new InvalidArgumentException(\sprintf(
-                    'Rule selector "%s" does not match any registered producer, group, or channel.',
+                    'Rule selector "%s" does not match any registered producer, group, or channel%s.',
                     $selector,
+                    ChannelLevelSelector::carriesLevelSeparator($selector) ? ' at that level' : '',
                 ));
             }
         }
@@ -108,7 +148,7 @@ final readonly class RuleInputValidator
         }
 
         foreach (array_unique($owners) as $owner) {
-            if ($owner === '' || str_contains($owner, '#') || !$this->ruleSelector->matchesKnownProducer($owner, $producers)) {
+            if ($owner === '' || FindingChannel::isRetiredPairSpelling($owner) || !$this->ruleSelector->matchesKnownProducer($owner, $producers)) {
                 throw new InvalidArgumentException(\sprintf(
                     'Rule option owner "%s" does not match any registered producer rule.',
                     $owner,

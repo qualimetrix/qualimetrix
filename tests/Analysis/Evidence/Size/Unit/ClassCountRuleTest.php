@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Evidence\Size\ClassCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -41,19 +40,11 @@ final class ClassCountRuleTest extends TestCase
     }
 
     #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new ClassCountRule(new ClassCountOptions());
-
-        self::assertSame(RuleCategory::Size, $rule->getCategory());
-    }
-
-    #[Test]
     public function itRequiresClassCount(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
-        self::assertSame(['classCount'], $rule->requires());
+        self::assertSame(['size.class-count'], $rule->requires());
     }
 
     #[Test]
@@ -115,7 +106,7 @@ final class ClassCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
-        $metricBag = (new MetricBag())->with('classCount.sum', 5);
+        $metricBag = (new MetricBag())->with('size.class-count.sum', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -137,7 +128,7 @@ final class ClassCountRuleTest extends TestCase
         $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // 18 classes is above warning (15) but below error (25)
-        $metricBag = (new MetricBag())->with('classCount.sum', 18);
+        $metricBag = (new MetricBag())->with('size.class-count.sum', 18);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -146,14 +137,14 @@ final class ClassCountRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Class count is 18, exceeds threshold of 15. Consider splitting into sub-namespaces', $violations[0]->message);
-        self::assertSame(18, $violations[0]->metricValue);
-        self::assertSame('size.class-count', $violations[0]->ruleName);
-        self::assertSame('size.class-count', $violations[0]->violationCode);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('Class count is 18, exceeds threshold of 15. Consider splitting into sub-namespaces', $findings[0]->message);
+        self::assertSame(18, $findings[0]->metricValue);
+        self::assertSame('size.class-count', $findings[0]->ruleName);
+        self::assertSame('size.class-count', $findings[0]->code);
     }
 
     #[Test]
@@ -165,7 +156,7 @@ final class ClassCountRuleTest extends TestCase
         $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // 30 classes is above error threshold (25)
-        $metricBag = (new MetricBag())->with('classCount.sum', 30);
+        $metricBag = (new MetricBag())->with('size.class-count.sum', 30);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -174,11 +165,11 @@ final class ClassCountRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('Class count is 30, exceeds threshold of 25. Consider splitting into sub-namespaces', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame('Class count is 30, exceeds threshold of 25. Consider splitting into sub-namespaces', $findings[0]->message);
     }
 
     #[Test]
@@ -194,7 +185,7 @@ final class ClassCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Test');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 0);
 
-        $metricBag = (new MetricBag())->with('classCount.sum', $classCount);
+        $metricBag = (new MetricBag())->with('size.class-count.sum', $classCount);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -203,13 +194,13 @@ final class ClassCountRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 

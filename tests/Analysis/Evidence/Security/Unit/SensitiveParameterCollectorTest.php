@@ -34,7 +34,7 @@ final class SensitiveParameterCollectorTest extends TestCase
     #[Test]
     public function itProvidesExpectedMetrics(): void
     {
-        self::assertSame(['security.sensitiveParameter'], $this->collector->provides());
+        self::assertSame(['security.sensitive-parameter'], $this->collector->provides());
     }
 
     #[Test]
@@ -47,8 +47,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->entryCount('security.sensitiveParameter'));
-        $entries = $metrics->entries('security.sensitiveParameter');
+        self::assertSame(2, $metrics->entryCount('security.sensitive-parameter'));
+        $entries = $metrics->entries('security.sensitive-parameter');
         self::assertCount(2, $entries);
         self::assertArrayHasKey('line', $entries[0]);
         self::assertArrayHasKey('line', $entries[1]);
@@ -58,7 +58,7 @@ PHP;
     public function itRetainsParameterEvidenceAndTheEnclosingCallableSubject(): void
     {
         $metrics = $this->collectMetrics('<?php namespace App; function login(string $password) {}');
-        $entry = $metrics->entries('security.sensitiveParameter')[0];
+        $entry = $metrics->entries('security.sensitive-parameter')[0];
 
         self::assertSame('password', $entry['paramName']);
         self::assertSame('declaration', $entry['subjectKind']);
@@ -76,7 +76,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->entryCount('security.sensitiveParameter'));
+        self::assertSame(0, $metrics->entryCount('security.sensitive-parameter'));
     }
 
     #[Test]
@@ -89,7 +89,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->entryCount('security.sensitiveParameter'));
+        self::assertSame(0, $metrics->entryCount('security.sensitive-parameter'));
     }
 
     #[Test]
@@ -103,7 +103,7 @@ PHP;
         $code2 = '<?php function foo(string $name) {}';
         $metrics = $this->collectMetrics($code2);
 
-        self::assertSame(0, $metrics->entryCount('security.sensitiveParameter'));
+        self::assertSame(0, $metrics->entryCount('security.sensitive-parameter'));
     }
 
     #[Test]

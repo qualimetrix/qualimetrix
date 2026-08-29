@@ -8,10 +8,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
@@ -46,8 +46,8 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(BaselineCleanupCommand::class)]
 final class BaselineCleanupCommandTest extends TestCase
 {
-    private const string EDGE_CHANNEL = 'architecture.layer-violation#architecture.layer-violation';
-    private const string OCCURRENCE_CHANNEL = 'code-smell.goto#code-smell.goto';
+    private const string EDGE_CHANNEL = 'architecture.layer-violation';
+    private const string OCCURRENCE_CHANNEL = 'code-smell.goto';
 
     private string $tempDir;
     private string $baselinePath;
@@ -200,7 +200,7 @@ final class BaselineCleanupCommandTest extends TestCase
     /**
      * @param array<string, mixed> $options
      * @param list<string> $runScope
-     * @param list<Violation> $measured
+     * @param list<Finding> $measured
      */
     private function execute(array $options, array $runScope = ['src'], array $measured = []): CommandTester
     {
@@ -245,7 +245,7 @@ final class BaselineCleanupCommandTest extends TestCase
             MetricSubject::declaration(
                 DeclarationPath::of($symbol, RelativePath::fromString('src/Web/Controller.php'), DeclarationOrdinal::fromRank(0)),
             )->toCanonical(),
-            ViolationChannel::fromKey(self::EDGE_CHANNEL),
+            new FindingChannel(self::EDGE_CHANNEL),
             edge: new BaselineEdge($target, DependencyType::New_),
         );
     }
@@ -258,24 +258,24 @@ final class BaselineCleanupCommandTest extends TestCase
         return new BaselineEntry(
             new BaselineIdentity(
                 MetricSubject::aggregate($symbol)->toCanonical(),
-                ViolationChannel::fromKey(self::OCCURRENCE_CHANNEL),
+                new FindingChannel(self::OCCURRENCE_CHANNEL),
             ),
             null,
             3,
         );
     }
 
-    private static function gotoFinding(): Violation
+    private static function gotoFinding(): Finding
     {
         $path = RelativePath::fromString('src/Legacy.php');
         $symbol = SymbolPath::forFile($path);
 
-        return new Violation(
+        return new Finding(
             location: new Location($path, 3),
             subject: MetricSubject::aggregate($symbol),
             symbolPath: $symbol,
             ruleName: 'code-smell.goto',
-            violationCode: 'code-smell.goto',
+            code: 'code-smell.goto',
             message: 'finding',
             severity: Severity::Warning,
         );

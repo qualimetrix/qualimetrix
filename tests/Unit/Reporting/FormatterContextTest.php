@@ -52,7 +52,7 @@ final class FormatterContextTest extends TestCase
     public function itReturnsEmptyStringForNullPath(): void
     {
         // Location::$file is ?RelativePath after ADR 0015 Phase 1a; null means
-        // architectural violations not tied to a file. Formatters carry the
+        // architectural findings not tied to a file. Formatters carry the
         // sentinel ('[project]', '_project', etc.) at the call site, so the
         // boundary value here is always the empty string.
         $context = new FormatterContext(basePath: '/home/user/project');

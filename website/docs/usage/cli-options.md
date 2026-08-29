@@ -124,7 +124,7 @@ bin/qmx check src/ --format=json
 bin/qmx check src/ --format=sarif
 ```
 
-Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`.
+Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
 
 See [Output Formats](output-formats.md) for details on each format.
 
@@ -369,6 +369,27 @@ violations were suppressed this way. The namespace bucket includes both namespac
 is separate from `exclude_paths`; each is broken down by rule name. Unlike `@qmx-ignore`, this suppression is otherwise silent: nothing in
 the default output indicates it happened.
 
+`--show-suppressed` renders part of this as prose on the text surface.
+`--format=suppressed` reports the full composition — all seven suppression
+mechanisms, not only these two — as machine-readable JSON; see
+[Output Formats](output-formats.md#suppressed). Either `--show-suppressed` or
+selecting `--format=suppressed` (including `format: suppressed` in
+`qmx.yaml`) is enough to arm the per-rule exclusion capture; you do not need
+both. The two surfaces are not otherwise equivalent — see
+[suppressed](output-formats.md#suppressed) for what each one shows.
+
+Suppression is a closed set of seven mechanisms. Several neighboring decisions
+also make a finding invisible but are not suppression, and neither surface
+covers them: a rule that never ran (`--disable-rule`, `--only-rule`,
+`enabled: false`) produced nothing to suppress; a disabled channel for a
+classless producer (visible in `qmx rules`) is removed the same way, before
+the ledger runs; a threshold that keeps a finding from being produced at all
+(`@qmx-threshold`) is audited separately rather than through this surface;
+formatter truncation (`--detail`, `violations=N`) keeps the finding in the
+payload and only flags it `truncated`; and `--namespace`/`--class` drill-down
+narrows presentation per invocation without removing anything from the
+underlying result.
+
 ### `--no-suppression-annotations`
 
 Report every violation, including the ones `@qmx-ignore` tags suppress:
@@ -517,8 +538,8 @@ Available formats: `json`, `chrome-tracing`.
 Disable a producer rule, an entire group, or a finding channel. A selector is either an
 **exact** name (a producer rule, a group like `complexity`, or a channel), or `X.*` for
 strictly the **descendants** of `X` — `X` itself is not included. A bare prefix without the
-star is an error, and channel selectors also accept the explicit `ruleName#violationCode`
-form, same as `--only-rule`. Disabling one channel keeps its producer active so that other
+star is an error. A channel selector can be narrowed to one level of the aggregation tree with
+`:level`, same as `--only-rule`. Disabling one channel keeps its producer active so that other
 channels can still be reported. Can be repeated:
 
 ```bash
@@ -536,14 +557,15 @@ bin/qmx check src/ --disable-rule=health.complexity
 ```
 
 !!! tip "Memory optimization"
-    Disabling the `duplication.code-duplication` rule also skips the memory-intensive duplication detection phase entirely. On large codebases (500+ files), this can significantly reduce memory usage. Use `--disable-rule=duplication.code-duplication` if you encounter out-of-memory errors.
+    Disabling the `duplication.code-duplication` rule also skips the memory-intensive duplication detection phase entirely. On large codebases (500+ files), this can significantly reduce memory usage. Use `--disable-rule=duplication.code-duplication` if you encounter out-of-memory errors. The level-narrowed spelling `--disable-rule=duplication.code-duplication:project` skips it too: the channel reports at that one level, so silencing the level silences the rule. A producer stops as soon as the disable selectors together cover every level of every channel it emits — one level of a two-level channel leaves it running, since the other level still has findings to report.
 
 ### `--only-rule`
 
 Run only matching producer rules or finding channels. A selector is either an **exact** name
-(a producer rule, a group like `complexity`, a channel `ruleName`, or `violationCode`), or
-`X.*` for strictly its **descendants**. Use `ruleName#violationCode` for an explicit full
-channel — both halves must be exact, no star inside it. Can be repeated:
+(a producer rule, a group like `complexity`, or a channel), or `X.*` for strictly its
+**descendants**, either optionally narrowed to one level of the aggregation tree with `:level`.
+A selector carrying a level keeps its producer running, since a producer filtered out would
+never emit the level that was asked for. Can be repeated:
 
 ```bash
 # Run only complexity rules
@@ -552,9 +574,9 @@ bin/qmx check src/ --only-rule=complexity.*
 # Run two specific rules
 bin/qmx check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
 
-# Select one channel emitted by the computed.health producer
+# Select one channel of a built-in health dimension: producer and channel
+# share the name, since each of the six dimensions is its own producer
 bin/qmx check src/ --only-rule=health.complexity
-bin/qmx check src/ --only-rule=computed.health#health.complexity
 ```
 
 Selectors must match a registered producer, group, or emitted channel exactly, or resolve an
@@ -585,7 +607,9 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 `exclude_namespace_channels` is configured in YAML, not through `--rule-opt`: each selector
 requires a non-empty list of namespace patterns, while `--rule-opt` carries scalar values. Its
 keys are channel selectors and follow the same exact-or-`X.*` rule as `@qmx-ignore` — a bare
-prefix like `health` is now an error, not a shorthand for `health.*`.
+prefix like `health` is now an error, not a shorthand for `health.*`. A key may add `:namespace`
+and no other level: the option is offered namespace aggregates only, so any other level would
+name a filter that can never fire.
 
 <!-- llms:skip-begin -->
 ### Rule-specific shortcut flags
@@ -637,24 +661,24 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 
 === "Design"
 
-| Flag                                 | Rule                 | Option              |
-| ------------------------------------ | -------------------- | ------------------- |
-| `--dit-warning=N`                    | design.inheritance   | warning             |
-| `--dit-error=N`                      | design.inheritance   | error               |
-| `--lcom-warning=N`                   | cohesion.lcom        | warning             |
-| `--lcom-error=N`                     | cohesion.lcom        | error               |
-| `--lcom-min-methods=N`               | cohesion.lcom        | minMethods          |
-| `--lcom-exclude-readonly`            | cohesion.lcom        | excludeReadonly     |
-| `--noc-warning=N`                    | design.noc           | warning             |
-| `--noc-error=N`                      | design.noc           | error               |
-| `--type-coverage-param-warning=N`    | design.type-coverage | param_warning       |
-| `--type-coverage-param-error=N`      | design.type-coverage | param_error         |
-| `--type-coverage-return-warning=N`   | design.type-coverage | return_warning      |
-| `--type-coverage-return-error=N`     | design.type-coverage | return_error        |
-| `--type-coverage-property-warning=N` | design.type-coverage | property_warning    |
-| `--type-coverage-property-error=N`   | design.type-coverage | property_error      |
-| `--property-exclude-readonly`        | size.property-count  | excludeReadonly     |
-| `--property-exclude-promoted-only`   | size.property-count  | excludePromotedOnly |
+| Flag                                 | Rule                          | Option              |
+| ------------------------------------ | ----------------------------- | ------------------- |
+| `--dit-warning=N`                    | design.inheritance            | warning             |
+| `--dit-error=N`                      | design.inheritance            | error               |
+| `--lcom-warning=N`                   | cohesion.lcom                 | warning             |
+| `--lcom-error=N`                     | cohesion.lcom                 | error               |
+| `--lcom-min-methods=N`               | cohesion.lcom                 | minMethods          |
+| `--lcom-exclude-readonly`            | cohesion.lcom                 | excludeReadonly     |
+| `--noc-warning=N`                    | design.noc                    | warning             |
+| `--noc-error=N`                      | design.noc                    | error               |
+| `--param-type-coverage-warning=N`    | design.type-coverage.param    | warning             |
+| `--param-type-coverage-error=N`      | design.type-coverage.param    | error               |
+| `--return-type-coverage-warning=N`   | design.type-coverage.return   | warning             |
+| `--return-type-coverage-error=N`     | design.type-coverage.return   | error               |
+| `--property-type-coverage-warning=N` | design.type-coverage.property | warning             |
+| `--property-type-coverage-error=N`   | design.type-coverage.property | error               |
+| `--property-exclude-readonly`        | size.property-count           | excludeReadonly     |
+| `--property-exclude-promoted-only`   | size.property-count           | excludePromotedOnly |
 
 === "Maintainability"
 
@@ -692,13 +716,13 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 
 === "Architecture"
 
-| Flag                                      | Rule                             | Option           |
-| ----------------------------------------- | -------------------------------- | ---------------- |
-| `--circular-deps`                         | architecture.circular-dependency | enabled          |
-| `--max-cycle-size=N`                      | architecture.circular-dependency | maxCycleSize     |
-| `--layer-violation`                       | architecture.layer-violation     | enabled          |
-| `--layer-violation-severity=SEVERITY`     | architecture.layer-violation     | severity         |
-| `--layer-violation-unassigned-class=MODE` | architecture.layer-violation     | unassigned_class |
+| Flag                                  | Rule                             | Option       |
+| ------------------------------------- | -------------------------------- | ------------ |
+| `--circular-deps`                     | architecture.circular-dependency | enabled      |
+| `--max-cycle-size=N`                  | architecture.circular-dependency | maxCycleSize |
+| `--layer-violation`                   | architecture.layer-violation     | enabled      |
+| `--layer-violation-severity=SEVERITY` | architecture.layer-violation     | severity     |
+| `--unassigned-class-mode=MODE`        | architecture.unassigned-class    | mode         |
 
 ---
 

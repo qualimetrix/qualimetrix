@@ -1,0 +1,116 @@
+# Every `violation` spelling the product still carries after Ш5a, measured — not
+# narrated. Replaces the prose claim "two names / two families keep the old
+# spelling": the measured residue is larger, and three of its rows belong to no
+# sub-step of the plan.
+#
+# Unit of a row: one maximal token of `[A-Za-z0-9_.$-]` containing `violation`
+# or `Violation`, case kept, with a leading receiver segment (`node.`, `$a->`)
+# stripped. Scope: `src/`, `tests/`, `qmx.yaml`. The generated bundle
+# `src/Reporting/Template/dist/` is excluded — it mirrors
+# `src/Reporting/Template/src/`. The gate (`finding-gate/`,
+# `scripts/finding-gate*/`) is excluded too: it pins product spellings
+# deliberately and its own freshness checks own those rows.
+#
+# Regenerate the measured columns (spelling, occurrences):
+#
+#   git grep -hoIE '[A-Za-z0-9_.$-]*[Vv]iolation[A-Za-z0-9_]*' -- src tests qmx.yaml ':!src/Reporting/Template/dist' \
+#     | sed -E 's/^[.$-]+//; s/[.-]+$//' \
+#     | sed -E ':r; s/^[A-Za-z_][A-Za-z0-9_]*\.([A-Za-z0-9_.]*[Vv]iolation[A-Za-z0-9_]*)$/\1/; tr' \
+#     | sort | uniq -c | awk -v OFS='\t' '{print $2, $1}' | sort
+#
+# Check this file against a fresh measurement — empty output means fresh:
+#
+#   diff <(<the command above>) \
+#        <(grep -v '^#' docs/internal/plans/rule-vocabulary/enumeration-kept-spellings.tsv | tail -n +2 | cut -f1,2)
+#
+# `kind`, `disposition` and `note` are judgement, not measurement. A spelling the
+# measurement produces and this file does not classify is `residual:unclassified`
+# by construction, so a new one is loud rather than absorbed.
+#
+# Dispositions:
+#   kept:layer-violation-subject  the LayerViolation subject and its rule name `architecture.layer-violation`
+#   kept:metric-key               `violationCount`, `violationCountTotal`, `violationDensity` and names derived from them
+#   kept:output-word              the English word a report prints ("1 violation")
+#   kept:test-fixture-name        a golden-fixture file name
+#   substep:Ш5b                   the `rule#code` pair vocabulary
+#   substep:Ш5g                   HTML payload keys and the HTML report's own JS/CSS
+#   orphan:published-json-key     a published JSON key no sub-step of Ш5 claims
+#   orphan:cli-option             `--format-opt=violations`, its internal mirror and its tests — no sub-step claims it
+#   orphan:internal-name          an internal name the rename left half-translated
+#   orphan:string-literal         a literal printed to a user or a developer that still says "Violation"
+#
+spelling	occurrences	kind	disposition	note
+ArchitectureViolationProjector	5	layer-violation subject	kept:layer-violation-subject	-
+ArchitectureViolationSmokeTest	1	layer-violation subject	kept:layer-violation-subject	-
+InlineSuppressionLayerViolationIntegrationTest	1	layer-violation subject	kept:layer-violation-subject	-
+Layer-violation	2	layer-violation subject	kept:layer-violation-subject	-
+LayerViolation	139	layer-violation subject	kept:layer-violation-subject	-
+LayerViolationFinding	14	layer-violation subject	kept:layer-violation-subject	-
+LayerViolationIntegrationTest	4	layer-violation subject	kept:layer-violation-subject	-
+LayerViolationOptions	94	layer-violation subject	kept:layer-violation-subject	-
+LayerViolationOptionsTest	1	layer-violation subject	kept:layer-violation-subject	-
+LayerViolationRule	154	layer-violation subject	kept:layer-violation-subject	-
+LayerViolationRuleTest	1	layer-violation subject	kept:layer-violation-subject	-
+Violation	32	string-literal	orphan:string-literal	compiler-pass error text plus test messages and fixtures
+ViolationDensityTest	1	test-class	kept:metric-key	-
+Violations	10	string-literal	orphan:string-literal	SummaryFormatter section heading
+allFlagSetsViolationsOptionToAll	1	cli-option mirror	orphan:cli-option	names --format-opt=violations
+allFlagWithFormatOptViolationsAllDoesNotConflict	1	cli-option mirror	orphan:cli-option	names --format-opt=violations
+allFlagWithNumericViolationsThrowsException	1	cli-option mirror	orphan:cli-option	names --format-opt=violations
+architecture.layer-violation	162	layer-violation subject	kept:layer-violation-subject	-
+computeViolationDensity	2	php-method	kept:metric-key	computes violationDensity
+emptyArchitecturePolicyProducesZeroLayerViolations	1	layer-violation subject	kept:layer-violation-subject	-
+everyDeclaredRuleNameHalfNamesARealRuleOrALayerViolationDiagnostic	1	layer-violation subject	kept:layer-violation-subject	-
+expected-violations	1	golden-fixture-name	kept:test-fixture-name	-
+expectedViolationCount	8	test-local	kept:metric-key	-
+filterLayerViolations	2	layer-violation subject	kept:layer-violation-subject	-
+formatOptViolationsAllWithoutAllFlagStillWorks	1	cli-option mirror	orphan:cli-option	names --format-opt=violations
+getViolationCountBySeverity	3	php-public-method	orphan:internal-name	AnalysisResult method over list<Finding>
+getViolationLimit	2	cli-option mirror	orphan:cli-option	names --format-opt=violations
+has-violations	2	html-css-class	substep:Ш5g	-
+hasOwnErrorViolations	3	html-report-js	substep:Ш5g	-
+itCalculatesViolationCountsCorrectly	1	test-name	kept:metric-key	-
+itDisplaysTheLayerViolationSeverityAlias	1	layer-violation subject	kept:layer-violation-subject	-
+itDocumentsLayerViolationCliAliasesInWebsiteCliReferences	1	layer-violation subject	kept:layer-violation-subject	-
+itFallsBackToDefaultForInvalidViolationsOption	1	cli-option mirror	orphan:cli-option	names --format-opt=violations
+itIncludesViolationDensityInClassOutput	1	test-name	kept:metric-key	-
+itIncludesViolationDensityInNamespaceOutput	1	test-name	kept:metric-key	-
+itKeepsLayerViolationRuleInExcludedNamespace	1	layer-violation subject	kept:layer-violation-subject	-
+itKeepsLayerViolationRuleInExcludedPath	1	layer-violation subject	kept:layer-violation-subject	-
+itOverridesDetailWithFormatOptViolations	1	cli-option mirror	orphan:cli-option	names --format-opt=violations
+itPreparesArchitecturePolicyWhenLayerViolationRuleIsEnabled	1	layer-violation subject	kept:layer-violation-subject	-
+itPrioritizesFormatOptViolationsOverLimit	1	cli-option mirror	orphan:cli-option	names --format-opt=violations
+itRendersArchitectureViolationsViaCheckstyleFormatter	1	layer-violation subject	kept:layer-violation-subject	-
+itRendersArchitectureViolationsViaGitLabCodeQualityFormatter	1	layer-violation subject	kept:layer-violation-subject	-
+itRendersArchitectureViolationsViaGithubActionsFormatter	1	layer-violation subject	kept:layer-violation-subject	-
+itRendersArchitectureViolationsViaHtmlFormatter	1	layer-violation subject	kept:layer-violation-subject	-
+itRendersArchitectureViolationsViaJsonFormatter	1	layer-violation subject	kept:layer-violation-subject	-
+itRendersArchitectureViolationsViaSarifFormatter	1	layer-violation subject	kept:layer-violation-subject	-
+itRendersArchitectureViolationsViaSummaryFormatter	1	layer-violation subject	kept:layer-violation-subject	-
+itRendersArchitectureViolationsViaTextFormatter	1	layer-violation subject	kept:layer-violation-subject	-
+itRendersArchitectureViolationsViaTextVerboseFormatter	1	layer-violation subject	kept:layer-violation-subject	-
+itShowsAllViolationsWhenFormatOptViolationsIsAll	1	cli-option mirror	orphan:cli-option	names --format-opt=violations
+itShowsNoViolationsWhenFormatOptViolationsIsZero	1	cli-option mirror	orphan:cli-option	names --format-opt=violations
+itStillAcceptsTheSiblingLayerViolationChannelAsDebt	1	layer-violation subject	kept:layer-violation-subject	-
+layer-violation	33	layer-violation subject	kept:layer-violation-subject	-
+layer-violations	1	layer-violation subject	kept:layer-violation-subject	-
+layerViolation	2	layer-violation subject	kept:layer-violation-subject	-
+layerViolationAliases	3	layer-violation subject	kept:layer-violation-subject	-
+layerViolations	20	layer-violation subject	kept:layer-violation-subject	-
+node.has-violations	1	html-css-class	substep:Ш5g	-
+otherViolations	2	html-report-js	substep:Ш5g	-
+phase1-compat-violations	2	golden-fixture-name	kept:test-fixture-name	-
+qmxIgnoreOnSourceDoesNotDropTargetAttributedArchitectureLayerViolation	1	layer-violation subject	kept:layer-violation-subject	-
+renderViolationsTable	2	html-report-js	substep:Ш5g	-
+rules.architecture.layer-violation	1	layer-violation subject	kept:layer-violation-subject	-
+sviolationCode	1	runtime-error-text	substep:Ш5b	FindingChannel error text prints the form `ruleName#violationCode`
+totalViolations	8	html-payload-key	substep:Ш5g	-
+violation	99	printed-word + prose	kept:output-word	"1 violation" / "N violations" in text output
+violationCode	59	html-payload-key + channel-key prose	substep:Ш5g	also the `ruleName#violationCode` key form Ш5b collapses
+violationCount	87	published-metric-key	kept:metric-key	recorded in the Ш5a commit as deliberately unmoved
+violationCountTotal	80	published-metric-key	kept:metric-key	recorded in the Ш5a commit as deliberately unmoved
+violationCounts	8	php-local	orphan:internal-name	DebtBreakdownRenderer local
+violationDensity	47	published-metric-key	kept:metric-key	recorded in the Ш5a commit as deliberately unmoved
+violationGroups	19	published-json-key	orphan:published-json-key	JsonFormatter envelope only
+violations	251	published-json-key	orphan:published-json-key	also the --format-opt name, the v5 baseline key, a log field and the printed word
+violationsMeta	19	published-json-key	orphan:published-json-key	JsonFormatter envelope only

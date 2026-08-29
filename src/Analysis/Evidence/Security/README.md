@@ -47,13 +47,13 @@ credential collector/visitor pair. It uses the Security-owned
 
 ## Evidence and Rules
 
-| Collector                       | DataBag entry key               | Rule ID                          | Default severity |
-| ------------------------------- | ------------------------------- | -------------------------------- | ---------------- |
-| `HardcodedCredentialsCollector` | `security.hardcodedCredentials` | `security.hardcoded-credentials` | Error            |
-| `SecurityPatternCollector`      | `security.sql_injection`        | `security.sql-injection`         | Error            |
-| `SecurityPatternCollector`      | `security.xss`                  | `security.xss`                   | Error            |
-| `SecurityPatternCollector`      | `security.command_injection`    | `security.command-injection`     | Error            |
-| `SensitiveParameterCollector`   | `security.sensitiveParameter`   | `security.sensitive-parameter`   | Warning          |
+| Collector                       | DataBag entry key                | Rule ID                          | Default severity |
+| ------------------------------- | -------------------------------- | -------------------------------- | ---------------- |
+| `HardcodedCredentialsCollector` | `security.hardcoded-credentials` | `security.hardcoded-credentials` | Error            |
+| `SecurityPatternCollector`      | `security.sql_injection`         | `security.sql-injection`         | Error            |
+| `SecurityPatternCollector`      | `security.xss`                   | `security.xss`                   | Error            |
+| `SecurityPatternCollector`      | `security.command_injection`     | `security.command-injection`     | Error            |
+| `SensitiveParameterCollector`   | `security.sensitive-parameter`   | `security.sensitive-parameter`   | Warning          |
 
 All Security rule options default to `enabled: true`. The three pattern rules
 share `AbstractSecurityPatternRule` and `SecurityPatternOptions`; credential
@@ -72,7 +72,7 @@ AST node -> stateful visitor -> MetricBag entry -> stateless rule -> Finding
 ```
 
 Visitors keep resettable per-file state. Collectors emit Measurement-owned
-`MetricBag` entries, while rules consume Finding-owned rule and violation
+`MetricBag` entries, while rules consume Finding-owned rule and finding
 contracts. Security publishes no additional contract.
 
 ## Tests

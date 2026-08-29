@@ -190,14 +190,17 @@ rules:
     threshold: 15   # class AND namespace: warning=error=15
 ```
 
-For type coverage, dedicated shorthand keys are available:
+Each type-coverage dimension is a rule of its own, so each takes its own bare
+`threshold`:
 
 ```yaml
 rules:
-  design.type-coverage:
-    param_threshold: 90
-    return_threshold: 90
-    property_threshold: 80
+  design.type-coverage.param:
+    threshold: 90
+  design.type-coverage.return:
+    threshold: 90
+  design.type-coverage.property:
+    threshold: 80
 ```
 
 **Exclude namespaces from a rule:**
@@ -230,7 +233,7 @@ part of the namespace tree, but class findings and the producer's other channels
 
 ```yaml
 rules:
-  computed.health:
+  health.cohesion:
     exclude_namespace_channels:
       health.cohesion:
         - App\Metrics\Coupling
@@ -239,26 +242,34 @@ rules:
 
 The option is a non-empty map from channel selector to a non-empty list of namespace
 prefixes or globs. The key reads the same grammar as everywhere else — an **exact channel
-name**, `X.*` for the strict descendants of `X`, or the explicit `ruleName#violationCode`
-pair; see [Rule and channel selectors](#rule-and-channel-selectors) below. A bare prefix such
-as `health` is an error, not a group: write `health.*`. Exact `health.cohesion` leaves the
-sibling `health.coupling` untouched.
+name**, or `X.*` for the strict descendants of `X`, either optionally narrowed to a level with
+`:namespace`; see [Rule and channel selectors](#rule-and-channel-selectors) below. A bare
+prefix such as `health` is an error, not a group: write `health.*`. Exact `health.cohesion`
+leaves the sibling `health.coupling` untouched.
 
 The key must address a channel **the rule it is written under actually emits**. A key that
 names another rule's channel, or no channel at all, ends the run with exit code 3 and a
-message listing that rule's channels — it used to be accepted and exclude nothing:
+message listing that rule's channels — it used to be accepted and exclude nothing. A key
+carrying a level is judged as one thing: the channel it names must be produced by this rule
+**and** report at that level, so `coupling.*:namespace` under `coupling.class-rank` is refused
+even though a sibling `coupling` channel does report at namespace level.
+
+`namespace` is the only level such a key can name, because the option is offered
+namespace-aggregate findings and nothing else. `coupling.cbo:class` is refused by name — it
+used to be accepted and could never fire:
 
 ```yaml
 rules:
-  computed.health:
+  coupling.cbo:
     exclude_namespace_channels:
-      # the same channel, spelled in full; identical in effect to `health.cohesion`
-      'computed.health#health.cohesion':
-        - App\Metrics\Coupling
+      # the namespace aggregate only; the class findings of the same channel stay reported
+      coupling.cbo:namespace:
+        - App\Legacy
 ```
 
-Here the pair is redundant: the key already sits under a rule name, so both spellings say the
-same thing. It is accepted for consistency of grammar, not because it adds reach.
+Writing the level is optional: a level-free key already reaches only namespace aggregates, so
+`coupling.cbo` and `coupling.cbo:namespace` exclude the same findings. The pair is worth
+writing when the key should say out loud which half of a two-level channel it is about.
 
 !!! warning "Only namespace-aggregate findings are removed"
     The option filters findings whose subject is a **namespace**. A rule that reports per
@@ -330,11 +341,11 @@ Every place that names a rule or a finding channel — `disabled_rules`, `only_r
 equivalents, `exclude_namespace_channels`, and the `@qmx-ignore` family in source code — reads
 the name the same way:
 
-| Form                              | Meaning                                                                                                                                                                                                |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `complexity.cyclomatic`           | **exactly** that name, and nothing else                                                                                                                                                                |
-| `complexity.*`                    | **strictly the descendants** of `complexity` — `complexity.cyclomatic`, `complexity.wmc` and so on. `complexity` itself is not included; if a name is both a rule and a channel, address it separately |
-| `coupling.cbo#coupling.cbo.class` | the rule and the channel spelled out explicitly. Both halves must be exact; no `*` inside this form                                                                                                    |
+| Form                     | Meaning                                                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `complexity.cyclomatic`  | **exactly** that name, and nothing else                                                                                                                                                                |
+| `complexity.*`           | **strictly the descendants** of `complexity` — `complexity.cyclomatic`, `complexity.wmc` and so on. `complexity` itself is not included; if a name is both a rule and a channel, address it separately |
+| `coupling.cbo:namespace` | the channel narrowed to one level of the aggregation tree. The level is one of `callable`, `class`, `file`, `namespace`, `project`, and the channel must report at it                                  |
 
 A bare prefix is **not** a group. `complexity` on its own selects nothing and is rejected:
 
@@ -505,7 +516,7 @@ detection is not configurable: `namespace.strategy` and
 
 ### Coupling
 
-Configure framework namespace prefixes for the CBO (Coupling Between Objects) metric. Dependencies on framework namespaces are tracked separately as `cbo_app` and `ce_framework`:
+Configure framework namespace prefixes for the CBO (Coupling Between Objects) metric. Dependencies on framework namespaces are tracked separately as `coupling.cbo-app` and `coupling.ce-framework`:
 
 ```yaml
 coupling:
@@ -516,7 +527,7 @@ coupling:
     - Illuminate
 ```
 
-When no `framework-namespaces` are configured, `cbo_app` equals `cbo` (no effect).
+When no `framework-namespaces` are configured, `coupling.cbo-app` equals `coupling.cbo` (no effect).
 
 ### Aggregation
 

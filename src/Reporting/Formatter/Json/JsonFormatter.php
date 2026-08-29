@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Json;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
-use Qualimetrix\Reporting\Formatter\Support\ViolationSorter;
+use Qualimetrix\Reporting\Formatter\Support\FindingSorter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -17,7 +17,7 @@ use Qualimetrix\Reporting\Report;
 /**
  * Formats report as JSON with summary structure.
  *
- * Outputs health scores, worst offenders, and violations in a machine-readable
+ * Outputs health scores, worst offenders, and findings in a machine-readable
  * format suitable for AI agents, CI pipelines, and programmatic consumption.
  */
 final class JsonFormatter implements FormatterInterface
@@ -30,21 +30,21 @@ final class JsonFormatter implements FormatterInterface
         private readonly DebtCalculator $debtCalculator,
         private readonly JsonHealthSection $healthSection,
         private readonly JsonOffenderSection $offenderSection,
-        private readonly JsonViolationSection $violationSection,
+        private readonly JsonFindingSection $findingSection,
     ) {}
 
     public function format(Report $report, FormatterContext $context): string
     {
-        $filteredViolations = $this->violationSection->sort($report->violations);
+        $filteredFindings = $this->findingSection->sort($report->findings);
 
         $limit = $this->getViolationLimit($context);
-        $outputViolations = $limit === null
-            ? $filteredViolations
-            : \array_slice($filteredViolations, 0, $limit);
+        $outputFindings = $limit === null
+            ? $filteredFindings
+            : \array_slice($filteredFindings, 0, $limit);
 
         $topN = $this->getTopN($context);
 
-        // When drill-down is active, compute summary from filtered violations
+        // When drill-down is active, compute summary from filtered findings
         $isDrillDown = $context->namespace !== null || $context->class !== null;
 
         $data = [
@@ -53,7 +53,7 @@ final class JsonFormatter implements FormatterInterface
                 'package' => self::PACKAGE,
                 'timestamp' => gmdate('c'),
             ],
-            'summary' => $this->buildSummary($report, $filteredViolations, $isDrillDown),
+            'summary' => $this->buildSummary($report, $filteredFindings, $isDrillDown),
             'coverage' => $report->coverage?->toArray(),
             'health' => $this->healthSection->format($report, $context),
             'worstNamespaces' => $this->offenderSection->formatNamespaces(
@@ -67,20 +67,19 @@ final class JsonFormatter implements FormatterInterface
                 $topN,
             ),
             'topIssues' => $this->formatTopIssues($report, $context),
-            'violations' => $this->violationSection->format($outputViolations, $context),
+            'violations' => $this->findingSection->format($outputFindings, $context),
             'violationsMeta' => [
-                'total' => \count($filteredViolations),
-                'shown' => \count($outputViolations),
+                'total' => \count($filteredFindings),
+                'shown' => \count($outputFindings),
                 'limit' => $limit,
-                'truncated' => $limit !== null && \count($filteredViolations) > $limit,
-                'byRule' => $this->violationSection->countByRule($filteredViolations),
+                'truncated' => $limit !== null && \count($filteredFindings) > $limit,
+                'byRule' => $this->findingSection->countByRule($filteredFindings),
             ],
         ];
 
-        // Add violationGroups when group-by is active (not None)
         if ($context->groupBy !== GroupBy::None) {
-            $data['violationGroups'] = $this->buildViolationGroups(
-                $outputViolations,
+            $data['violationGroups'] = $this->buildFindingGroups(
+                $outputFindings,
                 $context,
             );
         }
@@ -119,19 +118,19 @@ final class JsonFormatter implements FormatterInterface
         $result = [];
 
         foreach ($issues as $rank => $issue) {
-            $violation = $issue->violation;
+            $finding = $issue->finding;
             $result[] = [
                 'rank' => $rank + 1,
-                'file' => $violation->location->file === null
+                'file' => $finding->location->file === null
                     ? null
-                    : $context->relativizePath($violation->location->file),
-                'line' => $violation->location->line,
-                'symbol' => $violation->symbolPath->toString(),
-                'rule' => $violation->ruleName,
-                'severity' => $violation->severity->value,
-                'message' => $violation->getDisplayMessage(),
+                    : $context->relativizePath($finding->location->file),
+                'line' => $finding->location->line,
+                'symbol' => $finding->symbolPath->toString(),
+                'rule' => $finding->ruleName,
+                'severity' => $finding->severity->value,
+                'message' => $finding->getDisplayMessage(),
                 'impactScore' => round($issue->impactScore, 2),
-                'classRank' => $issue->classRank !== null ? round($issue->classRank, 4) : null,
+                'coupling.class-rank' => $issue->classRank !== null ? round($issue->classRank, 4) : null,
                 'debtMinutes' => $issue->debtMinutes,
             ];
         }
@@ -153,7 +152,7 @@ final class JsonFormatter implements FormatterInterface
         }
 
         return array_values(array_filter($issues, static function ($issue) use ($context): bool {
-            $sp = $issue->violation->symbolPath;
+            $sp = $issue->finding->symbolPath;
             $ns = $sp->namespace ?? '';
             $type = $sp->type;
 
@@ -174,19 +173,19 @@ final class JsonFormatter implements FormatterInterface
     /**
      * Builds the summary section.
      *
-     * When drill-down is active, violation counts reflect the filtered set.
+     * When drill-down is active, finding counts reflect the filtered set.
      *
-     * @param list<Violation> $filteredViolations
+     * @param list<Finding> $filteredFindings
      *
      * @return array<string, mixed>
      */
-    private function buildSummary(Report $report, array $filteredViolations, bool $isDrillDown): array
+    private function buildSummary(Report $report, array $filteredFindings, bool $isDrillDown): array
     {
         if ($isDrillDown) {
             $errorCount = 0;
             $warningCount = 0;
             $infoCount = 0;
-            foreach ($filteredViolations as $v) {
+            foreach ($filteredFindings as $v) {
                 match ($v->severity) {
                     Severity::Error => $errorCount++,
                     Severity::Warning => $warningCount++,
@@ -194,13 +193,13 @@ final class JsonFormatter implements FormatterInterface
                 };
             }
 
-            $debtSummary = $this->debtCalculator->calculate($filteredViolations);
+            $debtSummary = $this->debtCalculator->calculate($filteredFindings);
 
             return [
                 'filesAnalyzed' => $report->filesAnalyzed,
                 'filesSkipped' => $report->filesSkipped,
                 'duration' => round($report->duration, 3),
-                'violationCount' => \count($filteredViolations),
+                'violationCount' => \count($filteredFindings),
                 'errorCount' => $errorCount,
                 'warningCount' => $warningCount,
                 'infoCount' => $infoCount,
@@ -212,7 +211,7 @@ final class JsonFormatter implements FormatterInterface
             'filesAnalyzed' => $report->filesAnalyzed,
             'filesSkipped' => $report->filesSkipped,
             'duration' => round($report->duration, 3),
-            'violationCount' => $report->getTotalViolations(),
+            'violationCount' => $report->getTotalFindings(),
             'errorCount' => $report->errorCount,
             'warningCount' => $report->warningCount,
             'infoCount' => $report->infoCount,
@@ -222,22 +221,22 @@ final class JsonFormatter implements FormatterInterface
     }
 
     /**
-     * Builds grouped violation structure sorted by count descending.
+     * Builds grouped finding structure sorted by count descending.
      *
-     * @param list<Violation> $violations Already limited violations
+     * @param list<Finding> $findings Already limited findings
      *
      * @return array<string, array{count: int, violations: list<array<string, mixed>>}>
      */
-    private function buildViolationGroups(array $violations, FormatterContext $context): array
+    private function buildFindingGroups(array $findings, FormatterContext $context): array
     {
-        $groups = ViolationSorter::group($violations, $context->groupBy);
+        $groups = FindingSorter::group($findings, $context->groupBy);
 
         $result = [];
 
-        foreach ($groups as $key => $groupViolations) {
+        foreach ($groups as $key => $groupFindings) {
             $result[$key] = [
-                'count' => \count($groupViolations),
-                'violations' => $this->violationSection->format($groupViolations, $context),
+                'count' => \count($groupFindings),
+                'violations' => $this->findingSection->format($groupFindings, $context),
             ];
         }
 
@@ -248,10 +247,10 @@ final class JsonFormatter implements FormatterInterface
     }
 
     /**
-     * Returns the violation limit based on context.
+     * Returns the finding limit based on context.
      *
      * Priority: explicit --format-opt violations=N > --detail > default (50).
-     * Returns null for "all violations" (no limit).
+     * Returns null for "all findings" (no limit).
      */
     private function getViolationLimit(FormatterContext $context): ?int
     {

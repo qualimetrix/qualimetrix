@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Exclusion;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
  * Stores per-rule namespace exclusions and provides namespace matching.
  *
  * Extracted from config during RuleOptionsFactory::create() and consumed
- * by RuleExecution to filter violations at framework level.
+ * by RuleExecution to filter findings at framework level.
  */
 final class RuleNamespaceExclusionProvider
 {
@@ -62,9 +63,10 @@ final class RuleNamespaceExclusionProvider
     /**
      * Stores namespace-aggregate exclusions scoped to one channel selector.
      *
-     * The selector is a {@see ChannelSelector}: an exact violation code, `X.*`
-     * for its strict descendants, or the `ruleName#violationCode` pair. A bare
-     * prefix such as `health` no longer stands for a group — write `health.*`.
+     * The selector is a {@see ChannelLevelSelector}: an exact channel name, or
+     * `X.*` for its strict descendants, either optionally narrowed to one
+     * level with `:level`. A bare prefix such as `health` no longer stands for
+     * a group — write `health.*`.
      *
      * @param list<string> $patterns Namespace patterns (prefixes or globs)
      */
@@ -178,21 +180,29 @@ final class RuleNamespaceExclusionProvider
 
     public function isExcluded(string $ruleName, string $namespace): bool
     {
-        return isset($this->matchers[$ruleName]) && $this->matchers[$ruleName]->matches($namespace);
+        return isset($this->matchers[$ruleName]) && $this->matchers[$ruleName]->matches($namespace) !== null;
     }
 
     /**
-     * The whole channel is taken, not just its code, because the two-part
-     * selector is meaningless without the rule name — reading only the code
-     * would make `a#x` and `b#x` the same key. The rule name it compares
-     * against is the channel's own, which is not always `$ruleName`: that one
-     * is the rule the option is configured under, and the layer policy emits
-     * four channels under rule names no class declares as its own.
+     * The channel is taken whole rather than as a bare string so that the
+     * caller cannot pass the *producer's* name by accident: `$ruleName` is the
+     * rule the option is configured under, and the layer policy emits four
+     * channels whose names no class declares as its own.
+     *
+     * The level a key is matched at is `namespace` and is not read from the
+     * key: this option is offered namespace aggregates and nothing else, so a
+     * key narrowed to any other level would describe a filter that can never
+     * fire. Such a key is refused by name — before the run starts, by
+     * {@see \Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator} —
+     * rather than judged a second time here, so one mistake keeps one answer.
      */
-    public function isChannelExcluded(string $ruleName, ViolationChannel $channel, string $namespace): bool
+    public function isChannelExcluded(string $ruleName, FindingChannel $channel, string $namespace): bool
     {
         foreach ($this->channelMatchers[$ruleName] ?? [] as $selector => $matcher) {
-            if (ChannelSelector::tryParse($selector)?->matches($channel) === true && $matcher->matches($namespace)) {
+            if (
+                ChannelLevelSelector::tryParse($selector)?->matches($channel->code, SymbolLevel::Namespace_) === true
+                && $matcher->matches($namespace) !== null
+            ) {
                 return true;
             }
         }

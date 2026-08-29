@@ -36,7 +36,7 @@ final class JsonHealthSectionTest extends TestCase
     private function buildReport(array $healthScores = []): Report
     {
         return new Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
@@ -79,7 +79,7 @@ final class JsonHealthSectionTest extends TestCase
         $contributor = new HealthContributor(
             className: 'UserService',
             symbolPath: 'App\\Service::UserService',
-            metricValues: ['ccn' => 15.0, 'loc' => 200],
+            metricValues: ['complexity.ccn' => 15.0, 'size.loc' => 200],
         );
 
         $healthScore = new HealthScore(
@@ -120,8 +120,8 @@ final class JsonHealthSectionTest extends TestCase
         $contrib = $complexity['worstContributors'][0];
         self::assertSame('UserService', $contrib['className']);
         self::assertSame('App\\Service::UserService', $contrib['symbolPath']);
-        self::assertSame(15.0, $contrib['metrics']['ccn']);
-        self::assertSame(200, $contrib['metrics']['loc']);
+        self::assertSame(15.0, $contrib['metrics']['complexity.ccn']);
+        self::assertSame(200, $contrib['metrics']['size.loc']);
     }
 
     #[Test]
@@ -139,7 +139,7 @@ final class JsonHealthSectionTest extends TestCase
         $contributor = new HealthContributor(
             className: 'BadService',
             symbolPath: 'App::BadService',
-            metricValues: ['mi' => \INF, 'loc' => 50],
+            metricValues: ['maintainability.mi' => \INF, 'size.loc' => 50],
         );
 
         $healthScore = new HealthScore(
@@ -164,8 +164,8 @@ final class JsonHealthSectionTest extends TestCase
         self::assertNull($maint['threshold']['warning']);
         self::assertNull($maint['threshold']['error']);
         self::assertNull($maint['decomposition'][0]['value']);
-        self::assertNull($maint['worstContributors'][0]['metrics']['mi']);
-        self::assertSame(50, $maint['worstContributors'][0]['metrics']['loc']);
+        self::assertNull($maint['worstContributors'][0]['metrics']['maintainability.mi']);
+        self::assertSame(50, $maint['worstContributors'][0]['metrics']['size.loc']);
     }
 
     #[Test]

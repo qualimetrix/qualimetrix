@@ -10,7 +10,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\ChannelPresentationView;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
@@ -96,7 +95,7 @@ final class ChannelPresentationViewTest extends TestCase
     }
 
     /**
-     * @param array<string, string> $producerByCode violation code => producing rule name
+     * @param array<string, string> $producerByCode finding code => producing rule name
      * @param list<RuleMetadata> $rules
      * @param array<string, string> $docsPageByRule
      */
@@ -104,7 +103,7 @@ final class ChannelPresentationViewTest extends TestCase
     {
         $identity = self::createStub(ChannelIdentityInterface::class);
         $identity->method('producerOf')->willReturnCallback(
-            static fn(string $violationCode): ?string => $producerByCode[$violationCode] ?? null,
+            static fn(string $code): ?string => $producerByCode[$code] ?? null,
         );
 
         $ruleExecution = self::createStub(RuleExecutionInterface::class);
@@ -118,7 +117,6 @@ final class ChannelPresentationViewTest extends TestCase
         return new RuleMetadata(
             name: $name,
             optionsClass: FixtureChannelPresentationRuleOptions::class,
-            category: RuleCategory::CodeSmell,
             description: $description,
             aliases: [],
             active: true,

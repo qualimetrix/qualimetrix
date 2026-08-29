@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures;
 
 use DateTimeImmutable;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
@@ -48,12 +48,12 @@ trait CeilingStageFixtures
      * @param list<int|float> $magnitudes
      */
     private static function magnitudeEntry(
-        Violation $member,
+        Finding $member,
         array $magnitudes,
         ?BaselineEntryMode $mode = null,
     ): BaselineEntry {
         return new BaselineEntry(
-            BaselineIdentity::forViolation($member),
+            BaselineIdentity::forFinding($member),
             $magnitudes,
             \count($magnitudes),
             $mode,
@@ -64,11 +64,11 @@ trait CeilingStageFixtures
      * An `occurrence` entry bounding the group the given finding belongs to.
      */
     private static function occurrenceEntry(
-        Violation $member,
+        Finding $member,
         int $count,
         ?BaselineEntryMode $mode = null,
     ): BaselineEntry {
-        return new BaselineEntry(BaselineIdentity::forViolation($member), null, $count, $mode);
+        return new BaselineEntry(BaselineIdentity::forFinding($member), null, $count, $mode);
     }
 
     private static function stageOver(
@@ -87,18 +87,18 @@ trait CeilingStageFixtures
      */
     private static function findingOn(
         string $ruleName,
-        string $violationCode,
+        string $code,
         SymbolPath $symbolPath,
         int|float|null $metricValue,
         int $line = 1,
         Severity $severity = Severity::Warning,
-    ): Violation {
-        return new Violation(
+    ): Finding {
+        return new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), $line),
             subject: self::subjectFor($symbolPath),
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: 'finding',
             severity: $severity,
             metricValue: $metricValue,
@@ -116,12 +116,12 @@ trait CeilingStageFixtures
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return list<Severity>
      */
-    private static function severitiesOf(array $violations): array
+    private static function severitiesOf(array $findings): array
     {
-        return array_map(static fn(Violation $violation): Severity => $violation->severity, $violations);
+        return array_map(static fn(Finding $finding): Severity => $finding->severity, $findings);
     }
 }

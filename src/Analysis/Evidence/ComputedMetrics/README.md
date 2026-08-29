@@ -5,8 +5,20 @@
 `Analysis\Evidence\ComputedMetrics` owns formula-defined metrics and their
 run-scoped definition lifecycle. It resolves the ordered configuration
 document, validates and orders definitions, evaluates formulas after
-Measurement aggregation, and emits threshold findings through its own rule.
+Measurement aggregation, and emits threshold findings through `ComputedMetricRule`.
 There is no process-global definition holder.
+
+One rule class serves seven producers, not one. The six built-in health
+dimensions each publish under their own name (`health.complexity`,
+`health.cohesion`, `health.coupling`, `health.typing`, `health.maintainability`,
+`health.overall`) because that set is closed at container-build time; every
+user-defined metric publishes under the shared `computed`, because its name
+comes out of someone else's `qmx.yaml` and cannot be validated by the stage
+that validates that configuration. A producer here is therefore not in
+bijection with a rule class — see
+`Contract/Finding/ComputedMetricChannelFamily` for the declared names and the
+`producerFor()` arbiter, and `ComputedMetricProducerOptions` for why the rule
+asks per-definition options rather than one shared `enabled` flag.
 
 `Health` is a distinct child owner. It owns the six built-in health dimensions,
 score/decomposition semantics, contributor ranking, namespace drill-down, and
@@ -32,6 +44,7 @@ ComputedMetrics/
 ├── ComputedMetricFormulaValidator.php
 ├── ComputedMetricDependencyGraphCalculator.php
 ├── ComputedMetricDefaults.php
+├── ComputedMetricProducerOptions.php # per-definition `enabled` routed through the producer arbiter
 ├── ComputedMetricRule.php
 ├── ComputedMetricRuleOptions.php
 └── Health/
@@ -75,7 +88,10 @@ when no files or definitions exist.
   universe over it.
 - `ComputedMetricDefinitionCatalogInterface` — Health and Reporting's named
   projection consumers.
-- `ComputedMetricChannelFamily` — the channel declaration compiler pass.
+- `ComputedMetricChannelFamily` — declares the family's seven producer names
+  and every class-keyed fact about them (shape, remediation minutes, docs
+  page, threshold-override support) for the channel declaration
+  compiler pass, and arbitrates which producer owns a given definition.
 - `HealthFormulaExclusionInterface` and `ComputedMetricDefinition` — Health's
   exclusion implementation.
 - `HealthDimension` — Reporting's HTML, JSON, and summary projections plus

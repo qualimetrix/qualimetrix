@@ -1,0 +1,26 @@
+{
+    "id": "security",
+    "description": "The security family: hardcoded credentials, SQL injection, XSS, command injection and unmarked sensitive parameters.",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2"
+    ],
+    "channels": [
+        "code-smell.superglobals@callable",
+        "security.command-injection@callable",
+        "security.hardcoded-credentials@class",
+        "security.sensitive-parameter@callable",
+        "security.sql-injection@callable",
+        "security.xss@callable"
+    ],
+    "explainSubjects": [
+        "declaration:callable:Corpus\\Security\\Login::authenticate@src/Login.php",
+        "declaration:callable:Corpus\\Security\\Output::greet@src/Output.php"
+    ]
+}

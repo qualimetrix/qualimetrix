@@ -8,16 +8,16 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -38,6 +38,8 @@ final class LcomRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/cohesion.md';
 
     public const int REMEDIATION_MINUTES = 45;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;
@@ -48,21 +50,16 @@ final class LcomRule extends AbstractRule
         return 'Checks Lack of Cohesion of Methods (high values indicate class should be split)';
     }
 
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Cohesion;
-    }
-
     /**
      * @return list<string>
      */
     public function requires(): array
     {
-        return [MetricName::STRUCTURE_LCOM, MetricName::STRUCTURE_METHOD_COUNT, MetricName::STRUCTURE_IS_READONLY];
+        return [MetricName::COHESION_LCOM, MetricName::SIZE_METHOD_COUNT, MetricName::DESIGN_IS_READONLY];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -70,19 +67,19 @@ final class LcomRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $violation = $this->violationForClass($classInfo, $context, $this->options);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->findingForClass($classInfo, $context, $this->options);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function violationForClass(SymbolInfo $classInfo, AnalysisContext $context, LcomOptions $options): ?Violation
+    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, LcomOptions $options): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('LCOM findings require an exact class declaration subject');
         if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
@@ -113,12 +110,12 @@ final class LcomRule extends AbstractRule
         $location = new Location($classInfo->file, $classInfo->line);
         $symbolPath = $subject->toSymbolPath();
 
-        return new Violation(
+        return new Finding(
             location: $location,
             subject: $subject,
             symbolPath: $symbolPath,
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: $message,
             severity: $severity,
             metricValue: $lcomValue,
@@ -129,14 +126,14 @@ final class LcomRule extends AbstractRule
 
     private function eligibleLcom(MetricBag $metrics, LcomOptions $options): ?int
     {
-        if ($options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
+        if ($options->excludeReadonly && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1) {
             return null;
         }
-        $methodCount = (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT) ?? 0);
+        $methodCount = (int) ($metrics->get(MetricName::SIZE_METHOD_COUNT) ?? 0);
         if ($methodCount < $options->minMethods) {
             return null;
         }
-        $lcom = $metrics->get(MetricName::STRUCTURE_LCOM);
+        $lcom = $metrics->get(MetricName::COHESION_LCOM);
 
         return $lcom !== null ? (int) $lcom : null;
     }
@@ -160,7 +157,7 @@ final class LcomRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
         ];
     }
 

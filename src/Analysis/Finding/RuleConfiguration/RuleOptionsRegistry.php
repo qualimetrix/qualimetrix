@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider;
 use Qualimetrix\Core\Path\RelativePath;
@@ -34,7 +34,7 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
 
     private RuleSelection $selection;
 
-    private bool $capturesExcludedViolations = false;
+    private bool $capturesExcludedFindings = false;
 
     public function __construct(
         private readonly RuleNamespaceExclusionProvider $exclusionProvider = new RuleNamespaceExclusionProvider(),
@@ -156,14 +156,14 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         return !$config[RuleOptionKey::ENABLED];
     }
 
-    public function captureExcludedViolations(): void
+    public function captureExcludedFindings(): void
     {
-        $this->capturesExcludedViolations = true;
+        $this->capturesExcludedFindings = true;
     }
 
-    public function capturesExcludedViolations(): bool
+    public function capturesExcludedFindings(): bool
     {
-        return $this->capturesExcludedViolations;
+        return $this->capturesExcludedFindings;
     }
 
     /**
@@ -188,7 +188,7 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         $this->configFileOptions = [];
         $this->cliOptions = [];
         $this->selection = new RuleSelection();
-        $this->capturesExcludedViolations = false;
+        $this->capturesExcludedFindings = false;
         $this->exclusionProvider->reset();
         $this->pathExclusionProvider->reset();
     }
@@ -201,7 +201,7 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         $this->configFileOptions = [];
         $this->cliOptions = [];
         $this->selection = new RuleSelection();
-        $this->capturesExcludedViolations = false;
+        $this->capturesExcludedFindings = false;
         $this->exclusionProvider->reset();
         $this->pathExclusionProvider->reset();
     }
@@ -226,7 +226,7 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         return $this->exclusionProvider->isExcluded($ruleName, $namespace);
     }
 
-    public function isNamespaceChannelExcluded(string $ruleName, ViolationChannel $channel, string $namespace): bool
+    public function isNamespaceChannelExcluded(string $ruleName, FindingChannel $channel, string $namespace): bool
     {
         return $this->exclusionProvider->isChannelExcluded($ruleName, $channel, $namespace);
     }

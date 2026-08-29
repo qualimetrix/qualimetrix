@@ -22,7 +22,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Size\MethodStatementCountCollector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -51,19 +50,11 @@ final class MaintainabilityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itGetsCategory(): void
-    {
-        $rule = new MaintainabilityRule(new MaintainabilityOptions());
-
-        self::assertSame(RuleCategory::Maintainability, $rule->getCategory());
-    }
-
-    #[Test]
     public function itRequires(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
-        self::assertSame(['mi', 'methodStatementCount'], $rule->requires());
+        self::assertSame(['maintainability.mi', 'size.method-statement-count'], $rule->requires());
     }
 
     #[Test]
@@ -125,8 +116,8 @@ final class MaintainabilityRuleTest extends TestCase
 
         // MI of 30 is below warning threshold (40) but above error (20)
         $metricBag = (new MetricBag())
-            ->with('mi', 30.0)
-            ->with('methodStatementCount', 15);
+            ->with('maintainability.mi', 30.0)
+            ->with('size.method-statement-count', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -139,13 +130,13 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Maintainability Index is 30.0', $violations[0]->message);
-        self::assertSame(30.0, $violations[0]->metricValue);
-        self::assertSame('maintainability.index', $violations[0]->ruleName);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('Maintainability Index is 30.0', $findings[0]->message);
+        self::assertSame(30.0, $findings[0]->metricValue);
+        self::assertSame('maintainability.index', $findings[0]->ruleName);
     }
 
     #[Test]
@@ -158,8 +149,8 @@ final class MaintainabilityRuleTest extends TestCase
 
         // MI of 15 is below error threshold (20) - very poor maintainability
         $metricBag = (new MetricBag())
-            ->with('mi', 15.0)
-            ->with('methodStatementCount', 20);
+            ->with('maintainability.mi', 15.0)
+            ->with('size.method-statement-count', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -172,15 +163,15 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(15.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(15.0, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function itProducesNoViolationForHighMi(): void
+    public function itProducesNoFindingForHighMi(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
@@ -189,8 +180,8 @@ final class MaintainabilityRuleTest extends TestCase
 
         // MI of 90 is good (above warning threshold 65)
         $metricBag = (new MetricBag())
-            ->with('mi', 90.0)
-            ->with('methodStatementCount', 12);
+            ->with('maintainability.mi', 90.0)
+            ->with('size.method-statement-count', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -203,9 +194,9 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -217,8 +208,8 @@ final class MaintainabilityRuleTest extends TestCase
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('mi', 25.67)
-            ->with('methodStatementCount', 15);
+            ->with('maintainability.mi', 25.67)
+            ->with('size.method-statement-count', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -231,11 +222,11 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(25.7, $violations[0]->metricValue);
-        self::assertIsFloat($violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(25.7, $findings[0]->metricValue);
+        self::assertIsFloat($findings[0]->metricValue);
     }
 
     #[Test]
@@ -246,7 +237,7 @@ final class MaintainabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'method');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        // No 'mi' metric
+        // No 'maintainability.mi' metric
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -260,9 +251,9 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     // Options tests
@@ -318,8 +309,8 @@ final class MaintainabilityRuleTest extends TestCase
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
-            ->with('mi', $mi)
-            ->with('methodStatementCount', 15);
+            ->with('maintainability.mi', $mi)
+            ->with('size.method-statement-count', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -332,13 +323,13 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -405,8 +396,8 @@ final class MaintainabilityRuleTest extends TestCase
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('tests/Helpers/AssertionHelper.php'), 10);
 
         $metricBag = (new MetricBag())
-            ->with('mi', 15.0)
-            ->with('methodStatementCount', 20);
+            ->with('maintainability.mi', 15.0)
+            ->with('size.method-statement-count', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -419,9 +410,9 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -432,10 +423,10 @@ final class MaintainabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Tests', 'UserServiceTest', 'testCalculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('tests/Service/UserServiceTest.php'), 10);
 
-        // Low MI that would normally trigger a violation
+        // Low MI that would normally trigger a finding
         $metricBag = (new MetricBag())
-            ->with('mi', 15.0)
-            ->with('methodStatementCount', 20);
+            ->with('maintainability.mi', 15.0)
+            ->with('size.method-statement-count', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -448,10 +439,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Should be skipped because it's a test file
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -462,10 +453,10 @@ final class MaintainabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Tests', 'UserServiceTest', 'testCalculate');
         $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('tests/Service/UserServiceTest.php'), 10);
 
-        // Low MI that would trigger a violation
+        // Low MI that would trigger a finding
         $metricBag = (new MetricBag())
-            ->with('mi', 15.0)
-            ->with('methodStatementCount', 20);
+            ->with('maintainability.mi', 15.0)
+            ->with('size.method-statement-count', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -478,11 +469,11 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Should NOT be skipped
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -495,8 +486,8 @@ final class MaintainabilityRuleTest extends TestCase
 
         // Low MI and too few statements.
         $metricBag = (new MetricBag())
-            ->with('mi', 15.0)
-            ->with('methodStatementCount', 10);
+            ->with('maintainability.mi', 15.0)
+            ->with('size.method-statement-count', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -509,10 +500,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Should be skipped because methodStatementCount < minStatements.
-        self::assertCount(0, $violations);
+        self::assertCount(0, $findings);
     }
 
     #[Test]
@@ -525,8 +516,8 @@ final class MaintainabilityRuleTest extends TestCase
 
         // Low MI and enough statements.
         $metricBag = (new MetricBag())
-            ->with('mi', 15.0)
-            ->with('methodStatementCount', 20);
+            ->with('maintainability.mi', 15.0)
+            ->with('size.method-statement-count', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -539,11 +530,11 @@ final class MaintainabilityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         // Should NOT be skipped
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
     #[Test]
@@ -575,10 +566,10 @@ PHP;
         $multiLineMetrics = $this->calculateMaintainabilityMetrics($multiLine);
 
         self::assertSame(
-            $oneLineMetrics->get('methodStatementCount'),
-            $multiLineMetrics->get('methodStatementCount'),
+            $oneLineMetrics->get('size.method-statement-count'),
+            $multiLineMetrics->get('size.method-statement-count'),
         );
-        self::assertSame($oneLineMetrics->get('mi'), $multiLineMetrics->get('mi'));
+        self::assertSame($oneLineMetrics->get('maintainability.mi'), $multiLineMetrics->get('maintainability.mi'));
 
         $rule = new MaintainabilityRule(new MaintainabilityOptions(
             warning: 101.0,
@@ -610,14 +601,14 @@ PHP;
             self::subjectInfo($method, RelativePath::fromString('src/B.php'), 200),
         ]);
         $repository->method('getSubject')->willReturn(
-            (new MetricBag())->with('mi', 30.0)->with('methodStatementCount', 15),
+            (new MetricBag())->with('maintainability.mi', 30.0)->with('size.method-statement-count', 15),
         );
 
-        $violations = (new MaintainabilityRule(new MaintainabilityOptions()))
+        $findings = (new MaintainabilityRule(new MaintainabilityOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
         sort($subjects);
         self::assertSame([
             'declaration:callable:App\\Service\\Twin::run@src/A.php',
@@ -649,7 +640,7 @@ PHP;
         $statementMetrics = $statements->getCallablesWithMetrics(RelativePath::fromString('src/Example.php'))[0]->metrics;
         $source = $halsteadMetrics
             ->merge($statementMetrics)
-            ->with('ccn', 2);
+            ->with('complexity.ccn', 2);
 
         return $source->merge((new MaintainabilityIndexCollector())->calculate($source));
     }

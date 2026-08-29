@@ -171,7 +171,7 @@ Kebab-case is therefore the spelling users see in tool output, even though
 > **Known gap:** `warnAboutUnknownKeys()` only recognizes constructor
 > parameter names (reflected off the Options class). Shorthand keys consumed
 > by `ThresholdParser` but not also a constructor parameter — the bare
-> `threshold` key, or rule-specific ones like `param_threshold` on
-> `design.type-coverage` — are invisible to this check and can trigger a
+> `threshold` key, or rule-specific ones like `vo_threshold` on
+> `code-smell.long-parameter-list` — are invisible to this check and can trigger a
 > false "Unknown option" warning even though `ThresholdParser` accepts them
 > correctly. See `RuleOptionsFactory::warnAboutUnknownKeys()` docblock.

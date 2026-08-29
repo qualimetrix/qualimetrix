@@ -7,13 +7,16 @@ namespace Qualimetrix\Tests\Integration\Documentation;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
+use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
+use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 /**
- * Binds every prose statement that counts or enumerates violation channels to
+ * Binds every prose statement that counts or enumerates finding channels to
  * the machine-readable channel declarations.
  *
  * Counts and channel lists were maintained as prose in eight documentation
@@ -160,7 +163,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
         ],
         [
             'path' => 'website/docs/rules/architecture.md',
-            'pattern' => '/The rule emits (?<count>\S+) channels, but the other \S+ carry rule names of their own \((?<list>[^)]*)\)/su',
+            'pattern' => '/The layer policy publishes (?<count>\S+) channels, but the other \S+ carry rule names of their own \((?<list>[^)]*)\)/su',
             'set' => 'layer-policy-channels',
             'omitted' => ['architecture.layer-violation'],
         ],
@@ -205,7 +208,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
         ],
         [
             'path' => 'website/docs/rules/architecture.ru.md',
-            'pattern' => '/Правило публикует (?<count>\S+) каналов, но остальные \S+ несут собственные имена правил \((?<list>[^)]*)\)/su',
+            'pattern' => '/Политика слоёв публикует (?<count>\S+) каналов, но остальные \S+ несут собственные имена правил \((?<list>[^)]*)\)/su',
             'set' => 'layer-policy-channels',
             'omitted' => ['architecture.layer-violation'],
         ],
@@ -412,19 +415,34 @@ final class ChannelPublicationConsistencyTest extends TestCase
                 continue;
             }
 
-            $configErrors[] = substr($line, 0, (int) strpos($line, '#'));
+            $fields = preg_split('/\s+/', $line);
+            self::assertNotFalse($fields, \sprintf('Malformed fixture line: "%s".', $line));
+            $configErrors[] = $fields[0];
         }
 
         $layerPolicy = [];
 
-        foreach (array_keys(LayerViolationRule::channelDeclarations()) as $channelKey) {
-            $layerPolicy[] = substr($channelKey, 0, (int) strpos($channelKey, '#'));
+        // Every producer of the family: one rule per finding about the code,
+        // and the validator for the five about the declaration.
+        $layerPolicyKeys = [
+            ...array_keys(LayerViolationRule::channelDeclarations()),
+            ...array_keys(UnassignedClassRule::channelDeclarations()),
+            ...array_keys(LayerDeclarationValidator::channelDeclarations()),
+        ];
+
+        foreach ($layerPolicyKeys as $channelName) {
+            $layerPolicy[] = $channelName;
         }
 
         $annotationChannels = [];
 
-        foreach (array_keys(InlineDirectiveRule::channelDeclarations()) as $channelKey) {
-            $annotationChannels[] = substr($channelKey, 0, (int) strpos($channelKey, '#'));
+        $annotationKeys = [
+            ...array_keys(UnusedDirectiveRule::channelDeclarations()),
+            ...array_keys(InlineDirectiveValidator::channelDeclarations()),
+        ];
+
+        foreach ($annotationKeys as $channelName) {
+            $annotationChannels[] = $channelName;
         }
 
         $sets = [

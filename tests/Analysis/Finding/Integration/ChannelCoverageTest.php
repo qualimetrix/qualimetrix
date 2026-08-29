@@ -20,8 +20,8 @@ use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule;
+use Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
@@ -38,11 +38,10 @@ use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -51,26 +50,27 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
-use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
+use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
+use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
 /**
  * Real-emission coverage guard: every channel exercised by this suite is
  * checked against the production {@see ChannelDeclarationRegistryInterface}
  * and must resolve to a declaration, or be recorded in
- * `tests/Fixtures/Channels/excluded.txt` as deliberately not baselineable.
+ * `tests/Analysis/Finding/Fixtures/Channels/excluded.txt` as deliberately not baselineable.
  *
  * Every case runs the REAL rule against a hand-built `AnalysisContext` (or,
  * for the inline-directive cases, a real prepared policy) — never a
- * hand-built `Violation` — so a wiring mistake (wrong channel key in
+ * hand-built `Finding` — so a wiring mistake (wrong channel key in
  * `channelDeclarations()`, a rule renamed without updating its declaration)
  * would show up as a real emitted channel the registry cannot resolve.
  *
@@ -106,13 +106,13 @@ final class ChannelCoverageTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')->willReturn($metricBag);
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
-        self::assertCount(1, $violations);
+        $findings = $rule->analyze(new AnalysisContext($repository));
+        self::assertCount(1, $findings);
 
-        self::assertDeclared($violations[0]->channel());
+        self::assertDeclared($findings[0]->channel());
     }
 
     #[Test]
@@ -121,16 +121,16 @@ final class ChannelCoverageTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $methodInfo = self::callableInfo('calculate');
-        $metricBag = (new MetricBag())->with('mi', 10.0)->with('methodStatementCount', 50);
+        $metricBag = (new MetricBag())->with('maintainability.mi', 10.0)->with('size.method-statement-count', 50);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
         $repository->method('getSubject')->willReturn($metricBag);
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
-        self::assertCount(1, $violations);
+        $findings = $rule->analyze(new AnalysisContext($repository));
+        self::assertCount(1, $findings);
 
-        self::assertDeclared($violations[0]->channel());
+        self::assertDeclared($findings[0]->channel());
     }
 
     #[Test]
@@ -139,16 +139,16 @@ final class ChannelCoverageTest extends TestCase
         $rule = new ComplexityRule(new ComplexityOptions());
 
         $methodInfo = self::callableInfo('calculate');
-        $metricBag = (new MetricBag())->with('ccn', 25)->with('cognitive', 5);
+        $metricBag = (new MetricBag())->with('complexity.ccn', 25)->with('complexity.cognitive', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
         $repository->method('getSubject')->willReturn($metricBag);
 
-        $violations = $rule->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
-        self::assertCount(1, $violations);
+        $findings = $rule->analyzeLevel(SymbolLevel::Callable, new AnalysisContext($repository));
+        self::assertCount(1, $findings);
 
-        self::assertDeclared($violations[0]->channel());
+        self::assertDeclared($findings[0]->channel());
     }
 
     #[Test]
@@ -157,16 +157,16 @@ final class ChannelCoverageTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $methodInfo = self::callableInfo('__construct');
-        $metricBag = (new MetricBag())->with('parameterCount', 15);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
         $repository->method('getSubject')->willReturn($metricBag);
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
-        self::assertCount(1, $violations);
+        $findings = $rule->analyze(new AnalysisContext($repository));
+        self::assertCount(1, $findings);
 
-        self::assertDeclared($violations[0]->channel());
+        self::assertDeclared($findings[0]->channel());
     }
 
     #[Test]
@@ -186,10 +186,10 @@ final class ChannelCoverageTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($repository);
 
-        $violations = $rule->analyze($context);
-        self::assertCount(1, $violations);
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
 
-        self::assertDeclared($violations[0]->channel());
+        self::assertDeclared($findings[0]->channel());
     }
 
     #[Test]
@@ -200,40 +200,40 @@ final class ChannelCoverageTest extends TestCase
         $classInfo = self::classInfo('CriticalHub', RelativePath::fromString('src/CriticalHub.php'));
         // With one class, computeScaleFactor(1) = sqrt(1/100) = 0.1, so the
         // default error threshold (0.05) scales to 0.5 — 0.9 clears it.
-        $metricBag = (new MetricBag())->with('classRank', 0.9);
+        $metricBag = (new MetricBag())->with('coupling.class-rank', 0.9);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
-        self::assertCount(1, $violations);
+        $findings = $rule->analyze(new AnalysisContext($repository));
+        self::assertCount(1, $findings);
 
-        self::assertDeclared($violations[0]->channel());
+        self::assertDeclared($findings[0]->channel());
     }
 
     #[Test]
     public function theTypeCoverageParamMagnitudeChannelIsDeclaredLowerIsWorse(): void
     {
-        $rule = new TypeCoverageRule(new TypeCoverageOptions(paramWarning: 80.0, paramError: 50.0));
+        $rule = new ParamTypeCoverageRule(new TypeCoverageOptions(warning: 80.0, error: 50.0));
 
         $classInfo = self::classInfo('TestClass', RelativePath::fromString('src/TestClass.php'));
         $metricBag = (new MetricBag())
-            ->with('typeCoverage.paramTotal', 10)
-            ->with('typeCoverage.paramTyped', 7)
-            ->with('typeCoverage.param', 70.0)
-            ->with('typeCoverage.returnTotal', 0)
-            ->with('typeCoverage.propertyTotal', 0);
+            ->with('design.type-coverage.param.total', 10)
+            ->with('design.type-coverage.param.typed', 7)
+            ->with('design.type-coverage.param', 70.0)
+            ->with('design.type-coverage.return.total', 0)
+            ->with('design.type-coverage.property.total', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
-        self::assertCount(1, $violations);
+        $findings = $rule->analyze(new AnalysisContext($repository));
+        self::assertCount(1, $findings);
 
-        self::assertDeclared($violations[0]->channel());
+        self::assertDeclared($findings[0]->channel());
     }
 
     #[Test]
@@ -256,10 +256,10 @@ final class ChannelCoverageTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($repository);
 
-        $violations = $rule->analyze($context);
-        self::assertCount(1, $violations);
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
 
-        self::assertDeclared($violations[0]->channel());
+        self::assertDeclared($findings[0]->channel());
     }
 
     #[Test]
@@ -277,13 +277,13 @@ final class ChannelCoverageTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')->willReturn($metricBag);
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
-        self::assertCount(1, $violations);
+        $findings = $rule->analyze(new AnalysisContext($repository));
+        self::assertCount(1, $findings);
 
-        self::assertDeclared($violations[0]->channel());
+        self::assertDeclared($findings[0]->channel());
     }
 
     #[Test]
@@ -293,16 +293,16 @@ final class ChannelCoverageTest extends TestCase
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $namespaceInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
-        $metricBag = (new MetricBag())->with('classCount.sum', 30);
+        $metricBag = (new MetricBag())->with('size.class-count.sum', 30);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$namespaceInfo]);
         $repository->method('get')->willReturn($metricBag);
 
-        $violations = $rule->analyze(new AnalysisContext($repository));
-        self::assertCount(1, $violations);
+        $findings = $rule->analyze(new AnalysisContext($repository));
+        self::assertCount(1, $findings);
 
-        self::assertDeclared($violations[0]->channel());
+        self::assertDeclared($findings[0]->channel());
     }
 
     /**
@@ -350,10 +350,10 @@ final class ChannelCoverageTest extends TestCase
             ],
         );
 
-        $rule = new InlineDirectiveRule(new InlineDirectiveOptions(), $policy, self::channelIdentity());
-        $violations = $rule->analyze(new AnalysisContext(self::createStub(MetricRepositoryInterface::class)));
+        $validator = new InlineDirectiveValidator(new InlineDirectiveOptions(), $policy, self::channelIdentity());
+        $findings = $validator->validate(new AnalysisContext(self::createStub(MetricRepositoryInterface::class)));
 
-        $emitted = array_map(static fn($violation): string => $violation->violationCode, $violations);
+        $emitted = array_map(static fn($finding): string => $finding->code, $findings);
         sort($emitted);
         self::assertSame(
             [
@@ -364,8 +364,8 @@ final class ChannelCoverageTest extends TestCase
             $emitted,
         );
 
-        foreach ($violations as $violation) {
-            self::assertDeclared($violation->channel());
+        foreach ($findings as $finding) {
+            self::assertDeclared($finding->channel());
         }
 
         $unused = $policy->auditDirectiveUsage([]);
@@ -384,14 +384,16 @@ final class ChannelCoverageTest extends TestCase
             [],
         );
 
-        $rule = new InlineDirectiveRule(new InlineDirectiveOptions(), $policy, self::channelIdentity());
-        self::assertSame([], $rule->analyze(new AnalysisContext(self::createStub(MetricRepositoryInterface::class))));
+        $context = new AnalysisContext(self::createStub(MetricRepositoryInterface::class));
+        $options = new InlineDirectiveOptions();
+        self::assertSame([], (new UnusedDirectiveRule($options, $policy))->analyze($context));
+        self::assertSame([], (new InlineDirectiveValidator($options, $policy, self::channelIdentity()))->validate($context));
 
         $unused = $policy->auditDirectiveUsage([]);
         self::assertCount(1, $unused);
         self::assertSame(
             InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
-            $unused[0]->violationCode,
+            $unused[0]->code,
         );
 
         self::assertDeclared($unused[0]->channel());
@@ -437,11 +439,11 @@ final class ChannelCoverageTest extends TestCase
         );
     }
 
-    private static function assertDeclared(ViolationChannel $channel): void
+    private static function assertDeclared(FindingChannel $channel): void
     {
         self::assertNotNull(
             self::registry()->declarationFor($channel),
-            \sprintf('Channel "%s" was emitted but the registry has no declaration for it.', $channel->toKey()),
+            \sprintf('Channel "%s" was emitted but the registry has no declaration for it.', $channel->code),
         );
     }
 

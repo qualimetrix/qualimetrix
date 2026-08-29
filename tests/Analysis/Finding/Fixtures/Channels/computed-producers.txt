@@ -1,0 +1,19 @@
+# Every producer of the computed-metric family, tracked here rather than read
+# from the definition catalog the registry is built from.
+#
+# A guard that asked the live catalog would be comparing the registry with the
+# source the registry was assembled out of, and would agree with itself for any
+# set at all — including an empty one. This file is the independent witness: it
+# changes only when a person changes it, so a producer silently appearing or
+# vanishing fails instead of passing.
+#
+# The open producer is listed with the six: it is a rule class as well, and
+# leaving it out here would make "the family's producers" mean two different
+# sets in the two places that state them.
+health.complexity
+health.cohesion
+health.coupling
+health.typing
+health.maintainability
+health.overall
+computed

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
 
+use Qualimetrix\Core\Symbol\SymbolLevel;
+
 /**
  * Describes how a metric is collected and how it should be aggregated
  * when rolling up to higher symbol levels.
  *
  * Example for CCN (Cyclomatic Complexity):
- *   - Collected at: Method level
+ *   - Collected at: Callable level
  *   - Aggregations: Class→[Sum,Avg,Max], Namespace→[Sum,Avg,Max], Project→[Sum,Avg,Max]
  *
  * Example for classCount:
@@ -21,7 +23,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
 final readonly class MetricDefinition
 {
     /**
-     * @param string $name Base metric name (e.g., 'ccn', 'loc', 'classCount')
+     * @param string $name Base metric name (e.g., 'complexity.ccn', 'size.loc', 'size.class-count')
      * @param SymbolLevel $collectedAt Level where the metric is originally collected
      * @param array<string, list<AggregationStrategy>> $aggregations
      *                                                               Map of target level (SymbolLevel->value) to list of aggregation strategies.
@@ -37,8 +39,8 @@ final readonly class MetricDefinition
      * Returns the name for an aggregated metric.
      *
      * Examples:
-     *   - ('ccn', Sum) → 'ccn.sum'
-     *   - ('loc', Average) → 'loc.avg'
+     *   - ('complexity.ccn', Sum) → 'complexity.ccn.sum'
+     *   - ('size.loc', Average) → 'size.loc.avg'
      *
      * @param AggregationStrategy $strategy The aggregation strategy applied
      *

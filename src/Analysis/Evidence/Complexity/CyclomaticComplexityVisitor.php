@@ -90,7 +90,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements D
         $result = [];
 
         foreach ($this->scopes as $fqn => $scope) {
-            $metrics = (new MetricBag())->with('ccn', $this->complexities[$fqn] ?? 1);
+            $metrics = (new MetricBag())->with('complexity.ccn', $this->complexities[$fqn] ?? 1);
 
             $result[] = $this->createCallableWithMetrics($scope, $file, $metrics);
         }

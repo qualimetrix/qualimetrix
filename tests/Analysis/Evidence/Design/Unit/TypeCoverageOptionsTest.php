@@ -9,164 +9,100 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 #[CoversClass(TypeCoverageOptions::class)]
 final class TypeCoverageOptionsTest extends TestCase
 {
     #[Test]
-    public function fromArray_withCamelCaseKeys_appliesCorrectly(): void
+    public function itReadsTheBareThresholdPair(): void
     {
-        $options = TypeCoverageOptions::fromArray([
-            'paramWarning' => 90.0,
-            'paramError' => 60.0,
-            'returnWarning' => 85.0,
-            'returnError' => 55.0,
-            'propertyWarning' => 75.0,
-            'propertyError' => 45.0,
-        ]);
+        $options = TypeCoverageOptions::fromArray(['warning' => 90.0, 'error' => 60.0]);
 
-        self::assertSame(90.0, $options->paramWarning);
-        self::assertSame(60.0, $options->paramError);
-        self::assertSame(85.0, $options->returnWarning);
-        self::assertSame(55.0, $options->returnError);
-        self::assertSame(75.0, $options->propertyWarning);
-        self::assertSame(45.0, $options->propertyError);
+        self::assertSame(90.0, $options->warning);
+        self::assertSame(60.0, $options->error);
+    }
+
+    /**
+     * The dimension prefix moved into the rule name, so a key that still
+     * carries it configures nothing here.
+     */
+    #[Test]
+    public function itDoesNotAnswerToTheOldPrefixedKeys(): void
+    {
+        $options = TypeCoverageOptions::fromArray(['param_warning' => 30.0, 'paramWarning' => 30.0]);
+
+        self::assertSame(80.0, $options->warning);
     }
 
     #[Test]
-    public function fromArray_withSnakeCaseKeys_appliesCorrectly(): void
+    public function itDisablesOnAnEmptyConfig(): void
     {
-        $options = TypeCoverageOptions::fromArray([
-            'param_warning' => 90.0,
-            'param_error' => 60.0,
-            'return_warning' => 85.0,
-            'return_error' => 55.0,
-            'property_warning' => 75.0,
-            'property_error' => 45.0,
-        ]);
-
-        self::assertSame(90.0, $options->paramWarning);
-        self::assertSame(60.0, $options->paramError);
-        self::assertSame(85.0, $options->returnWarning);
-        self::assertSame(55.0, $options->returnError);
-        self::assertSame(75.0, $options->propertyWarning);
-        self::assertSame(45.0, $options->propertyError);
+        self::assertFalse(TypeCoverageOptions::fromArray([])->isEnabled());
     }
 
     #[Test]
-    public function fromArray_snakeCaseKeysTakePrecedenceOverCamelCase(): void
-    {
-        $options = TypeCoverageOptions::fromArray([
-            'paramWarning' => 95.0,
-            'param_warning' => 70.0, // snake_case takes precedence
-        ]);
-
-        self::assertSame(70.0, $options->paramWarning);
-    }
-
-    #[Test]
-    public function fromArray_withEmptyArray_disablesRule(): void
-    {
-        $options = TypeCoverageOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
-    }
-
-    #[Test]
-    public function fromArray_withDefaults_usesDefaultValues(): void
+    public function itDefaultsToEightyAndFifty(): void
     {
         $options = TypeCoverageOptions::fromArray(['enabled' => true]);
 
         self::assertTrue($options->isEnabled());
-        self::assertSame(80.0, $options->paramWarning);
-        self::assertSame(50.0, $options->paramError);
-        self::assertSame(80.0, $options->returnWarning);
-        self::assertSame(50.0, $options->returnError);
-        self::assertSame(80.0, $options->propertyWarning);
-        self::assertSame(50.0, $options->propertyError);
+        self::assertSame(80.0, $options->warning);
+        self::assertSame(50.0, $options->error);
     }
 
     #[Test]
-    public function getParamSeverity_returnsCorrectSeverity(): void
+    public function itReadsLessCoverageAsWorse(): void
     {
         $options = new TypeCoverageOptions();
 
-        self::assertNull($options->getParamSeverity(90.0));
-        self::assertNotNull($options->getParamSeverity(70.0));
-        self::assertNotNull($options->getParamSeverity(30.0));
+        self::assertNull($options->getSeverity(90.0));
+        self::assertNull($options->getSeverity(80.0));
+        self::assertSame(Severity::Warning, $options->getSeverity(79.9));
+        self::assertSame(Severity::Warning, $options->getSeverity(50.0));
+        self::assertSame(Severity::Error, $options->getSeverity(49.9));
     }
 
     #[Test]
-    public function getReturnSeverity_returnsCorrectSeverity(): void
+    public function itLetsTheBareThresholdShorthandSetBothBoundaries(): void
     {
-        $options = new TypeCoverageOptions();
+        $options = TypeCoverageOptions::fromArray(['threshold' => 90.0]);
 
-        self::assertNull($options->getReturnSeverity(90.0));
-        self::assertNotNull($options->getReturnSeverity(70.0));
-        self::assertNotNull($options->getReturnSeverity(30.0));
+        self::assertSame(90.0, $options->warning);
+        self::assertSame(90.0, $options->error);
     }
 
     #[Test]
-    public function getPropertySeverity_returnsCorrectSeverity(): void
-    {
-        $options = new TypeCoverageOptions();
-
-        self::assertNull($options->getPropertySeverity(90.0));
-        self::assertNotNull($options->getPropertySeverity(70.0));
-        self::assertNotNull($options->getPropertySeverity(30.0));
-    }
-
-    #[Test]
-    public function fromArray_perDimensionThresholdSetsBothValues(): void
-    {
-        $options = TypeCoverageOptions::fromArray([
-            'param_threshold' => 90.0,
-            'return_threshold' => 85.0,
-            'property_threshold' => 70.0,
-        ]);
-
-        self::assertSame(90.0, $options->paramWarning);
-        self::assertSame(90.0, $options->paramError);
-        self::assertSame(85.0, $options->returnWarning);
-        self::assertSame(85.0, $options->returnError);
-        self::assertSame(70.0, $options->propertyWarning);
-        self::assertSame(70.0, $options->propertyError);
-    }
-
-    /**
-     * Regression: `RuleOptionsFactory` (config-file keys) and
-     * `RuleOptionsParser` (`--rule-opt` keys) both normalize kebab-case and
-     * snake_case option names to camelCase before they reach fromArray(). The
-     * `param_threshold`/`return_threshold`/`property_threshold` unified
-     * shorthand keys must therefore also be recognized in their camelCase
-     * form, not just the snake_case primary spelling covered by
-     * {@see fromArray_perDimensionThresholdSetsBothValues()}.
-     */
-    #[Test]
-    public function itAcceptsCamelCaseThresholdShorthand(): void
-    {
-        $options = TypeCoverageOptions::fromArray([
-            'paramThreshold' => 90.0,
-            'returnThreshold' => 85.0,
-            'propertyThreshold' => 70.0,
-        ]);
-
-        self::assertSame(90.0, $options->paramWarning);
-        self::assertSame(90.0, $options->paramError);
-        self::assertSame(85.0, $options->returnWarning);
-        self::assertSame(85.0, $options->returnError);
-        self::assertSame(70.0, $options->propertyWarning);
-        self::assertSame(70.0, $options->propertyError);
-    }
-
-    #[Test]
-    public function fromArray_thresholdMixedWithWarningThrows(): void
+    public function itRefusesAThresholdMixedWithAGraduatedKey(): void
     {
         self::expectException(InvalidArgumentException::class);
 
-        TypeCoverageOptions::fromArray([
-            'param_threshold' => 90.0,
-            'param_warning' => 80.0,
-        ]);
+        TypeCoverageOptions::fromArray(['threshold' => 90.0, 'warning' => 80.0]);
+    }
+
+    /**
+     * An override that raises the minimum must not be read as a relaxation:
+     * this is the one rule family where a higher number is stricter.
+     */
+    #[Test]
+    public function itValidatesOverridesInInvertedDirection(): void
+    {
+        self::assertInstanceOf(InvertedOverrideValidator::class, TypeCoverageOptions::getOverrideValidator());
+    }
+
+    #[Test]
+    public function itAppliesAnOverridePerBoundary(): void
+    {
+        $options = (new TypeCoverageOptions())->withOverride(95.0, null);
+
+        self::assertSame(95.0, $options->warning);
+        self::assertSame(50.0, $options->error);
+    }
+
+    #[Test]
+    public function itAdvertisesOnlyTheBareShorthand(): void
+    {
+        self::assertSame(['threshold'], TypeCoverageOptions::getShorthandOptionKeys());
     }
 }

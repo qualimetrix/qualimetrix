@@ -56,7 +56,9 @@ use Qualimetrix\Analysis\Evidence\Design\GodClassRule;
 use Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector;
 use Qualimetrix\Analysis\Evidence\Design\InheritanceRule;
 use Qualimetrix\Analysis\Evidence\Design\NocRule;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\PropertyTypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Design\ReturnTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
@@ -87,8 +89,9 @@ use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
-use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
+use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
@@ -104,7 +107,7 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
+use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -209,7 +212,7 @@ final class ContainerFactoryTest extends TestCase
         );
 
         $checkCommand = $container->get(CheckCommand::class);
-        $orchestrator = (new ReflectionProperty(CheckCommand::class, 'violationFilterOrchestrator'))->getValue($checkCommand);
+        $orchestrator = (new ReflectionProperty(CheckCommand::class, 'findingFilterOrchestrator'))->getValue($checkCommand);
         $projector = (new ReflectionProperty($orchestrator, 'findingProjector'))->getValue($orchestrator);
         self::assertSame(
             'Qualimetrix\\Reporting\\FindingProjection\\FindingProjector',
@@ -329,7 +332,7 @@ final class ContainerFactoryTest extends TestCase
         $channels = $container->get(ChannelDeclarationRegistryInterface::class);
         self::assertInstanceOf(ChannelDeclarationRegistryInterface::class, $channels);
         self::assertArrayHasKey(
-            CodeDuplicationRule::NAME . '#' . CodeDuplicationRule::NAME,
+            CodeDuplicationRule::NAME,
             $channels->staticDeclarations(),
         );
 
@@ -448,13 +451,13 @@ PHP;
         self::assertCount(7, $runtimeConstructor->getParameters());
         $checkConstructor = (new ReflectionClass(CheckCommand::class))->getConstructor();
         $baselineRunConstructor = (new ReflectionClass(BaselineRun::class))->getConstructor();
-        $measuredViolationSetConstructor = (new ReflectionClass(MeasuredViolationSet::class))->getConstructor();
+        $measuredFindingSetConstructor = (new ReflectionClass(MeasuredFindingSet::class))->getConstructor();
         self::assertNotNull($checkConstructor);
         self::assertNotNull($baselineRunConstructor);
-        self::assertNotNull($measuredViolationSetConstructor);
+        self::assertNotNull($measuredFindingSetConstructor);
         self::assertCount(12, $checkConstructor->getParameters());
         self::assertCount(8, $baselineRunConstructor->getParameters());
-        self::assertCount(3, $measuredViolationSetConstructor->getParameters());
+        self::assertCount(3, $measuredFindingSetConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
         self::assertNotNull($pipelineConstructor);
         self::assertCount(10, $pipelineConstructor->getParameters());
@@ -673,6 +676,7 @@ PHP;
             'metrics',
             'health',
             'html',
+            'suppressed',
         ];
 
         foreach ($expectedFormatters as $name) {
@@ -798,7 +802,7 @@ PHP;
             DistanceRule::class,
             CircularDependencyRule::class,
             LayerViolationRule::class,
-            InlineDirectiveRule::class,
+            UnusedDirectiveRule::class,
             LongParameterListRule::class,
             BooleanArgumentRule::class,
             CountInLoopRule::class,
@@ -810,7 +814,10 @@ PHP;
             GotoRule::class,
             SuperglobalsRule::class,
             UnreachableCodeRule::class,
-            TypeCoverageRule::class,
+            ParamTypeCoverageRule::class,
+            ReturnTypeCoverageRule::class,
+            PropertyTypeCoverageRule::class,
+            UnassignedClassRule::class,
             HardcodedCredentialsRule::class,
             ClassRankRule::class,
             SqlInjectionRule::class,

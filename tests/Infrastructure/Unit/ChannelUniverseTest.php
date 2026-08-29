@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Unit;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -11,12 +12,13 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 
 /**
@@ -37,10 +39,10 @@ final class ChannelUniverseTest extends TestCase
     #[Test]
     public function itReturnsTheDeclarationForAStaticallyDeclaredChannel(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
-        $declaration = ChannelDeclaration::magnitude(WorseDirection::Higher);
+        $channel = new FindingChannel('complexity.cyclomatic.callable');
+        $declaration = ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_);
 
-        $universe = $this->universe(declarations: [$channel->toKey() => $declaration]);
+        $universe = $this->universe(declarations: [$channel->code => $declaration]);
 
         self::assertSame($declaration, $universe->declarationFor($channel));
     }
@@ -48,7 +50,7 @@ final class ChannelUniverseTest extends TestCase
     #[Test]
     public function itReturnsNullForAnUndeclaredChannel(): void
     {
-        $result = $this->universe()->declarationFor(new ViolationChannel('code-smell.eval', 'code-smell.eval'));
+        $result = $this->universe()->declarationFor(new FindingChannel('code-smell.eval'));
 
         self::assertNull($result, 'An undeclared channel is not baselineable — that is observable, not an exception.');
     }
@@ -56,12 +58,12 @@ final class ChannelUniverseTest extends TestCase
     #[Test]
     public function itExposesExactlyTheStaticDeclarationsItWasGiven(): void
     {
-        $channel = new ViolationChannel('maintainability.index', 'maintainability.index');
-        $declaration = ChannelDeclaration::magnitude(WorseDirection::Lower);
+        $channel = new FindingChannel('maintainability.index');
+        $declaration = ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_);
 
-        $universe = $this->universe(declarations: [$channel->toKey() => $declaration]);
+        $universe = $this->universe(declarations: [$channel->code => $declaration]);
 
-        self::assertSame([$channel->toKey() => $declaration], $universe->staticDeclarations());
+        self::assertSame([$channel->code => $declaration], $universe->staticDeclarations());
     }
 
     #[Test]
@@ -70,11 +72,11 @@ final class ChannelUniverseTest extends TestCase
         $this->definitions = [$this->definition('health.complexity', inverted: true)];
 
         $declaration = $this->universe()->declarationFor(
-            new ViolationChannel(ComputedMetricRule::NAME, 'health.complexity'),
+            new FindingChannel('health.complexity'),
         );
 
         self::assertNotNull($declaration);
-        self::assertSame(ChannelShape::Magnitude, $declaration->shape);
+        self::assertSame(ChannelShape::Magnitude, ComputedMetricRule::shape());
         self::assertSame(
             WorseDirection::Lower,
             $declaration->direction,
@@ -85,14 +87,14 @@ final class ChannelUniverseTest extends TestCase
     #[Test]
     public function itResolvesAUserDefinedComputedMetricAtRunTimeAsHigherIsWorseByDefault(): void
     {
-        $this->definitions = [$this->definition('computed.risk_score', inverted: false)];
+        $this->definitions = [$this->definition('computed.risk-score', inverted: false)];
 
         $declaration = $this->universe()->declarationFor(
-            new ViolationChannel(ComputedMetricRule::NAME, 'computed.risk_score'),
+            new FindingChannel('computed.risk-score'),
         );
 
         self::assertNotNull($declaration);
-        self::assertSame(ChannelShape::Magnitude, $declaration->shape);
+        self::assertSame(ChannelShape::Magnitude, ComputedMetricRule::shape());
         self::assertSame(WorseDirection::Higher, $declaration->direction);
     }
 
@@ -102,7 +104,7 @@ final class ChannelUniverseTest extends TestCase
         $this->definitions = [$this->definition('health.overall', inverted: true)];
 
         // A stale entry for a definition the user has since removed from config.
-        $channel = new ViolationChannel(ComputedMetricRule::NAME, 'computed.removed_metric');
+        $channel = new FindingChannel('computed.removed-metric');
 
         self::assertNull($this->universe()->declarationFor($channel));
     }
@@ -112,30 +114,48 @@ final class ChannelUniverseTest extends TestCase
     {
         $universe = $this->universe(channelsByProducer: [
             'architecture.layer-violation' => [
-                'architecture.layer-violation#architecture.layer-violation',
-                'architecture.coverage#architecture.coverage',
+                'architecture.layer-violation',
+                'architecture.coverage',
             ],
         ]);
 
         self::assertSame(
-            ['architecture.layer-violation#architecture.layer-violation', 'architecture.coverage#architecture.coverage'],
+            ['architecture.layer-violation', 'architecture.coverage'],
             array_map(
-                static fn(ViolationChannel $channel): string => $channel->toKey(),
+                static fn(FindingChannel $channel): string => $channel->code,
                 $universe->channelsProducedBy('architecture.layer-violation'),
             ),
         );
     }
 
+    /**
+     * A built-in dimension is its own producer; a user-defined metric belongs
+     * to the open one. Both directions in one case, so it cannot pass by
+     * routing everything to a single name.
+     */
     #[Test]
-    public function itAddsRuntimeComputedMetricChannelsToTheirProducer(): void
+    public function itAddsRuntimeComputedMetricChannelsToTheirOwnProducer(): void
     {
-        $this->definitions = [$this->definition('health.complexity', inverted: true)];
+        $this->definitions = [
+            $this->definition('health.complexity', inverted: true),
+            $this->definition('computed.branch-load', inverted: false),
+        ];
 
-        $channels = $this->universe()->channelsProducedBy(ComputedMetricRule::NAME);
+        $universe = $this->universe();
 
         self::assertSame(
-            ['computed.health#health.complexity'],
-            array_map(static fn(ViolationChannel $channel): string => $channel->toKey(), $channels),
+            ['health.complexity'],
+            array_map(
+                static fn(FindingChannel $channel): string => $channel->code,
+                $universe->channelsProducedBy('health.complexity'),
+            ),
+        );
+        self::assertSame(
+            ['computed.branch-load'],
+            array_map(
+                static fn(FindingChannel $channel): string => $channel->code,
+                $universe->channelsProducedBy(ComputedMetricRule::NAME),
+            ),
         );
     }
 
@@ -143,8 +163,8 @@ final class ChannelUniverseTest extends TestCase
     public function itAnswersTheReverseLookupWithTheProducingRuleNotTheChannelsOwnRuleName(): void
     {
         $universe = $this->universe(channelsByProducer: [
-            'architecture.layer-violation' => ['architecture.coverage#architecture.coverage'],
-            'coupling.cbo' => ['coupling.cbo#coupling.cbo.class'],
+            'architecture.layer-violation' => ['architecture.coverage'],
+            'coupling.cbo' => ['coupling.cbo.class'],
         ]);
 
         self::assertSame('coupling.cbo', $universe->producerOf('coupling.cbo.class'));
@@ -163,7 +183,7 @@ final class ChannelUniverseTest extends TestCase
 
         $universe = $this->universe();
 
-        self::assertSame(ComputedMetricRule::NAME, $universe->producerOf('health.cohesion'));
+        self::assertSame('health.cohesion', $universe->producerOf('health.cohesion'));
         self::assertTrue($universe->hasChannel('health.cohesion'));
         self::assertFalse($universe->hasChannel('health.removed'));
     }
@@ -196,16 +216,16 @@ final class ChannelUniverseTest extends TestCase
     public function itExpandsAGroupSelectorIntoStrictDescendantsOnly(): void
     {
         $universe = $this->universe(channelsByProducer: [
-            'coupling.cbo' => ['coupling.cbo#coupling.cbo.class', 'coupling.cbo#coupling.cbo.namespace'],
-            'code-smell.eval' => ['code-smell.eval#code-smell.eval'],
+            'coupling.cbo' => ['coupling.cbo.class', 'coupling.cbo.namespace'],
+            'code-smell.eval' => ['code-smell.eval'],
         ]);
 
         $selector = NameSelector::tryParse('coupling.cbo.*');
         self::assertNotNull($selector);
 
         self::assertSame(
-            ['coupling.cbo#coupling.cbo.class', 'coupling.cbo#coupling.cbo.namespace'],
-            array_map(static fn(ViolationChannel $c): string => $c->toKey(), $universe->expand($selector)),
+            ['coupling.cbo.class', 'coupling.cbo.namespace'],
+            array_map(static fn(FindingChannel $c): string => $c->code, $universe->expand($selector)),
         );
     }
 
@@ -213,7 +233,7 @@ final class ChannelUniverseTest extends TestCase
     public function itExpandsAnEqualitySelectorIntoTheOneChannelItNames(): void
     {
         $universe = $this->universe(channelsByProducer: [
-            'coupling.cbo' => ['coupling.cbo#coupling.cbo.class'],
+            'coupling.cbo' => ['coupling.cbo.class'],
         ]);
 
         $exact = NameSelector::tryParse('coupling.cbo.class');
@@ -222,8 +242,8 @@ final class ChannelUniverseTest extends TestCase
         self::assertNotNull($parent);
 
         self::assertSame(
-            ['coupling.cbo#coupling.cbo.class'],
-            array_map(static fn(ViolationChannel $c): string => $c->toKey(), $universe->expand($exact)),
+            ['coupling.cbo.class'],
+            array_map(static fn(FindingChannel $c): string => $c->code, $universe->expand($exact)),
         );
         self::assertSame(
             [],
@@ -244,8 +264,8 @@ final class ChannelUniverseTest extends TestCase
         self::assertNotNull($selector);
 
         self::assertSame(
-            ['computed.health#health.cohesion', 'computed.health#health.coupling'],
-            array_map(static fn(ViolationChannel $c): string => $c->toKey(), $this->universe()->expand($selector)),
+            ['health.cohesion', 'health.coupling'],
+            array_map(static fn(FindingChannel $c): string => $c->code, $this->universe()->expand($selector)),
         );
     }
 
@@ -254,7 +274,7 @@ final class ChannelUniverseTest extends TestCase
     {
         $this->definitions = [$this->definition('health.live', inverted: true)];
         $universe = $this->universe(channelsByProducer: [
-            'coupling.cbo' => ['coupling.cbo#coupling.cbo.class'],
+            'coupling.cbo' => ['coupling.cbo.class'],
         ], thresholdSupport: ['coupling.cbo' => true]);
 
         $candidate = $universe->snapshot(new ResolvedComputedMetricDefinitions([
@@ -262,9 +282,9 @@ final class ChannelUniverseTest extends TestCase
         ]));
 
         self::assertSame(
-            ['computed.health#health.candidate'],
+            ['health.candidate'],
             array_map(
-                static fn(ViolationChannel $c): string => $c->toKey(),
+                static fn(FindingChannel $c): string => $c->code,
                 $candidate->channelsProducedBy(ComputedMetricRule::NAME),
             ),
         );
@@ -276,6 +296,130 @@ final class ChannelUniverseTest extends TestCase
             $universe->producerOf('health.live'),
             'Building a candidate must not disturb the committed universe.',
         );
+    }
+
+    #[Test]
+    public function itProjectsEveryDeclaredLevelOfAComputedMetricOntoTheChannel(): void
+    {
+        $this->definitions = [$this->definitionWithLevels(
+            'health.overall',
+            [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
+        )];
+
+        $declaration = $this->universe()->declarationFor(
+            new FindingChannel('health.overall'),
+        );
+
+        self::assertNotNull($declaration);
+        self::assertSame(
+            [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
+            $declaration->levels,
+        );
+    }
+
+    /**
+     * `levels: []` is accepted by the resolver and makes the metric emit
+     * nothing, so it has no channel to declare — the same answer an unknown
+     * name gets, and the one documented behaviour change of the level work.
+     */
+    #[Test]
+    public function itDeclaresNothingForAComputedMetricThatReportsAtNoLevel(): void
+    {
+        $this->definitions = [$this->definitionWithLevels('computed.silent', [])];
+
+        self::assertNull($this->universe()->declarationFor(
+            new FindingChannel('computed.silent'),
+        ));
+    }
+
+    /**
+     * A repeated level cannot reach this lookup at all: it is refused when
+     * the {@see ComputedMetricDefinition} carrying it is built, which is
+     * while configuration resolves. Pinned here because the alternative —
+     * refusing it in the channel declaration — would have thrown from a
+     * lookup that every finding makes.
+     */
+    #[Test]
+    public function aRepeatedLevelCannotReachTheChannelDeclaration(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('declares the same level more than once');
+
+        $this->definitionWithLevels('computed.repeated', [SymbolLevel::Class_, SymbolLevel::Class_]);
+    }
+
+    /**
+     * The name space is one, so a computed metric may not take a name the
+     * static half already owns.
+     *
+     * The static half used to win in silence: `producerOf()` answered from its
+     * own map and never asked the catalog, so a colliding definition looked
+     * like a working configuration while addressing nothing. The input is
+     * measured rather than invented — `computed_metrics: { computed.health: … }`
+     * is accepted by the resolver (its name carries the required `computed.`
+     * prefix) and names the rule every computed channel is produced under.
+     */
+    #[Test]
+    public function itRefusesAComputedMetricNamedAfterARegisteredRule(): void
+    {
+        $universe = $this->universe(thresholdSupport: ['computed.taken' => false]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Computed metric "computed.taken" is named after a registered rule');
+
+        $universe->snapshot(new ResolvedComputedMetricDefinitions([
+            $this->definition('computed.taken', false),
+        ]));
+    }
+
+    /**
+     * The six built-in dimensions are addressable rule names AND the names of
+     * the definitions they publish, so a membership test alone would refuse
+     * every run before it read a file. Only a name whose producer is somebody
+     * else is a collision.
+     */
+    #[Test]
+    public function itAcceptsABuiltInDimensionThatIsAlsoItsOwnProducersName(): void
+    {
+        $universe = $this->universe(
+            thresholdSupport: array_fill_keys(ComputedMetricChannelFamily::PRODUCER_RULE_NAMES, false),
+        );
+
+        $snapshot = $universe->snapshot(new ResolvedComputedMetricDefinitions(array_map(
+            fn(string $name): ComputedMetricDefinition => $this->definition($name, false),
+            ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES,
+        )));
+
+        self::assertSame('health.cohesion', $snapshot->producerOf('health.cohesion'));
+    }
+
+    #[Test]
+    public function itRefusesAComputedMetricNamedAfterAStaticallyDeclaredChannel(): void
+    {
+        $universe = $this->universe(
+            declarations: ['computed.taken' => ChannelDeclaration::occurrence(SymbolLevel::Class_)],
+            channelsByProducer: ['size.class-count' => ['computed.taken']],
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('named after a channel declared by rule "size.class-count"');
+
+        $universe->snapshot(new ResolvedComputedMetricDefinitions([
+            $this->definition('computed.taken', false),
+        ]));
+    }
+
+    /** The refusal is a refusal of a collision, not of every snapshot. */
+    #[Test]
+    public function itAcceptsASnapshotWhoseComputedNamesAreFree(): void
+    {
+        $universe = $this->universe(thresholdSupport: [ComputedMetricRule::NAME => false]);
+
+        $snapshot = $universe->snapshot(new ResolvedComputedMetricDefinitions([
+            $this->definition('computed.branch-load', false),
+        ]));
+
+        self::assertSame(ComputedMetricRule::NAME, $snapshot->producerOf('computed.branch-load'));
     }
 
     /**
@@ -292,7 +436,6 @@ final class ChannelUniverseTest extends TestCase
             $declarations,
             $channelsByProducer,
             $thresholdSupport,
-            ComputedMetricRule::NAME,
             $this->catalog(),
         );
     }
@@ -301,10 +444,23 @@ final class ChannelUniverseTest extends TestCase
     {
         return new ComputedMetricDefinition(
             name: $name,
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Fixture definition',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: $inverted,
+        );
+    }
+
+    /**
+     * @param list<SymbolLevel> $levels
+     */
+    private function definitionWithLevels(string $name, array $levels): ComputedMetricDefinition
+    {
+        return new ComputedMetricDefinition(
+            name: $name,
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
+            description: 'Fixture definition',
+            levels: $levels,
         );
     }
 

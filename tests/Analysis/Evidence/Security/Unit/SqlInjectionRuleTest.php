@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -29,7 +28,6 @@ final class SqlInjectionRuleTest extends TestCase
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
         self::assertSame('security.sql-injection', $rule->getName());
-        self::assertSame(RuleCategory::Security, $rule->getCategory());
         self::assertSame('Detects potential SQL injection vulnerabilities', $rule->getDescription());
     }
 
@@ -42,7 +40,7 @@ final class SqlInjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenDisabled(): void
+    public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions(enabled: false));
 
@@ -54,7 +52,7 @@ final class SqlInjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsNoViolationsWhenNoFindings(): void
+    public function itReturnsNoFindingsWhenNoFindings(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
@@ -64,7 +62,7 @@ final class SqlInjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itCreatesViolationForSingleFinding(): void
+    public function itCreatesFindingForSingleFinding(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
@@ -73,20 +71,20 @@ final class SqlInjectionRuleTest extends TestCase
                 ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 15, 'superglobal' => '']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(15, $violations[0]->location->line);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('security.sql-injection', $violations[0]->ruleName);
-        self::assertSame('Potential SQL injection — use parameterized queries instead of direct superglobal interpolation', $violations[0]->message);
-        self::assertSame('file:src/Controller/UserController.php', $violations[0]->subject->toCanonical());
-        self::assertSame('Use parameterized queries or prepared statements.', $violations[0]->recommendation);
-        self::assertTrue($violations[0]->location->precise);
+        self::assertCount(1, $findings);
+        self::assertSame(15, $findings[0]->location->line);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame('security.sql-injection', $findings[0]->ruleName);
+        self::assertSame('Potential SQL injection — use parameterized queries instead of direct superglobal interpolation', $findings[0]->message);
+        self::assertSame('file:src/Controller/UserController.php', $findings[0]->subject->toCanonical());
+        self::assertSame('Use parameterized queries or prepared statements.', $findings[0]->recommendation);
+        self::assertTrue($findings[0]->location->precise);
     }
 
     #[Test]
-    public function itCreatesMultipleViolationsForMultipleFindings(): void
+    public function itCreatesMultipleFindingsForMultipleFindings(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
@@ -97,31 +95,31 @@ final class SqlInjectionRuleTest extends TestCase
                 ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 42, 'superglobal' => '']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(3, $violations);
-        self::assertSame(10, $violations[0]->location->line);
-        self::assertSame(25, $violations[1]->location->line);
-        self::assertSame(42, $violations[2]->location->line);
+        self::assertCount(3, $findings);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertSame(25, $findings[1]->location->line);
+        self::assertSame(42, $findings[2]->location->line);
     }
 
     #[Test]
     public function itGroupsOnlySemanticPatternEvidenceRatherThanLinesOrRawContext(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
-        $violations = $rule->analyze($this->createContext(
+        $findings = $rule->analyze($this->createContext(
             (new MetricBag())
                 ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 10, 'superglobal' => '_GET'])
                 ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 20, 'superglobal' => '_GET'])
                 ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 30, 'superglobal' => '_POST']),
         ));
 
-        self::assertSame($violations[0]->occurrenceKey?->value, $violations[1]->occurrenceKey?->value);
-        self::assertNotSame($violations[0]->occurrenceKey?->value, $violations[2]->occurrenceKey?->value);
+        self::assertSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
+        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[2]->occurrenceKey?->value);
     }
 
     #[Test]
-    public function itIncludesSuperglobalInViolationMessage(): void
+    public function itIncludesSuperglobalInFindingMessage(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
@@ -130,11 +128,11 @@ final class SqlInjectionRuleTest extends TestCase
                 ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 15, 'superglobal' => '_GET']),
         );
 
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('($_GET)', $violations[0]->message);
-        self::assertStringContainsString('SQL injection', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('($_GET)', $findings[0]->message);
+        self::assertStringContainsString('SQL injection', $findings[0]->message);
     }
 
     #[Test]

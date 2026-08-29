@@ -280,7 +280,7 @@ final class LayerPolicyTest extends TestCase
         // name still resolves "self → self" as true. This is fine: in practice,
         // a non-empty $from === $to could only originate from a resolved layer,
         // but the contract is deliberately permissive on identity to avoid
-        // spurious "self-cycle" violations.
+        // spurious "self-cycle" findings.
         $policy = AllowListBuilder::policyFromExactMap([
             'controller' => ['service'],
         ]);

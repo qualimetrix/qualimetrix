@@ -65,7 +65,7 @@ final readonly class WorstOffender
     }
 
     /**
-     * Re-ranks offenders by violation density (descending) when requested.
+     * Re-ranks offenders by finding density (descending) when requested.
      *
      * Falls back to canonical path for stable ordering among equal densities.
      * Returns the original list unchanged when rank-by is not 'density'.
@@ -88,9 +88,9 @@ final readonly class WorstOffender
     }
 
     /**
-     * Computes violation density as violations per 100 LOC.
+     * Computes finding density as findings per 100 LOC.
      *
-     * Returns 0.0 when there are no violations, null when LOC is unavailable or zero.
+     * Returns 0.0 when there are no findings, null when LOC is unavailable or zero.
      */
     public static function computeViolationDensity(
         int $violationCount,

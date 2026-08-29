@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Suppression;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Stringable;
 
 /**
@@ -13,10 +14,11 @@ use Stringable;
  *
  * Two states, and the second one is the point of this type:
  *
- * - **a channel selector** — an exact `violationCode`, `X.*` for its strict
- *   descendants, or the explicit `ruleName#violationCode` pair. All three are
- *   {@see ChannelSelector}, which is the whole of the grammar and is shared
- *   with configuration's channel-keyed surfaces;
+ * - **a channel selector** — an exact channel name, `X.*` for its strict
+ *   descendants, and either of those narrowed to one level of the aggregation
+ *   tree with `:level`. All of it is {@see ChannelLevelSelector}, which is the
+ *   whole of the grammar and is shared with configuration's channel-keyed
+ *   surfaces;
  * - **no rule filter at all** — "every finding here, whatever it is". This is
  *   what `@qmx-ignore *` on a symbol or line means, and what a bare
  *   `@qmx-ignore-file` with no argument means.
@@ -44,7 +46,7 @@ final readonly class SuppressionTarget implements Stringable
 
     private function __construct(
         private string $raw,
-        private ?ChannelSelector $selector,
+        private ?ChannelLevelSelector $selector,
         private bool $everyChannel,
     ) {}
 
@@ -54,7 +56,7 @@ final readonly class SuppressionTarget implements Stringable
             return new self($rule, null, true);
         }
 
-        return new self($rule, ChannelSelector::tryParse($rule), false);
+        return new self($rule, ChannelLevelSelector::tryParse($rule), false);
     }
 
     /** Whether the directive carries no rule filter at all. */
@@ -64,31 +66,31 @@ final readonly class SuppressionTarget implements Stringable
     }
 
     /**
-     * The channel addressed by the explicit `ruleName#violationCode` form, or
-     * `null` when the directive was not written in it.
+     * Whether the authored text is written in the retired `rule#code` spelling.
      *
-     * Callers that have to decide whether the target addresses anything need
-     * the pair, because the answer is a channel lookup rather than a name
-     * expansion.
+     * Kept as a question of its own because such a target parses to nothing —
+     * the separator is out of the name grammar — and "parses to nothing" is the
+     * same state a typo produces. Only this predicate separates the two, and
+     * the difference is what the author is told.
      */
-    public function exactChannel(): ?ViolationChannel
+    public function usesRetiredChannelPair(): bool
     {
-        return $this->selector?->exactChannel();
+        return FindingChannel::isRetiredPairSpelling($this->raw);
     }
 
-    /** Whether the authored text used the explicit pair separator at all. */
-    public function looksLikeChannelPair(): bool
+    /** The parsed selector, or `null` when the text is not one. */
+    public function selector(): ?ChannelLevelSelector
     {
-        return ChannelSelector::looksLikePair($this->raw);
+        return $this->selector;
     }
 
-    public function matches(string $ruleName, string $violationCode): bool
+    public function matches(string $code, ?SymbolLevel $level): bool
     {
         if ($this->everyChannel) {
             return true;
         }
 
-        return $this->selector?->matchesNames($ruleName, $violationCode) === true;
+        return $this->selector?->matches($code, $level) === true;
     }
 
     /** The authored text, so a directive round-trips into diagnostics unchanged. */

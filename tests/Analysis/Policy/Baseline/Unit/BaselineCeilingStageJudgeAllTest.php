@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Tests\Analysis\Finding\Support\ViolationFactory;
+use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\CeilingStageFixtures;
 
 /**
@@ -39,9 +39,9 @@ final class BaselineCeilingStageJudgeAllTest extends TestCase
     #[Test]
     public function itMakesApplyDelegateToJudgeAll(): void
     {
-        $recorded = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
-        $worsened = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 16);
-        $unbounded = ViolationFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/Legacy/dup.php')));
+        $recorded = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $worsened = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 16);
+        $unbounded = FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/Legacy/dup.php')));
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [15])]));
 
@@ -62,9 +62,9 @@ final class BaselineCeilingStageJudgeAllTest extends TestCase
     #[Test]
     public function itReportsAnEntryStaleWhenItsIdentityIsAbsentFromTheJudgedList(): void
     {
-        $present = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $present = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $absentEntry = self::magnitudeEntry(
-            ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'other'), 10),
+            FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'other'), 10),
             [10],
         );
 
@@ -97,17 +97,17 @@ final class BaselineCeilingStageJudgeAllTest extends TestCase
         $stage = self::stageOver(self::baselineOf([], [$inert]));
 
         self::assertSame([$inert], $stage->judgeAll([])->inertEntries);
-        self::assertSame([], $stage->judgeAll([])->result->violations);
+        self::assertSame([], $stage->judgeAll([])->result->findings);
     }
 
     /**
      * A run with nothing to judge still reports both lists: absence of
-     * violations is not absence of a baseline to report on.
+     * findings is not absence of a baseline to report on.
      */
     #[Test]
     public function itReportsBothListsEmptyWhenTheBaselineHasNeitherStaleNorInertEntries(): void
     {
-        $member = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $member = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($member, [15])]));
 
         $outcome = $stage->judgeAll([$member]);

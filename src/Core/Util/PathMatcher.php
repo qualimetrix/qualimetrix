@@ -7,7 +7,7 @@ namespace Qualimetrix\Core\Util;
 use Qualimetrix\Core\Path\RelativePath;
 
 /**
- * Matches file paths against path patterns.
+ * Matches file paths against path patterns, naming the pattern that fired.
  *
  * Supports two matching modes, selected automatically per pattern:
  * - **Prefix mode** (no glob characters): the pattern is treated as a path prefix
@@ -43,12 +43,16 @@ final readonly class PathMatcher
     }
 
     /**
-     * Returns true if the file path matches at least one pattern.
+     * Returns the pattern that matched the file path, or `null` if none did.
+     *
+     * When several configured patterns match, the first one in configuration
+     * order is returned — the same order the internal scan already used to
+     * short-circuit on the first hit.
      */
-    public function matches(RelativePath $filePath): bool
+    public function matches(RelativePath $filePath): ?PatternMatch
     {
         if ($this->normalizedPatterns === []) {
-            return false;
+            return null;
         }
 
         $normalizedPath = rtrim($filePath->value(), '/');
@@ -60,16 +64,16 @@ final readonly class PathMatcher
 
             if ($this->isGlobPattern($pattern)) {
                 if (fnmatch($pattern, $normalizedPath, \FNM_NOESCAPE)) {
-                    return true;
+                    return new PatternMatch($pattern);
                 }
             } else {
                 if ($normalizedPath === $pattern || str_starts_with($normalizedPath, $pattern . '/')) {
-                    return true;
+                    return new PatternMatch($pattern);
                 }
             }
         }
 
-        return false;
+        return null;
     }
 
     /**

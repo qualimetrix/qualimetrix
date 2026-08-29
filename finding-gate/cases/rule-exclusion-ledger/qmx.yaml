@@ -1,0 +1,15 @@
+exclude_namespaces:
+  - Corpus\RuleExclusionLedger\GloballyExcluded
+rules:
+  code-smell.long-parameter-list:
+    exclude_namespaces:
+      - Corpus\RuleExclusionLedger\Excluded
+    exclude_paths:
+      - src/SilencedByPath.php
+computed_metrics:
+  health.complexity: { enabled: false }
+  health.cohesion: { enabled: false }
+  health.coupling: { enabled: false }
+  health.typing: { enabled: false }
+  health.maintainability: { enabled: false }
+  health.overall: { enabled: false }

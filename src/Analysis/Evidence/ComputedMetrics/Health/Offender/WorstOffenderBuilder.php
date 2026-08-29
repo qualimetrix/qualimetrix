@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
@@ -46,34 +46,34 @@ final class WorstOffenderBuilder
 
     /**
      * @param iterable<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, loc: int|float|null, notableMetrics: array<string, int|float>}> $snapshots
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return list<WorstOffender>
      */
     public function buildWorstClasses(
         iterable $snapshots,
         string $namespace,
-        array $violations,
+        array $findings,
         float $warningThreshold,
         float $errorThreshold,
     ): array {
-        return $this->buildClassList($snapshots, $namespace, $violations, $warningThreshold, $errorThreshold);
+        return $this->buildClassList($snapshots, $namespace, $findings, $warningThreshold, $errorThreshold);
     }
 
     /**
      * @param iterable<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, loc: int|float|null, notableMetrics: array<string, int|float>}> $snapshots
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return list<WorstOffender>
      */
     private function buildClassList(
         iterable $snapshots,
         string $namespace,
-        array $violations,
+        array $findings,
         float $warningThreshold,
         float $errorThreshold,
     ): array {
-        $violationCounts = $this->countClassViolations($violations);
+        $violationCounts = $this->countClassFindings($findings);
         $offenders = [];
 
         foreach ($snapshots as $snapshot) {
@@ -97,17 +97,17 @@ final class WorstOffenderBuilder
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return array<string, int>
      */
-    private function countClassViolations(array $violations): array
+    private function countClassFindings(array $findings): array
     {
         $counts = [];
-        foreach ($violations as $violation) {
-            if ($violation->symbolPath->type !== null) {
-                $namespace = $violation->symbolPath->namespace ?? '';
-                $class = 'class:' . ($namespace === '' ? '' : $namespace . '\\') . $violation->symbolPath->type;
+        foreach ($findings as $finding) {
+            if ($finding->symbolPath->type !== null) {
+                $namespace = $finding->symbolPath->namespace ?? '';
+                $class = 'class:' . ($namespace === '' ? '' : $namespace . '\\') . $finding->symbolPath->type;
                 $counts[$class] = ($counts[$class] ?? 0) + 1;
             }
         }

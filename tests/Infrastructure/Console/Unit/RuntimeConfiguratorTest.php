@@ -115,11 +115,12 @@ final class RuntimeConfiguratorTest extends TestCase
         $loggerFactory->method('create')->willReturn(new NullLogger());
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
         $ruleRegistry->method('getClasses')->willReturn([LcomRule::class]);
+        // The universe carries the addressable names, which is what the
+        // validator reads; a registry stub alone no longer says which they are.
         $staticChannels = new ChannelUniverse(
             [],
             [],
-            [],
-            'computed.health',
+            [LcomRule::NAME => false],
             new ResolvedComputedMetricDefinitions([]),
         );
         $ruleSelector = $selectorOverride ?? new RuleSelector($staticChannels);
@@ -167,7 +168,7 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertFalse($this->cacheStore->current()->enabled);
         self::assertSame(3, $this->parallelStore->current()->workers);
         self::assertSame(['getName'], $this->lcomStore->current()->excludedMethods);
-        self::assertTrue($this->rules->capturesExcludedViolations());
+        self::assertTrue($this->rules->capturesExcludedFindings());
         self::assertTrue($this->profile->isEnabled());
     }
 
@@ -232,7 +233,7 @@ final class RuntimeConfiguratorTest extends TestCase
             self::assertTrue($this->cacheStore->current()->enabled);
             self::assertNull($this->parallelStore->current()->workers);
             self::assertSame([], $this->rules->all());
-            self::assertFalse($this->rules->capturesExcludedViolations());
+            self::assertFalse($this->rules->capturesExcludedFindings());
             self::assertSame([], $this->lcomStore->current()->excludedMethods);
             self::assertFalse($this->profile->isEnabled());
         }
@@ -267,7 +268,7 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertSame([], $this->rules->all());
         self::assertSame([], $this->rules->selection()->only);
         self::assertSame([], $this->rules->selection()->disabled);
-        self::assertFalse($this->rules->capturesExcludedViolations());
+        self::assertFalse($this->rules->capturesExcludedFindings());
         self::assertSame([], $this->lcomStore->current()->excludedMethods);
         self::assertFalse($this->profile->isEnabled());
     }
@@ -323,7 +324,7 @@ final class RuntimeConfiguratorTest extends TestCase
             self::assertNull($this->parallelStore->current()->workers);
             self::assertTrue($this->cacheStore->current()->enabled);
             self::assertSame([], $this->rules->all());
-            self::assertFalse($this->rules->capturesExcludedViolations());
+            self::assertFalse($this->rules->capturesExcludedFindings());
             self::assertSame([], $this->lcomStore->current()->excludedMethods);
             self::assertFalse($this->profile->isEnabled());
         }

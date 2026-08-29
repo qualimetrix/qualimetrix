@@ -1,0 +1,44 @@
+# RUNTIME channels: the computed-metric half of the channel universe, which
+# `ChannelDeclarationRegistryInterface::staticDeclarations()` does not contain
+# and enumeration-renames.tsv therefore does not list. The split that created
+# these producers is recorded once, as a retired `|`-separated row in
+# enumeration-renames-executed.tsv; it is a record of a SPLIT and not a map row
+# — `RenameMaps` knows neither `|` nor a wildcard.
+#
+# Do not hand-edit. Regenerate with:
+#   php scripts/generate-rename-enumeration.php --runtime-channels
+#
+# ROW COUNTS: 6 builtin, 1 corpus-observed
+#
+# HOW THIS WAS PRODUCED
+# - `builtin` rows are DERIVED from
+#   `ComputedMetricDefaults::getDefaults()` — the array the config resolver
+#   itself starts from — not written out here. A seventh health dimension added
+#   there appears here on the next run, with no edit to the generator.
+# - `corpus-observed` rows are the keys of `computed_metrics:` in
+#   finding-gate/cases/*/qmx.yaml minus the built-in set. A user-defined
+#   computed metric is open-ended by construction (it is a name in somebody's
+#   own qmx.yaml), so it is not enumerable — only observable, and only over the
+#   corpus this run read. That narrowing is the `origin` column's whole point.
+# - `producer` is MEASURED, through `ComputedMetricChannelFamily::producerFor()`
+#   — the same arbiter the channel universe and the finding emission ask. Since
+#   Ш5d a built-in dimension is its own producer and every user-defined metric
+#   shares the open producer `computed`; this column is where that stops being
+#   prose. A built-in name that is not `health.*`, or an observed name that is
+#   not `computed.*`, fails the generator instead of getting an invented
+#   answer: the vocabulary names those two shapes and no others.
+#
+# WHAT THIS DOES NOT SEE
+# - a computed metric defined in a qmx.yaml outside the gate corpus (a user's
+#   own project). That set has no upper bound and no measurement can close it;
+# - whether a channel listed here actually FIRES. A case may disable a built-in
+#   dimension (`enabled: false`) or threshold it out of range; what fires is
+#   measured by the gate's coverage check, against each case's `channels` claim.
+channel	origin	source	producer	step
+health.cohesion	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.cohesion	Ш5d
+health.complexity	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.complexity	Ш5d
+health.coupling	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.coupling	Ш5d
+health.maintainability	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.maintainability	Ш5d
+health.overall	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.overall	Ш5d
+health.typing	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.typing	Ш5d
+computed.branch-load	corpus-observed	finding-gate/cases/health/qmx.yaml	computed	Ш5d

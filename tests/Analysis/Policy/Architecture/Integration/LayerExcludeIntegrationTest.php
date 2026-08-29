@@ -8,10 +8,11 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -34,10 +35,10 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  *
  * The fixture has every classified class depend on a shared {@code Marker}
  * (which sits in its own self-only allow-list layer). With every layer
- * self-allow-only, a {@code source → marker} edge produces a violation iff
+ * self-allow-only, a {@code source → marker} edge produces a finding iff
  * the source class is actually assigned to a non-{@code marker} layer.
  * Excluded classes (those filtered by the exclude clause) fall outside
- * every layer under {@code coverage: ignore} and produce no violation —
+ * every layer under {@code coverage: ignore} and produce no finding —
  * that absence is the evidence of correct exclusion.
  */
 #[Group('integration')]
@@ -51,10 +52,10 @@ final class LayerExcludeIntegrationTest extends TestCase
     {
         $analysis = $this->runPipelineWithConfig($this->baseConfig());
 
-        $violations = $this->filterByRule($analysis->violations, LayerViolationRule::NAME);
-        $sourceFqns = $this->collectSourceFqns($violations);
+        $findings = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $sourceFqns = $this->collectSourceFqns($findings);
 
-        // UserService sits in `service` and depends on Marker — violation
+        // UserService sits in `service` and depends on Marker — finding
         // surfaces because every layer self-allows only.
         self::assertContains(
             self::FIXTURE_NAMESPACE . '\\Service\\UserService',
@@ -64,7 +65,7 @@ final class LayerExcludeIntegrationTest extends TestCase
 
         // OldUserService sits in `Service\Legacy\` which the exclude clause
         // filters out of `service`. With CoverageMode::Ignore, an unassigned
-        // class produces no architecture violation.
+        // class produces no architecture finding.
         self::assertNotContains(
             self::FIXTURE_NAMESPACE . '\\Service\\Legacy\\OldUserService',
             $sourceFqns,
@@ -77,11 +78,11 @@ final class LayerExcludeIntegrationTest extends TestCase
     {
         $analysis = $this->runPipelineWithConfig($this->baseConfig());
 
-        $violations = $this->filterByRule($analysis->violations, LayerViolationRule::NAME);
-        $sourceFqns = $this->collectSourceFqns($violations);
+        $findings = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $sourceFqns = $this->collectSourceFqns($findings);
 
         // Order and Stock are in `module-Order` and `module-Inventory` —
-        // assigned and visible as sources of violations.
+        // assigned and visible as sources of findings.
         self::assertContains(
             self::FIXTURE_NAMESPACE . '\\Module\\Order\\Domain\\Order',
             $sourceFqns,
@@ -96,7 +97,7 @@ final class LayerExcludeIntegrationTest extends TestCase
         // OrderProxy sits in `Module\Order\Domain\Generated\` — the
         // template's exclude.patterns filters this subtree per-instance
         // (binding `{m}` to `Order`). The class becomes unassigned and
-        // produces no architecture violation.
+        // produces no architecture finding.
         self::assertNotContains(
             self::FIXTURE_NAMESPACE . '\\Module\\Order\\Domain\\Generated\\OrderProxy',
             $sourceFqns,
@@ -121,7 +122,7 @@ final class LayerExcludeIntegrationTest extends TestCase
 
         $cacheProxyFqn = self::FIXTURE_NAMESPACE . '\\Module\\Cache\\Domain\\Generated\\CacheProxy';
         $sourceFqns = $this->collectSourceFqns(
-            $this->filterByRule($analysis->violations, LayerViolationRule::NAME),
+            $this->filterByRule($analysis->findings, LayerViolationRule::NAME),
         );
 
         self::assertNotContains(
@@ -131,8 +132,8 @@ final class LayerExcludeIntegrationTest extends TestCase
         );
 
         $unreachableMessages = array_map(
-            static fn(Violation $v): string => $v->message,
-            $this->filterByRule($analysis->violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+            static fn(Finding $v): string => $v->message,
+            $this->filterByRule($analysis->findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
         );
         foreach ($unreachableMessages as $message) {
             self::assertStringNotContainsString(
@@ -175,10 +176,10 @@ final class LayerExcludeIntegrationTest extends TestCase
             $loaded = (new YamlConfigLoader())->load($yamlPath);
             $analysis = $this->runPipelineWithConfig($loaded['architecture']);
 
-            $violations = $this->filterByRule($analysis->violations, LayerViolationRule::NAME);
-            $sourceFqns = $this->collectSourceFqns($violations);
+            $findings = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+            $sourceFqns = $this->collectSourceFqns($findings);
 
-            // Assigned classes still produce violations.
+            // Assigned classes still produce findings.
             self::assertContains(
                 self::FIXTURE_NAMESPACE . '\\Service\\UserService',
                 $sourceFqns,
@@ -259,28 +260,28 @@ final class LayerExcludeIntegrationTest extends TestCase
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
-     * @return list<Violation>
+     * @return list<Finding>
      */
-    private function filterByRule(array $violations, string $ruleName): array
+    private function filterByRule(array $findings, string $ruleName): array
     {
         return array_values(array_filter(
-            $violations,
-            static fn(Violation $v): bool => $v->ruleName === $ruleName,
+            $findings,
+            static fn(Finding $v): bool => $v->ruleName === $ruleName,
         ));
     }
 
     /**
-     * @param list<Violation> $violations
+     * @param list<Finding> $findings
      *
      * @return list<string>
      */
-    private function collectSourceFqns(array $violations): array
+    private function collectSourceFqns(array $findings): array
     {
         $seen = [];
-        foreach ($violations as $violation) {
-            $seen[$violation->symbolPath->toString()] = true;
+        foreach ($findings as $finding) {
+            $seen[$finding->symbolPath->toString()] = true;
         }
 
         return array_keys($seen);

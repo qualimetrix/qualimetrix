@@ -37,7 +37,7 @@ final class MetricSubjectIndexTest extends TestCase
             null,
             null,
             $owner,
-            MetricBag::fromArray(['ccn' => 3]),
+            MetricBag::fromArray(['complexity.ccn' => 3]),
             10,
         ));
         $index->addCallable(new CallableWithMetrics(
@@ -47,13 +47,13 @@ final class MetricSubjectIndexTest extends TestCase
             null,
             null,
             $owner,
-            MetricBag::fromArray(['ccn' => 5]),
+            MetricBag::fromArray(['complexity.ccn' => 5]),
             20,
         ));
 
         self::assertSame(2, \count($index->declarationsForLogical($logical->toCanonical())));
-        self::assertSame(3, $index->get(MetricSubject::declaration($first))->get('ccn'));
-        self::assertSame(5, $index->get(MetricSubject::declaration($second))->get('ccn'));
+        self::assertSame(3, $index->get(MetricSubject::declaration($first))->get('complexity.ccn'));
+        self::assertSame(5, $index->get(MetricSubject::declaration($second))->get('complexity.ccn'));
         self::assertCount(2, iterator_to_array($index->allCallables(), false));
     }
 

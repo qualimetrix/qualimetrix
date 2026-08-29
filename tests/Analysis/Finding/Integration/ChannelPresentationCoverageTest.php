@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
@@ -29,7 +29,7 @@ final class ChannelPresentationCoverageTest extends TestCase
      * read the same real container's static declarations, so a divergence
      * between the two counts would itself be a regression.
      */
-    private const int DECLARED_CHANNEL_COUNT = 57;
+    private const int DECLARED_CHANNEL_COUNT = 52;
 
     #[Test]
     public function everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage(): void
@@ -47,21 +47,21 @@ final class ChannelPresentationCoverageTest extends TestCase
 
         $missing = [];
         foreach ($channelKeys as $key) {
-            $violationCode = ViolationChannel::fromKey($key)->violationCode;
-            $answer = $presentation->presentationFor($violationCode);
+            $code = new FindingChannel($key)->code;
+            $answer = $presentation->presentationFor($code);
 
             if ($answer === null) {
-                $missing[] = $violationCode;
+                $missing[] = $code;
 
                 continue;
             }
 
             if ($answer->description === '') {
-                $missing[] = $violationCode . ' (blank description)';
+                $missing[] = $code . ' (blank description)';
             }
 
             if (!is_file(self::docsRoot() . '/' . $answer->docsPage)) {
-                $missing[] = $violationCode . ' (docs page does not exist: ' . $answer->docsPage . ')';
+                $missing[] = $code . ' (docs page does not exist: ' . $answer->docsPage . ')';
             }
         }
 
@@ -79,7 +79,7 @@ final class ChannelPresentationCoverageTest extends TestCase
      * own `everyStaticChannelResolvesToARealDescriptionAndAnExistingDocsPage()`
      * and {@see \Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest},
      * whose docblocks both say so. That leaves P2's own DoD — "the view
-     * answers for all 57 static channels and for a configured `computed.*` /
+     * answers for all 52 static channels and for a configured `computed.*` /
      * `health.*` definition" — half-checked. This resolves the six built-in
      * health-score definitions the same way a real run would (through
      * {@see ComputedMetricConfiguratorInterface::resolve()} against an empty
@@ -107,25 +107,25 @@ final class ChannelPresentationCoverageTest extends TestCase
         self::assertCount(
             self::DECLARED_CHANNEL_COUNT + \count(ComputedMetricDefaults::getDefaults()),
             $channels,
-            'The universe should now report the 57 static channels plus the 6 built-in computed/health definitions.',
+            'The universe should now report the 52 static channels plus the 6 built-in computed/health definitions.',
         );
 
         $missing = [];
         foreach ($channels as $channel) {
-            $answer = $presentation->presentationFor($channel->violationCode);
+            $answer = $presentation->presentationFor($channel->code);
 
             if ($answer === null) {
-                $missing[] = $channel->violationCode;
+                $missing[] = $channel->code;
 
                 continue;
             }
 
             if ($answer->description === '') {
-                $missing[] = $channel->violationCode . ' (blank description)';
+                $missing[] = $channel->code . ' (blank description)';
             }
 
             if (!is_file(self::docsRoot() . '/' . $answer->docsPage)) {
-                $missing[] = $channel->violationCode . ' (docs page does not exist: ' . $answer->docsPage . ')';
+                $missing[] = $channel->code . ' (docs page does not exist: ' . $answer->docsPage . ')';
             }
         }
 

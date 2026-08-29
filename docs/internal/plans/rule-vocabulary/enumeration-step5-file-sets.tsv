@@ -1,0 +1,2378 @@
+# enumeration-step5-file-sets.tsv
+# Measured on branch rule-vocabulary-channel-levels at HEAD de36c45a.
+# Universe: tracked files only (git ls-files, 1989 files). vendor/ and
+# .claude/worktrees/ are untracked and therefore absent by construction.
+#
+# LAYOUT, in this order:
+#   1. `subject` TSV rows - one per subject A-J: sizes per bucket + the command
+#   2. `member` TSV rows  - one row per (subject, file), with its subject count
+#   3. `#` comment blocks, in this order:
+#        - full-universe 10x10 overlap matrix
+#        - all 45 pairs with up to five example files
+#        - empty pairs over the full universe
+#        - files in three or more subjects, full universe, complete
+#        - CODE-SURFACE 10x10 matrix (the decision-relevant one) and its 45 pairs,
+#          empty pairs and >=3-subject files
+#        - subjects x the plan's P5.1/P5.2/P5.3/P5.4 directory cut
+#        - point 4: what shape of input no subject covers
+#        - subject H: whether the loud refusal it needs exists today
+#
+# Rationale for the format: a 10x10 matrix is unreadable as TSV rows, and the
+# per-file membership is unreadable as prose. So the machine-consumable part
+# (sets) is TSV and the human-consumable part (matrix) is a comment block.
+# Rejected alternatives: (a) one wide row per file with ten boolean columns -
+# 900+ rows, and the matrix still has to be computed by the reader; (b) a
+# separate matrix TSV - two files for one measurement, and the DoD asks for one.
+#
+# CAVEAT: finding-gate/** and scripts/finding-gate*/** are being edited by
+# another agent in this same tree. Their membership is measured, not trusted.
+
+kind	subject	what	total	src	tests	website	docs	benchmarks	finding_gate	other	command
+subject	A	Violation -> Finding, violationCode -> code	448	168	186	20	58	0	6	10	git grep -lIP '\bViolation|violationCode|\$violations?\b|list<Violation>'  +  git ls-files '*Violation*'
+subject	B	removal of Violation::$level	36	6	30	0	0	0	0	0	git grep -lIP '(^|[^A-Za-z_])level:\s*(\$|SymbolLevel::|null)'  +  git grep -lIP '->level\b'  (both intersected with files naming Violation/violation, plus Violation.php itself)
+subject	C	level leaves the channel name (10 -> 5)	145	29	64	10	34	0	5	3	git grep -lIF -e 'complexity.cognitive.callable' -e 'complexity.cognitive.class' -e 'complexity.cyclomatic.callable' -e 'complexity.cyclomatic.class' -e 'complexity.npath.callable' -e 'complexity.npath.class' -e 'coupling.cbo.class' -e 'coupling.cbo.namespace' -e 'coupling.instability.class' -e 'coupling.instability.namespace' -e 'ClassCognitiveComplexityOptions' -e 'MethodCognitiveComplexityOptions' -e 'ClassComplexityOptions' -e 'MethodComplexityOptions' -e 'ClassNpathComplexityOptions' -e 'MethodNpathComplexityOptions' -e 'ClassCboOptions' -e 'NamespaceCboOptions' -e 'ClassInstabilityOptions' -e 'NamespaceInstabilityOptions'  +  git ls-files '*{Class,Method,Namespace}*Options.php' for the ten option classes
+subject	D	computed.health splits into health.* and computed.*	169	55	47	13	33	0	16	5	column 2 of docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv  +  git grep -lIP 'computed\.health|ComputedMetricChannelPresentation|ComputedMetricDefaults|REGISTERED_RULE_COUNT|computed_metrics'  +  the three named guard tests
+subject	E	MetricName grammar family.metric	188	85	66	12	18	0	1	6	git grep -lIF -e 'MetricName::'  +  git grep -lIF -e 'typeCoverage.' -e 'halstead.' -e 'unusedPrivate.' -e 'unreachableCode' -e 'pureMethodCount_cohesion' -e 'rfc_own' -e 'rfc_external' -e 'cbo_app' -e 'ce_packages' -e 'ce_framework' -e 'classRank' -e 'methodCountTotal' -e 'methodStatementCount' -e 'implementingEnumCount' -e 'isVoConstructor' -e 'isPromotedPropertiesOnly' -e 'isDataClass' -e 'abstractClassCount' -e 'classLoc' -e 'traitCount' -e 'interfaceCount' -e 'enumCount' -e 'security.hardcodedCredentials' -e 'security.sensitiveParameter'  (the 71 kind=metric-key rows reduced to their distinctive tokens; generic keys loc/mi/ca/ce/cbo/ccn are unsearchable as bare text)
+subject	F	RuleCategory withdrawn	108	39	48	0	20	0	0	1	git grep -lIF -e 'RuleCategory'
+subject	G	$levels typed SymbolLevel; all(SymbolLevel)	252	90	122	4	29	0	2	5	git grep -lIP 'ComputedMetricDefinition|->all\(SymbolType|->all\(\$type\)|mapLevel\(|->levels\b|(^|[^A-Za-z_])levels:|SymbolLevelProjection|MetricRepositoryInterface'  (seeded by Serena find_referencing_symbols on MetricRepositoryInterface::all and ComputedMetricDefinition::$levels)
+subject	H	directive grammars accept a colon	70	18	8	21	20	0	0	3	git grep -lIP 'SuppressionExtractor|ThresholdOverrideExtractor|InlineDirectiveValidator|ChannelExclusionKeyValidator|PATTERN_SYMBOL|PATTERN_NEXT_LINE|PATTERN_FILE'  +  git grep -lIP 'qmx-ignore|qmx-threshold' -- 'website/docs' (user-facing grammar pages only; @qmx-* tags inside src/ are suppressions, not grammar)
+subject	I	baseline v13 -> v14	187	61	79	6	32	0	5	4	git ls-files -- src/Analysis/Policy/Baseline tests/Analysis/Policy/Baseline qmx-baseline.json  +  git grep -lIP 'BaselineMigrator|SCHEMA_VERSION|CURRENT_VERSION|BaselineWriter|BaselineLoader|GitLabCodeQualityFormatter|SarifFormatter|fingerprint'
+subject	J	site, CHANGELOG, ADR, generated inventories	113	0	0	57	53	0	0	3	git ls-files -- website/docs docs/adr docs/internal/modular-architecture-manifest.json docs/internal/generated CHANGELOG.md qmx.yaml qmx.yaml.example
+
+kind	subject	file	subject_count	all_subjects
+member	A	.github/workflows/qmx.yml	1	A
+member	A	AGENTS.md	2	AE
+member	A	CHANGELOG.md	7	ACDEGIJ
+member	A	LICENSE	1	A
+member	A	SCANNER_VALIDATION_ROUND_2_HANDOFF.md	2	AI
+member	A	docs/ARCHITECTURE.md	1	A
+member	A	docs/README.md	1	A
+member	A	docs/adr/0003-reporting-ux-redesign.md	5	ADGIJ
+member	A	docs/adr/0005-architecture-rules.md	2	AJ
+member	A	docs/adr/0012-hybrid-architectural-direction.md	2	AJ
+member	A	docs/adr/0015-relative-path-vo.md	3	AIJ
+member	A	docs/adr/0016-subject-cohesion.md	2	AJ
+member	A	docs/adr/0024-channel-identity-and-selector-semantics.md	5	ACDFJ
+member	A	docs/adr/0025-channel-selectors-in-configuration-keys.md	4	ACDJ
+member	A	docs/adr/0029-channel-presentation-join.md	6	ACDFGJ
+member	A	docs/adr/README.md	5	ADEFJ
+member	A	docs/internal/CLI_CONVENTIONS.md	1	A
+member	A	docs/internal/PRODUCT_ROADMAP.md	2	AE
+member	A	docs/internal/PRODUCT_VISION.md	1	A
+member	A	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	8	ACDEFGHI
+member	A	docs/internal/generated/modular-architecture/production-composition-bindings.tsv	3	ADJ
+member	A	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	8	ACDFGHIJ
+member	A	docs/internal/generated/modular-architecture/production-module-fan-in.tsv	6	AFGHIJ
+member	A	docs/internal/generated/modular-architecture/production-ownership.tsv	8	ACDFGHIJ
+member	A	docs/internal/generated/modular-architecture/production-phase-participants.tsv	4	AEGJ
+member	A	docs/internal/generated/modular-architecture/production-public-imports.tsv	8	ACDFGHIJ
+member	A	docs/internal/generated/modular-architecture/production-reporting-classification.tsv	3	AIJ
+member	A	docs/internal/generated/modular-architecture/test-ownership.tsv	7	ACDGHIJ
+member	A	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	8	ACDEGHIJ
+member	A	docs/internal/modular-architecture-manifest.json	8	ACDFGHIJ
+member	A	docs/internal/plans/baseline-compaction/PLAN-IDENTITY.md	2	AI
+member	A	docs/internal/plans/baseline-compaction/PLAN.md	3	AGI
+member	A	docs/internal/plans/baseline-compaction/enumeration-artifact.md	1	A
+member	A	docs/internal/plans/baseline-compaction/enumeration-identity.md	3	ADI
+member	A	docs/internal/plans/channel-identity-substrate.md	6	ACDFGH
+member	A	docs/internal/plans/client-requests/architecture-layer-pending.md	1	A
+member	A	docs/internal/plans/client-requests/architecture-unassigned-class.md	3	ACG
+member	A	docs/internal/plans/client-requests/threshold-override-exact-matching.md	2	AC
+member	A	docs/internal/plans/diff-mode-new-only.md	4	ADFI
+member	A	docs/internal/plans/global-functions-graph.md	3	AEG
+member	A	docs/internal/plans/modular-architecture/decisions-and-target.md	1	A
+member	A	docs/internal/plans/modular-architecture/p1-duplication.md	1	A
+member	A	docs/internal/plans/modular-architecture/p2-dependency-model.md	4	ACDI
+member	A	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md	5	ACDGI
+member	A	docs/internal/plans/modular-architecture/p4-architecture-policy.md	1	A
+member	A	docs/internal/plans/modular-architecture/p5-computed-metrics.md	4	ACDG
+member	A	docs/internal/plans/modular-architecture/p6-finding-policy.md	6	ACDFHI
+member	A	docs/internal/plans/modular-architecture/p6/p6-production-ledger.md	6	ACDFHI
+member	A	docs/internal/plans/modular-architecture/p6/p6-relations-ledger.md	6	ACFGHI
+member	A	docs/internal/plans/modular-architecture/p6/p6-test-ledger.md	4	ACHI
+member	A	docs/internal/plans/modular-architecture/roadmap-p5-p8.md	2	AG
+member	A	docs/internal/plans/phpdoc-dependencies.md	2	AC
+member	A	docs/internal/plans/rule-vocabulary/AUDIT.md	3	ACI
+member	A	docs/internal/plans/rule-vocabulary/FACTS.md	6	ACDEFG
+member	A	docs/internal/plans/rule-vocabulary/PLAN.md	8	ACDEFGHI
+member	A	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	4	ACDG
+member	A	docs/internal/plans/rule-vocabulary/enumeration-consumers.tsv	3	AEF
+member	A	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	4	ADHI
+member	A	docs/internal/plans/rule-vocabulary/enumeration-producer-surfaces.tsv	2	AE
+member	A	docs/internal/plans/rule-vocabulary/enumeration-renames.tsv	4	ACDE
+member	A	docs/internal/plans/rule-vocabulary/enumeration-shape-consumers.tsv	2	AH
+member	A	docs/internal/plans/sarif-channel-descriptions.md	6	ACDFGI
+member	A	docs/internal/plans/sarif-channel-descriptions/channel-inventory.tsv	3	ACI
+member	A	finding-gate/README.md	3	ACD
+member	A	qmx-baseline.json	6	ACDGHI
+member	A	qmx.yaml	8	ACDFGHIJ
+member	A	scripts/finding-gate-controls.php	1	A
+member	A	scripts/finding-gate-controls/Controls.php	3	ADG
+member	A	scripts/finding-gate/Fingerprints.php	2	AI
+member	A	scripts/finding-gate/Gate.php	2	AI
+member	A	scripts/finding-gate/SelfTest.php	3	ACI
+member	A	scripts/generate-modular-architecture-production-inventory.php	3	AEG
+member	A	scripts/generate-modular-architecture-test-inventory.php	2	AH
+member	A	scripts/generate-rename-enumeration.php	3	ADE
+member	A	src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php	2	AF
+member	A	src/Analysis/Evidence/CircularDependency/Contract/CircularDependencyPreparationInterface.php	1	A
+member	A	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php	3	AFG
+member	A	src/Analysis/Evidence/CodeSmell/CodeSmellFinding.php	1	A
+member	A	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php	3	AEF
+member	A	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php	3	AFG
+member	A	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	3	AEF
+member	A	src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php	3	AEF
+member	A	src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php	3	AEF
+member	A	src/Analysis/Evidence/Cohesion/LcomRule.php	3	AEF
+member	A	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	5	ABCEF
+member	A	src/Analysis/Evidence/Complexity/ComplexityRule.php	5	ABCEF
+member	A	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	5	ABCEF
+member	A	src/Analysis/Evidence/Complexity/WmcRule.php	3	AEF
+member	A	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	3	AFG
+member	A	src/Analysis/Evidence/ComputedMetrics/Finding/ComputedMetricFindingBuilder.php	2	AG
+member	A	src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/WorstClassDrillDown.php	3	AEG
+member	A	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	3	AEG
+member	A	src/Analysis/Evidence/ComputedMetrics/Health/Offender/WorstOffenderBuilder.php	1	A
+member	A	src/Analysis/Evidence/Coupling/CboRule.php	6	ABCEFG
+member	A	src/Analysis/Evidence/Coupling/ClassRankRule.php	4	AEFG
+member	A	src/Analysis/Evidence/Coupling/DistanceRule.php	4	AEFG
+member	A	src/Analysis/Evidence/Coupling/InstabilityRule.php	6	ABCEFG
+member	A	src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php	2	AF
+member	A	src/Analysis/Evidence/Design/DataClassRule.php	3	AEF
+member	A	src/Analysis/Evidence/Design/GodClassRule.php	3	AEF
+member	A	src/Analysis/Evidence/Design/InheritanceRule.php	3	AEF
+member	A	src/Analysis/Evidence/Design/NocRule.php	3	AEF
+member	A	src/Analysis/Evidence/Duplication/CodeDuplicationRule.php	2	AF
+member	A	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php	3	AEF
+member	A	src/Analysis/Evidence/Prioritization/Debt/DebtCalculator.php	2	AD
+member	A	src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php	3	ADG
+member	A	src/Analysis/Evidence/Prioritization/Impact/ClassRankResolver.php	3	AEG
+member	A	src/Analysis/Evidence/Prioritization/Impact/ImpactCalculator.php	3	AEG
+member	A	src/Analysis/Evidence/Prioritization/Impact/RankedIssue.php	2	AE
+member	A	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php	3	AFG
+member	A	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php	4	AEFG
+member	A	src/Analysis/Evidence/Security/SecurityPatternFinding.php	1	A
+member	A	src/Analysis/Evidence/Security/SensitiveParameterRule.php	4	AEFG
+member	A	src/Analysis/Evidence/Size/ClassCountRule.php	4	AEFG
+member	A	src/Analysis/Evidence/Size/MethodCountRule.php	3	AEF
+member	A	src/Analysis/Evidence/Size/PropertyCountRule.php	3	AEF
+member	A	src/Analysis/Finding/ChannelPresentationView.php	3	ADG
+member	A	src/Analysis/Finding/Contract/AcceptedLevel.php	1	A
+member	A	src/Analysis/Finding/Contract/ChannelDeclarationRegistryInterface.php	2	AG
+member	A	src/Analysis/Finding/Contract/ChannelIdentityInterface.php	2	AC
+member	A	src/Analysis/Finding/Contract/ChannelPresentationInterface.php	2	AG
+member	A	src/Analysis/Finding/Contract/ChannelShape.php	2	AD
+member	A	src/Analysis/Finding/Contract/ConfigurationValidatorInterface.php	1	A
+member	A	src/Analysis/Finding/Contract/Filter/ChannelFileScope.php	1	A
+member	A	src/Analysis/Finding/Contract/Filter/NamespaceExclusionFilter.php	1	A
+member	A	src/Analysis/Finding/Contract/Filter/PathExclusionFilter.php	1	A
+member	A	src/Analysis/Finding/Contract/Filter/PredicateFilterStage.php	1	A
+member	A	src/Analysis/Finding/Contract/Filter/ViolationFilterInterface.php	1	A
+member	A	src/Analysis/Finding/Contract/Filter/ViolationFilterStage.php	1	A
+member	A	src/Analysis/Finding/Contract/Filter/ViolationFilterStageInterface.php	1	A
+member	A	src/Analysis/Finding/Contract/Filter/ViolationFilterStageResult.php	1	A
+member	A	src/Analysis/Finding/Contract/OccurrenceKey.php	1	A
+member	A	src/Analysis/Finding/Contract/Rule/ChannelDeclarationReader.php	1	A
+member	A	src/Analysis/Finding/Contract/Rule/ChannelSelector.php	1	A
+member	A	src/Analysis/Finding/Contract/Rule/HierarchicalRuleInterface.php	1	A
+member	A	src/Analysis/Finding/Contract/Rule/RuleChannelRegistryInterface.php	1	A
+member	A	src/Analysis/Finding/Contract/Rule/RuleSelector.php	2	AD
+member	A	src/Analysis/Finding/Contract/RuleConfigurationInterface.php	1	A
+member	A	src/Analysis/Finding/Contract/RuleExclusionStats.php	1	A
+member	A	src/Analysis/Finding/Contract/RuleExecutionInterface.php	1	A
+member	A	src/Analysis/Finding/Contract/Severity.php	1	A
+member	A	src/Analysis/Finding/Contract/Violation.php	3	ABI
+member	A	src/Analysis/Finding/Contract/ViolationChannel.php	1	A
+member	A	src/Analysis/Finding/Exclusion/RuleNamespaceExclusionProvider.php	1	A
+member	A	src/Analysis/Finding/README.md	3	ADG
+member	A	src/Analysis/Finding/Rule/InMemoryRuleChannelRegistry.php	2	AD
+member	A	src/Analysis/Finding/Rule/RuleInterface.php	2	AF
+member	A	src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php	2	AD
+member	A	src/Analysis/Finding/RuleExecution.php	2	AD
+member	A	src/Analysis/Policy/Architecture/Contract/LayerPolicyPreparationInterface.php	2	AD
+member	A	src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php	1	A
+member	A	src/Analysis/Policy/Architecture/LayerViolation/DiagnosticSampleList.php	1	A
+member	A	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php	1	A
+member	A	src/Analysis/Policy/Architecture/LayerViolation/LayerEvidence.php	1	A
+member	A	src/Analysis/Policy/Architecture/LayerViolation/LayerEvidenceCollector.php	2	AG
+member	A	src/Analysis/Policy/Architecture/LayerViolation/LayerRoutingGuidance.php	1	A
+member	A	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationFinding.php	1	A
+member	A	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php	1	A
+member	A	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	2	AF
+member	A	src/Analysis/Policy/Architecture/LayerViolation/OwnedLayerTargets.php	1	A
+member	A	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassMode.php	1	A
+member	A	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassOptions.php	1	A
+member	A	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassRule.php	2	AF
+member	A	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassSummary.php	1	A
+member	A	src/Analysis/Policy/Baseline/BaselineCleaner.php	2	AI
+member	A	src/Analysis/Policy/Baseline/BaselineEntryParser.php	2	AI
+member	A	src/Analysis/Policy/Baseline/BaselineGenerator.php	2	AI
+member	A	src/Analysis/Policy/Baseline/BaselineIdentity.php	2	AI
+member	A	src/Analysis/Policy/Baseline/BaselineMigrator.php	3	ADI
+member	A	src/Analysis/Policy/Baseline/BaselineUpdater.php	2	AI
+member	A	src/Analysis/Policy/Baseline/BoundaryExplanationService.php	4	ADGI
+member	A	src/Analysis/Policy/Baseline/EntrySelector.php	2	AI
+member	A	src/Analysis/Policy/Baseline/Filter/BaselineCeilingStage.php	2	AI
+member	A	src/Analysis/Policy/Baseline/Filter/CeilingOutcome.php	2	AI
+member	A	src/Analysis/Policy/Baseline/README.md	5	ACDGI
+member	A	src/Analysis/Policy/Baseline/V5Entry.php	2	AI
+member	A	src/Analysis/Policy/Inline/Contract/AnnotationSuppressionInterface.php	1	A
+member	A	src/Analysis/Policy/Inline/Contract/AnnotationSuppressionResult.php	1	A
+member	A	src/Analysis/Policy/Inline/Contract/Directive/InlineDirectivePolicyInterface.php	1	A
+member	A	src/Analysis/Policy/Inline/Contract/Suppression/Suppression.php	2	AC
+member	A	src/Analysis/Policy/Inline/Contract/Suppression/SuppressionTarget.php	2	AH
+member	A	src/Analysis/Policy/Inline/Contract/SuppressionExtractor.php	2	AH
+member	A	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	2	AD
+member	A	src/Analysis/Policy/Inline/Directive/DirectiveNameHints.php	3	ACD
+member	A	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php	3	ADH
+member	A	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	2	AH
+member	A	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php	3	AFH
+member	A	src/Analysis/Policy/Inline/Suppression/SuppressionFilter.php	1	A
+member	A	src/Analysis/Run/Contract/Pipeline/AnalysisResult.php	2	AG
+member	A	src/Analysis/Run/Pipeline/AnalysisPipeline.php	2	AG
+member	A	src/Analysis/Run/RuleProducerPreparation.php	2	AD
+member	A	src/Core/README.md	4	ADFG
+member	A	src/Infrastructure/Console/ChannelExclusionKeyHints.php	2	AH
+member	A	src/Infrastructure/Console/ChannelExclusionKeyValidator.php	3	ADH
+member	A	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php	3	ADG
+member	A	src/Infrastructure/Console/Command/BaselineExplainCommand.php	2	AI
+member	A	src/Infrastructure/Console/Command/BaselineRunContext.php	2	AI
+member	A	src/Infrastructure/Console/Command/CheckCommand.php	1	A
+member	A	src/Infrastructure/Console/ExitCodeResolver.php	1	A
+member	A	src/Infrastructure/Console/MeasuredAnalysisRun.php	1	A
+member	A	src/Infrastructure/Console/MeasuredViolationSet.php	1	A
+member	A	src/Infrastructure/Console/README.md	3	AGH
+member	A	src/Infrastructure/Console/ResultPresenter.php	1	A
+member	A	src/Infrastructure/Console/ViolationFilterOrchestrator.php	1	A
+member	A	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php	2	AD
+member	A	src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php	2	AI
+member	A	src/Infrastructure/Profiler/README.md	1	A
+member	A	src/Infrastructure/README.md	2	AH
+member	A	src/Infrastructure/Rule/ChannelUniverse.php	3	ADG
+member	A	src/Infrastructure/Rule/ComputedMetricChannelPresentation.php	3	ADG
+member	A	src/Reporting/Filter/ViolationFilter.php	1	A
+member	A	src/Reporting/FindingProjection/FindingProjectionResult.php	1	A
+member	A	src/Reporting/FindingProjection/FindingProjector.php	3	ACI
+member	A	src/Reporting/Formatter/CheckstyleFormatter.php	1	A
+member	A	src/Reporting/Formatter/GitLabCodeQualityFormatter.php	2	AI
+member	A	src/Reporting/Formatter/GithubActionsFormatter.php	1	A
+member	A	src/Reporting/Formatter/Html/HtmlDebtCalculator.php	1	A
+member	A	src/Reporting/Formatter/Html/HtmlTreeNode.php	1	A
+member	A	src/Reporting/Formatter/Html/HtmlViolationPartitioner.php	1	A
+member	A	src/Reporting/Formatter/Json/JsonFormatter.php	2	AE
+member	A	src/Reporting/Formatter/Json/JsonOffenderSection.php	1	A
+member	A	src/Reporting/Formatter/Json/JsonViolationSection.php	2	AD
+member	A	src/Reporting/Formatter/Sarif/SarifFormatter.php	3	AGI
+member	A	src/Reporting/Formatter/Sarif/SarifRuleCollector.php	3	ADG
+member	A	src/Reporting/Formatter/Summary/OffenderListRenderer.php	1	A
+member	A	src/Reporting/Formatter/Summary/SummaryFormatter.php	1	A
+member	A	src/Reporting/Formatter/Summary/TopIssuesRenderer.php	1	A
+member	A	src/Reporting/Formatter/Summary/ViolationSummaryRenderer.php	1	A
+member	A	src/Reporting/Formatter/Support/AcceptedLevelNarrator.php	1	A
+member	A	src/Reporting/Formatter/Support/DebtBreakdownRenderer.php	2	AD
+member	A	src/Reporting/Formatter/Support/DetailedViolationRenderer.php	1	A
+member	A	src/Reporting/Formatter/Support/ViolationDetailRenderer.php	1	A
+member	A	src/Reporting/Formatter/Support/ViolationSorter.php	1	A
+member	A	src/Reporting/Formatter/TextFormatter.php	1	A
+member	A	src/Reporting/FormatterContext.php	1	A
+member	A	src/Reporting/README.md	4	ACGI
+member	A	src/Reporting/Report.php	2	AG
+member	A	src/Reporting/ReportBuilder.php	2	AG
+member	A	src/Reporting/Template/dev.html	2	AC
+member	A	src/Reporting/Template/dist/report.min.js	1	A
+member	A	src/Reporting/Template/src/detail.js	1	A
+member	A	src/Reporting/Template/src/main.js	1	A
+member	A	tests/Analysis/Evidence/CircularDependency/Unit/CircularDependencyRuleTest.php	2	AF
+member	A	tests/Analysis/Evidence/CircularDependency/Unit/CycleIdentityStabilityTest.php	2	AI
+member	A	tests/Analysis/Evidence/CodeSmell/Integration/CodeSmellLinePrecisionTest.php	2	AG
+member	A	tests/Analysis/Evidence/CodeSmell/Integration/LongParameterListVoPropagationTest.php	3	AEG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/BooleanArgumentRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/CodeSmellFindingTest.php	1	A
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/ConstructorOverinjectionRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/CountInLoopRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/DebugCodeRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/EmptyCatchRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/ErrorSuppressionRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/EvalRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/ExitRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/GotoRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/IdenticalSubExpressionRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/LongParameterListRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/SuperglobalsRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/UnreachableCodeRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/CodeSmell/Unit/UnusedPrivateRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/Cohesion/Unit/LcomRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/Complexity/Unit/CognitiveComplexityRuleTest.php	5	ABCFG
+member	A	tests/Analysis/Evidence/Complexity/Unit/ComplexityRuleTest.php	5	ABCFG
+member	A	tests/Analysis/Evidence/Complexity/Unit/NpathComplexityRuleTest.php	5	ABCFG
+member	A	tests/Analysis/Evidence/Complexity/Unit/WmcRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/ViolationDensityTest.php	4	ACEG
+member	A	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/WorstClassDrillDownTest.php	3	AEG
+member	A	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricFindingBuilderTest.php	3	ADG
+member	A	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleTest.php	4	ADFG
+member	A	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsInternalTopologyTest.php	3	ADG
+member	A	tests/Analysis/Evidence/Coupling/Unit/CboRuleTest.php	6	ABCEFG
+member	A	tests/Analysis/Evidence/Coupling/Unit/ClassRankRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/Coupling/Unit/DistanceRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/Coupling/Unit/InstabilityRuleTest.php	5	ABCFG
+member	A	tests/Analysis/Evidence/Design/Integration/DataClassDetectionTest.php	2	AE
+member	A	tests/Analysis/Evidence/Design/Unit/DataClassRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/Design/Unit/GodClassRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/Design/Unit/InheritanceRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/Design/Unit/NocRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/Design/Unit/TypeCoverageRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/Duplication/Unit/CodeDuplicationRuleTest.php	4	AFGI
+member	A	tests/Analysis/Evidence/Maintainability/Unit/MaintainabilityRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/Measurement/Integration/Identity/DeclarationIdentityTest.php	1	A
+member	A	tests/Analysis/Evidence/Prioritization/Unit/Debt/DebtCalculatorTest.php	1	A
+member	A	tests/Analysis/Evidence/Prioritization/Unit/Debt/RemediationTimeRegistryTest.php	2	AG
+member	A	tests/Analysis/Evidence/Prioritization/Unit/Impact/ClassRankResolverTest.php	3	AEG
+member	A	tests/Analysis/Evidence/Prioritization/Unit/Impact/ImpactCalculatorTest.php	3	AEG
+member	A	tests/Analysis/Evidence/Security/Unit/CommandInjectionRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/Security/Unit/HardcodedCredentialsRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/Security/Unit/SecurityPatternFindingTest.php	1	A
+member	A	tests/Analysis/Evidence/Security/Unit/SensitiveParameterRuleTest.php	4	AEFG
+member	A	tests/Analysis/Evidence/Security/Unit/SqlInjectionRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/Security/Unit/XssRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/Size/Unit/ClassCountRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/Size/Unit/MethodCountRuleTest.php	3	AFG
+member	A	tests/Analysis/Evidence/Size/Unit/PropertyCountRuleTest.php	4	AEFG
+member	A	tests/Analysis/Finding/Fixtures/Channels/declared.txt	2	AC
+member	A	tests/Analysis/Finding/Fixtures/Channels/excluded.txt	1	A
+member	A	tests/Analysis/Finding/Integration/ChannelCoverageTest.php	4	AEGH
+member	A	tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php	2	AD
+member	A	tests/Analysis/Finding/Integration/ChannelEmissionStaticGuardTest.php	1	A
+member	A	tests/Analysis/Finding/Integration/ChannelLevelAssemblyTopologyTest.php	2	AG
+member	A	tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php	2	AG
+member	A	tests/Analysis/Finding/Integration/ChannelOrderFixtureDriftTest.php	1	A
+member	A	tests/Analysis/Finding/Integration/ChannelPresentationCoverageTest.php	2	AD
+member	A	tests/Analysis/Finding/Integration/ChannelSuggestionTieTest.php	1	A
+member	A	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	3	ACD
+member	A	tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php	3	AFG
+member	A	tests/Analysis/Finding/Integration/ConfigurationValidatorSilencingPathsTest.php	1	A
+member	A	tests/Analysis/Finding/Integration/RuleIdentifierLiteralGuardTest.php	2	AD
+member	A	tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php	2	AC
+member	A	tests/Analysis/Finding/Support/ViolationFactory.php	2	AC
+member	A	tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php	4	ACDF
+member	A	tests/Analysis/Finding/Unit/ChannelDeclarationReaderTest.php	1	A
+member	A	tests/Analysis/Finding/Unit/ChannelPresentationViewTest.php	4	ADFG
+member	A	tests/Analysis/Finding/Unit/ChannelSelectorTest.php	3	ACD
+member	A	tests/Analysis/Finding/Unit/NamespaceExclusionFilterTest.php	2	AC
+member	A	tests/Analysis/Finding/Unit/PathExclusionFilterTest.php	1	A
+member	A	tests/Analysis/Finding/Unit/PredicateFilterStageTest.php	2	AC
+member	A	tests/Analysis/Finding/Unit/RuleExclusionStatsTest.php	1	A
+member	A	tests/Analysis/Finding/Unit/RuleExecutorTest.php	6	ABCDFG
+member	A	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	2	AD
+member	A	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	2	AD
+member	A	tests/Analysis/Finding/Unit/RuleSelectorTest.php	2	AD
+member	A	tests/Analysis/Finding/Unit/SelectorCompatibilityOracleTest.php	1	A
+member	A	tests/Analysis/Finding/Unit/ViolationChannelTest.php	2	AC
+member	A	tests/Analysis/Finding/Unit/ViolationFilterStageTest.php	1	A
+member	A	tests/Analysis/Finding/Unit/ViolationTest.php	4	ABCI
+member	A	tests/Analysis/Policy/Architecture/Integration/CaptureBindingIntegrationTest.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Integration/FailClosedModularTopologyIntegrationTest.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Integration/LayerCriteriaIntegrationTest.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Integration/LayerExcludeIntegrationTest.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Integration/LayerTemplateExpansionIntegrationTest.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Integration/LayerViolationIntegrationTest.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Integration/RelationsFilterIntegrationTest.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Support/ArchitectureViolationProjector.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Support/LayerVerdicts.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Unit/CoverageDiagnosticsTest.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Unit/LayerViolationOptionsTest.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Unit/LayerViolationRuleTest.php	3	AFG
+member	A	tests/Analysis/Policy/Architecture/Unit/PendingLayerDiagnosticsTest.php	1	A
+member	A	tests/Analysis/Policy/Architecture/Unit/UnassignedClassDiagnosticsTest.php	1	A
+member	A	tests/Analysis/Policy/Baseline/Fixtures/CeilingStageFixtures.php	2	AI
+member	A	tests/Analysis/Policy/Baseline/Functional/BaselineCleanupCommandTest.php	2	AI
+member	A	tests/Analysis/Policy/Baseline/Functional/BaselineCommandFailureReportingTest.php	4	ADGI
+member	A	tests/Analysis/Policy/Baseline/Functional/BaselineExplainCommandTest.php	4	ACGI
+member	A	tests/Analysis/Policy/Baseline/Functional/BaselineGenerateCommandTest.php	2	AI
+member	A	tests/Analysis/Policy/Baseline/Functional/BaselineRunBeforeLoadTest.php	4	ADGI
+member	A	tests/Analysis/Policy/Baseline/Functional/BaselineUpdateCommandTest.php	2	AI
+member	A	tests/Analysis/Policy/Baseline/Integration/BaselineWorkflowTest.php	3	ACI
+member	A	tests/Analysis/Policy/Baseline/Integration/CaptureFromMeasuredSetTest.php	3	ACI
+member	A	tests/Analysis/Policy/Baseline/Integration/NpathSaturationCeilingTest.php	5	ACEGI
+member	A	tests/Analysis/Policy/Baseline/Integration/ResidualLimitationsCoverageTest.php	2	AI
+member	A	tests/Analysis/Policy/Baseline/Support/StubBaselineRun.php	3	AGI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php	5	ADEGI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageFailSafeTest.php	3	ACI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageJudgeAllTest.php	2	AI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStagePromotionTest.php	3	ABI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineCleanerTest.php	2	AI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineEntryTest.php	2	AI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineEntryValuesTest.php	3	ACI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineGeneratorTest.php	3	ACI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineIdentityTest.php	3	ACI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineMigratorTest.php	3	ACI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineRoundTripVOTest.php	3	ACI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineTest.php	3	ACI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineUpdaterTest.php	3	ACI
+member	A	tests/Analysis/Policy/Baseline/Unit/BaselineWriterTest.php	3	ACI
+member	A	tests/Analysis/Policy/Baseline/Unit/BoundaryExplanationServiceTest.php	4	ACGI
+member	A	tests/Analysis/Policy/Baseline/Unit/ConfigurationErrorChannelRejectionTest.php	2	AI
+member	A	tests/Analysis/Policy/Baseline/Unit/GroupAcceptanceTest.php	2	AI
+member	A	tests/Analysis/Policy/Inline/Integration/InlineSuppressionLayerViolationIntegrationTest.php	1	A
+member	A	tests/Analysis/Policy/Inline/Integration/UnusedDirectiveRuleTest.php	5	ACDGH
+member	A	tests/Analysis/Policy/Inline/Unit/Directive/InlineDirectivePolicyTest.php	3	ADG
+member	A	tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php	3	ACH
+member	A	tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php	3	ACD
+member	A	tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php	4	ACEG
+member	A	tests/Analysis/Run/Integration/Pipeline/AnalysisPipelineIntegrationTest.php	3	AGH
+member	A	tests/Analysis/Run/Unit/Pipeline/AnalysisResultTest.php	2	AG
+member	A	tests/Analysis/Run/Unit/RuleProducerPreparationTest.php	1	A
+member	A	tests/Functional/Reporting/JsonShapePreservationTest.php	5	ABCGI
+member	A	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	2	AD
+member	A	tests/Infrastructure/Console/Integration/RuleExclusionStatsWiringTest.php	2	AD
+member	A	tests/Infrastructure/Console/Unit/ExitCodeResolverConfigurationErrorTest.php	1	A
+member	A	tests/Infrastructure/Console/Unit/ExitCodeResolverReportOnlyTest.php	1	A
+member	A	tests/Infrastructure/Console/Unit/ResultPresenterTest.php	2	AG
+member	A	tests/Infrastructure/Console/Unit/ViolationFilterOrchestratorBaselineReportingTest.php	3	AGI
+member	A	tests/Infrastructure/Console/Unit/ViolationFilterOrchestratorTest.php	4	ACGI
+member	A	tests/Infrastructure/Unit/ChannelUniverseTest.php	4	ACDG
+member	A	tests/Integration/Infrastructure/Git/ReportingGitScopeQueryProjectSubdirTest.php	1	A
+member	A	tests/Reporting/FindingProjection/Unit/ConfigurationErrorProjectionTest.php	2	AI
+member	A	tests/Reporting/FindingProjection/Unit/DeclaredChannelFileScopeTest.php	3	ACD
+member	A	tests/Reporting/FindingProjection/Unit/FindingProjectorTest.php	3	ACI
+member	A	tests/Reporting/FindingProjection/Unit/ProjectScopedChannelProjectionTest.php	2	AI
+member	A	tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php	2	AD
+member	A	tests/Unit/Core/Util/NamespaceMatcherTest.php	1	A
+member	A	tests/Unit/Infrastructure/Console/MeasuredViolationSetTest.php	4	ACGI
+member	A	tests/Unit/Infrastructure/Git/ReportingGitScopeQueryTest.php	1	A
+member	A	tests/Unit/Reporting/Filter/ViolationFilterTest.php	1	A
+member	A	tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php	4	ABGI
+member	A	tests/Unit/Reporting/Formatter/CheckstyleFormatterTest.php	2	AB
+member	A	tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php	4	ABCI
+member	A	tests/Unit/Reporting/Formatter/GithubActionsFormatterTest.php	2	AB
+member	A	tests/Unit/Reporting/Formatter/Html/HtmlDebtCalculatorTest.php	1	A
+member	A	tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php	3	ABG
+member	A	tests/Unit/Reporting/Formatter/Html/HtmlViolationPartitionerTest.php	2	AB
+member	A	tests/Unit/Reporting/Formatter/Json/JsonOffenderSectionDensityTest.php	2	AG
+member	A	tests/Unit/Reporting/Formatter/Json/JsonViolationSectionTest.php	2	AB
+member	A	tests/Unit/Reporting/Formatter/JsonFormatterTest.php	4	ABCG
+member	A	tests/Unit/Reporting/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php	4	ABCI
+member	A	tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php	4	ABCG
+member	A	tests/Unit/Reporting/Formatter/Sarif/SarifSchemaValidationTest.php	3	ABI
+member	A	tests/Unit/Reporting/Formatter/Sarif/Support/StubChannelPresentation.php	2	AI
+member	A	tests/Unit/Reporting/Formatter/SarifFormatterTest.php	4	ABCI
+member	A	tests/Unit/Reporting/Formatter/Summary/HintRendererTest.php	2	AG
+member	A	tests/Unit/Reporting/Formatter/Summary/OffenderListRendererDensityTest.php	2	AG
+member	A	tests/Unit/Reporting/Formatter/Summary/TopIssuesRendererTest.php	3	ABE
+member	A	tests/Unit/Reporting/Formatter/Summary/ViolationSummaryRendererTest.php	2	AB
+member	A	tests/Unit/Reporting/Formatter/SummaryFormatterTest.php	4	ABCG
+member	A	tests/Unit/Reporting/Formatter/Support/AcceptedLevelNarratorTest.php	2	AC
+member	A	tests/Unit/Reporting/Formatter/Support/DetailedViolationRendererTest.php	3	ABC
+member	A	tests/Unit/Reporting/Formatter/Support/ViolationSorterTest.php	2	AB
+member	A	tests/Unit/Reporting/Formatter/TextFormatterTest.php	3	ABC
+member	A	tests/Unit/Reporting/Formatter/TextVerboseFormatterTest.php	3	ABC
+member	A	tests/Unit/Reporting/Health/SummaryEnricherTest.php	3	ACG
+member	A	tests/Unit/Reporting/ReportBuilderTest.php	3	ABG
+member	A	tests/Unit/Reporting/ReportTest.php	2	AB
+member	A	website/docs/ci-cd/github-actions.md	2	AJ
+member	A	website/docs/ci-cd/github-actions.ru.md	2	AJ
+member	A	website/docs/getting-started/configuration.md	6	ACDEHJ
+member	A	website/docs/getting-started/configuration.ru.md	6	ACDEHJ
+member	A	website/docs/guides/architecture-investigation.md	3	AHJ
+member	A	website/docs/reference/default-thresholds.md	5	ACDHJ
+member	A	website/docs/reference/remediation-time.md	3	ADJ
+member	A	website/docs/reference/remediation-time.ru.md	3	ADJ
+member	A	website/docs/rules/annotation.md	5	ACDHJ
+member	A	website/docs/rules/annotation.ru.md	5	ACDHJ
+member	A	website/docs/rules/architecture.md	3	AHJ
+member	A	website/docs/rules/architecture.ru.md	3	AHJ
+member	A	website/docs/rules/index.md	4	AGHJ
+member	A	website/docs/usage/baseline.md	5	ACDHJ
+member	A	website/docs/usage/baseline.ru.md	5	ACDHJ
+member	A	website/docs/usage/cli-options.md	6	ADEGHJ
+member	A	website/docs/usage/cli-options.ru.md	5	ADEHJ
+member	A	website/docs/usage/output-formats.md	5	ACEIJ
+member	A	website/docs/usage/output-formats.ru.md	5	ACEIJ
+member	A	website/docs/usage/usage-scenarios.md	2	AJ
+member	B	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	5	ABCEF
+member	B	src/Analysis/Evidence/Complexity/ComplexityRule.php	5	ABCEF
+member	B	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	5	ABCEF
+member	B	src/Analysis/Evidence/Coupling/CboRule.php	6	ABCEFG
+member	B	src/Analysis/Evidence/Coupling/InstabilityRule.php	6	ABCEFG
+member	B	src/Analysis/Finding/Contract/Violation.php	3	ABI
+member	B	tests/Analysis/Evidence/Complexity/Unit/CognitiveComplexityRuleTest.php	5	ABCFG
+member	B	tests/Analysis/Evidence/Complexity/Unit/ComplexityRuleTest.php	5	ABCFG
+member	B	tests/Analysis/Evidence/Complexity/Unit/NpathComplexityRuleTest.php	5	ABCFG
+member	B	tests/Analysis/Evidence/Coupling/Unit/CboRuleTest.php	6	ABCEFG
+member	B	tests/Analysis/Evidence/Coupling/Unit/InstabilityRuleTest.php	5	ABCFG
+member	B	tests/Analysis/Finding/Unit/RuleExecutorTest.php	6	ABCDFG
+member	B	tests/Analysis/Finding/Unit/ViolationTest.php	4	ABCI
+member	B	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStagePromotionTest.php	3	ABI
+member	B	tests/Functional/Reporting/JsonShapePreservationTest.php	5	ABCGI
+member	B	tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php	4	ABGI
+member	B	tests/Unit/Reporting/Formatter/CheckstyleFormatterTest.php	2	AB
+member	B	tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php	4	ABCI
+member	B	tests/Unit/Reporting/Formatter/GithubActionsFormatterTest.php	2	AB
+member	B	tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php	3	ABG
+member	B	tests/Unit/Reporting/Formatter/Html/HtmlViolationPartitionerTest.php	2	AB
+member	B	tests/Unit/Reporting/Formatter/Json/JsonViolationSectionTest.php	2	AB
+member	B	tests/Unit/Reporting/Formatter/JsonFormatterTest.php	4	ABCG
+member	B	tests/Unit/Reporting/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php	4	ABCI
+member	B	tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php	4	ABCG
+member	B	tests/Unit/Reporting/Formatter/Sarif/SarifSchemaValidationTest.php	3	ABI
+member	B	tests/Unit/Reporting/Formatter/SarifFormatterTest.php	4	ABCI
+member	B	tests/Unit/Reporting/Formatter/Summary/TopIssuesRendererTest.php	3	ABE
+member	B	tests/Unit/Reporting/Formatter/Summary/ViolationSummaryRendererTest.php	2	AB
+member	B	tests/Unit/Reporting/Formatter/SummaryFormatterTest.php	4	ABCG
+member	B	tests/Unit/Reporting/Formatter/Support/DetailedViolationRendererTest.php	3	ABC
+member	B	tests/Unit/Reporting/Formatter/Support/ViolationSorterTest.php	2	AB
+member	B	tests/Unit/Reporting/Formatter/TextFormatterTest.php	3	ABC
+member	B	tests/Unit/Reporting/Formatter/TextVerboseFormatterTest.php	3	ABC
+member	B	tests/Unit/Reporting/ReportBuilderTest.php	3	ABG
+member	B	tests/Unit/Reporting/ReportTest.php	2	AB
+member	C	CHANGELOG.md	7	ACDEGIJ
+member	C	docs/adr/0024-channel-identity-and-selector-semantics.md	5	ACDFJ
+member	C	docs/adr/0025-channel-selectors-in-configuration-keys.md	4	ACDJ
+member	C	docs/adr/0029-channel-presentation-join.md	6	ACDFGJ
+member	C	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	8	ACDEFGHI
+member	C	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	8	ACDFGHIJ
+member	C	docs/internal/generated/modular-architecture/production-ownership.tsv	8	ACDFGHIJ
+member	C	docs/internal/generated/modular-architecture/production-public-imports.tsv	8	ACDFGHIJ
+member	C	docs/internal/generated/modular-architecture/test-ownership.tsv	7	ACDGHIJ
+member	C	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	8	ACDEGHIJ
+member	C	docs/internal/modular-architecture-manifest.json	8	ACDFGHIJ
+member	C	docs/internal/plans/baseline-compaction/enumeration-identity-r4.md	1	C
+member	C	docs/internal/plans/baseline-compaction/measurements/ceiling-comparison-v12-v13.txt	1	C
+member	C	docs/internal/plans/channel-identity-substrate.md	6	ACDFGH
+member	C	docs/internal/plans/client-requests/architecture-unassigned-class.md	3	ACG
+member	C	docs/internal/plans/client-requests/threshold-override-exact-matching.md	2	AC
+member	C	docs/internal/plans/modular-architecture/p2-dependency-model.md	4	ACDI
+member	C	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md	5	ACDGI
+member	C	docs/internal/plans/modular-architecture/p5-computed-metrics.md	4	ACDG
+member	C	docs/internal/plans/modular-architecture/p6-finding-policy.md	6	ACDFHI
+member	C	docs/internal/plans/modular-architecture/p6/p6-production-ledger.md	6	ACDFHI
+member	C	docs/internal/plans/modular-architecture/p6/p6-relations-ledger.md	6	ACFGHI
+member	C	docs/internal/plans/modular-architecture/p6/p6-test-ledger.md	4	ACHI
+member	C	docs/internal/plans/phpdoc-dependencies.md	2	AC
+member	C	docs/internal/plans/rule-vocabulary/AUDIT.md	3	ACI
+member	C	docs/internal/plans/rule-vocabulary/FACTS.md	6	ACDEFG
+member	C	docs/internal/plans/rule-vocabulary/PLAN.md	8	ACDEFGHI
+member	C	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	4	ACDG
+member	C	docs/internal/plans/rule-vocabulary/enumeration-channel-shapes.tsv	4	CDGH
+member	C	docs/internal/plans/rule-vocabulary/enumeration-magnitude-levels.tsv	1	C
+member	C	docs/internal/plans/rule-vocabulary/enumeration-renames.tsv	4	ACDE
+member	C	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv	3	CDF
+member	C	docs/internal/plans/sarif-channel-descriptions.md	6	ACDFGI
+member	C	docs/internal/plans/sarif-channel-descriptions/channel-inventory.tsv	3	ACI
+member	C	docs/internal/plans/sarif-channel-descriptions/sarif-table-coverage.tsv	1	C
+member	C	finding-gate/README.md	3	ACD
+member	C	finding-gate/cases/complexity/case.json	1	C
+member	C	finding-gate/cases/coupling/case.json	1	C
+member	C	qmx-baseline.json	6	ACDGHI
+member	C	qmx.yaml	8	ACDFGHIJ
+member	C	scripts/finding-gate/RenameMaps.php	1	C
+member	C	scripts/finding-gate/SelfTest.php	3	ACI
+member	C	src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	1	C
+member	C	src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	1	C
+member	C	src/Analysis/Evidence/Complexity/ClassNpathComplexityOptions.php	1	C
+member	C	src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	1	C
+member	C	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	5	ABCEF
+member	C	src/Analysis/Evidence/Complexity/ComplexityOptions.php	1	C
+member	C	src/Analysis/Evidence/Complexity/ComplexityRule.php	5	ABCEF
+member	C	src/Analysis/Evidence/Complexity/MethodCognitiveComplexityOptions.php	1	C
+member	C	src/Analysis/Evidence/Complexity/MethodComplexityOptions.php	1	C
+member	C	src/Analysis/Evidence/Complexity/MethodNpathComplexityOptions.php	1	C
+member	C	src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	1	C
+member	C	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	5	ABCEF
+member	C	src/Analysis/Evidence/Complexity/README.md	2	CE
+member	C	src/Analysis/Evidence/Coupling/CboOptions.php	1	C
+member	C	src/Analysis/Evidence/Coupling/CboRule.php	6	ABCEFG
+member	C	src/Analysis/Evidence/Coupling/ClassCboOptions.php	1	C
+member	C	src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	1	C
+member	C	src/Analysis/Evidence/Coupling/InstabilityOptions.php	1	C
+member	C	src/Analysis/Evidence/Coupling/InstabilityRule.php	6	ABCEFG
+member	C	src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	1	C
+member	C	src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	1	C
+member	C	src/Analysis/Finding/Contract/ChannelIdentityInterface.php	2	AC
+member	C	src/Analysis/Finding/Contract/Threshold/ThresholdOverride.php	1	C
+member	C	src/Analysis/Policy/Baseline/README.md	5	ACDGI
+member	C	src/Analysis/Policy/Inline/Contract/Suppression/Suppression.php	2	AC
+member	C	src/Analysis/Policy/Inline/Directive/DirectiveNameHints.php	3	ACD
+member	C	src/Reporting/FindingProjection/FindingProjector.php	3	ACI
+member	C	src/Reporting/README.md	4	ACGI
+member	C	src/Reporting/Template/dev.html	2	AC
+member	C	tests/Analysis/Configuration/Unit/Pipeline/RuleNameValidatorTest.php	1	C
+member	C	tests/Analysis/Evidence/Complexity/Unit/CognitiveComplexityRuleTest.php	5	ABCFG
+member	C	tests/Analysis/Evidence/Complexity/Unit/ComplexityRuleTest.php	5	ABCFG
+member	C	tests/Analysis/Evidence/Complexity/Unit/NpathComplexityRuleTest.php	5	ABCFG
+member	C	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/ViolationDensityTest.php	4	ACEG
+member	C	tests/Analysis/Evidence/Coupling/Unit/CboRuleTest.php	6	ABCEFG
+member	C	tests/Analysis/Evidence/Coupling/Unit/InstabilityRuleTest.php	5	ABCFG
+member	C	tests/Analysis/Evidence/Coupling/Unit/NamespaceCboOptionsTest.php	1	C
+member	C	tests/Analysis/Evidence/Coupling/Unit/NamespaceInstabilityOptionsTest.php	1	C
+member	C	tests/Analysis/Finding/Fixtures/Channels/declared.txt	2	AC
+member	C	tests/Analysis/Finding/Fixtures/Channels/order.txt	1	C
+member	C	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	3	ACD
+member	C	tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php	2	AC
+member	C	tests/Analysis/Finding/Support/ViolationFactory.php	2	AC
+member	C	tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php	4	ACDF
+member	C	tests/Analysis/Finding/Unit/ChannelSelectorTest.php	3	ACD
+member	C	tests/Analysis/Finding/Unit/NameSelectorTest.php	1	C
+member	C	tests/Analysis/Finding/Unit/NamespaceExclusionFilterTest.php	2	AC
+member	C	tests/Analysis/Finding/Unit/PredicateFilterStageTest.php	2	AC
+member	C	tests/Analysis/Finding/Unit/RuleExecutorTest.php	6	ABCDFG
+member	C	tests/Analysis/Finding/Unit/ViolationChannelTest.php	2	AC
+member	C	tests/Analysis/Finding/Unit/ViolationTest.php	4	ABCI
+member	C	tests/Analysis/Policy/Baseline/Functional/BaselineExplainCommandTest.php	4	ACGI
+member	C	tests/Analysis/Policy/Baseline/Functional/BaselineIncompleteAnalysisTest.php	2	CI
+member	C	tests/Analysis/Policy/Baseline/Integration/BaselineWorkflowTest.php	3	ACI
+member	C	tests/Analysis/Policy/Baseline/Integration/CaptureFromMeasuredSetTest.php	3	ACI
+member	C	tests/Analysis/Policy/Baseline/Integration/CboAggregateBreachTest.php	2	CI
+member	C	tests/Analysis/Policy/Baseline/Integration/NpathSaturationCeilingTest.php	5	ACEGI
+member	C	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageFailSafeTest.php	3	ACI
+member	C	tests/Analysis/Policy/Baseline/Unit/BaselineEntryParserTest.php	2	CI
+member	C	tests/Analysis/Policy/Baseline/Unit/BaselineEntryValuesTest.php	3	ACI
+member	C	tests/Analysis/Policy/Baseline/Unit/BaselineGeneratorTest.php	3	ACI
+member	C	tests/Analysis/Policy/Baseline/Unit/BaselineIdentityTest.php	3	ACI
+member	C	tests/Analysis/Policy/Baseline/Unit/BaselineLoaderTest.php	2	CI
+member	C	tests/Analysis/Policy/Baseline/Unit/BaselineMigratorTest.php	3	ACI
+member	C	tests/Analysis/Policy/Baseline/Unit/BaselineRoundTripVOTest.php	3	ACI
+member	C	tests/Analysis/Policy/Baseline/Unit/BaselineTest.php	3	ACI
+member	C	tests/Analysis/Policy/Baseline/Unit/BaselineUpdaterTest.php	3	ACI
+member	C	tests/Analysis/Policy/Baseline/Unit/BaselineWriterTest.php	3	ACI
+member	C	tests/Analysis/Policy/Baseline/Unit/BoundaryExplanationServiceTest.php	4	ACGI
+member	C	tests/Analysis/Policy/Inline/Integration/ThresholdAnnotationParserPathTest.php	2	CH
+member	C	tests/Analysis/Policy/Inline/Integration/UnusedDirectiveRuleTest.php	5	ACDGH
+member	C	tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php	3	ACH
+member	C	tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php	3	ACD
+member	C	tests/Analysis/Policy/Inline/Unit/SuppressionTargetTest.php	1	C
+member	C	tests/Analysis/Policy/Inline/Unit/SuppressionTest.php	1	C
+member	C	tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php	4	ACEG
+member	C	tests/Functional/Reporting/JsonShapePreservationTest.php	5	ABCGI
+member	C	tests/Infrastructure/Console/Unit/ViolationFilterOrchestratorTest.php	4	ACGI
+member	C	tests/Infrastructure/Unit/ChannelUniverseTest.php	4	ACDG
+member	C	tests/Reporting/FindingProjection/Unit/DeclaredChannelFileScopeTest.php	3	ACD
+member	C	tests/Reporting/FindingProjection/Unit/FindingProjectorTest.php	3	ACI
+member	C	tests/Unit/Infrastructure/Console/MeasuredViolationSetTest.php	4	ACGI
+member	C	tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php	4	ABCI
+member	C	tests/Unit/Reporting/Formatter/JsonFormatterTest.php	4	ABCG
+member	C	tests/Unit/Reporting/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php	4	ABCI
+member	C	tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php	4	ABCG
+member	C	tests/Unit/Reporting/Formatter/SarifFormatterTest.php	4	ABCI
+member	C	tests/Unit/Reporting/Formatter/SummaryFormatterTest.php	4	ABCG
+member	C	tests/Unit/Reporting/Formatter/Support/AcceptedLevelNarratorTest.php	2	AC
+member	C	tests/Unit/Reporting/Formatter/Support/DetailedViolationRendererTest.php	3	ABC
+member	C	tests/Unit/Reporting/Formatter/TextFormatterTest.php	3	ABC
+member	C	tests/Unit/Reporting/Formatter/TextVerboseFormatterTest.php	3	ABC
+member	C	tests/Unit/Reporting/Health/SummaryEnricherTest.php	3	ACG
+member	C	website/docs/getting-started/configuration.md	6	ACDEHJ
+member	C	website/docs/getting-started/configuration.ru.md	6	ACDEHJ
+member	C	website/docs/reference/default-thresholds.md	5	ACDHJ
+member	C	website/docs/reference/default-thresholds.ru.md	3	CHJ
+member	C	website/docs/rules/annotation.md	5	ACDHJ
+member	C	website/docs/rules/annotation.ru.md	5	ACDHJ
+member	C	website/docs/usage/baseline.md	5	ACDHJ
+member	C	website/docs/usage/baseline.ru.md	5	ACDHJ
+member	C	website/docs/usage/output-formats.md	5	ACEIJ
+member	C	website/docs/usage/output-formats.ru.md	5	ACEIJ
+member	D	CHANGELOG.md	7	ACDEGIJ
+member	D	docs/adr/0001-computed-metrics.md	3	DGJ
+member	D	docs/adr/0003-reporting-ux-redesign.md	5	ADGIJ
+member	D	docs/adr/0024-channel-identity-and-selector-semantics.md	5	ACDFJ
+member	D	docs/adr/0025-channel-selectors-in-configuration-keys.md	4	ACDJ
+member	D	docs/adr/0029-channel-presentation-join.md	6	ACDFGJ
+member	D	docs/adr/0031-channel-shape-is-a-producer-property.md	4	DGHJ
+member	D	docs/adr/README.md	5	ADEFJ
+member	D	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	8	ACDEFGHI
+member	D	docs/internal/generated/modular-architecture/production-composition-bindings.tsv	3	ADJ
+member	D	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	8	ACDFGHIJ
+member	D	docs/internal/generated/modular-architecture/production-ownership.tsv	8	ACDFGHIJ
+member	D	docs/internal/generated/modular-architecture/production-public-imports.tsv	8	ACDFGHIJ
+member	D	docs/internal/generated/modular-architecture/test-ownership.tsv	7	ACDGHIJ
+member	D	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	8	ACDEGHIJ
+member	D	docs/internal/modular-architecture-manifest.json	8	ACDFGHIJ
+member	D	docs/internal/plans/baseline-compaction/enumeration-identity.md	3	ADI
+member	D	docs/internal/plans/channel-identity-substrate.md	6	ACDFGH
+member	D	docs/internal/plans/diff-mode-new-only.md	4	ADFI
+member	D	docs/internal/plans/modular-architecture/p2-dependency-model.md	4	ACDI
+member	D	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md	5	ACDGI
+member	D	docs/internal/plans/modular-architecture/p5-computed-metrics.md	4	ACDG
+member	D	docs/internal/plans/modular-architecture/p6-finding-policy.md	6	ACDFHI
+member	D	docs/internal/plans/modular-architecture/p6/p6-production-ledger.md	6	ACDFHI
+member	D	docs/internal/plans/rule-vocabulary/FACTS.md	6	ACDEFG
+member	D	docs/internal/plans/rule-vocabulary/PLAN.md	8	ACDEFGHI
+member	D	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	4	ACDG
+member	D	docs/internal/plans/rule-vocabulary/enumeration-channel-shapes.tsv	4	CDGH
+member	D	docs/internal/plans/rule-vocabulary/enumeration-count-assertions.tsv	1	D
+member	D	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	4	ADHI
+member	D	docs/internal/plans/rule-vocabulary/enumeration-renames.tsv	4	ACDE
+member	D	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv	3	CDF
+member	D	docs/internal/plans/rule-vocabulary/enumeration-runtime-channels.tsv	1	D
+member	D	docs/internal/plans/sarif-channel-descriptions.md	6	ACDFGI
+member	D	finding-gate/README.md	3	ACD
+member	D	finding-gate/cases/annotations/qmx.yaml	1	D
+member	D	finding-gate/cases/complexity/qmx.yaml	1	D
+member	D	finding-gate/cases/coupling/qmx.yaml	1	D
+member	D	finding-gate/cases/cycle/qmx.yaml	1	D
+member	D	finding-gate/cases/design/qmx.yaml	1	D
+member	D	finding-gate/cases/disabled-rule/qmx.yaml	1	D
+member	D	finding-gate/cases/duplication/qmx.yaml	1	D
+member	D	finding-gate/cases/excluded-path/qmx.yaml	1	D
+member	D	finding-gate/cases/health/case.json	1	D
+member	D	finding-gate/cases/health/qmx.yaml	2	DG
+member	D	finding-gate/cases/layers/qmx.yaml	1	D
+member	D	finding-gate/cases/only-rules/qmx.yaml	1	D
+member	D	finding-gate/cases/security/qmx.yaml	1	D
+member	D	finding-gate/cases/smells/qmx.yaml	1	D
+member	D	qmx-baseline.json	6	ACDGHI
+member	D	qmx.yaml	8	ACDFGHIJ
+member	D	qmx.yaml.example	3	DGJ
+member	D	scripts/finding-gate-controls/Controls.php	3	ADG
+member	D	scripts/generate-rename-enumeration.php	3	ADE
+member	D	src/Analysis/Configuration/ConfigSchema.php	1	D
+member	D	src/Analysis/Configuration/Loader/SectionNormalizationPolicy.php	1	D
+member	D	src/Analysis/Configuration/Pipeline/RuleNameValidator.php	1	D
+member	D	src/Analysis/Configuration/README.md	2	DE
+member	D	src/Analysis/Evidence/ComputedMetrics/ComputedMetricConfigurationException.php	1	D
+member	D	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	3	DEG
+member	D	src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php	2	DG
+member	D	src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricContributionReader.php	1	D
+member	D	src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetricChannelFamily.php	1	D
+member	D	src/Analysis/Evidence/ComputedMetrics/README.md	2	DG
+member	D	src/Analysis/Evidence/Duplication/DuplicationDetector.php	1	D
+member	D	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	1	D
+member	D	src/Analysis/Evidence/Prioritization/Debt/DebtCalculator.php	2	AD
+member	D	src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php	3	ADG
+member	D	src/Analysis/Finding/ChannelPresentationView.php	3	ADG
+member	D	src/Analysis/Finding/Contract/ChannelDeclaration.php	2	DG
+member	D	src/Analysis/Finding/Contract/ChannelShape.php	2	AD
+member	D	src/Analysis/Finding/Contract/Rule/RuleCategory.php	2	DF
+member	D	src/Analysis/Finding/Contract/Rule/RuleDocsPageReader.php	2	DF
+member	D	src/Analysis/Finding/Contract/Rule/RuleSelector.php	2	AD
+member	D	src/Analysis/Finding/README.md	3	ADG
+member	D	src/Analysis/Finding/Rule/InMemoryRuleChannelRegistry.php	2	AD
+member	D	src/Analysis/Finding/RuleConfiguration/RuleOptionsParserFactory.php	1	D
+member	D	src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php	2	AD
+member	D	src/Analysis/Finding/RuleExecution.php	2	AD
+member	D	src/Analysis/Policy/Architecture/Contract/LayerPolicyPreparationInterface.php	2	AD
+member	D	src/Analysis/Policy/Baseline/BaselineMigrator.php	3	ADI
+member	D	src/Analysis/Policy/Baseline/BaselineWriter.php	2	DI
+member	D	src/Analysis/Policy/Baseline/BoundaryExplanationService.php	4	ADGI
+member	D	src/Analysis/Policy/Baseline/README.md	5	ACDGI
+member	D	src/Analysis/Policy/Inline/Contract/RuleValidatorMapFactory.php	2	DH
+member	D	src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	2	AD
+member	D	src/Analysis/Policy/Inline/Directive/DirectiveNameHints.php	3	ACD
+member	D	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php	3	ADH
+member	D	src/Analysis/Run/FileSetInspection/FileSetInspectionComposite.php	1	D
+member	D	src/Analysis/Run/FileSetInspection/RuleSelectorProducerGate.php	1	D
+member	D	src/Analysis/Run/RuleProducerPreparation.php	2	AD
+member	D	src/Core/README.md	4	ADFG
+member	D	src/Infrastructure/Console/ChannelExclusionKeyValidator.php	3	ADH
+member	D	src/Infrastructure/Console/CheckCommandDefinition.php	1	D
+member	D	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php	3	ADG
+member	D	src/Infrastructure/Console/Command/RulesCommand.php	1	D
+member	D	src/Infrastructure/Console/RuleInputValidator.php	3	DGH
+member	D	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php	2	AD
+member	D	src/Infrastructure/DependencyInjection/CompilerPass/RuleOptionsCompilerPass.php	1	D
+member	D	src/Infrastructure/DependencyInjection/CompilerPass/RuleRegistryCompilerPass.php	1	D
+member	D	src/Infrastructure/DependencyInjection/Configurator/RuleConfigurator.php	2	DG
+member	D	src/Infrastructure/Rule/ChannelUniverse.php	3	ADG
+member	D	src/Infrastructure/Rule/ComputedMetricChannelPresentation.php	3	ADG
+member	D	src/Infrastructure/Rule/KnownRuleNamesAdapter.php	1	D
+member	D	src/Infrastructure/Rule/README.md	2	DG
+member	D	src/Infrastructure/Rule/RuleRegistry.php	1	D
+member	D	src/Reporting/Formatter/Json/JsonViolationSection.php	2	AD
+member	D	src/Reporting/Formatter/Sarif/SarifRuleCollector.php	3	ADG
+member	D	src/Reporting/Formatter/Support/DebtBreakdownRenderer.php	2	AD
+member	D	tests/Analysis/Configuration/Integration/Loader/YamlNormalizationCharacterizationTest.php	1	D
+member	D	tests/Analysis/Configuration/Integration/YamlKeyReachabilityTest.php	1	D
+member	D	tests/Analysis/Configuration/Unit/Loader/YamlConfigLoaderTest.php	1	D
+member	D	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricDefaultsTest.php	2	DG
+member	D	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricEvaluatorTest.php	3	DEG
+member	D	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricFindingBuilderTest.php	3	ADG
+member	D	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleTest.php	4	ADFG
+member	D	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsConfigResolverTest.php	2	DG
+member	D	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsInternalTopologyTest.php	3	ADG
+member	D	tests/Analysis/Evidence/ComputedMetrics/Unit/HealthFormulaExcluderTest.php	2	DG
+member	D	tests/Analysis/Evidence/Prioritization/Support/StubRemediationMinutes.php	1	D
+member	D	tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php	2	AD
+member	D	tests/Analysis/Finding/Integration/ChannelPresentationCoverageTest.php	2	AD
+member	D	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php	3	ACD
+member	D	tests/Analysis/Finding/Integration/RuleDocsPageCoverageTest.php	1	D
+member	D	tests/Analysis/Finding/Integration/RuleIdentifierLiteralGuardTest.php	2	AD
+member	D	tests/Analysis/Finding/Integration/RuleRemediationMinutesCoverageTest.php	1	D
+member	D	tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php	4	ACDF
+member	D	tests/Analysis/Finding/Unit/ChannelPresentationViewTest.php	4	ADFG
+member	D	tests/Analysis/Finding/Unit/ChannelSelectorTest.php	3	ACD
+member	D	tests/Analysis/Finding/Unit/RuleExecutorTest.php	6	ABCDFG
+member	D	tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php	2	AD
+member	D	tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php	2	AD
+member	D	tests/Analysis/Finding/Unit/RuleSelectorTest.php	2	AD
+member	D	tests/Analysis/Policy/Baseline/Functional/BaselineCommandFailureReportingTest.php	4	ADGI
+member	D	tests/Analysis/Policy/Baseline/Functional/BaselineMeasuredSetSeamTest.php	2	DI
+member	D	tests/Analysis/Policy/Baseline/Functional/BaselineRunBeforeLoadTest.php	4	ADGI
+member	D	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php	5	ADEGI
+member	D	tests/Analysis/Policy/Inline/Integration/UnusedDirectiveRuleTest.php	5	ACDGH
+member	D	tests/Analysis/Policy/Inline/Unit/Directive/InlineDirectivePolicyTest.php	3	ADG
+member	D	tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php	3	ACD
+member	D	tests/Analysis/Run/Support/Pipeline/TestPipelineBuilder.php	2	DG
+member	D	tests/Functional/Console/LayerAssignmentCommandTest.php	2	DG
+member	D	tests/Infrastructure/Console/Functional/Command/CheckCommandConfigErrorExitCodeTest.php	2	DG
+member	D	tests/Infrastructure/Console/Functional/Command/CheckCommandInputValidationTest.php	2	DG
+member	D	tests/Infrastructure/Console/Functional/Command/CheckCommandPathInputTest.php	1	D
+member	D	tests/Infrastructure/Console/Functional/Command/CheckCommandTest.php	2	AD
+member	D	tests/Infrastructure/Console/Integration/RuleExclusionStatsWiringTest.php	2	AD
+member	D	tests/Infrastructure/Console/Integration/RuntimeConfigurationIsolationTest.php	1	D
+member	D	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	2	DG
+member	D	tests/Infrastructure/Console/Unit/RuntimeConfiguratorTest.php	2	DG
+member	D	tests/Infrastructure/Rule/Unit/ComputedMetricChannelPresentationTest.php	2	DG
+member	D	tests/Infrastructure/Unit/ChannelUniverseTest.php	4	ACDG
+member	D	tests/Reporting/FindingProjection/Unit/DeclaredChannelFileScopeTest.php	3	ACD
+member	D	tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php	2	AD
+member	D	tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php	1	D
+member	D	tests/Unit/RuleVocabulary/RenameEnumerationRetirementTest.php	1	D
+member	D	website/docs/getting-started/configuration.md	6	ACDEHJ
+member	D	website/docs/getting-started/configuration.ru.md	6	ACDEHJ
+member	D	website/docs/reference/default-thresholds.md	5	ACDHJ
+member	D	website/docs/reference/health-scores.md	4	DEGJ
+member	D	website/docs/reference/health-scores.ru.md	4	DEGJ
+member	D	website/docs/reference/remediation-time.md	3	ADJ
+member	D	website/docs/reference/remediation-time.ru.md	3	ADJ
+member	D	website/docs/rules/annotation.md	5	ACDHJ
+member	D	website/docs/rules/annotation.ru.md	5	ACDHJ
+member	D	website/docs/usage/baseline.md	5	ACDHJ
+member	D	website/docs/usage/baseline.ru.md	5	ACDHJ
+member	D	website/docs/usage/cli-options.md	6	ADEGHJ
+member	D	website/docs/usage/cli-options.ru.md	5	ADEHJ
+member	E	AGENTS.md	2	AE
+member	E	CHANGELOG.md	7	ACDEGIJ
+member	E	docs/adr/0020-method-size-and-npath-semantics.md	2	EJ
+member	E	docs/adr/0027-weight-of-class-measures-accessors-not-visibility.md	2	EJ
+member	E	docs/adr/README.md	5	ADEFJ
+member	E	docs/internal/PRODUCT_ROADMAP.md	2	AE
+member	E	docs/internal/SCANNER_VALIDATION_ROUND_1_FINDINGS.md	2	EI
+member	E	docs/internal/SCANNER_VALIDATION_ROUND_1_PLAN.md	1	E
+member	E	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	8	ACDEFGHI
+member	E	docs/internal/generated/modular-architecture/production-phase-participants.tsv	4	AEGJ
+member	E	docs/internal/generated/modular-architecture/production-state-services.tsv	2	EJ
+member	E	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	8	ACDEGHIJ
+member	E	docs/internal/plans/baseline-compaction/identity-map.md	2	EG
+member	E	docs/internal/plans/client-requests/abstractness-enum-exclusion.md	1	E
+member	E	docs/internal/plans/global-functions-graph.md	3	AEG
+member	E	docs/internal/plans/rule-vocabulary/FACTS.md	6	ACDEFG
+member	E	docs/internal/plans/rule-vocabulary/PLAN.md	8	ACDEFGHI
+member	E	docs/internal/plans/rule-vocabulary/enumeration-consumers.tsv	3	AEF
+member	E	docs/internal/plans/rule-vocabulary/enumeration-producer-surfaces.tsv	2	AE
+member	E	docs/internal/plans/rule-vocabulary/enumeration-renames.tsv	4	ACDE
+member	E	finding-gate/cases/design/case.json	1	E
+member	E	scripts/collect-benchmark-data.php	1	E
+member	E	scripts/cross-tool-comparison.py	1	E
+member	E	scripts/generate-modular-architecture-production-inventory.php	3	AEG
+member	E	scripts/generate-rename-enumeration.php	3	ADE
+member	E	src/Analysis/Configuration/README.md	2	DE
+member	E	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php	3	AEF
+member	E	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	3	AEF
+member	E	src/Analysis/Evidence/CodeSmell/ParameterCountCollector.php	1	E
+member	E	src/Analysis/Evidence/CodeSmell/ParameterCountVisitor.php	1	E
+member	E	src/Analysis/Evidence/CodeSmell/UnreachableCodeCollector.php	1	E
+member	E	src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php	3	AEF
+member	E	src/Analysis/Evidence/CodeSmell/UnreachableCodeVisitor.php	1	E
+member	E	src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php	1	E
+member	E	src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php	3	AEF
+member	E	src/Analysis/Evidence/Cohesion/LcomCollector.php	1	E
+member	E	src/Analysis/Evidence/Cohesion/LcomRule.php	3	AEF
+member	E	src/Analysis/Evidence/Cohesion/TccLccCollector.php	1	E
+member	E	src/Analysis/Evidence/Complexity/CognitiveComplexityCollector.php	1	E
+member	E	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	5	ABCEF
+member	E	src/Analysis/Evidence/Complexity/ComplexityRule.php	5	ABCEF
+member	E	src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php	1	E
+member	E	src/Analysis/Evidence/Complexity/NpathComplexityCollector.php	1	E
+member	E	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	5	ABCEF
+member	E	src/Analysis/Evidence/Complexity/README.md	2	CE
+member	E	src/Analysis/Evidence/Complexity/WmcRule.php	3	AEF
+member	E	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	3	DEG
+member	E	src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/WorstClassDrillDown.php	3	AEG
+member	E	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	3	AEG
+member	E	src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDimensionCatalog.php	1	E
+member	E	src/Analysis/Evidence/ComputedMetrics/Health/Metadata/MetricHintCatalog.php	1	E
+member	E	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	2	EG
+member	E	src/Analysis/Evidence/Coupling/CboRule.php	6	ABCEFG
+member	E	src/Analysis/Evidence/Coupling/ClassRankCollector.php	2	EG
+member	E	src/Analysis/Evidence/Coupling/ClassRankRule.php	4	AEFG
+member	E	src/Analysis/Evidence/Coupling/CouplingCollector.php	2	EG
+member	E	src/Analysis/Evidence/Coupling/DistanceCollector.php	2	EG
+member	E	src/Analysis/Evidence/Coupling/DistanceRule.php	4	AEFG
+member	E	src/Analysis/Evidence/Coupling/InstabilityRule.php	6	ABCEFG
+member	E	src/Analysis/Evidence/Coupling/README.md	2	EI
+member	E	src/Analysis/Evidence/Coupling/RfcCollector.php	1	E
+member	E	src/Analysis/Evidence/Design/DataClassExclusionCheck.php	1	E
+member	E	src/Analysis/Evidence/Design/DataClassRule.php	3	AEF
+member	E	src/Analysis/Evidence/Design/DitGlobalCollector.php	2	EG
+member	E	src/Analysis/Evidence/Design/GodClassCriteriaEvaluator.php	1	E
+member	E	src/Analysis/Evidence/Design/GodClassOptions.php	1	E
+member	E	src/Analysis/Evidence/Design/GodClassRule.php	3	AEF
+member	E	src/Analysis/Evidence/Design/InheritanceDepthCollector.php	1	E
+member	E	src/Analysis/Evidence/Design/InheritanceRule.php	3	AEF
+member	E	src/Analysis/Evidence/Design/NocCollector.php	2	EG
+member	E	src/Analysis/Evidence/Design/NocRule.php	3	AEF
+member	E	src/Analysis/Evidence/Design/ParamTypeCoverageRule.php	1	E
+member	E	src/Analysis/Evidence/Design/PropertyTypeCoverageRule.php	1	E
+member	E	src/Analysis/Evidence/Design/ReturnTypeCoverageRule.php	1	E
+member	E	src/Analysis/Evidence/Design/TypeCoverageCollector.php	1	E
+member	E	src/Analysis/Evidence/Design/TypeCoveragePercentCollector.php	1	E
+member	E	src/Analysis/Evidence/Design/TypeCoverageVisitor.php	1	E
+member	E	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	1	E
+member	E	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	1	E
+member	E	src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php	1	E
+member	E	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php	3	AEF
+member	E	src/Analysis/Evidence/Maintainability/README.md	1	E
+member	E	src/Analysis/Evidence/Measurement/Aggregation/CallableToClassAggregator.php	2	EG
+member	E	src/Analysis/Evidence/Measurement/Contract/MetricName.php	1	E
+member	E	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	1	E
+member	E	src/Analysis/Evidence/Prioritization/Impact/ClassRankResolver.php	3	AEG
+member	E	src/Analysis/Evidence/Prioritization/Impact/ImpactCalculator.php	3	AEG
+member	E	src/Analysis/Evidence/Prioritization/Impact/RankedIssue.php	2	AE
+member	E	src/Analysis/Evidence/Security/Credential/HardcodedCredentialsCollector.php	1	E
+member	E	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php	4	AEFG
+member	E	src/Analysis/Evidence/Security/README.md	1	E
+member	E	src/Analysis/Evidence/Security/SensitiveParameterCollector.php	1	E
+member	E	src/Analysis/Evidence/Security/SensitiveParameterRule.php	4	AEFG
+member	E	src/Analysis/Evidence/Size/ClassCountCollector.php	1	E
+member	E	src/Analysis/Evidence/Size/ClassCountRule.php	4	AEFG
+member	E	src/Analysis/Evidence/Size/ClassCountVisitor.php	1	E
+member	E	src/Analysis/Evidence/Size/LocCollector.php	1	E
+member	E	src/Analysis/Evidence/Size/MethodCountCollector.php	1	E
+member	E	src/Analysis/Evidence/Size/MethodCountMetrics.php	1	E
+member	E	src/Analysis/Evidence/Size/MethodCountRule.php	3	AEF
+member	E	src/Analysis/Evidence/Size/MethodCountVisitor.php	1	E
+member	E	src/Analysis/Evidence/Size/MethodStatementCountCollector.php	1	E
+member	E	src/Analysis/Evidence/Size/MethodStatementCountVisitor.php	1	E
+member	E	src/Analysis/Evidence/Size/PropertyCountRule.php	3	AEF
+member	E	src/Analysis/Evidence/Size/README.md	1	E
+member	E	src/Reporting/Formatter/Html/HtmlMetricAggregator.php	1	E
+member	E	src/Reporting/Formatter/Html/HtmlTreeBuilder.php	2	EG
+member	E	src/Reporting/Formatter/Json/JsonFormatter.php	2	AE
+member	E	src/Reporting/Health/SummaryEnricher.php	1	E
+member	E	src/Reporting/Template/tests/hints.test.js	1	E
+member	E	tests/Analysis/Evidence/CodeSmell/Integration/LongParameterListVoPropagationTest.php	3	AEG
+member	E	tests/Analysis/Evidence/CodeSmell/Unit/LongParameterListRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/CodeSmell/Unit/ParameterCountCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/CodeSmell/Unit/UnreachableCodeCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/CodeSmell/Unit/UnreachableCodeRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/CodeSmell/Unit/UnusedPrivateCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/CodeSmell/Unit/UnusedPrivateRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/Cohesion/Unit/TccLccCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Complexity/Unit/WmcRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/HealthDimensionCatalogTest.php	1	E
+member	E	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/MetricHintCatalogTest.php	1	E
+member	E	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/ViolationDensityTest.php	4	ACEG
+member	E	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/WorstClassDrillDownTest.php	3	AEG
+member	E	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricEvaluatorTest.php	3	DEG
+member	E	tests/Analysis/Evidence/Coupling/Unit/AbstractnessCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Coupling/Unit/CboRuleTest.php	6	ABCEFG
+member	E	tests/Analysis/Evidence/Coupling/Unit/ClassRankCollectorTest.php	2	EG
+member	E	tests/Analysis/Evidence/Coupling/Unit/ClassRankRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/Coupling/Unit/CouplingCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Coupling/Unit/DistanceRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/Coupling/Unit/RfcCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Design/Fixtures/ReadonlyDto.php	1	E
+member	E	tests/Analysis/Evidence/Design/Fixtures/SmallClass.php	1	E
+member	E	tests/Analysis/Evidence/Design/Integration/DataClassDetectionTest.php	2	AE
+member	E	tests/Analysis/Evidence/Design/Unit/DataClassRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/Design/Unit/GodClassRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/Design/Unit/TypeCoverageCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Design/Unit/TypeCoveragePercentCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Design/Unit/TypeCoverageRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/Design/Unit/TypeCoverageScaleTest.php	1	E
+member	E	tests/Analysis/Evidence/Maintainability/Unit/HalsteadCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Maintainability/Unit/MaintainabilityIndexCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Maintainability/Unit/MaintainabilityRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics/App/Repository/UserRepositoryInterface.php	1	E
+member	E	tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics/App/Service/Auth/TokenValidator.php	1	E
+member	E	tests/Analysis/Evidence/Measurement/Fixtures/qmx-current.json	1	E
+member	E	tests/Analysis/Evidence/Measurement/Fixtures/qmx-incomplete-coverage.json	1	E
+member	E	tests/Analysis/Evidence/Measurement/Fixtures/qmx-malformed-coverage.json	1	E
+member	E	tests/Analysis/Evidence/Measurement/Fixtures/qmx-missing-coverage.json	1	E
+member	E	tests/Analysis/Evidence/Measurement/Integration/Aggregation/GoldenFileAggregationTest.php	2	EG
+member	E	tests/Analysis/Evidence/Measurement/Tests/test_cross_tool_comparison.py	1	E
+member	E	tests/Analysis/Evidence/Measurement/Unit/Aggregation/ClassToNamespaceAggregatorTest.php	1	E
+member	E	tests/Analysis/Evidence/Measurement/Unit/Aggregation/GlobalCollectorSorterTest.php	1	E
+member	E	tests/Analysis/Evidence/Measurement/Unit/Aggregation/MetricAggregatorTest.php	1	E
+member	E	tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/CompositeCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/DerivedMetricExtractorTest.php	1	E
+member	E	tests/Analysis/Evidence/Prioritization/Unit/Impact/ClassRankResolverTest.php	3	AEG
+member	E	tests/Analysis/Evidence/Prioritization/Unit/Impact/ImpactCalculatorTest.php	3	AEG
+member	E	tests/Analysis/Evidence/Security/Unit/HardcodedCredentialsCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Security/Unit/HardcodedCredentialsRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/Security/Unit/HardcodedCredentialsVisitorTest.php	1	E
+member	E	tests/Analysis/Evidence/Security/Unit/SensitiveParameterCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Security/Unit/SensitiveParameterRuleTest.php	4	AEFG
+member	E	tests/Analysis/Evidence/Size/Unit/ClassCountCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Size/Unit/LocCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Size/Unit/MethodCountCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Size/Unit/MethodStatementCountCollectorTest.php	1	E
+member	E	tests/Analysis/Evidence/Size/Unit/PropertyCountRuleTest.php	4	AEFG
+member	E	tests/Analysis/Finding/Integration/ChannelCoverageTest.php	4	AEGH
+member	E	tests/Analysis/Policy/Baseline/Integration/NpathSaturationCeilingTest.php	5	ACEGI
+member	E	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php	5	ADEGI
+member	E	tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php	4	ACEG
+member	E	tests/Analysis/Run/Integration/Pipeline/MultiNamespaceAnalysisTest.php	1	E
+member	E	tests/Analysis/Run/Unit/Collection/CollectionOrchestratorTest.php	1	E
+member	E	tests/Unit/Reporting/Formatter/Summary/TopIssuesRendererTest.php	3	ABE
+member	E	tests/Unit/Reporting/Health/HealthHintProjectorTest.php	1	E
+member	E	website/docs/getting-started/configuration.md	6	ACDEHJ
+member	E	website/docs/getting-started/configuration.ru.md	6	ACDEHJ
+member	E	website/docs/reference/health-scores.md	4	DEGJ
+member	E	website/docs/reference/health-scores.ru.md	4	DEGJ
+member	E	website/docs/rules/coupling.md	3	EIJ
+member	E	website/docs/rules/coupling.ru.md	3	EIJ
+member	E	website/docs/rules/maintainability.md	2	EJ
+member	E	website/docs/rules/maintainability.ru.md	2	EJ
+member	E	website/docs/usage/cli-options.md	6	ADEGHJ
+member	E	website/docs/usage/cli-options.ru.md	5	ADEHJ
+member	E	website/docs/usage/output-formats.md	5	ACEIJ
+member	E	website/docs/usage/output-formats.ru.md	5	ACEIJ
+member	F	docs/adr/0024-channel-identity-and-selector-semantics.md	5	ACDFJ
+member	F	docs/adr/0028-lcom-rule-name-and-category.md	2	FJ
+member	F	docs/adr/0029-channel-presentation-join.md	6	ACDFGJ
+member	F	docs/adr/README.md	5	ADEFJ
+member	F	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	8	ACDEFGHI
+member	F	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	8	ACDFGHIJ
+member	F	docs/internal/generated/modular-architecture/production-module-fan-in.tsv	6	AFGHIJ
+member	F	docs/internal/generated/modular-architecture/production-ownership.tsv	8	ACDFGHIJ
+member	F	docs/internal/generated/modular-architecture/production-public-imports.tsv	8	ACDFGHIJ
+member	F	docs/internal/modular-architecture-manifest.json	8	ACDFGHIJ
+member	F	docs/internal/plans/channel-identity-substrate.md	6	ACDFGH
+member	F	docs/internal/plans/diff-mode-new-only.md	4	ADFI
+member	F	docs/internal/plans/modular-architecture/p6-finding-policy.md	6	ACDFHI
+member	F	docs/internal/plans/modular-architecture/p6/p6-production-ledger.md	6	ACDFHI
+member	F	docs/internal/plans/modular-architecture/p6/p6-relations-ledger.md	6	ACFGHI
+member	F	docs/internal/plans/rule-vocabulary/FACTS.md	6	ACDEFG
+member	F	docs/internal/plans/rule-vocabulary/PLAN.md	8	ACDEFGHI
+member	F	docs/internal/plans/rule-vocabulary/enumeration-consumers.tsv	3	AEF
+member	F	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv	3	CDF
+member	F	docs/internal/plans/sarif-channel-descriptions.md	6	ACDFGI
+member	F	qmx.yaml	8	ACDFGHIJ
+member	F	src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php	2	AF
+member	F	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php	3	AFG
+member	F	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php	3	AEF
+member	F	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php	3	AFG
+member	F	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	3	AEF
+member	F	src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php	3	AEF
+member	F	src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php	3	AEF
+member	F	src/Analysis/Evidence/Cohesion/LcomRule.php	3	AEF
+member	F	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	5	ABCEF
+member	F	src/Analysis/Evidence/Complexity/ComplexityRule.php	5	ABCEF
+member	F	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	5	ABCEF
+member	F	src/Analysis/Evidence/Complexity/WmcRule.php	3	AEF
+member	F	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	3	AFG
+member	F	src/Analysis/Evidence/Coupling/CboRule.php	6	ABCEFG
+member	F	src/Analysis/Evidence/Coupling/ClassRankRule.php	4	AEFG
+member	F	src/Analysis/Evidence/Coupling/DistanceRule.php	4	AEFG
+member	F	src/Analysis/Evidence/Coupling/InstabilityRule.php	6	ABCEFG
+member	F	src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php	2	AF
+member	F	src/Analysis/Evidence/Design/DataClassRule.php	3	AEF
+member	F	src/Analysis/Evidence/Design/GodClassRule.php	3	AEF
+member	F	src/Analysis/Evidence/Design/InheritanceRule.php	3	AEF
+member	F	src/Analysis/Evidence/Design/NocRule.php	3	AEF
+member	F	src/Analysis/Evidence/Duplication/CodeDuplicationRule.php	2	AF
+member	F	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php	3	AEF
+member	F	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php	3	AFG
+member	F	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php	4	AEFG
+member	F	src/Analysis/Evidence/Security/SensitiveParameterRule.php	4	AEFG
+member	F	src/Analysis/Evidence/Size/ClassCountRule.php	4	AEFG
+member	F	src/Analysis/Evidence/Size/MethodCountRule.php	3	AEF
+member	F	src/Analysis/Evidence/Size/PropertyCountRule.php	3	AEF
+member	F	src/Analysis/Finding/Contract/Rule/AbstractRule.php	1	F
+member	F	src/Analysis/Finding/Contract/Rule/RuleCategory.php	2	DF
+member	F	src/Analysis/Finding/Contract/Rule/RuleDocsPageReader.php	2	DF
+member	F	src/Analysis/Finding/Contract/RuleMetadata.php	1	F
+member	F	src/Analysis/Finding/Rule/RuleInterface.php	2	AF
+member	F	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	2	AF
+member	F	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassRule.php	2	AF
+member	F	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php	3	AFH
+member	F	src/Core/README.md	4	ADFG
+member	F	tests/Analysis/Evidence/CircularDependency/Unit/CircularDependencyRuleTest.php	2	AF
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/BooleanArgumentRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/ConstructorOverinjectionRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/CountInLoopRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/DebugCodeRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/EmptyCatchRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/ErrorSuppressionRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/EvalRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/ExitRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/GotoRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/IdenticalSubExpressionRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/LongParameterListRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/SuperglobalsRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/UnreachableCodeRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/CodeSmell/Unit/UnusedPrivateRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/Cohesion/Unit/LcomRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/Complexity/Unit/CognitiveComplexityRuleTest.php	5	ABCFG
+member	F	tests/Analysis/Evidence/Complexity/Unit/ComplexityRuleTest.php	5	ABCFG
+member	F	tests/Analysis/Evidence/Complexity/Unit/NpathComplexityRuleTest.php	5	ABCFG
+member	F	tests/Analysis/Evidence/Complexity/Unit/WmcRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleTest.php	4	ADFG
+member	F	tests/Analysis/Evidence/Coupling/Unit/CboRuleTest.php	6	ABCEFG
+member	F	tests/Analysis/Evidence/Coupling/Unit/ClassRankRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/Coupling/Unit/DistanceRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/Coupling/Unit/InstabilityRuleTest.php	5	ABCFG
+member	F	tests/Analysis/Evidence/Design/Unit/DataClassRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/Design/Unit/GodClassRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/Design/Unit/InheritanceRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/Design/Unit/NocRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/Design/Unit/TypeCoverageRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/Duplication/Unit/CodeDuplicationRuleTest.php	4	AFGI
+member	F	tests/Analysis/Evidence/Maintainability/Unit/MaintainabilityRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/Security/Unit/CommandInjectionRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/Security/Unit/HardcodedCredentialsRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/Security/Unit/SensitiveParameterRuleTest.php	4	AEFG
+member	F	tests/Analysis/Evidence/Security/Unit/SqlInjectionRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/Security/Unit/XssRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/Size/Unit/ClassCountRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/Size/Unit/MethodCountRuleTest.php	3	AFG
+member	F	tests/Analysis/Evidence/Size/Unit/PropertyCountRuleTest.php	4	AEFG
+member	F	tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php	3	AFG
+member	F	tests/Analysis/Finding/Unit/AbstractRuleSubjectControlTest.php	2	FG
+member	F	tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php	4	ACDF
+member	F	tests/Analysis/Finding/Unit/ChannelPresentationViewTest.php	4	ADFG
+member	F	tests/Analysis/Finding/Unit/RuleExecutorTest.php	6	ABCDFG
+member	F	tests/Analysis/Policy/Architecture/Unit/LayerViolationRuleTest.php	3	AFG
+member	F	tests/Infrastructure/Unit/RuleRegistryCompilerPassTest.php	1	F
+member	F	tests/Infrastructure/Unit/RulesCommandTest.php	1	F
+member	G	CHANGELOG.md	7	ACDEGIJ
+member	G	docs/adr/0001-computed-metrics.md	3	DGJ
+member	G	docs/adr/0003-reporting-ux-redesign.md	5	ADGIJ
+member	G	docs/adr/0006-architecture-rules-declaration-order.md	2	GJ
+member	G	docs/adr/0008-architecture-processor-service.md	2	GJ
+member	G	docs/adr/0029-channel-presentation-join.md	6	ACDFGJ
+member	G	docs/adr/0031-channel-shape-is-a-producer-property.md	4	DGHJ
+member	G	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	8	ACDEFGHI
+member	G	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	8	ACDFGHIJ
+member	G	docs/internal/generated/modular-architecture/production-module-fan-in.tsv	6	AFGHIJ
+member	G	docs/internal/generated/modular-architecture/production-ownership.tsv	8	ACDFGHIJ
+member	G	docs/internal/generated/modular-architecture/production-phase-participants.tsv	4	AEGJ
+member	G	docs/internal/generated/modular-architecture/production-public-imports.tsv	8	ACDFGHIJ
+member	G	docs/internal/generated/modular-architecture/test-ownership.tsv	7	ACDGHIJ
+member	G	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	8	ACDEGHIJ
+member	G	docs/internal/modular-architecture-manifest.json	8	ACDFGHIJ
+member	G	docs/internal/plans/baseline-compaction/PLAN.md	3	AGI
+member	G	docs/internal/plans/baseline-compaction/identity-map.md	2	EG
+member	G	docs/internal/plans/channel-identity-substrate.md	6	ACDFGH
+member	G	docs/internal/plans/client-requests/architecture-unassigned-class.md	3	ACG
+member	G	docs/internal/plans/global-functions-graph.md	3	AEG
+member	G	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md	5	ACDGI
+member	G	docs/internal/plans/modular-architecture/p5-computed-metrics.md	4	ACDG
+member	G	docs/internal/plans/modular-architecture/p6/p6-relations-ledger.md	6	ACFGHI
+member	G	docs/internal/plans/modular-architecture/roadmap-p5-p8.md	2	AG
+member	G	docs/internal/plans/rule-vocabulary/FACTS.md	6	ACDEFG
+member	G	docs/internal/plans/rule-vocabulary/PLAN.md	8	ACDEFGHI
+member	G	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv	4	ACDG
+member	G	docs/internal/plans/rule-vocabulary/enumeration-channel-shapes.tsv	4	CDGH
+member	G	docs/internal/plans/sarif-channel-descriptions.md	6	ACDFGI
+member	G	finding-gate/cases/health/qmx.yaml	2	DG
+member	G	qmx-baseline.json	6	ACDGHI
+member	G	qmx.yaml	8	ACDFGHIJ
+member	G	qmx.yaml.example	3	DGJ
+member	G	scripts/finding-gate-controls/Controls.php	3	ADG
+member	G	scripts/generate-modular-architecture-production-inventory.php	3	AEG
+member	G	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php	3	AFG
+member	G	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php	3	AFG
+member	G	src/Analysis/Evidence/ComputedMetrics/ComputedMetricAnalysis.php	1	G
+member	G	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	3	DEG
+member	G	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDependencyGraphCalculator.php	1	G
+member	G	src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	1	G
+member	G	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	3	AFG
+member	G	src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php	2	DG
+member	G	src/Analysis/Evidence/ComputedMetrics/Contract/Configuration/ComputedMetricConfiguratorInterface.php	1	G
+member	G	src/Analysis/Evidence/ComputedMetrics/Contract/Configuration/HealthFormulaExclusionInterface.php	1	G
+member	G	src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php	1	G
+member	G	src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinitionCatalogInterface.php	1	G
+member	G	src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ResolvedComputedMetricDefinitions.php	1	G
+member	G	src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	1	G
+member	G	src/Analysis/Evidence/ComputedMetrics/Finding/ComputedMetricFindingBuilder.php	2	AG
+member	G	src/Analysis/Evidence/ComputedMetrics/Health/Configuration/HealthFormulaExcluder.php	1	G
+member	G	src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/HealthScoreDrillDown.php	1	G
+member	G	src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/WorstClassDrillDown.php	3	AEG
+member	G	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	3	AEG
+member	G	src/Analysis/Evidence/ComputedMetrics/README.md	2	DG
+member	G	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	2	EG
+member	G	src/Analysis/Evidence/Coupling/CboRule.php	6	ABCEFG
+member	G	src/Analysis/Evidence/Coupling/ClassRankCollector.php	2	EG
+member	G	src/Analysis/Evidence/Coupling/ClassRankRule.php	4	AEFG
+member	G	src/Analysis/Evidence/Coupling/CouplingCollector.php	2	EG
+member	G	src/Analysis/Evidence/Coupling/DistanceCollector.php	2	EG
+member	G	src/Analysis/Evidence/Coupling/DistanceRule.php	4	AEFG
+member	G	src/Analysis/Evidence/Coupling/InstabilityRule.php	6	ABCEFG
+member	G	src/Analysis/Evidence/Design/DitGlobalCollector.php	2	EG
+member	G	src/Analysis/Evidence/Design/NocCollector.php	2	EG
+member	G	src/Analysis/Evidence/Measurement/Aggregation/AggregationHelper.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Aggregation/AggregationPhaseInterface.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Aggregation/CallableToClassAggregator.php	2	EG
+member	G	src/Analysis/Evidence/Measurement/Aggregation/ClassToNamespaceAggregator.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Aggregation/MeasurementAggregationService.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Aggregation/MetricAggregator.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Aggregation/NamespaceMetricContributions.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Aggregation/NamespaceToProjectAggregator.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Aggregation/TreeAwareNamespaceAggregator.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Contract/DerivedMetricExtractorInterface.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Contract/GlobalContextCollectorInterface.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Contract/MeasurementAggregationInterface.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Contract/MetricRepositoryFactoryInterface.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Contract/SymbolLevelProjection.php	1	G
+member	G	src/Analysis/Evidence/Measurement/FileMeasurement/DerivedMetricExtractor.php	1	G
+member	G	src/Analysis/Evidence/Measurement/README.md	1	G
+member	G	src/Analysis/Evidence/Measurement/Repository/DefaultMetricRepositoryFactory.php	1	G
+member	G	src/Analysis/Evidence/Measurement/Repository/InMemoryMetricRepository.php	1	G
+member	G	src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php	3	ADG
+member	G	src/Analysis/Evidence/Prioritization/Impact/ClassRankResolver.php	3	AEG
+member	G	src/Analysis/Evidence/Prioritization/Impact/ImpactCalculator.php	3	AEG
+member	G	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php	3	AFG
+member	G	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php	4	AEFG
+member	G	src/Analysis/Evidence/Security/SensitiveParameterRule.php	4	AEFG
+member	G	src/Analysis/Evidence/Size/ClassCountRule.php	4	AEFG
+member	G	src/Analysis/Finding/ChannelPresentationView.php	3	ADG
+member	G	src/Analysis/Finding/Contract/ChannelDeclaration.php	2	DG
+member	G	src/Analysis/Finding/Contract/ChannelDeclarationRegistryInterface.php	2	AG
+member	G	src/Analysis/Finding/Contract/ChannelPresentationInterface.php	2	AG
+member	G	src/Analysis/Finding/Contract/Rule/AnalysisContext.php	1	G
+member	G	src/Analysis/Finding/README.md	3	ADG
+member	G	src/Analysis/Policy/Architecture/LayerViolation/LayerEvidenceCollector.php	2	AG
+member	G	src/Analysis/Policy/Baseline/BoundaryExplanationService.php	4	ADGI
+member	G	src/Analysis/Policy/Baseline/README.md	5	ACDGI
+member	G	src/Analysis/Run/Collection/CollectionOrchestrator.php	1	G
+member	G	src/Analysis/Run/Contract/Collection/CollectionOrchestratorInterface.php	1	G
+member	G	src/Analysis/Run/Contract/Pipeline/AnalysisResult.php	2	AG
+member	G	src/Analysis/Run/Pipeline/AnalysisPipeline.php	2	AG
+member	G	src/Core/README.md	4	ADFG
+member	G	src/Infrastructure/Console/AnalysisRuntimeConfigurator.php	1	G
+member	G	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php	3	ADG
+member	G	src/Infrastructure/Console/LayerAssignmentResolver.php	1	G
+member	G	src/Infrastructure/Console/README.md	3	AGH
+member	G	src/Infrastructure/Console/RuleInputValidator.php	3	DGH
+member	G	src/Infrastructure/DependencyInjection/Configurator/ComputedMetricsConfigurator.php	1	G
+member	G	src/Infrastructure/DependencyInjection/Configurator/MeasurementConfigurator.php	1	G
+member	G	src/Infrastructure/DependencyInjection/Configurator/RuleConfigurator.php	2	DG
+member	G	src/Infrastructure/Logging/ConsoleLogger.php	1	G
+member	G	src/Infrastructure/Rule/ChannelUniverse.php	3	ADG
+member	G	src/Infrastructure/Rule/ComputedMetricChannelPresentation.php	3	ADG
+member	G	src/Infrastructure/Rule/Contract/RuleChannelSnapshotFactoryInterface.php	1	G
+member	G	src/Infrastructure/Rule/README.md	2	DG
+member	G	src/Reporting/Formatter/Html/HtmlTreeBuilder.php	2	EG
+member	G	src/Reporting/Formatter/MetricsJsonFormatter.php	1	G
+member	G	src/Reporting/Formatter/Sarif/SarifFormatter.php	3	AGI
+member	G	src/Reporting/Formatter/Sarif/SarifRuleCollector.php	3	ADG
+member	G	src/Reporting/README.md	4	ACGI
+member	G	src/Reporting/Report.php	2	AG
+member	G	src/Reporting/ReportBuilder.php	2	AG
+member	G	tests/Analysis/Evidence/CodeSmell/Integration/CodeSmellLinePrecisionTest.php	2	AG
+member	G	tests/Analysis/Evidence/CodeSmell/Integration/LongParameterListVoPropagationTest.php	3	AEG
+member	G	tests/Analysis/Evidence/CodeSmell/Integration/PropertyHookControlPrecedenceTest.php	1	G
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/BooleanArgumentRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/ConstructorOverinjectionRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/CountInLoopRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/DebugCodeRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/EmptyCatchRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/ErrorSuppressionRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/EvalRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/ExitRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/GotoRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/IdenticalSubExpressionRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/LongParameterListRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/SuperglobalsRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/UnreachableCodeRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/CodeSmell/Unit/UnusedPrivateRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/Cohesion/Unit/LcomRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/Complexity/Integration/WmcIntegrationTest.php	1	G
+member	G	tests/Analysis/Evidence/Complexity/Unit/CognitiveComplexityRuleTest.php	5	ABCFG
+member	G	tests/Analysis/Evidence/Complexity/Unit/ComplexityRuleTest.php	5	ABCFG
+member	G	tests/Analysis/Evidence/Complexity/Unit/NpathComplexityRuleTest.php	5	ABCFG
+member	G	tests/Analysis/Evidence/Complexity/Unit/WmcRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/HealthContributorTest.php	1	G
+member	G	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/HealthScoreDrillDownTest.php	1	G
+member	G	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/HealthSummaryBuilderTest.php	1	G
+member	G	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/MetricRepositoryTestHelper.php	1	G
+member	G	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/ViolationDensityTest.php	4	ACEG
+member	G	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/WorstClassDrillDownTest.php	3	AEG
+member	G	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricDefaultsTest.php	2	DG
+member	G	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricDefinitionTest.php	1	G
+member	G	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricEvaluatorTest.php	3	DEG
+member	G	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricFindingBuilderTest.php	3	ADG
+member	G	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleTest.php	4	ADFG
+member	G	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsConfigResolverTest.php	2	DG
+member	G	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsInternalTopologyTest.php	3	ADG
+member	G	tests/Analysis/Evidence/ComputedMetrics/Unit/HealthFormulaExcluderTest.php	2	DG
+member	G	tests/Analysis/Evidence/Coupling/Unit/CboRuleTest.php	6	ABCEFG
+member	G	tests/Analysis/Evidence/Coupling/Unit/ClassRankCollectorTest.php	2	EG
+member	G	tests/Analysis/Evidence/Coupling/Unit/ClassRankRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/Coupling/Unit/DistanceRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/Coupling/Unit/InstabilityRuleTest.php	5	ABCFG
+member	G	tests/Analysis/Evidence/Design/Unit/DataClassRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/Design/Unit/GodClassRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/Design/Unit/InheritanceRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/Design/Unit/NocCollectorTest.php	1	G
+member	G	tests/Analysis/Evidence/Design/Unit/NocRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/Design/Unit/TypeCoverageRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/Duplication/Unit/CodeDuplicationRuleTest.php	4	AFGI
+member	G	tests/Analysis/Evidence/Maintainability/Unit/MaintainabilityRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/Measurement/Integration/Aggregation/GoldenFileAggregationTest.php	2	EG
+member	G	tests/Analysis/Evidence/Measurement/Integration/Aggregation/MetricInvariantTest.php	1	G
+member	G	tests/Analysis/Evidence/Measurement/Unit/Aggregation/GlobalFunctionAggregationTest.php	1	G
+member	G	tests/Analysis/Evidence/Measurement/Unit/Aggregation/NamespaceMetricContributionsTest.php	1	G
+member	G	tests/Analysis/Evidence/Measurement/Unit/Contract/SymbolLevelProjectionTest.php	1	G
+member	G	tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php	1	G
+member	G	tests/Analysis/Evidence/Prioritization/Unit/Debt/RemediationTimeRegistryTest.php	2	AG
+member	G	tests/Analysis/Evidence/Prioritization/Unit/Impact/ClassRankResolverTest.php	3	AEG
+member	G	tests/Analysis/Evidence/Prioritization/Unit/Impact/ImpactCalculatorTest.php	3	AEG
+member	G	tests/Analysis/Evidence/Security/Unit/CommandInjectionRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/Security/Unit/HardcodedCredentialsRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/Security/Unit/SensitiveParameterRuleTest.php	4	AEFG
+member	G	tests/Analysis/Evidence/Security/Unit/SqlInjectionRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/Security/Unit/XssRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/Size/Unit/ClassCountRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/Size/Unit/MethodCountRuleTest.php	3	AFG
+member	G	tests/Analysis/Evidence/Size/Unit/PropertyCountRuleTest.php	4	AEFG
+member	G	tests/Analysis/Finding/Integration/ChannelCoverageTest.php	4	AEGH
+member	G	tests/Analysis/Finding/Integration/ChannelLevelAssemblyTopologyTest.php	2	AG
+member	G	tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php	2	AG
+member	G	tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php	3	AFG
+member	G	tests/Analysis/Finding/Unit/AbstractRuleSubjectControlTest.php	2	FG
+member	G	tests/Analysis/Finding/Unit/AnalysisContextTest.php	1	G
+member	G	tests/Analysis/Finding/Unit/AnalysisContextThresholdTest.php	1	G
+member	G	tests/Analysis/Finding/Unit/ChannelDeclarationTest.php	1	G
+member	G	tests/Analysis/Finding/Unit/ChannelPresentationViewTest.php	4	ADFG
+member	G	tests/Analysis/Finding/Unit/RuleExecutorTest.php	6	ABCDFG
+member	G	tests/Analysis/Policy/Architecture/Support/ProcessorBuilder.php	1	G
+member	G	tests/Analysis/Policy/Architecture/Unit/LayerViolationRuleTest.php	3	AFG
+member	G	tests/Analysis/Policy/Baseline/Functional/BaselineCommandFailureReportingTest.php	4	ADGI
+member	G	tests/Analysis/Policy/Baseline/Functional/BaselineExplainCommandTest.php	4	ACGI
+member	G	tests/Analysis/Policy/Baseline/Functional/BaselineRunBeforeLoadTest.php	4	ADGI
+member	G	tests/Analysis/Policy/Baseline/Integration/NpathSaturationCeilingTest.php	5	ACEGI
+member	G	tests/Analysis/Policy/Baseline/Support/StubBaselineRun.php	3	AGI
+member	G	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php	5	ADEGI
+member	G	tests/Analysis/Policy/Baseline/Unit/BoundaryExplanationServiceTest.php	4	ACGI
+member	G	tests/Analysis/Policy/Inline/Integration/UnusedDirectiveRuleTest.php	5	ACDGH
+member	G	tests/Analysis/Policy/Inline/Unit/Directive/InlineDirectivePolicyTest.php	3	ADG
+member	G	tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php	4	ACEG
+member	G	tests/Analysis/Run/Integration/Pipeline/AnalysisPipelineIntegrationTest.php	3	AGH
+member	G	tests/Analysis/Run/Support/Pipeline/TestPipelineBuilder.php	2	DG
+member	G	tests/Analysis/Run/Unit/Pipeline/AnalysisPipelineTest.php	1	G
+member	G	tests/Analysis/Run/Unit/Pipeline/AnalysisResultTest.php	2	AG
+member	G	tests/Functional/Console/LayerAssignmentCommandTest.php	2	DG
+member	G	tests/Functional/Reporting/JsonShapePreservationTest.php	5	ABCGI
+member	G	tests/Infrastructure/Console/Functional/Command/CheckCommandConfigErrorExitCodeTest.php	2	DG
+member	G	tests/Infrastructure/Console/Functional/Command/CheckCommandInputValidationTest.php	2	DG
+member	G	tests/Infrastructure/Console/Unit/ResultPresenterTest.php	2	AG
+member	G	tests/Infrastructure/Console/Unit/RuleInputValidatorTest.php	2	DG
+member	G	tests/Infrastructure/Console/Unit/RuntimeConfiguratorTest.php	2	DG
+member	G	tests/Infrastructure/Console/Unit/ViolationFilterOrchestratorBaselineReportingTest.php	3	AGI
+member	G	tests/Infrastructure/Console/Unit/ViolationFilterOrchestratorTest.php	4	ACGI
+member	G	tests/Infrastructure/Rule/Unit/ComputedMetricChannelPresentationTest.php	2	DG
+member	G	tests/Infrastructure/Unit/ChannelUniverseTest.php	4	ACDG
+member	G	tests/Integration/DependencyInjection/ContainerFactoryTest.php	1	G
+member	G	tests/Unit/Infrastructure/Console/MeasuredViolationSetTest.php	4	ACGI
+member	G	tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php	4	ABGI
+member	G	tests/Unit/Reporting/Formatter/HealthTextFormatterTest.php	1	G
+member	G	tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php	3	ABG
+member	G	tests/Unit/Reporting/Formatter/HtmlFormatterTest.php	1	G
+member	G	tests/Unit/Reporting/Formatter/Json/JsonHealthSectionTest.php	1	G
+member	G	tests/Unit/Reporting/Formatter/Json/JsonOffenderSectionDensityTest.php	2	AG
+member	G	tests/Unit/Reporting/Formatter/JsonFormatterTest.php	4	ABCG
+member	G	tests/Unit/Reporting/Formatter/MetricsJsonFormatterTest.php	1	G
+member	G	tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php	4	ABCG
+member	G	tests/Unit/Reporting/Formatter/Summary/HealthBarRendererTest.php	1	G
+member	G	tests/Unit/Reporting/Formatter/Summary/HintRendererTest.php	2	AG
+member	G	tests/Unit/Reporting/Formatter/Summary/OffenderListRendererDensityTest.php	2	AG
+member	G	tests/Unit/Reporting/Formatter/SummaryFormatterTest.php	4	ABCG
+member	G	tests/Unit/Reporting/Health/HealthScoreResolverTest.php	1	G
+member	G	tests/Unit/Reporting/Health/SummaryEnricherTest.php	3	ACG
+member	G	tests/Unit/Reporting/ReportBuilderTest.php	3	ABG
+member	G	website/docs/reference/health-scores.md	4	DEGJ
+member	G	website/docs/reference/health-scores.ru.md	4	DEGJ
+member	G	website/docs/rules/index.md	4	AGHJ
+member	G	website/docs/usage/cli-options.md	6	ADEGHJ
+member	H	docs/adr/0013-threshold-override-validators.md	2	HJ
+member	H	docs/adr/0031-channel-shape-is-a-producer-property.md	4	DGHJ
+member	H	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	8	ACDEFGHI
+member	H	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	8	ACDFGHIJ
+member	H	docs/internal/generated/modular-architecture/production-module-fan-in.tsv	6	AFGHIJ
+member	H	docs/internal/generated/modular-architecture/production-ownership.tsv	8	ACDFGHIJ
+member	H	docs/internal/generated/modular-architecture/production-public-imports.tsv	8	ACDFGHIJ
+member	H	docs/internal/generated/modular-architecture/test-ownership.tsv	7	ACDGHIJ
+member	H	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	8	ACDEGHIJ
+member	H	docs/internal/modular-architecture-manifest.json	8	ACDFGHIJ
+member	H	docs/internal/plans/channel-identity-substrate.md	6	ACDFGH
+member	H	docs/internal/plans/modular-architecture/p6-finding-policy.md	6	ACDFHI
+member	H	docs/internal/plans/modular-architecture/p6/p6-production-ledger.md	6	ACDFHI
+member	H	docs/internal/plans/modular-architecture/p6/p6-relations-ledger.md	6	ACFGHI
+member	H	docs/internal/plans/modular-architecture/p6/p6-test-ledger.md	4	ACHI
+member	H	docs/internal/plans/rule-vocabulary/PLAN.md	8	ACDEFGHI
+member	H	docs/internal/plans/rule-vocabulary/enumeration-channel-shapes.tsv	4	CDGH
+member	H	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	4	ADHI
+member	H	docs/internal/plans/rule-vocabulary/enumeration-shape-consumers.tsv	2	AH
+member	H	docs/internal/plans/rule-vocabulary/enumeration-split-consumers.tsv	1	H
+member	H	qmx-baseline.json	6	ACDGHI
+member	H	qmx.yaml	8	ACDFGHIJ
+member	H	scripts/generate-modular-architecture-test-inventory.php	2	AH
+member	H	src/Analysis/Policy/Inline/Contract/RuleValidatorMapFactory.php	2	DH
+member	H	src/Analysis/Policy/Inline/Contract/Suppression/SuppressionTarget.php	2	AH
+member	H	src/Analysis/Policy/Inline/Contract/SuppressionExtractor.php	2	AH
+member	H	src/Analysis/Policy/Inline/Contract/Threshold/ThresholdDiagnostic.php	1	H
+member	H	src/Analysis/Policy/Inline/Contract/ThresholdOverrideExtractor.php	1	H
+member	H	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php	3	ADH
+member	H	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	2	AH
+member	H	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php	3	AFH
+member	H	src/Analysis/Policy/Inline/Extraction/SourceControlExtractor.php	1	H
+member	H	src/Analysis/Policy/Inline/README.md	1	H
+member	H	src/Infrastructure/Console/ChannelExclusionKeyHints.php	2	AH
+member	H	src/Infrastructure/Console/ChannelExclusionKeyValidator.php	3	ADH
+member	H	src/Infrastructure/Console/README.md	3	AGH
+member	H	src/Infrastructure/Console/RuleInputValidator.php	3	DGH
+member	H	src/Infrastructure/DependencyInjection/CompilerPass/ThresholdValidatorMapCompilerPass.php	1	H
+member	H	src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php	1	H
+member	H	src/Infrastructure/Parallel/WorkerBootstrap.php	1	H
+member	H	src/Infrastructure/README.md	2	AH
+member	H	tests/Analysis/Finding/Integration/ChannelCoverageTest.php	4	AEGH
+member	H	tests/Analysis/Policy/Inline/Integration/ThresholdAnnotationParserPathTest.php	2	CH
+member	H	tests/Analysis/Policy/Inline/Integration/ThresholdValidatorWiringTest.php	1	H
+member	H	tests/Analysis/Policy/Inline/Integration/UnusedDirectiveRuleTest.php	5	ACDGH
+member	H	tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php	3	ACH
+member	H	tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php	1	H
+member	H	tests/Analysis/Run/Integration/Pipeline/AnalysisPipelineIntegrationTest.php	3	AGH
+member	H	tests/System/DocumentationConsistency/Integration/ChannelPublicationConsistencyTest.php	1	H
+member	H	website/docs/getting-started/configuration.md	6	ACDEHJ
+member	H	website/docs/getting-started/configuration.ru.md	6	ACDEHJ
+member	H	website/docs/guides/architecture-investigation.md	3	AHJ
+member	H	website/docs/guides/architecture-investigation.ru.md	2	HJ
+member	H	website/docs/llms.txt	2	HJ
+member	H	website/docs/reference/default-thresholds.md	5	ACDHJ
+member	H	website/docs/reference/default-thresholds.ru.md	3	CHJ
+member	H	website/docs/rules/annotation.md	5	ACDHJ
+member	H	website/docs/rules/annotation.ru.md	5	ACDHJ
+member	H	website/docs/rules/architecture.md	3	AHJ
+member	H	website/docs/rules/architecture.ru.md	3	AHJ
+member	H	website/docs/rules/code-smell.md	2	HJ
+member	H	website/docs/rules/code-smell.ru.md	2	HJ
+member	H	website/docs/rules/design.md	2	HJ
+member	H	website/docs/rules/design.ru.md	2	HJ
+member	H	website/docs/rules/index.md	4	AGHJ
+member	H	website/docs/rules/index.ru.md	2	HJ
+member	H	website/docs/usage/baseline.md	5	ACDHJ
+member	H	website/docs/usage/baseline.ru.md	5	ACDHJ
+member	H	website/docs/usage/cli-options.md	6	ADEGHJ
+member	H	website/docs/usage/cli-options.ru.md	5	ADEHJ
+member	I	CHANGELOG.md	7	ACDEGIJ
+member	I	SCANNER_VALIDATION_ROUND_2_HANDOFF.md	2	AI
+member	I	docs/adr/0003-reporting-ux-redesign.md	5	ADGIJ
+member	I	docs/adr/0015-relative-path-vo.md	3	AIJ
+member	I	docs/adr/0017-baseline-ceiling.md	2	IJ
+member	I	docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md	2	IJ
+member	I	docs/adr/0026-assigned-declaration-ordinal.md	2	IJ
+member	I	docs/internal/SCANNER_VALIDATION_ROUND_1_FINDINGS.md	2	EI
+member	I	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	8	ACDEFGHI
+member	I	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	8	ACDFGHIJ
+member	I	docs/internal/generated/modular-architecture/production-extension-families.tsv	2	IJ
+member	I	docs/internal/generated/modular-architecture/production-module-fan-in.tsv	6	AFGHIJ
+member	I	docs/internal/generated/modular-architecture/production-ownership.tsv	8	ACDFGHIJ
+member	I	docs/internal/generated/modular-architecture/production-public-imports.tsv	8	ACDFGHIJ
+member	I	docs/internal/generated/modular-architecture/production-reporting-classification.tsv	3	AIJ
+member	I	docs/internal/generated/modular-architecture/test-ownership.tsv	7	ACDGHIJ
+member	I	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	8	ACDEGHIJ
+member	I	docs/internal/modular-architecture-manifest.json	8	ACDFGHIJ
+member	I	docs/internal/plans/baseline-compaction/PLAN-IDENTITY.md	2	AI
+member	I	docs/internal/plans/baseline-compaction/PLAN.md	3	AGI
+member	I	docs/internal/plans/baseline-compaction/enumeration-identity.md	3	ADI
+member	I	docs/internal/plans/baseline-compaction/measurements/README.md	1	I
+member	I	docs/internal/plans/diff-mode-new-only.md	4	ADFI
+member	I	docs/internal/plans/modular-architecture/p2-dependency-model.md	4	ACDI
+member	I	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md	5	ACDGI
+member	I	docs/internal/plans/modular-architecture/p6-finding-policy.md	6	ACDFHI
+member	I	docs/internal/plans/modular-architecture/p6/p6-production-ledger.md	6	ACDFHI
+member	I	docs/internal/plans/modular-architecture/p6/p6-relations-ledger.md	6	ACFGHI
+member	I	docs/internal/plans/modular-architecture/p6/p6-test-ledger.md	4	ACHI
+member	I	docs/internal/plans/rule-vocabulary/AUDIT.md	3	ACI
+member	I	docs/internal/plans/rule-vocabulary/PLAN.md	8	ACDEFGHI
+member	I	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv	4	ADHI
+member	I	docs/internal/plans/sarif-channel-descriptions.md	6	ACDFGI
+member	I	docs/internal/plans/sarif-channel-descriptions/channel-inventory.tsv	3	ACI
+member	I	finding-gate/cases/security/src/Credentials.php	1	I
+member	I	qmx-baseline.json	6	ACDGHI
+member	I	qmx.yaml	8	ACDFGHIJ
+member	I	scripts/finding-gate/FailureClass.php	1	I
+member	I	scripts/finding-gate/Fingerprints.php	2	AI
+member	I	scripts/finding-gate/Gate.php	2	AI
+member	I	scripts/finding-gate/SelfTest.php	3	ACI
+member	I	src/Analysis/Evidence/Coupling/README.md	2	EI
+member	I	src/Analysis/Finding/Contract/Violation.php	3	ABI
+member	I	src/Analysis/Policy/Baseline/Baseline.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineCapture.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineCleaner.php	2	AI
+member	I	src/Analysis/Policy/Baseline/BaselineCleanupCandidate.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineCleanupReason.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineCleanupRemoval.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineConflictException.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineEdge.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineEntry.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineEntryMode.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineEntryParser.php	2	AI
+member	I	src/Analysis/Policy/Baseline/BaselineEntryRejection.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineEntryUpdateOutcome.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineEntryValues.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineGenerator.php	2	AI
+member	I	src/Analysis/Policy/Baseline/BaselineIdentity.php	2	AI
+member	I	src/Analysis/Policy/Baseline/BaselineLoadException.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineLoader.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineMigrator.php	3	ADI
+member	I	src/Analysis/Policy/Baseline/BaselineMigratorResult.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineUpdateDisposition.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineUpdateRefusalReason.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineUpdateResult.php	1	I
+member	I	src/Analysis/Policy/Baseline/BaselineUpdater.php	2	AI
+member	I	src/Analysis/Policy/Baseline/BaselineWriter.php	2	DI
+member	I	src/Analysis/Policy/Baseline/BoundaryExplanation.php	1	I
+member	I	src/Analysis/Policy/Baseline/BoundaryExplanationService.php	4	ADGI
+member	I	src/Analysis/Policy/Baseline/BoundaryExplanationStatus.php	1	I
+member	I	src/Analysis/Policy/Baseline/CanonicalBaselineReader.php	1	I
+member	I	src/Analysis/Policy/Baseline/EffectiveBoundary.php	1	I
+member	I	src/Analysis/Policy/Baseline/EffectiveBoundaryBaselineSource.php	1	I
+member	I	src/Analysis/Policy/Baseline/EntrySelector.php	2	AI
+member	I	src/Analysis/Policy/Baseline/Filter/BaselineCeilingStage.php	2	AI
+member	I	src/Analysis/Policy/Baseline/Filter/CeilingOutcome.php	2	AI
+member	I	src/Analysis/Policy/Baseline/Filter/GroupCeilingVerdict.php	1	I
+member	I	src/Analysis/Policy/Baseline/GroupAcceptance.php	1	I
+member	I	src/Analysis/Policy/Baseline/InertBaselineEntry.php	1	I
+member	I	src/Analysis/Policy/Baseline/InertEntryReason.php	1	I
+member	I	src/Analysis/Policy/Baseline/MigrationReport.php	1	I
+member	I	src/Analysis/Policy/Baseline/MigrationReportDroppedEntry.php	1	I
+member	I	src/Analysis/Policy/Baseline/README.md	5	ACDGI
+member	I	src/Analysis/Policy/Baseline/RunScope.php	1	I
+member	I	src/Analysis/Policy/Baseline/UncapturedGroup.php	1	I
+member	I	src/Analysis/Policy/Baseline/UncapturedReason.php	1	I
+member	I	src/Analysis/Policy/Baseline/V5Baseline.php	1	I
+member	I	src/Analysis/Policy/Baseline/V5BaselineReader.php	1	I
+member	I	src/Analysis/Policy/Baseline/V5Entry.php	2	AI
+member	I	src/Analysis/Policy/Baseline/V5UnreadableRecord.php	1	I
+member	I	src/Infrastructure/Cache/CacheKeyGenerator.php	1	I
+member	I	src/Infrastructure/Console/Command/BaselineCleanupCommand.php	1	I
+member	I	src/Infrastructure/Console/Command/BaselineExplainCommand.php	2	AI
+member	I	src/Infrastructure/Console/Command/BaselineGenerateCommand.php	1	I
+member	I	src/Infrastructure/Console/Command/BaselineRunContext.php	2	AI
+member	I	src/Infrastructure/Console/Command/BaselineUpdateCommand.php	1	I
+member	I	src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php	2	AI
+member	I	src/Reporting/FindingProjection/FindingProjector.php	3	ACI
+member	I	src/Reporting/Formatter/GitLabCodeQualityFormatter.php	2	AI
+member	I	src/Reporting/Formatter/Sarif/SarifFormatter.php	3	AGI
+member	I	src/Reporting/README.md	4	ACGI
+member	I	tests/Analysis/Evidence/CircularDependency/Unit/CycleIdentityStabilityTest.php	2	AI
+member	I	tests/Analysis/Evidence/Duplication/Unit/CodeDuplicationRuleTest.php	4	AFGI
+member	I	tests/Analysis/Finding/Unit/ViolationTest.php	4	ABCI
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineCliFixture.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/cbo/Other.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/cbo/Subject.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/cbo/qmx.yaml	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/cleanup/First.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/cleanup/Kept.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/cleanup/Second.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/cleanup/qmx.yaml	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/dogfood/qmx.yaml	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/dogfood/src/Legacy.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/duplication-repair/One.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/duplication-repair/Three.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/duplication-repair/Two.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/duplication-repair/qmx.yaml	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/duplication/A.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/duplication/B.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/duplication/C.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/duplication/qmx.yaml	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/memory-ceiling.json	1	I
+member	I	tests/Analysis/Policy/Baseline/Fixtures/CeilingStageFixtures.php	2	AI
+member	I	tests/Analysis/Policy/Baseline/Functional/BaselineCleanupCommandTest.php	2	AI
+member	I	tests/Analysis/Policy/Baseline/Functional/BaselineCommandFailureReportingTest.php	4	ADGI
+member	I	tests/Analysis/Policy/Baseline/Functional/BaselineCommandOptionSurfaceTest.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Functional/BaselineExplainCommandTest.php	4	ACGI
+member	I	tests/Analysis/Policy/Baseline/Functional/BaselineGenerateCommandTest.php	2	AI
+member	I	tests/Analysis/Policy/Baseline/Functional/BaselineIncompleteAnalysisTest.php	2	CI
+member	I	tests/Analysis/Policy/Baseline/Functional/BaselineLifecycleTest.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Functional/BaselineMeasuredSetSeamTest.php	2	DI
+member	I	tests/Analysis/Policy/Baseline/Functional/BaselineMigrateCommandTest.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Functional/BaselineRunBeforeLoadTest.php	4	ADGI
+member	I	tests/Analysis/Policy/Baseline/Functional/BaselineUpdateCommandTest.php	2	AI
+member	I	tests/Analysis/Policy/Baseline/Integration/BaselineWorkflowTest.php	3	ACI
+member	I	tests/Analysis/Policy/Baseline/Integration/CaptureFromMeasuredSetTest.php	3	ACI
+member	I	tests/Analysis/Policy/Baseline/Integration/CboAggregateBreachTest.php	2	CI
+member	I	tests/Analysis/Policy/Baseline/Integration/MemoryCeilingManifestTest.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Integration/NpathSaturationCeilingTest.php	5	ACEGI
+member	I	tests/Analysis/Policy/Baseline/Integration/ResidualLimitationsCoverageTest.php	2	AI
+member	I	tests/Analysis/Policy/Baseline/Support/FixedClock.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Support/StubBaselineRun.php	3	AGI
+member	I	tests/Analysis/Policy/Baseline/Support/TempDirectory.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php	5	ADEGI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageFailSafeTest.php	3	ACI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageJudgeAllTest.php	2	AI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStagePromotionTest.php	3	ABI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineCleanerTest.php	2	AI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineEntryParserTest.php	2	CI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineEntryTest.php	2	AI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineEntryValuesTest.php	3	ACI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineGeneratorTest.php	3	ACI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineIdentityTest.php	3	ACI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineLoaderTest.php	2	CI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineMigratorTest.php	3	ACI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineRoundTripVOTest.php	3	ACI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineTest.php	3	ACI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineUpdaterTest.php	3	ACI
+member	I	tests/Analysis/Policy/Baseline/Unit/BaselineWriterTest.php	3	ACI
+member	I	tests/Analysis/Policy/Baseline/Unit/BoundaryExplanationServiceTest.php	4	ACGI
+member	I	tests/Analysis/Policy/Baseline/Unit/ConfigurationErrorChannelRejectionTest.php	2	AI
+member	I	tests/Analysis/Policy/Baseline/Unit/EntrySelectorTest.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Unit/GroupAcceptanceTest.php	2	AI
+member	I	tests/Analysis/Policy/Baseline/Unit/RunScopeTest.php	1	I
+member	I	tests/Analysis/Policy/Baseline/Unit/V5BaselineReaderTest.php	1	I
+member	I	tests/Fixtures/Schema/sarif-2.1.0.schema.json	1	I
+member	I	tests/Functional/Reporting/JsonShapePreservationTest.php	5	ABCGI
+member	I	tests/Infrastructure/Console/Unit/ViolationFilterOrchestratorBaselineReportingTest.php	3	AGI
+member	I	tests/Infrastructure/Console/Unit/ViolationFilterOrchestratorTest.php	4	ACGI
+member	I	tests/Reporting/FindingProjection/Unit/ConfigurationErrorProjectionTest.php	2	AI
+member	I	tests/Reporting/FindingProjection/Unit/FindingProjectorTest.php	3	ACI
+member	I	tests/Reporting/FindingProjection/Unit/ProjectScopedChannelProjectionTest.php	2	AI
+member	I	tests/Unit/Infrastructure/Console/MeasuredViolationSetTest.php	4	ACGI
+member	I	tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php	4	ABGI
+member	I	tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php	4	ABCI
+member	I	tests/Unit/Reporting/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php	4	ABCI
+member	I	tests/Unit/Reporting/Formatter/Sarif/SarifSchemaValidationTest.php	3	ABI
+member	I	tests/Unit/Reporting/Formatter/Sarif/Support/StubChannelPresentation.php	2	AI
+member	I	tests/Unit/Reporting/Formatter/SarifFormatterTest.php	4	ABCI
+member	I	website/docs/rules/coupling.md	3	EIJ
+member	I	website/docs/rules/coupling.ru.md	3	EIJ
+member	I	website/docs/rules/duplication.md	2	IJ
+member	I	website/docs/rules/duplication.ru.md	2	IJ
+member	I	website/docs/usage/output-formats.md	5	ACEIJ
+member	I	website/docs/usage/output-formats.ru.md	5	ACEIJ
+member	J	CHANGELOG.md	7	ACDEGIJ
+member	J	docs/adr/0001-computed-metrics.md	3	DGJ
+member	J	docs/adr/0002-html-report.md	1	J
+member	J	docs/adr/0003-reporting-ux-redesign.md	5	ADGIJ
+member	J	docs/adr/0004-architecture-findings-april-2026.md	1	J
+member	J	docs/adr/0005-architecture-rules.md	2	AJ
+member	J	docs/adr/0006-architecture-rules-declaration-order.md	2	GJ
+member	J	docs/adr/0007-architecture-rules-phase-2-design.md	1	J
+member	J	docs/adr/0008-architecture-processor-service.md	2	GJ
+member	J	docs/adr/0009-yaml-loader-normalization-model.md	1	J
+member	J	docs/adr/0010-architecture-vertical-slice.md	1	J
+member	J	docs/adr/0011-architecture-rules-errata.md	1	J
+member	J	docs/adr/0012-hybrid-architectural-direction.md	2	AJ
+member	J	docs/adr/0013-threshold-override-validators.md	2	HJ
+member	J	docs/adr/0014-deptrac-retirement.md	1	J
+member	J	docs/adr/0015-relative-path-vo.md	3	AIJ
+member	J	docs/adr/0016-subject-cohesion.md	2	AJ
+member	J	docs/adr/0017-baseline-ceiling.md	2	IJ
+member	J	docs/adr/0018-analysis-coverage-verdict-and-output-projection.md	1	J
+member	J	docs/adr/0019-namespace-metric-ownership-and-attribution.md	1	J
+member	J	docs/adr/0020-method-size-and-npath-semantics.md	2	EJ
+member	J	docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md	2	IJ
+member	J	docs/adr/0022-capability-oriented-modular-monolith.md	1	J
+member	J	docs/adr/0023-p8-context-locality-and-composition-bindings.md	1	J
+member	J	docs/adr/0024-channel-identity-and-selector-semantics.md	5	ACDFJ
+member	J	docs/adr/0025-channel-selectors-in-configuration-keys.md	4	ACDJ
+member	J	docs/adr/0026-assigned-declaration-ordinal.md	2	IJ
+member	J	docs/adr/0027-weight-of-class-measures-accessors-not-visibility.md	2	EJ
+member	J	docs/adr/0028-lcom-rule-name-and-category.md	2	FJ
+member	J	docs/adr/0029-channel-presentation-join.md	6	ACDFGJ
+member	J	docs/adr/0030-one-rule-per-type-coverage-dimension.md	1	J
+member	J	docs/adr/0031-channel-shape-is-a-producer-property.md	4	DGHJ
+member	J	docs/adr/README.md	5	ADEFJ
+member	J	docs/internal/generated/modular-architecture/documentation-ownership.tsv	1	J
+member	J	docs/internal/generated/modular-architecture/manifest-enforcement-summary.tsv	1	J
+member	J	docs/internal/generated/modular-architecture/production-class-string-targets.tsv	1	J
+member	J	docs/internal/generated/modular-architecture/production-composition-bindings.tsv	3	ADJ
+member	J	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv	8	ACDFGHIJ
+member	J	docs/internal/generated/modular-architecture/production-extension-families.tsv	2	IJ
+member	J	docs/internal/generated/modular-architecture/production-module-fan-in.tsv	6	AFGHIJ
+member	J	docs/internal/generated/modular-architecture/production-ownership.tsv	8	ACDFGHIJ
+member	J	docs/internal/generated/modular-architecture/production-phase-participants.tsv	4	AEGJ
+member	J	docs/internal/generated/modular-architecture/production-public-imports.tsv	8	ACDFGHIJ
+member	J	docs/internal/generated/modular-architecture/production-reporting-classification.tsv	3	AIJ
+member	J	docs/internal/generated/modular-architecture/production-state-services.tsv	2	EJ
+member	J	docs/internal/generated/modular-architecture/production-to-test-imports.tsv	1	J
+member	J	docs/internal/generated/modular-architecture/test-fixture-directories.tsv	1	J
+member	J	docs/internal/generated/modular-architecture/test-orphan-dispositions.tsv	1	J
+member	J	docs/internal/generated/modular-architecture/test-ownership.tsv	7	ACDGHIJ
+member	J	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt	8	ACDEGHIJ
+member	J	docs/internal/generated/modular-architecture/test-phpunit-suites.txt	1	J
+member	J	docs/internal/generated/modular-architecture/test-system-support-owners.tsv	1	J
+member	J	docs/internal/generated/modular-architecture/test-topology.tsv	1	J
+member	J	docs/internal/modular-architecture-manifest.json	8	ACDFGHIJ
+member	J	qmx.yaml	8	ACDFGHIJ
+member	J	qmx.yaml.example	3	DGJ
+member	J	website/docs/CNAME	1	J
+member	J	website/docs/changelog.md	1	J
+member	J	website/docs/ci-cd/github-actions.md	2	AJ
+member	J	website/docs/ci-cd/github-actions.ru.md	2	AJ
+member	J	website/docs/ci-cd/other-ci.md	1	J
+member	J	website/docs/ci-cd/other-ci.ru.md	1	J
+member	J	website/docs/getting-started/configuration.md	6	ACDEHJ
+member	J	website/docs/getting-started/configuration.ru.md	6	ACDEHJ
+member	J	website/docs/getting-started/installation.md	1	J
+member	J	website/docs/getting-started/installation.ru.md	1	J
+member	J	website/docs/getting-started/quick-start.md	1	J
+member	J	website/docs/getting-started/quick-start.ru.md	1	J
+member	J	website/docs/guides/architecture-investigation.md	3	AHJ
+member	J	website/docs/guides/architecture-investigation.ru.md	2	HJ
+member	J	website/docs/index.md	1	J
+member	J	website/docs/index.ru.md	1	J
+member	J	website/docs/llms.txt	2	HJ
+member	J	website/docs/reference/default-thresholds.md	5	ACDHJ
+member	J	website/docs/reference/default-thresholds.ru.md	3	CHJ
+member	J	website/docs/reference/health-scores.md	4	DEGJ
+member	J	website/docs/reference/health-scores.ru.md	4	DEGJ
+member	J	website/docs/reference/remediation-time.md	3	ADJ
+member	J	website/docs/reference/remediation-time.ru.md	3	ADJ
+member	J	website/docs/rules/annotation.md	5	ACDHJ
+member	J	website/docs/rules/annotation.ru.md	5	ACDHJ
+member	J	website/docs/rules/architecture.md	3	AHJ
+member	J	website/docs/rules/architecture.ru.md	3	AHJ
+member	J	website/docs/rules/code-smell.md	2	HJ
+member	J	website/docs/rules/code-smell.ru.md	2	HJ
+member	J	website/docs/rules/cohesion.md	1	J
+member	J	website/docs/rules/cohesion.ru.md	1	J
+member	J	website/docs/rules/complexity.md	1	J
+member	J	website/docs/rules/complexity.ru.md	1	J
+member	J	website/docs/rules/coupling.md	3	EIJ
+member	J	website/docs/rules/coupling.ru.md	3	EIJ
+member	J	website/docs/rules/design.md	2	HJ
+member	J	website/docs/rules/design.ru.md	2	HJ
+member	J	website/docs/rules/duplication.md	2	IJ
+member	J	website/docs/rules/duplication.ru.md	2	IJ
+member	J	website/docs/rules/index.md	4	AGHJ
+member	J	website/docs/rules/index.ru.md	2	HJ
+member	J	website/docs/rules/maintainability.md	2	EJ
+member	J	website/docs/rules/maintainability.ru.md	2	EJ
+member	J	website/docs/rules/security.md	1	J
+member	J	website/docs/rules/security.ru.md	1	J
+member	J	website/docs/rules/size.md	1	J
+member	J	website/docs/rules/size.ru.md	1	J
+member	J	website/docs/usage/baseline.md	5	ACDHJ
+member	J	website/docs/usage/baseline.ru.md	5	ACDHJ
+member	J	website/docs/usage/cli-options.md	6	ADEGHJ
+member	J	website/docs/usage/cli-options.ru.md	5	ADEHJ
+member	J	website/docs/usage/git-integration.md	1	J
+member	J	website/docs/usage/git-integration.ru.md	1	J
+member	J	website/docs/usage/output-formats.md	5	ACEIJ
+member	J	website/docs/usage/output-formats.ru.md	5	ACEIJ
+member	J	website/docs/usage/usage-scenarios.md	2	AJ
+member	J	website/docs/usage/usage-scenarios.ru.md	1	J
+
+# ============================ PAIRWISE OVERLAP MATRIX ============================
+# cell = |X and Y|.  Row/column order A..J.
+#            A      B      C      D      E      F      G      H      I      J
+#  A      448     36    106     95     75     99    149     45    100     41
+#  B       36     36     22      1      7     11     15      0      9      0
+#  C      106     22    145     44     20     28     45     27     52     21
+#  D       95      1     44    169     18     24     67     30     28     30
+#  E       75      7     20     18    188     42     58      8     12     19
+#  F       99     11     28     24     42    108     69     13     14     10
+#  G      149     15     45     67     58     69    252     22     34     21
+#  H       45      0     27     30      8     13     22     70     16     31
+#  I      100      9     52     28     12     14     34     16    187     22
+#  J       41      0     21     30     19     10     21     31     22    113
+#  (diagonal = set size)
+#
+# ---------------------------- 45 PAIRS, WITH EXAMPLES ----------------------------
+# A-G	149	CHANGELOG.md, docs/adr/0003-reporting-ux-redesign.md, docs/adr/0029-channel-presentation-join.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv
+# A-C	106	CHANGELOG.md, docs/adr/0024-channel-identity-and-selector-semantics.md, docs/adr/0025-channel-selectors-in-configuration-keys.md, docs/adr/0029-channel-presentation-join.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md
+# A-I	100	CHANGELOG.md, SCANNER_VALIDATION_ROUND_2_HANDOFF.md, docs/adr/0003-reporting-ux-redesign.md, docs/adr/0015-relative-path-vo.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md
+# A-F	99	docs/adr/0024-channel-identity-and-selector-semantics.md, docs/adr/0029-channel-presentation-join.md, docs/adr/README.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv
+# A-D	95	CHANGELOG.md, docs/adr/0003-reporting-ux-redesign.md, docs/adr/0024-channel-identity-and-selector-semantics.md, docs/adr/0025-channel-selectors-in-configuration-keys.md, docs/adr/0029-channel-presentation-join.md
+# A-E	75	AGENTS.md, CHANGELOG.md, docs/adr/README.md, docs/internal/PRODUCT_ROADMAP.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md
+# F-G	69	docs/adr/0029-channel-presentation-join.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-module-fan-in.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv
+# D-G	67	CHANGELOG.md, docs/adr/0001-computed-metrics.md, docs/adr/0003-reporting-ux-redesign.md, docs/adr/0029-channel-presentation-join.md, docs/adr/0031-channel-shape-is-a-producer-property.md
+# E-G	58	CHANGELOG.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-phase-participants.tsv, docs/internal/generated/modular-architecture/test-phpunit-discovery.txt, docs/internal/plans/baseline-compaction/identity-map.md
+# C-I	52	CHANGELOG.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv, docs/internal/generated/modular-architecture/production-public-imports.tsv
+# A-H	45	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-module-fan-in.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv, docs/internal/generated/modular-architecture/production-public-imports.tsv
+# C-G	45	CHANGELOG.md, docs/adr/0029-channel-presentation-join.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv
+# C-D	44	CHANGELOG.md, docs/adr/0024-channel-identity-and-selector-semantics.md, docs/adr/0025-channel-selectors-in-configuration-keys.md, docs/adr/0029-channel-presentation-join.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md
+# E-F	42	docs/adr/README.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/plans/rule-vocabulary/FACTS.md, docs/internal/plans/rule-vocabulary/PLAN.md, docs/internal/plans/rule-vocabulary/enumeration-consumers.tsv
+# A-J	41	CHANGELOG.md, docs/adr/0003-reporting-ux-redesign.md, docs/adr/0005-architecture-rules.md, docs/adr/0012-hybrid-architectural-direction.md, docs/adr/0015-relative-path-vo.md
+# A-B	36	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php, src/Analysis/Evidence/Complexity/ComplexityRule.php, src/Analysis/Evidence/Complexity/NpathComplexityRule.php, src/Analysis/Evidence/Coupling/CboRule.php, src/Analysis/Evidence/Coupling/InstabilityRule.php
+# G-I	34	CHANGELOG.md, docs/adr/0003-reporting-ux-redesign.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-module-fan-in.tsv
+# H-J	31	docs/adr/0013-threshold-override-validators.md, docs/adr/0031-channel-shape-is-a-producer-property.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-module-fan-in.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv
+# D-H	30	docs/adr/0031-channel-shape-is-a-producer-property.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv, docs/internal/generated/modular-architecture/production-public-imports.tsv
+# D-J	30	CHANGELOG.md, docs/adr/0001-computed-metrics.md, docs/adr/0003-reporting-ux-redesign.md, docs/adr/0024-channel-identity-and-selector-semantics.md, docs/adr/0025-channel-selectors-in-configuration-keys.md
+# C-F	28	docs/adr/0024-channel-identity-and-selector-semantics.md, docs/adr/0029-channel-presentation-join.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv
+# D-I	28	CHANGELOG.md, docs/adr/0003-reporting-ux-redesign.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv
+# C-H	27	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv, docs/internal/generated/modular-architecture/production-public-imports.tsv, docs/internal/generated/modular-architecture/test-ownership.tsv
+# D-F	24	docs/adr/0024-channel-identity-and-selector-semantics.md, docs/adr/0029-channel-presentation-join.md, docs/adr/README.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv
+# B-C	22	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php, src/Analysis/Evidence/Complexity/ComplexityRule.php, src/Analysis/Evidence/Complexity/NpathComplexityRule.php, src/Analysis/Evidence/Coupling/CboRule.php, src/Analysis/Evidence/Coupling/InstabilityRule.php
+# G-H	22	docs/adr/0031-channel-shape-is-a-producer-property.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-module-fan-in.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv
+# I-J	22	CHANGELOG.md, docs/adr/0003-reporting-ux-redesign.md, docs/adr/0015-relative-path-vo.md, docs/adr/0017-baseline-ceiling.md, docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md
+# C-J	21	CHANGELOG.md, docs/adr/0024-channel-identity-and-selector-semantics.md, docs/adr/0025-channel-selectors-in-configuration-keys.md, docs/adr/0029-channel-presentation-join.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv
+# G-J	21	CHANGELOG.md, docs/adr/0001-computed-metrics.md, docs/adr/0003-reporting-ux-redesign.md, docs/adr/0006-architecture-rules-declaration-order.md, docs/adr/0008-architecture-processor-service.md
+# C-E	20	CHANGELOG.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/test-phpunit-discovery.txt, docs/internal/plans/rule-vocabulary/FACTS.md, docs/internal/plans/rule-vocabulary/PLAN.md
+# E-J	19	CHANGELOG.md, docs/adr/0020-method-size-and-npath-semantics.md, docs/adr/0027-weight-of-class-measures-accessors-not-visibility.md, docs/adr/README.md, docs/internal/generated/modular-architecture/production-phase-participants.tsv
+# D-E	18	CHANGELOG.md, docs/adr/README.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/test-phpunit-discovery.txt, docs/internal/plans/rule-vocabulary/FACTS.md
+# H-I	16	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-module-fan-in.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv, docs/internal/generated/modular-architecture/production-public-imports.tsv
+# B-G	15	src/Analysis/Evidence/Coupling/CboRule.php, src/Analysis/Evidence/Coupling/InstabilityRule.php, tests/Analysis/Evidence/Complexity/Unit/CognitiveComplexityRuleTest.php, tests/Analysis/Evidence/Complexity/Unit/ComplexityRuleTest.php, tests/Analysis/Evidence/Complexity/Unit/NpathComplexityRuleTest.php
+# F-I	14	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-module-fan-in.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv, docs/internal/generated/modular-architecture/production-public-imports.tsv
+# F-H	13	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv, docs/internal/generated/modular-architecture/production-module-fan-in.tsv, docs/internal/generated/modular-architecture/production-ownership.tsv, docs/internal/generated/modular-architecture/production-public-imports.tsv
+# E-I	12	CHANGELOG.md, docs/internal/SCANNER_VALIDATION_ROUND_1_FINDINGS.md, docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/test-phpunit-discovery.txt, docs/internal/plans/rule-vocabulary/PLAN.md
+# B-F	11	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php, src/Analysis/Evidence/Complexity/ComplexityRule.php, src/Analysis/Evidence/Complexity/NpathComplexityRule.php, src/Analysis/Evidence/Coupling/CboRule.php, src/Analysis/Evidence/Coupling/InstabilityRule.php
+# F-J	10	docs/adr/0024-channel-identity-and-selector-semantics.md, docs/adr/0028-lcom-rule-name-and-category.md, docs/adr/0029-channel-presentation-join.md, docs/adr/README.md, docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv
+# B-I	9	src/Analysis/Finding/Contract/Violation.php, tests/Analysis/Finding/Unit/ViolationTest.php, tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStagePromotionTest.php, tests/Functional/Reporting/JsonShapePreservationTest.php, tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php
+# E-H	8	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md, docs/internal/generated/modular-architecture/test-phpunit-discovery.txt, docs/internal/plans/rule-vocabulary/PLAN.md, tests/Analysis/Finding/Integration/ChannelCoverageTest.php, website/docs/getting-started/configuration.md
+# B-E	7	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php, src/Analysis/Evidence/Complexity/ComplexityRule.php, src/Analysis/Evidence/Complexity/NpathComplexityRule.php, src/Analysis/Evidence/Coupling/CboRule.php, src/Analysis/Evidence/Coupling/InstabilityRule.php
+# B-D	1	tests/Analysis/Finding/Unit/RuleExecutorTest.php
+# B-H	0	(empty)
+# B-J	0	(empty)
+#
+# -------------------------- EMPTY PAIRS (true parallel) --------------------------
+# B-H, B-J
+#
+# ------------------- FILES IN THREE OR MORE SUBJECTS (complete) ------------------
+# count = 230
+# 8	ACDEFGHI	docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md
+# 8	ACDFGHIJ	docs/internal/generated/modular-architecture/production-cross-owner-imports.tsv
+# 8	ACDFGHIJ	docs/internal/generated/modular-architecture/production-ownership.tsv
+# 8	ACDFGHIJ	docs/internal/generated/modular-architecture/production-public-imports.tsv
+# 8	ACDEGHIJ	docs/internal/generated/modular-architecture/test-phpunit-discovery.txt
+# 8	ACDFGHIJ	docs/internal/modular-architecture-manifest.json
+# 8	ACDEFGHI	docs/internal/plans/rule-vocabulary/PLAN.md
+# 8	ACDFGHIJ	qmx.yaml
+# 7	ACDEGIJ	CHANGELOG.md
+# 7	ACDGHIJ	docs/internal/generated/modular-architecture/test-ownership.tsv
+# 6	ACDFGJ	docs/adr/0029-channel-presentation-join.md
+# 6	AFGHIJ	docs/internal/generated/modular-architecture/production-module-fan-in.tsv
+# 6	ACDFGH	docs/internal/plans/channel-identity-substrate.md
+# 6	ACDFHI	docs/internal/plans/modular-architecture/p6-finding-policy.md
+# 6	ACDFHI	docs/internal/plans/modular-architecture/p6/p6-production-ledger.md
+# 6	ACFGHI	docs/internal/plans/modular-architecture/p6/p6-relations-ledger.md
+# 6	ACDEFG	docs/internal/plans/rule-vocabulary/FACTS.md
+# 6	ACDFGI	docs/internal/plans/sarif-channel-descriptions.md
+# 6	ACDGHI	qmx-baseline.json
+# 6	ABCEFG	src/Analysis/Evidence/Coupling/CboRule.php
+# 6	ABCEFG	src/Analysis/Evidence/Coupling/InstabilityRule.php
+# 6	ABCEFG	tests/Analysis/Evidence/Coupling/Unit/CboRuleTest.php
+# 6	ABCDFG	tests/Analysis/Finding/Unit/RuleExecutorTest.php
+# 6	ACDEHJ	website/docs/getting-started/configuration.md
+# 6	ACDEHJ	website/docs/getting-started/configuration.ru.md
+# 6	ADEGHJ	website/docs/usage/cli-options.md
+# 5	ADGIJ	docs/adr/0003-reporting-ux-redesign.md
+# 5	ACDFJ	docs/adr/0024-channel-identity-and-selector-semantics.md
+# 5	ADEFJ	docs/adr/README.md
+# 5	ACDGI	docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md
+# 5	ABCEF	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php
+# 5	ABCEF	src/Analysis/Evidence/Complexity/ComplexityRule.php
+# 5	ABCEF	src/Analysis/Evidence/Complexity/NpathComplexityRule.php
+# 5	ACDGI	src/Analysis/Policy/Baseline/README.md
+# 5	ABCFG	tests/Analysis/Evidence/Complexity/Unit/CognitiveComplexityRuleTest.php
+# 5	ABCFG	tests/Analysis/Evidence/Complexity/Unit/ComplexityRuleTest.php
+# 5	ABCFG	tests/Analysis/Evidence/Complexity/Unit/NpathComplexityRuleTest.php
+# 5	ABCFG	tests/Analysis/Evidence/Coupling/Unit/InstabilityRuleTest.php
+# 5	ACEGI	tests/Analysis/Policy/Baseline/Integration/NpathSaturationCeilingTest.php
+# 5	ADEGI	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php
+# 5	ACDGH	tests/Analysis/Policy/Inline/Integration/UnusedDirectiveRuleTest.php
+# 5	ABCGI	tests/Functional/Reporting/JsonShapePreservationTest.php
+# 5	ACDHJ	website/docs/reference/default-thresholds.md
+# 5	ACDHJ	website/docs/rules/annotation.md
+# 5	ACDHJ	website/docs/rules/annotation.ru.md
+# 5	ACDHJ	website/docs/usage/baseline.md
+# 5	ACDHJ	website/docs/usage/baseline.ru.md
+# 5	ADEHJ	website/docs/usage/cli-options.ru.md
+# 5	ACEIJ	website/docs/usage/output-formats.md
+# 5	ACEIJ	website/docs/usage/output-formats.ru.md
+# 4	ACDJ	docs/adr/0025-channel-selectors-in-configuration-keys.md
+# 4	DGHJ	docs/adr/0031-channel-shape-is-a-producer-property.md
+# 4	AEGJ	docs/internal/generated/modular-architecture/production-phase-participants.tsv
+# 4	ADFI	docs/internal/plans/diff-mode-new-only.md
+# 4	ACDI	docs/internal/plans/modular-architecture/p2-dependency-model.md
+# 4	ACDG	docs/internal/plans/modular-architecture/p5-computed-metrics.md
+# 4	ACHI	docs/internal/plans/modular-architecture/p6/p6-test-ledger.md
+# 4	ACDG	docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv
+# 4	CDGH	docs/internal/plans/rule-vocabulary/enumeration-channel-shapes.tsv
+# 4	ADHI	docs/internal/plans/rule-vocabulary/enumeration-producer-name-consumers.tsv
+# 4	ACDE	docs/internal/plans/rule-vocabulary/enumeration-renames.tsv
+# 4	AEFG	src/Analysis/Evidence/Coupling/ClassRankRule.php
+# 4	AEFG	src/Analysis/Evidence/Coupling/DistanceRule.php
+# 4	AEFG	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php
+# 4	AEFG	src/Analysis/Evidence/Security/SensitiveParameterRule.php
+# 4	AEFG	src/Analysis/Evidence/Size/ClassCountRule.php
+# 4	ADGI	src/Analysis/Policy/Baseline/BoundaryExplanationService.php
+# 4	ADFG	src/Core/README.md
+# 4	ACGI	src/Reporting/README.md
+# 4	AEFG	tests/Analysis/Evidence/CodeSmell/Unit/LongParameterListRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/CodeSmell/Unit/UnreachableCodeRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/CodeSmell/Unit/UnusedPrivateRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Complexity/Unit/WmcRuleTest.php
+# 4	ACEG	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/ViolationDensityTest.php
+# 4	ADFG	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Coupling/Unit/ClassRankRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Coupling/Unit/DistanceRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Design/Unit/DataClassRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Design/Unit/GodClassRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Design/Unit/TypeCoverageRuleTest.php
+# 4	AFGI	tests/Analysis/Evidence/Duplication/Unit/CodeDuplicationRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Maintainability/Unit/MaintainabilityRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Security/Unit/HardcodedCredentialsRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Security/Unit/SensitiveParameterRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Size/Unit/PropertyCountRuleTest.php
+# 4	AEGH	tests/Analysis/Finding/Integration/ChannelCoverageTest.php
+# 4	ACDF	tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php
+# 4	ADFG	tests/Analysis/Finding/Unit/ChannelPresentationViewTest.php
+# 4	ABCI	tests/Analysis/Finding/Unit/ViolationTest.php
+# 4	ADGI	tests/Analysis/Policy/Baseline/Functional/BaselineCommandFailureReportingTest.php
+# 4	ACGI	tests/Analysis/Policy/Baseline/Functional/BaselineExplainCommandTest.php
+# 4	ADGI	tests/Analysis/Policy/Baseline/Functional/BaselineRunBeforeLoadTest.php
+# 4	ACGI	tests/Analysis/Policy/Baseline/Unit/BoundaryExplanationServiceTest.php
+# 4	ACEG	tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php
+# 4	ACGI	tests/Infrastructure/Console/Unit/ViolationFilterOrchestratorTest.php
+# 4	ACDG	tests/Infrastructure/Unit/ChannelUniverseTest.php
+# 4	ACGI	tests/Unit/Infrastructure/Console/MeasuredViolationSetTest.php
+# 4	ABGI	tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php
+# 4	ABCI	tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php
+# 4	ABCG	tests/Unit/Reporting/Formatter/JsonFormatterTest.php
+# 4	ABCI	tests/Unit/Reporting/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php
+# 4	ABCG	tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php
+# 4	ABCI	tests/Unit/Reporting/Formatter/SarifFormatterTest.php
+# 4	ABCG	tests/Unit/Reporting/Formatter/SummaryFormatterTest.php
+# 4	DEGJ	website/docs/reference/health-scores.md
+# 4	DEGJ	website/docs/reference/health-scores.ru.md
+# 4	AGHJ	website/docs/rules/index.md
+# 3	DGJ	docs/adr/0001-computed-metrics.md
+# 3	AIJ	docs/adr/0015-relative-path-vo.md
+# 3	ADJ	docs/internal/generated/modular-architecture/production-composition-bindings.tsv
+# 3	AIJ	docs/internal/generated/modular-architecture/production-reporting-classification.tsv
+# 3	AGI	docs/internal/plans/baseline-compaction/PLAN.md
+# 3	ADI	docs/internal/plans/baseline-compaction/enumeration-identity.md
+# 3	ACG	docs/internal/plans/client-requests/architecture-unassigned-class.md
+# 3	AEG	docs/internal/plans/global-functions-graph.md
+# 3	ACI	docs/internal/plans/rule-vocabulary/AUDIT.md
+# 3	AEF	docs/internal/plans/rule-vocabulary/enumeration-consumers.tsv
+# 3	CDF	docs/internal/plans/rule-vocabulary/enumeration-rules.tsv
+# 3	ACI	docs/internal/plans/sarif-channel-descriptions/channel-inventory.tsv
+# 3	ACD	finding-gate/README.md
+# 3	DGJ	qmx.yaml.example
+# 3	ADG	scripts/finding-gate-controls/Controls.php
+# 3	ACI	scripts/finding-gate/SelfTest.php
+# 3	AEG	scripts/generate-modular-architecture-production-inventory.php
+# 3	ADE	scripts/generate-rename-enumeration.php
+# 3	AFG	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+# 3	AEF	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php
+# 3	AFG	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php
+# 3	AEF	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php
+# 3	AEF	src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php
+# 3	AEF	src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php
+# 3	AEF	src/Analysis/Evidence/Cohesion/LcomRule.php
+# 3	AEF	src/Analysis/Evidence/Complexity/WmcRule.php
+# 3	DEG	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php
+# 3	AFG	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php
+# 3	AEG	src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/WorstClassDrillDown.php
+# 3	AEG	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php
+# 3	AEF	src/Analysis/Evidence/Design/DataClassRule.php
+# 3	AEF	src/Analysis/Evidence/Design/GodClassRule.php
+# 3	AEF	src/Analysis/Evidence/Design/InheritanceRule.php
+# 3	AEF	src/Analysis/Evidence/Design/NocRule.php
+# 3	AEF	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php
+# 3	ADG	src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php
+# 3	AEG	src/Analysis/Evidence/Prioritization/Impact/ClassRankResolver.php
+# 3	AEG	src/Analysis/Evidence/Prioritization/Impact/ImpactCalculator.php
+# 3	AFG	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php
+# 3	AEF	src/Analysis/Evidence/Size/MethodCountRule.php
+# 3	AEF	src/Analysis/Evidence/Size/PropertyCountRule.php
+# 3	ADG	src/Analysis/Finding/ChannelPresentationView.php
+# 3	ABI	src/Analysis/Finding/Contract/Violation.php
+# 3	ADG	src/Analysis/Finding/README.md
+# 3	ADI	src/Analysis/Policy/Baseline/BaselineMigrator.php
+# 3	ACD	src/Analysis/Policy/Inline/Directive/DirectiveNameHints.php
+# 3	ADH	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php
+# 3	AFH	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php
+# 3	ADH	src/Infrastructure/Console/ChannelExclusionKeyValidator.php
+# 3	ADG	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php
+# 3	AGH	src/Infrastructure/Console/README.md
+# 3	DGH	src/Infrastructure/Console/RuleInputValidator.php
+# 3	ADG	src/Infrastructure/Rule/ChannelUniverse.php
+# 3	ADG	src/Infrastructure/Rule/ComputedMetricChannelPresentation.php
+# 3	ACI	src/Reporting/FindingProjection/FindingProjector.php
+# 3	AGI	src/Reporting/Formatter/Sarif/SarifFormatter.php
+# 3	ADG	src/Reporting/Formatter/Sarif/SarifRuleCollector.php
+# 3	AEG	tests/Analysis/Evidence/CodeSmell/Integration/LongParameterListVoPropagationTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/BooleanArgumentRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/ConstructorOverinjectionRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/CountInLoopRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/DebugCodeRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/EmptyCatchRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/ErrorSuppressionRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/EvalRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/ExitRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/GotoRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/IdenticalSubExpressionRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/SuperglobalsRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Cohesion/Unit/LcomRuleTest.php
+# 3	AEG	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/WorstClassDrillDownTest.php
+# 3	DEG	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricEvaluatorTest.php
+# 3	ADG	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricFindingBuilderTest.php
+# 3	ADG	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsInternalTopologyTest.php
+# 3	AFG	tests/Analysis/Evidence/Design/Unit/InheritanceRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Design/Unit/NocRuleTest.php
+# 3	AEG	tests/Analysis/Evidence/Prioritization/Unit/Impact/ClassRankResolverTest.php
+# 3	AEG	tests/Analysis/Evidence/Prioritization/Unit/Impact/ImpactCalculatorTest.php
+# 3	AFG	tests/Analysis/Evidence/Security/Unit/CommandInjectionRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Security/Unit/SqlInjectionRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Security/Unit/XssRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Size/Unit/ClassCountRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Size/Unit/MethodCountRuleTest.php
+# 3	ACD	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php
+# 3	AFG	tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php
+# 3	ACD	tests/Analysis/Finding/Unit/ChannelSelectorTest.php
+# 3	AFG	tests/Analysis/Policy/Architecture/Unit/LayerViolationRuleTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Integration/BaselineWorkflowTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Integration/CaptureFromMeasuredSetTest.php
+# 3	AGI	tests/Analysis/Policy/Baseline/Support/StubBaselineRun.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageFailSafeTest.php
+# 3	ABI	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStagePromotionTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineEntryValuesTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineGeneratorTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineIdentityTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineMigratorTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineRoundTripVOTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineUpdaterTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineWriterTest.php
+# 3	ADG	tests/Analysis/Policy/Inline/Unit/Directive/InlineDirectivePolicyTest.php
+# 3	ACH	tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php
+# 3	ACD	tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php
+# 3	AGH	tests/Analysis/Run/Integration/Pipeline/AnalysisPipelineIntegrationTest.php
+# 3	AGI	tests/Infrastructure/Console/Unit/ViolationFilterOrchestratorBaselineReportingTest.php
+# 3	ACD	tests/Reporting/FindingProjection/Unit/DeclaredChannelFileScopeTest.php
+# 3	ACI	tests/Reporting/FindingProjection/Unit/FindingProjectorTest.php
+# 3	ABG	tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php
+# 3	ABI	tests/Unit/Reporting/Formatter/Sarif/SarifSchemaValidationTest.php
+# 3	ABE	tests/Unit/Reporting/Formatter/Summary/TopIssuesRendererTest.php
+# 3	ABC	tests/Unit/Reporting/Formatter/Support/DetailedViolationRendererTest.php
+# 3	ABC	tests/Unit/Reporting/Formatter/TextFormatterTest.php
+# 3	ABC	tests/Unit/Reporting/Formatter/TextVerboseFormatterTest.php
+# 3	ACG	tests/Unit/Reporting/Health/SummaryEnricherTest.php
+# 3	ABG	tests/Unit/Reporting/ReportBuilderTest.php
+# 3	AHJ	website/docs/guides/architecture-investigation.md
+# 3	CHJ	website/docs/reference/default-thresholds.ru.md
+# 3	ADJ	website/docs/reference/remediation-time.md
+# 3	ADJ	website/docs/reference/remediation-time.ru.md
+# 3	AHJ	website/docs/rules/architecture.md
+# 3	AHJ	website/docs/rules/architecture.ru.md
+# 3	EIJ	website/docs/rules/coupling.md
+# 3	EIJ	website/docs/rules/coupling.ru.md
+#
+# ================== CODE-SURFACE MATRIX (the decision-relevant one) ==================
+# Restricted to src/ tests/ benchmarks/ bin/ scripts/ finding-gate/ and the root
+# qmx.yaml, qmx.yaml.example, qmx-baseline.json, phpstan.neon, composer.json,
+# package.json.  Rationale: every prose document in docs/ and every generated
+# inventory under docs/internal/generated/ names most of these identifiers, so in
+# the full matrix above the docs surface saturates every pair and hides which
+# subjects actually collide in code.  Parallelism is decided by THIS matrix; the
+# docs surface is subject J and is serialised after A-I by construction.
+#            A      B      C      D      E      F      G      H      I      J
+#  A      365     36     68     56     56     81    123     16     70      1
+#  B       36     36     22      1      7     11     15      0      9      0
+#  C       68     22    100     13     10     13     26      5     32      1
+#  D       56      1     13    122      5      8     44      7     10      2
+#  E       56      7     10      5    156     37     47      1      3      0
+#  F       81     11     13      8     37     88     57      2      2      1
+#  G      123     15     26     44     47     57    218      7     19      2
+#  H       16      0      5      7      1      2      7     29      2      1
+#  I       70      9     32     10      3      2     19      2    147      1
+#  J        1      0      1      2      0      1      2      1      1      2
+#  (diagonal = set size restricted to the code surface)
+#
+# ------------------ 45 CODE-SURFACE PAIRS, WITH EXAMPLES ------------------
+# A-G	123	qmx-baseline.json, qmx.yaml, scripts/finding-gate-controls/Controls.php, scripts/generate-modular-architecture-production-inventory.php, src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+# A-F	81	qmx.yaml, src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php, src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php, src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php, src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php
+# A-I	70	qmx-baseline.json, qmx.yaml, scripts/finding-gate/Fingerprints.php, scripts/finding-gate/Gate.php, scripts/finding-gate/SelfTest.php
+# A-C	68	finding-gate/README.md, qmx-baseline.json, qmx.yaml, scripts/finding-gate/SelfTest.php, src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php
+# F-G	57	qmx.yaml, src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php, src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php, src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php, src/Analysis/Evidence/Coupling/CboRule.php
+# A-D	56	finding-gate/README.md, qmx-baseline.json, qmx.yaml, scripts/finding-gate-controls/Controls.php, scripts/generate-rename-enumeration.php
+# A-E	56	scripts/generate-modular-architecture-production-inventory.php, scripts/generate-rename-enumeration.php, src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php, src/Analysis/Evidence/CodeSmell/LongParameterListRule.php, src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php
+# E-G	47	scripts/generate-modular-architecture-production-inventory.php, src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php, src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/WorstClassDrillDown.php, src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php, src/Analysis/Evidence/Coupling/AbstractnessCollector.php
+# D-G	44	finding-gate/cases/health/qmx.yaml, qmx-baseline.json, qmx.yaml, qmx.yaml.example, scripts/finding-gate-controls/Controls.php
+# E-F	37	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php, src/Analysis/Evidence/CodeSmell/LongParameterListRule.php, src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php, src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php, src/Analysis/Evidence/Cohesion/LcomRule.php
+# A-B	36	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php, src/Analysis/Evidence/Complexity/ComplexityRule.php, src/Analysis/Evidence/Complexity/NpathComplexityRule.php, src/Analysis/Evidence/Coupling/CboRule.php, src/Analysis/Evidence/Coupling/InstabilityRule.php
+# C-I	32	qmx-baseline.json, qmx.yaml, scripts/finding-gate/SelfTest.php, src/Analysis/Policy/Baseline/README.md, src/Reporting/FindingProjection/FindingProjector.php
+# C-G	26	qmx-baseline.json, qmx.yaml, src/Analysis/Evidence/Coupling/CboRule.php, src/Analysis/Evidence/Coupling/InstabilityRule.php, src/Analysis/Policy/Baseline/README.md
+# B-C	22	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php, src/Analysis/Evidence/Complexity/ComplexityRule.php, src/Analysis/Evidence/Complexity/NpathComplexityRule.php, src/Analysis/Evidence/Coupling/CboRule.php, src/Analysis/Evidence/Coupling/InstabilityRule.php
+# G-I	19	qmx-baseline.json, qmx.yaml, src/Analysis/Policy/Baseline/BoundaryExplanationService.php, src/Analysis/Policy/Baseline/README.md, src/Reporting/Formatter/Sarif/SarifFormatter.php
+# A-H	16	qmx-baseline.json, qmx.yaml, scripts/generate-modular-architecture-test-inventory.php, src/Analysis/Policy/Inline/Contract/Suppression/SuppressionTarget.php, src/Analysis/Policy/Inline/Contract/SuppressionExtractor.php
+# B-G	15	src/Analysis/Evidence/Coupling/CboRule.php, src/Analysis/Evidence/Coupling/InstabilityRule.php, tests/Analysis/Evidence/Complexity/Unit/CognitiveComplexityRuleTest.php, tests/Analysis/Evidence/Complexity/Unit/ComplexityRuleTest.php, tests/Analysis/Evidence/Complexity/Unit/NpathComplexityRuleTest.php
+# C-D	13	finding-gate/README.md, qmx-baseline.json, qmx.yaml, src/Analysis/Policy/Baseline/README.md, src/Analysis/Policy/Inline/Directive/DirectiveNameHints.php
+# C-F	13	qmx.yaml, src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php, src/Analysis/Evidence/Complexity/ComplexityRule.php, src/Analysis/Evidence/Complexity/NpathComplexityRule.php, src/Analysis/Evidence/Coupling/CboRule.php
+# B-F	11	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php, src/Analysis/Evidence/Complexity/ComplexityRule.php, src/Analysis/Evidence/Complexity/NpathComplexityRule.php, src/Analysis/Evidence/Coupling/CboRule.php, src/Analysis/Evidence/Coupling/InstabilityRule.php
+# C-E	10	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php, src/Analysis/Evidence/Complexity/ComplexityRule.php, src/Analysis/Evidence/Complexity/NpathComplexityRule.php, src/Analysis/Evidence/Complexity/README.md, src/Analysis/Evidence/Coupling/CboRule.php
+# D-I	10	qmx-baseline.json, qmx.yaml, src/Analysis/Policy/Baseline/BaselineMigrator.php, src/Analysis/Policy/Baseline/BaselineWriter.php, src/Analysis/Policy/Baseline/BoundaryExplanationService.php
+# B-I	9	src/Analysis/Finding/Contract/Violation.php, tests/Analysis/Finding/Unit/ViolationTest.php, tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStagePromotionTest.php, tests/Functional/Reporting/JsonShapePreservationTest.php, tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php
+# D-F	8	qmx.yaml, src/Analysis/Finding/Contract/Rule/RuleCategory.php, src/Analysis/Finding/Contract/Rule/RuleDocsPageReader.php, src/Core/README.md, tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleTest.php
+# B-E	7	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php, src/Analysis/Evidence/Complexity/ComplexityRule.php, src/Analysis/Evidence/Complexity/NpathComplexityRule.php, src/Analysis/Evidence/Coupling/CboRule.php, src/Analysis/Evidence/Coupling/InstabilityRule.php
+# D-H	7	qmx-baseline.json, qmx.yaml, src/Analysis/Policy/Inline/Contract/RuleValidatorMapFactory.php, src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php, src/Infrastructure/Console/ChannelExclusionKeyValidator.php
+# G-H	7	qmx-baseline.json, qmx.yaml, src/Infrastructure/Console/README.md, src/Infrastructure/Console/RuleInputValidator.php, tests/Analysis/Finding/Integration/ChannelCoverageTest.php
+# C-H	5	qmx-baseline.json, qmx.yaml, tests/Analysis/Policy/Inline/Integration/ThresholdAnnotationParserPathTest.php, tests/Analysis/Policy/Inline/Integration/UnusedDirectiveRuleTest.php, tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php
+# D-E	5	scripts/generate-rename-enumeration.php, src/Analysis/Configuration/README.md, src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php, tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricEvaluatorTest.php, tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php
+# E-I	3	src/Analysis/Evidence/Coupling/README.md, tests/Analysis/Policy/Baseline/Integration/NpathSaturationCeilingTest.php, tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php
+# D-J	2	qmx.yaml, qmx.yaml.example
+# F-H	2	qmx.yaml, src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php
+# F-I	2	qmx.yaml, tests/Analysis/Evidence/Duplication/Unit/CodeDuplicationRuleTest.php
+# G-J	2	qmx.yaml, qmx.yaml.example
+# H-I	2	qmx-baseline.json, qmx.yaml
+# A-J	1	qmx.yaml
+# B-D	1	tests/Analysis/Finding/Unit/RuleExecutorTest.php
+# C-J	1	qmx.yaml
+# E-H	1	tests/Analysis/Finding/Integration/ChannelCoverageTest.php
+# F-J	1	qmx.yaml
+# H-J	1	qmx.yaml
+# I-J	1	qmx.yaml
+# B-H	0	(empty)
+# B-J	0	(empty)
+# E-J	0	(empty)
+#
+# ---------- CODE-SURFACE EMPTY PAIRS = the only real parallelism candidates ----------
+# B-H, B-J, E-J
+#
+# ------- CODE-SURFACE FILES IN THREE OR MORE SUBJECTS (complete) -------
+# count = 164
+# 8	ACDFGHIJ	qmx.yaml
+# 6	ACDGHI	qmx-baseline.json
+# 6	ABCEFG	src/Analysis/Evidence/Coupling/CboRule.php
+# 6	ABCEFG	src/Analysis/Evidence/Coupling/InstabilityRule.php
+# 6	ABCEFG	tests/Analysis/Evidence/Coupling/Unit/CboRuleTest.php
+# 6	ABCDFG	tests/Analysis/Finding/Unit/RuleExecutorTest.php
+# 5	ABCEF	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php
+# 5	ABCEF	src/Analysis/Evidence/Complexity/ComplexityRule.php
+# 5	ABCEF	src/Analysis/Evidence/Complexity/NpathComplexityRule.php
+# 5	ACDGI	src/Analysis/Policy/Baseline/README.md
+# 5	ABCFG	tests/Analysis/Evidence/Complexity/Unit/CognitiveComplexityRuleTest.php
+# 5	ABCFG	tests/Analysis/Evidence/Complexity/Unit/ComplexityRuleTest.php
+# 5	ABCFG	tests/Analysis/Evidence/Complexity/Unit/NpathComplexityRuleTest.php
+# 5	ABCFG	tests/Analysis/Evidence/Coupling/Unit/InstabilityRuleTest.php
+# 5	ACEGI	tests/Analysis/Policy/Baseline/Integration/NpathSaturationCeilingTest.php
+# 5	ADEGI	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageAcceptanceTest.php
+# 5	ACDGH	tests/Analysis/Policy/Inline/Integration/UnusedDirectiveRuleTest.php
+# 5	ABCGI	tests/Functional/Reporting/JsonShapePreservationTest.php
+# 4	AEFG	src/Analysis/Evidence/Coupling/ClassRankRule.php
+# 4	AEFG	src/Analysis/Evidence/Coupling/DistanceRule.php
+# 4	AEFG	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php
+# 4	AEFG	src/Analysis/Evidence/Security/SensitiveParameterRule.php
+# 4	AEFG	src/Analysis/Evidence/Size/ClassCountRule.php
+# 4	ADGI	src/Analysis/Policy/Baseline/BoundaryExplanationService.php
+# 4	ADFG	src/Core/README.md
+# 4	ACGI	src/Reporting/README.md
+# 4	AEFG	tests/Analysis/Evidence/CodeSmell/Unit/LongParameterListRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/CodeSmell/Unit/UnreachableCodeRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/CodeSmell/Unit/UnusedPrivateRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Complexity/Unit/WmcRuleTest.php
+# 4	ACEG	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/ViolationDensityTest.php
+# 4	ADFG	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Coupling/Unit/ClassRankRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Coupling/Unit/DistanceRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Design/Unit/DataClassRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Design/Unit/GodClassRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Design/Unit/TypeCoverageRuleTest.php
+# 4	AFGI	tests/Analysis/Evidence/Duplication/Unit/CodeDuplicationRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Maintainability/Unit/MaintainabilityRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Security/Unit/HardcodedCredentialsRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Security/Unit/SensitiveParameterRuleTest.php
+# 4	AEFG	tests/Analysis/Evidence/Size/Unit/PropertyCountRuleTest.php
+# 4	AEGH	tests/Analysis/Finding/Integration/ChannelCoverageTest.php
+# 4	ACDF	tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php
+# 4	ADFG	tests/Analysis/Finding/Unit/ChannelPresentationViewTest.php
+# 4	ABCI	tests/Analysis/Finding/Unit/ViolationTest.php
+# 4	ADGI	tests/Analysis/Policy/Baseline/Functional/BaselineCommandFailureReportingTest.php
+# 4	ACGI	tests/Analysis/Policy/Baseline/Functional/BaselineExplainCommandTest.php
+# 4	ADGI	tests/Analysis/Policy/Baseline/Functional/BaselineRunBeforeLoadTest.php
+# 4	ACGI	tests/Analysis/Policy/Baseline/Unit/BoundaryExplanationServiceTest.php
+# 4	ACEG	tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php
+# 4	ACGI	tests/Infrastructure/Console/Unit/ViolationFilterOrchestratorTest.php
+# 4	ACDG	tests/Infrastructure/Unit/ChannelUniverseTest.php
+# 4	ACGI	tests/Unit/Infrastructure/Console/MeasuredViolationSetTest.php
+# 4	ABGI	tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php
+# 4	ABCI	tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php
+# 4	ABCG	tests/Unit/Reporting/Formatter/JsonFormatterTest.php
+# 4	ABCI	tests/Unit/Reporting/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php
+# 4	ABCG	tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php
+# 4	ABCI	tests/Unit/Reporting/Formatter/SarifFormatterTest.php
+# 4	ABCG	tests/Unit/Reporting/Formatter/SummaryFormatterTest.php
+# 3	ACD	finding-gate/README.md
+# 3	DGJ	qmx.yaml.example
+# 3	ADG	scripts/finding-gate-controls/Controls.php
+# 3	ACI	scripts/finding-gate/SelfTest.php
+# 3	AEG	scripts/generate-modular-architecture-production-inventory.php
+# 3	ADE	scripts/generate-rename-enumeration.php
+# 3	AFG	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php
+# 3	AEF	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php
+# 3	AFG	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php
+# 3	AEF	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php
+# 3	AEF	src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php
+# 3	AEF	src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php
+# 3	AEF	src/Analysis/Evidence/Cohesion/LcomRule.php
+# 3	AEF	src/Analysis/Evidence/Complexity/WmcRule.php
+# 3	DEG	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php
+# 3	AFG	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php
+# 3	AEG	src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/WorstClassDrillDown.php
+# 3	AEG	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php
+# 3	AEF	src/Analysis/Evidence/Design/DataClassRule.php
+# 3	AEF	src/Analysis/Evidence/Design/GodClassRule.php
+# 3	AEF	src/Analysis/Evidence/Design/InheritanceRule.php
+# 3	AEF	src/Analysis/Evidence/Design/NocRule.php
+# 3	AEF	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php
+# 3	ADG	src/Analysis/Evidence/Prioritization/Debt/RemediationTimeRegistry.php
+# 3	AEG	src/Analysis/Evidence/Prioritization/Impact/ClassRankResolver.php
+# 3	AEG	src/Analysis/Evidence/Prioritization/Impact/ImpactCalculator.php
+# 3	AFG	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php
+# 3	AEF	src/Analysis/Evidence/Size/MethodCountRule.php
+# 3	AEF	src/Analysis/Evidence/Size/PropertyCountRule.php
+# 3	ADG	src/Analysis/Finding/ChannelPresentationView.php
+# 3	ABI	src/Analysis/Finding/Contract/Violation.php
+# 3	ADG	src/Analysis/Finding/README.md
+# 3	ADI	src/Analysis/Policy/Baseline/BaselineMigrator.php
+# 3	ACD	src/Analysis/Policy/Inline/Directive/DirectiveNameHints.php
+# 3	ADH	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php
+# 3	AFH	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php
+# 3	ADH	src/Infrastructure/Console/ChannelExclusionKeyValidator.php
+# 3	ADG	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php
+# 3	AGH	src/Infrastructure/Console/README.md
+# 3	DGH	src/Infrastructure/Console/RuleInputValidator.php
+# 3	ADG	src/Infrastructure/Rule/ChannelUniverse.php
+# 3	ADG	src/Infrastructure/Rule/ComputedMetricChannelPresentation.php
+# 3	ACI	src/Reporting/FindingProjection/FindingProjector.php
+# 3	AGI	src/Reporting/Formatter/Sarif/SarifFormatter.php
+# 3	ADG	src/Reporting/Formatter/Sarif/SarifRuleCollector.php
+# 3	AEG	tests/Analysis/Evidence/CodeSmell/Integration/LongParameterListVoPropagationTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/BooleanArgumentRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/ConstructorOverinjectionRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/CountInLoopRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/DebugCodeRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/EmptyCatchRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/ErrorSuppressionRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/EvalRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/ExitRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/GotoRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/IdenticalSubExpressionRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/CodeSmell/Unit/SuperglobalsRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Cohesion/Unit/LcomRuleTest.php
+# 3	AEG	tests/Analysis/Evidence/ComputedMetrics/Health/Unit/WorstClassDrillDownTest.php
+# 3	DEG	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricEvaluatorTest.php
+# 3	ADG	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricFindingBuilderTest.php
+# 3	ADG	tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricsInternalTopologyTest.php
+# 3	AFG	tests/Analysis/Evidence/Design/Unit/InheritanceRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Design/Unit/NocRuleTest.php
+# 3	AEG	tests/Analysis/Evidence/Prioritization/Unit/Impact/ClassRankResolverTest.php
+# 3	AEG	tests/Analysis/Evidence/Prioritization/Unit/Impact/ImpactCalculatorTest.php
+# 3	AFG	tests/Analysis/Evidence/Security/Unit/CommandInjectionRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Security/Unit/SqlInjectionRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Security/Unit/XssRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Size/Unit/ClassCountRuleTest.php
+# 3	AFG	tests/Analysis/Evidence/Size/Unit/MethodCountRuleTest.php
+# 3	ACD	tests/Analysis/Finding/Integration/ChannelUniverseCoverageTest.php
+# 3	AFG	tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php
+# 3	ACD	tests/Analysis/Finding/Unit/ChannelSelectorTest.php
+# 3	AFG	tests/Analysis/Policy/Architecture/Unit/LayerViolationRuleTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Integration/BaselineWorkflowTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Integration/CaptureFromMeasuredSetTest.php
+# 3	AGI	tests/Analysis/Policy/Baseline/Support/StubBaselineRun.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStageFailSafeTest.php
+# 3	ABI	tests/Analysis/Policy/Baseline/Unit/BaselineCeilingStagePromotionTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineEntryValuesTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineGeneratorTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineIdentityTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineMigratorTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineRoundTripVOTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineUpdaterTest.php
+# 3	ACI	tests/Analysis/Policy/Baseline/Unit/BaselineWriterTest.php
+# 3	ADG	tests/Analysis/Policy/Inline/Unit/Directive/InlineDirectivePolicyTest.php
+# 3	ACH	tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php
+# 3	ACD	tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php
+# 3	AGH	tests/Analysis/Run/Integration/Pipeline/AnalysisPipelineIntegrationTest.php
+# 3	AGI	tests/Infrastructure/Console/Unit/ViolationFilterOrchestratorBaselineReportingTest.php
+# 3	ACD	tests/Reporting/FindingProjection/Unit/DeclaredChannelFileScopeTest.php
+# 3	ACI	tests/Reporting/FindingProjection/Unit/FindingProjectorTest.php
+# 3	ABG	tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php
+# 3	ABI	tests/Unit/Reporting/Formatter/Sarif/SarifSchemaValidationTest.php
+# 3	ABE	tests/Unit/Reporting/Formatter/Summary/TopIssuesRendererTest.php
+# 3	ABC	tests/Unit/Reporting/Formatter/Support/DetailedViolationRendererTest.php
+# 3	ABC	tests/Unit/Reporting/Formatter/TextFormatterTest.php
+# 3	ABC	tests/Unit/Reporting/Formatter/TextVerboseFormatterTest.php
+# 3	ACG	tests/Unit/Reporting/Health/SummaryEnricherTest.php
+# 3	ABG	tests/Unit/Reporting/ReportBuilderTest.php
+#
+# ============ SUBJECTS x THE PLAN'S DIRECTORY CUT (code surface only) ============
+# The plan makes P5.2 (Reporting whole), P5.3 (Baseline + its tests) and P5.4
+# (the remainder) parallel after P5.1.  A subject that has files in two or more
+# lanes cannot be executed by one of those packages: whoever owns it has to
+# reach across the boundary the cut was drawn to protect.
+# subject   P5.1 Finding contract          P5.2 Reporting           P5.3 Baseline          P5.4 remainder   lanes_touched
+# A                        28                      38                      42                     257   4
+# B                         1                       1                       1                      33   4
+# C                         2                       6                      20                      72   4
+# D                         6                       5                       9                     102   4
+# E                         0                       5                       2                     149   3
+# F                         5                       0                       0                      83   2
+# G                         4                       8                      10                     196   4
+# H                         0                       0                       1                      28   2
+# I                         1                       8                     111                      27   4
+# J                         0                       0                       0                       2   1
+#
+# ================ POINT 4: WHAT SHAPE OF INPUT NO SUBJECT COVERS ================
+# For each named miss mechanism: the probe, and every file it produces that is
+# NOT a member of the subject whose semantics require it.  `covered_by` is the
+# measured membership; `owed_to` is the subject that must gain it.
+# shape	file	covered_by	probe
+# name assembled at runtime from a prefix plus a variable	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php	AFG	git grep -nIP -e "'(typeCoverage|halstead|unusedPrivate|security|health|computed)\.' *\." -- src
+# name assembled at runtime from a prefix plus a variable	src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php	DG	git grep -nIP -e "'(typeCoverage|halstead|unusedPrivate|security|health|computed)\.' *\." -- src
+# name assembled at runtime from a prefix plus a variable	src/Analysis/Evidence/ComputedMetrics/Health/Configuration/HealthFormulaExcluder.php	G	git grep -nIP -e "'(typeCoverage|halstead|unusedPrivate|security|health|computed)\.' *\." -- src
+# name assembled at runtime from a prefix plus a variable	src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	G	git grep -nIP -e "'(typeCoverage|halstead|unusedPrivate|security|health|computed)\.' *\." -- src
+# name read by reflection over a class constant	src/Analysis/Finding/Contract/Rule/RuleNameReader.php	NONE	git grep -lIP -e 'ReflectionClass|ReflectionEnum|constant\(' -- src
+# name read by reflection over a class constant	src/Analysis/Finding/Contract/Rule/ChannelDeclarationReader.php	A	git grep -lIP -e 'ReflectionClass|ReflectionEnum|constant\(' -- src
+# name read by reflection over a class constant	src/Analysis/Finding/Contract/Rule/RuleShapeReader.php	NONE	git grep -lIP -e 'ReflectionClass|ReflectionEnum|constant\(' -- src
+# name read by reflection over a class constant	src/Analysis/Finding/Contract/Rule/CliAliasReader.php	NONE	git grep -lIP -e 'ReflectionClass|ReflectionEnum|constant\(' -- src
+# name read by reflection over a class constant	src/Analysis/Finding/Contract/Rule/RuleOwnConstantReader.php	NONE	git grep -lIP -e 'ReflectionClass|ReflectionEnum|constant\(' -- src
+# name read by reflection over a class constant	src/Analysis/Finding/Contract/Rule/ThresholdOverrideSupportReader.php	NONE	git grep -lIP -e 'ReflectionClass|ReflectionEnum|constant\(' -- src
+# name read by reflection over a class constant	src/Infrastructure/Console/RuleInputValidator.php	DGH	git grep -lIP -e 'ReflectionClass|ReflectionEnum|constant\(' -- src
+# metric key living in an out-of-tree calibration artefact	docs/internal/benchmark-baselines.json	NONE	git ls-files docs/internal/benchmark-baselines.json ; git grep -lIP -e 'health\.' -- scripts
+# metric key living in an out-of-tree calibration artefact	scripts/benchmark-regression.php	NONE	git ls-files docs/internal/benchmark-baselines.json ; git grep -lIP -e 'health\.' -- scripts
+#
+# Findings, stated flatly:
+#  * HealthFormulaExcluder.php and ComputedMetricEvaluator.php assemble the very
+#    prefixes subject D splits ('health.' . $dimension, 'computed.' . $name) and
+#    are in G only, NOT in D.  D's probe is built from the already-snapped
+#    producer-name enumeration plus the literal 'computed.health'; neither reaches
+#    a prefix that is only ever half-written in the source.
+#  * AbstractSecurityPatternRule.php:90 builds two of E's 71 metric keys as
+#    'security.' . static::PATTERN_TYPE.  E does not contain it.  This is the
+#    abstract-ancestor mechanism, on a metric key instead of a channel.
+#  * RuleNameReader.php is in NO subject at all.  It is the reflection reader for
+#    the NAME constant every producer declares; no probe on a name literal reaches
+#    the code that reads names generically.  Same class of miss: RuleShapeReader,
+#    CliAliasReader, RuleOwnConstantReader, ThresholdOverrideSupportReader.
+#  * benchmarks/** holds FIVE tracked files and not one metric key: the calibration
+#    data is docs/internal/benchmark-baselines.json (tracked, keyed by health.*)
+#    read by scripts/benchmark-regression.php.  BOTH are in NO subject, and the
+#    plan's 'плюс бенчмарки' for E therefore names an empty tracked set.
+#  * DI tags do NOT carry rule or channel names in this tree: the only tag matching
+#    addTag('qmx.*') is ContainerFactory.php:154, a collector-configuration tag.
+#    So the tag mechanism, though named as a hazard, does not bite here.
+#
+# What no probe of ANY shape can cover, stated as a limit rather than a finding:
+#  a producer name supplied by a user's own qmx.yaml under computed_metrics.  After
+#  the split it is user data, so it exists in no tracked file by construction, and
+#  the only defence is the fail-closed registry check the plan already requires.
+#
+# ============ SUBJECT H: DOES THE LOUD REFUSAL IT NEEDS ALREADY EXIST? ============
+# Asked because the brief asks it directly.  Measured answer: NO.
+# Four grammars accept a directive target today, and not one of them admits a colon:
+#   src/Analysis/Policy/Inline/Contract/SuppressionExtractor.php:45,46,47
+#     PATTERN_SYMBOL / PATTERN_NEXT_LINE / PATTERN_FILE, target class [\w.*#-]
+#     - '#' is admitted (producer#code), ':' is not.
+#   src/Analysis/Policy/Inline/Contract/ThresholdOverrideExtractor.php:43
+#     PATTERN, target class [\w.*-] - neither '#' nor ':' is admitted.
+# So a 'channel:level' target does not parse today; it cannot be REFUSED because it
+# is not even RECOGNISED - the regex simply stops at the colon and the remainder
+# falls into the free-text reason group.  Two seams exist where the refusal could
+# live, and neither does the job:
+#   src/Infrastructure/Console/ChannelExclusionKeyValidator.php:45,61
+#     assertAddressesAProducedChannel() THROWS InvalidArgumentException - but only
+#     for configuration and CLI exclusion keys, never for an inline directive.
+#   src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php:127,256
+#     validate() EMITS a finding (annotation.unresolved-directive) - a report entry,
+#     not a refusal, and it is reached only for a target that already parsed.
+# Consequence for the plan: Sh5's 'one place of loud refusal for an impossible
+# channel:level pair' is NEW code, not an edit to an existing check, and it has to
+# be reachable from BOTH seams above or the two directive families disagree.

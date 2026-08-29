@@ -7,16 +7,16 @@ namespace Qualimetrix\Analysis\Evidence\Design;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -40,6 +40,8 @@ final class DataClassRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/design.md';
 
     public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;
@@ -50,31 +52,26 @@ final class DataClassRule extends AbstractRule
         return 'Detects classes whose public interface is mostly data access rather than behavior (Data Classes)';
     }
 
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::Design;
-    }
-
     /**
      * @return list<string>
      */
     public function requires(): array
     {
         return [
-            MetricName::STRUCTURE_WOC,
-            MetricName::STRUCTURE_WMC,
-            MetricName::STRUCTURE_METHOD_COUNT_TOTAL,
-            MetricName::STRUCTURE_PROPERTY_COUNT,
-            MetricName::STRUCTURE_IS_READONLY,
-            MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY,
-            MetricName::STRUCTURE_IS_ABSTRACT,
-            MetricName::STRUCTURE_IS_INTERFACE,
-            MetricName::STRUCTURE_IS_EXCEPTION,
+            MetricName::DESIGN_WOC,
+            MetricName::COMPLEXITY_WMC,
+            MetricName::SIZE_METHOD_COUNT_TOTAL,
+            MetricName::SIZE_PROPERTY_COUNT,
+            MetricName::DESIGN_IS_READONLY,
+            MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY,
+            MetricName::DESIGN_IS_ABSTRACT,
+            MetricName::DESIGN_IS_INTERFACE,
+            MetricName::DESIGN_IS_EXCEPTION,
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -82,7 +79,7 @@ final class DataClassRule extends AbstractRule
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     private function analyzeEligibleClasses(AnalysisContext $context): array
     {
@@ -90,22 +87,22 @@ final class DataClassRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
             if ($classInfo->subject?->toSymbolPath()->getType() !== SymbolType::Class_) {
                 continue;
             }
-            $violation = $this->evaluateClass($context, $classInfo);
-            if ($violation !== null) {
-                $violations[] = $violation;
+            $finding = $this->evaluateClass($context, $classInfo);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
         }
 
-        return $violations;
+        return $findings;
     }
 
-    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Violation
+    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('Data class findings require an exact class declaration subject');
         $metrics = $context->metrics->get($subject->toSymbolPath());
@@ -122,25 +119,25 @@ final class DataClassRule extends AbstractRule
             return null;
         }
 
-        $woc = $metrics->get(MetricName::STRUCTURE_WOC);
+        $woc = $metrics->get(MetricName::DESIGN_WOC);
         if ($woc === null) {
             return null;
         }
 
         $wocValue = (int) $woc;
-        $wmcValue = (int) ($metrics->get(MetricName::STRUCTURE_WMC) ?? 0);
+        $wmcValue = (int) ($metrics->get(MetricName::COMPLEXITY_WMC) ?? 0);
 
         // Data Class: high WOC (public surface) + low WMC (complexity)
         if ($wocValue > $effectiveOptions->wocThreshold || $wmcValue > $effectiveOptions->wmcThreshold) {
             return null;
         }
 
-        return new Violation(
+        return new Finding(
             location: new Location($classInfo->file, $classInfo->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf(
                 'Data Class detected: only %d%% of the public interface is behavior (WOC, threshold %d%%) and complexity is low (WMC=%d, threshold %d). Consider encapsulating behavior or using a DTO pattern',
                 $wocValue,
@@ -165,7 +162,7 @@ final class DataClassRule extends AbstractRule
     /**
      * `design.data-class` reports WOC (`$wocValue`) as `metricValue` — see
      * the emission above — the only one of the rule's two gating axes that
-     * reaches the `Violation`: emission requires the disjunction
+     * reaches the `Finding`: emission requires the disjunction
      * `$wocValue > $effectiveOptions->wocThreshold ||
      * $wmcValue > $effectiveOptions->wmcThreshold` to be **false**
      * ({@see evaluateClass()}), i.e. `woc <= wocThreshold` (inclusive).
@@ -181,7 +178,7 @@ final class DataClassRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
         ];
     }
 

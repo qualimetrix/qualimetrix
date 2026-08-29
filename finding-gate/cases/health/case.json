@@ -1,0 +1,58 @@
+{
+    "id": "health",
+    "description": "Untyped, branch-heavy, incohesive code spread over three namespace roots, with every health dimension thresholded at 100 and one user-defined computed metric whose formula reads a metric key.",
+    "paths": [
+        "src",
+        "lib"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2",
+        "--rule-opt=code-smell.long-parameter-list:warning=30",
+        "--rule-opt=code-smell.long-parameter-list:error=40",
+        "--rule-opt=code-smell.long-parameter-list:vo-warning=30",
+        "--rule-opt=code-smell.long-parameter-list:vo-error=40",
+        "--rule-opt=complexity.cognitive:callable.warning=1000",
+        "--rule-opt=complexity.cognitive:callable.error=2000",
+        "--rule-opt=complexity.cyclomatic:callable.warning=1000",
+        "--rule-opt=complexity.cyclomatic:callable.error=2000",
+        "--rule-opt=coupling.instability:class.max_warning=2",
+        "--rule-opt=coupling.instability:class.max_error=2",
+        "--rule-opt=design.type-coverage.param:warning=-1",
+        "--rule-opt=design.type-coverage.param:error=-1",
+        "--rule-opt=design.type-coverage.return:warning=-1",
+        "--rule-opt=design.type-coverage.return:error=-1",
+        "--rule-opt=design.type-coverage.property:warning=-1",
+        "--rule-opt=design.type-coverage.property:error=-1"
+    ],
+    "channels": [
+        "computed.branch-load@class",
+        "computed.branch-load@namespace",
+        "computed.branch-load@project",
+        "health.cohesion@class",
+        "health.cohesion@namespace",
+        "health.cohesion@project",
+        "health.complexity@class",
+        "health.complexity@namespace",
+        "health.complexity@project",
+        "health.coupling@class",
+        "health.coupling@namespace",
+        "health.coupling@project",
+        "health.maintainability@class",
+        "health.maintainability@namespace",
+        "health.maintainability@project",
+        "health.overall@class",
+        "health.overall@namespace",
+        "health.overall@project",
+        "health.typing@class",
+        "health.typing@namespace",
+        "health.typing@project"
+    ],
+    "explainSubjects": [
+        "declaration:class:Corpus\\Health\\Engine\\Pipeline@src/Engine/Pipeline.php",
+        "ns:Corpus\\Health\\Engine"
+    ]
+}

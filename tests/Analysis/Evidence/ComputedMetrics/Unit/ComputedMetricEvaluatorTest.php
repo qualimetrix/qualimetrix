@@ -11,14 +11,14 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
-use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationMeta;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use RuntimeException;
 
 #[CoversClass(ComputedMetricEvaluator::class)]
@@ -39,14 +39,14 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
         $repo->add($classPath, MetricBag::fromArray([
-            'ccn.avg' => 3.0,
+            'complexity.ccn.avg' => 3.0,
         ]), RelativePath::fromString('src/UserService.php'), 10);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
-            formulas: ['class' => 'ccn__avg * 10'],
+            formulas: ['class' => 'm["complexity.ccn.avg"] * 10'],
             description: 'Test metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -61,21 +61,21 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
         $repo->add($classPath, MetricBag::fromArray([
-            'ccn.avg' => 5.0,
+            'complexity.ccn.avg' => 5.0,
         ]), RelativePath::fromString('src/UserService.php'), 10);
 
         // Define B first, which depends on A — evaluator should sort them
         $defB = new ComputedMetricDefinition(
             name: 'health.b',
-            formulas: ['class' => 'health__a * 2'],
+            formulas: ['class' => 'm["health.a"] * 2'],
             description: 'Depends on A',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
         $defA = new ComputedMetricDefinition(
             name: 'health.a',
-            formulas: ['class' => 'ccn__avg + 1'],
+            formulas: ['class' => 'm["complexity.ccn.avg"] + 1'],
             description: 'Base metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         // Pass B before A — topological sort should fix the order
@@ -95,9 +95,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
-            formulas: ['class' => 'missing_var * 10'],
+            formulas: ['class' => 'm["missing_var"] * 10'],
             description: 'Test metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         self::expectException(RuntimeException::class);
@@ -115,9 +115,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
-            formulas: ['class' => 'known + foo + bar'],
+            formulas: ['class' => 'm["known"] + m["foo"] + m["bar"]'],
             description: 'Test metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         self::expectException(RuntimeException::class);
@@ -131,17 +131,17 @@ final class ComputedMetricEvaluatorTest extends TestCase
     {
         $repo = new InMemoryMetricRepository();
 
-        // Class A has 'ccn', class B does not — but union includes 'ccn', so formula is valid
+        // Class A has 'complexity.ccn', class B does not — but union includes 'complexity.ccn', so formula is valid
         $classA = SymbolPath::forClass('App', 'ClassA');
         $classB = SymbolPath::forClass('App', 'ClassB');
-        $repo->add($classA, MetricBag::fromArray(['ccn' => 5.0]), RelativePath::fromString('src/ClassA.php'), 1);
+        $repo->add($classA, MetricBag::fromArray(['complexity.ccn' => 5.0]), RelativePath::fromString('src/ClassA.php'), 1);
         $repo->add($classB, MetricBag::fromArray([]), RelativePath::fromString('src/ClassB.php'), 1);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
-            formulas: ['class' => '(ccn ?? 0) * 10'],
+            formulas: ['class' => '(m["complexity.ccn"] ?? 0) * 10'],
             description: 'Test with partial data',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -159,9 +159,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
-            formulas: ['class' => '(missing_var ?? 42) * 2'],
+            formulas: ['class' => '(m["missing_var"] ?? 42) * 2'],
             description: 'Test metric with fallback',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -180,9 +180,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
-            formulas: ['class' => 'sqrt(value)'],
+            formulas: ['class' => 'sqrt(m["value"])'],
             description: 'NaN test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -201,9 +201,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
-            formulas: ['class' => 'log(value)'],
+            formulas: ['class' => 'log(m["value"])'],
             description: 'Infinity test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -217,16 +217,16 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
         $repo->add($classPath, MetricBag::fromArray([
-            'ccn.avg' => 4.0,
-            'cognitive.avg' => 6.0,
-            'npath.avg' => 10.0,
-            'tcc' => 0.6,
-            'lcom' => 2.0,
-            'cbo' => 8.0,
-            'ce' => 6.0,
-            'typeCoverage.pct' => 80.0,
-            'dit' => 2.0,
-            'mi.avg' => 65.0,
+            'complexity.ccn.avg' => 4.0,
+            'complexity.cognitive.avg' => 6.0,
+            'complexity.npath.avg' => 10.0,
+            'cohesion.tcc' => 0.6,
+            'cohesion.lcom' => 2.0,
+            'coupling.cbo' => 8.0,
+            'coupling.ce' => 6.0,
+            'design.type-coverage.pct' => 80.0,
+            'design.dit' => 2.0,
+            'maintainability.mi.avg' => 65.0,
         ]), RelativePath::fromString('src/UserService.php'), 10);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
@@ -264,12 +264,12 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Rules', 'DistanceRule');
         $repo->add($classPath, MetricBag::fromArray([
-            'tcc' => 0.0,
-            'lcom' => 5.0,
-            'methodCount' => 5,
-            'pureMethodCount_cohesion' => 4,
-            'ce' => 3.0,
-            'typeCoverage.pct' => 100.0,
+            'cohesion.tcc' => 0.0,
+            'cohesion.lcom' => 5.0,
+            'size.method-count' => 5,
+            'cohesion.pure-method-count' => 4,
+            'coupling.ce' => 3.0,
+            'design.type-coverage.pct' => 100.0,
         ]), RelativePath::fromString('src/DistanceRule.php'), 10);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
@@ -301,30 +301,30 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // Add namespace-level metrics
         $nsPath = SymbolPath::forNamespace('App\\Service');
         $repo->add($nsPath, MetricBag::fromArray([
-            'ccn.avg' => 3.0,
-            'ccn.sum' => 30.0,
-            'cognitive.avg' => 4.0,
-            'cognitive.sum' => 40.0,
-            AggregationMeta::SYMBOL_METHOD_COUNT => 10,
-            'npath.avg' => 5.0,
-            'tcc.avg' => 0.5,
-            'lcom.avg' => 3.0,
-            'ce' => 6,
-            'ce.avg' => 4.0,
-            'ce.max' => 8.0,
-            'ce_packages.avg' => 0.2,
-            'distance' => 0.3,
-            'typeCoverage.paramTyped.sum' => 40.0,
-            'typeCoverage.returnTyped.sum' => 35.0,
-            'typeCoverage.propertyTyped.sum' => 20.0,
-            'typeCoverage.paramTotal.sum' => 50.0,
-            'typeCoverage.returnTotal.sum' => 50.0,
-            'typeCoverage.propertyTotal.sum' => 25.0,
-            'dit.avg' => 1.5,
-            'abstractness' => 0.2,
-            'mi.avg' => 70.0,
-            'mi.p5' => 50.0,
-            'mi.min' => 25.0,
+            'complexity.ccn.avg' => 3.0,
+            'complexity.ccn.sum' => 30.0,
+            'complexity.cognitive.avg' => 4.0,
+            'complexity.cognitive.sum' => 40.0,
+            MetricName::SIZE_SYMBOL_METHOD_COUNT => 10,
+            'complexity.npath.avg' => 5.0,
+            'cohesion.tcc.avg' => 0.5,
+            'cohesion.lcom.avg' => 3.0,
+            'coupling.ce' => 6,
+            'coupling.ce.avg' => 4.0,
+            'coupling.ce.max' => 8.0,
+            'coupling.ce-packages.avg' => 0.2,
+            'coupling.distance' => 0.3,
+            'design.type-coverage.param.typed.sum' => 40.0,
+            'design.type-coverage.return.typed.sum' => 35.0,
+            'design.type-coverage.property.typed.sum' => 20.0,
+            'design.type-coverage.param.total.sum' => 50.0,
+            'design.type-coverage.return.total.sum' => 50.0,
+            'design.type-coverage.property.total.sum' => 25.0,
+            'design.dit.avg' => 1.5,
+            'coupling.abstractness' => 0.2,
+            'maintainability.mi.avg' => 70.0,
+            'maintainability.mi.p5' => 50.0,
+            'maintainability.mi.min' => 25.0,
         ]), null, null);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
@@ -375,12 +375,12 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $nsPath = SymbolPath::forNamespace('App\\Shared\\Messaging');
         $repo->add($nsPath, MetricBag::fromArray([
             // All typeCoverage sums explicitly zero (denotes 0 typeable positions).
-            'typeCoverage.paramTyped.sum' => 0.0,
-            'typeCoverage.returnTyped.sum' => 0.0,
-            'typeCoverage.propertyTyped.sum' => 0.0,
-            'typeCoverage.paramTotal.sum' => 0.0,
-            'typeCoverage.returnTotal.sum' => 0.0,
-            'typeCoverage.propertyTotal.sum' => 0.0,
+            'design.type-coverage.param.typed.sum' => 0.0,
+            'design.type-coverage.return.typed.sum' => 0.0,
+            'design.type-coverage.property.typed.sum' => 0.0,
+            'design.type-coverage.param.total.sum' => 0.0,
+            'design.type-coverage.return.total.sum' => 0.0,
+            'design.type-coverage.property.total.sum' => 0.0,
         ]), null, null);
 
         // Evaluate the typing definition in isolation — sibling formulas would require
@@ -422,12 +422,12 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $projectPath = SymbolPath::forProject();
         $repo->add($projectPath, MetricBag::fromArray([
-            'typeCoverage.paramTyped.sum' => 0.0,
-            'typeCoverage.returnTyped.sum' => 0.0,
-            'typeCoverage.propertyTyped.sum' => 0.0,
-            'typeCoverage.paramTotal.sum' => 0.0,
-            'typeCoverage.returnTotal.sum' => 0.0,
-            'typeCoverage.propertyTotal.sum' => 0.0,
+            'design.type-coverage.param.typed.sum' => 0.0,
+            'design.type-coverage.return.typed.sum' => 0.0,
+            'design.type-coverage.property.typed.sum' => 0.0,
+            'design.type-coverage.param.total.sum' => 0.0,
+            'design.type-coverage.return.total.sum' => 0.0,
+            'design.type-coverage.property.total.sum' => 0.0,
         ]), null, null);
 
         $typing = ComputedMetricDefaults::getDefaults()['health.typing'];
@@ -448,12 +448,12 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // ce_packages.avg=2 (touches 2 vendor packages on avg per class), ns-level ce=80.
         $nsPath = SymbolPath::forNamespace('App\\Big');
         $repo->add($nsPath, MetricBag::fromArray([
-            'ce' => 80,
-            'ce.avg' => 10.0,
-            'ce.max' => 60,
-            'ce_packages.avg' => 2.0,
-            'distance' => 0.2,
-            AggregationMeta::SYMBOL_METHOD_COUNT => 1,
+            'coupling.ce' => 80,
+            'coupling.ce.avg' => 10.0,
+            'coupling.ce.max' => 60,
+            'coupling.ce-packages.avg' => 2.0,
+            'coupling.distance' => 0.2,
+            MetricName::SIZE_SYMBOL_METHOD_COUNT => 1,
         ]), null, null);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
@@ -483,12 +483,12 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // formula uses efferent metrics only.
         $nsPath = SymbolPath::forNamespace('App\\Contracts');
         $repo->add($nsPath, MetricBag::fromArray([
-            'ce' => 5,
-            'ce.avg' => 1.3,
-            'ce.max' => 4,
-            'ce_packages.avg' => 0.0,
-            'distance' => 0.4,
-            AggregationMeta::SYMBOL_METHOD_COUNT => 1,
+            'coupling.ce' => 5,
+            'coupling.ce.avg' => 1.3,
+            'coupling.ce.max' => 4,
+            'coupling.ce-packages.avg' => 0.0,
+            'coupling.distance' => 0.4,
+            MetricName::SIZE_SYMBOL_METHOD_COUNT => 1,
         ]), null, null);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
@@ -514,14 +514,14 @@ final class ComputedMetricEvaluatorTest extends TestCase
         ]), RelativePath::fromString('src/Svc.php'), 1);
 
         $tests = [
-            ['health.sqrtTest', 'sqrt(a)', 4.0],
-            ['health.absTest', 'abs(b)', 5.0],
-            ['health.minTest', 'min(c, d)', 3.0],
-            ['health.maxTest', 'max(c, d)', 7.0],
-            ['health.logTest', 'log(e)', log(100.0)],
-            ['health.log10Test', 'log10(f)', 3.0],
-            ['health.clampTest', 'clamp(150, 0, 100)', 100.0],
-            ['health.clampLowTest', 'clamp(b, 0, 100)', 0.0],
+            ['health.sqrt-test', 'sqrt(m["a"])', 4.0],
+            ['health.abs-test', 'abs(m["b"])', 5.0],
+            ['health.min-test', 'min(m["c"], m["d"])', 3.0],
+            ['health.max-test', 'max(m["c"], m["d"])', 7.0],
+            ['health.log-test', 'log(m["e"])', log(100.0)],
+            ['health.log10-test', 'log10(m["f"])', 3.0],
+            ['health.clamp-test', 'clamp(150, 0, 100)', 100.0],
+            ['health.clamp-low-test', 'clamp(m["b"], 0, 100)', 0.0],
         ];
 
         $definitions = [];
@@ -530,7 +530,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
                 name: $name,
                 formulas: ['class' => $formula],
                 description: 'Math test',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
             );
         }
 
@@ -550,14 +550,14 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $class1 = SymbolPath::forClass('App', 'ClassA');
         $class2 = SymbolPath::forClass('App', 'ClassB');
 
-        $repo->add($class1, MetricBag::fromArray(['ccn' => 2.0]), RelativePath::fromString('src/ClassA.php'), 1);
-        $repo->add($class2, MetricBag::fromArray(['ccn' => 8.0]), RelativePath::fromString('src/ClassB.php'), 1);
+        $repo->add($class1, MetricBag::fromArray(['complexity.ccn' => 2.0]), RelativePath::fromString('src/ClassA.php'), 1);
+        $repo->add($class2, MetricBag::fromArray(['complexity.ccn' => 8.0]), RelativePath::fromString('src/ClassB.php'), 1);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.simple',
-            formulas: ['class' => 'ccn * 10'],
+            formulas: ['class' => 'm["complexity.ccn"] * 10'],
             description: 'Simple test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -583,9 +583,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $definition = new ComputedMetricDefinition(
             name: 'health.inherited',
-            formulas: ['namespace' => 'value + 1'],
+            formulas: ['namespace' => 'm["value"] + 1'],
             description: 'Inherits namespace formula for project',
-            levels: [SymbolType::Namespace_, SymbolType::Project],
+            levels: [SymbolLevel::Namespace_, SymbolLevel::Project],
         );
 
         $this->evaluate($repo, [$definition]);
@@ -604,15 +604,15 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $defA = new ComputedMetricDefinition(
             name: 'health.a',
-            formulas: ['class' => '(health__b ?? 0) + x'],
+            formulas: ['class' => '(m["health.b"] ?? 0) + m["x"]'],
             description: 'Circular A',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
         $defB = new ComputedMetricDefinition(
             name: 'health.b',
-            formulas: ['class' => '(health__a ?? 0) + x'],
+            formulas: ['class' => '(m["health.a"] ?? 0) + m["x"]'],
             description: 'Circular B',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         // Should not throw — falls back to original order with warning
@@ -639,12 +639,12 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $nsPath = SymbolPath::forNamespace('App\\Service');
         $repo->add($nsPath, MetricBag::fromArray([
-            'ccn.sum' => 40.0,          // total CCN across all methods
-            'ccn.avg' => 20.0,          // average WMC (per-class) - NOT per-method
-            'cognitive.sum' => 30.0,
-            'cognitive.avg' => 15.0,    // average per-class cognitive sum
-            AggregationMeta::SYMBOL_METHOD_COUNT => 6,    // total method count
-            'npath.avg' => 10.0,
+            'complexity.ccn.sum' => 40.0,          // total CCN across all methods
+            'complexity.ccn.avg' => 20.0,          // average WMC (per-class) - NOT per-method
+            'complexity.cognitive.sum' => 30.0,
+            'complexity.cognitive.avg' => 15.0,    // average per-class cognitive sum
+            MetricName::SIZE_SYMBOL_METHOD_COUNT => 6,    // total method count
+            'complexity.npath.avg' => 10.0,
         ]), null, null);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
@@ -707,7 +707,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             name: 'computed.test',
             formulas: ['project' => '1'],
             description: 'Test',
-            levels: [SymbolType::Project],
+            levels: [SymbolLevel::Project],
         );
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn([$definition]);

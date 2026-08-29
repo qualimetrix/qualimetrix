@@ -27,8 +27,9 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * - `@qmx-ignore-next-line <channel> [-- reason]`
  * - `@qmx-ignore-file [channel] [-- reason]`
  *
- * The argument names a **channel**: an exact `violationCode`, the explicit
- * `ruleName#violationCode` pair, or `X.*` for the strict descendants of `X`.
+ * The argument names a **channel**: an exact `code`, or `X.*` for the strict
+ * descendants of `X`, either optionally narrowed to one level of the
+ * aggregation tree with `:level` (`coupling.cbo:namespace`).
  * The two "everything here" spellings survive unchanged: `*` on the symbol
  * and next-line forms, and an omitted argument on the file form. Both mean
  * "no rule filter", not "a wildcard selector"; see {@see SuppressionTarget}.
@@ -42,9 +43,17 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  */
 final readonly class SuppressionExtractor
 {
-    private const PATTERN_SYMBOL = '/@qmx-ignore(?!-next-line|-file)(?![\w-])\s+([\w.*#-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
-    private const PATTERN_NEXT_LINE = '/@qmx-ignore-next-line(?![\w-])\s+([\w.*#-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
-    private const PATTERN_FILE = '/@qmx-ignore-file(?![\w-])(?:\s+([\w.*#-]+)(?:[^\S\n\r]+([^\n\r]+))?)?/';
+    /**
+     * The three grammars admit `:` and `#` so that both spellings a channel
+     * can be *mis*addressed by are **captured** and then refused by name —
+     * `#` for the retired pair, `:` for a level that the channel does not
+     * report at. Without them the pattern stops at the separator and silences
+     * the whole channel instead of one level of it, which is a suppression
+     * quietly wider than the one that was written.
+     */
+    private const PATTERN_SYMBOL = '/@qmx-ignore(?!-next-line|-file)(?![\w-])\s+([\w.*#:-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
+    private const PATTERN_NEXT_LINE = '/@qmx-ignore-next-line(?![\w-])\s+([\w.*#:-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
+    private const PATTERN_FILE = '/@qmx-ignore-file(?![\w-])(?:\s+([\w.*#:-]+)(?:[^\S\n\r]+([^\n\r]+))?)?/';
 
     private const MODE_FULL = 'full';
     private const MODE_PHYSICAL = 'physical';

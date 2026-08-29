@@ -19,34 +19,35 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\Formatter\CheckstyleFormatter;
 use Qualimetrix\Reporting\Formatter\GithubActionsFormatter;
 use Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter;
 use Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter;
 use Qualimetrix\Reporting\Formatter\Html\HtmlFormatter;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
+use Qualimetrix\Reporting\Formatter\Json\JsonFindingSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
-use Qualimetrix\Reporting\Formatter\Json\JsonViolationSection;
 use Qualimetrix\Reporting\Formatter\MetricsJsonFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
+use Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter;
 use Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer;
-use Qualimetrix\Reporting\Formatter\Summary\ViolationSummaryRenderer;
-use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
+use Qualimetrix\Reporting\Formatter\Support\DetailedFindingRenderer;
 use Qualimetrix\Reporting\Formatter\TextFormatter;
 use Qualimetrix\Reporting\Formatter\TextVerboseFormatter;
 use Qualimetrix\Reporting\FormatterContext;
@@ -60,14 +61,14 @@ use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresenta
 
 /**
  * Smoke coverage for every output formatter against the full set of
- * architecture-domain violation flavours.
+ * architecture-domain finding flavours.
  *
  * The goal is "formatter runs without error AND emits format-appropriate
- * output for architecture violations" — assertions are intentionally
+ * output for architecture findings" — assertions are intentionally
  * containment- or structure-based, not full-string snapshots, so that
  * formatters can evolve without rewriting these tests.
  *
- * The fixture mixes per-class violations with project-level diagnostics
+ * The fixture mixes per-class findings with project-level diagnostics
  * (which carry {@see SymbolPath::forProject()} and {@see Location::none()})
  * so the format-specific handling of fileless / project-level locations
  * is exercised on the path through every formatter.
@@ -93,10 +94,10 @@ final class ArchitectureViolationSmokeTest extends TestCase
         self::assertNonEmptyOutput($output);
         self::assertStringContainsString(LayerViolationRule::NAME, $output);
         self::assertStringContainsString(CircularDependencyRule::NAME, $output);
-        self::assertStringContainsString(LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME, $output);
-        self::assertStringContainsString(LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, $output);
-        self::assertStringContainsString(LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, $output);
-        self::assertStringContainsString(LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, $output);
+        self::assertStringContainsString(LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, $output);
         // Source/target class names should appear in the layer-violation row
         self::assertStringContainsString(self::SOURCE_CLASS, $output);
         // Dependency-type detail (the human description) should appear too
@@ -107,7 +108,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
     public function itRendersArchitectureViolationsViaTextVerboseFormatter(): void
     {
         $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
-        $detailedRenderer = new DetailedViolationRenderer($debtCalculator);
+        $detailedRenderer = new DetailedFindingRenderer($debtCalculator);
         $textFormatter = new TextFormatter($debtCalculator, $detailedRenderer);
         $formatter = new TextVerboseFormatter($textFormatter);
 
@@ -118,7 +119,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         self::assertStringContainsString(LayerViolationRule::NAME, $output);
         self::assertStringContainsString(CircularDependencyRule::NAME, $output);
         // text-verbose enables --detail, so recommendation text must surface.
-        // DetailedViolationRenderer inlines the recommendation without a
+        // DetailedFindingRenderer inlines the recommendation without a
         // 'Recommendation:' label, so we assert on a stable substring from
         // the layer-violation recommendation copy itself.
         self::assertStringContainsString(
@@ -134,13 +135,13 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
         $sanitizer = new JsonSanitizer();
-        $violationFilter = new ViolationFilter();
+        $findingFilter = new FindingFilter();
         $remediationTimeRegistry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $formatter = new JsonFormatter(
             new DebtCalculator($remediationTimeRegistry),
             new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
-            new JsonOffenderSection(new WorstClassDrillDown($definitionCatalog), $violationFilter, $sanitizer),
-            new JsonViolationSection($remediationTimeRegistry, $sanitizer),
+            new JsonOffenderSection(new WorstClassDrillDown($definitionCatalog), $findingFilter, $sanitizer),
+            new JsonFindingSection($remediationTimeRegistry, $sanitizer),
         );
 
         $report = $this->buildArchitectureReport();
@@ -177,9 +178,9 @@ final class ArchitectureViolationSmokeTest extends TestCase
         self::assertJson($output);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // MetricsJsonFormatter exports metric symbols, not violations directly —
-        // but the summary block should reflect the violation totals so this
-        // assertion proves architecture violations actually flow through.
+        // MetricsJsonFormatter exports metric symbols, not findings directly —
+        // but the summary block should reflect the finding totals so this
+        // assertion proves architecture findings actually flow through.
         self::assertArrayHasKey('summary', $data);
         self::assertSame($this->expectedViolationCount(), $data['summary']['violations']);
         // With no metric repository wired in, symbols is just an empty list
@@ -201,9 +202,9 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $report = $this->buildArchitectureReport();
         $output = $formatter->format($report, new FormatterContext());
 
-        // The HTML formatter attaches violations to tree nodes built from
-        // the metric repository (see HtmlViolationPartitioner): project-level
-        // violations and violations whose owning class/namespace node has no
+        // The HTML formatter attaches findings to tree nodes built from
+        // the metric repository (see HtmlFindingPartitioner): project-level
+        // findings and findings whose owning class/namespace node has no
         // entry are intentionally dropped. With an architecture-only report
         // (no MetricRepositoryInterface wired in) the tree is empty, so the
         // smoke contract is that the formatter still produces a valid,
@@ -342,14 +343,14 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $hintProvider = new HealthMetricCatalog();
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
-        $violationFilter = new ViolationFilter();
-        $offenderListRenderer = new OffenderListRenderer($violationFilter, new WorstClassDrillDown($definitionCatalog));
+        $findingFilter = new FindingFilter();
+        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog));
         $formatter = new SummaryFormatter(
-            new DetailedViolationRenderer($debtCalculator),
+            new DetailedFindingRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
             $offenderListRenderer,
             new TopIssuesRenderer(),
-            new ViolationSummaryRenderer($violationFilter, $registry),
+            new FindingSummaryRenderer($findingFilter, $registry),
             new HintRenderer($offenderListRenderer),
         );
 
@@ -358,7 +359,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
 
         self::assertNonEmptyOutput($output);
         // Summary aggregates by severity. The fixture has 1 error, 2 warnings,
-        // 3 info violations, so the summary line must mention those counts.
+        // 3 info findings, so the summary line must mention those counts.
         self::assertStringContainsString('violation', $output);
         self::assertStringContainsString('error', $output);
         self::assertStringContainsString('warning', $output);
@@ -413,11 +414,11 @@ final class ArchitectureViolationSmokeTest extends TestCase
     {
         $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
 
-        return new TextFormatter($debtCalculator, new DetailedViolationRenderer($debtCalculator));
+        return new TextFormatter($debtCalculator, new DetailedFindingRenderer($debtCalculator));
     }
 
     /**
-     * Builds a report containing exactly one of each architecture violation
+     * Builds a report containing exactly one of each architecture finding
      * flavour the rules emit in production.
      *
      * Severities mirror production defaults:
@@ -433,13 +434,13 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $sourcePath = SymbolPath::forClass(self::SOURCE_NAMESPACE, self::SOURCE_CLASS);
         $targetPath = SymbolPath::forClass(self::TARGET_NAMESPACE, self::TARGET_CLASS);
 
-        $violations = [
+        $findings = [
             // architecture.layer-violation — per-class, with dependency metadata
-            self::violation(
+            self::finding(
                 location: new Location(RelativePath::fromString(self::SOURCE_FILE), self::SOURCE_LINE, precise: true),
                 symbolPath: $sourcePath,
                 ruleName: LayerViolationRule::NAME,
-                violationCode: LayerViolationRule::NAME,
+                code: LayerViolationRule::NAME,
                 message: \sprintf(
                     'Layer "console" must not depend on layer "persistence" (%s → %s, %s)',
                     $sourcePath->toString(),
@@ -453,11 +454,11 @@ final class ArchitectureViolationSmokeTest extends TestCase
             ),
 
             // architecture.circular-dependency — per-class, no dependency metadata
-            self::violation(
+            self::finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forClass('App\\Service', 'A'),
                 ruleName: CircularDependencyRule::NAME,
-                violationCode: CircularDependencyRule::NAME,
+                code: CircularDependencyRule::NAME,
                 message: 'Circular dependency (3 classes): App\\Service\\A → App\\Service\\B → App\\Service\\C → App\\Service\\A',
                 severity: Severity::Error,
                 metricValue: 3,
@@ -465,44 +466,44 @@ final class ArchitectureViolationSmokeTest extends TestCase
             ),
 
             // architecture.coverage — project-level diagnostic
-            self::violation(
+            self::finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
-                ruleName: LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
-                violationCode: LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
+                ruleName: LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+                code: LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
                 message: 'Architecture coverage: 0 edge(s) with unmatched source layer, 0 edge(s) with unmatched target layer, 7 class(es) outside all declared layers.',
                 severity: Severity::Error,
                 recommendation: 'Declare layers covering the remaining classes or accept the gap by leaving coverage on "ignore".',
             ),
 
             // architecture.empty-template — project-level diagnostic
-            self::violation(
+            self::finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
-                ruleName: LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
-                violationCode: LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+                ruleName: LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+                code: LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
                 message: 'Template layer "module-{name}" expanded to zero concrete layers — no class in the analysed codebase matched the template\'s criteria.',
                 severity: Severity::Warning,
                 recommendation: 'Verify the template patterns against the project structure, or remove the template if no longer relevant.',
             ),
 
             // architecture.unreachable-layer — project-level diagnostic
-            self::violation(
+            self::finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
-                ruleName: LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-                violationCode: LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                ruleName: LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                code: LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 message: 'Layer "legacy" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier, (2) the declared criteria match no class in the analysed codebase.',
                 severity: Severity::Info,
                 recommendation: 'Move the layer above any broader layer that captures its classes, or remove the layer if its pattern intentionally covers no class.',
             ),
 
             // architecture.potential-shadow — project-level diagnostic (per shadow pair)
-            self::violation(
+            self::finding(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
-                ruleName: LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-                violationCode: LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+                ruleName: LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+                code: LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
                 message: 'Layer "core" (pattern App\\Core\\**) shadows layer "core-domain" (pattern App\\Core\\Domain\\**) for 3 class(es).',
                 severity: Severity::Info,
                 recommendation: 'If layer "core-domain" should own these classes, declare it BEFORE "core" (declaration order, first match wins).',
@@ -510,7 +511,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         ];
 
         return ReportBuilder::create()
-            ->addViolations($violations)
+            ->addFindings($findings)
             ->filesAnalyzed(12)
             ->filesSkipped(0)
             ->duration(0.42)
@@ -525,10 +526,10 @@ final class ArchitectureViolationSmokeTest extends TestCase
         return [
             LayerViolationRule::NAME,
             CircularDependencyRule::NAME,
-            LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
-            LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
-            LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+            LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         ];
     }
 
@@ -538,13 +539,13 @@ final class ArchitectureViolationSmokeTest extends TestCase
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
-        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+        return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
 }

@@ -9,7 +9,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
  * it, and the opaque hash v5 stored instead of a magnitude.
  *
  * The hash is carried along for fidelity to the source file, but nothing in
- * this package reads it: it digests `rule|namespace|type|member|violationCode`
+ * this package reads it: it digests `rule|namespace|type|member|code`
  * (ADR 0017), which is neither a magnitude nor
  * recoverable into one. The only thing a v5 record and a v10 finding share
  * is the pair `($symbolKey, $rule)` — {@see BaselineMigrator} matches on

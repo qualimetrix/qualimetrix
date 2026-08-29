@@ -10,12 +10,12 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -26,6 +26,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 
@@ -52,7 +53,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $findings = $policy->auditDirectiveUsage([]);
 
         self::assertCount(1, $findings);
-        self::assertSame(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->violationCode);
+        self::assertSame(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->code);
         self::assertSame(Severity::Info, $findings[0]->severity);
     }
 
@@ -191,7 +192,7 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto#code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
             [],
             [],
         );
@@ -202,16 +203,17 @@ final class InlineDirectivePolicyTest extends TestCase
     }
 
     /**
-     * A pair addressing no channel is already reported as a configuration
+     * A target addressing no channel is already reported as a configuration
      * error, so counting it here too would say the same directive is both
-     * broken and merely stale.
+     * broken and merely stale. The retired `rule#code` spelling is the sharpest
+     * case: it is a target that no longer parses at all.
      */
     #[Test]
-    public function itDoesNotAlsoCallAnUnaddressablePairStale(): void
+    public function itDoesNotAlsoCallAnUnaddressableTargetStale(): void
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('complexity.cyclomatic#code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto#code-smell.goto', null, 1, SuppressionType::File)]],
             [],
             [],
         );
@@ -230,6 +232,29 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare([], [], []);
+        $policy->enableUsageReporting(Severity::Info);
+
+        self::assertSame([], $policy->auditDirectiveUsage([]));
+    }
+
+    /**
+     * A directive whose pair is impossible — the channel is real but never
+     * reports at the named level — must never be counted stale. Before this
+     * fix, `isAccountable()` read only the channel half of the target and let
+     * the impossible pair through: the same directive would then earn both
+     * `annotation.unresolved-directive` from {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability}
+     * and a spurious `annotation.unused-directive` from here — one mistake,
+     * reported twice.
+     */
+    #[Test]
+    public function itNeverCallsAnImpossiblePairStale(): void
+    {
+        $policy = self::policy();
+        $policy->prepare(
+            [self::FILE => [new Suppression('code-smell.goto:project', null, 1, SuppressionType::File)]],
+            [],
+            [],
+        );
         $policy->enableUsageReporting(Severity::Info);
 
         self::assertSame([], $policy->auditDirectiveUsage([]));
@@ -270,14 +295,13 @@ final class InlineDirectivePolicyTest extends TestCase
 
     private static function policy(?RuleOptionsRegistry $configuration = null): InlineDirectivePolicy
     {
-        $channel = new ViolationChannel('code-smell.goto', 'code-smell.goto');
+        $channel = new FindingChannel('code-smell.goto');
 
         return new InlineDirectivePolicy(
             new ChannelUniverse(
-                [$channel->toKey() => ChannelDeclaration::occurrence()],
-                ['code-smell.goto' => [$channel->toKey()]],
+                [$channel->code => ChannelDeclaration::occurrence(SymbolLevel::Class_)],
+                ['code-smell.goto' => [$channel->code]],
                 ['code-smell.goto' => false],
-                'computed.health',
                 new ResolvedComputedMetricDefinitions([]),
             ),
             new RuleSelector(new InMemoryRuleChannelRegistry()),
@@ -307,14 +331,14 @@ final class InlineDirectivePolicyTest extends TestCase
         return MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString(self::FILE)));
     }
 
-    private static function finding(MetricSubject $subject, int $line): Violation
+    private static function finding(MetricSubject $subject, int $line): Finding
     {
-        return new Violation(
+        return new Finding(
             location: new Location(RelativePath::fromString(self::FILE), $line, precise: true),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: 'code-smell.goto',
-            violationCode: 'code-smell.goto',
+            code: 'code-smell.goto',
             message: 'goto',
             severity: Severity::Warning,
         );

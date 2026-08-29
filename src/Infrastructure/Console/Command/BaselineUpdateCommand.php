@@ -89,7 +89,7 @@ final class BaselineUpdateCommand extends BaselineCommand
             return self::FAILURE;
         }
 
-        $result = $this->updater->update($baseline, $context->violations(), $context->scope);
+        $result = $this->updater->update($baseline, $context->findings(), $context->scope);
 
         self::report($result, $output);
 

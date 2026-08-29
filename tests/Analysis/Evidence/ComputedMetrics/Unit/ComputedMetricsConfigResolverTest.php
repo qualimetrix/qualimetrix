@@ -6,13 +6,15 @@ namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use RuntimeException;
 
 #[CoversClass(ComputedMetricsConfigResolver::class)]
@@ -69,16 +71,16 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         $result = $this->resolver->resolve([
             'health.complexity' => [
-                'formula' => '100 - ccn__avg * 10',
+                'formula' => '100 - m["complexity.ccn.avg"] * 10',
             ],
         ]);
 
         $complexity = $this->findByName($result, 'health.complexity');
         self::assertNotNull($complexity);
         // Singular formula applies to all levels
-        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolType::Class_));
-        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolType::Namespace_));
-        self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolType::Project));
+        self::assertSame('100 - m["complexity.ccn.avg"] * 10', $complexity->getFormulaForLevel(SymbolLevel::Class_));
+        self::assertSame('100 - m["complexity.ccn.avg"] * 10', $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
+        self::assertSame('100 - m["complexity.ccn.avg"] * 10', $complexity->getFormulaForLevel(SymbolLevel::Project));
     }
 
     #[Test]
@@ -87,7 +89,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $result = $this->resolver->resolve([
             'health.complexity' => [
                 'formulas' => [
-                    'class' => '100 - ccn * 5',
+                    'class' => '100 - m["complexity.ccn"] * 5',
                 ],
             ],
         ]);
@@ -95,9 +97,9 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $complexity = $this->findByName($result, 'health.complexity');
         self::assertNotNull($complexity);
         // Only class formula overridden
-        self::assertSame('100 - ccn * 5', $complexity->getFormulaForLevel(SymbolType::Class_));
+        self::assertSame('100 - m["complexity.ccn"] * 5', $complexity->getFormulaForLevel(SymbolLevel::Class_));
         // Namespace keeps default formula (uses per-method average via ccn__sum / symbolMethodCount)
-        self::assertStringContainsString('ccn__sum', (string) $complexity->getFormulaForLevel(SymbolType::Namespace_));
+        self::assertStringContainsString('m["complexity.ccn.sum"]', (string) $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
     }
 
     #[Test]
@@ -123,7 +125,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotNull($overall);
 
         $classFormula = $overall->formulas['class'] ?? '';
-        self::assertStringNotContainsString('health__typing', $classFormula);
+        self::assertStringNotContainsString('m["health.typing"]', $classFormula);
         preg_match_all('/\*\s*([\d.]+)/', $classFormula, $matches);
         $weights = array_map('floatval', $matches[1]);
         self::assertEqualsWithDelta(1.0, array_sum($weights), 0.001);
@@ -166,8 +168,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $overall = $this->findByName($result, 'health.overall');
         self::assertNotNull($overall);
-        self::assertStringNotContainsString('health__typing', $overall->formulas['namespace'] ?? '');
-        self::assertStringNotContainsString('health__maintainability', $overall->formulas['namespace'] ?? '');
+        self::assertStringNotContainsString('m["health.typing"]', $overall->formulas['namespace'] ?? '');
+        self::assertStringNotContainsString('m["health.maintainability"]', $overall->formulas['namespace'] ?? '');
     }
 
     #[Test]
@@ -177,7 +179,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         // no formula renormalization applies (no health.overall reference path).
         $result = $this->resolver->resolve([
             'computed.foo' => [
-                'formula' => 'loc__avg * 2',
+                'formula' => 'm["size.loc.avg"] * 2',
                 'levels' => ['namespace'],
                 'enabled' => false,
             ],
@@ -233,8 +235,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     public function itCreatesNewComputedMetric(): void
     {
         $result = $this->resolver->resolve([
-            'computed.my_score' => [
-                'formula' => 'loc__avg * 2',
+            'computed.my-score' => [
+                'formula' => 'm["size.loc.avg"] * 2',
                 'description' => 'My custom score',
                 'levels' => ['class', 'namespace'],
                 'inverted' => true,
@@ -244,23 +246,107 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
 
         self::assertCount(7, $result); // 6 defaults + 1 custom
-        $custom = $this->findByName($result, 'computed.my_score');
+        $custom = $this->findByName($result, 'computed.my-score');
         self::assertNotNull($custom);
         self::assertSame('My custom score', $custom->description);
         self::assertTrue($custom->inverted);
         self::assertSame(80.0, $custom->warningThreshold);
         self::assertSame(40.0, $custom->errorThreshold);
-        self::assertSame('loc__avg * 2', $custom->getFormulaForLevel(SymbolType::Class_));
-        self::assertContains(SymbolType::Class_, $custom->levels);
-        self::assertContains(SymbolType::Namespace_, $custom->levels);
-        self::assertNotContains(SymbolType::Project, $custom->levels);
+        self::assertSame('m["size.loc.avg"] * 2', $custom->getFormulaForLevel(SymbolLevel::Class_));
+        self::assertContains(SymbolLevel::Class_, $custom->levels);
+        self::assertContains(SymbolLevel::Namespace_, $custom->levels);
+        self::assertNotContains(SymbolLevel::Project, $custom->levels);
+    }
+
+    /**
+     * A channel cannot declare one level twice, so a configuration that asks
+     * for it has to be refused while the configuration is being read.
+     * {@see ComputedMetricDefinition} owns the invariant; these two cases
+     * pin that the resolver actually reaches it, from a fresh metric and
+     * from an override of a built-in one.
+     */
+    #[Test]
+    public function itRefusesARepeatedLevel(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('declares the same level more than once');
+
+        $this->resolver->resolve([
+            'computed.repeated' => [
+                'formula' => 'm["size.loc.avg"]',
+                'levels' => ['class', 'class'],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function itRefusesARepeatedLevelInAnOverrideToo(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('declares the same level more than once');
+
+        $this->resolver->resolve([
+            'health.overall' => ['levels' => ['namespace', 'namespace']],
+        ]);
+    }
+
+    /**
+     * A level is a coordinate beside the channel name, addressed via
+     * `channel:level`, never a word inside the name itself — the same
+     * invariant Ш5c enforces for statically declared channels
+     * ({@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest}).
+     * A user-defined metric name is the one place that invariant can still be
+     * broken at runtime, since the user picks the name.
+     */
+    #[Test]
+    public function itRefusesAUserDefinedMetricNameEndingInALevelWord(): void
+    {
+        self::expectException(ComputedMetricConfigurationException::class);
+        self::expectExceptionMessage('must not end in the level word "class"');
+
+        $this->resolver->resolve([
+            'computed.foo.class' => [
+                'formula' => '1',
+                'levels' => ['class'],
+                'warning' => 0,
+            ],
+        ]);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function provideLevelWordsEndingAName(): array
+    {
+        return [
+            'callable' => ['computed.foo.callable'],
+            'class' => ['computed.foo.class'],
+            'file' => ['computed.foo.file'],
+            'namespace' => ['computed.foo.namespace'],
+            'project' => ['computed.foo.project'],
+            'bare name, no prefix segment' => ['computed.namespace'],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('provideLevelWordsEndingAName')]
+    public function itRefusesEveryLevelWordAsTheLastSegment(string $name): void
+    {
+        self::expectException(ComputedMetricConfigurationException::class);
+
+        $this->resolver->resolve([
+            $name => [
+                'formula' => '1',
+                'levels' => ['namespace'],
+            ],
+        ]);
     }
 
     #[Test]
     public function itThrowsForInvalidPrefix(): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('must start with "health." or "computed."');
+        self::expectExceptionMessage('must be "health.<name>" or "computed.<name>"');
 
         $this->resolver->resolve([
             'custom.my_score' => [
@@ -291,11 +377,11 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $this->resolver->resolve([
             'computed.a' => [
-                'formula' => 'computed__b + 1',
+                'formula' => 'm["computed.b"] + 1',
                 'levels' => ['namespace'],
             ],
             'computed.b' => [
-                'formula' => 'computed__a + 1',
+                'formula' => 'm["computed.a"] + 1',
                 'levels' => ['namespace'],
             ],
         ]);
@@ -309,7 +395,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $this->resolver->resolve([
             'computed.ref' => [
-                'formula' => 'computed__nonexistent + 1',
+                'formula' => 'm["computed.nonexistent"] + 1',
                 'levels' => ['namespace'],
             ],
         ]);
@@ -324,7 +410,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $this->resolver->resolve([
             'computed.partial' => [
                 'formulas' => [
-                    'namespace' => 'loc__avg * 2',
+                    'namespace' => 'm["size.loc.avg"] * 2',
                 ],
                 'levels' => ['class', 'namespace'],
             ],
@@ -339,7 +425,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $this->resolver->resolve([
             'health.custom' => [
-                'formula' => 'ccn__avg * 10',
+                'formula' => 'm["complexity.ccn.avg"] * 10',
             ],
         ]);
     }
@@ -349,9 +435,9 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         $result = $this->resolver->resolve([
             'health.complexity' => [
-                'formula' => 'ccn__avg * 10',
+                'formula' => 'm["complexity.ccn.avg"] * 10',
                 'formulas' => [
-                    'class' => 'ccn * 5',
+                    'class' => 'm["complexity.ccn"] * 5',
                 ],
             ],
         ]);
@@ -359,9 +445,97 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $complexity = $this->findByName($result, 'health.complexity');
         self::assertNotNull($complexity);
         // formulas per-level takes precedence over formula singular
-        self::assertSame('ccn * 5', $complexity->getFormulaForLevel(SymbolType::Class_));
+        self::assertSame('m["complexity.ccn"] * 5', $complexity->getFormulaForLevel(SymbolLevel::Class_));
         // Other levels get the singular formula
-        self::assertSame('ccn__avg * 10', $complexity->getFormulaForLevel(SymbolType::Namespace_));
+        self::assertSame('m["complexity.ccn.avg"] * 10', $complexity->getFormulaForLevel(SymbolLevel::Namespace_));
+    }
+
+    /**
+     * @return array<string, array{string, SymbolLevel}>
+     */
+    public static function provideLevelSpellingsAcceptedForAComputedMetric(): array
+    {
+        return [
+            'class' => ['class', SymbolLevel::Class_],
+            'namespace' => ['namespace', SymbolLevel::Namespace_],
+            'project' => ['project', SymbolLevel::Project],
+        ];
+    }
+
+    /**
+     * `mapLevel()` used to spell the level vocabulary as its own private
+     * `match ('class', 'namespace', 'project')`, independent of
+     * {@see \Qualimetrix\Core\Symbol\SymbolLevel}.
+     * Routing it through `SymbolLevel` must not narrow the spellings a
+     * `computed_metrics.*.levels` entry accepts — every spelling accepted
+     * before this change is accepted after it too.
+     */
+    #[Test]
+    #[DataProvider('provideLevelSpellingsAcceptedForAComputedMetric')]
+    public function itAcceptsEveryLevelSpellingTheOldPrivateWordListAccepted(string $spelling, SymbolLevel $expected): void
+    {
+        $result = $this->resolver->resolve([
+            'computed.spelling' => [
+                'formula' => 'm["size.loc.avg"]',
+                'levels' => [$spelling],
+            ],
+        ]);
+
+        $custom = $this->findByName($result, 'computed.spelling');
+        self::assertNotNull($custom);
+        self::assertSame([$expected], $custom->levels);
+    }
+
+    /**
+     * `callable` and `file` are real words in the level vocabulary
+     * ({@see \Qualimetrix\Core\Symbol\SymbolLevel}) that a
+     * computed metric cannot report at — {@see ComputedMetricDefinition}'s
+     * `formulas` keys are class/namespace/project only. Both the old private
+     * word list and the vocabulary-backed replacement refuse them; this pins
+     * that the replacement did not accidentally widen the accepted spellings.
+     */
+    /** @return array<string, array{string}> */
+    public static function provideLevelWordsAComputedMetricCannotReportAt(): array
+    {
+        return [
+            // `callable` is pinned in its own right: the repository answers
+            // that level for real now, so losing this refusal would quietly
+            // switch on a level of reporting nobody decided to add.
+            'callable' => ['callable'],
+            'file' => ['file'],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('provideLevelWordsAComputedMetricCannotReportAt')]
+    public function itStillRefusesLevelsAComputedMetricCannotReportAt(string $spelling): void
+    {
+        self::expectException(ComputedMetricConfigurationException::class);
+        self::expectExceptionMessage(\sprintf(
+            'Computed metric level "%s" is not supported; computed metrics report at "class", "namespace" or "project" only.',
+            $spelling,
+        ));
+
+        $this->resolver->resolve([
+            'computed.unsupported' => [
+                'formula' => 'm["size.loc.avg"]',
+                'levels' => [$spelling],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function itThrowsForAWordThatIsNotALevelAtAll(): void
+    {
+        self::expectException(ComputedMetricConfigurationException::class);
+        self::expectExceptionMessage('Invalid computed metric level: "bogus"');
+
+        $this->resolver->resolve([
+            'computed.bogus' => [
+                'formula' => 'm["size.loc.avg"]',
+                'levels' => ['bogus'],
+            ],
+        ]);
     }
 
     #[Test]
@@ -375,7 +549,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
         $complexity = $this->findByName($result, 'health.complexity');
         self::assertNotNull($complexity);
-        self::assertSame([SymbolType::Class_], $complexity->levels);
+        self::assertSame([SymbolLevel::Class_], $complexity->levels);
     }
 
     #[Test]
@@ -383,16 +557,16 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         $result = $this->resolver->resolve([
             'computed.simple' => [
-                'formula' => 'loc__avg',
+                'formula' => 'm["size.loc.avg"]',
             ],
         ]);
 
         $custom = $this->findByName($result, 'computed.simple');
         self::assertNotNull($custom);
         // Default levels for user-defined: namespace, project
-        self::assertContains(SymbolType::Namespace_, $custom->levels);
-        self::assertContains(SymbolType::Project, $custom->levels);
-        self::assertNotContains(SymbolType::Class_, $custom->levels);
+        self::assertContains(SymbolLevel::Namespace_, $custom->levels);
+        self::assertContains(SymbolLevel::Project, $custom->levels);
+        self::assertNotContains(SymbolLevel::Class_, $custom->levels);
     }
 
     #[Test]

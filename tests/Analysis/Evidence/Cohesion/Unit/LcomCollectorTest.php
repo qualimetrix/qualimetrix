@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 #[CoversClass(LcomCollector::class)]
@@ -41,7 +41,7 @@ final class LcomCollectorTest extends TestCase
     {
         $provides = $this->collector->provides();
 
-        self::assertContains('lcom', $provides);
+        self::assertContains('cohesion.lcom', $provides);
     }
 
     #[Test]
@@ -60,7 +60,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Empty class has LCOM = 0 (no methods)
-        self::assertSame(0, $metrics->get('lcom:App\EmptyClass'));
+        self::assertSame(0, $metrics->get('cohesion.lcom:App\EmptyClass'));
     }
 
     #[Test]
@@ -85,7 +85,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Single method = LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\SingleMethod'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\SingleMethod'));
     }
 
     #[Test]
@@ -120,7 +120,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // All methods share $data property = LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\CohesiveClass'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\CohesiveClass'));
     }
 
     #[Test]
@@ -161,7 +161,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Two groups: (method1a, method1b) and (method2a, method2b) = LCOM 2
-        self::assertSame(2, $metrics->get('lcom:App\DisconnectedClass'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\DisconnectedClass'));
     }
 
     #[Test]
@@ -198,7 +198,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Each method uses different property = LCOM 3
-        self::assertSame(3, $metrics->get('lcom:App\NoSharedProperties'));
+        self::assertSame(3, $metrics->get('cohesion.lcom:App\NoSharedProperties'));
     }
 
     #[Test]
@@ -226,7 +226,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Methods don't access any properties - each is its own component = LCOM 2
-        self::assertSame(2, $metrics->get('lcom:App\StatelessClass'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\StatelessClass'));
     }
 
     #[Test]
@@ -265,7 +265,7 @@ PHP;
         // method1 -- method2 (share $shared)
         // method2 -- method3 (share $unique)
         // All connected = LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\PartiallyConnected'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\PartiallyConnected'));
     }
 
     #[Test]
@@ -286,7 +286,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Interfaces are ignored - LCOM is not meaningful for interfaces (no properties, no implementations)
-        self::assertNull($metrics->get('lcom:App\MyInterface'));
+        self::assertNull($metrics->get('cohesion.lcom:App\MyInterface'));
     }
 
     #[Test]
@@ -317,7 +317,7 @@ PHP;
 
         // Traits are intentionally ignored - LCOM is not meaningful for traits
         // as they are not standalone classes and their cohesion depends on the using class
-        self::assertNull($metrics->get('lcom:App\MyTrait'));
+        self::assertNull($metrics->get('cohesion.lcom:App\MyTrait'));
     }
 
     #[Test]
@@ -347,9 +347,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Factory has 1 method = LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\Factory'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\Factory'));
         // Anonymous class should not appear
-        self::assertNull($metrics->get('lcom:'));
+        self::assertNull($metrics->get('cohesion.lcom:'));
     }
 
     #[Test]
@@ -370,7 +370,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Both methods share $data = LCOM 1
-        self::assertSame(1, $metrics->get('lcom:GlobalClass'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:GlobalClass'));
     }
 
     #[Test]
@@ -398,8 +398,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('lcom:App\First'));
-        self::assertSame(2, $metrics->get('lcom:App\Second'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\First'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\Second'));
     }
 
     #[Test]
@@ -437,8 +437,8 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         // Should only contain metrics from second file
-        self::assertNull($metrics->get('lcom:App\First'));
-        self::assertSame(1, $metrics->get('lcom:App\Second'));
+        self::assertNull($metrics->get('cohesion.lcom:App\First'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\Second'));
     }
 
     #[Test]
@@ -449,7 +449,7 @@ PHP;
         self::assertCount(1, $definitions);
 
         $def = $definitions[0];
-        self::assertSame('lcom', $def->name);
+        self::assertSame('cohesion.lcom', $def->name);
         self::assertSame(SymbolLevel::Class_, $def->collectedAt);
 
         $namespaceStrategies = $def->getStrategiesForLevel(SymbolLevel::Namespace_);
@@ -502,7 +502,7 @@ PHP;
         // logger: log, getLog
         // mailer: sendEmail
         // validator: validate
-        self::assertSame(5, $metrics->get('lcom:App\GodClass'));
+        self::assertSame(5, $metrics->get('cohesion.lcom:App\GodClass'));
     }
 
     #[Test]
@@ -535,7 +535,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // doWork -> helper, doOtherWork -> helper => all connected via helper = LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\MethodCallCohesion'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\MethodCallCohesion'));
     }
 
     #[Test]
@@ -567,7 +567,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // a -> b -> c => all in one component = LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\MethodCallChain'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\MethodCallChain'));
     }
 
     #[Test]
@@ -594,7 +594,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // caller calls callee => connected = LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\DirectMethodCall'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\DirectMethodCall'));
     }
 
     #[Test]
@@ -629,7 +629,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Static method excluded; getData and setData share $data = LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\WithStaticMethod'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\WithStaticMethod'));
     }
 
     #[Test]
@@ -663,7 +663,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Only 1 instance method (getValue) => LCOM 1, static methods excluded
-        self::assertSame(1, $metrics->get('lcom:App\StaticInflation'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\StaticInflation'));
     }
 
     #[Test]
@@ -705,7 +705,7 @@ PHP;
 
         // methodA uses $a, methodB uses $b, self::/static:: do not create edges
         // Static methods excluded from graph, methodA and methodB disconnected = LCOM 2
-        self::assertSame(2, $metrics->get('lcom:App\StaticCallClass'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\StaticCallClass'));
     }
 
     #[Test]
@@ -726,7 +726,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // All methods are static => 0 instance methods => LCOM 0
-        self::assertSame(0, $metrics->get('lcom:App\AllStatic'));
+        self::assertSame(0, $metrics->get('cohesion.lcom:App\AllStatic'));
     }
 
     #[Test]
@@ -761,7 +761,7 @@ PHP;
         // Abstract methods have no body and no property access — they should NOT
         // be added to the LCOM graph. Only getData and setData counted, both share $data => LCOM 1.
         // Without fix: abstract methods would be disconnected nodes => LCOM 3.
-        self::assertSame(1, $metrics->get('lcom:App\AbstractClass'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\AbstractClass'));
     }
 
     #[Test]
@@ -792,7 +792,7 @@ PHP;
 
         // Only 1 concrete method (getValue) => LCOM 1
         // Without fix: 5 methods, 4 abstract disconnected => LCOM 5
-        self::assertSame(1, $metrics->get('lcom:App\ManyAbstract'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\ManyAbstract'));
     }
 
     #[Test]
@@ -827,7 +827,7 @@ PHP;
 
         // Enums cannot have instance properties, so LCOM (method-property cohesion)
         // is meaningless for them. They should be completely ignored.
-        self::assertNull($metrics->get('lcom:App\Status'));
+        self::assertNull($metrics->get('cohesion.lcom:App\Status'));
     }
 
     #[Test]
@@ -859,9 +859,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Class metrics should be present
-        self::assertSame(1, $metrics->get('lcom:App\RealClass'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\RealClass'));
         // Enum should not produce LCOM metrics
-        self::assertNull($metrics->get('lcom:App\Color'));
+        self::assertNull($metrics->get('cohesion.lcom:App\Color'));
     }
 
     #[Test]
@@ -884,7 +884,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // All methods have empty bodies (trivial) => LCOM 1, not 4
-        self::assertSame(1, $metrics->get('lcom:App\NullLogger'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\NullLogger'));
     }
 
     #[Test]
@@ -908,7 +908,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // All methods are trivial (return null/scalar/constant/empty array or empty body)
-        self::assertSame(1, $metrics->get('lcom:App\NullCache'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\NullCache'));
     }
 
     #[Test]
@@ -933,7 +933,7 @@ PHP;
         // One non-trivial method exists => normal LCOM calculation
         // increment uses $count, reset is empty but class is not all-trivial
         // increment and reset are disconnected => LCOM 2
-        self::assertSame(2, $metrics->get('lcom:App\Service'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\Service'));
     }
 
     #[Test]
@@ -955,7 +955,7 @@ PHP;
 
         // Both methods return arrays of constants — they are stateless constants,
         // merged into one virtual node => LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\Config'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\Config'));
     }
 
     #[Test]
@@ -986,7 +986,7 @@ PHP;
 
         // method1 uses $static, method2 has dynamic access (ignored)
         // They don't share properties = LCOM 2
-        self::assertSame(2, $metrics->get('lcom:App\DynamicAccess'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\DynamicAccess'));
     }
 
     #[Test]
@@ -1022,7 +1022,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Both methodA and methodB access $sharedProp => connected => LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\OuterClass'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\OuterClass'));
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -1055,7 +1055,7 @@ PHP;
         // Virtual node not connected to stateful group => LCOM 2
         // Without grouping: LCOM would be 4 (getName, getDescription each separate + analyze/validate)
         // Was 4, now 2
-        self::assertSame(2, $metrics->get('lcom:App\Rule'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\Rule'));
     }
 
     #[Test]
@@ -1077,7 +1077,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // All methods are stateless constants => merged into 1 virtual node => LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\MetadataOnly'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\MetadataOnly'));
     }
 
     #[Test]
@@ -1101,7 +1101,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // No stateless methods — standard LCOM calculation: 2 disconnected groups
-        self::assertSame(2, $metrics->get('lcom:App\AllStateful'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\AllStateful'));
     }
 
     #[Test]
@@ -1125,7 +1125,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Both methods access properties => NOT stateless => LCOM 2
-        self::assertSame(2, $metrics->get('lcom:App\WithGetter'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\WithGetter'));
     }
 
     #[Test]
@@ -1154,7 +1154,7 @@ PHP;
         // process->format share edge, both connected with data => 1 component
         // getName merged into virtual stateless node => separate component
         // LCOM = 2 (stateful group + stateless virtual)
-        self::assertSame(2, $metrics->get('lcom:App\WithDelegation'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\WithDelegation'));
     }
 
     #[Test]
@@ -1192,7 +1192,7 @@ PHP;
         // getLabel: returns self::X => stateless
         // factory: static => excluded from graph
         // Both stateless merged into 1 virtual node => LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\WithStaticCall'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\WithStaticCall'));
     }
 
     #[Test]
@@ -1219,7 +1219,7 @@ PHP;
         // getName is stateless => virtual node (1)
         // query uses $db (1), cache uses $cache (1) => 2 disconnected stateful
         // Total: 3 components
-        self::assertSame(3, $metrics->get('lcom:App\ThreeGroups'));
+        self::assertSame(3, $metrics->get('cohesion.lcom:App\ThreeGroups'));
     }
 
     #[Test]
@@ -1257,7 +1257,7 @@ PHP;
         // read: accesses $data => connected to process via shared $data
         // process -> virtual (via method call), process -> read (via $data)
         // All in one component => LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\WithStatelessCall'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\WithStatelessCall'));
     }
 
     #[Test]
@@ -1281,7 +1281,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Both methods return class constants => stateless, merged => LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\WithConstants'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\WithConstants'));
     }
 
     #[Test]
@@ -1311,7 +1311,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Both methods return arrays of constants => stateless, merged => LCOM 1
-        self::assertSame(1, $metrics->get('lcom:App\WithConstantArray'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\WithConstantArray'));
     }
 
     #[Test]
@@ -1340,7 +1340,7 @@ PHP;
         // getValue accesses $this->config (property access) => NOT stateless
         // getName returns constant => stateless => virtual node
         // Two components => LCOM 2
-        self::assertSame(2, $metrics->get('lcom:App\WithPropertyViaCall'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\WithPropertyViaCall'));
     }
 
     #[Test]
@@ -1366,7 +1366,7 @@ PHP;
         // getLabel and getFullLabel: both stateless => merged into virtual
         // process: accesses $data => separate
         // LCOM = 2 (virtual + process)
-        self::assertSame(2, $metrics->get('lcom:App\StatelessCalling'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\StatelessCalling'));
     }
 
     #[Test]
@@ -1389,7 +1389,7 @@ PHP;
 
         // All methods are trivial AND all are stateless => LCOM 1
         // (both the trivial exemption and stateless grouping would produce LCOM 1)
-        self::assertSame(1, $metrics->get('lcom:App\AllTrivial'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\AllTrivial'));
     }
 
     #[Test]
@@ -1422,7 +1422,7 @@ PHP;
         // getLabel: accesses $this->type => NOT stateless (has property access)
         // getName: returns constant => stateless
         // LCOM = 2
-        self::assertSame(2, $metrics->get('lcom:App\WithMatch'));
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\WithMatch'));
     }
 
     #[Test]
@@ -1455,7 +1455,7 @@ PHP;
 
         // With getName excluded: only doWork remains => LCOM 1
         // Without exclusion: doWork uses $data (1 component), getName is stateless (virtual node) => LCOM 2
-        self::assertSame(1, $metrics->get('lcom:App\Service'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\Service'));
     }
 
     #[Test]
@@ -1487,7 +1487,7 @@ PHP;
 
         // connector shares both properties with readsA and readsB => one component.
         // The constructor is excluded from the graph, so it cannot add a second one.
-        self::assertSame(1, $metrics->get('lcom:App\ShapeD'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\ShapeD'));
     }
 
     #[Test]
@@ -1514,7 +1514,7 @@ PHP;
         // node, so before the fix it landed in the graph as an isolated vertex
         // and inflated LCOM to 2, even though connector ties the other three
         // methods into one component just like in ShapeD above.
-        self::assertSame(1, $metrics->get('lcom:App\ShapeE'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\ShapeE'));
     }
 
     #[Test]
@@ -1547,7 +1547,7 @@ PHP;
         // __destruct touches only $log, a property no other method shares.
         // If it were not excluded from the graph, it would land as its own
         // isolated component (LCOM 2: {open, read} + {__destruct}).
-        self::assertSame(1, $metrics->get('lcom:App\WithDestructor'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\WithDestructor'));
     }
 
     #[Test]

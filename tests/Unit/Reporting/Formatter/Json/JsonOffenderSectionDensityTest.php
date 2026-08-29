@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\Worst
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Filter\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
 use Qualimetrix\Reporting\FormatterContext;
@@ -27,7 +27,7 @@ final class JsonOffenderSectionDensityTest extends TestCase
     {
         $this->section = new JsonOffenderSection(
             new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
-            new ViolationFilter(),
+            new FindingFilter(),
             new JsonSanitizer(),
         );
     }
@@ -79,7 +79,7 @@ final class JsonOffenderSectionDensityTest extends TestCase
         // Instead, test with the raw formatWorstOffenders via formatNamespaces (since it delegates)
         // For classes, we need to use formatClasses via Report
         $report = new \Qualimetrix\Reporting\Report(
-            violations: [],
+            findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,

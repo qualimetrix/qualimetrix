@@ -10,9 +10,9 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -89,7 +89,7 @@ final class WorstClassDrillDownTest extends TestCase
     }
 
     #[Test]
-    public function itBuildWorstClassesCountsViolationsPerClass(): void
+    public function itBuildWorstClassesCountsFindingsPerClass(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Foo');
         $methodPath = SymbolPath::forMethod('App\\Service', 'Foo', 'bar');
@@ -102,34 +102,34 @@ final class WorstClassDrillDownTest extends TestCase
             classMetrics: [
                 'class:App\\Service\\Foo' => MetricBag::fromArray([
                     'health.overall' => 60.0,
-                    'classLoc' => 100,
+                    'size.class-loc' => 100,
                 ]),
             ],
         );
 
-        // Two violations: one class-level, one callable-level (both count toward the class)
-        $violations = [
-            new Violation(
+        // Two findings: one class-level, one callable-level (both count toward the class)
+        $findings = [
+            new Finding(
                 location: new Location(RelativePath::fromString('src/Service/Foo.php'), 10),
                 subject: MetricSubject::declaration(DeclarationPath::of($classPath, RelativePath::fromString('src/Service/Foo.php'), DeclarationOrdinal::fromRank(0))),
                 symbolPath: $classPath,
                 ruleName: 'test.rule',
-                violationCode: 'T001',
+                code: 'T001',
                 message: 'test violation 1',
                 severity: Severity::Warning,
             ),
-            new Violation(
+            new Finding(
                 location: new Location(RelativePath::fromString('src/Service/Foo.php'), 20),
                 subject: MetricSubject::declaration(DeclarationPath::of($methodPath, RelativePath::fromString('src/Service/Foo.php'), DeclarationOrdinal::fromRank(0))),
                 symbolPath: $methodPath,
                 ruleName: 'test.rule',
-                violationCode: 'T002',
+                code: 'T002',
                 message: 'test violation 2',
                 severity: Severity::Warning,
             ),
         ];
 
-        $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', $violations);
+        $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', $findings);
 
         self::assertCount(1, $result);
         self::assertSame(2, $result[0]->violationCount);
@@ -137,7 +137,7 @@ final class WorstClassDrillDownTest extends TestCase
     }
 
     #[Test]
-    public function itBuildWorstClassesSkipsNamespaceLevelViolations(): void
+    public function itBuildWorstClassesSkipsNamespaceLevelFindings(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Foo');
         $nsPath = SymbolPath::forNamespace('App\\Service');
@@ -154,19 +154,19 @@ final class WorstClassDrillDownTest extends TestCase
             ],
         );
 
-        $violations = [
-            new Violation(
+        $findings = [
+            new Finding(
                 location: new Location(RelativePath::fromString('src/Service/Foo.php'), 10),
                 subject: MetricSubject::aggregate($nsPath),
                 symbolPath: $nsPath,
                 ruleName: 'test.rule',
-                violationCode: 'T001',
+                code: 'T001',
                 message: 'namespace violation',
                 severity: Severity::Warning,
             ),
         ];
 
-        $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', $violations);
+        $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', $findings);
 
         self::assertCount(1, $result);
         self::assertSame(0, $result[0]->violationCount);
@@ -208,9 +208,9 @@ final class WorstClassDrillDownTest extends TestCase
             classMetrics: [
                 'class:App\\Service\\Rich' => MetricBag::fromArray([
                     'health.overall' => 70.0,
-                    'methodCount' => 15,
-                    'cbo' => 8,
-                    'loc' => 300,
+                    'size.method-count' => 15,
+                    'coupling.cbo' => 8,
+                    'size.loc' => 300,
                 ]),
             ],
         );
@@ -218,10 +218,10 @@ final class WorstClassDrillDownTest extends TestCase
         $result = $this->drillDown->buildWorstClasses($metrics, 'App\\Service', [], includeNotableMetrics: true);
 
         self::assertCount(1, $result);
-        self::assertArrayHasKey('methodCount', $result[0]->metrics);
-        self::assertSame(15, $result[0]->metrics['methodCount']);
-        self::assertArrayHasKey('cbo', $result[0]->metrics);
-        self::assertArrayHasKey('loc', $result[0]->metrics);
+        self::assertArrayHasKey('size.method-count', $result[0]->metrics);
+        self::assertSame(15, $result[0]->metrics['size.method-count']);
+        self::assertArrayHasKey('coupling.cbo', $result[0]->metrics);
+        self::assertArrayHasKey('size.loc', $result[0]->metrics);
     }
 
     #[Test]
@@ -237,7 +237,7 @@ final class WorstClassDrillDownTest extends TestCase
             classMetrics: [
                 'class:App\\Service\\Simple' => MetricBag::fromArray([
                     'health.overall' => 70.0,
-                    'methodCount' => 5,
+                    'size.method-count' => 5,
                 ]),
             ],
         );

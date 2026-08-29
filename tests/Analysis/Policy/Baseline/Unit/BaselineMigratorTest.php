@@ -8,7 +8,8 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCapture;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
@@ -20,10 +21,11 @@ use Qualimetrix\Analysis\Policy\Baseline\V5Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\V5BaselineReader;
 use Qualimetrix\Analysis\Policy\Baseline\V5Entry;
 use Qualimetrix\Analysis\Policy\Baseline\V5UnreadableRecord;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * A v5 file carries only `(symbolKey, rule)` — no magnitude, no
- * `violationCode`, no edge — so {@see BaselineMigrator} can only match on
+ * `code`, no edge — so {@see BaselineMigrator} can only match on
  * that pair against the fresh capture's v10 entries. The fixture below is
  * built so every migration-report group defined by ADR 0017 is exercised by one run:
  *
@@ -45,7 +47,7 @@ final class BaselineMigratorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->migrator = new BaselineMigrator(new V5BaselineReader());
+        $this->migrator = new BaselineMigrator(new V5BaselineReader(), self::producerEdge());
         $this->tempDir = sys_get_temp_dir() . '/qmx_migrator_test_' . uniqid();
         mkdir($this->tempDir, 0755, true);
     }
@@ -172,7 +174,7 @@ final class BaselineMigratorTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'callable:App\Foo::bar',
-                        new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
+                        new FindingChannel('complexity.cyclomatic.callable'),
                     ),
                     [25],
                     1,
@@ -180,7 +182,7 @@ final class BaselineMigratorTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'callable:App\Foo::bar',
-                        new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.class'),
+                        new FindingChannel('complexity.cyclomatic.class'),
                     ),
                     [30],
                     1,
@@ -188,7 +190,7 @@ final class BaselineMigratorTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'class:App\Foo',
-                        new ViolationChannel('design.god-class', 'design.god-class'),
+                        new FindingChannel('design.god-class'),
                     ),
                     null,
                     1,
@@ -196,7 +198,7 @@ final class BaselineMigratorTest extends TestCase
                 new BaselineEntry(
                     new BaselineIdentity(
                         'callable:App\Foo::qux',
-                        new ViolationChannel('size.method-count', 'size.method-count'),
+                        new FindingChannel('size.method-count'),
                     ),
                     null,
                     1,
@@ -206,7 +208,7 @@ final class BaselineMigratorTest extends TestCase
 
         $uncaptured = [
             new UncapturedGroup(
-                new BaselineIdentity('callable:App\Foo::quux', new ViolationChannel('computed.custom', 'computed.custom')),
+                new BaselineIdentity('callable:App\Foo::quux', new FindingChannel('computed.custom')),
                 UncapturedReason::UndeclaredChannel,
                 1,
             ),
@@ -221,5 +223,24 @@ final class BaselineMigratorTest extends TestCase
         file_put_contents($path, $json);
 
         return $path;
+    }
+
+    /**
+     * The channel-to-producer edge a v5 record is matched through: the channel's
+     * own name, minus a trailing level segment where it carries one — the same
+     * relation the retired left half of a channel key encoded.
+     */
+    private static function producerEdge(): ChannelIdentityInterface
+    {
+        $identity = self::createStub(ChannelIdentityInterface::class);
+        $identity->method('producerOf')->willReturnCallback(static function (string $code): string {
+            $lastDot = strrpos($code, '.');
+
+            return $lastDot !== false && SymbolLevel::tryFrom(substr($code, $lastDot + 1)) !== null
+                ? substr($code, 0, $lastDot)
+                : $code;
+        });
+
+        return $identity;
     }
 }

@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 #[CoversClass(ComputedMetricDefinition::class)]
 final class ComputedMetricDefinitionTest extends TestCase
@@ -19,9 +19,9 @@ final class ComputedMetricDefinitionTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         self::assertSame('health.complexity', $definition->name);
@@ -31,13 +31,13 @@ final class ComputedMetricDefinitionTest extends TestCase
     public function itValidComputedName(): void
     {
         $definition = new ComputedMetricDefinition(
-            name: 'computed.myMetric',
-            formulas: ['class' => 'ccn__avg'],
+            name: 'computed.my-metric',
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
-        self::assertSame('computed.myMetric', $definition->name);
+        self::assertSame('computed.my-metric', $definition->name);
     }
 
     #[Test]
@@ -45,9 +45,9 @@ final class ComputedMetricDefinitionTest extends TestCase
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity.sub1',
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test metric',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         self::assertSame('health.complexity.sub1', $definition->name);
@@ -57,13 +57,13 @@ final class ComputedMetricDefinitionTest extends TestCase
     public function itInvalidNameNoPrefix(): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('must start with "health." or "computed."');
+        self::expectExceptionMessage('must be "health.<name>" or "computed.<name>"');
 
         new ComputedMetricDefinition(
             name: 'custom.metric',
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
     }
 
@@ -71,13 +71,13 @@ final class ComputedMetricDefinitionTest extends TestCase
     public function itInvalidNameContainsDoubleUnderscore(): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('must not contain "__"');
+        self::expectExceptionMessage('lower-case kebab');
 
         new ComputedMetricDefinition(
             name: 'health.my__metric',
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
     }
 
@@ -85,13 +85,13 @@ final class ComputedMetricDefinitionTest extends TestCase
     public function itInvalidNameSegmentStartsWithDigit(): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('must match [a-zA-Z][a-zA-Z0-9_]*');
+        self::expectExceptionMessage('lower-case kebab');
 
         new ComputedMetricDefinition(
             name: 'health.1invalid',
-            formulas: ['class' => 'ccn__avg'],
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
     }
 
@@ -99,13 +99,13 @@ final class ComputedMetricDefinitionTest extends TestCase
     public function itInvalidNameSegmentWithSpecialChars(): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('must match [a-zA-Z][a-zA-Z0-9_]*');
+        self::expectExceptionMessage('lower-case kebab');
 
         new ComputedMetricDefinition(
-            name: 'health.inv-alid',
-            formulas: ['class' => 'ccn__avg'],
+            name: 'health.inv@lid',
+            formulas: ['class' => 'm["complexity.ccn.avg"]'],
             description: 'Test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
     }
 
@@ -119,10 +119,10 @@ final class ComputedMetricDefinitionTest extends TestCase
                 'namespace' => 'namespace_formula',
             ],
             description: 'Test',
-            levels: [SymbolType::Class_, SymbolType::Namespace_],
+            levels: [SymbolLevel::Class_, SymbolLevel::Namespace_],
         );
 
-        self::assertSame('class_formula', $definition->getFormulaForLevel(SymbolType::Class_));
+        self::assertSame('class_formula', $definition->getFormulaForLevel(SymbolLevel::Class_));
     }
 
     #[Test]
@@ -135,10 +135,10 @@ final class ComputedMetricDefinitionTest extends TestCase
                 'namespace' => 'namespace_formula',
             ],
             description: 'Test',
-            levels: [SymbolType::Class_, SymbolType::Namespace_],
+            levels: [SymbolLevel::Class_, SymbolLevel::Namespace_],
         );
 
-        self::assertSame('namespace_formula', $definition->getFormulaForLevel(SymbolType::Namespace_));
+        self::assertSame('namespace_formula', $definition->getFormulaForLevel(SymbolLevel::Namespace_));
     }
 
     #[Test]
@@ -152,10 +152,10 @@ final class ComputedMetricDefinitionTest extends TestCase
                 'project' => 'project_formula',
             ],
             description: 'Test',
-            levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
+            levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
         );
 
-        self::assertSame('project_formula', $definition->getFormulaForLevel(SymbolType::Project));
+        self::assertSame('project_formula', $definition->getFormulaForLevel(SymbolLevel::Project));
     }
 
     #[Test]
@@ -168,10 +168,10 @@ final class ComputedMetricDefinitionTest extends TestCase
                 'namespace' => 'namespace_formula',
             ],
             description: 'Test',
-            levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
+            levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
         );
 
-        self::assertSame('namespace_formula', $definition->getFormulaForLevel(SymbolType::Project));
+        self::assertSame('namespace_formula', $definition->getFormulaForLevel(SymbolLevel::Project));
     }
 
     #[Test]
@@ -181,10 +181,10 @@ final class ComputedMetricDefinitionTest extends TestCase
             name: 'health.test',
             formulas: ['class' => 'class_formula'],
             description: 'Test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
-        self::assertNull($definition->getFormulaForLevel(SymbolType::Method));
+        self::assertNull($definition->getFormulaForLevel(SymbolLevel::Callable));
     }
 
     #[Test]
@@ -194,10 +194,10 @@ final class ComputedMetricDefinitionTest extends TestCase
             name: 'health.test',
             formulas: ['namespace' => 'namespace_formula'],
             description: 'Test',
-            levels: [SymbolType::Namespace_],
+            levels: [SymbolLevel::Namespace_],
         );
 
-        self::assertNull($definition->getFormulaForLevel(SymbolType::Class_));
+        self::assertNull($definition->getFormulaForLevel(SymbolLevel::Class_));
     }
 
     #[Test]
@@ -207,13 +207,13 @@ final class ComputedMetricDefinitionTest extends TestCase
             name: 'health.test',
             formulas: ['class' => 'formula'],
             description: 'Test',
-            levels: [SymbolType::Class_, SymbolType::Namespace_],
+            levels: [SymbolLevel::Class_, SymbolLevel::Namespace_],
         );
 
-        self::assertTrue($definition->hasLevel(SymbolType::Class_));
-        self::assertTrue($definition->hasLevel(SymbolType::Namespace_));
-        self::assertFalse($definition->hasLevel(SymbolType::Project));
-        self::assertFalse($definition->hasLevel(SymbolType::Method));
+        self::assertTrue($definition->hasLevel(SymbolLevel::Class_));
+        self::assertTrue($definition->hasLevel(SymbolLevel::Namespace_));
+        self::assertFalse($definition->hasLevel(SymbolLevel::Project));
+        self::assertFalse($definition->hasLevel(SymbolLevel::Callable));
     }
 
     #[Test]
@@ -223,7 +223,7 @@ final class ComputedMetricDefinitionTest extends TestCase
             name: 'health.test',
             formulas: ['class' => 'formula'],
             description: 'Test description',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
             inverted: true,
             warningThreshold: 50.0,
             errorThreshold: 25.0,
@@ -242,7 +242,7 @@ final class ComputedMetricDefinitionTest extends TestCase
             name: 'health.test',
             formulas: ['class' => 'formula'],
             description: 'Test',
-            levels: [SymbolType::Class_],
+            levels: [SymbolLevel::Class_],
         );
 
         self::assertFalse($definition->inverted);

@@ -80,12 +80,12 @@ final class FileProcessorTest extends TestCase
     {
         $file = new SplFileInfo('/tmp/test.php');
         $ast = [];
-        $fileBag = MetricBag::fromArray(['loc' => 50]);
+        $fileBag = MetricBag::fromArray(['size.loc' => 50]);
 
         $this->parser->method('parse')->willReturn($ast);
 
         $collector = $this->createMock(MetricCollectorInterface::class);
-        $collector->method('provides')->willReturn(['loc']);
+        $collector->method('provides')->willReturn(['size.loc']);
         $collector->method('getVisitor')->willReturn(new class extends NodeVisitorAbstract {});
         $collector->method('collect')->willReturn($fileBag);
         $collector->expects(self::once())->method('reset');
@@ -97,7 +97,7 @@ final class FileProcessorTest extends TestCase
 
         self::assertTrue($result->isSuccessful());
         self::assertSame('test.php', $result->filePath->value());
-        self::assertSame(50, $result->fileBag()->get('loc'));
+        self::assertSame(50, $result->fileBag()->get('size.loc'));
     }
 
     #[Test]
@@ -130,7 +130,7 @@ final class FileProcessorTest extends TestCase
         $this->parser->method('parse')->willReturn($ast);
 
         $symbolPath = SymbolPath::forMethod('App', 'Service', 'calculate');
-        $methodBag = MetricBag::fromArray(['ccn' => 5]);
+        $methodBag = MetricBag::fromArray(['complexity.ccn' => 5]);
 
         $methodWithMetrics = new CallableWithMetrics(
             DeclarationPath::of($symbolPath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
@@ -165,7 +165,7 @@ final class FileProcessorTest extends TestCase
         $this->parser->method('parse')->willReturn($ast);
 
         $symbolPath = SymbolPath::forClass('App', 'Service');
-        $classBag = MetricBag::fromArray(['wmc' => 25]);
+        $classBag = MetricBag::fromArray(['complexity.wmc' => 25]);
 
         $classWithMetrics = new ClassWithMetrics(
             declarationPath: DeclarationPath::of($symbolPath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(1)),
@@ -184,7 +184,7 @@ final class FileProcessorTest extends TestCase
         self::assertTrue($result->isSuccessful());
         self::assertCount(1, $result->classMetrics());
         self::assertArrayHasKey($classWithMetrics->subject->toCanonical(), $result->classMetrics());
-        self::assertSame(25, $result->classMetrics()[$classWithMetrics->subject->toCanonical()]['metrics']->get('wmc'));
+        self::assertSame(25, $result->classMetrics()[$classWithMetrics->subject->toCanonical()]['metrics']->get('complexity.wmc'));
     }
 
     #[Test]
@@ -192,13 +192,13 @@ final class FileProcessorTest extends TestCase
     {
         $file = new SplFileInfo('/tmp/test.php');
         $this->parser->method('parse')->willReturn([]);
-        $namespace = new NamespaceWithMetrics('App', 3, MetricBag::fromArray(['loc' => 8]));
+        $namespace = new NamespaceWithMetrics('App', 3, MetricBag::fromArray(['size.loc' => 8]));
         $collector = $this->createMockCollectorWithNamespaceMetrics([$namespace]);
 
         $result = $this->makeProcessor(new CompositeCollector([$collector], new DeclarationRegistrarFactory()))->process($file);
 
         self::assertTrue($result->isSuccessful());
-        self::assertSame(8, $result->namespaceMetrics()['ns:App']['metrics']->get('loc'));
+        self::assertSame(8, $result->namespaceMetrics()['ns:App']['metrics']->get('size.loc'));
         self::assertSame(3, $result->namespaceMetrics()['ns:App']['line']);
     }
 
@@ -241,7 +241,7 @@ final class FileProcessorTest extends TestCase
             'closure',
             null,
             null,
-            MetricBag::fromArray(['ccn' => 3]),
+            MetricBag::fromArray(['complexity.ccn' => 3]),
         );
 
         $collector = $this->createMockCollectorWithMethodMetrics([$methodWithMetrics]);
@@ -273,7 +273,7 @@ final class FileProcessorTest extends TestCase
             null,
             null,
             $owner,
-            MetricBag::fromArray(['ccn' => 3]),
+            MetricBag::fromArray(['complexity.ccn' => 3]),
             $method->getStartLine(),
         );
         $second = new CallableWithMetrics(
@@ -283,7 +283,7 @@ final class FileProcessorTest extends TestCase
             null,
             null,
             $owner,
-            MetricBag::fromArray(['npath' => 5]),
+            MetricBag::fromArray(['complexity.npath' => 5]),
             $method->getStartLine(),
         );
 
@@ -297,8 +297,8 @@ final class FileProcessorTest extends TestCase
         $callable = $result->callableMetrics()[0];
         self::assertSame($method->getStartLine(), $callable->sourceLine);
         self::assertNotSame($callable->startFilePos, $callable->sourceLine);
-        self::assertSame(3, $callable->metrics->get('ccn'));
-        self::assertSame(5, $callable->metrics->get('npath'));
+        self::assertSame(3, $callable->metrics->get('complexity.ccn'));
+        self::assertSame(5, $callable->metrics->get('complexity.npath'));
     }
 
     #[Test]
@@ -723,7 +723,7 @@ final class FileProcessorTest extends TestCase
 
             public function provides(): array
             {
-                return ['ccn'];
+                return ['complexity.ccn'];
             }
 
             /** @return list<\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition> */
@@ -770,7 +770,7 @@ final class FileProcessorTest extends TestCase
 
             public function provides(): array
             {
-                return ['wmc'];
+                return ['complexity.wmc'];
             }
 
             /** @return list<\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition> */
@@ -818,7 +818,7 @@ final class FileProcessorTest extends TestCase
 
             public function provides(): array
             {
-                return ['loc'];
+                return ['size.loc'];
             }
 
             public function getMetricDefinitions(): array

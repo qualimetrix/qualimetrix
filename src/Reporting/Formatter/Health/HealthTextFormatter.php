@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Formatter\Health;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
@@ -294,7 +295,7 @@ final class HealthTextFormatter implements FormatterInterface
 
             foreach ($contributor->metricValues as $key => $value) {
                 $formattedValue = \is_float($value) ? \sprintf('%.1f', $value) : (string) $value;
-                $displayKey = strtoupper(self::stripAggregationSuffix($key));
+                $displayKey = self::displayKey($key);
                 $metricParts[] = \sprintf('%s=%s', $displayKey, $formattedValue);
             }
 
@@ -304,24 +305,26 @@ final class HealthTextFormatter implements FormatterInterface
     }
 
     /**
-     * Strips aggregation suffixes (.sum, .avg, .max, etc.) from metric keys for display.
+     * The short label a contributor line prints for a metric.
+     *
+     * Two things are dropped, and for the same reason: the line already says
+     * both. The aggregation suffix is dropped because the dimension decides it,
+     * and the family because the dimension heading above the line IS the
+     * family — "Complexity … COMPLEXITY.CCN=15" says it twice. What is left is
+     * the metric, which is what a reader scanning the column is looking for.
+     *
+     * What is left is rendered in constant case, underscores and all, because
+     * that is what an upper-cased identifier is written as. Upper-casing the
+     * key's own separator instead made the label carry a spelling decision —
+     * `CE_PACKAGES` became `CE-PACKAGES` when Ш5e3 moved the key to kebab.
      */
-    private static function stripAggregationSuffix(string $key): string
+    private static function displayKey(string $key): string
     {
-        $pos = strrpos($key, '.');
+        $base = MetricName::base($key);
+        $separatorAt = strpos($base, '.');
+        $metric = $separatorAt === false ? $base : substr($base, $separatorAt + 1);
 
-        if ($pos === false) {
-            return $key;
-        }
-
-        $suffix = substr($key, $pos + 1);
-        $aggregationSuffixes = ['sum', 'avg', 'max', 'min', 'count', 'p95', 'p5'];
-
-        if (\in_array($suffix, $aggregationSuffixes, true)) {
-            return substr($key, 0, $pos);
-        }
-
-        return $key;
+        return strtoupper(str_replace('-', '_', $metric));
     }
 
     private function colorizeScore(string $text, HealthScore $hs, AnsiColor $color): string

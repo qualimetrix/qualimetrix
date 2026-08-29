@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
@@ -26,6 +25,7 @@ use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(ClassToNamespaceAggregator::class)]
@@ -39,37 +39,37 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository = new InMemoryMetricRepository();
         $file = RelativePath::fromString('src/Multi.php');
         $repository->add(SymbolPath::forFile($file), MetricBag::fromArray([
-            'loc' => 20,
-            'classCount' => 2,
+            'size.loc' => 20,
+            'size.class-count' => 2,
         ]), $file, 1);
         $repository->add(SymbolPath::forNamespace('One'), MetricBag::fromArray([
-            'loc' => 8,
-            'loc.count' => 1,
-            'classCount' => 1,
-            'classCount.count' => 1,
+            'size.loc' => 8,
+            'size.loc.count' => 1,
+            'size.class-count' => 1,
+            'size.class-count.count' => 1,
         ]), $file, 2);
         $repository->add(SymbolPath::forNamespace('Two'), MetricBag::fromArray([
-            'loc' => 9,
-            'loc.count' => 1,
-            'classCount' => 1,
-            'classCount.count' => 1,
+            'size.loc' => 9,
+            'size.loc.count' => 1,
+            'size.class-count' => 1,
+            'size.class-count.count' => 1,
         ]), $file, 10);
 
         $definitions = [
-            new MetricDefinition('loc', SymbolLevel::File, [
+            new MetricDefinition('size.loc', SymbolLevel::File, [
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
             ]),
-            new MetricDefinition('classCount', SymbolLevel::File, [
+            new MetricDefinition('size.class-count', SymbolLevel::File, [
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
             ]),
         ];
 
         (new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class)))->aggregate($repository, $definitions);
 
-        self::assertSame(8, $repository->get(SymbolPath::forNamespace('One'))->get('loc.sum'));
-        self::assertSame(9, $repository->get(SymbolPath::forNamespace('Two'))->get('loc.sum'));
-        self::assertSame(1, $repository->get(SymbolPath::forNamespace('One'))->get('classCount.sum'));
-        self::assertSame(1, $repository->get(SymbolPath::forNamespace('Two'))->get('classCount.sum'));
+        self::assertSame(8, $repository->get(SymbolPath::forNamespace('One'))->get('size.loc.sum'));
+        self::assertSame(9, $repository->get(SymbolPath::forNamespace('Two'))->get('size.loc.sum'));
+        self::assertSame(1, $repository->get(SymbolPath::forNamespace('One'))->get('size.class-count.sum'));
+        self::assertSame(1, $repository->get(SymbolPath::forNamespace('Two'))->get('size.class-count.sum'));
     }
 
     #[Test]
@@ -78,19 +78,19 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository = new InMemoryMetricRepository();
         $file = RelativePath::fromString('src/A.php');
         $repository->add(SymbolPath::forNamespace('App'), MetricBag::fromArray([
-            'loc' => 30,
-            'loc.count' => 2,
+            'size.loc' => 30,
+            'size.loc.count' => 2,
         ]), $file, 2);
-        $definitions = [new MetricDefinition('loc', SymbolLevel::File, [
+        $definitions = [new MetricDefinition('size.loc', SymbolLevel::File, [
             SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
         ])];
 
         (new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class)))->aggregate($repository, $definitions);
 
         $namespace = $repository->get(SymbolPath::forNamespace('App'));
-        self::assertSame(30, $namespace->get('loc.sum'));
-        self::assertSame(15, $namespace->get('loc.avg'));
-        self::assertSame(2, $namespace->get('loc.count'));
+        self::assertSame(30, $namespace->get('size.loc.sum'));
+        self::assertSame(15, $namespace->get('size.loc.avg'));
+        self::assertSame(2, $namespace->get('size.loc.count'));
     }
 
     #[Test]
@@ -103,11 +103,11 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forFile($file),
             MetricBag::fromArray([
-                'classCount' => 6,
-                'abstractClassCount' => 1,
-                'interfaceCount' => 1,
-                'traitCount' => 1,
-                'enumCount' => 1,
+                'size.class-count' => 6,
+                'size.abstract-class-count' => 1,
+                'size.interface-count' => 1,
+                'size.trait-count' => 1,
+                'size.enum-count' => 1,
             ]),
             $file,
             1,
@@ -125,16 +125,16 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forNamespace($namespace),
             MetricBag::fromArray([
-                'classCount' => 6,
-                'classCount.count' => 6,
-                'abstractClassCount' => 1,
-                'abstractClassCount.count' => 6,
-                'interfaceCount' => 1,
-                'interfaceCount.count' => 6,
-                'traitCount' => 1,
-                'traitCount.count' => 6,
-                'enumCount' => 1,
-                'enumCount.count' => 6,
+                'size.class-count' => 6,
+                'size.class-count.count' => 6,
+                'size.abstract-class-count' => 1,
+                'size.abstract-class-count.count' => 6,
+                'size.interface-count' => 1,
+                'size.interface-count.count' => 6,
+                'size.trait-count' => 1,
+                'size.trait-count.count' => 6,
+                'size.enum-count' => 1,
+                'size.enum-count.count' => 6,
             ]),
             $file,
             1,
@@ -147,11 +147,11 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         foreach ([SymbolPath::forNamespace($namespace), SymbolPath::forNamespace('App\\Domain')] as $path) {
             $metrics = $repository->get($path);
 
-            self::assertSame(6, $metrics->get('classCount.sum'));
-            self::assertSame(1, $metrics->get('abstractClassCount.sum'));
-            self::assertSame(1, $metrics->get('interfaceCount.sum'));
-            self::assertSame(1, $metrics->get('traitCount.sum'));
-            self::assertSame(1, $metrics->get('enumCount.sum'));
+            self::assertSame(6, $metrics->get('size.class-count.sum'));
+            self::assertSame(1, $metrics->get('size.abstract-class-count.sum'));
+            self::assertSame(1, $metrics->get('size.interface-count.sum'));
+            self::assertSame(1, $metrics->get('size.trait-count.sum'));
+            self::assertSame(1, $metrics->get('size.enum-count.sum'));
         }
     }
 
@@ -162,14 +162,14 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         // Add a global function in namespace App\Utils (no class in the file)
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
-        $functionMetrics = (new MetricBag())->with('ccn', 2);
+        $functionMetrics = (new MetricBag())->with('complexity.ccn', 2);
         $this->addCallable($repository, $functionPath, $functionMetrics, RelativePath::fromString('src/Utils/helpers.php'), 100);
 
         // Add file-level LOC metrics for the same file
         $fileMetrics = (new MetricBag())
-            ->with('loc', 50)
-            ->with('lloc', 40)
-            ->with('cloc', 5);
+            ->with('size.loc', 50)
+            ->with('size.lloc', 40)
+            ->with('size.cloc', 5);
         $repository->add(
             SymbolPath::forFile(RelativePath::fromString('src/Utils/helpers.php')),
             $fileMetrics,
@@ -185,9 +185,9 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         // Namespace-level LOC should include the procedural file's LOC
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Utils'));
 
-        self::assertSame(50, (int) $nsMetrics->get('loc.sum'));
-        self::assertSame(40, (int) $nsMetrics->get('lloc.sum'));
-        self::assertSame(5, (int) $nsMetrics->get('cloc.sum'));
+        self::assertSame(50, (int) $nsMetrics->get('size.loc.sum'));
+        self::assertSame(40, (int) $nsMetrics->get('size.lloc.sum'));
+        self::assertSame(5, (int) $nsMetrics->get('size.cloc.sum'));
     }
 
     #[Test]
@@ -204,7 +204,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         );
         $repository->add(
             SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php')),
-            (new MetricBag())->with('loc', 100),
+            (new MetricBag())->with('size.loc', 100),
             RelativePath::fromString('src/Service/UserService.php'),
             1,
         );
@@ -219,7 +219,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         );
         $repository->add(
             SymbolPath::forFile(RelativePath::fromString('src/Service/helpers.php')),
-            (new MetricBag())->with('loc', 30),
+            (new MetricBag())->with('size.loc', 30),
             RelativePath::fromString('src/Service/helpers.php'),
             1,
         );
@@ -232,7 +232,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         // Namespace LOC should include both files
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
-        self::assertSame(130, (int) $nsMetrics->get('loc.sum')); // 100 + 30
+        self::assertSame(130, (int) $nsMetrics->get('size.loc.sum')); // 100 + 30
     }
 
     #[Test]
@@ -243,25 +243,25 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         // Class with 10 methods, MI avg=80
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
         $repository->add($class1, (new MetricBag())
-            ->with('mi.avg', 80.0)
-            ->with('mi.count', 10)
-            ->with('mi.min', 70.0), RelativePath::fromString('src/Service/UserService.php'), 10);
+            ->with('maintainability.mi.avg', 80.0)
+            ->with('maintainability.mi.count', 10)
+            ->with('maintainability.mi.min', 70.0), RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // Add 10 method symbols with mi=80 each
         for ($i = 1; $i <= 10; $i++) {
-            $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'mi', 80.0);
+            $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'maintainability.mi', 80.0);
         }
 
         // Class with 2 methods, MI avg=60
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
         $repository->add($class2, (new MetricBag())
-            ->with('mi.avg', 60.0)
-            ->with('mi.count', 2)
-            ->with('mi.min', 50.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
+            ->with('maintainability.mi.avg', 60.0)
+            ->with('maintainability.mi.count', 2)
+            ->with('maintainability.mi.min', 50.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
 
         // Add 2 method symbols with mi=60 each
-        $this->addMethod($repository, 'App\\Service', 'OrderService', 'method1', 'src/Service/OrderService.php', 'mi', 60.0);
-        $this->addMethod($repository, 'App\\Service', 'OrderService', 'method2', 'src/Service/OrderService.php', 'mi', 60.0);
+        $this->addMethod($repository, 'App\\Service', 'OrderService', 'method1', 'src/Service/OrderService.php', 'maintainability.mi', 60.0);
+        $this->addMethod($repository, 'App\\Service', 'OrderService', 'method2', 'src/Service/OrderService.php', 'maintainability.mi', 60.0);
 
         $collector = new MaintainabilityIndexCollector();
         $aggregator = new MetricAggregator($collector->getMetricDefinitions(), self::createStub(ProfilerInterface::class));
@@ -270,11 +270,11 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
         // Average from raw method values: (80*10 + 60*2) / 12 = 920/12 ≈ 76.67
-        self::assertEqualsWithDelta(76.67, $nsMetrics->get('mi.avg'), 0.01);
+        self::assertEqualsWithDelta(76.67, $nsMetrics->get('maintainability.mi.avg'), 0.01);
         // mi.count = total method count = 12
-        self::assertSame(12, $nsMetrics->get('mi.count'));
+        self::assertSame(12, $nsMetrics->get('maintainability.mi.count'));
         // mi.min = min of all method values = 60.0
-        self::assertEqualsWithDelta(60.0, $nsMetrics->get('mi.min'), 0.01);
+        self::assertEqualsWithDelta(60.0, $nsMetrics->get('maintainability.mi.min'), 0.01);
     }
 
     #[Test]
@@ -285,19 +285,19 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         // Class-level data without .count — but method symbols exist
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
         $repository->add($class1, (new MetricBag())
-            ->with('mi.avg', 80.0)
-            ->with('mi.min', 70.0), RelativePath::fromString('src/Service/UserService.php'), 10);
+            ->with('maintainability.mi.avg', 80.0)
+            ->with('maintainability.mi.min', 70.0), RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // 1 method with mi=80
-        $this->addMethod($repository, 'App\\Service', 'UserService', 'handle', 'src/Service/UserService.php', 'mi', 80.0);
+        $this->addMethod($repository, 'App\\Service', 'UserService', 'handle', 'src/Service/UserService.php', 'maintainability.mi', 80.0);
 
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
         $repository->add($class2, (new MetricBag())
-            ->with('mi.avg', 60.0)
-            ->with('mi.min', 50.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
+            ->with('maintainability.mi.avg', 60.0)
+            ->with('maintainability.mi.min', 50.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
 
         // 1 method with mi=60
-        $this->addMethod($repository, 'App\\Service', 'OrderService', 'process', 'src/Service/OrderService.php', 'mi', 60.0);
+        $this->addMethod($repository, 'App\\Service', 'OrderService', 'process', 'src/Service/OrderService.php', 'maintainability.mi', 60.0);
 
         $collector = new MaintainabilityIndexCollector();
         $aggregator = new MetricAggregator($collector->getMetricDefinitions(), self::createStub(ProfilerInterface::class));
@@ -306,9 +306,9 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
         // Average from raw method values: (80+60)/2 = 70
-        self::assertEqualsWithDelta(70.0, $nsMetrics->get('mi.avg'), 0.01);
+        self::assertEqualsWithDelta(70.0, $nsMetrics->get('maintainability.mi.avg'), 0.01);
         // mi.count = 2 (from number of method symbols)
-        self::assertSame(2, $nsMetrics->get('mi.count'));
+        self::assertSame(2, $nsMetrics->get('maintainability.mi.count'));
     }
 
     #[Test]
@@ -319,13 +319,13 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         // Single class with 5 methods, all mi=85
         $class1 = SymbolPath::forClass('App\\Single', 'OnlyService');
         $repository->add($class1, (new MetricBag())
-            ->with('mi.avg', 85.0)
-            ->with('mi.count', 5)
-            ->with('mi.min', 75.0), RelativePath::fromString('src/Single/OnlyService.php'), 10);
+            ->with('maintainability.mi.avg', 85.0)
+            ->with('maintainability.mi.count', 5)
+            ->with('maintainability.mi.min', 75.0), RelativePath::fromString('src/Single/OnlyService.php'), 10);
 
         // Add 5 method symbols with mi=85 each
         for ($i = 1; $i <= 5; $i++) {
-            $this->addMethod($repository, 'App\\Single', 'OnlyService', "method{$i}", 'src/Single/OnlyService.php', 'mi', 85.0);
+            $this->addMethod($repository, 'App\\Single', 'OnlyService', "method{$i}", 'src/Single/OnlyService.php', 'maintainability.mi', 85.0);
         }
 
         $collector = new MaintainabilityIndexCollector();
@@ -335,10 +335,10 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Single'));
 
         // All methods have mi=85, so avg = 85.0
-        self::assertEqualsWithDelta(85.0, $nsMetrics->get('mi.avg'), 0.01);
-        self::assertSame(5, $nsMetrics->get('mi.count'));
+        self::assertEqualsWithDelta(85.0, $nsMetrics->get('maintainability.mi.avg'), 0.01);
+        self::assertSame(5, $nsMetrics->get('maintainability.mi.count'));
         // min of all method values = 85.0
-        self::assertEqualsWithDelta(85.0, $nsMetrics->get('mi.min'), 0.01);
+        self::assertEqualsWithDelta(85.0, $nsMetrics->get('maintainability.mi.min'), 0.01);
     }
 
     #[Test]
@@ -349,25 +349,25 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         // UserService: 4 methods with ccn [5,5,5,5] → sum=20
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
         $repository->add($class1, (new MetricBag())
-            ->with('ccn.sum', 20.0)
-            ->with('ccn.avg', 5.0), RelativePath::fromString('src/Service/UserService.php'), 10);
+            ->with('complexity.ccn.sum', 20.0)
+            ->with('complexity.ccn.avg', 5.0), RelativePath::fromString('src/Service/UserService.php'), 10);
 
         for ($i = 1; $i <= 4; $i++) {
-            $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'ccn', 5.0);
+            $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'complexity.ccn', 5.0);
         }
 
         // OrderService: 3 methods with ccn [10,10,10] → sum=30
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
         $repository->add($class2, (new MetricBag())
-            ->with('ccn.sum', 30.0)
-            ->with('ccn.avg', 10.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
+            ->with('complexity.ccn.sum', 30.0)
+            ->with('complexity.ccn.avg', 10.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
 
         for ($i = 1; $i <= 3; $i++) {
-            $this->addMethod($repository, 'App\\Service', 'OrderService', "method{$i}", 'src/Service/OrderService.php', 'ccn', 10.0);
+            $this->addMethod($repository, 'App\\Service', 'OrderService', "method{$i}", 'src/Service/OrderService.php', 'complexity.ccn', 10.0);
         }
 
         $definition = new MetricDefinition(
-            name: 'ccn',
+            name: 'complexity.ccn',
             collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
@@ -380,9 +380,9 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
         // ccn.sum = sum of all 7 method values = 5*4 + 10*3 = 50
-        self::assertEqualsWithDelta(50.0, $nsMetrics->get('ccn.sum'), 0.01);
+        self::assertEqualsWithDelta(50.0, $nsMetrics->get('complexity.ccn.sum'), 0.01);
         // ccn.avg = average of all 7 method values = 50/7 ≈ 7.14
-        self::assertEqualsWithDelta(50.0 / 7, $nsMetrics->get('ccn.avg'), 0.01);
+        self::assertEqualsWithDelta(50.0 / 7, $nsMetrics->get('complexity.ccn.avg'), 0.01);
     }
 
     #[Test]
@@ -393,27 +393,27 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         // UserService: 4 methods with ccn [5,5,5,5] → sum=20
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
         $repository->add($class1, (new MetricBag())
-            ->with('ccn.sum', 20.0)
-            ->with('ccn.avg', 5.0)
-            ->with('ccn.count', 4), RelativePath::fromString('src/Service/UserService.php'), 10);
+            ->with('complexity.ccn.sum', 20.0)
+            ->with('complexity.ccn.avg', 5.0)
+            ->with('complexity.ccn.count', 4), RelativePath::fromString('src/Service/UserService.php'), 10);
 
         for ($i = 1; $i <= 4; $i++) {
-            $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'ccn', 5.0);
+            $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'complexity.ccn', 5.0);
         }
 
         // OrderService: 3 methods with ccn [10,10,10] → sum=30
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
         $repository->add($class2, (new MetricBag())
-            ->with('ccn.sum', 30.0)
-            ->with('ccn.avg', 10.0)
-            ->with('ccn.count', 3), RelativePath::fromString('src/Service/OrderService.php'), 10);
+            ->with('complexity.ccn.sum', 30.0)
+            ->with('complexity.ccn.avg', 10.0)
+            ->with('complexity.ccn.count', 3), RelativePath::fromString('src/Service/OrderService.php'), 10);
 
         for ($i = 1; $i <= 3; $i++) {
-            $this->addMethod($repository, 'App\\Service', 'OrderService', "method{$i}", 'src/Service/OrderService.php', 'ccn', 10.0);
+            $this->addMethod($repository, 'App\\Service', 'OrderService', "method{$i}", 'src/Service/OrderService.php', 'complexity.ccn', 10.0);
         }
 
         $definition = new MetricDefinition(
-            name: 'ccn',
+            name: 'complexity.ccn',
             collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
@@ -426,32 +426,32 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
         // ccn.sum = sum of all 7 method values = 50
-        self::assertEqualsWithDelta(50.0, $nsMetrics->get('ccn.sum'), 0.01);
+        self::assertEqualsWithDelta(50.0, $nsMetrics->get('complexity.ccn.sum'), 0.01);
         // ccn.avg = average of all 7 method values = 50/7 ≈ 7.14
-        self::assertEqualsWithDelta(50.0 / 7, $nsMetrics->get('ccn.avg'), 0.01);
+        self::assertEqualsWithDelta(50.0 / 7, $nsMetrics->get('complexity.ccn.avg'), 0.01);
     }
 
     #[Test]
     public function applyAggregationsAutoStoresCountAlongsideAverage(): void
     {
         $definition = new MetricDefinition(
-            name: 'mi',
+            name: 'maintainability.mi',
             collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Average, AggregationStrategy::Min],
             ],
         );
 
-        $metricValues = ['mi' => [80.0, 60.0, 70.0]];
+        $metricValues = ['maintainability.mi' => [80.0, 60.0, 70.0]];
 
         $bag = AggregationHelper::applyAggregations($metricValues, [$definition], SymbolLevel::Namespace_);
 
         // avg stored
-        self::assertEqualsWithDelta(70.0, $bag->get('mi.avg'), 0.01);
+        self::assertEqualsWithDelta(70.0, $bag->get('maintainability.mi.avg'), 0.01);
         // count auto-stored = 3
-        self::assertEqualsWithDelta(3.0, $bag->get('mi.count'), 0.01);
+        self::assertEqualsWithDelta(3.0, $bag->get('maintainability.mi.count'), 0.01);
         // min stored
-        self::assertEqualsWithDelta(60.0, $bag->get('mi.min'), 0.01);
+        self::assertEqualsWithDelta(60.0, $bag->get('maintainability.mi.min'), 0.01);
     }
 
     #[Test]
@@ -486,16 +486,16 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         // but raw method values are [2, 3] → correct sum=5
         $class = SymbolPath::forClass('App\\Service', 'Svc');
         $repository->add($class, (new MetricBag())
-            ->with('ccn.sum', 999)
-            ->with('ccn.avg', 499.5)
-            ->with('ccn.max', 999)
-            ->with('ccn.count', 2), RelativePath::fromString('src/Service/Svc.php'), 10);
+            ->with('complexity.ccn.sum', 999)
+            ->with('complexity.ccn.avg', 499.5)
+            ->with('complexity.ccn.max', 999)
+            ->with('complexity.ccn.count', 2), RelativePath::fromString('src/Service/Svc.php'), 10);
 
-        $this->addMethod($repository, 'App\\Service', 'Svc', 'doA', 'src/Service/Svc.php', 'ccn', 2);
-        $this->addMethod($repository, 'App\\Service', 'Svc', 'doB', 'src/Service/Svc.php', 'ccn', 3);
+        $this->addMethod($repository, 'App\\Service', 'Svc', 'doA', 'src/Service/Svc.php', 'complexity.ccn', 2);
+        $this->addMethod($repository, 'App\\Service', 'Svc', 'doB', 'src/Service/Svc.php', 'complexity.ccn', 3);
 
         $definition = new MetricDefinition(
-            name: 'ccn',
+            name: 'complexity.ccn',
             collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
@@ -508,9 +508,9 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
         // Namespace must use raw method values [2, 3], NOT class bag ccn.sum=999
-        self::assertEqualsWithDelta(5.0, $nsMetrics->get('ccn.sum'), 0.01, 'sum from raw methods');
-        self::assertEqualsWithDelta(2.5, $nsMetrics->get('ccn.avg'), 0.01, 'avg from raw methods');
-        self::assertSame(3, (int) $nsMetrics->get('ccn.max'), 'max from raw methods');
+        self::assertEqualsWithDelta(5.0, $nsMetrics->get('complexity.ccn.sum'), 0.01, 'sum from raw methods');
+        self::assertEqualsWithDelta(2.5, $nsMetrics->get('complexity.ccn.avg'), 0.01, 'avg from raw methods');
+        self::assertSame(3, (int) $nsMetrics->get('complexity.ccn.max'), 'max from raw methods');
     }
 
     private function addMethod(

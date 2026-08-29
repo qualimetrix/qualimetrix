@@ -21,7 +21,7 @@ use Symfony\Component\Process\Process;
  *
  * Before ADR 0015 Phase 1b, GitClient::$repoRoot was misnamed (it was actually
  * the project root); raw git output (toplevel-relative) was used directly as if
- * project-relative, silently mis-attributing or skipping violations.
+ * project-relative, silently mis-attributing or skipping findings.
  *
  * This test pins:
  * - Files inside the project subdir → included with project-relative path.

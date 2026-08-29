@@ -11,6 +11,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -54,22 +56,35 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
             : $this->subjectIndex->logicalCallableMetrics($canonical) ?? new MetricBag();
     }
 
-    public function all(SymbolType $type): iterable
+    /**
+     * Two levels live outside `$symbolInfos`, each behind its own enumeration.
+     * `add()` is the only writer of `$symbolInfos`: it refuses a method or a
+     * function outright, and it hands a class to the subject index before it
+     * reaches the map — so neither a callable nor a logical class is ever
+     * stored there. Both are answered by delegating to the enumeration that
+     * owns them, which keeps the two spellings of one enumeration from
+     * drifting apart. The remaining levels are matched by projecting each
+     * symbol's declaration kind onto its level, so nothing here maps a level
+     * back onto a kind.
+     */
+    public function all(SymbolLevel $level): iterable
     {
-        $seen = [];
-        foreach ($this->symbolInfos as $canonical => $info) {
-            if ($info->symbolPath->getType() === $type) {
-                $seen[$canonical] = true;
+        if ($level === SymbolLevel::Callable) {
+            yield from $this->allCallables();
+
+            return;
+        }
+
+        if ($level === SymbolLevel::Class_) {
+            yield from $this->allLogicalClasses();
+
+            return;
+        }
+
+        foreach ($this->symbolInfos as $info) {
+            if (SymbolLevelProjection::ofDeclaration($info->symbolPath->getType()) === $level) {
                 yield $info;
             }
-        }
-
-        if ($type === SymbolType::Class_) {
-            yield from $this->unseenLogicalClasses($seen);
-        }
-
-        if (\in_array($type, [SymbolType::Method, SymbolType::Function_], true)) {
-            yield from $this->callablesOfType($type);
         }
     }
 
@@ -257,30 +272,6 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
     {
         $info = $this->subjectIndex->addLogicalClass($symbol, $metrics, null, null);
         $this->namespaceIndex->add($info);
-    }
-
-    /**
-     * @param array<string, true> $seen
-     *
-     * @return iterable<SymbolInfo>
-     */
-    private function unseenLogicalClasses(array $seen): iterable
-    {
-        foreach ($this->allLogicalClasses() as $info) {
-            if (!isset($seen[$info->symbolPath->toCanonical()])) {
-                yield $info;
-            }
-        }
-    }
-
-    /** @return iterable<SymbolInfo> */
-    private function callablesOfType(SymbolType $type): iterable
-    {
-        foreach ($this->allCallables() as $info) {
-            if ($info->symbolPath->getType() === $type) {
-                yield $info;
-            }
-        }
     }
 
 }

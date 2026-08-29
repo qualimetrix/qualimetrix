@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
@@ -1021,7 +1021,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itExtractsViolationCodeScopedNamespaceExclusions(): void
+    public function itExtractsCodeScopedNamespaceExclusions(): void
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
@@ -1036,18 +1036,18 @@ final class RuleOptionsFactoryTest extends TestCase
 
         self::assertTrue($this->registry->isNamespaceChannelExcluded(
             'computed.health',
-            new ViolationChannel('computed.health', 'health.cohesion'),
+            new FindingChannel('health.cohesion'),
             'App\\Metrics',
         ));
         self::assertTrue($this->registry->isNamespaceChannelExcluded(
             'computed.health',
-            new ViolationChannel('computed.health', 'health.typing'),
+            new FindingChannel('health.typing'),
             'App\\Generated',
         ));
     }
 
     #[Test]
-    public function itRejectsEmptyViolationCodeScopedNamespaceExclusions(): void
+    public function itRejectsEmptyCodeScopedNamespaceExclusions(): void
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
@@ -1092,7 +1092,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsEmptyViolationCodeSelectorsInNamespaceChannelExclusions(): void
+    public function itRejectsEmptyCodeSelectorsInNamespaceChannelExclusions(): void
     {
         $this->registry->setConfigFileOptions([
             'computed.health' => [
@@ -1394,21 +1394,21 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itDoesNotWarnAboutTheParamThresholdShorthandOnTypeCoverage(): void
+    public function itDoesNotWarnAboutTheThresholdShorthandOnTypeCoverage(): void
     {
         $logger = new RecordingLogger();
         $factory = new RuleOptionsFactory($this->registry, $logger);
 
         $this->registry->setConfigFileOptions([
-            'design.type-coverage' => ['param_threshold' => 70.0],
+            'design.type-coverage.param' => ['threshold' => 70.0],
         ]);
 
         /** @var TypeCoverageOptions $options */
-        $options = $factory->create('design.type-coverage', TypeCoverageOptions::class);
+        $options = $factory->create('design.type-coverage.param', TypeCoverageOptions::class);
 
-        self::assertSame(70.0, $options->paramWarning);
-        self::assertSame(70.0, $options->paramError);
-        self::assertSame([], $logger->records, 'The documented `param_threshold` shorthand must not trigger a false Unknown option warning');
+        self::assertSame(70.0, $options->warning);
+        self::assertSame(70.0, $options->error);
+        self::assertSame([], $logger->records, 'The documented `threshold` shorthand must not trigger a false Unknown option warning');
     }
 
     #[Test]

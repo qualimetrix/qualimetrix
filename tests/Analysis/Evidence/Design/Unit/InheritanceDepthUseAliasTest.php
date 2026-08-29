@@ -41,7 +41,7 @@ PHP;
         // The visitor resolves "BaseAlias" via the use import to "Vendor\Base".
         // Since "Vendor\Base" is not a known class in the file, DIT = 1
         // (extends unknown external class).
-        $dit = $metrics->get('dit:App\ChildClass');
+        $dit = $metrics->get('design.dit:App\ChildClass');
         self::assertIsInt($dit);
         self::assertSame(1, $dit);
     }
@@ -121,10 +121,10 @@ PHP;
         $metrics = $collector->collect(new SplFileInfo(__FILE__), $ast);
 
         // Vendor\Base has DIT 0
-        self::assertSame(0, $metrics->get('dit:Vendor\Base'));
+        self::assertSame(0, $metrics->get('design.dit:Vendor\Base'));
 
         // App\ChildClass correctly gets DIT 1 (extends Vendor\Base which has DIT 0)
-        self::assertSame(1, $metrics->get('dit:App\ChildClass'));
+        self::assertSame(1, $metrics->get('design.dit:App\ChildClass'));
     }
 
     #[Test]
@@ -141,7 +141,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('dit:App\ChildClass'));
+        self::assertSame(1, $metrics->get('design.dit:App\ChildClass'));
     }
 
     #[Test]
@@ -196,10 +196,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('dit:Vendor\GrandParent_'));
-        self::assertSame(1, $metrics->get('dit:Vendor\Base'));
+        self::assertSame(0, $metrics->get('design.dit:Vendor\GrandParent_'));
+        self::assertSame(1, $metrics->get('design.dit:Vendor\Base'));
         // ChildClass -> Vendor\Base (DIT 1) -> Vendor\GrandParent_ (DIT 0) = DIT 2
-        self::assertSame(2, $metrics->get('dit:App\ChildClass'));
+        self::assertSame(2, $metrics->get('design.dit:App\ChildClass'));
     }
 
     private function collectMetrics(string $code): MetricBag

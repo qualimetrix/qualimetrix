@@ -7,16 +7,16 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Rule that checks number of constructor parameters (dependencies).
@@ -32,6 +32,8 @@ final class ConstructorOverinjectionRule extends AbstractRule
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
     public const int REMEDIATION_MINUTES = 60;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
     public function getName(): string
     {
         return self::NAME;
@@ -40,11 +42,6 @@ final class ConstructorOverinjectionRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks number of constructor parameters (dependencies)';
-    }
-
-    public function getCategory(): RuleCategory
-    {
-        return RuleCategory::CodeSmell;
     }
 
     /**
@@ -75,12 +72,12 @@ final class ConstructorOverinjectionRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
         ];
     }
 
     /**
-     * @return list<Violation>
+     * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
     {
@@ -88,19 +85,19 @@ final class ConstructorOverinjectionRule extends AbstractRule
             return [];
         }
 
-        $violations = [];
+        $findings = [];
 
         foreach ($context->metrics->allCallables() as $symbolInfo) {
-            $violations[] = $this->checkSymbol($symbolInfo, $context);
+            $findings[] = $this->checkSymbol($symbolInfo, $context);
         }
 
         return array_values(array_filter(
-            $violations,
-            static fn(?Violation $violation): bool => $violation !== null,
+            $findings,
+            static fn(?Finding $finding): bool => $finding !== null,
         ));
     }
 
-    private function checkSymbol(SymbolInfo $symbolInfo, AnalysisContext $context): ?Violation
+    private function checkSymbol(SymbolInfo $symbolInfo, AnalysisContext $context): ?Finding
     {
         /** @var ConstructorOverinjectionOptions $options */
         $options = $this->options;
@@ -138,12 +135,12 @@ final class ConstructorOverinjectionRule extends AbstractRule
         $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
         $className = $declaration->logical->type;
 
-        return new Violation(
+        return new Finding(
             location: new Location($symbolInfo->file, $symbolInfo->line),
             subject: $subject,
             symbolPath: $declaration->logical,
             ruleName: $this->getName(),
-            violationCode: self::NAME,
+            code: self::NAME,
             message: \sprintf(
                 'Constructor of %s has %d parameters (threshold %d). Consider using a parameter object or splitting responsibilities',
                 $className,

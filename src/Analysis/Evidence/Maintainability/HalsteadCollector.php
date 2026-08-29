@@ -12,8 +12,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
 /**
@@ -92,11 +92,11 @@ final class HalsteadCollector extends AbstractCollector implements CallableMetri
     public function provides(): array
     {
         return [
-            MetricName::HALSTEAD_VOLUME,
-            MetricName::HALSTEAD_DIFFICULTY,
-            MetricName::HALSTEAD_EFFORT,
-            MetricName::HALSTEAD_BUGS,
-            MetricName::HALSTEAD_TIME,
+            MetricName::MAINTAINABILITY_HALSTEAD_VOLUME,
+            MetricName::MAINTAINABILITY_HALSTEAD_DIFFICULTY,
+            MetricName::MAINTAINABILITY_HALSTEAD_EFFORT,
+            MetricName::MAINTAINABILITY_HALSTEAD_BUGS,
+            MetricName::MAINTAINABILITY_HALSTEAD_TIME,
         ];
     }
 
@@ -112,11 +112,11 @@ final class HalsteadCollector extends AbstractCollector implements CallableMetri
         foreach ($this->visitor->getMetrics() as $fqn => $metrics) {
 
             $bag = $bag
-                ->with(MetricName::HALSTEAD_VOLUME . ':' . $fqn, $metrics->volume())
-                ->with(MetricName::HALSTEAD_DIFFICULTY . ':' . $fqn, $metrics->difficulty())
-                ->with(MetricName::HALSTEAD_EFFORT . ':' . $fqn, $metrics->effort())
-                ->with(MetricName::HALSTEAD_BUGS . ':' . $fqn, $metrics->bugs())
-                ->with(MetricName::HALSTEAD_TIME . ':' . $fqn, $metrics->time());
+                ->with(MetricName::MAINTAINABILITY_HALSTEAD_VOLUME . ':' . $fqn, $metrics->volume())
+                ->with(MetricName::MAINTAINABILITY_HALSTEAD_DIFFICULTY . ':' . $fqn, $metrics->difficulty())
+                ->with(MetricName::MAINTAINABILITY_HALSTEAD_EFFORT . ':' . $fqn, $metrics->effort())
+                ->with(MetricName::MAINTAINABILITY_HALSTEAD_BUGS . ':' . $fqn, $metrics->bugs())
+                ->with(MetricName::MAINTAINABILITY_HALSTEAD_TIME . ':' . $fqn, $metrics->time());
         }
 
         return $bag;
@@ -157,22 +157,22 @@ final class HalsteadCollector extends AbstractCollector implements CallableMetri
 
         return [
             new MetricDefinition(
-                name: MetricName::HALSTEAD_VOLUME,
+                name: MetricName::MAINTAINABILITY_HALSTEAD_VOLUME,
                 collectedAt: SymbolLevel::Callable,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: MetricName::HALSTEAD_DIFFICULTY,
+                name: MetricName::MAINTAINABILITY_HALSTEAD_DIFFICULTY,
                 collectedAt: SymbolLevel::Callable,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: MetricName::HALSTEAD_EFFORT,
+                name: MetricName::MAINTAINABILITY_HALSTEAD_EFFORT,
                 collectedAt: SymbolLevel::Callable,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: MetricName::HALSTEAD_BUGS,
+                name: MetricName::MAINTAINABILITY_HALSTEAD_BUGS,
                 collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => [
@@ -189,7 +189,7 @@ final class HalsteadCollector extends AbstractCollector implements CallableMetri
                 ],
             ),
             new MetricDefinition(
-                name: MetricName::HALSTEAD_TIME,
+                name: MetricName::MAINTAINABILITY_HALSTEAD_TIME,
                 collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => [

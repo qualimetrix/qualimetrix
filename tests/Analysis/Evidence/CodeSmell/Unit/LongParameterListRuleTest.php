@@ -17,7 +17,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
@@ -48,19 +47,11 @@ final class LongParameterListRuleTest extends TestCase
     }
 
     #[Test]
-    public function itGetCategory(): void
-    {
-        $rule = new LongParameterListRule(new LongParameterListOptions());
-
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
-    }
-
-    #[Test]
     public function itRequires(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
-        self::assertSame(['parameterCount', 'isVoConstructor'], $rule->requires());
+        self::assertSame(['code-smell.parameter-count', 'code-smell.is-vo-constructor'], $rule->requires());
     }
 
     #[Test]
@@ -127,7 +118,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 3);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 3);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -147,7 +138,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 4);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 4);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -155,14 +146,14 @@ final class LongParameterListRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Method has 4 parameters, exceeds threshold of 4. Consider introducing a parameter object', $violations[0]->message);
-        self::assertSame(4, $violations[0]->metricValue);
-        self::assertSame('code-smell.long-parameter-list', $violations[0]->ruleName);
-        self::assertSame('code-smell.long-parameter-list', $violations[0]->violationCode);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('Method has 4 parameters, exceeds threshold of 4. Consider introducing a parameter object', $findings[0]->message);
+        self::assertSame(4, $findings[0]->metricValue);
+        self::assertSame('code-smell.long-parameter-list', $findings[0]->ruleName);
+        self::assertSame('code-smell.long-parameter-list', $findings[0]->code);
     }
 
     #[Test]
@@ -173,7 +164,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 6);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 6);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -181,11 +172,11 @@ final class LongParameterListRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('Method has 6 parameters, exceeds threshold of 6. Consider introducing a parameter object', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame('Method has 6 parameters, exceeds threshold of 6. Consider introducing a parameter object', $findings[0]->message);
     }
 
     #[Test]
@@ -196,7 +187,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', 8);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', 8);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -204,11 +195,11 @@ final class LongParameterListRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(8, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame(8, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -238,7 +229,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Test', 'TestClass', 'testMethod');
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'test.php', 10);
 
-        $metricBag = (new MetricBag())->with('parameterCount', $parameterCount);
+        $metricBag = (new MetricBag())->with('code-smell.parameter-count', $parameterCount);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -246,13 +237,13 @@ final class LongParameterListRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -370,7 +361,7 @@ final class LongParameterListRuleTest extends TestCase
     }
 
     #[Test]
-    public function itVoConstructorBelowVoThresholdNoViolation(): void
+    public function itVoConstructorBelowVoThresholdNoFinding(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions(
             warning: 4,
@@ -384,8 +375,8 @@ final class LongParameterListRuleTest extends TestCase
 
         // 7 params in VO constructor — below vo-warning=8, but above regular warning=4
         $metricBag = (new MetricBag())
-            ->with('parameterCount', 7)
-            ->with('isVoConstructor', 1);
+            ->with('code-smell.parameter-count', 7)
+            ->with('code-smell.is-vo-constructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -411,8 +402,8 @@ final class LongParameterListRuleTest extends TestCase
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Dto/UserDto.php', 10);
 
         $metricBag = (new MetricBag())
-            ->with('parameterCount', 8)
-            ->with('isVoConstructor', 1);
+            ->with('code-smell.parameter-count', 8)
+            ->with('code-smell.is-vo-constructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -420,14 +411,14 @@ final class LongParameterListRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('VO constructor', $violations[0]->message);
-        self::assertStringContainsString('promoted parameters', $violations[0]->message);
-        self::assertSame(8, $violations[0]->metricValue);
-        self::assertSame(8, $violations[0]->threshold);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('VO constructor', $findings[0]->message);
+        self::assertStringContainsString('promoted parameters', $findings[0]->message);
+        self::assertSame(8, $findings[0]->metricValue);
+        self::assertSame(8, $findings[0]->threshold);
     }
 
     #[Test]
@@ -444,8 +435,8 @@ final class LongParameterListRuleTest extends TestCase
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Dto/UserDto.php', 10);
 
         $metricBag = (new MetricBag())
-            ->with('parameterCount', 13)
-            ->with('isVoConstructor', 1);
+            ->with('code-smell.parameter-count', 13)
+            ->with('code-smell.is-vo-constructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -453,13 +444,13 @@ final class LongParameterListRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertStringContainsString('VO constructor', $violations[0]->message);
-        self::assertSame(13, $violations[0]->metricValue);
-        self::assertSame(12, $violations[0]->threshold);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertStringContainsString('VO constructor', $findings[0]->message);
+        self::assertSame(13, $findings[0]->metricValue);
+        self::assertSame(12, $findings[0]->threshold);
     }
 
     #[Test]
@@ -477,7 +468,7 @@ final class LongParameterListRuleTest extends TestCase
 
         // 5 params in non-VO constructor — above warning=4, below error=6
         $metricBag = (new MetricBag())
-            ->with('parameterCount', 5);
+            ->with('code-smell.parameter-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -485,12 +476,12 @@ final class LongParameterListRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Method has 5 parameters', $violations[0]->message);
-        self::assertSame(4, $violations[0]->threshold);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertStringContainsString('Method has 5 parameters', $findings[0]->message);
+        self::assertSame(4, $findings[0]->threshold);
     }
 
     #[Test]
@@ -498,7 +489,7 @@ final class LongParameterListRuleTest extends TestCase
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
-        self::assertContains('isVoConstructor', $rule->requires());
+        self::assertContains('code-smell.is-vo-constructor', $rule->requires());
     }
 
     #[Test]
@@ -531,8 +522,8 @@ final class LongParameterListRuleTest extends TestCase
         $methodInfo = $this->exactDeclarationInfo($symbolPath, 'test.php', 10);
 
         $metricBag = (new MetricBag())
-            ->with('parameterCount', $parameterCount)
-            ->with('isVoConstructor', 1);
+            ->with('code-smell.parameter-count', $parameterCount)
+            ->with('code-smell.is-vo-constructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
@@ -540,13 +531,13 @@ final class LongParameterListRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $findings);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
         }
     }
 
@@ -668,8 +659,8 @@ final class LongParameterListRuleTest extends TestCase
         $repository->method('allCallables')->willReturn([$symbolInfo]);
         $repository->method('getSubject')->willReturn(
             (new MetricBag())
-                ->with('parameterCount', $parameterCount)
-                ->with('isVoConstructor', 1),
+                ->with('code-smell.parameter-count', $parameterCount)
+                ->with('code-smell.is-vo-constructor', 1),
         );
         $context = new AnalysisContext(
             metrics: $repository,
@@ -688,19 +679,19 @@ final class LongParameterListRuleTest extends TestCase
             ],
         );
 
-        $violations = (new LongParameterListRule(
+        $findings = (new LongParameterListRule(
             new LongParameterListOptions(warning: 3, error: 4, voWarning: 8, voError: 12),
         ))->analyze($context);
 
         if ($expectedSeverity === null) {
-            self::assertSame([], $violations);
+            self::assertSame([], $findings);
 
             return;
         }
 
-        self::assertCount(1, $violations);
-        self::assertSame($expectedSeverity, $violations[0]->severity);
-        self::assertSame($expectedThreshold, $violations[0]->threshold);
+        self::assertCount(1, $findings);
+        self::assertSame($expectedSeverity, $findings[0]->severity);
+        self::assertSame($expectedThreshold, $findings[0]->threshold);
     }
 
     /**
@@ -720,7 +711,7 @@ final class LongParameterListRuleTest extends TestCase
         $symbolInfo = $this->exactDeclarationInfo(SymbolPath::forMethod('App\\Service', 'UserService', 'create'), $file->value(), 10);
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$symbolInfo]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('parameterCount', 5));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('code-smell.parameter-count', 5));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -738,14 +729,14 @@ final class LongParameterListRuleTest extends TestCase
             ],
         );
 
-        $violations = (new LongParameterListRule(
+        $findings = (new LongParameterListRule(
             new LongParameterListOptions(warning: 3, error: 4, voWarning: 8, voError: 12),
         ))->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(5, $violations[0]->threshold);
-        self::assertStringStartsWith('Method has 5 parameters', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(5, $findings[0]->threshold);
+        self::assertStringStartsWith('Method has 5 parameters', $findings[0]->message);
     }
 
     #[Test]
@@ -766,7 +757,7 @@ final class LongParameterListRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$controlled, $uncontrolled]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('parameterCount', 5));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('code-smell.parameter-count', 5));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -784,14 +775,14 @@ final class LongParameterListRuleTest extends TestCase
             ],
         );
 
-        $violations = (new LongParameterListRule(
+        $findings = (new LongParameterListRule(
             new LongParameterListOptions(warning: 4, error: 6),
         ))->analyze($context);
 
-        self::assertCount(1, $violations);
+        self::assertCount(1, $findings);
         self::assertSame(
             $uncontrolled->subject?->toCanonical(),
-            $violations[0]->subject->toCanonical(),
+            $findings[0]->subject->toCanonical(),
         );
     }
 
@@ -815,20 +806,20 @@ final class LongParameterListRuleTest extends TestCase
         $repository->method('allCallables')->willReturn([$regular, $vo]);
         $repository->method('getSubject')->willReturnCallback(
             static fn(MetricSubject $subject): MetricBag => $subject->toCanonical() === $regularSubject->toCanonical()
-                ? (new MetricBag())->with('parameterCount', 4)
-                : (new MetricBag())->with('parameterCount', 8)->with('isVoConstructor', 1),
+                ? (new MetricBag())->with('code-smell.parameter-count', 4)
+                : (new MetricBag())->with('code-smell.parameter-count', 8)->with('code-smell.is-vo-constructor', 1),
         );
 
-        $violations = (new LongParameterListRule(new LongParameterListOptions()))
+        $findings = (new LongParameterListRule(new LongParameterListOptions()))
             ->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        self::assertSame($regularSubject->toCanonical(), $violations[0]->subject->toCanonical());
-        self::assertSame('Method has 4 parameters, exceeds threshold of 4. Consider introducing a parameter object', $violations[0]->message);
-        self::assertSame(4, $violations[0]->threshold);
-        self::assertSame($voSubject->toCanonical(), $violations[1]->subject->toCanonical());
-        self::assertSame('VO constructor has 8 promoted parameters, exceeds threshold of 8. Consider splitting the value object', $violations[1]->message);
-        self::assertSame(8, $violations[1]->threshold);
+        self::assertCount(2, $findings);
+        self::assertSame($regularSubject->toCanonical(), $findings[0]->subject->toCanonical());
+        self::assertSame('Method has 4 parameters, exceeds threshold of 4. Consider introducing a parameter object', $findings[0]->message);
+        self::assertSame(4, $findings[0]->threshold);
+        self::assertSame($voSubject->toCanonical(), $findings[1]->subject->toCanonical());
+        self::assertSame('VO constructor has 8 promoted parameters, exceeds threshold of 8. Consider splitting the value object', $findings[1]->message);
+        self::assertSame(8, $findings[1]->threshold);
     }
 
     private function exactDeclarationInfo(SymbolPath $symbolPath, string $file, int $line): SymbolInfo

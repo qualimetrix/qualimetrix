@@ -16,8 +16,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 /**
@@ -77,7 +77,7 @@ final class ProcessorBuilder
 
         /** @var list<SymbolPath> $paths */
         $paths = [];
-        foreach ($repository->all(SymbolType::Class_) as $symbol) {
+        foreach ($repository->all(SymbolLevel::Class_) as $symbol) {
             $paths[] = $symbol->symbolPath;
         }
 

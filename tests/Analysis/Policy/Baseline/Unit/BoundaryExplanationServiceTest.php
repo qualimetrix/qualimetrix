@@ -14,13 +14,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
@@ -36,8 +37,8 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use ReflectionMethod;
 
 #[CoversClass(BoundaryExplanationService::class)]
@@ -49,13 +50,34 @@ final class BoundaryExplanationServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->service = new BoundaryExplanationService();
+        $this->service = new BoundaryExplanationService(self::producerEdge());
+    }
+
+    /**
+     * A channel-to-producer edge for the fixtures below: the channel's own name,
+     * minus a trailing level segment where it carries one. That is exactly the
+     * relation the retired left half of a channel key encoded, so a fixture
+     * naming `complexity.cyclomatic` still resolves to the rule a
+     * `@qmx-threshold complexity.cyclomatic` addresses.
+     */
+    private static function producerEdge(): ChannelIdentityInterface
+    {
+        $identity = self::createStub(ChannelIdentityInterface::class);
+        $identity->method('producerOf')->willReturnCallback(static function (string $code): string {
+            $lastDot = strrpos($code, '.');
+
+            return $lastDot !== false && SymbolLevel::tryFrom(substr($code, $lastDot + 1)) !== null
+                ? substr($code, 0, $lastDot)
+                : $code;
+        });
+
+        return $identity;
     }
 
     #[Test]
     public function itClassifiesCurrentBaselineOnlyAndUnknownSymbolsExplicitly(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $channel = new FindingChannel('complexity.cyclomatic');
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
         $currentRepository = $this->repositoryWithCallableSubject(
             SymbolPath::forMethod('App', 'Foo', 'bar'),
@@ -82,7 +104,7 @@ final class BoundaryExplanationServiceTest extends TestCase
                 entries: [],
                 inertEntries: [InertBaselineEntry::forRaw(
                     self::SYMBOL_KEY,
-                    $channel->toKey(),
+                    $channel->code,
                     InertEntryReason::Malformed,
                     'test fixture',
                     'garbage',
@@ -108,19 +130,19 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itCollectsAllThreeSourcesWhenAllThreeApply(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $channel = new FindingChannel('complexity.cyclomatic');
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
-        $currentViolation = $this->violation($channel, metricValue: 31);
+        $currentFinding = $this->finding($channel, metricValue: 31);
 
         $explanation = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: null,
             baseline: $baseline,
-            measuredViolations: [$currentViolation],
+            measuredFindings: [$currentFinding],
             thresholdOverridesByFile: [
                 'src/Foo.php' => [$this->thresholdOverride(1)],
             ],
-            configuredThresholds: [$channel->toKey() => 20],
+            configuredThresholds: [$channel->code => [SymbolLevel::Callable->value => 20]],
         );
 
         self::assertCount(1, $explanation->boundaries);
@@ -143,15 +165,15 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itPrintsBothTheStoredMagnitudeAndTheCurrentlyComparedOne(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $channel = new FindingChannel('complexity.cyclomatic');
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
-        $currentViolation = $this->violation($channel, metricValue: 31);
+        $currentFinding = $this->finding($channel, metricValue: 31);
 
         $explanation = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: $baseline,
-            measuredViolations: [$currentViolation],
+            measuredFindings: [$currentFinding],
             thresholdOverridesByFile: [],
             configuredThresholds: [],
         );
@@ -173,19 +195,19 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itReportsAbsentSourcesAsNullRatherThanAsZero(): void
     {
-        $channel = new ViolationChannel('coupling.cbo', 'coupling.cbo.class');
+        $channel = new FindingChannel('coupling.cbo');
 
         $explanation = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: $this->baselineWithEntry(
-                new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
+                new FindingChannel('complexity.cyclomatic'),
                 magnitudes: [25],
                 count: 1,
             ),
-            measuredViolations: [],
+            measuredFindings: [],
             thresholdOverridesByFile: [],
-            configuredThresholds: [$channel->toKey() => 10],
+            configuredThresholds: [$channel->code => [SymbolLevel::Callable->value => 10]],
         );
 
         self::assertCount(1, $explanation->boundaries);
@@ -203,22 +225,22 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itKeepsAZeroConfiguredThresholdDistinctFromAnAbsentOne(): void
     {
-        $channel = new ViolationChannel('code-smell.goto', 'code-smell.goto');
+        $channel = new FindingChannel('code-smell.goto');
 
         $withZero = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: null,
-            measuredViolations: [],
+            measuredFindings: [],
             thresholdOverridesByFile: [],
-            configuredThresholds: [$channel->toKey() => 0],
+            configuredThresholds: [$channel->code => [SymbolLevel::Callable->value => 0]],
         );
 
         $withoutEntry = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: null,
-            measuredViolations: [],
+            measuredFindings: [],
             thresholdOverridesByFile: [],
             configuredThresholds: [],
         );
@@ -235,29 +257,29 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itDiscoversEveryApplicableChannelWhenNoneIsRequested(): void
     {
-        $baselinedChannel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
-        $firingOnlyChannel = new ViolationChannel('coupling.cbo', 'coupling.cbo.class');
+        $baselinedChannel = new FindingChannel('complexity.cyclomatic');
+        $firingOnlyChannel = new FindingChannel('coupling.cbo');
 
         $baseline = $this->baselineWithEntry($baselinedChannel, magnitudes: [25], count: 1);
-        $firingOnly = $this->violation($firingOnlyChannel, metricValue: 12);
+        $firingOnly = $this->finding($firingOnlyChannel, metricValue: 12);
 
         $explanation = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: null,
             baseline: $baseline,
-            measuredViolations: [$firingOnly],
+            measuredFindings: [$firingOnly],
             thresholdOverridesByFile: [],
             configuredThresholds: [],
         );
 
         $channelKeys = array_map(
-            static fn($boundary): string => $boundary->identity->channel->toKey(),
+            static fn($boundary): string => $boundary->identity->channel->code,
             $explanation->boundaries,
         );
 
         self::assertCount(2, $explanation->boundaries);
-        self::assertContains($baselinedChannel->toKey(), $channelKeys);
-        self::assertContains($firingOnlyChannel->toKey(), $channelKeys);
+        self::assertContains($baselinedChannel->code, $channelKeys);
+        self::assertContains($firingOnlyChannel->code, $channelKeys);
     }
 
     /**
@@ -267,13 +289,13 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itReportsNoAnnotationWhenNoSourceLocatesTheSymbol(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $channel = new FindingChannel('complexity.cyclomatic');
 
         $explanation = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: null,
-            measuredViolations: [],
+            measuredFindings: [],
             thresholdOverridesByFile: [
                 'src/Foo.php' => [$this->thresholdOverride(1)],
             ],
@@ -288,22 +310,22 @@ final class BoundaryExplanationServiceTest extends TestCase
      * "`qmx.yaml` says 10; annotation raises it to 40" describes a symbol
      * that is *not* violating anything — the raised threshold is normally
      * why the rule stopped firing. The repository retains its exact typed
-     * subject whether or not a violation currently exists.
+     * subject whether or not a finding currently exists.
      */
     #[Test]
     public function itFindsTheAnnotationForASymbolThatViolatesNothing(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $channel = new FindingChannel('complexity.cyclomatic');
 
         $explanation = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: null,
-            measuredViolations: [],
+            measuredFindings: [],
             thresholdOverridesByFile: [
                 'src/Foo.php' => [$this->thresholdOverride(12)],
             ],
-            configuredThresholds: [$channel->toKey() => 10],
+            configuredThresholds: [$channel->code => [SymbolLevel::Callable->value => 10]],
             symbolLocations: $this->repositoryWithCallableSubject(SymbolPath::forMethod('App', 'Foo', 'bar'), 'src/Foo.php', 14),
         );
 
@@ -318,14 +340,14 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itUsesTheFirstExactMeasuredSubjectAcrossDifferentOccurrenceIdentities(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $channel = new FindingChannel('complexity.cyclomatic');
         $baselineIdentity = new BaselineIdentity(self::SYMBOL_KEY, $channel, 'stored-occurrence');
         $baseline = new Baseline(
             new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             ['src'],
             [new BaselineEntry($baselineIdentity, [25], 1)],
         );
-        $measured = $this->violationWithIdentityParts(
+        $measured = $this->findingWithIdentityParts(
             $channel,
             OccurrenceKey::semantic('measured', ['slot' => 2]),
         );
@@ -348,7 +370,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itUsesTheFirstExactMeasuredSubjectAcrossDifferentEdgeIdentities(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $channel = new FindingChannel('complexity.cyclomatic');
         $target = SymbolPath::forClass('App\Dependency', 'Target');
         $baselineIdentity = new BaselineIdentity(
             self::SYMBOL_KEY,
@@ -361,7 +383,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             ['src'],
             [new BaselineEntry($baselineIdentity, [25], 1)],
         );
-        $measured = $this->violationWithIdentityParts($channel, dependencyTarget: $target);
+        $measured = $this->findingWithIdentityParts($channel, dependencyTarget: $target);
 
         $explanation = $this->service->explain(
             self::SYMBOL_KEY,
@@ -384,13 +406,13 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itReportsNoAnnotationForASymbolTheRunNeverMeasured(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $channel = new FindingChannel('complexity.cyclomatic');
 
         $explanation = $this->service->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: null,
-            measuredViolations: [],
+            measuredFindings: [],
             thresholdOverridesByFile: [
                 'src/Foo.php' => [$this->thresholdOverride(1)],
             ],
@@ -404,7 +426,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itUsesScopeThenFiniteSpanAndKeepsTheFirstExactTieAcrossRulePatterns(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $channel = new FindingChannel('complexity.cyclomatic');
         $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)));
         $override = static fn(string $pattern, int $warning, ControlScope $scope, int $line, ?int $endLine): ThresholdOverride => new ThresholdOverride(
             $pattern,
@@ -454,7 +476,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             ],
             logicalClasses: [new SymbolInfo($logical, RelativePath::fromString('src/First.php'), null)],
             aggregates: [
-                SymbolType::Namespace_->value => [new SymbolInfo($namespace, null, null)],
+                SymbolLevel::Namespace_->value => [new SymbolInfo($namespace, null, null)],
             ],
         );
 
@@ -462,24 +484,41 @@ final class BoundaryExplanationServiceTest extends TestCase
         $index = $method->invoke(null, $repository);
 
         self::assertIsArray($index);
-        self::assertArrayHasKey($first->toCanonical(), $index);
-        self::assertArrayHasKey($second->toCanonical(), $index);
-        self::assertArrayHasKey($callable->toCanonical(), $index);
-        self::assertArrayHasKey($logical->toCanonical(), $index);
-        self::assertArrayHasKey($namespace->toCanonical(), $index);
+        // The index content, not the number of repository calls, is what the
+        // service promises: one aggregation level fewer than there are
+        // declaration kinds must still reach every row.
+        self::assertSame(
+            [
+                $first->toCanonical(),
+                $second->toCanonical(),
+                $callable->toCanonical(),
+                $logical->toCanonical(),
+                $namespace->toCanonical(),
+            ],
+            array_keys($index),
+        );
         self::assertSame($first, $index[$first->toCanonical()]['subject']);
         self::assertSame('src/First.php', $index[$first->toCanonical()]['location'][0]->value());
         self::assertNull($index[$namespace->toCanonical()]['subject']);
         self::assertSame(1, $repository->calls['allDeclarations']);
-        self::assertSame(1, $repository->calls['allCallables']);
         self::assertSame(1, $repository->calls['allLogicalClasses']);
         self::assertSame(2, $repository->iterations['allDeclarations']);
-        self::assertSame(2, $repository->iterations['allCallables']);
         self::assertSame(1, $repository->iterations['allLogicalClasses']);
-        foreach (SymbolType::cases() as $type) {
-            self::assertSame(1, $repository->calls['all:' . $type->value]);
+        // `all(Callable)` is the same enumeration as `allCallables()`, so the
+        // double delegates and the service's two callable reads land on one
+        // counter; a level counter of its own would mean the double had two
+        // sources for one enumeration, which the real repository does not.
+        self::assertSame(2, $repository->calls['allCallables']);
+        self::assertSame(4, $repository->iterations['allCallables']);
+        self::assertArrayNotHasKey('all:' . SymbolLevel::Callable->value, $repository->calls);
+        foreach (SymbolLevel::cases() as $level) {
+            if ($level === SymbolLevel::Callable) {
+                continue;
+            }
+
+            self::assertSame(1, $repository->calls['all:' . $level->value]);
         }
-        self::assertSame(1, $repository->iterations['all:' . SymbolType::Namespace_->value]);
+        self::assertSame(1, $repository->iterations['all:' . SymbolLevel::Namespace_->value]);
     }
 
     #[Test]
@@ -510,7 +549,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     /**
      * @param ?list<int|float> $magnitudes
      */
-    private function baselineWithEntry(ViolationChannel $channel, ?array $magnitudes, int $count): Baseline
+    private function baselineWithEntry(FindingChannel $channel, ?array $magnitudes, int $count): Baseline
     {
         $identity = new BaselineIdentity(self::SYMBOL_KEY, $channel);
 
@@ -521,33 +560,33 @@ final class BoundaryExplanationServiceTest extends TestCase
         );
     }
 
-    private function violation(ViolationChannel $channel, int|float $metricValue): Violation
+    private function finding(FindingChannel $channel, int|float $metricValue): Finding
     {
-        return new Violation(
+        return new Finding(
             subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             location: new Location(RelativePath::fromString('src/Foo.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: $channel->ruleName,
-            violationCode: $channel->violationCode,
+            ruleName: $channel->code,
+            code: $channel->code,
             message: 'test finding',
             severity: Severity::Warning,
             metricValue: $metricValue,
         );
     }
 
-    private function violationWithIdentityParts(
-        ViolationChannel $channel,
+    private function findingWithIdentityParts(
+        FindingChannel $channel,
         ?OccurrenceKey $occurrenceKey = null,
         ?SymbolPath $dependencyTarget = null,
-    ): Violation {
+    ): Finding {
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
 
-        return new Violation(
+        return new Finding(
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             location: new Location(RelativePath::fromString('src/Foo.php'), 10),
             symbolPath: $symbol,
-            ruleName: $channel->ruleName,
-            violationCode: $channel->violationCode,
+            ruleName: $channel->code,
+            code: $channel->code,
             message: 'same subject, different identity details',
             severity: Severity::Warning,
             metricValue: 31,
@@ -603,12 +642,19 @@ final class CountingBoundaryRepository implements MetricRepositoryInterface
         return new MetricBag();
     }
 
-    public function all(SymbolType $type): iterable
+    public function all(SymbolLevel $level): iterable
     {
-        $source = 'all:' . $type->value;
+        // The contract makes `all(Callable)` and `allCallables()` one
+        // enumeration; a double that answered them from different maps would
+        // let a consumer pass here and fail against the real repository.
+        if ($level === SymbolLevel::Callable) {
+            return $this->allCallables();
+        }
+
+        $source = 'all:' . $level->value;
         $this->count($this->calls, $source);
 
-        return $this->iterate($source, $this->aggregates[$type->value] ?? []);
+        return $this->iterate($source, $this->aggregates[$level->value] ?? []);
     }
 
     public function has(SymbolPath $symbol): bool

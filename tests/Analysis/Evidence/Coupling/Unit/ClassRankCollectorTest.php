@@ -14,15 +14,14 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 #[CoversClass(ClassRankCollector::class)]
@@ -46,13 +45,13 @@ final class ClassRankCollectorTest extends TestCase
     #[Test]
     public function requires_returnsCaAndCe(): void
     {
-        self::assertSame(['ca', 'ce'], $this->collector->requires());
+        self::assertSame(['coupling.ca', 'coupling.ce'], $this->collector->requires());
     }
 
     #[Test]
     public function provides_returnsClassRank(): void
     {
-        self::assertSame(['classRank'], $this->collector->provides());
+        self::assertSame(['coupling.class-rank'], $this->collector->provides());
     }
 
     #[Test]
@@ -63,7 +62,7 @@ final class ClassRankCollectorTest extends TestCase
         self::assertCount(1, $definitions);
 
         $def = $definitions[0];
-        self::assertSame('classRank', $def->name);
+        self::assertSame('coupling.class-rank', $def->name);
         self::assertSame(SymbolLevel::Class_, $def->collectedAt);
         self::assertSame(
             [AggregationStrategy::Max, AggregationStrategy::Average, AggregationStrategy::Percentile95],
@@ -83,7 +82,7 @@ final class ClassRankCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        $classes = iterator_to_array($repository->all(SymbolType::Class_));
+        $classes = iterator_to_array($repository->all(SymbolLevel::Class_));
         self::assertSame([], $classes, 'Empty graph should produce no class-level metrics');
     }
 
@@ -104,7 +103,7 @@ final class ClassRankCollectorTest extends TestCase
         $fooPath = SymbolPath::forClass('App', 'Foo');
         $metrics = $repository->get($fooPath);
 
-        self::assertEqualsWithDelta(1.0, $metrics->get('classRank'), 0.001);
+        self::assertEqualsWithDelta(1.0, $metrics->get('coupling.class-rank'), 0.001);
     }
 
     #[Test]
@@ -119,7 +118,7 @@ final class ClassRankCollectorTest extends TestCase
 
         self::assertSame(
             1.0,
-            $repository->get(SymbolPath::forClass('App\\Isolated', 'Standalone'))->get('classRank'),
+            $repository->get(SymbolPath::forClass('App\\Isolated', 'Standalone'))->get('coupling.class-rank'),
         );
     }
 
@@ -146,7 +145,7 @@ final class ClassRankCollectorTest extends TestCase
 
         self::assertCount(1, iterator_to_array($repository->allLogicalClasses()));
         self::assertCount(2, iterator_to_array($repository->allDeclarations()));
-        self::assertSame(1.0, $repository->get($class)->get('classRank'));
+        self::assertSame(1.0, $repository->get($class)->get('coupling.class-rank'));
     }
 
     #[Test]
@@ -166,9 +165,9 @@ final class ClassRankCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        $rankA = $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
-        $rankB = $repository->get(SymbolPath::forClass('App', 'B'))->get('classRank');
-        $rankC = $repository->get(SymbolPath::forClass('App', 'C'))->get('classRank');
+        $rankA = $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankB = $repository->get(SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
+        $rankC = $repository->get(SymbolPath::forClass('App', 'C'))->get('coupling.class-rank');
 
         self::assertNotNull($rankA);
         self::assertNotNull($rankB);
@@ -197,9 +196,9 @@ final class ClassRankCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
-        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('classRank');
-        $rankC = (float) $repository->get(SymbolPath::forClass('App', 'C'))->get('classRank');
+        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
+        $rankC = (float) $repository->get(SymbolPath::forClass('App', 'C'))->get('coupling.class-rank');
 
         self::assertGreaterThan($rankA, $rankB, 'B should rank higher than A');
         self::assertGreaterThan($rankB, $rankC, 'C should rank higher than B');
@@ -227,7 +226,7 @@ final class ClassRankCollectorTest extends TestCase
         );
 
         // A should still get a rank (single project class)
-        $rankA = $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
+        $rankA = $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
         self::assertEqualsWithDelta(1.0, $rankA, 0.001);
     }
 
@@ -248,8 +247,8 @@ final class ClassRankCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         // Self-dependency should not boost A's own rank
-        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
-        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('classRank');
+        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
 
         // B should have higher rank than A (A votes for B, not for itself)
         self::assertGreaterThan($rankA, $rankB);
@@ -272,8 +271,8 @@ final class ClassRankCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
-        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('classRank');
+        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
 
         // Both should have equal rank (isolated nodes get (1-d)/N from teleportation + dangling)
         self::assertEqualsWithDelta($rankA, $rankB, 0.001);
@@ -301,9 +300,9 @@ final class ClassRankCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
-        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('classRank');
-        $rankC = (float) $repository->get(SymbolPath::forClass('App', 'C'))->get('classRank');
+        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
+        $rankC = (float) $repository->get(SymbolPath::forClass('App', 'C'))->get('coupling.class-rank');
 
         // PageRank scores should sum to approximately 1.0
         self::assertEqualsWithDelta(1.0, $rankA + $rankB + $rankC, 0.01);
@@ -352,8 +351,8 @@ final class ClassRankCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        $rankCenter = (float) $repository->get(SymbolPath::forClass('App', 'Center'))->get('classRank');
-        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
+        $rankCenter = (float) $repository->get(SymbolPath::forClass('App', 'Center'))->get('coupling.class-rank');
+        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
 
         // Center should have the highest rank by far
         self::assertGreaterThan($rankA, $rankCenter);

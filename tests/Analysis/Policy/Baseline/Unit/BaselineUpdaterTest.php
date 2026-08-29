@@ -8,10 +8,10 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
@@ -28,8 +28,8 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
-use Qualimetrix\Tests\Analysis\Finding\Support\ViolationFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 
 /**
@@ -59,7 +59,7 @@ final class BaselineUpdaterTest extends TestCase
             2,
         );
 
-        $current = ViolationFactory::magnitude($symbol, 100, 'duplication.code-duplication', 'duplication.code-duplication');
+        $current = FindingFactory::magnitude($symbol, 100, 'duplication.code-duplication', 'duplication.code-duplication');
 
         $result = $this->updater()->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
 
@@ -81,7 +81,7 @@ final class BaselineUpdaterTest extends TestCase
     {
         $symbol = SymbolPath::forClass('App', 'Service');
         $stored = new BaselineEntry(
-            BaselineIdentity::forViolation(ViolationFactory::magnitude(
+            BaselineIdentity::forFinding(FindingFactory::magnitude(
                 $symbol,
                 40,
                 'maintainability.index',
@@ -92,8 +92,8 @@ final class BaselineUpdaterTest extends TestCase
         );
 
         $current = [
-            ViolationFactory::magnitude($symbol, 55, 'maintainability.index', 'maintainability.index.class'),
-            ViolationFactory::magnitude($symbol, 70, 'maintainability.index', 'maintainability.index.class'),
+            FindingFactory::magnitude($symbol, 55, 'maintainability.index', 'maintainability.index.class'),
+            FindingFactory::magnitude($symbol, 70, 'maintainability.index', 'maintainability.index.class'),
         ];
 
         $result = $this->updater()->update(self::baselineOf($stored), $current, RunScope::fromRecorded(['src']));
@@ -108,7 +108,7 @@ final class BaselineUpdaterTest extends TestCase
     public function itLeavesAVanishedGroupUntouched(): void
     {
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
-        $stored = new BaselineEntry(BaselineIdentity::forViolation(ViolationFactory::magnitude($symbol, 25)), [25], 1);
+        $stored = new BaselineEntry(BaselineIdentity::forFinding(FindingFactory::magnitude($symbol, 25)), [25], 1);
 
         $result = $this->updater()->update(self::baselineOf($stored), [], RunScope::fromRecorded(['src']));
 
@@ -120,7 +120,7 @@ final class BaselineUpdaterTest extends TestCase
     public function itNeverAddsAnIdentityTheBaselineDidNotAlreadyHold(): void
     {
         $baseline = new Baseline(generated: new DateTimeImmutable(), scope: [], entries: []);
-        $found = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 25);
+        $found = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 25);
 
         $result = $this->updater()->update($baseline, [$found], RunScope::fromRecorded(['src']));
 
@@ -153,13 +153,13 @@ final class BaselineUpdaterTest extends TestCase
     {
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
         $stored = new BaselineEntry(
-            BaselineIdentity::forViolation(ViolationFactory::magnitude($symbol, 25)),
+            BaselineIdentity::forFinding(FindingFactory::magnitude($symbol, 25)),
             [25],
             1,
             BaselineEntryMode::Suppress,
         );
 
-        $current = ViolationFactory::magnitude($symbol, 20);
+        $current = FindingFactory::magnitude($symbol, 20);
 
         $result = $this->updater()->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
 
@@ -179,7 +179,7 @@ final class BaselineUpdaterTest extends TestCase
     {
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
         $stored = new BaselineEntry(
-            BaselineIdentity::forViolation(ViolationFactory::magnitude($symbol, 25)),
+            BaselineIdentity::forFinding(FindingFactory::magnitude($symbol, 25)),
             [25],
             1,
             BaselineEntryMode::Suppress,
@@ -187,7 +187,7 @@ final class BaselineUpdaterTest extends TestCase
 
         $result = $this->updater()->update(
             self::baselineOf($stored),
-            [ViolationFactory::magnitude($symbol, 40)],
+            [FindingFactory::magnitude($symbol, 40)],
             RunScope::fromRecorded(['src']),
         );
 
@@ -212,11 +212,11 @@ final class BaselineUpdaterTest extends TestCase
     public function itStillNamesAnOrdinaryEntrysRefusalAWorsening(): void
     {
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
-        $stored = new BaselineEntry(BaselineIdentity::forViolation(ViolationFactory::magnitude($symbol, 25)), [25], 1);
+        $stored = new BaselineEntry(BaselineIdentity::forFinding(FindingFactory::magnitude($symbol, 25)), [25], 1);
 
         $result = $this->updater()->update(
             self::baselineOf($stored),
-            [ViolationFactory::magnitude($symbol, 40)],
+            [FindingFactory::magnitude($symbol, 40)],
             RunScope::fromRecorded(['src']),
         );
 
@@ -236,7 +236,7 @@ final class BaselineUpdaterTest extends TestCase
 
         $result = $this->updater()->update(
             self::baselineOf($stored),
-            [ViolationFactory::occurrence($symbol), ViolationFactory::occurrence($symbol)],
+            [FindingFactory::occurrence($symbol), FindingFactory::occurrence($symbol)],
             RunScope::fromRecorded(['src']),
         );
 
@@ -251,11 +251,11 @@ final class BaselineUpdaterTest extends TestCase
     public function itRefusesAnEntryOnAChannelNoRuleDeclares(): void
     {
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
-        $violation = ViolationFactory::magnitude($symbol, 5, 'nobody.declares', 'this.channel');
-        $stored = new BaselineEntry(BaselineIdentity::forViolation($violation), [5], 1);
+        $finding = FindingFactory::magnitude($symbol, 5, 'nobody.declares', 'this.channel');
+        $stored = new BaselineEntry(BaselineIdentity::forFinding($finding), [5], 1);
 
         $result = (new BaselineUpdater(new StubChannelDeclarationRegistry(), new FixedClock()))
-            ->update(self::baselineOf($stored), [$violation], RunScope::fromRecorded(['src']));
+            ->update(self::baselineOf($stored), [$finding], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Refused, $result->outcomes[0]->disposition);
         self::assertSame(BaselineUpdateRefusalReason::UndeclaredChannel, $result->outcomes[0]->refusalReason);
@@ -280,7 +280,7 @@ final class BaselineUpdaterTest extends TestCase
         $identity = new BaselineIdentity($symbol->toCanonical(), self::gotoChannel());
         $stored = new BaselineEntry($identity, [1.0], 1);
 
-        $current = ViolationFactory::occurrence($symbol);
+        $current = FindingFactory::occurrence($symbol);
 
         $result = $this->updater()->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
 
@@ -292,14 +292,14 @@ final class BaselineUpdaterTest extends TestCase
     public function itRefusesAMagnitudeEntryWhoseMeasuredGroupReportsNoFiniteNumber(): void
     {
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
-        $stored = new BaselineEntry(BaselineIdentity::forViolation(ViolationFactory::magnitude($symbol, 15)), [15], 1);
+        $stored = new BaselineEntry(BaselineIdentity::forFinding(FindingFactory::magnitude($symbol, 15)), [15], 1);
 
-        $noNumber = new Violation(
+        $noNumber = new Finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.callable',
+            code: 'complexity.cyclomatic',
             message: 'no magnitude reported',
             severity: Severity::Warning,
         );
@@ -374,13 +374,13 @@ final class BaselineUpdaterTest extends TestCase
         return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry]);
     }
 
-    private static function duplicationChannel(): ViolationChannel
+    private static function duplicationChannel(): FindingChannel
     {
-        return new ViolationChannel('duplication.code-duplication', 'duplication.code-duplication');
+        return new FindingChannel('duplication.code-duplication');
     }
 
-    private static function gotoChannel(): ViolationChannel
+    private static function gotoChannel(): FindingChannel
     {
-        return new ViolationChannel('code-smell.goto', 'code-smell.goto');
+        return new FindingChannel('code-smell.goto');
     }
 }

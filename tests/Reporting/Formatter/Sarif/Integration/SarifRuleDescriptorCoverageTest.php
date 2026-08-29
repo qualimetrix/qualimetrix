@@ -12,9 +12,9 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -43,7 +43,7 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
      * empty until configuration resolves it, so `channels()` and
      * `staticDeclarations()` agree here.
      */
-    private const int UNIVERSE_CHANNEL_COUNT = 57;
+    private const int UNIVERSE_CHANNEL_COUNT = 52;
 
     /**
      * Mirrors {@see SarifRuleCollector}'s own private `DOCS_BASE_URI` — kept
@@ -120,12 +120,12 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
 
     /** @return list<string> */
     private function checkChannel(
-        ViolationChannel $channel,
+        FindingChannel $channel,
         ChannelUniverseInterface $universe,
         ChannelPresentationInterface $presentationView,
         SarifRuleCollector $collector,
     ): array {
-        $code = $channel->violationCode;
+        $code = $channel->code;
         $presentation = $presentationView->presentationFor($code);
 
         if ($presentation === null) {
@@ -143,7 +143,7 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
             return [\sprintf('%s: no presentation resolved for a channel the universe itself declares.', $code)];
         }
 
-        $rules = $collector->collectRules([self::violation($channel->ruleName, $code)]);
+        $rules = $collector->collectRules([self::finding($channel->code, $code)]);
 
         if (\count($rules) !== 1) {
             return [\sprintf('%s: collectRules() returned %d entries, expected 1.', $code, \count($rules))];
@@ -214,23 +214,23 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
         \assert($presentationView instanceof ChannelPresentationInterface);
 
         $collector = new SarifRuleCollector($presentationView);
-        $rules = $collector->collectRules([self::violation('custom.made-up-rule', 'custom.made-up-rule')]);
+        $rules = $collector->collectRules([self::finding('custom.made-up-rule', 'custom.made-up-rule')]);
 
         self::assertCount(1, $rules);
         self::assertSame('Custom made up rule', $rules[0]['shortDescription']['text']);
         self::assertSame(SarifRuleCollector::INFORMATION_URI, $rules[0]['helpUri']);
     }
 
-    private static function violation(string $ruleName, string $violationCode): \Qualimetrix\Analysis\Finding\Contract\Violation
+    private static function finding(string $ruleName, string $code): \Qualimetrix\Analysis\Finding\Contract\Finding
     {
         $symbolPath = SymbolPath::forProject();
 
-        return new \Qualimetrix\Analysis\Finding\Contract\Violation(
+        return new \Qualimetrix\Analysis\Finding\Contract\Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate($symbolPath),
             symbolPath: $symbolPath,
             ruleName: $ruleName,
-            violationCode: $violationCode,
+            code: $code,
             message: 'fixture',
             severity: Severity::Warning,
         );

@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
+use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
@@ -34,14 +34,14 @@ use Symfony\Component\Console\Output\OutputInterface;
  * The steps are `check`'s own, in `check`'s order — resolve the
  * configuration, configure the runtime from it, discover under
  * `paths.excludes` — because any divergence here would move the set for one
- * side only. {@see MeasuredViolationSet} then applies the stages that define
+ * side only. {@see MeasuredFindingSet} then applies the stages that define
  * the set itself.
  */
 final readonly class BaselineRun implements BaselineRunInterface
 {
     public function __construct(
         private RuntimeConfigurator $runtimeConfigurator,
-        private MeasuredViolationSet $measuredViolationSet,
+        private MeasuredFindingSet $measuredFindingSet,
         private RuleInputValidator $ruleInputValidator,
         private ConfigurationInputAdapter $configurationInputAdapter,
         private RunConfigurationResolverInterface $runConfigurationResolver,
@@ -74,7 +74,7 @@ final readonly class BaselineRun implements BaselineRunInterface
         );
         $this->assertPathsExist($configuration->paths);
 
-        $run = $this->measuredViolationSet->run(
+        $run = $this->measuredFindingSet->run(
             $configuration,
             null,
             new FindingProjectionOptions(

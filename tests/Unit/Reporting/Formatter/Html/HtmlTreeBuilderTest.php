@@ -13,12 +13,12 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode;
 use Qualimetrix\Reporting\FormatterContext;
@@ -98,7 +98,7 @@ final class HtmlTreeBuilderTest extends TestCase
         // Add namespace metrics
         $metrics->add(
             SymbolPath::forNamespace('App\\Service'),
-            MetricBag::fromArray(['loc.sum' => 200, 'classes.count' => 2]),
+            MetricBag::fromArray(['size.loc.sum' => 200, 'classes.count' => 2]),
             null,
             null,
         );
@@ -106,13 +106,13 @@ final class HtmlTreeBuilderTest extends TestCase
         // Add classes
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
-            MetricBag::fromArray(['ccn.sum' => 5, 'loc.sum' => 120]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 5, 'size.loc.sum' => 120]),
             RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'OrderService'),
-            MetricBag::fromArray(['ccn.sum' => 3, 'loc.sum' => 80]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 3, 'size.loc.sum' => 80]),
             RelativePath::fromString('src/Service/OrderService.php'),
             5,
         );
@@ -161,13 +161,13 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App\\Controller', 'HomeController'),
-            MetricBag::fromArray(['ccn.sum' => 2]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 2]),
             RelativePath::fromString('src/Controller/HomeController.php'),
             1,
         );
         $metrics->add(
             SymbolPath::forClass('Domain\\User', 'UserEntity'),
-            MetricBag::fromArray(['ccn.sum' => 1]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 1]),
             RelativePath::fromString('src/Domain/User/UserEntity.php'),
             1,
         );
@@ -199,13 +199,13 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forNamespace('App\\Payment\\Processing'),
-            MetricBag::fromArray(['loc.sum' => 100]),
+            MetricBag::fromArray(['size.loc.sum' => 100]),
             null,
             null,
         );
         $metrics->add(
             SymbolPath::forClass('App\\Payment\\Processing', 'PaymentProcessor'),
-            MetricBag::fromArray(['ccn.sum' => 4]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 4]),
             RelativePath::fromString('src/Payment/Processing/PaymentProcessor.php'),
             1,
         );
@@ -244,7 +244,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('', 'GlobalHelper'),
-            MetricBag::fromArray(['ccn.sum' => 1]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 1]),
             RelativePath::fromString('src/GlobalHelper.php'),
             1,
         );
@@ -270,23 +270,23 @@ final class HtmlTreeBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itAttachesViolationToTreeNode(): void
+    public function itAttachesFindingToTreeNode(): void
     {
         $metrics = new InMemoryMetricRepository();
 
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
-            MetricBag::fromArray(['ccn.sum' => 15]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 15]),
             RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
 
-        // Method-level violation should be attached to the class
-        $violation = self::violation(
+        // Method-level finding should be attached to the class
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 25),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculate'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Cyclomatic complexity is 15',
             severity: Severity::Warning,
             metricValue: 15,
@@ -297,7 +297,7 @@ final class HtmlTreeBuilderTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->metrics($metrics)
-            ->addViolation($violation)
+            ->addFinding($finding)
             ->build();
 
         // ADR 0015 Phase 4: Location::$file is already project-relative, so
@@ -324,46 +324,46 @@ final class HtmlTreeBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itCountsViolationsTotalBottomUp(): void
+    public function itCountsFindingsTotalBottomUp(): void
     {
         $metrics = new InMemoryMetricRepository();
 
         $metrics->add(
             SymbolPath::forClass('App\\A', 'ClassA'),
-            MetricBag::fromArray(['ccn.sum' => 10]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 10]),
             RelativePath::fromString('src/A/ClassA.php'),
             1,
         );
         $metrics->add(
             SymbolPath::forClass('App\\B', 'ClassB'),
-            MetricBag::fromArray(['ccn.sum' => 5]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 5]),
             RelativePath::fromString('src/B/ClassB.php'),
             1,
         );
 
-        $v1 = self::violation(
+        $v1 = self::finding(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 10),
             symbolPath: SymbolPath::forClass('App\\A', 'ClassA'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Too complex',
             severity: Severity::Error,
             metricValue: 10,
         );
-        $v2 = self::violation(
+        $v2 = self::finding(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 20),
             symbolPath: SymbolPath::forMethod('App\\A', 'ClassA', 'doStuff'),
             ruleName: 'complexity.cognitive',
-            violationCode: 'complexity.cognitive',
+            code: 'complexity.cognitive',
             message: 'Too cognitive',
             severity: Severity::Warning,
             metricValue: 8,
         );
-        $v3 = self::violation(
+        $v3 = self::finding(
             location: new Location(RelativePath::fromString('src/B/ClassB.php'), 5),
             symbolPath: SymbolPath::forClass('App\\B', 'ClassB'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Complex',
             severity: Severity::Warning,
             metricValue: 5,
@@ -374,22 +374,22 @@ final class HtmlTreeBuilderTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->metrics($metrics)
-            ->addViolation($v1)
-            ->addViolation($v2)
-            ->addViolation($v3)
+            ->addFinding($v1)
+            ->addFinding($v2)
+            ->addFinding($v3)
             ->build();
 
         $result = $this->builder->build($report, new FormatterContext());
 
         $tree = $result['tree'];
-        // Root should have 3 total violations
+        // Root should have 3 total findings
         self::assertSame(3, $tree['violationCountTotal']);
 
         // App node should also have 3
         $appNode = $tree['children'][0];
         self::assertSame(3, $appNode['violationCountTotal']);
 
-        // ClassA has 2 violations (1 class-level + 1 callable-level attached to class)
+        // ClassA has 2 findings (1 class-level + 1 callable-level attached to class)
         $aNode = null;
         $bNode = null;
         foreach ($appNode['children'] as $child) {
@@ -445,16 +445,16 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App', 'Service'),
-            MetricBag::fromArray(['ccn.sum' => 10]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 10]),
             RelativePath::fromString('src/Service.php'),
             1,
         );
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Too complex',
             severity: Severity::Warning,
             metricValue: 10,
@@ -465,7 +465,7 @@ final class HtmlTreeBuilderTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->metrics($metrics)
-            ->addViolation($violation)
+            ->addFinding($finding)
             ->build();
 
         $result = $this->builder->build($report, new FormatterContext());
@@ -490,7 +490,7 @@ final class HtmlTreeBuilderTest extends TestCase
             MetricBag::fromArray([
                 'health.overall' => 85.0,
                 'health.complexity' => 90.0,
-                'loc.sum' => 1000,
+                'size.loc.sum' => 1000,
                 'classes.count' => 10,
             ]),
             null,
@@ -509,7 +509,7 @@ final class HtmlTreeBuilderTest extends TestCase
         $healthScores = (array) $result['summary']['healthScores'];
         self::assertSame(85.0, $healthScores['health.overall']);
         self::assertSame(90.0, $healthScores['health.complexity']);
-        self::assertArrayNotHasKey('loc.sum', $healthScores);
+        self::assertArrayNotHasKey('size.loc.sum', $healthScores);
         self::assertArrayNotHasKey('classes.count', $healthScores);
     }
 
@@ -520,7 +520,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App', 'ScriptTag</script>Test'),
-            MetricBag::fromArray(['ccn.sum' => 1]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 1]),
             RelativePath::fromString('src/ScriptTagTest.php'),
             1,
         );
@@ -584,14 +584,14 @@ final class HtmlTreeBuilderTest extends TestCase
                 name: 'health.overall',
                 formulas: ['class' => '100'],
                 description: 'Overall health score',
-                levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
+                levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
                 inverted: false,
             ),
             new ComputedMetricDefinition(
                 name: 'computed.custom',
                 formulas: ['class' => '50'],
                 description: 'Custom metric',
-                levels: [SymbolType::Class_],
+                levels: [SymbolLevel::Class_],
             ),
         ];
 
@@ -622,7 +622,7 @@ final class HtmlTreeBuilderTest extends TestCase
         $metrics->add(
             SymbolPath::forClass('App', 'Service'),
             MetricBag::fromArray([
-                'ccn.sum' => 5,
+                'complexity.ccn.sum' => 5,
                 'internal:cache_key' => 42,
                 'some:internal:value' => 99,
             ]),
@@ -641,28 +641,28 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $classNode = $result['tree']['children'][0]['children'][0];
         $classMetrics = (array) $classNode['metrics'];
-        self::assertArrayHasKey('ccn.sum', $classMetrics);
+        self::assertArrayHasKey('complexity.ccn.sum', $classMetrics);
         self::assertArrayNotHasKey('internal:cache_key', $classMetrics);
         self::assertArrayNotHasKey('some:internal:value', $classMetrics);
     }
 
     #[Test]
-    public function itNullsNanMetricValueInViolation(): void
+    public function itNullsNanMetricValueInFinding(): void
     {
         $metrics = new InMemoryMetricRepository();
 
         $metrics->add(
             SymbolPath::forClass('App', 'Service'),
-            MetricBag::fromArray(['mi' => 50.0]),
+            MetricBag::fromArray(['maintainability.mi' => 50.0]),
             RelativePath::fromString('src/Service.php'),
             1,
         );
 
-        $violation = self::violation(
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'maintainability.index',
-            violationCode: 'maintainability.index',
+            code: 'maintainability.index',
             message: 'Low maintainability',
             severity: Severity::Warning,
             metricValue: \NAN,
@@ -673,7 +673,7 @@ final class HtmlTreeBuilderTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->metrics($metrics)
-            ->addViolation($violation)
+            ->addFinding($finding)
             ->build();
 
         $result = $this->builder->build($report, new FormatterContext());
@@ -690,13 +690,13 @@ final class HtmlTreeBuilderTest extends TestCase
         // Classes have loc.sum but the namespace does not
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
-            MetricBag::fromArray(['loc.sum' => 100]),
+            MetricBag::fromArray(['size.loc.sum' => 100]),
             RelativePath::fromString('src/Service/UserService.php'),
             1,
         );
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'OrderService'),
-            MetricBag::fromArray(['loc.sum' => 150]),
+            MetricBag::fromArray(['size.loc.sum' => 150]),
             RelativePath::fromString('src/Service/OrderService.php'),
             1,
         );
@@ -716,11 +716,11 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame('Service', $serviceNode['name']);
 
         $serviceMetrics = (array) $serviceNode['metrics'];
-        self::assertSame(250, $serviceMetrics['loc.sum']);
+        self::assertSame(250, $serviceMetrics['size.loc.sum']);
 
         // Root should also aggregate
         $rootMetrics = (array) $tree['metrics'];
-        self::assertSame(250, $rootMetrics['loc.sum']);
+        self::assertSame(250, $rootMetrics['size.loc.sum']);
     }
 
     #[Test]
@@ -774,23 +774,23 @@ final class HtmlTreeBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsFileViolationDuringBuild(): void
+    public function itSkipsFileFindingDuringBuild(): void
     {
         $metrics = new InMemoryMetricRepository();
 
         $metrics->add(
             SymbolPath::forClass('App', 'Service'),
-            MetricBag::fromArray(['ccn.sum' => 5]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 5]),
             RelativePath::fromString('src/Service.php'),
             1,
         );
 
-        // File-level violation should be skipped (not attached to any node)
-        $violation = self::violation(
+        // File-level finding should be skipped (not attached to any node)
+        $finding = self::finding(
             location: new Location(RelativePath::fromString('src/helpers.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
             ruleName: 'size.loc',
-            violationCode: 'size.loc',
+            code: 'size.loc',
             message: 'File too large',
             severity: Severity::Warning,
             metricValue: 500,
@@ -801,13 +801,13 @@ final class HtmlTreeBuilderTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->metrics($metrics)
-            ->addViolation($violation)
+            ->addFinding($finding)
             ->build();
 
         $result = $this->builder->build($report, new FormatterContext());
 
         $tree = $result['tree'];
-        // Violation count in tree should be 0 (file-level skipped)
+        // Finding count in tree should be 0 (file-level skipped)
         self::assertSame(0, $tree['violationCountTotal']);
     }
 
@@ -818,7 +818,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forProject(),
-            MetricBag::fromArray(['loc.sum' => 100, 'classes.count' => 1]),
+            MetricBag::fromArray(['size.loc.sum' => 100, 'classes.count' => 1]),
             null,
             null,
         );
@@ -832,34 +832,34 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $metrics->add(
             SymbolPath::forClass('App', 'Foo'),
-            MetricBag::fromArray(['ccn.sum' => 5]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 5]),
             RelativePath::fromString('src/Foo.php'),
             1,
         );
 
-        // Class-level violation (30 min debt via RemediationTimeRegistry)
-        $classViolation = self::violation(
+        // Class-level finding (30 min debt via RemediationTimeRegistry)
+        $classFinding = self::finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            code: 'complexity.cyclomatic',
             message: 'Complex',
             severity: Severity::Error,
         );
 
-        // File-level violation — won't be partitioned into any node
-        $fileViolation = self::violation(
+        // File-level finding — won't be partitioned into any node
+        $fileFinding = self::finding(
             location: new Location(RelativePath::fromString('src/Foo.php'), null),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Foo.php')),
             ruleName: 'size.loc',
-            violationCode: 'size.loc',
+            code: 'size.loc',
             message: 'File too long',
             severity: Severity::Warning,
         );
 
-        // Report with techDebtMinutes = 50 (includes both violations)
+        // Report with techDebtMinutes = 50 (includes both findings)
         $report = new \Qualimetrix\Reporting\Report(
-            violations: [$classViolation, $fileViolation],
+            findings: [$classFinding, $fileFinding],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
@@ -872,7 +872,7 @@ final class HtmlTreeBuilderTest extends TestCase
         $result = $this->builder->build($report, new FormatterContext());
 
         // Both tree root and summary should show 50 (report's techDebtMinutes),
-        // not the bottom-up aggregation which misses file-level violations (30)
+        // not the bottom-up aggregation which misses file-level findings (30)
         self::assertSame(50, $result['tree']['debtMinutes']);
         self::assertSame(50, $result['summary']['totalDebtMinutes']);
     }
@@ -886,13 +886,13 @@ final class HtmlTreeBuilderTest extends TestCase
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
-        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+        return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
 }

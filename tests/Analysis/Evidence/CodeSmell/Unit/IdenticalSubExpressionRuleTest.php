@@ -12,12 +12,11 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(IdenticalSubExpressionRule::class)]
 #[CoversClass(IdenticalSubExpressionOptions::class)]
@@ -35,13 +34,6 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
         self::assertNotEmpty($rule->getDescription());
-    }
-
-    #[Test]
-    public function itGetCategory(): void
-    {
-        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
     #[Test]
@@ -95,14 +87,14 @@ final class IdenticalSubExpressionRuleTest extends TestCase
             ->withEntry('identicalSubExpression.identical_operands', ['subjectKind' => 'file', 'line' => 10, 'detail' => '']);
 
         $context = $this->createContext($metricBag);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(10, $violations[0]->location->line);
-        self::assertStringContainsString('operator', $violations[0]->message);
-        self::assertSame('code-smell.identical-subexpression', $violations[0]->violationCode);
-        self::assertSame(1.0, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertStringContainsString('operator', $findings[0]->message);
+        self::assertSame('code-smell.identical-subexpression', $findings[0]->code);
+        self::assertSame(1.0, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -114,10 +106,10 @@ final class IdenticalSubExpressionRuleTest extends TestCase
             ->withEntry('identicalSubExpression.duplicate_condition', ['subjectKind' => 'file', 'line' => 5, 'detail' => '']);
 
         $context = $this->createContext($metricBag);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('if/elseif', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('if/elseif', $findings[0]->message);
     }
 
     #[Test]
@@ -129,10 +121,10 @@ final class IdenticalSubExpressionRuleTest extends TestCase
             ->withEntry('identicalSubExpression.identical_ternary', ['subjectKind' => 'file', 'line' => 3, 'detail' => '']);
 
         $context = $this->createContext($metricBag);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('ternary', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('ternary', $findings[0]->message);
     }
 
     #[Test]
@@ -144,10 +136,10 @@ final class IdenticalSubExpressionRuleTest extends TestCase
             ->withEntry('identicalSubExpression.duplicate_match_arm', ['subjectKind' => 'file', 'line' => 7, 'detail' => '']);
 
         $context = $this->createContext($metricBag);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertStringContainsString('match', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('match', $findings[0]->message);
     }
 
     #[Test]
@@ -161,9 +153,9 @@ final class IdenticalSubExpressionRuleTest extends TestCase
             ->withEntry('identicalSubExpression.duplicate_condition', ['subjectKind' => 'file', 'line' => 12, 'detail' => '']);
 
         $context = $this->createContext($metricBag);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(3, $violations);
+        self::assertCount(3, $findings);
     }
 
     // -- Options Tests ---------------------------------------------------
@@ -219,7 +211,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
         $repository->method('get')
             ->willReturn($metricBag);
 

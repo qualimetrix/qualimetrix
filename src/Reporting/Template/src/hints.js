@@ -81,7 +81,7 @@ export function initHints(hintsData) {
 /**
  * Returns a human-readable hint for a metric value.
  *
- * @param {string} metricKey - The metric key (e.g. 'ccn', 'ccn.avg', 'lcom.max')
+ * @param {string} metricKey - The metric key (e.g. 'complexity.ccn', 'complexity.ccn.avg', 'cohesion.lcom.max')
  * @param {*} value - The metric value
  * @returns {string|null} Hint text, or null if no hint available
  */
@@ -154,14 +154,16 @@ export function getHealthHint(metricKey, node) {
 
 /**
  * Resolves a metric key with aggregation suffix to its base hint key.
- * E.g. 'ccn.avg' → 'ccn', 'lcom.max' → 'lcom', 'ccn' → 'ccn'
+ * E.g. 'complexity.ccn.avg' → 'complexity.ccn', 'cohesion.lcom.max' → 'cohesion.lcom', 'complexity.ccn' → 'complexity.ccn'
  */
 function resolveBaseKey(key) {
   // First check for exact match
   if (METRIC_HINTS.has(key)) return key;
 
   // Strip known aggregation suffixes
-  const suffixes = ['.avg', '.max', '.min', '.sum', '.p95', '.p5'];
+  // The product's AggregationStrategy, in full. The copy that stood here was
+  // one short — no '.count' — so a counted metric resolved to no hint at all.
+  const suffixes = ['.avg', '.max', '.min', '.sum', '.count', '.p95', '.p5'];
   for (const suffix of suffixes) {
     if (key.endsWith(suffix)) {
       const base = key.slice(0, -suffix.length);

@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -33,7 +32,6 @@ final class UnusedPrivateRuleTest extends TestCase
 
         self::assertSame('code-smell.unused-private', $rule->getName());
         self::assertSame('Detects unused private methods, properties, and constants', $rule->getDescription());
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
     #[Test]
@@ -43,7 +41,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function disabledRuleReturnsNoViolations(): void
+    public function disabledRuleReturnsNoFindings(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions(enabled: false));
 
@@ -56,7 +54,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function noUnusedMembersProducesNoViolations(): void
+    public function noUnusedMembersProducesNoFindings(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -64,7 +62,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $classInfo = $this->exactClassInfo($symbolPath, 'src/Clean.php', 5);
 
         $metricBag = (new MetricBag())
-            ->with('unusedPrivate.total', 0);
+            ->with('code-smell.unused-private.total', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -77,7 +75,7 @@ final class UnusedPrivateRuleTest extends TestCase
     }
 
     #[Test]
-    public function unusedMethodProducesViolation(): void
+    public function unusedMethodProducesFinding(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -85,8 +83,8 @@ final class UnusedPrivateRuleTest extends TestCase
         $classInfo = $this->exactClassInfo($symbolPath, 'src/Smelly.php', 5);
 
         $metricBag = (new MetricBag())
-            ->with('unusedPrivate.total', 1)
-            ->withEntry('unusedPrivate.method', ['line' => 15, 'name' => 'doLoadMappingFile']);
+            ->with('code-smell.unused-private.total', 1)
+            ->withEntry('code-smell.unused-private.method', ['line' => 15, 'name' => 'doLoadMappingFile']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -94,18 +92,18 @@ final class UnusedPrivateRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame(15, $violations[0]->location->line);
-        self::assertSame('Unused private method `doLoadMappingFile`', $violations[0]->message);
-        self::assertSame('code-smell.unused-private', $violations[0]->ruleName);
-        self::assertSame(1, $violations[0]->metricValue);
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(15, $findings[0]->location->line);
+        self::assertSame('Unused private method `doLoadMappingFile`', $findings[0]->message);
+        self::assertSame('code-smell.unused-private', $findings[0]->ruleName);
+        self::assertSame(1, $findings[0]->metricValue);
     }
 
     #[Test]
-    public function unusedPropertyProducesViolation(): void
+    public function unusedPropertyProducesFinding(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -113,8 +111,8 @@ final class UnusedPrivateRuleTest extends TestCase
         $classInfo = $this->exactClassInfo($symbolPath, 'src/PropClass.php', 5);
 
         $metricBag = (new MetricBag())
-            ->with('unusedPrivate.total', 1)
-            ->withEntry('unusedPrivate.property', ['line' => 10, 'name' => 'cache']);
+            ->with('code-smell.unused-private.total', 1)
+            ->withEntry('code-smell.unused-private.property', ['line' => 10, 'name' => 'cache']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -122,14 +120,14 @@ final class UnusedPrivateRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame('Unused private property `cache`', $violations[0]->message);
+        self::assertCount(1, $findings);
+        self::assertSame('Unused private property `cache`', $findings[0]->message);
     }
 
     #[Test]
-    public function unusedConstantProducesViolation(): void
+    public function unusedConstantProducesFinding(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -137,8 +135,8 @@ final class UnusedPrivateRuleTest extends TestCase
         $classInfo = $this->exactClassInfo($symbolPath, 'src/ConstClass.php', 5);
 
         $metricBag = (new MetricBag())
-            ->with('unusedPrivate.total', 1)
-            ->withEntry('unusedPrivate.constant', ['line' => 8, 'name' => 'MAX_RETRIES']);
+            ->with('code-smell.unused-private.total', 1)
+            ->withEntry('code-smell.unused-private.constant', ['line' => 8, 'name' => 'MAX_RETRIES']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -146,15 +144,15 @@ final class UnusedPrivateRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(1, $violations);
-        self::assertSame('Unused private constant `MAX_RETRIES`', $violations[0]->message);
-        self::assertSame(8, $violations[0]->location->line);
+        self::assertCount(1, $findings);
+        self::assertSame('Unused private constant `MAX_RETRIES`', $findings[0]->message);
+        self::assertSame(8, $findings[0]->location->line);
     }
 
     #[Test]
-    public function multipleUnusedMembersProduceMultipleViolations(): void
+    public function multipleUnusedMembersProduceMultipleFindings(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
@@ -162,11 +160,11 @@ final class UnusedPrivateRuleTest extends TestCase
         $classInfo = $this->exactClassInfo($symbolPath, 'src/ManyUnused.php', 5);
 
         $metricBag = (new MetricBag())
-            ->with('unusedPrivate.total', 4)
-            ->withEntry('unusedPrivate.method', ['line' => 10, 'name' => 'foo'])
-            ->withEntry('unusedPrivate.method', ['line' => 15, 'name' => 'bar'])
-            ->withEntry('unusedPrivate.property', ['line' => 7, 'name' => 'baz'])
-            ->withEntry('unusedPrivate.constant', ['line' => 8, 'name' => 'QUX']);
+            ->with('code-smell.unused-private.total', 4)
+            ->withEntry('code-smell.unused-private.method', ['line' => 10, 'name' => 'foo'])
+            ->withEntry('code-smell.unused-private.method', ['line' => 15, 'name' => 'bar'])
+            ->withEntry('code-smell.unused-private.property', ['line' => 7, 'name' => 'baz'])
+            ->withEntry('code-smell.unused-private.constant', ['line' => 8, 'name' => 'QUX']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allDeclarations')->willReturn([$classInfo]);
@@ -174,19 +172,19 @@ final class UnusedPrivateRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyze($context);
+        $findings = $rule->analyze($context);
 
-        self::assertCount(4, $violations);
+        self::assertCount(4, $findings);
 
         self::assertSame([
             'Unused private method `foo`',
             'Unused private method `bar`',
             'Unused private property `baz`',
             'Unused private constant `QUX`',
-        ], array_map(static fn($violation): string => $violation->message, $violations));
-        self::assertSame([10, 15, 7, 8], array_map(static fn($violation): ?int => $violation->location->line, $violations));
-        self::assertSame([4, 4, 4, 4], array_map(static fn($violation): int|float|null => $violation->metricValue, $violations));
-        self::assertSame([true, true, true, true], array_map(static fn($violation): bool => $violation->location->precise, $violations));
+        ], array_map(static fn($finding): string => $finding->message, $findings));
+        self::assertSame([10, 15, 7, 8], array_map(static fn($finding): ?int => $finding->location->line, $findings));
+        self::assertSame([4, 4, 4, 4], array_map(static fn($finding): int|float|null => $finding->metricValue, $findings));
+        self::assertSame([true, true, true, true], array_map(static fn($finding): bool => $finding->location->precise, $findings));
     }
 
     #[Test]
@@ -197,16 +195,16 @@ final class UnusedPrivateRuleTest extends TestCase
         $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('getSubject')->willReturn(
             (new MetricBag())
-                ->with('unusedPrivate.total', 1)
-                ->withEntry('unusedPrivate.property', ['line' => 9]),
+                ->with('code-smell.unused-private.total', 1)
+                ->withEntry('code-smell.unused-private.property', ['line' => 9]),
         );
 
-        $violations = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
+        $findings = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
 
-        self::assertCount(1, $violations);
-        self::assertSame('Unused private property', $violations[0]->message);
-        self::assertSame('Remove the unused symbol to reduce dead code.', $violations[0]->recommendation);
-        self::assertSame($classInfo->subject?->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertCount(1, $findings);
+        self::assertSame('Unused private property', $findings[0]->message);
+        self::assertSame('Remove the unused symbol to reduce dead code.', $findings[0]->recommendation);
+        self::assertSame($classInfo->subject?->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
     #[Test]
@@ -251,15 +249,15 @@ final class UnusedPrivateRuleTest extends TestCase
         $repository->method('allDeclarations')->willReturn([$first, $second]);
         $repository->method('getSubject')->willReturnCallback(
             static fn() => (new MetricBag())
-                ->with('unusedPrivate.total', 1)
-                ->withEntry('unusedPrivate.method', ['line' => 15, 'name' => 'stale']),
+                ->with('code-smell.unused-private.total', 1)
+                ->withEntry('code-smell.unused-private.method', ['line' => 15, 'name' => 'stale']),
         );
 
-        $violations = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
+        $findings = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
 
-        self::assertCount(2, $violations);
-        self::assertSame($first->subject?->toCanonical(), $violations[0]->subject->toCanonical());
-        self::assertSame($second->subject?->toCanonical(), $violations[1]->subject->toCanonical());
+        self::assertCount(2, $findings);
+        self::assertSame($first->subject?->toCanonical(), $findings[0]->subject->toCanonical());
+        self::assertSame($second->subject?->toCanonical(), $findings[1]->subject->toCanonical());
     }
 
     #[Test]

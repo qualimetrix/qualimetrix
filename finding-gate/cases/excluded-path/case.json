@@ -1,0 +1,21 @@
+{
+    "id": "excluded-path",
+    "description": "Auxiliary: the only case with a non-empty exclude_paths, silencing the one fixture that would fire code-smell.goto.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2"
+    ],
+    "channels": [
+        "code-smell.eval@callable"
+    ],
+    "explainSubjects": [
+        "declaration:callable:Corpus\\ExcludedPath\\Reported::run@src/Reported.php"
+    ]
+}
