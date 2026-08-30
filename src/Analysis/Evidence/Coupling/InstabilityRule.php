@@ -31,8 +31,6 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * Classes/namespaces with high instability are fragile — they depend on many
  * other components, so changes in dependencies may break them.
- *
- * @qmx-threshold coupling.cbo 21 -- Raw CBO 20, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 21 gets one-edge headroom.
  */
 #[CliAlias('instability-class-warning', 'class.max_warning')]
 #[CliAlias('instability-class-error', 'class.max_error')]

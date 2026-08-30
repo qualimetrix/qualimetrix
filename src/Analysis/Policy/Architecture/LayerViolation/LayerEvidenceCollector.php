@@ -38,8 +38,6 @@ use WeakMap;
  * — the policy not prepared at all — is deliberately not one of them: it
  * throws, because memoising its emptiness would silence both verdicts for the
  * whole run.
- *
- * @qmx-threshold coupling.instability warning=0.82 -- Ca=2, raw Ce=8 (I=0.80): AnalysisContext, ArchitecturePolicy, ArchitectureConfiguration, LayerMatch, LayerShadowing, SymbolLevel, WeakMap and the LayerEvidence it constructs are each read to answer one of the two verdicts this collector shares between them; none can be dropped without duplicating the walk it exists to share. Raw Ce=8 gets one-edge headroom: at Ce=9, I=0.818, still under 0.82; at Ce=10, I=0.833, over it.
  */
 final class LayerEvidenceCollector
 {

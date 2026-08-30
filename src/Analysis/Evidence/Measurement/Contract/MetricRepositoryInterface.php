@@ -14,7 +14,6 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Mutable Measurement repository promise shared by collection, aggregation, and rules.
  *
  * @qmx-threshold coupling.cbo 46 -- Stable provider-owned repository fan-in gets one-edge headroom above raw CBO 45.
- * @qmx-threshold coupling.class-rank warning=0.020 error=0.020 -- Project-size scaling maps this point threshold to about 0.00748, just above the observed raw ClassRank 0.00745523 for this intentional contract hub.
  */
 interface MetricRepositoryInterface
 {

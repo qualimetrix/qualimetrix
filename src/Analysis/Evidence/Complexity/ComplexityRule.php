@@ -27,8 +27,6 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * - Callable level: checks the CCN of one method or global function
  * - Class level: checks maximum CCN among class methods
- *
- * @qmx-threshold coupling.cbo 21 -- Raw CBO 20, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 21 gets one-edge headroom.
  */
 #[CliAlias('cyclomatic-warning', 'callable.warning')]
 #[CliAlias('cyclomatic-error', 'callable.error')]

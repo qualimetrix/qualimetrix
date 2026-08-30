@@ -28,13 +28,6 @@ use Stringable;
  * Note on directionality: this VO has no static reference to {@see AbsolutePath}.
  * The conversion to absolute uses {@see AbsolutePath::joinRelative()}, mirroring
  * Java NIO / Python pathlib where the base owns the resolution operation.
- *
- * @qmx-threshold coupling.cbo warning=50 error=80 — ADR 0015: shared path VO intentionally has high afferent coupling.
- *                 coupling is by design: every rule / formatter / value carrier
- *                 consumes this VO.
- * @qmx-threshold coupling.class-rank warning=0.06 error=0.10 — ADR 0015: shared path VO is a hub by construction.
- *                 hub by construction (PageRank-style metric tracks afferent
- *                 importance); not a coupling defect.
  */
 final readonly class RelativePath implements JsonSerializable, Stringable
 {

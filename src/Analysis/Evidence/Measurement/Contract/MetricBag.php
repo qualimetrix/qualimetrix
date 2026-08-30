@@ -12,7 +12,12 @@ use RuntimeException;
  * Provider-owned metric value bag shared across collection, aggregation, and rules.
  *
  * @qmx-threshold coupling.cbo 68 -- Stable Measurement contract fan-in has raw CBO 67 after the declaration-index delivery edge and one-edge headroom.
- * @qmx-threshold coupling.class-rank warning=0.035 error=0.035 -- Project-size scaling maps this point threshold to about 0.01309, just above the observed raw ClassRank 0.0128228 for this intentional contract hub.
+ * @qmx-threshold coupling.class-rank warning=0.035 error=0.035 -- Intentional contract hub:
+ *                observed raw ClassRank 0.00995, and project-size scaling
+ *                (`sqrt(classCount/100)`, 867 classes today) maps this point threshold to
+ *                0.0119. The margin is deliberately more than one step: the scaled value
+ *                moves with the project's class count, so a threshold set just above
+ *                today's rank would trip on growth anywhere else in the tree.
  */
 final class MetricBag
 {

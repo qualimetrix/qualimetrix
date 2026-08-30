@@ -24,8 +24,6 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * For rules that whitelist individual occurrences (e.g. allowed boolean
  * prefixes, allowed @-suppressed functions) the options class must
  * implement {@see EntryFilteringOptionsInterface}.
- *
- * @qmx-threshold coupling.cbo 22 -- Declaring the levels a channel reports at costs every rule one edge onto SymbolLevel; this base sat exactly on the inclusive warning threshold of 20 before it. Raw CBO 21 now, after ADR 0031 (rule-vocabulary Ш4c) added one more constant-typed dependency (ChannelShape) that every subclass answering shape() through this base needs; 22 gets one-edge headroom again.
  */
 abstract class AbstractCodeSmellRule extends AbstractRule
 {
