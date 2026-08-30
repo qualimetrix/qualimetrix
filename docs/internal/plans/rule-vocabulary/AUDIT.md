@@ -221,6 +221,14 @@ the product's own parsing strips backtick regions before matching (AGENTS.md
 four real sites are `SymbolLevel` ×2 (`coupling.cbo`, `coupling.class-rank`)
 and `RelativePath` ×2 (the same pair), and none of them is dead.
 
+**Corrected again, 2026-08-30 (Ш8):** «none of them is dead» держалось на
+строгом критерии «директива меняет вердикт», и по нему было верно. Измерение
+якорей показало другое: у трёх из четырёх величина уже прошла поднятый порог
+(`CBO: 105 (threshold: 105)`, `CBO: 85 (threshold: 80)`,
+`ClassRank: 0.0483 (threshold: 0.0340)`), то есть вердикт не менялся не по
+замыслу, а потому что послабление не сработало. Эти три сняты; из четвёрки
+остался `SymbolLevel` class-rank. Разбор — «Ш8. Исполнен» в `PLAN.md`.
+
 136 was never a count of authored directives — it is a naive
 `grep -rn '@qmx-threshold' src | wc -l`, which also matches every mention of
 the tag in prose, including the very documentation examples the paragraph
