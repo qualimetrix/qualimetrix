@@ -1,3 +1,16 @@
+# SUPERSEDED 2026-08-30 — DO NOT BUILD ON THIS TABLE.
+# The seam this table was taken for (plan step Ш7) was cancelled; the audit it
+# was meant to enable is done by outcome difference instead, which needs no
+# per-site inventory. Review round 2 and the orchestrator's own reading found
+# this table wrong in three ways: it misses ComplexityRule::classFinding()
+# (ComplexityRule.php:263-264, an inline match the extractor's accessor-name
+# scan cannot see); its 22 `decides-in-rule` rows are keyed on the RULE, not on
+# the site, so GodClassRule hides at least five boundary comparisons behind one
+# row; and LongParameterListRule takes two decisions, not three — rows at lines
+# 183 and 187 are one decision (reading the override and applying it inside
+# checkVoConstructor()). The count of 50 held only by those two errors
+# cancelling out. Kept as evidence of the round, not as an enumeration.
+#
 # Where a threshold DECISION is actually taken. One row per DECISION SITE, not
 # per rule: the first edition of this table gave one row per rule and hid three
 # facts at once — LongParameterListRule takes three decisions, the five
