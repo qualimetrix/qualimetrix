@@ -27,8 +27,6 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * - Callable level: checks the cognitive complexity of one method or global function
  * - Class level: checks maximum cognitive complexity among class methods
- *
- * @qmx-threshold coupling.cbo 21 -- Raw CBO 20, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 21 gets one-edge headroom.
  */
 #[CliAlias('cognitive-warning', 'callable.warning')]
 #[CliAlias('cognitive-error', 'callable.error')]

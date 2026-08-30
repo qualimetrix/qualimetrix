@@ -9,11 +9,12 @@
 # one step (37 before Ш6, 39 after П2, 41 after П4), and each time a number
 # written by hand somewhere else went stale first. `composer
 # enumeration:directives:check` fails when this file and the tree disagree. The same script over
-# tests/ finds 2. Four of the 37 sit in a namespace excluded from the very
-# channel they retune (`SymbolLevel.php:19,20`, `RelativePath.php:32,35`) — that
-# is the population of the Sh5e2b lesson, and it is four, not the five AUDIT.md
-# claims: the fifth, on `ThresholdOverride`, does not exist. All five occurrences
-# of the tag in that file are backticked examples.
+# tests/ finds 2. One site still sits in a namespace excluded from the very
+# channel it retunes (`SymbolLevel.php`, class-rank) — that is what is left of
+# the Sh5e2b population after Ш8 removed the three whose measured value had
+# already overrun the threshold they raised. AUDIT.md's fifth member, on
+# `ThresholdOverride`, never existed: all five occurrences of the tag in that
+# file are backticked examples.
 #
 # HOW THIS WAS PRODUCED
 # Token-level, not line-level: only T_DOC_COMMENT tokens are read, backtick-
@@ -55,13 +56,7 @@ src/Core/Symbol/MetricSubjectCodec.php	68	complexity.cyclomatic	warning=13 error
 src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	74	complexity.cyclomatic	warning=11 error=11 — Finite attachment projection keeps node lookup, magnitude normalization, and payload fields together.
 src/Core/Symbol/MetricSubjectCodec.php	69	complexity.npath	warning=289 error=289 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
 src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	30	complexity.wmc	warning=52 error=52 -- Finite php-parser expression algebra keeps exact NPath composition and saturation together (grew by one arm for the  assignment-coalesce operator).
-src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php	28	coupling.cbo	22 -- Declaring the levels a channel reports at costs every rule one edge onto SymbolLevel; this base sat exactly on the inclusive warning threshold of 20 before it. Raw CBO 21 now, after ADR 0031 (rule-vocabulary Ш4c) added one more constant-typed dependency (ChannelShape) that every subclass answering shape() through this base needs; 22 gets one-edge headroom again.
-src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	31	coupling.cbo	21 -- Raw CBO 20, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 21 gets one-edge headroom.
-src/Analysis/Evidence/Complexity/ComplexityRule.php	31	coupling.cbo	21 -- Raw CBO 20, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 21 gets one-edge headroom.
-src/Analysis/Evidence/Coupling/CboRule.php	34	coupling.cbo	23 -- Raw CBO 22, from declaring both its own channel (per-rule) and its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this hierarchical rule's dependencies; 23 gets one-edge headroom.
-src/Analysis/Evidence/Coupling/DistanceRule.php	46	coupling.cbo	23 -- Raw CBO 22, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 23 gets one-edge headroom.
-src/Analysis/Evidence/Coupling/InstabilityRule.php	35	coupling.cbo	21 -- Raw CBO 20, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 21 gets one-edge headroom.
-src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php	19	coupling.cbo	28 -- Raw CBO 27 is stable graph-query fan-in: DependencyGraphBuilderInterface, DependencyGraphBuilder, AnalysisPipeline, DependencyGraphProjector, and MeasurementAggregationInterface are the five net consumers; inclusive threshold 28 leaves no room for another edge.
+src/Analysis/Evidence/Coupling/CboRule.php	34	coupling.cbo	21 -- Raw CBO 20: this hierarchical rule's own dependencies
 src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	18	coupling.cbo	27 -- Measurement collector base is a stable provider-owned extension hub; current raw CBO 26 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php	10	coupling.cbo	38 -- Aggregation definitions and consumers intentionally share this provider-owned enum; current raw CBO 37 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Contract/DeclarationIndexAwareInterface.php	16	coupling.cbo	23 -- Every producer of declaration identity implements this one-method promise; its fan-in is the point of it, and raw CBO 22 gets one-edge headroom.
@@ -71,14 +66,9 @@ src/Analysis/Evidence/Measurement/Contract/MetricName.php	18	coupling.cbo	70 -- 
 src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php	16	coupling.cbo	46 -- Stable provider-owned repository fan-in gets one-edge headroom above raw CBO 45.
 src/Analysis/Evidence/Measurement/Contract/ResettableVisitorInterface.php	10	coupling.cbo	23 -- Measurement visitors intentionally share this lifecycle promise; current raw CBO 22 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	25	coupling.cbo	22 -- Composition root of traversal identity: four collaborators plus the node types it routes; raw CBO 21 gets one-edge headroom.
-src/Core/Path/RelativePath.php	32	coupling.cbo	warning=50 error=80 — ADR 0015: shared path VO intentionally has high afferent coupling.
-src/Core/Symbol/SymbolLevel.php	19	coupling.cbo	105 -- Raw CBO 104 with one edge of headroom. This channel is excluded by namespace for , so this threshold does not decide the published report or the exit code; it decides whether the hub is reported at all, i.e. whether it appears in  and in the suppression count. Keeping it there means a step that concentrates more of the vocabulary here has to move this number and say why.
 src/Reporting/FormatterContext.php	14	coupling.cbo	warning=31 error=31 -- Formatter context is the immutable Reporting input boundary every formatter's  signature depends on; the prior threshold of 30 reserved room for exactly one more dependent, and Ш6's  formatter () is that one. The inclusive threshold of 31 again rejects one additional dependency beyond it.
 src/Reporting/Report.php	19	coupling.cbo	warning=31 error=31 -- Report is the transport VO every formatter's
-src/Analysis/Evidence/Measurement/Contract/MetricBag.php	15	coupling.class-rank	warning=0.035 error=0.035 -- Project-size scaling maps this point threshold to about 0.01309, just above the observed raw ClassRank 0.0128228 for this intentional contract hub.
-src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php	17	coupling.class-rank	warning=0.020 error=0.020 -- Project-size scaling maps this point threshold to about 0.00748, just above the observed raw ClassRank 0.00745523 for this intentional contract hub.
-src/Core/Path/RelativePath.php	35	coupling.class-rank	warning=0.06 error=0.10 — ADR 0015: shared path VO is a hub by construction.
-src/Core/Symbol/SymbolLevel.php	20	coupling.class-rank	warning=0.045 error=0.045 -- Same intentional contract-hub role as MetricBag, and the same suppressed-report reach as the CBO threshold above. A point threshold is scaled by project size before comparison: this project's default point 0.02 is reported as an effective 0.0069, which puts 0.045 at roughly 0.0155 against the observed raw ClassRank 0.014. Warning and error are deliberately equal — there is no band in which growing fan-in on the level vocabulary is a warning rather than the expected shape.
+src/Analysis/Evidence/Measurement/Contract/MetricBag.php	15	coupling.class-rank	warning=0.035 error=0.035 -- Intentional contract hub:
+src/Core/Symbol/SymbolLevel.php	19	coupling.class-rank	warning=0.045 error=0.045 -- Same intentional contract-hub
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	26	coupling.instability	warning=0.95 error=0.95 -- A composition root depends outward on everything it assembles and is depended on by one trait; instability near one is its shape, not its defect.
-src/Analysis/Policy/Architecture/LayerViolation/LayerEvidenceCollector.php	42	coupling.instability	warning=0.82 -- Ca=2, raw Ce=8 (I=0.80): AnalysisContext, ArchitecturePolicy, ArchitectureConfiguration, LayerMatch, LayerShadowing, SymbolLevel, WeakMap and the LayerEvidence it constructs are each read to answer one of the two verdicts this collector shares between them; none can be dropped without duplicating the walk it exists to share. Raw Ce=8 gets one-edge headroom: at Ce=9, I=0.818, still under 0.82; at Ce=10, I=0.833, over it.
 src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php	37	coupling.instability	warning=0.89 -- Ca=2, raw Ce=15 (I=0.882): this class had one consumer (its owning rule) until  became a second;  never measured it before that, so the fifteen outgoing edges are not new, only now counted. The actual fix is splitting directive storage from finding-building, which is not done here — it is recorded as debt in the rule-vocabulary plan's Ш5 "Debt Ш3" section, not accepted as the permanent shape of this class. Raw Ce=15 gets one-edge headroom: at Ce=16, I=0.889, still under 0.89; at Ce=17, I=0.895, over it.

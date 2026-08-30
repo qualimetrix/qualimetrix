@@ -42,8 +42,6 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * - By default, uses ProjectNamespaceResolver to auto-detect project namespaces from composer.json
  * - Use `includeNamespaces` option to override auto-detection
  * - Use `exclude_namespaces` (universal per-rule option) to exclude specific namespaces
- *
- * @qmx-threshold coupling.cbo 23 -- Raw CBO 22, from declaring its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this rule's own dependencies; 23 gets one-edge headroom.
  */
 #[CliAlias('distance-warning', 'max_distance_warning')]
 #[CliAlias('distance-error', 'max_distance_error')]

@@ -16,8 +16,15 @@ namespace Qualimetrix\Core\Symbol;
  * is to spell the level in more than one enum again — the defect this one hub
  * replaced.
  *
- * @qmx-threshold coupling.cbo 105 -- Raw CBO 104 with one edge of headroom. This channel is excluded by namespace for `Core\Symbol`, so this threshold does not decide the published report or the exit code; it decides whether the hub is reported at all, i.e. whether it appears in `--show-suppressed` and in the suppression count. Keeping it there means a step that concentrates more of the vocabulary here has to move this number and say why.
- * @qmx-threshold coupling.class-rank warning=0.045 error=0.045 -- Same intentional contract-hub role as MetricBag, and the same suppressed-report reach as the CBO threshold above. A point threshold is scaled by project size before comparison: this project's default point 0.02 is reported as an effective 0.0069, which puts 0.045 at roughly 0.0155 against the observed raw ClassRank 0.014. Warning and error are deliberately equal — there is no band in which growing fan-in on the level vocabulary is a warning rather than the expected shape.
+ * @qmx-threshold coupling.class-rank warning=0.045 error=0.045 -- Same intentional contract-hub
+ *                role as MetricBag. This channel is excluded by namespace for `Core\Symbol`,
+ *                so the threshold decides only whether the hub is reported at all — whether it
+ *                appears under `--show-suppressed` and in the suppression count — not the
+ *                published report or the exit code. Project-size scaling maps 0.045 to 0.0153
+ *                against the observed raw ClassRank 0.0133, a margin wider than one step for
+ *                the same reason as MetricBag's. Warning and error are deliberately equal:
+ *                there is no band in which growing fan-in on the level vocabulary is a warning
+ *                rather than the expected shape.
  */
 enum SymbolLevel: string
 {

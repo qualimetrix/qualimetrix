@@ -31,7 +31,9 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - Medium CBO (14-19): acceptable (warning)
  * - High CBO (>=20): tightly coupled, hard to isolate (error)
  *
- * @qmx-threshold coupling.cbo 23 -- Raw CBO 22, from declaring both its own channel (per-rule) and its shape (ADR 0031, the ChannelShape-typed SHAPE constant) alongside the rest of this hierarchical rule's dependencies; 23 gets one-edge headroom.
+ * @qmx-threshold coupling.cbo 21 -- Raw CBO 20: this hierarchical rule's own dependencies
+ *                plus the per-rule channel and shape declarations (ADR 0031); 21 gets
+ *                one-edge headroom.
  */
 #[CliAlias('cbo-warning', 'class.warning')]
 #[CliAlias('cbo-error', 'class.error')]
