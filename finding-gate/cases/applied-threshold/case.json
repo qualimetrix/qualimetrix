@@ -1,0 +1,26 @@
+{
+    "id": "applied-threshold",
+    "description": "Auxiliary: the only case where an inline @qmx-threshold is applied rather than refused. One annotation lowers a threshold until a finding exists that no configuration of this case produces, one raises a threshold until a finding every configuration of this case produces is gone, one is written on a class and has to reach a declaration inside it, and one class carries no annotation at all so that an override bound to the file rather than to its declaration is visible.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2"
+    ],
+    "channels": [
+        "complexity.cognitive@callable",
+        "complexity.cognitive@class",
+        "complexity.cyclomatic@callable"
+    ],
+    "explainSubjects": [
+        "declaration:callable:Corpus\\AppliedThreshold\\Retuned::classify@src/Retuned.php",
+        "declaration:callable:Corpus\\AppliedThreshold\\ClassScoped::walk@src/ClassScoped.php",
+        "declaration:callable:Corpus\\AppliedThreshold\\Neighbour::classify@src/Neighbour.php",
+        "declaration:callable:Corpus\\AppliedThreshold\\Accepted::assemble@src/Accepted.php"
+    ]
+}
