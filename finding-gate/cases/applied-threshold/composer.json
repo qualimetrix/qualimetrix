@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/applied-threshold",
+    "description": "Corpus case: inline threshold overrides that are applied, in both directions",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\AppliedThreshold\\": "src/"
+        }
+    }
+}

@@ -150,11 +150,52 @@ and still has to fire **exactly** what its `channels` claims; it is only left ou
 of the coverage and multiplicity arithmetic. The original guarantee — one
 authoritative owner per channel — is unchanged word for word.
 
-The three that exist address only names later steps do not rename, and each was
-checked to bite: without its selector, both fixtures of the case fire. An
-auxiliary case is not evidence about a selector's *reach* — after a rule is
-split, "does `--disable-rule=<old name>` still find anything" is a question the
-reference's vocabulary cannot even state, and it is closed by a test, not here.
+Each auxiliary case addresses one kind of input and was checked to bite: take
+that input away and the case stops firing exactly what it claims. For the
+selector cases that is both fixtures firing once the selector is gone. An auxiliary case is not
+evidence about a selector's *reach* — after a rule is split, "does
+`--disable-rule=<old name>` still find anything" is a question the reference's
+vocabulary cannot even state, and it is closed by a test, not here.
+
+`applied-threshold` is the one whose input is an annotation rather than a
+selector. Before it, both `@qmx-threshold` annotations in the corpus were
+refusals — a rule that declares no override support, and a value that does not
+parse — so a green gate was evidence about how an override is *rejected* and
+about nothing else. It carries four fixtures, because an applied override has
+more than one thing to witness:
+
+- **the lowering direction publishes itself.** `Retuned::classify` fires at no
+  configured threshold of the case, and the finding prints the annotated number
+  rather than the configured one.
+- **the raising direction publishes nothing.** `Accepted::assemble` is an error
+  at the configured threshold and the annotation accepts it, so the evidence is
+  a pair the case must fire none of.
+- **an annotation written on a class has to reach a declaration inside it.**
+  `ClassScoped` is the second binding path, and the only one a mutation can cut
+  while every annotation of the case stays in place.
+- **an annotation must not reach anything else.** `Retuned::untouched` and
+  `Neighbour` carry the annotated method's own complexity and no annotation, one
+  inside the annotated file and one outside it. Both are needed: the binding is
+  built per file, so a file-wide leak is invisible to a witness in another file,
+  and a run-wide one is invisible to a witness in the same file.
+
+Each of the three annotations was taken away on its own, and each is a
+`case-claim-mismatch`: twice as *only in claimed*, once as *only in fired*. The
+witnesses were measured against the product instead, on isolated copies — cut
+the class-to-declaration propagation, bind a callable annotation to its whole
+file, or drop the subject comparison that selects an override, and the run is
+red on findings and surfaces. The first of those mutations left this corpus
+green before the case existed.
+
+What the case does not witness is worth stating, because the annotations look
+like they cover more than they do. The raising direction pins no *value*: any
+annotation lifting both boundaries clear of the fixture is indistinguishable
+from this one. Both directions bite only against today's defaults — a default
+that moved past a fixture would leave the annotation deciding nothing, and only
+the claim would notice. And one standard `warning`/`error` pair is the only
+option shape exercised: the rules whose options hold several boundaries, or
+whose `withOverride()` writes something other than a threshold, are untested
+here.
 
 Every run uses the case directory as its working directory, so no path in any
 artifact depends on where the tree is checked out. The `check` runs add
