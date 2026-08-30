@@ -1,0 +1,169 @@
+# THE POPULATION P1's CONTRACT MUST COVER: every (channel, level) pair
+# `BaselineConfiguredThresholds::resolve()` walks, with the options object that
+# pair actually resolves to, and TWO INDEPENDENT WITNESSES of whether that
+# object holds a configured warning boundary.
+#
+# Regenerate with:
+#   php docs/internal/plans/rule-vocabulary/enumeration-configured-boundary-population.php
+# (the generator is committed next to this file; it boots the real container,
+# reflects the service out of BaselineExplainCommand and prints the rows below).
+#
+# ROW COUNT: 49 channel-level pairs over 39 distinct resolved options classes.
+#
+# THIS TABLE ENUMERATES PATHS, NOT CLASSES, and the difference is not empty.
+# The companion `enumeration-boundary-contract-implementors.tsv` enumerates the
+# classes a contract obligation would land on. Six of them never appear as a
+# `resolved_options` value here — five hierarchical parents, whose levels are
+# what the walk resolves to, and `ComputedMetricRuleOptions`, whose rule declares
+# no channel statically. A conclusion about "every class that must implement the
+# method" cannot be drawn from this file.
+#
+# THE TWO WITNESSES, and why one is not enough:
+#   - `warning_named_members` — the public numeric members whose NAME says
+#     "warning". This is the witness today's code uses, through a hardcoded list
+#     of three names, and it is the one being removed.
+#   - `severity_switch_points` — the values at which `getSeverity()` actually
+#     changes its answer, found by probing a grid. Behaviour, not naming. A
+#     `X` in this column marks a value where `getSeverity()` threw: an exception
+#     is not an absent severity, and the generator refuses to conflate them.
+#     THIS COLUMN IS A COARSE SWEEP, FOR READING. It is not the definition a
+#     check may use: a grid says only "between these two probes". The normative
+#     definition lives in the plan (`P1-configured-boundary.md`, "Одно
+#     определение точки переключения") and probes the neighbourhood
+#     {b-1, b, b+1} of one candidate, because an exclusive comparison with an
+#     int cast puts the switch at b+1 and a grid can straddle it unseen.
+#   A declaration that names the wrong member passes the first witness and fails
+#   the second; a rule that judges without `getSeverity()` fails the second while
+#   holding a perfectly real boundary. Only the disagreements are interesting,
+#   and they are enumerated below rather than left to be discovered.
+#
+# THE DISAGREEMENTS, all five of them. THREE ARE MISSED BOUNDARIES, not the one
+# this file first claimed — the correction is recorded here rather than quietly
+# applied, because the wrong reading is what a reader of the earlier version
+# acted on:
+#   - `coupling.distance` — `maxDistanceWarning=0.3` is configured AND is where
+#     `getSeverity()` switches, and the old reader printed nothing, because
+#     `maxDistanceWarning` was not one of the three names it guessed at.
+#   - `design.god-class` — switches at "> 0", which is NOT its boundary, and the
+#     first reading stopped there and called the refusal correct. `GodClassRule`
+#     reports `$matchedCount` and warns from `matchedCount >= minCriteria`
+#     upwards, deciding inside `analyze()`; `minCriteria` is configurable, is
+#     where `withOverride()` puts the warning half, and is a real boundary on
+#     the axis the channel reports. `getSeverity()` is a stub and witnesses
+#     nothing here.
+#   - `design.data-class` — constant `Warning`, and again the first reading
+#     called that "no boundary". `DataClassRule` reports WOC, declares
+#     `WorseDirection::Lower`, and emits while `woc <= wocThreshold`.
+#     `wmcThreshold` gates a second metric, exactly as `minAfferent`,
+#     `minClassCount` and `minStatements` gate elsewhere without stopping their
+#     classes from naming a boundary.
+#   - `code-smell.long-parameter-list` — `getSeverity()` switches at 4, and the
+#     object also holds `voWarning=8`, applied by `LongParameterListRule`
+#     through a separate `getVoSeverity()` when the callable is a value object's
+#     constructor. One channel, two boundaries, chosen by a property of the
+#     subject. Printing nothing is the correct answer.
+#   - `architecture.circular-dependency` — switches at 3, and no member is named
+#     for it: severity comes from the cycle's length against the boolean
+#     `directAsError`, not from a number `qmx.yaml` places on an axis. Printing
+#     nothing is correct.
+#
+# WHY THE FIRST READING WENT WRONG, because the mechanism outlives the two rows.
+# `getSeverity()` was treated as the authority on whether a boundary exists. It
+# is the authority only for rules that delegate to it. A rule that decides in
+# `analyze()` leaves behind a stub whose behaviour says "no boundary" no matter
+# what the class holds — so for those, absence of a switch point is not evidence
+# of absence of a boundary, and the emission condition inside the rule has to be
+# read. `WHAT THIS METHOD DOES NOT SEE` said this in the abstract and the
+# analysis above it then resolved it the wrong way.
+#
+# The 17 rows with `(none)` under `warning_named_members` and a switch at 0.01
+# are occurrence detectors: severity depends on the count of occurrences against
+# a hardcoded "more than zero", not against anything `qmx.yaml` can move. They
+# have no configured boundary, and that is a statement about them, not a gap.
+#
+# WHAT THE ROWS DO SUPPORT: every row whose `current_explain_output` is a number
+# has `threshold_aware=yes`, and no row with `threshold_aware=no` holds a
+# warning-named member at all (both counts are 0 by `awk` over this file). The
+# holders of a configured boundary are therefore already inside
+# `ThresholdAwareOptionsInterface` — which is the population the contract lands
+# on, and it is 27 classes rather than every options class in the tree.
+#
+# THREE CLASSES SERVE MORE THAN ONE CHANNEL: `CodeSmellOptions` (7),
+# `SecurityPatternOptions` (3) and `TypeCoverageOptions` (3). None of them
+# serves two channels with two DIFFERENT boundaries: the first two hold no
+# boundary at all, and the third is instantiated once per rule under its own
+# rule name. That, and not "only TypeCoverageOptions repeats", is what licenses
+# a contract method with no channel argument.
+#
+# `complexity.npath|class` resolves a boundary while its level is DISABLED.
+# Configured and enabled are different columns; the current output keeps them
+# apart, and so must the replacement.
+#
+# WHAT THIS METHOD DOES NOT SEE
+# - Values are the classes' DEFAULTS, not this repository's configuration. The
+#   generator builds the container through `ContainerFactory` alone, which does
+#   not read `qmx.yaml`: the file sets `max_distance_warning: 0.5` for
+#   `coupling.distance` and this table shows 0.3. Which member is the boundary
+#   does not depend on configuration; the numbers do, and these are not the
+#   numbers a `bin/qmx check` in this repository would judge against.
+# - The probe grid is discrete. A switch between two grid points is invisible;
+#   `coupling.class-rank`'s 0.02 was missed by the first grid and only appeared
+#   once the grid was extended, which is exactly how this blind spot fails.
+# - Channels no rule declares statically. `ComputedMetricRule` declares none, so
+#   `explain` resolves no computed-metric channel at all — a gap in
+#   `ChannelDeclarationReader`'s reach, not in this table's.
+# - `getSeverity()` witnesses only the rules that delegate to it: 25 `*Rule.php`
+#   files call it (`grep -rln 'getSeverity(' src --include='*Rule.php'`), and the
+#   three that hold or refuse a boundary without delegating are named above.
+# - Test doubles implementing `RuleOptionsInterface` are not rules and are absent
+#   here; they are counted in the implementors enumeration instead.
+channel	level	rule	resolved_options	threshold_aware	warning_named_members	severity_switch_points	current_explain_output
+annotation.unused-directive	file	UnusedDirectiveRule	InlineDirectiveOptions	no	(none)	constant(E)	NULL
+architecture.circular-dependency	project	CircularDependencyRule	CircularDependencyOptions	no	(none)	3:E>W	NULL
+architecture.layer-violation	class	LayerViolationRule	LayerViolationOptions	no	(none)	constant(W)	NULL
+architecture.unassigned-class	project	UnassignedClassRule	UnassignedClassOptions	no	(none)	constant(-)	NULL
+code-smell.boolean-argument	callable	BooleanArgumentRule	BooleanArgumentOptions	no	(none)	0.01:->W	NULL
+code-smell.constructor-overinjection	callable	ConstructorOverinjectionRule	ConstructorOverinjectionOptions	yes	warning=8	8:->W 12:W>E	8
+code-smell.count-in-loop	callable	CountInLoopRule	CodeSmellOptions	no	(none)	0.01:->E	NULL
+code-smell.debug-code	callable	DebugCodeRule	CodeSmellOptions	no	(none)	0.01:->E	NULL
+code-smell.empty-catch	callable	EmptyCatchRule	CodeSmellOptions	no	(none)	0.01:->E	NULL
+code-smell.error-suppression	callable	ErrorSuppressionRule	ErrorSuppressionOptions	no	(none)	0.01:->W	NULL
+code-smell.eval	callable	EvalRule	CodeSmellOptions	no	(none)	0.01:->E	NULL
+code-smell.exit	callable	ExitRule	CodeSmellOptions	no	(none)	0.01:->E	NULL
+code-smell.goto	callable	GotoRule	CodeSmellOptions	no	(none)	0.01:->E	NULL
+code-smell.identical-subexpression	callable	IdenticalSubExpressionRule	IdenticalSubExpressionOptions	no	(none)	0.01:->W	NULL
+code-smell.long-parameter-list	callable	LongParameterListRule	LongParameterListOptions	yes	warning=4,voWarning=8	4:->W 6:W>E	NULL
+code-smell.superglobals	callable	SuperglobalsRule	CodeSmellOptions	no	(none)	0.01:->E	NULL
+code-smell.unreachable-code	callable	UnreachableCodeRule	UnreachableCodeOptions	yes	warning=1	1:->W 2:W>E	1
+code-smell.unused-private	class	UnusedPrivateRule	UnusedPrivateOptions	no	(none)	0.01:->W	NULL
+cohesion.lcom	class	LcomRule	LcomOptions	yes	warning=3	3:->W 5:W>E	3
+complexity.cognitive	callable	CognitiveComplexityRule	MethodCognitiveComplexityOptions	yes	warning=15	15:->W 30:W>E	15
+complexity.cognitive	class	CognitiveComplexityRule	ClassCognitiveComplexityOptions	yes	maxWarning=30	30:->W 50:W>E	30
+complexity.cyclomatic	callable	ComplexityRule	MethodComplexityOptions	yes	warning=10	10:->W 20:W>E	10
+complexity.cyclomatic	class	ComplexityRule	ClassComplexityOptions	yes	maxWarning=30	30:->W 50:W>E	30
+complexity.npath	callable	NpathComplexityRule	MethodNpathComplexityOptions	yes	warning=200	200:->W 1000:W>E	200
+complexity.npath	class	NpathComplexityRule	ClassNpathComplexityOptions	yes	maxWarning=500	500:->W 1000:W>E	500
+complexity.wmc	class	WmcRule	WmcOptions	yes	warning=50	50:->W 80:W>E	50
+coupling.cbo	class	CboRule	ClassCboOptions	yes	warning=14	14:->W 20:W>E	14
+coupling.cbo	namespace	CboRule	NamespaceCboOptions	yes	warning=14	14:->W 20:W>E	14
+coupling.class-rank	class	ClassRankRule	ClassRankOptions	yes	warning=0.02	0.02:->W 0.05:W>E	0.02
+coupling.distance	namespace	DistanceRule	DistanceOptions	yes	maxDistanceWarning=0.3	0.3:->W 0.5:W>E	NULL
+coupling.instability	class	InstabilityRule	ClassInstabilityOptions	yes	maxWarning=0.8	0.8:->W 0.95:W>E	0.8
+coupling.instability	namespace	InstabilityRule	NamespaceInstabilityOptions	yes	maxWarning=0.8	0.8:->W 0.95:W>E	0.8
+design.data-class	class	DataClassRule	DataClassOptions	yes	(none)	constant(W)	NULL
+design.god-class	class	GodClassRule	GodClassOptions	yes	(none)	0.01:->W	NULL
+design.inheritance	class	InheritanceRule	InheritanceOptions	yes	warning=4	4:->W 6:W>E	4
+design.noc	class	NocRule	NocOptions	yes	warning=10	10:->W 15:W>E	10
+design.type-coverage.param	class	ParamTypeCoverageRule	TypeCoverageOptions	yes	warning=80	50:E>W 80:W>-	80
+design.type-coverage.property	class	PropertyTypeCoverageRule	TypeCoverageOptions	yes	warning=80	50:E>W 80:W>-	80
+design.type-coverage.return	class	ReturnTypeCoverageRule	TypeCoverageOptions	yes	warning=80	50:E>W 80:W>-	80
+duplication.code-duplication	project	CodeDuplicationRule	CodeDuplicationOptions	yes	warning=5	5:->W 50:W>E	5
+maintainability.index	callable	MaintainabilityRule	MaintainabilityOptions	yes	warning=40	20:E>W 40:W>-	40
+security.command-injection	callable	CommandInjectionRule	SecurityPatternOptions	no	(none)	0.01:->E	NULL
+security.hardcoded-credentials	class	HardcodedCredentialsRule	HardcodedCredentialsOptions	no	(none)	0.01:->E	NULL
+security.sensitive-parameter	callable	SensitiveParameterRule	SensitiveParameterOptions	no	(none)	0.01:->W	NULL
+security.sql-injection	callable	SqlInjectionRule	SecurityPatternOptions	no	(none)	0.01:->E	NULL
+security.xss	callable	XssRule	SecurityPatternOptions	no	(none)	0.01:->E	NULL
+size.class-count	namespace	ClassCountRule	ClassCountOptions	yes	warning=15	15:->W 25:W>E	15
+size.method-count	class	MethodCountRule	MethodCountOptions	yes	warning=20	20:->W 30:W>E	20
+size.property-count	class	PropertyCountRule	PropertyCountOptions	yes	warning=15	15:->W 20:W>E	15
