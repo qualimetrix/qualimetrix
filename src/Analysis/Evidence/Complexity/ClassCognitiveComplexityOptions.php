@@ -66,4 +66,9 @@ final readonly class ClassCognitiveComplexityOptions implements LevelOptionsInte
             maxError: $error !== null ? (int) $error : $this->maxError,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->maxWarning;
+    }
 }

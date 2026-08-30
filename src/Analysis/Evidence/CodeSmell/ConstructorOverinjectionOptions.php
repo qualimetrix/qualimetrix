@@ -83,4 +83,9 @@ final readonly class ConstructorOverinjectionOptions implements RuleOptionsInter
             error: $error !== null ? (int) $error : $this->error,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->warning;
+    }
 }

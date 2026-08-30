@@ -91,4 +91,9 @@ final readonly class ClassRankOptions implements RuleOptionsInterface, Threshold
             error: $error !== null ? (float) $error : $this->error,
         );
     }
+
+    public function warningBoundary(): float
+    {
+        return $this->warning;
+    }
 }

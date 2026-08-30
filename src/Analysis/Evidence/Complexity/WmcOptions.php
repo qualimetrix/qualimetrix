@@ -93,4 +93,9 @@ final readonly class WmcOptions implements RuleOptionsInterface, ThresholdAwareO
             excludeDataClasses: $this->excludeDataClasses,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->warning;
+    }
 }

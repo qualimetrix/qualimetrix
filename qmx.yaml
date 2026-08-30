@@ -477,6 +477,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface'

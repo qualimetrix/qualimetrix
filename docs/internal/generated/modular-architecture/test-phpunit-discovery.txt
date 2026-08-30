@@ -3605,6 +3605,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyProducerOfTheComputedFamilyIsOnTheReferencePage
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRegisteredRuleDeclaresItsOwnRemediationMinutes
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRulesRemediationMinutesMatchTheReferencePage
+ - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::anOverriddenCopyReportsTheOverriddenNumber
+ - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::everyDeclaredBoundaryIsWhereSeverityStarts
+ - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::moreThanOneBoundaryIsClaimedOnlyWithASecondDecision
+ - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::noHierarchicalParentClaimsToHoldABoundary
+ - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::nothingThatDeniesABoundaryIsSittingOnOne
+ - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::onlyThePinnedClassesDecideInsideTheirRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\AbstractRuleSubjectControlTest::itPassesTheMetricSubjectToTheThresholdResolutionSeam
  - Qualimetrix\Tests\Analysis\Finding\Unit\AcceptedLevelTest::itCarriesOnlyACountOnAnOccurrenceChannel
  - Qualimetrix\Tests\Analysis\Finding\Unit\AcceptedLevelTest::itCarriesTheAcceptedMagnitudesOfAMagnitudeChannel
@@ -5094,6 +5100,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineUpdateCommandTest::itRefusesAMagnitudeThatIsWiderOnALowerChannel
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineUpdateCommandTest::itRefusesARunThatDoesNotCoverTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineUpdateCommandTest::itWritesANarrowedRunUnderForce
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\ConfiguredWarningBoundaryMapTest::itReadsNoOptionsMemberByName
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\ConfiguredWarningBoundaryMapTest::itResolvesABoundaryWhoseMemberIsNotSpelledWarning
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\ConfiguredWarningBoundaryMapTest::itResolvesTheBoundaryOfEveryChannelThatHasOne
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWorkflowTest::itChangesIdentityOnMethodRename
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWorkflowTest::itDetectsResolvedFindings
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWorkflowTest::itExecutesCompleteBaselineWorkflow

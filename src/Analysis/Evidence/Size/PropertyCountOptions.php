@@ -86,4 +86,9 @@ final readonly class PropertyCountOptions implements RuleOptionsInterface, Thres
             excludePromotedOnly: $this->excludePromotedOnly,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->warning;
+    }
 }

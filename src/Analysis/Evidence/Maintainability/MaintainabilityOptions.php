@@ -102,4 +102,9 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
     {
         return InvertedOverrideValidator::instance();
     }
+
+    public function warningBoundary(): float
+    {
+        return $this->warning;
+    }
 }

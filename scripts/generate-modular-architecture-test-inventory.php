@@ -14,7 +14,7 @@ declare(strict_types=1);
  */
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
-const P6_C_BASELINE_PATHS_SHA256 = 'e448b9cdb862d0b5e705339c9588718e798df1eb8b5e23bfacf9e9cce39acf28';
+const P6_C_BASELINE_PATHS_SHA256 = 'a4aadf128b0104978e97a5f86f7c2f765b61dd8ceb88a671f553c6d526a6ceb2';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);

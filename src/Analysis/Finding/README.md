@@ -29,6 +29,15 @@ to return), and `$exclusions` (`RuleExclusionStats`, unchanged). Reporting's
 
 `RuleExecutionInterface` exposes immutable `RuleMetadata`; concrete rule instances never cross the capability boundary. `RuleConfigurationInterface` is the only external mutation/query surface for per-run options, selection, and exclusions. Runtime reset clears CLI selection and exclusion state before every run.
 
+`ThresholdAwareOptionsInterface::warningBoundary()` is how a rule's options
+name the warning boundary of the channel they configure, returning the number or
+`NoConfiguredBoundary::MoreThanOneBoundary` when the class holds several and
+nothing in the question says which applied. Options that hold no boundary at all
+express that by not implementing the interface. `baseline:explain` reads it
+instead of guessing property names; `getSeverity()` witnesses the declaration
+only for rules that delegate to it. See
+`docs/adr/0038-an-options-class-names-its-own-warning-boundary.md`.
+
 `ControlScope` and `ThresholdOverride` are Finding-owned vocabulary. Inline
 produces them from source annotations, Run transports them, and Finding applies
 them while selecting effective rule thresholds.

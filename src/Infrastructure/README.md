@@ -145,7 +145,7 @@ Infrastructure/
         ├── BaselineRun.php                  # Implements BaselineRunInterface: resolves configuration, configures the runtime and runs the analysis exactly as `check` does
         ├── BaselineRunContext.php           # VO: one run's measured findings, its RunScope and project root
         ├── BaselineCaptureReporter.php      # Reports non-baselineable findings omitted by baseline:generate
-        ├── BaselineConfiguredThresholds.php # Resolves each channel's qmx.yaml-configured warning boundary, for baseline:explain
+        ├── BaselineConfiguredThresholds.php # Asks each channel's options for its warning boundary, for baseline:explain (ADR 0038)
         ├── BaselineGenerateCommand.php # `baseline:generate` — captures the current findings as a new baseline file
         ├── BaselineUpdateCommand.php   # `baseline:update` — direction-aware monotonic tightening of an existing baseline in place
         ├── BaselineCleanupCommand.php  # `baseline:cleanup` — lists removal candidates (stale/undeclared/inert entries) and removes only the selectors named via --remove

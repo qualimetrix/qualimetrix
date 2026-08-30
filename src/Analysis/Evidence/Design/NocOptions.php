@@ -92,4 +92,9 @@ final readonly class NocOptions implements RuleOptionsInterface, ThresholdAwareO
             error: $error !== null ? (int) $error : $this->error,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->warning;
+    }
 }

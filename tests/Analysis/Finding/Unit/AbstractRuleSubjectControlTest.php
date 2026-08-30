@@ -104,4 +104,9 @@ final readonly class SubjectControlOptions implements RuleOptionsInterface, Thre
     {
         return StandardOverrideValidator::instance();
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->warning;
+    }
 }

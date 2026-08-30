@@ -33,7 +33,6 @@ rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Fi
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/FindingChannel.php	Qualimetrix\Analysis\Finding\Contract\FindingChannel	warning	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Rule/RuleOptionKey.php	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	warning	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Severity.php	Qualimetrix\Analysis\Finding\Contract\Severity	error	1
-rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Rule/Override/OverrideValidationFailure.php	Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure	warning	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolPath.php	Qualimetrix\Core\Symbol\SymbolPath	error	1

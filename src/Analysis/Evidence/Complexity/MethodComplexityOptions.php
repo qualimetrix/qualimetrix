@@ -69,4 +69,9 @@ final readonly class MethodComplexityOptions implements LevelOptionsInterface, T
             error: $error !== null ? (int) $error : $this->error,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->warning;
+    }
 }

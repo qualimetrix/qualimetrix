@@ -80,4 +80,9 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
             minAfferent: $this->minAfferent,
         );
     }
+
+    public function warningBoundary(): float
+    {
+        return $this->maxWarning;
+    }
 }

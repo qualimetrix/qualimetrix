@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -145,5 +146,15 @@ final readonly class LongParameterListOptions implements RuleOptionsInterface, T
             voWarning: $warning !== null ? (int) $warning : $this->voWarning,
             voError: $error !== null ? (int) $error : $this->voError,
         );
+    }
+
+    /**
+     * A value object's constructor is judged against `voWarning`, an ordinary
+     * callable against `warning`, and the choice is made from the subject, not
+     * from anything the caller asks with.
+     */
+    public function warningBoundary(): NoConfiguredBoundary
+    {
+        return NoConfiguredBoundary::MoreThanOneBoundary;
     }
 }

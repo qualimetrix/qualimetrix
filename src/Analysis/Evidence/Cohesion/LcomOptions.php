@@ -113,4 +113,9 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
             excludeMethods: $this->excludeMethods,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->warning;
+    }
 }

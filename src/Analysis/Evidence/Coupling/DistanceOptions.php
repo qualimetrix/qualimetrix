@@ -113,4 +113,9 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
             minClassCount: $this->minClassCount,
         );
     }
+
+    public function warningBoundary(): float
+    {
+        return $this->maxDistanceWarning;
+    }
 }

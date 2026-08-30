@@ -4,19 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use ReflectionObject;
-use ReflectionProperty;
 use Throwable;
 
 /**
@@ -46,59 +43,51 @@ use Throwable;
  * **The warning boundary, not the error one.** It is the number at which a
  * channel starts reporting, which is the boundary a user compares a baseline
  * entry against; the error threshold answers a different question
- * (`bin/qmx rules` and the finding's own message carry it).
+ * (`bin/qmx rules` and the finding's own message carry it). "Starts" is not
+ * always "at or above": a channel declared `WorseDirection::Lower` — type
+ * coverage, maintainability, data class — starts reporting at or below it.
+ * The map carries the number, and the channel's own declaration carries the
+ * direction.
  *
- * **A channel whose options expose no such number is left out of the map, not
+ * **The number is asked for, not guessed.** Every options class that holds a
+ * boundary says which one it is through
+ * {@see ThresholdAwareOptionsInterface::warningBoundary()}. The reader this
+ * replaced tried three property names, a name derived from the channel's
+ * suffix, and a count of `…Warning` properties to detect ambiguity — which
+ * answered a different question (*how is the property spelled*) than the one
+ * asked (*what does the object decide with*), and printed nothing for
+ * `coupling.distance`, whose `maxDistanceWarning` was not on the list.
+ *
+ * **The value is what the object holds, and this class asks an object no
+ * override has touched.** {@see RuleOptionsFactory} builds options from
+ * configuration alone, so "configured" is a property of who is asking rather
+ * than of the method; on a copy from `withOverride()` the same call reports the
+ * overridden number.
+ *
+ * **A channel whose options hold no such number is left out of the map, not
  * guessed.** {@see \Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary::$configuredThreshold}
  * is then `null`, which `explain` prints as "not resolvable" — distinct from a
- * configured `0`. Two shapes are read, and both are conventions the codebase
- * actually holds rather than assumptions about it:
+ * configured `0`. Two shapes reach that outcome, and they are different
+ * statements even though the column cannot show the difference:
  *
- * - a hierarchical rule's options hold one object per level, so the object of
- *   the level being resolved is asked. The level always comes from the
- *   declaration, never parsed back out of the channel code: the code spells
- *   the level today and will not always, and a reader of the name fails by
- *   printing nothing rather than by failing. A level the declaration names and
- *   the options do not support yields no row, which is a mismatch worth one
- *   missing line and not a failure;
- * - a multi-axis rule's channel names its axis, so a property named after that
- *   axis is preferred. No channel names an axis since ADR 0030 gave each
- *   type-coverage dimension its own rule — the branch is kept because what
- *   selects it is the shape of the channel, not a list of rule names, and the
- *   next multi-axis rule would otherwise resolve to the wrong number silently.
+ * - the options are not {@see ThresholdAwareOptionsInterface} at all, which is
+ *   every occurrence detector: severity there comes from "more than zero
+ *   occurrences", a comparison no configuration moves;
+ * - the class answers
+ *   {@see \Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary::MoreThanOneBoundary},
+ *   holding two and unable to tell which was applied. **A wrong number is
+ *   worse than a missing one** — the user acts on it.
  *
- * Rules with neither resolve to nothing, correctly.
- *
- * **Occurrence and "no number" are not the same thing**, and the earlier
- * wording here equated them. `coupling.class-rank` is an occurrence channel —
- * a baseline entry for it bounds a count, because a PageRank is renormalised
- * over the whole project and is not a boundary in a later run's units — yet
- * its options do configure the `0.02` the rule fires above, and printing that
- * number answers exactly the question this line of `explain` asks. What an
- * occurrence channel has no number for is the *entry*, which is a different
- * column of the same output.
- *
- * **And a channel that names no axis while its options hold several
- * boundaries resolves to nothing too, deliberately.** `LongParameterListRule`
- * emits one channel and judges against two thresholds: `warning` for an
- * ordinary method, `voWarning` for a readonly value object's constructor. The
- * channel carries nothing that says which applied, so picking the generic
- * property prints "qmx.yaml says 4" for a nine-parameter VO constructor the
- * rule measured against 8. **A wrong number is worse than a missing one** —
- * the user acts on it — so the ambiguity is reported as an ambiguity, through
- * the same `null` the unresolvable channels use and therefore still distinct
- * from a configured `0`. The condition is structural, not a list of rule
- * names: more than one warning boundary on the options object, and no axis in
- * the channel to choose between them.
+ * A hierarchical rule's options hold one object per level, so the object of the
+ * level being resolved is asked. The level always comes from the declaration,
+ * never parsed back out of the channel code: the code spells the level today
+ * and will not always, and a reader of the name fails by printing nothing
+ * rather than by failing. A level the declaration names and the options do not
+ * support yields no row, which is a mismatch worth one missing line and not a
+ * failure.
  */
 final readonly class BaselineConfiguredThresholds
 {
-    /**
-     * Property names holding a level's or an axis's warning boundary, in the
-     * order they are tried once the axis-specific name has been.
-     */
-    private const array GENERIC_PROPERTIES = [RuleOptionKey::WARNING, 'maxWarning', 'minWarning'];
-
     public function __construct(
         private RuleRegistryInterface $rules,
         private RuleOptionsFactory $optionsFactory,
@@ -126,12 +115,7 @@ final readonly class BaselineConfiguredThresholds
 
             foreach ($declarations as $channelKey => $declaration) {
                 foreach ($declaration->levels as $level) {
-                    $threshold = self::thresholdFor(
-                        $options,
-                        RuleNameReader::read($ruleClass),
-                        new FindingChannel($channelKey),
-                        $level,
-                    );
+                    $threshold = self::thresholdFor($options, $level);
 
                     if ($threshold !== null) {
                         $thresholds[$channelKey][$level->value] = $threshold;
@@ -165,72 +149,23 @@ final readonly class BaselineConfiguredThresholds
      * Resolved per level rather than per channel because a channel reports at
      * more than one now, and a hierarchical rule's two levels have separate
      * boundaries: one number keyed by the channel alone would have to pick a
-     * level and print the choice as a fact.
+     * level and print the choice as a fact. The channel itself is not passed:
+     * three options classes serve more than one channel and none of them holds
+     * two different boundaries, so the object answers for itself.
      */
-    private static function thresholdFor(
-        RuleOptionsInterface $options,
-        string $declaringRuleName,
-        FindingChannel $channel,
-        SymbolLevel $level,
-    ): int|float|null {
-        if ($options instanceof HierarchicalRuleOptionsInterface) {
-            $levelOptions = self::levelOptions($options, $level);
+    private static function thresholdFor(RuleOptionsInterface $options, SymbolLevel $level): int|float|null
+    {
+        $target = $options instanceof HierarchicalRuleOptionsInterface
+            ? self::levelOptions($options, $level)
+            : $options;
 
-            return $levelOptions !== null ? self::readProperty($levelOptions, self::GENERIC_PROPERTIES) : null;
-        }
-
-        $axis = self::axisOf($declaringRuleName, $channel);
-
-        if ($axis !== null) {
-            $onAxis = self::readProperty($options, [self::axisProperty($axis)]);
-
-            if ($onAxis !== null) {
-                return $onAxis;
-            }
-        }
-
-        // The channel names no boundary of its own, so a generic property is
-        // only an answer while there is one to be generic about. Where the
-        // options hold several, nothing in the channel says which the rule
-        // applied to the finding being explained, and the first one that
-        // happens to exist would be a guess printed as a fact.
-        if (self::countsWarningBoundaries($options) > 1) {
+        if (!$target instanceof ThresholdAwareOptionsInterface) {
             return null;
         }
 
-        return self::readProperty($options, self::GENERIC_PROPERTIES);
-    }
+        $boundary = $target->warningBoundary();
 
-    /**
-     * How many distinct warning boundaries the options expose.
-     *
-     * Counted from the object rather than from a list of known rules: the
-     * property is "this rule judges one channel against more than one
-     * boundary", and a rule added tomorrow with a second `…Warning` gets the
-     * honest answer without anybody remembering to extend a list here.
-     * `error` counterparts are not counted — the boundary this class reports
-     * is the warning one, and a rule with `warning`/`error` is not ambiguous
-     * about which of them is being asked for.
-     */
-    private static function countsWarningBoundaries(RuleOptionsInterface $options): int
-    {
-        $found = 0;
-
-        foreach ((new ReflectionObject($options))->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
-            $name = $property->getName();
-
-            if ($name !== RuleOptionKey::WARNING && !str_ends_with($name, 'Warning')) {
-                continue;
-            }
-
-            $value = $property->getValue($options);
-
-            if (\is_int($value) || \is_float($value)) {
-                ++$found;
-            }
-        }
-
-        return $found;
+        return \is_int($boundary) || \is_float($boundary) ? $boundary : null;
     }
 
     private static function levelOptions(HierarchicalRuleOptionsInterface $options, SymbolLevel $level): ?LevelOptionsInterface
@@ -242,72 +177,5 @@ final readonly class BaselineConfiguredThresholds
             // support is a mismatch worth no more than a missing line here.
             return null;
         }
-    }
-
-    /**
-     * The part of the channel name that follows the name of the rule that
-     * declared it — the level or the axis the channel reports on, or `null`
-     * when the channel is named after the rule itself.
-     *
-     * The declaring rule's name is passed in rather than read off the channel:
-     * a channel is one name now, and the name it is decomposed against is the
-     * name of the class whose `channelDeclarations()` this key came from. That
-     * is the same rule whose options are being read here, so the two halves of
-     * the decomposition come from one place instead of from a key that used to
-     * carry both. `ChannelDeclarationFixtureDriftTest` pins the invariant that a
-     * channel name is its declaring rule's name, optionally with a `.suffix`.
-     *
-     * This is a **structural decomposition of one channel**, not a selector
-     * match: there is no user text here deciding which channels are addressed.
-     */
-    private static function axisOf(string $declaringRuleName, FindingChannel $channel): ?string
-    {
-        $prefix = $declaringRuleName . '.';
-
-        if (!str_starts_with($channel->code, $prefix)) {
-            return null;
-        }
-
-        $axis = substr($channel->code, \strlen($prefix));
-
-        return $axis === '' ? null : $axis;
-    }
-
-    /**
-     * `return` → `returnWarning`, `max-distance` → `maxDistanceWarning`.
-     */
-    private static function axisProperty(string $axis): string
-    {
-        $camel = lcfirst(str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $axis))));
-
-        return $camel . ucfirst(RuleOptionKey::WARNING);
-    }
-
-    /**
-     * @param list<string> $candidates
-     */
-    private static function readProperty(object $target, array $candidates): int|float|null
-    {
-        $reflection = new ReflectionObject($target);
-
-        foreach ($candidates as $name) {
-            if (!$reflection->hasProperty($name)) {
-                continue;
-            }
-
-            $property = $reflection->getProperty($name);
-
-            if (!$property->isPublic()) {
-                continue;
-            }
-
-            $value = $property->getValue($target);
-
-            if (\is_int($value) || \is_float($value)) {
-                return $value;
-            }
-        }
-
-        return null;
     }
 }
