@@ -1,0 +1,105 @@
+# EVERY CLASS A BOUNDARY-DECLARING OBLIGATION COULD LAND ON: every concrete
+# implementor of `RuleOptionsInterface` or `LevelOptionsInterface` under `src/`
+# and `tests/`, with the two facts that decide which interface should carry the
+# obligation — whether the class is a hierarchical parent, and whether it is
+# already `ThresholdAwareOptionsInterface`.
+#
+# Regenerate with:
+#   php docs/internal/plans/rule-vocabulary/enumeration-boundary-contract-implementors.php
+#
+# WHY THIS FILE EXISTS SEPARATELY FROM THE POPULATION TABLE. The population
+# table enumerates the (channel, level) PATHS the consumer walks; this one
+# enumerates CLASSES. The difference is not empty, and the plan's first draft
+# reasoned about classes from the path table and missed six of them: the five
+# hierarchical parents (`CboOptions`, `CognitiveComplexityOptions`,
+# `ComplexityOptions`, `InstabilityOptions`, `NpathComplexityOptions`), which
+# the walk never resolves to because it calls `forLevel()` first, and
+# `ComputedMetricRuleOptions`, whose rule declares no channel statically.
+#
+# COUNTS: 55 concrete implementors — 45 in `src/`, 10 test doubles.
+# 28 of them are `ThresholdAwareOptionsInterface`: the 27 production classes
+# already enumerated by `enumeration-threshold-decision-shapes.tsv`, plus one
+# test double (`SubjectControlOptions`). No hierarchical parent is among them,
+# and neither is `ComputedMetricRuleOptions`.
+#
+# WHAT THIS DECIDES. Cross-checked against the population table: every row that
+# resolves to a number is `threshold_aware=yes`, and no `threshold_aware=no` row
+# holds a warning-named member. Putting the obligation on
+# `ThresholdAwareOptionsInterface` therefore reaches every holder of a boundary
+# while leaving 27 classes untouched — including all five parents, for which no
+# honest answer exists, and the ~17 occurrence detectors, which would otherwise
+# gain a constant-returning method that touches no field.
+#
+# WHAT THIS METHOD DOES NOT SEE
+# - Classes are found by loading every `*.php` under `src/` and `tests/` and
+#   asking reflection. A class declared in a file whose namespace or class name
+#   the loader's two regexes miss (multiple classes per file are read; classes
+#   built by `eval` or by a string-keyed factory are not) is absent.
+# - Anonymous classes implementing either interface inside a test method are not
+#   reachable by reflection over declared classes, so they are absent from the
+#   rows below. They were counted separately by grep
+#   (`grep -rn 'new class' tests --include='*.php' -A3`): SIX of them, in
+#   `TypeCoverageRuleTest`, `LongParameterListRuleTest`,
+#   `ConstructorOverinjectionRuleTest`, `UnreachableCodeRuleTest`,
+#   `ClassCountRuleTest` and `MethodCountRuleTest`. All six implement
+#   `RuleOptionsInterface` only, so an obligation on
+#   `ThresholdAwareOptionsInterface` leaves all six untouched and an obligation
+#   on `RuleOptionsInterface` breaks all six.
+# - Classes outside this repository. The project has no external rule authors by
+#   policy, so this is a stated non-coverage rather than a measured zero.
+file	class	rule_options	level_options	hierarchical	threshold_aware
+src/Analysis/Evidence/CircularDependency/CircularDependencyOptions.php	Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions	rule	-	-	-
+src/Analysis/Evidence/CodeSmell/BooleanArgumentOptions.php	Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentOptions	rule	-	-	-
+src/Analysis/Evidence/CodeSmell/CodeSmellOptions.php	Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions	rule	-	-	-
+src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php	Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/CodeSmell/ErrorSuppressionOptions.php	Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionOptions	rule	-	-	-
+src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionOptions.php	Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionOptions	rule	-	-	-
+src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/CodeSmell/UnreachableCodeOptions.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/CodeSmell/UnusedPrivateOptions.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateOptions	rule	-	-	-
+src/Analysis/Evidence/Cohesion/LcomOptions.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	Qualimetrix\Analysis\Evidence\Complexity\ClassCognitiveComplexityOptions	-	level	-	threshold-aware
+src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	Qualimetrix\Analysis\Evidence\Complexity\ClassComplexityOptions	-	level	-	threshold-aware
+src/Analysis/Evidence/Complexity/ClassNpathComplexityOptions.php	Qualimetrix\Analysis\Evidence\Complexity\ClassNpathComplexityOptions	-	level	-	threshold-aware
+src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php	Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityOptions	rule	-	hierarchical	-
+src/Analysis/Evidence/Complexity/ComplexityOptions.php	Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions	rule	-	hierarchical	-
+src/Analysis/Evidence/Complexity/MethodCognitiveComplexityOptions.php	Qualimetrix\Analysis\Evidence\Complexity\MethodCognitiveComplexityOptions	-	level	-	threshold-aware
+src/Analysis/Evidence/Complexity/MethodComplexityOptions.php	Qualimetrix\Analysis\Evidence\Complexity\MethodComplexityOptions	-	level	-	threshold-aware
+src/Analysis/Evidence/Complexity/MethodNpathComplexityOptions.php	Qualimetrix\Analysis\Evidence\Complexity\MethodNpathComplexityOptions	-	level	-	threshold-aware
+src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityOptions	rule	-	hierarchical	-
+src/Analysis/Evidence/Complexity/WmcOptions.php	Qualimetrix\Analysis\Evidence\Complexity\WmcOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricRuleOptions.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions	rule	-	-	-
+src/Analysis/Evidence/Coupling/CboOptions.php	Qualimetrix\Analysis\Evidence\Coupling\CboOptions	rule	-	hierarchical	-
+src/Analysis/Evidence/Coupling/ClassCboOptions.php	Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	-	level	-	threshold-aware
+src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	Qualimetrix\Analysis\Evidence\Coupling\ClassInstabilityOptions	-	level	-	threshold-aware
+src/Analysis/Evidence/Coupling/ClassRankOptions.php	Qualimetrix\Analysis\Evidence\Coupling\ClassRankOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Coupling/DistanceOptions.php	Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Coupling/InstabilityOptions.php	Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions	rule	-	hierarchical	-
+src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	Qualimetrix\Analysis\Evidence\Coupling\NamespaceCboOptions	-	level	-	threshold-aware
+src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions	-	level	-	threshold-aware
+src/Analysis/Evidence/Design/DataClassOptions.php	Qualimetrix\Analysis\Evidence\Design\DataClassOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Design/GodClassOptions.php	Qualimetrix\Analysis\Evidence\Design\GodClassOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Design/InheritanceOptions.php	Qualimetrix\Analysis\Evidence\Design\InheritanceOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Design/NocOptions.php	Qualimetrix\Analysis\Evidence\Design\NocOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Design/TypeCoverageOptions.php	Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Security/HardcodedCredentialsOptions.php	Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsOptions	rule	-	-	-
+src/Analysis/Evidence/Security/SecurityPatternOptions.php	Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions	rule	-	-	-
+src/Analysis/Evidence/Security/SensitiveParameterOptions.php	Qualimetrix\Analysis\Evidence\Security\SensitiveParameterOptions	rule	-	-	-
+src/Analysis/Evidence/Size/ClassCountOptions.php	Qualimetrix\Analysis\Evidence\Size\ClassCountOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Size/MethodCountOptions.php	Qualimetrix\Analysis\Evidence\Size\MethodCountOptions	rule	-	-	threshold-aware
+src/Analysis/Evidence/Size/PropertyCountOptions.php	Qualimetrix\Analysis\Evidence\Size\PropertyCountOptions	rule	-	-	threshold-aware
+src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php	Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions	rule	-	-	-
+src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassOptions.php	Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions	rule	-	-	-
+src/Analysis/Policy/Inline/Directive/InlineDirectiveOptions.php	Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	rule	-	-	-
+tests/Analysis/Configuration/Fixtures/TestRuleOptions.php	Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptions	rule	-	-	-
+tests/Analysis/Configuration/Fixtures/TestRuleOptionsNoConstructor.php	Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsNoConstructor	rule	-	-	-
+tests/Analysis/Configuration/Fixtures/TestRuleOptionsWithRequiredParams.php	Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithRequiredParams	rule	-	-	-
+tests/Analysis/Configuration/Fixtures/TestRuleOptionsWithUnionType.php	Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithUnionType	rule	-	-	-
+tests/Analysis/Finding/Integration/ConfigurationErrorClassificationTopologyTest.php	Qualimetrix\Tests\Analysis\Finding\Integration\StampOptions	rule	-	-	-
+tests/Analysis/Finding/Unit/AbstractRuleSubjectControlTest.php	Qualimetrix\Tests\Analysis\Finding\Unit\SubjectControlOptions	rule	-	-	threshold-aware
+tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php	Qualimetrix\Tests\Analysis\Finding\Unit\FixtureOptionsWithNoChannelDeclarations	rule	-	-	-
+tests/Analysis/Finding/Unit/ChannelPresentationViewTest.php	Qualimetrix\Tests\Analysis\Finding\Unit\FixtureChannelPresentationRuleOptions	rule	-	-	-
+tests/Analysis/Finding/Unit/RuleExecutorTest.php	Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutionFixtureOptions	rule	-	-	-
+tests/Infrastructure/Unit/RulesCommandTest.php	Qualimetrix\Tests\Infrastructure\Unit\StubRuleOptions	rule	-	-	-

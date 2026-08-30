@@ -101,4 +101,15 @@ final readonly class GodClassOptions implements RuleOptionsInterface, ThresholdA
     {
         return WarningOnlyValidator::instance();
     }
+
+    /**
+     * `design.god-class` reports `$matchedCount`, and `GodClassRule` warns from
+     * `matchedCount >= minCriteria` upwards. The decision is made inside the
+     * rule rather than through {@see self::getSeverity()}, which stays a stub —
+     * so this member, not that method, is what the channel is judged against.
+     */
+    public function warningBoundary(): int
+    {
+        return $this->minCriteria;
+    }
 }

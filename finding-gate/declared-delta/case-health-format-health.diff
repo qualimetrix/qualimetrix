@@ -1,9 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -44,3 +44,3 @@
--      Formatter                      TYPE_COVERAGE.PCT=42.9
--      Registry                       TYPE_COVERAGE.PCT=44.4
--      Client                         TYPE_COVERAGE.PCT=50.0
-+      Formatter                      TYPECOVERAGE.PCT=42.9
-+      Registry                       TYPECOVERAGE.PCT=44.4
-+      Client                         TYPECOVERAGE.PCT=50.0

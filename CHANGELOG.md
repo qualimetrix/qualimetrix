@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `ThresholdAwareOptionsInterface` requires `warningBoundary()`, returning the
+  class's warning threshold or `NoConfiguredBoundary::MoreThanOneBoundary` when
+  it holds several. `baseline:explain` asks for the number instead of guessing a
+  property name, and now resolves `coupling.distance`, `design.god-class` and
+  `design.data-class`, all three of which it previously reported as
+  "not resolvable".
 - Every published metric key is renamed to `family.metric` in kebab: `ccn` →
   `complexity.ccn`, `classCount` → `size.class-count`, `typeCoverage.paramTotal`
   → `design.type-coverage.param.total`, and so on for all 82. Aggregated

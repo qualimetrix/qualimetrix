@@ -1,4 +1,5 @@
 mechanism	suppressor
+rule-namespace-exclusion	coupling.class-rank: Qualimetrix\Analysis\Finding\Rule
 rule-path-exclusion	complexity.cognitive: src/Analysis/Evidence/Coupling/*Visitor.php
 rule-path-exclusion	complexity.cognitive: src/Analysis/Evidence/Security/*Visitor.php
 rule-path-exclusion	complexity.cyclomatic: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php

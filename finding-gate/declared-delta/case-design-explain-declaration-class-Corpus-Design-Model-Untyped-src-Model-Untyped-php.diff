@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -5,1 +5,1 @@
+-    qmx.yaml:      50
++    qmx.yaml:      (not resolvable from configuration)

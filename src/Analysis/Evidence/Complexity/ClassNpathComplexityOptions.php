@@ -64,4 +64,9 @@ final readonly class ClassNpathComplexityOptions implements LevelOptionsInterfac
             maxError: $error !== null ? (int) $error : $this->maxError,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->maxWarning;
+    }
 }

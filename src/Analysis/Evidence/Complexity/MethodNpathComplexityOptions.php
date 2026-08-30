@@ -64,4 +64,9 @@ final readonly class MethodNpathComplexityOptions implements LevelOptionsInterfa
             error: $error !== null ? (int) $error : $this->error,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->warning;
+    }
 }

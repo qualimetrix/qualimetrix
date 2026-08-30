@@ -78,4 +78,9 @@ final readonly class ClassInstabilityOptions implements LevelOptionsInterface, T
             minAfferent: $this->minAfferent,
         );
     }
+
+    public function warningBoundary(): float
+    {
+        return $this->maxWarning;
+    }
 }

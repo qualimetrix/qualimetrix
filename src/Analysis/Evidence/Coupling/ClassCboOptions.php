@@ -98,4 +98,9 @@ final readonly class ClassCboOptions implements LevelOptionsInterface, Threshold
             scope: $this->scope,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->warning;
+    }
 }

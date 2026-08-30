@@ -71,4 +71,9 @@ final readonly class ClassComplexityOptions implements LevelOptionsInterface, Th
             maxError: $error !== null ? (int) $error : $this->maxError,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->maxWarning;
+    }
 }

@@ -94,4 +94,9 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface, Thresh
     {
         return InvertedOverrideValidator::instance();
     }
+
+    public function warningBoundary(): float
+    {
+        return $this->warning;
+    }
 }

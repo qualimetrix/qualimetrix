@@ -78,4 +78,9 @@ final readonly class NamespaceCboOptions implements LevelOptionsInterface, Thres
             minClassCount: $this->minClassCount,
         );
     }
+
+    public function warningBoundary(): int
+    {
+        return $this->warning;
+    }
 }

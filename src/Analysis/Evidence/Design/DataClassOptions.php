@@ -91,4 +91,19 @@ final readonly class DataClassOptions implements RuleOptionsInterface, Threshold
     {
         return IndependentAxisValidator::instance();
     }
+
+    /**
+     * `design.data-class` reports WOC and worsens downwards: `DataClassRule`
+     * emits while `woc <= wocThreshold`, so this member is the boundary on the
+     * reported axis. `wmcThreshold` gates a second metric and does not compete
+     * for the answer, exactly as `minAfferent` and `minStatements` gate
+     * elsewhere without stopping their classes from naming a boundary.
+     *
+     * The decision runs inside the rule; {@see self::getSeverity()} is a stub
+     * and cannot witness this number.
+     */
+    public function warningBoundary(): int
+    {
+        return $this->wocThreshold;
+    }
 }

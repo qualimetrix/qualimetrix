@@ -6820,11 +6820,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplainCommand",
           "closes_in": null
         },
@@ -8102,6 +8097,20 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\NoConfiguredBoundary": {
+      "path": "src/Analysis/Finding/Contract/Rule/NoConfiguredBoundary.php",
+      "kind": "enum",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "closure_package": "P6-A",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions",
+          "closes_in": null
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\Override\\IndependentAxisValidator": {
       "path": "src/Analysis/Finding/Contract/Rule/Override/IndependentAxisValidator.php",
       "kind": "class",
@@ -8655,11 +8664,6 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
           "closes_in": null
         },
         {
@@ -9217,6 +9221,11 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\RuleValidatorMapFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
           "closes_in": null
         }
       ]
