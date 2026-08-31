@@ -106,24 +106,30 @@ Owned test code is under `tests/Analysis/Evidence/Design/`:
 
 ```text
 Fixtures/
-├── ReadonlyDto.php
-└── SmallClass.php
+└── DataClass/
+    ├── ReadonlyDto.php
+    └── SmallClass.php
 Integration/
-└── DataClassDetectionTest.php
+└── DataClass/
+    └── DataClassDetectionTest.php
 Unit/
-├── DataClassRuleTest.php
-├── DitGlobalCollectorTest.php
-├── GodClassRuleTest.php
-├── InheritanceDepthCollectorTest.php
-├── InheritanceDepthUseAliasTest.php
-├── InheritanceRuleTest.php
-├── NocCollectorTest.php
-├── NocRuleTest.php
-├── TypeCoverageCollectorTest.php
-├── TypeCoverageOptionsTest.php
-├── TypeCoveragePercentCollectorTest.php
-├── TypeCoverageRuleTest.php
-└── TypeCoverageScaleTest.php
+├── DataClass/
+│   └── DataClassRuleTest.php
+├── GodClass/
+│   └── GodClassRuleTest.php
+├── Inheritance/
+│   ├── DitGlobalCollectorTest.php
+│   ├── InheritanceDepthCollectorTest.php
+│   ├── InheritanceDepthUseAliasTest.php
+│   ├── InheritanceRuleTest.php
+│   ├── NocCollectorTest.php
+│   └── NocRuleTest.php
+└── TypeCoverage/
+    ├── TypeCoverageCollectorTest.php
+    ├── TypeCoverageOptionsTest.php
+    ├── TypeCoveragePercentCollectorTest.php
+    ├── TypeCoverageRuleTest.php
+    └── TypeCoverageScaleTest.php
 ```
 
 Run the owned suite with:

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Design\Fixtures;
+namespace Qualimetrix\Tests\Analysis\Evidence\Design\Fixtures\DataClass;
 
 /**
  * RFC-008 Test Fixture: Small class with only 1-2 methods.

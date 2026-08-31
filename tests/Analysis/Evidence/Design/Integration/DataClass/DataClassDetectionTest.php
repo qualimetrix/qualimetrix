@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Design\Integration;
+namespace Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass;
 
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;

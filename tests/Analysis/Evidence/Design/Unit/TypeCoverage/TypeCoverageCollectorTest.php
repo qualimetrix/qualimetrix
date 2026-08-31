@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit;
+namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage;
 
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit;
+namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;

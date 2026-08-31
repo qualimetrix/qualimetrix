@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Design\Fixtures;
+namespace Qualimetrix\Tests\Analysis\Evidence\Design\Fixtures\DataClass;
 
 use DateTimeImmutable;
 
