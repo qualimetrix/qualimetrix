@@ -40,7 +40,6 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use ReflectionMethod;
 
 #[CoversClass(BoundaryExplanationService::class)]
 #[CoversClass(ExplainedSubject::class)]
@@ -482,8 +481,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             ],
         );
 
-        $method = new ReflectionMethod(ExplainedSubject::class, 'index');
-        $index = $method->invoke(null, $repository);
+        $index = ExplainedSubject::index($repository);
 
         self::assertIsArray($index);
         // The index content, not the number of repository calls, is what the
@@ -500,7 +498,9 @@ final class BoundaryExplanationServiceTest extends TestCase
             array_keys($index),
         );
         self::assertSame($first, $index[$first->toCanonical()]['subject']);
-        self::assertSame('src/First.php', $index[$first->toCanonical()]['location'][0]->value());
+        $location = $index[$first->toCanonical()]['location'];
+        self::assertNotNull($location);
+        self::assertSame('src/First.php', $location[0]->value());
         self::assertNull($index[$namespace->toCanonical()]['subject']);
         self::assertSame(1, $repository->calls['allDeclarations']);
         self::assertSame(1, $repository->calls['allLogicalClasses']);
@@ -529,12 +529,10 @@ final class BoundaryExplanationServiceTest extends TestCase
         $repository = new CountingBoundaryRepository(
             declarations: [new SymbolInfo(SymbolPath::forClass('App', 'Untyped'), null, null)],
         );
-        $method = new ReflectionMethod(ExplainedSubject::class, 'index');
-
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Exact repository rows must retain their typed subject.');
 
-        $method->invoke(null, $repository);
+        ExplainedSubject::index($repository);
     }
 
     /**

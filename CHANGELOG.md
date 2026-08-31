@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- Every class of the `design.*` rules moves under a subject segment of its own:
+  `Qualimetrix\Analysis\Evidence\Design\DitGlobalCollector` becomes
+  `Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector`, and likewise
+  for the `DataClass`, `GodClass` and `TypeCoverage` subjects. Rule names, channel
+  names, metric keys and CLI options are unchanged; only class strings move.
 - `ThresholdAwareOptionsInterface` requires `warningBoundary()`, returning the
   class's warning threshold or `NoConfiguredBoundary::MoreThanOneBoundary` when
   it holds several. `baseline:explain` asks for the number instead of guessing a

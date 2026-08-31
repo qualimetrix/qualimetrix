@@ -349,27 +349,43 @@ in `composer.json` that needs headroom passes `--memory-limit`.
 ### `size.class-count` never looks at a non-leaf namespace
 
 `ClassCountRule::analyze` skips a namespace whose `NamespaceTree` node is not a
-leaf (`ClassCountRule.php:93`). The check is on tree shape, not on the counted
-value, and the value it skips is the namespace's own `size.class-count`
-aggregate — so a namespace that holds many classes *directly* and also has one
-child namespace is never judged, at any count. Measured 2026-08-31 on this
-repository at the default `warning: 15`: `Analysis/Evidence/CodeSmell` holds 37
-classes directly, `Analysis/Evidence/Security` 21, `Analysis/Evidence/Coupling`
-19, and none of the three produces a finding — none appears in
+leaf (`ClassCountRule.php:95`). The test is on tree shape, and the value it
+guards is read one step later (`ClassCountRule.php:102`): the **recursive sum**
+`MetricName::agg(SIZE_CLASS_COUNT, AggregationStrategy::Sum)`, which already
+includes every child namespace. So a namespace that holds many classes directly
+and also has one child namespace is never judged, at any count.
+
+Measured 2026-08-31 on this repository against the default `warning: 15`, using
+the value the rule actually compares — `size.class-count.sum` on the namespace:
+`Analysis/Evidence/CodeSmell` 43, `Analysis/Evidence/Security` 25,
+`Analysis/Evidence/Coupling` 20. All three are non-leaf and none produces a
+finding: the run reports `size.class-count` on four namespaces only
+(`Evidence/Complexity`, `Evidence/Duplication`, `Evidence/Size` and
+`Infrastructure/DependencyInjection/Configurator`), none of the three appears in
 `qmx-baseline.json` under `size.class-count`, and `composer selfcheck` is green
 with `--fail-on=warning`.
 
-The rule is right to distinguish the two cases: a parent's aggregate sums its
-children and would double-count. What it lacks is the direct-count reading that
-makes the parent judgeable on its own classes. Fixing it means giving the rule a
-non-recursive class count per namespace, not removing the leaf test.
+**The first edition of this entry named the wrong quantity.** It read "CodeSmell
+37, Security 21, Coupling 19" as direct class counts. Those are
+`size.class-count.count` — the number of *files* contributing to the aggregate.
+The direct declaration counts are 35, 21 and 20. Neither series is what the rule
+puts against the threshold; the recursive sum is, and it is the series above.
 
-Not load-bearing for the `Design` split: the accepted `ns:…Evidence\Design`
-ratchet entry (`size.class-count` 24) was removed because the four subject
-folders leave **zero** classes in the root, so the namespace's own count is
-`None` and no finding exists to accept. The blind spot would only have been
-load-bearing in the rejected one-folder variant, which left 16 classes in the
-root against a threshold of 15.
+The rule is right to distinguish the two cases: the aggregate it reads sums the
+children and would double-count them. What it lacks is the direct-count reading
+that makes a parent judgeable on its own classes. Fixing it means giving the rule
+a non-recursive class count per namespace, not removing the leaf test.
+
+**Load-bearing for the `Design` split, contrary to the first edition.** That
+edition claimed the accepted `ns:…Evidence\Design` ratchet entry
+(`size.class-count` 24) was removed because the four subject folders leave zero
+classes in the root, so the namespace has no aggregate left to bound. The
+aggregate is recursive, so an empty root does not zero it:
+`ns:…Evidence\Design` still carries `size.class-count.sum` 24 today against a
+threshold of 15, and the `$classCount === 0` early return never fires. What
+removes the entry is the leaf test alone — distributing the classes over four
+subjects gave `Design` children and stopped it being a leaf. The blind spot is
+the mechanism of the removal, not a detail standing beside it.
 
 ## Disposition
 

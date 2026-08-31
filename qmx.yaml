@@ -1316,6 +1316,14 @@ rules:
       # AST visitors depend on many php-parser node types (not actionable coupling).
       # Exact capability roots preserve the visitor exclusion without enrolling
       # a future Analysis/Evidence sibling.
+      # Depth inside a capability root is deliberately not an axis. PathMatcher globs
+      # through fnmatch without FNM_PATHNAME, so `*` crosses `/` and these patterns
+      # kept matching after Design was split into subject folders. That is the chosen
+      # behaviour, not an accident to be pinned back: the enrolment this list guards
+      # against is a future sibling capability, while a subject folder inside an
+      # already-excluded capability is that capability's own business. Pinning the
+      # globs per subject would also mean editing every rule block below for each
+      # new subject, which is the cost this shape buys off.
       - src/Analysis/Evidence/CodeSmell/*Visitor.php
       - src/Analysis/Evidence/Cohesion/*Visitor.php
       - src/Analysis/Evidence/Complexity/*Visitor.php
