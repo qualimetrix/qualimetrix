@@ -41,11 +41,11 @@ enum DirectiveEffect { Effective; Overrun; Inert; Unmeasured; }
 
 enum DirectiveUnmeasurableReason {
     ProducerDisabled;      // селектор или rules: { X: false } — оба способа
-    ProducerAbsent;        // канал не принадлежит ни одному продюсеру
-    AlreadyRefused;        // пара channel:level отказана, либо селектор не разворачивается
+    AlreadyRefused;        // отказанная пара channel:level, неразворачиваемый
+                           // селектор, канал без продюсера — на всё это уже
+                           // отвечает annotation.unresolved-directive
     AddressesEveryChannel; // директива без фильтра правил
     Masked;                // перекрыта другой директивой того же правила (П2)
-    PartialCoverage;       // охват уже настроенного (П2)
 }
 
 final readonly class DirectiveVerdict {
@@ -56,6 +56,7 @@ final readonly class DirectiveVerdict {
     public DirectiveEffect $effect;
     public ?DirectiveUnmeasurableReason $reason;   // непустая ровно при Unmeasured
     public ?string $maskedBy;                      // заполняет П2
+    public bool $boundaryObservable;               // заполняет П2: см. О5
 }
 ```
 
@@ -75,8 +76,12 @@ public function verdicts(array $suppressionsByFile, array $findings): array
 public function stale(array $suppressionsByFile, array $findings, Severity $severity): array
 ```
 
-**Поверхность, через которую вердикты пересекают границу владельца, заводится
-здесь, а не молча в П2.** `DirectiveUsage` — internal с пустым списком
+**Видимость определяется потребителем, а не намерением.** Проверяющий манифеста
+отвергает запись потребителя, которого ещё нет, поэтому новые типы объявляются
+`internal`, пока их читает только Inline, и повышаются до контракта в том пакете,
+где появляется чужой читатель (П2 — пайплайн, П4 — команда). Поверхность,
+через которую вердикты пересекают границу владельца, всё равно заводится здесь,
+а не молча в П2: `DirectiveUsage` — internal с пустым списком
 потребителей, а единственный контракт Inline, который читает Run, отдаёт
 находки. Поэтому `InlineDirectivePolicyInterface` получает операцию
 
@@ -85,10 +90,9 @@ public function stale(array $suppressionsByFile, array $findings, Severity $seve
 public function directiveVerdicts(array $producedFindings): array;
 ```
 
-и её появление — часть этого пакета, вместе с записью в манифесте. `Overrun`,
-`Masked` и `PartialCoverage` в П1 не порождаются: их порождает пороговая
-половина, но словарь объявляется целиком сразу, чтобы П2 не расширял контракт,
-замороженный П1.
+и её появление — часть этого пакета. `Overrun` и `Masked` в П1 не порождаются —
+их порождает пороговая половина, — но словарь объявляется целиком сразу, чтобы
+П2 не расширял контракт, замороженный П1.
 
 ## Границы и краевые случаи
 
@@ -102,10 +106,14 @@ public function directiveVerdicts(array $producedFindings): array;
 - **`Unmeasured` не то же, что `Inert`.** Сегодня `isAccountable()` возвращает
   `false` по четырём разным путям, и все четыре молча выпадают из отчёта. После
   пакета они выпадают из **находок** (канал прежний), но присутствуют в
-  вердиктах с названной причиной. Различить `ProducerAbsent` и
-  `AlreadyRefused` обязательно: второй уже отвечен каналом
-  `annotation.unresolved-directive`, и повторный ответ судил бы одну ошибку
-  дважды — против прямого предписания докблока `isAccountable()`.
+  вердиктах с названной причиной. Три из четырёх путей — «директива уже
+  отказана» в разных видах, и они сводятся в один `AlreadyRefused`: на все три
+  уже отвечает канал `annotation.unresolved-directive`, а повторный ответ судил
+  бы одну ошибку дважды — против прямого предписания докблока
+  `isAccountable()`. Отдельная причина «канала нет ни у одного продюсера» в
+  словаре не заводится: раунд 2 показал, что валидная директива в это состояние
+  обычным путём не приходит, а причина, недостижимая на валидном входе, — это
+  ветка, которую нечем проверить.
 - **Файл без единой находки.** Директива в нём подотчётна и инертна.
 
 ## Тестовый план
@@ -117,12 +125,13 @@ public function directiveVerdicts(array $producedFindings): array;
 3. Директива без фильтра правил → `Unmeasured / AddressesEveryChannel`.
 4. Отказанная пара `channel:level` → `Unmeasured / AlreadyRefused`.
 5. Селектор, не разворачивающийся ни в один канал → `Unmeasured / AlreadyRefused`.
-6. Канал без продюсера → `Unmeasured / ProducerAbsent`.
+6. Канал без продюсера → `Unmeasured / AlreadyRefused`, и тест доказывает, что
+   вход достижим: если валидная директива в такое состояние не приходит, ветка
+   снимается, а не покрывается тестом на невозможное.
 7. Продюсер выключен селектором → `Unmeasured / ProducerDisabled`.
 8. Тот же продюсер выключен через `rules: { X: false }` → тот же вердикт.
 9. Классовая директива с пятью привязками, сработала одна → один `Effective`.
-10. Два тега разных типов с одним селектором на одной строке → два вердикта,
-    не один.
+10. Два тега разных типов с одним селектором на одной строке → два вердикта.
 
 Проекционный тест: `stale()` возвращает находки ровно по вердиктам с
 `effect === Inert`.
@@ -143,8 +152,11 @@ public function directiveVerdicts(array $producedFindings): array;
 - Десять единичных случаев, проекционный, ключей и универсума — зелёные;
   каждый проверен снятием своей ветки поштучно, мутация красит свой тест и не
   красит остальные.
-- Манифест: новые типы и новая операция `InlineDirectivePolicyInterface`
-  объявлены с владельцем `Analysis.Policy.Inline`; потребитель Run внесён.
+- Манифест: новые типы объявлены с владельцем `Analysis.Policy.Inline` и
+  видимостью `internal` — чужого потребителя у них в этом пакете нет, а запись
+  потребителя, которого ещё не существует, проверяющий отвергает
+  (`unused contract consumer entry`). Повышение до контракта — в том пакете, где
+  появляется читатель.
 - `composer check` — exit 0; `composer gate -- --reference=<origin/main>` —
   диффы только объявленной дельты, каждый назван.
 - README `src/Analysis/Policy/Inline/` дополнен словарём вердиктов;

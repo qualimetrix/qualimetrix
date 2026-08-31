@@ -1,15 +1,3 @@
-# Constructor-injected collaborator types of every rule and configuration
-# validator — the second-order surface on which re-execution could leave state.
-#
-# WHAT PRODUCED IT: enumeration-rule-collaborators.py — same transitive rule set
-# as enumeration-execution-state.py, plus ConfigurationValidatorInterface
-# implementors, then a regex over each constructor parameter list. 50 classes,
-# 40 of them without a constructor of their own.
-#
-# WHAT IT CANNOT SEE: collaborators obtained from a container or a factory
-# inside a method rather than injected; transitive collaborators (this is one
-# level deep); union and intersection parameter types, of which the regex keeps
-# only the first name.
 kind	class	file	collaborator
 rule	AbstractCodeSmellRule	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php	(no constructor)
 rule	AbstractRule	src/Analysis/Finding/Contract/Rule/AbstractRule.php	RuleOptionsInterface
@@ -25,6 +13,7 @@ rule	CodeDuplicationRule	src/Analysis/Evidence/Duplication/CodeDuplicationRule.p
 rule	CodeDuplicationRule	src/Analysis/Evidence/Duplication/CodeDuplicationRule.php	RuleOptionsInterface
 rule	CognitiveComplexityRule	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	(no constructor)
 rule	CommandInjectionRule	src/Analysis/Evidence/Security/CommandInjectionRule.php	(no constructor)
+rule	ComplexityRule	src/Analysis/Evidence/Complexity/ComplexityRule.php	(no constructor)
 rule	ComputedMetricRule	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ComputedMetricDefinitionCatalogInterface
 rule	ComputedMetricRule	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ComputedMetricFindingBuilder
 rule	ComputedMetricRule	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ComputedMetricProducerOptions
