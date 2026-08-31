@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Design;
+namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;

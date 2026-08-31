@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;

@@ -2,29 +2,31 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Design;
+namespace Qualimetrix\Analysis\Evidence\Design\TypeCoverage;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 
 /**
- * How many of a class's method and function return types carry a type declaration, against a
+ * How many of a class's method and function parameters carry a type declaration, against a
  * configured minimum.
  *
- * Sibling of {@see ParamTypeCoverageRule} and
- * {@see PropertyTypeCoverageRule}, configured and suppressed on its own.
+ * A dimension of its own rather than one facet of a single
+ * type-coverage rule: a codebase typically types its parameters, its return
+ * types and its properties at different speeds, so one threshold and one
+ * suppression per dimension is what a project can act on.
  *
  * @qmx-ignore health.cohesion -- Metadata only: every method here returns a constant naming this dimension, so no two of them can share a field. The judgement they configure lives in AbstractTypeCoverageRule.
  */
-#[CliAlias('return-type-coverage-warning', 'warning')]
-#[CliAlias('return-type-coverage-error', 'error')]
-final class ReturnTypeCoverageRule extends AbstractTypeCoverageRule
+#[CliAlias('param-type-coverage-warning', 'warning')]
+#[CliAlias('param-type-coverage-error', 'error')]
+final class ParamTypeCoverageRule extends AbstractTypeCoverageRule
 {
-    public const string NAME = 'design.type-coverage.return';
+    public const string NAME = 'design.type-coverage.param';
 
     public function getDescription(): string
     {
-        return 'Checks type coverage of return types per class';
+        return 'Checks type coverage of parameters per class';
     }
 
     /**
@@ -32,7 +34,7 @@ final class ReturnTypeCoverageRule extends AbstractTypeCoverageRule
      */
     public function requires(): array
     {
-        return [MetricName::DESIGN_TYPE_COVERAGE_RETURN];
+        return [MetricName::DESIGN_TYPE_COVERAGE_PARAM];
     }
 
     /**
@@ -50,22 +52,22 @@ final class ReturnTypeCoverageRule extends AbstractTypeCoverageRule
 
     protected function totalMetric(): string
     {
-        return MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL;
+        return MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL;
     }
 
     protected function coverageMetric(): string
     {
-        return MetricName::DESIGN_TYPE_COVERAGE_RETURN;
+        return MetricName::DESIGN_TYPE_COVERAGE_PARAM;
     }
 
     protected function label(): string
     {
-        return 'Return';
+        return 'Parameter';
     }
 
     protected function hint(): string
     {
-        return 'Add return type declarations to methods';
+        return 'Add type declarations to method parameters';
     }
 
     public const string DOCS_PAGE = 'rules/design.md';

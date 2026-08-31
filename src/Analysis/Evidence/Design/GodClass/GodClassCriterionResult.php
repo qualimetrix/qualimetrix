@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Design;
+namespace Qualimetrix\Analysis\Evidence\Design\GodClass;
 
 /**
  * Outcome of evaluating a single God Class criterion (WMC, LCOM, TCC, or class LOC)

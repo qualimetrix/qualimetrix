@@ -17,35 +17,45 @@ cross-capability contract.
 
 ```text
 Design/
-├── TypeCoverageCollector.php
-├── TypeCoveragePercentCollector.php
-├── TypeCoverageVisitor.php
-├── DitGlobalCollector.php
-├── InheritanceClassInfo.php
-├── InheritanceDepthCollector.php
-├── InheritanceDepthVisitor.php
-├── NocCollector.php
-├── DataClassExclusionCheck.php
-├── DataClassOptions.php
-├── DataClassRule.php
-├── GodClassCriteriaEvaluator.php
-├── GodClassCriterionResult.php
-├── GodClassOptions.php
-├── GodClassRule.php
-├── TypeCoverageOptions.php
-├── AbstractTypeCoverageRule.php
-├── ParamTypeCoverageRule.php
-├── ReturnTypeCoverageRule.php
-├── PropertyTypeCoverageRule.php
-├── InheritanceOptions.php
-├── InheritanceRule.php
-├── NocOptions.php
-└── NocRule.php
+├── DataClass/
+│   ├── DataClassExclusionCheck.php
+│   ├── DataClassOptions.php
+│   └── DataClassRule.php
+├── GodClass/
+│   ├── GodClassCriteriaEvaluator.php
+│   ├── GodClassCriterionResult.php
+│   ├── GodClassOptions.php
+│   └── GodClassRule.php
+├── Inheritance/
+│   ├── DitGlobalCollector.php
+│   ├── InheritanceClassInfo.php
+│   ├── InheritanceDepthCollector.php
+│   ├── InheritanceDepthVisitor.php
+│   ├── InheritanceOptions.php
+│   ├── InheritanceRule.php
+│   ├── NocCollector.php
+│   ├── NocOptions.php
+│   └── NocRule.php
+└── TypeCoverage/
+    ├── AbstractTypeCoverageRule.php
+    ├── ParamTypeCoverageRule.php
+    ├── PropertyTypeCoverageRule.php
+    ├── ReturnTypeCoverageRule.php
+    ├── TypeCoverageCollector.php
+    ├── TypeCoverageOptions.php
+    ├── TypeCoveragePercentCollector.php
+    └── TypeCoverageVisitor.php
 ```
 
-The flat layout is intentional: all files participate in one class-design
-evidence lifecycle. Do not recreate `Metrics/`, `Rules/`, or a generic helper
-subdirectory inside this leaf.
+Four subject folders, one per design property judged: declaration typing,
+inheritance shape, data-class shape, god-class shape. Each holds its own
+collectors, visitor, options and rules; there are no cross-family imports and
+no shared type, which is why the root carries no production code at all. `Noc`
+lives in `Inheritance/` because DIT and NOC measure the same inheritance tree
+from opposite ends, and NOC contributes one collector with no visitor of its
+own. Do not recreate `Metrics/`, `Rules/`, or a generic helper subdirectory
+inside any of them, and do not put a type back in the root: a type that would
+belong to no family is the signal that a fifth family is being named.
 
 ## Behaviour and lifecycle
 

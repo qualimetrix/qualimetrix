@@ -10,8 +10,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageVisitor;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageVisitor;
 use SplFileInfo;
 
 /**

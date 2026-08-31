@@ -79,7 +79,7 @@ rule-path-exclusion	complexity.cognitive	complexity.cognitive	src/Analysis/Evide
 rule-path-exclusion	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Cohesion/TccLccVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor	error	1
 rule-path-exclusion	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Cohesion/TccLccVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor::enterNode	error	1
 rule-path-exclusion	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Complexity/CognitiveComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor::isRecursiveCall	warning	1
-rule-path-exclusion	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Design/InheritanceDepthVisitor.php	Qualimetrix\Analysis\Evidence\Design\InheritanceDepthVisitor::enterNode	warning	1
+rule-path-exclusion	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor::enterNode	warning	1
 rule-path-exclusion	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	warning	1
 rule-path-exclusion	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor::getOperandName	error	1
 rule-path-exclusion	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor::enterNode	warning	1
@@ -96,7 +96,7 @@ rule-path-exclusion	complexity.cyclomatic	complexity.cyclomatic	src/Analysis/Evi
 rule-path-exclusion	complexity.cyclomatic	complexity.cyclomatic	src/Analysis/Evidence/Complexity/NpathComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityVisitor::enterNode	warning	1
 rule-path-exclusion	complexity.cyclomatic	complexity.cyclomatic	src/Analysis/Evidence/Complexity/NpathComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityVisitor::getExprTypeLabel	warning	1
 rule-path-exclusion	complexity.cyclomatic	complexity.cyclomatic	src/Analysis/Evidence/Complexity/NpathComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityVisitor::getStmtTypeLabel	warning	1
-rule-path-exclusion	complexity.cyclomatic	complexity.cyclomatic	src/Analysis/Evidence/Design/InheritanceDepthVisitor.php	Qualimetrix\Analysis\Evidence\Design\InheritanceDepthVisitor::enterNode	warning	1
+rule-path-exclusion	complexity.cyclomatic	complexity.cyclomatic	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor::enterNode	warning	1
 rule-path-exclusion	complexity.cyclomatic	complexity.cyclomatic	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	warning	1
 rule-path-exclusion	complexity.cyclomatic	complexity.cyclomatic	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor::getAssignOpName	warning	1
 rule-path-exclusion	complexity.cyclomatic	complexity.cyclomatic	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor::getBinaryOpName	error	1
@@ -117,7 +117,7 @@ rule-path-exclusion	complexity.npath	complexity.npath	src/Analysis/Evidence/Cohe
 rule-path-exclusion	complexity.npath	complexity.npath	src/Analysis/Evidence/Cohesion/TccLccVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor::enterNode	error	1
 rule-path-exclusion	complexity.npath	complexity.npath	src/Analysis/Evidence/Complexity/CognitiveComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor::getComplexityIncrement	error	1
 rule-path-exclusion	complexity.npath	complexity.npath	src/Analysis/Evidence/Complexity/CognitiveComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor::isRecursiveCall	error	1
-rule-path-exclusion	complexity.npath	complexity.npath	src/Analysis/Evidence/Design/InheritanceDepthVisitor.php	Qualimetrix\Analysis\Evidence\Design\InheritanceDepthVisitor::enterNode	warning	1
+rule-path-exclusion	complexity.npath	complexity.npath	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor::enterNode	warning	1
 rule-path-exclusion	complexity.npath	complexity.npath	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor::getOperandName	error	1
 rule-path-exclusion	complexity.npath	complexity.npath	src/Analysis/Evidence/Size/ClassCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\ClassCountVisitor::enterNode	warning	1
 rule-path-exclusion	complexity.npath	complexity.npath	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor::countMethod	warning	1
@@ -158,7 +158,7 @@ rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/DependencyInjec
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/DependencyInjection/Configurator/RuleConfigurator.php	Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator	warning	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/DependencyInjection/ContainerFactory.php	Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory	error	1
 rule-path-exclusion	coupling.instability	coupling.instability	src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php	Qualimetrix\Analysis\Evidence\CodeSmell\UsageTrackingTrait	warning	1
-rule-path-exclusion	coupling.instability	coupling.instability	src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\AbstractTypeCoverageRule	warning	1
+rule-path-exclusion	coupling.instability	coupling.instability	src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\AbstractTypeCoverageRule	warning	1
 rule-path-exclusion	coupling.instability	coupling.instability	src/Infrastructure/Console/AnalysisRuntimeConfigurator.php	Qualimetrix\Infrastructure\Console	warning	1
 rule-path-exclusion	coupling.instability	coupling.instability	src/Infrastructure/Console/AnalysisRuntimeConfigurator.php	Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator	warning	1
 rule-path-exclusion	coupling.instability	coupling.instability	src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php	Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds	warning	1
@@ -179,15 +179,15 @@ rule-path-exclusion	duplication.code-duplication	duplication.code-duplication	sr
 rule-path-exclusion	duplication.code-duplication	duplication.code-duplication	src/Analysis/Evidence/Coupling/CboOptions.php	(project)	warning	1
 rule-path-exclusion	duplication.code-duplication	duplication.code-duplication	src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	(project)	warning	2
 rule-path-exclusion	duplication.code-duplication	duplication.code-duplication	src/Analysis/Evidence/Coupling/ClassRankOptions.php	(project)	warning	1
-rule-path-exclusion	duplication.code-duplication	duplication.code-duplication	src/Analysis/Evidence/Design/TypeCoverageOptions.php	(project)	warning	1
+rule-path-exclusion	duplication.code-duplication	duplication.code-duplication	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php	(project)	warning	1
 rule-path-exclusion	size.property-count	size.property-count	src/Analysis/Evidence/Size/MethodCountMetrics.php	Qualimetrix\Analysis\Evidence\Size\MethodCountMetrics	error	1
 suppression	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	health.cohesion	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	warning	1
 suppression	src/Analysis/Evidence/CodeSmell/UnusedPrivateClassData.php	health.cohesion	src/Analysis/Evidence/CodeSmell/UnusedPrivateClassData.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateClassData	warning	1
 suppression	src/Analysis/Evidence/DependencyModel/DependencyGraph.php	health.cohesion	src/Analysis/Evidence/DependencyModel/DependencyGraph.php	Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph	error	1
-suppression	src/Analysis/Evidence/Design/InheritanceDepthCollector.php	health.cohesion	src/Analysis/Evidence/Design/InheritanceDepthCollector.php	Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector	error	1
-suppression	src/Analysis/Evidence/Design/ParamTypeCoverageRule.php	health.cohesion	src/Analysis/Evidence/Design/ParamTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule	error	1
-suppression	src/Analysis/Evidence/Design/PropertyTypeCoverageRule.php	health.cohesion	src/Analysis/Evidence/Design/PropertyTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\PropertyTypeCoverageRule	error	1
-suppression	src/Analysis/Evidence/Design/ReturnTypeCoverageRule.php	health.cohesion	src/Analysis/Evidence/Design/ReturnTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\ReturnTypeCoverageRule	error	1
+suppression	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php	health.cohesion	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector	error	1
+suppression	src/Analysis/Evidence/Design/TypeCoverage/ParamTypeCoverageRule.php	health.cohesion	src/Analysis/Evidence/Design/TypeCoverage/ParamTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule	error	1
+suppression	src/Analysis/Evidence/Design/TypeCoverage/PropertyTypeCoverageRule.php	health.cohesion	src/Analysis/Evidence/Design/TypeCoverage/PropertyTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\PropertyTypeCoverageRule	error	1
+suppression	src/Analysis/Evidence/Design/TypeCoverage/ReturnTypeCoverageRule.php	health.cohesion	src/Analysis/Evidence/Design/TypeCoverage/ReturnTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ReturnTypeCoverageRule	error	1
 suppression	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	health.cohesion	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext	warning	1
 suppression	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	health.cohesion	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankIndex	warning	1
 suppression	src/Analysis/Policy/Architecture/Configuration/LayerCriterionNormalizer.php	health.cohesion	src/Analysis/Policy/Architecture/Configuration/LayerCriterionNormalizer.php	Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer	error	1

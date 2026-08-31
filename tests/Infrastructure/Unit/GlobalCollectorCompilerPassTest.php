@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector;
-use Qualimetrix\Analysis\Evidence\Design\NocCollector;
+use Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

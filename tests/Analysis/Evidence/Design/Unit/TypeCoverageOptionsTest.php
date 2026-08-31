@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 

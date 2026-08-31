@@ -14,8 +14,8 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
 use Qualimetrix\Analysis\Evidence\Coupling\RfcCollector;
-use Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector;
-use Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector;
+use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
@@ -59,8 +59,8 @@ final class ClassProducerOrdinalTest extends TestCase
         LcomCollector::class => 'src/Analysis/Evidence/Cohesion/LcomCollector.php',
         TccLccCollector::class => 'src/Analysis/Evidence/Cohesion/TccLccCollector.php',
         RfcCollector::class => 'src/Analysis/Evidence/Coupling/RfcCollector.php',
-        InheritanceDepthCollector::class => 'src/Analysis/Evidence/Design/InheritanceDepthCollector.php',
-        TypeCoverageCollector::class => 'src/Analysis/Evidence/Design/TypeCoverageVisitor.php',
+        InheritanceDepthCollector::class => 'src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php',
+        TypeCoverageCollector::class => 'src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageVisitor.php',
         LocCollector::class => 'src/Analysis/Evidence/Size/LocCollector.php',
         MethodCountCollector::class => 'src/Analysis/Evidence/Size/MethodCountCollector.php',
     ];

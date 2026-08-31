@@ -34,8 +34,8 @@ coupling.cbo	channel	?		58	296	2	4	7	104	0	6
 coupling.class-rank	channel	?		22	98	0	2	2	26	0	30
 coupling.distance	channel	?		30	70	2	2	2	33	0	31
 coupling.instability	channel	?		31	88	2	4	8	48	0	8
-design.data-class	channel	?		15	15	1	1	10	33	0	4
-design.god-class	channel	?		15	18	1	2	2	36	0	8
+design.data-class	channel	?		15	15	1	1	10	33	0	3
+design.god-class	channel	?		15	18	1	2	2	36	0	7
 design.inheritance	channel	?		6	10	2	2	0	20	0	3
 design.noc	channel	?		15	33	2	2	0	20	0	3
 design.type-coverage.param	channel	?		10	54	2	1	1	23	0	3
@@ -48,7 +48,7 @@ security.hardcoded-credentials	channel	?		6	31	0	0	0	15	0	1
 security.sensitive-parameter	channel	?		5	19	0	0	0	13	0	1
 security.sql-injection	channel	?		3	6	0	0	0	13	0	1
 security.xss	channel	?		4	17	0	0	0	13	0	1
-size.class-count	channel	?		26	88	2	1	5	29	0	4
+size.class-count	channel	?		26	88	2	1	4	29	0	4
 size.method-count	channel	?		24	152	2	2	0	50	0	3
 size.property-count	channel	?		20	36	2	2	0	24	0	3
 code-smell.is-vo-constructor	metric-key	?		1	25	0	0	0	0	0	1
@@ -108,7 +108,7 @@ maintainability.mi	metric-key	?		12	133	0	0	0	0	0	0
 security.hardcoded-credentials	metric-key	?		6	31	0	0	0	15	0	1
 security.sensitive-parameter	metric-key	?		5	19	0	0	0	13	0	1
 size.abstract-class-count	metric-key	?		8	11	0	0	0	0	0	0
-size.class-count	metric-key	?		26	88	2	1	5	29	0	4
+size.class-count	metric-key	?		26	88	2	1	4	29	0	4
 size.class-loc	metric-key	?		2	31	0	0	0	0	0	0
 size.cloc	metric-key	?		5	20	0	0	0	0	0	0
 size.enum-count	metric-key	?		12	18	0	0	0	0	0	0
@@ -161,8 +161,8 @@ coupling.cbo	producer	?		58	296	2	4	7	104	0	6
 coupling.class-rank	producer	?		22	98	0	2	2	26	0	30
 coupling.distance	producer	?		30	70	2	2	2	33	0	31
 coupling.instability	producer	?		31	88	2	4	8	48	0	8
-design.data-class	producer	?		15	15	1	1	10	33	0	4
-design.god-class	producer	?		15	18	1	2	2	36	0	8
+design.data-class	producer	?		15	15	1	1	10	33	0	3
+design.god-class	producer	?		15	18	1	2	2	36	0	7
 design.inheritance	producer	?		6	10	2	2	0	20	0	3
 design.noc	producer	?		15	33	2	2	0	20	0	3
 design.type-coverage.param	producer	?		10	54	2	1	1	23	0	3
@@ -181,7 +181,7 @@ security.hardcoded-credentials	producer	?		6	31	0	0	0	15	0	1
 security.sensitive-parameter	producer	?		5	19	0	0	0	13	0	1
 security.sql-injection	producer	?		3	6	0	0	0	13	0	1
 security.xss	producer	?		4	17	0	0	0	13	0	1
-size.class-count	producer	?		26	88	2	1	5	29	0	4
+size.class-count	producer	?		26	88	2	1	4	29	0	4
 size.method-count	producer	?		24	152	2	2	0	50	0	3
 size.property-count	producer	?		20	36	2	2	0	24	0	3
 #

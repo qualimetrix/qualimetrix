@@ -261,30 +261,30 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TypeDependencyHelper'
     - name: analysis-evidence-design
       patterns:
-        - 'Qualimetrix\Analysis\Evidence\Design\AbstractTypeCoverageRule'
-        - 'Qualimetrix\Analysis\Evidence\Design\DataClassExclusionCheck'
-        - 'Qualimetrix\Analysis\Evidence\Design\DataClassOptions'
-        - 'Qualimetrix\Analysis\Evidence\Design\DataClassRule'
-        - 'Qualimetrix\Analysis\Evidence\Design\DitGlobalCollector'
-        - 'Qualimetrix\Analysis\Evidence\Design\GodClassCriteriaEvaluator'
-        - 'Qualimetrix\Analysis\Evidence\Design\GodClassCriterionResult'
-        - 'Qualimetrix\Analysis\Evidence\Design\GodClassOptions'
-        - 'Qualimetrix\Analysis\Evidence\Design\GodClassRule'
-        - 'Qualimetrix\Analysis\Evidence\Design\InheritanceClassInfo'
-        - 'Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector'
-        - 'Qualimetrix\Analysis\Evidence\Design\InheritanceDepthVisitor'
-        - 'Qualimetrix\Analysis\Evidence\Design\InheritanceOptions'
-        - 'Qualimetrix\Analysis\Evidence\Design\InheritanceRule'
-        - 'Qualimetrix\Analysis\Evidence\Design\NocCollector'
-        - 'Qualimetrix\Analysis\Evidence\Design\NocOptions'
-        - 'Qualimetrix\Analysis\Evidence\Design\NocRule'
-        - 'Qualimetrix\Analysis\Evidence\Design\ParamTypeCoverageRule'
-        - 'Qualimetrix\Analysis\Evidence\Design\PropertyTypeCoverageRule'
-        - 'Qualimetrix\Analysis\Evidence\Design\ReturnTypeCoverageRule'
-        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector'
-        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions'
-        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoveragePercentCollector'
-        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverageVisitor'
+        - 'Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassExclusionCheck'
+        - 'Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions'
+        - 'Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassCriteriaEvaluator'
+        - 'Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassCriterionResult'
+        - 'Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions'
+        - 'Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceClassInfo'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceOptions'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\NocOptions'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\AbstractTypeCoverageRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\PropertyTypeCoverageRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ReturnTypeCoverageRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector'
+        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions'
+        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoveragePercentCollector'
+        - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageVisitor'
     - name: analysis-evidence-duplication
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions'
@@ -1423,7 +1423,7 @@ rules:
       - src/Infrastructure/Console
       # Abstract base classes aggregate deps from all subclasses — instability is
       # structural. Its only afferent edges are the three type-coverage subclasses.
-      - src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php
+      - src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php
     class:
       min_afferent: 2
     namespace:

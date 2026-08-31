@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Design;
+namespace Qualimetrix\Analysis\Evidence\Design\GodClass;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator;

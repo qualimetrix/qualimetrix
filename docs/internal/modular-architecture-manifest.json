@@ -2119,12 +2119,12 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector",
           "closes_in": null
         },
         {
@@ -2276,12 +2276,12 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector",
           "closes_in": null
         },
         {
@@ -2452,192 +2452,192 @@
       "closure_package": "P3",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule": {
-      "path": "src/Analysis/Evidence/Design/AbstractTypeCoverageRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule": {
+      "path": "src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassExclusionCheck": {
-      "path": "src/Analysis/Evidence/Design/DataClassExclusionCheck.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassExclusionCheck": {
+      "path": "src/Analysis/Evidence/Design/DataClass/DataClassExclusionCheck.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassOptions": {
-      "path": "src/Analysis/Evidence/Design/DataClassOptions.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassOptions": {
+      "path": "src/Analysis/Evidence/Design/DataClass/DataClassOptions.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule": {
-      "path": "src/Analysis/Evidence/Design/DataClassRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule": {
+      "path": "src/Analysis/Evidence/Design/DataClass/DataClassRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector": {
-      "path": "src/Analysis/Evidence/Design/DitGlobalCollector.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/DitGlobalCollector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassCriteriaEvaluator": {
-      "path": "src/Analysis/Evidence/Design/GodClassCriteriaEvaluator.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassCriteriaEvaluator": {
+      "path": "src/Analysis/Evidence/Design/GodClass/GodClassCriteriaEvaluator.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassCriterionResult": {
-      "path": "src/Analysis/Evidence/Design/GodClassCriterionResult.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassCriterionResult": {
+      "path": "src/Analysis/Evidence/Design/GodClass/GodClassCriterionResult.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassOptions": {
-      "path": "src/Analysis/Evidence/Design/GodClassOptions.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions": {
+      "path": "src/Analysis/Evidence/Design/GodClass/GodClassOptions.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule": {
-      "path": "src/Analysis/Evidence/Design/GodClassRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule": {
+      "path": "src/Analysis/Evidence/Design/GodClass/GodClassRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceClassInfo": {
-      "path": "src/Analysis/Evidence/Design/InheritanceClassInfo.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceClassInfo": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceClassInfo.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector": {
-      "path": "src/Analysis/Evidence/Design/InheritanceDepthCollector.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthVisitor": {
-      "path": "src/Analysis/Evidence/Design/InheritanceDepthVisitor.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthVisitor": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceOptions": {
-      "path": "src/Analysis/Evidence/Design/InheritanceOptions.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceOptions": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule": {
-      "path": "src/Analysis/Evidence/Design/InheritanceRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\NocCollector": {
-      "path": "src/Analysis/Evidence/Design/NocCollector.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/NocCollector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\NocOptions": {
-      "path": "src/Analysis/Evidence/Design/NocOptions.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/NocOptions.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule": {
-      "path": "src/Analysis/Evidence/Design/NocRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/NocRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\ParamTypeCoverageRule": {
-      "path": "src/Analysis/Evidence/Design/ParamTypeCoverageRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\ParamTypeCoverageRule": {
+      "path": "src/Analysis/Evidence/Design/TypeCoverage/ParamTypeCoverageRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\PropertyTypeCoverageRule": {
-      "path": "src/Analysis/Evidence/Design/PropertyTypeCoverageRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\PropertyTypeCoverageRule": {
+      "path": "src/Analysis/Evidence/Design/TypeCoverage/PropertyTypeCoverageRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\ReturnTypeCoverageRule": {
-      "path": "src/Analysis/Evidence/Design/ReturnTypeCoverageRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\ReturnTypeCoverageRule": {
+      "path": "src/Analysis/Evidence/Design/TypeCoverage/ReturnTypeCoverageRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageCollector": {
-      "path": "src/Analysis/Evidence/Design/TypeCoverageCollector.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector": {
+      "path": "src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageOptions": {
-      "path": "src/Analysis/Evidence/Design/TypeCoverageOptions.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions": {
+      "path": "src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoveragePercentCollector": {
-      "path": "src/Analysis/Evidence/Design/TypeCoveragePercentCollector.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoveragePercentCollector": {
+      "path": "src/Analysis/Evidence/Design/TypeCoverage/TypeCoveragePercentCollector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageVisitor": {
-      "path": "src/Analysis/Evidence/Design/TypeCoverageVisitor.php",
+    "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageVisitor": {
+      "path": "src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageVisitor.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
@@ -2988,12 +2988,12 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector",
           "closes_in": null
         },
         {
@@ -3142,17 +3142,17 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector",
           "closes_in": null
         },
         {
@@ -3304,12 +3304,12 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector",
           "closes_in": null
         },
         {
@@ -3421,12 +3421,12 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageVisitor",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageVisitor",
           "closes_in": null
         },
         {
@@ -3495,12 +3495,12 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageVisitor",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageVisitor",
           "closes_in": null
         },
         {
@@ -3567,7 +3567,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoveragePercentCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoveragePercentCollector",
           "closes_in": null
         },
         {
@@ -3664,12 +3664,12 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector",
           "closes_in": null
         },
         {
@@ -3822,37 +3822,37 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassExclusionCheck",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassExclusionCheck",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassCriteriaEvaluator",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassCriteriaEvaluator",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoveragePercentCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoveragePercentCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageVisitor",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageVisitor",
           "closes_in": null
         },
         {
@@ -3932,7 +3932,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         }
       ]
@@ -4020,22 +4020,22 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoveragePercentCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoveragePercentCollector",
           "closes_in": null
         },
         {
@@ -4234,57 +4234,57 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassExclusionCheck",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassExclusionCheck",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassCriteriaEvaluator",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassCriteriaEvaluator",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoveragePercentCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoveragePercentCollector",
           "closes_in": null
         },
         {
@@ -4389,17 +4389,17 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\ParamTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\ParamTypeCoverageRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\ReturnTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\ReturnTypeCoverageRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\PropertyTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\PropertyTypeCoverageRule",
           "closes_in": null
         }
       ]
@@ -4487,12 +4487,12 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector",
           "closes_in": null
         },
         {
@@ -4668,7 +4668,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoveragePercentCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoveragePercentCollector",
           "closes_in": null
         },
         {
@@ -4766,12 +4766,12 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthVisitor",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthVisitor",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageVisitor",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageVisitor",
           "closes_in": null
         },
         {
@@ -5676,22 +5676,22 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
@@ -5771,7 +5771,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         },
         {
@@ -6041,27 +6041,27 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
@@ -6556,22 +6556,22 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
@@ -6751,7 +6751,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         },
         {
@@ -6939,22 +6939,22 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
@@ -7029,7 +7029,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         }
       ]
@@ -7375,22 +7375,22 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
@@ -7445,7 +7445,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         },
         {
@@ -7563,22 +7563,22 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
@@ -7653,7 +7653,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         },
         {
@@ -7737,22 +7737,22 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
@@ -7782,17 +7782,17 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\ParamTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\ParamTypeCoverageRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\ReturnTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\ReturnTypeCoverageRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\PropertyTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\PropertyTypeCoverageRule",
           "closes_in": null
         },
         {
@@ -8120,7 +8120,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassOptions",
           "closes_in": null
         }
       ]
@@ -8134,7 +8134,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions",
           "closes_in": null
         },
         {
@@ -8153,17 +8153,17 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions",
           "closes_in": null
         },
         {
@@ -8272,12 +8272,12 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions",
           "closes_in": null
         },
         {
@@ -8311,7 +8311,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions",
           "closes_in": null
         }
       ]
@@ -8593,27 +8593,27 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions",
           "closes_in": null
         },
         {
@@ -8762,27 +8762,27 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions",
           "closes_in": null
         },
         {
@@ -9036,17 +9036,17 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions",
           "closes_in": null
         },
         {
@@ -9170,27 +9170,27 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions",
           "closes_in": null
         },
         {
@@ -9363,17 +9363,17 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions",
           "closes_in": null
         },
         {
@@ -9672,47 +9672,47 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions",
           "closes_in": null
         },
         {
@@ -9907,7 +9907,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         },
         {
@@ -12431,22 +12431,22 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
@@ -12501,7 +12501,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         }
       ]
@@ -12978,17 +12978,17 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageVisitor",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageVisitor",
           "closes_in": null
         },
         {
@@ -13738,7 +13738,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
@@ -13878,7 +13878,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         }
       ]
@@ -13941,12 +13941,12 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         }
       ]
@@ -14020,27 +14020,27 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
@@ -14314,52 +14314,52 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoveragePercentCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoveragePercentCollector",
           "closes_in": null
         },
         {
@@ -14782,17 +14782,17 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageVisitor",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageVisitor",
           "closes_in": null
         },
         {
@@ -15056,27 +15056,27 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\AbstractTypeCoverageRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
           "closes_in": null
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
           "closes_in": null
         },
         {
