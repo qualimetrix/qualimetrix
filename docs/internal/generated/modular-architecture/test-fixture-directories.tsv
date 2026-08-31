@@ -1,7 +1,5 @@
 current_directory	subject_owners	closure_packages	disposition
 tests/Analysis/Configuration/Fixtures	Analysis/Configuration	P3	"Move atomically with the owning subject."
-tests/Analysis/Evidence/Design/Fixtures	Analysis/Evidence/Design	P7	"Move atomically with the owning subject."
-tests/Analysis/Evidence/Design/Fixtures/DataClass	Analysis/Evidence/Design	P7	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures	Analysis/Evidence/Measurement	P3,P7	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics	Analysis/Evidence/Measurement	P3	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics/App	Analysis/Evidence/Measurement	P3	"Move atomically with the owning subject."
