@@ -25,6 +25,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyI
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
@@ -605,11 +606,11 @@ final class UnusedDirectiveRuleTest extends TestCase
 
     private static function policy(?ChannelIdentityInterface $identity = null): InlineDirectivePolicy
     {
-        return new InlineDirectivePolicy(
+        return new InlineDirectivePolicy(new DirectiveUsage(
             $identity ?? self::productionUniverse(),
             new RuleSelector(new InMemoryRuleChannelRegistry()),
             new RuleOptionsRegistry(),
-        );
+        ));
     }
 
     private static function context(): AnalysisContext

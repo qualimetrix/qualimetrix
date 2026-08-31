@@ -23,6 +23,7 @@ use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
@@ -228,11 +229,11 @@ final class TestPipelineBuilder
      */
     private function resolveInlineDirectivePolicy(): InlineDirectivePolicyInterface
     {
-        return $this->inlineDirectivePolicy ?? new InlineDirectivePolicy(
+        return $this->inlineDirectivePolicy ?? new InlineDirectivePolicy(new DirectiveUsage(
             new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([])),
             $this->ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry()),
             $this->ruleConfiguration ?? new RuleOptionsRegistry(),
-        );
+        ));
     }
 
     public function build(): AnalysisPipeline

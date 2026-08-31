@@ -89,14 +89,14 @@
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\TypeDependencyHelper::processType@src/Analysis/Evidence/DependencyModel/Extraction/Handler/TypeDependencyHelper.php": [
       {"channel":"complexity.cognitive","magnitudes":[15]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Design\\DataClassOptions::fromArray@src/Analysis/Evidence/Design/DataClassOptions.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassOptions::fromArray@src/Analysis/Evidence/Design/DataClass/DataClassOptions.php": [
       {"channel":"complexity.cyclomatic","magnitudes":[15]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Design\\GodClassOptions::__construct@src/Analysis/Evidence/Design/GodClassOptions.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions::__construct@src/Analysis/Evidence/Design/GodClass/GodClassOptions.php": [
       {"channel":"code-smell.constructor-overinjection","magnitudes":[8]},
       {"channel":"code-smell.long-parameter-list","magnitudes":[8]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Design\\GodClassOptions::fromArray@src/Analysis/Evidence/Design/GodClassOptions.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions::fromArray@src/Analysis/Evidence/Design/GodClass/GodClassOptions.php": [
       {"channel":"complexity.cognitive","magnitudes":[16]},
       {"channel":"complexity.cyclomatic","magnitudes":[17]}
     ],
@@ -188,7 +188,7 @@
     "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\LayerDefinition::validateName@src/Analysis/Policy/Architecture/Layer/LayerDefinition.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"a9c1c5a63b10ba15","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService::relevantIdentities@src/Analysis/Policy/Baseline/BoundaryExplanationService.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Baseline\\ExplainedSubject::identities@src/Analysis/Policy/Baseline/ExplainedSubject.php": [
       {"channel":"complexity.cognitive","magnitudes":[18]},
       {"channel":"complexity.cyclomatic","magnitudes":[12]}
     ],
@@ -395,7 +395,7 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\DependencyContext@src/Analysis/Evidence/DependencyModel/Extraction/Handler/DependencyContext.php": [
       {"channel":"design.data-class","magnitudes":[20]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector@src/Analysis/Evidence/Design/DitGlobalCollector.php": [
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector@src/Analysis/Evidence/Design/Inheritance/DitGlobalCollector.php": [
       {"channel":"health.cohesion","magnitudes":[30]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\DataDeclarationTagger@src/Analysis/Evidence/Duplication/DataDeclarationTagger.php": [
@@ -444,8 +444,6 @@
       {"channel":"coupling.instability","magnitudes":[0.866667]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService@src/Analysis/Policy/Baseline/BoundaryExplanationService.php": [
-      {"channel":"complexity.wmc","magnitudes":[58]},
-      {"channel":"coupling.cbo","magnitudes":[20]},
       {"channel":"coupling.instability","magnitudes":[0.9]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\V5BaselineReader@src/Analysis/Policy/Baseline/V5BaselineReader.php": [
@@ -531,9 +529,6 @@
       {"channel":"coupling.cbo","magnitudes":[17]},
       {"channel":"coupling.instability","magnitudes":[0.953125]}
     ],
-    "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
-      {"channel":"size.class-count","magnitudes":[24]}
-    ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Duplication": [
       {"channel":"size.class-count","magnitudes":[17]}
     ],
@@ -541,7 +536,7 @@
       {"channel":"coupling.cbo","magnitudes":[16]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract": [
-      {"channel":"coupling.cbo","magnitudes":[41]}
+      {"channel":"coupling.cbo","magnitudes":[44]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor": [
       {"channel":"coupling.instability","magnitudes":[0.92]}

@@ -346,6 +346,31 @@ resident). It runs under `php -d memory_limit=2G`. The composer script sets no
 limit, so the documented invocation fails on a default PHP; every other script
 in `composer.json` that needs headroom passes `--memory-limit`.
 
+### `size.class-count` never looks at a non-leaf namespace
+
+`ClassCountRule::analyze` skips a namespace whose `NamespaceTree` node is not a
+leaf (`ClassCountRule.php:93`). The check is on tree shape, not on the counted
+value, and the value it skips is the namespace's own `size.class-count`
+aggregate — so a namespace that holds many classes *directly* and also has one
+child namespace is never judged, at any count. Measured 2026-08-31 on this
+repository at the default `warning: 15`: `Analysis/Evidence/CodeSmell` holds 37
+classes directly, `Analysis/Evidence/Security` 21, `Analysis/Evidence/Coupling`
+19, and none of the three produces a finding — none appears in
+`qmx-baseline.json` under `size.class-count`, and `composer selfcheck` is green
+with `--fail-on=warning`.
+
+The rule is right to distinguish the two cases: a parent's aggregate sums its
+children and would double-count. What it lacks is the direct-count reading that
+makes the parent judgeable on its own classes. Fixing it means giving the rule a
+non-recursive class count per namespace, not removing the leaf test.
+
+Not load-bearing for the `Design` split: the accepted `ns:…Evidence\Design`
+ratchet entry (`size.class-count` 24) was removed because the four subject
+folders leave **zero** classes in the root, so the namespace's own count is
+`None` and no finding exists to accept. The blind spot would only have been
+load-bearing in the rejected one-folder variant, which left 16 classes in the
+root against a threshold of 15.
+
 ## Disposition
 
 In scope for the rules-and-metrics pass: A1, A2, the `ViolationChannel` half of

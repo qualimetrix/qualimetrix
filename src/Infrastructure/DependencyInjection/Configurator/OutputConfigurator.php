@@ -174,7 +174,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
 
         // Auto-register all baseline services from src/Analysis/Policy/Baseline/*
-        // Excludes: value objects, enums and exceptions — data, not services.
+        // Excludes: value objects, enums, exceptions and pure static helpers —
+        // data and functions, not services.
         // A value object with required constructor arguments cannot be
         // autowired, so leaving one in would fail container compilation
         // rather than merely registering something unused.
@@ -187,7 +188,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 . 'Baseline.php,BaselineEdge.php,BaselineEntry.php,BaselineEntryMode.php,'
                 . 'BaselineIdentity.php,EntrySelector.php,InertBaselineEntry.php,InertEntryReason.php,'
                 . 'BaselineConflictException.php,BaselineEntryRejection.php,'
-                . 'BaselineCapture.php,UncapturedGroup.php,UncapturedReason.php}',
+                . 'BaselineCapture.php,UncapturedGroup.php,UncapturedReason.php,'
+                . 'ExplainedSubject.php}',
         );
     }
 

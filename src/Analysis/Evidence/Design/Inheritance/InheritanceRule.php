@@ -1,0 +1,157 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
+
+use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolType;
+
+/**
+ * Rule that checks DIT (Depth of Inheritance Tree) at class level.
+ *
+ * DIT measures how deep a class is in the inheritance hierarchy:
+ * - Deep inheritance increases coupling and complexity
+ * - Prefer composition over deep inheritance
+ */
+#[CliAlias('dit-warning', 'warning')]
+#[CliAlias('dit-error', 'error')]
+final class InheritanceRule extends AbstractRule
+{
+    public const string NAME = 'design.inheritance';
+    public const string DOCS_PAGE = 'rules/design.md';
+
+    public const int REMEDIATION_MINUTES = 30;
+
+    public const ChannelShape SHAPE = ChannelShape::Magnitude;
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Checks Depth of Inheritance Tree (deep hierarchies increase complexity)';
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [MetricName::DESIGN_DIT];
+    }
+
+    /**
+     * @return list<Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        if (!$this->options instanceof InheritanceOptions || !$this->options->isEnabled()) {
+            return [];
+        }
+
+        $findings = [];
+
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $subject = $classInfo->subject ?? throw new LogicException('Inheritance findings require an exact class declaration subject');
+            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+                continue;
+            }
+            $metrics = $context->metrics->get($subject->toSymbolPath());
+            $dit = $metrics->get(MetricName::DESIGN_DIT);
+
+            if ($dit === null) {
+                continue;
+            }
+
+            $ditValue = (int) $dit;
+            /** @var InheritanceOptions $effectiveOptions */
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+            $finding = $this->findingForClass($classInfo, $subject, $ditValue, $effectiveOptions);
+            if ($finding !== null) {
+                $findings[] = $finding;
+            }
+        }
+
+        return $findings;
+    }
+
+    private function findingForClass(
+        SymbolInfo $classInfo,
+        MetricSubject $subject,
+        int $ditValue,
+        InheritanceOptions $options,
+    ): ?Finding {
+        if ($ditValue >= $options->error) {
+            $severity = Severity::Error;
+            $threshold = $options->error;
+        } elseif ($ditValue >= $options->warning) {
+            $severity = Severity::Warning;
+            $threshold = $options->warning;
+        } else {
+            return null;
+        }
+
+        return new Finding(
+            location: new Location($classInfo->file, $classInfo->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: $this->getName(),
+            code: self::NAME,
+            message: \sprintf(
+                'DIT (Depth of Inheritance) is %d, exceeds threshold of %d. Prefer composition over deep inheritance',
+                $ditValue,
+                $threshold,
+            ),
+            severity: $severity,
+            metricValue: $ditValue,
+            recommendation: \sprintf('DIT: %d (threshold: %d) — deep inheritance, fragile hierarchy', $ditValue, $threshold),
+            threshold: $threshold,
+        );
+    }
+
+    /**
+     * @return class-string<InheritanceOptions>
+     */
+    public static function getOptionsClass(): string
+    {
+        return InheritanceOptions::class;
+    }
+
+    /**
+     * `design.inheritance` reports DIT (`$ditValue` — see the emission
+     * above) as `metricValue`, judged worse the higher it goes:
+     * {@see InheritanceOptions::getSeverity()}'s `$value >= $this->error`
+     * (line 73) / `$value >= $this->warning` (line 77).
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+        ];
+    }
+
+    /**
+     * Declared, never inferred from the options class: `@qmx-threshold` can
+     * retune this rule. See
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader},
+     * which also explains why this is a constant and why it is declared last.
+     */
+    public const bool SUPPORTS_THRESHOLD_OVERRIDE = true;
+}

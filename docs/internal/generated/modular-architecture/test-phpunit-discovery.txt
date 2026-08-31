@@ -2136,250 +2136,250 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::selfInUnionTypeDoesNotProduceDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::selfTypeHintDoesNotProduceDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::staticTypeHintDoesNotProduceDependency
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"accessor trait"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"accessors only"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"behaviour methods"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"delegating methods"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"no public members"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"public fields plus accessors"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"struct without methods"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itKeepsTheConstructorOutOfTheRatio
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itReportsTheWocShareItGatedOn
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itSeesOnlyMembersDeclaredByTheClassItself
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itSparesAClassWhoseComplexityExceedsTheWmcGate
- - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClassDetectionTest::itTreatsTheThresholdItselfAsAFinding
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itAnalyzeDisabledReturnsEmpty
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDetectsLowWocLowWmc
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDisablesWhenLoadedFromEmptyArray
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotFlagHighWmc
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotFlagHighWoc
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotSkipExceptionClassWhenOptionFalse
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotSkipPromotedOnlyWhenOptionFalse
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itDoesNotSkipReadonlyWhenOptionFalse
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itFiltersOnMinMembers
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itFlagsAClassMadeOfNothingButAccessors
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itGetsCliAliases
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itGetsDescription
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itGetsName
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itGetsOptionsClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itHasOptionsDefaults
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itLoadsOptionsFromArrayWithCustomValues
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itLoadsOptionsFromArrayWithDualKey
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itRequires
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsAbstractClasses
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsExceptionClassWhenExcluded
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsInterfaces
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsNullWoc
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsPromotedOnlyWhenExcluded
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsReadonlyWhenExcluded
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClassRuleTest::itSkipsZeroPropertyClasses
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DitGlobalCollectorTest::classExtendsStandardPhpClass_ditOne
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DitGlobalCollectorTest::classWithNoParent_ditZero
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DitGlobalCollectorTest::crossNamespaceInheritance
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DitGlobalCollectorTest::getName_returnsDitGlobal
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DitGlobalCollectorTest::inheritanceChainWithStandardClassAtRoot
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DitGlobalCollectorTest::preservesExistingMetrics
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DitGlobalCollectorTest::provides_returnsDit
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DitGlobalCollectorTest::requires_returnsEmpty
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DitGlobalCollectorTest::threeLevelInheritance_crossFile_ditThree
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DitGlobalCollectorTest::twoLevelInheritance_crossFile_ditTwo
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itAdjustsEvaluableCountWhenTccIsMissing
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itAnalyzeDisabledReturnsEmpty
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itDetectsWhenAllFourCriteriaMet
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itDetectsWhenThreeOfFourCriteriaMet
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itDisablesWhenLoadedFromEmptyArray
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itDoesNotFlagWhenOnlyTwoOfFourCriteriaMet
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itDoesNotFlagWhenTccAndLcomAreMissing
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itDoesNotVetoLcomWhenTccIsBelowVetoThreshold
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itFiltersOnMinMethods
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itGetsCliAliases
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itGetsDescription
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itGetsName
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itGetsOptionsClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itHasOptionsDefaults
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itListsMatchedCriteriaInMessage
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itLoadsOptionsFromArrayWithCustomValues
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itLoadsOptionsFromArrayWithDualKey
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itRequires
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itRespectsCustomThresholds
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itSkipsReadonlyClassesWhenExcluded
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itVetoesLcomCriterionWhenTccIsHigh
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClassRuleTest::itVetoesLcomWhenTccIsExactlyHalf
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsDitForClassExtendingExternalClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsDitForClassExtendingRuntimeException
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsDitForClassExtendingSplStack
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsDitForClassExtendingStandardException
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsDitForClassExtendingStdClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsDitForDateTimeClasses
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsDitForMultipleBranches
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsDitForSplClasses
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsSingleLevelInheritanceInSameFile
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsStandardPhpClassInReflectionDitChain
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsThreeLevelInheritance
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itCountsTwoLevelInheritanceInSameFile
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itDoesNotTreatNamespacedErrorAsStandardPhpClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itDoesNotTreatNamespacedExceptionAsStandardPhpClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itGetsMetricDefinitions
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itGetsName
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itHandlesClassWithoutNamespace
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itHandlesFullyQualifiedExtends
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itHandlesRelativeExtends
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itIgnoresAnonymousClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itProvides
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itResetsState
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itReturnsZeroForClassWithNoParent
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthCollectorTest::itTreatsUnqualifiedExceptionAsStandardPhpClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthUseAliasTest::aliasedParentFromDifferentNamespaceIsResolvedCorrectly
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthUseAliasTest::aliasedParentInSameFileIsLinkedCorrectly
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthUseAliasTest::fullyQualifiedExtendsWorksCorrectly
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthUseAliasTest::simpleUseImportWithoutAlias
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthUseAliasTest::useImportWithSameFileParent
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceDepthUseAliasTest::visitorResolvesAliasViaUseImport
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGeneratesError
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGeneratesWarning
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGetsCliAliases
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGetsDescription
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGetsName
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itGetsOptionsClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itHasCorrectOptionDefaults
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itLoadsOptionsFromArray
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itProducesNoFindingForShallowDit
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itRequiresDit
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itRespectsBoundaryThresholds"above error threshold"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itRespectsBoundaryThresholds"above warning, below error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itRespectsBoundaryThresholds"at error threshold"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itRespectsBoundaryThresholds"at warning threshold"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itRespectsBoundaryThresholds"below warning threshold"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itReturnsEmptyWhenDisabled
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itReturnsEmptyWhenNoClasses
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itSkipsClassWithoutDitMetric
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\InheritanceRuleTest::itThrowsExceptionForWrongOptionsType
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::calculate_allClasses_haveNocMetric
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::calculate_childExtendingGlobalParent_skipsVendorParent
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::calculate_classWithOneChild_hasNocOne
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::calculate_classWithTwoChildren_hasNocTwo
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::calculate_classWithoutChildren_hasNocZero
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::calculate_crossFileInheritance_works
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::calculate_globalNamespaceClass_works
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::calculate_indirectChildren_notCounted
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::calculate_preservesExistingMetrics
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::getName_returnsNoc
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::provides_returnsNoc
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocCollectorTest::requires_returnsEmpty
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itAppliesAnExactSubjectOverrideAtEquality
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGeneratesError
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGeneratesWarning
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGetsCliAliases
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGetsDescription
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGetsName
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itGetsOptionsClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itHasCorrectOptionDefaults
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itLoadsOptionsFromArray
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itProducesNoFindingForFewChildren
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itRequiresNoc
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itRespectsBoundaryThresholds"above error threshold"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itRespectsBoundaryThresholds"above warning, below error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itRespectsBoundaryThresholds"at error threshold"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itRespectsBoundaryThresholds"at warning threshold"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itRespectsBoundaryThresholds"below warning threshold"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itReturnsEmptyWhenDisabled
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itReturnsEmptyWhenNoClasses
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itSkipsClassWithoutNocMetric
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itSkipsClassesWithZeroNoc
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\NocRuleTest::itThrowsExceptionForWrongOptionsType
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itClearsStateOnReset
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itCollectsTypeCoverageForEnumMethods
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itCollectsTypeCoverageForInterfaceMethods
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itCollectsTypeCoverageForTraitMethods
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itCountsAllPropertiesInSingleDeclaration
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itCountsEachHookParameterWithoutCountingThePropertyAgain
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itCountsMixedTypeAsTyped
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itCountsNullableTypeAsTyped
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itCountsPromotedPropertiesAsBothParamAndProperty
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itCountsPromotedPropertyHookParametersWithoutDuplicatingTheProperty
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itCountsUnionTypeAsTyped
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itDetectsMixedReadonlyAndVisibilityPromotedProperties
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itDetectsReadonlyPromotedPropertyWithoutVisibility
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itExcludesCloneFromReturnTypeCount
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itExcludesConstructorFromReturnTypeCount
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itExcludesDestructorFromReturnTypeCount
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itHandlesClassWithNoMethods
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itHandlesClassWithNoProperties
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itIncludesToStringInReturnTypeCount
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itProvidesExpectedMetricKeys
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itReports0PercentWhenNoTypesAtAll
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itReports100PercentForFullyTypedClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itReportsCorrectPercentageForMixedTypeCoverage
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itReturnsCollectorName
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itReturnsCorrectMetricDefinitions
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageCollectorTest::itSkipsAnonymousClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itAdvertisesOnlyTheBareShorthand
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itAppliesAnOverridePerBoundary
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itDefaultsToEightyAndFifty
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itDisablesOnAnEmptyConfig
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itDoesNotAnswerToTheOldPrefixedKeys
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itLetsTheBareThresholdShorthandSetBothBoundaries
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itReadsLessCoverageAsWorse
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itReadsTheBareThresholdPair
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itRefusesAThresholdMixedWithAGraduatedKey
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageOptionsTest::itValidatesOverridesInInvertedDirection
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itDefaultsMissingTypedCountsToZero
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itProvidesTypeCoveragePctMetric
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itRequiresTypeCoverageDependency
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturns0PercentForUntypedClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturns100PercentForEmptyBag
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturns100PercentForFullyTypedClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturns100PercentWhenAllTotalsAreZero
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturnsClassLevelMetricDefinitionWithNoAggregation
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturnsCollectorName
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoveragePercentCollectorTest::itReturnsCorrectPercentageForPartiallyTypedClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentOnFullCoverage"param"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentOnFullCoverage"property"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentOnFullCoverage"return"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentWhenTheDimensionHasNoDeclarations"param"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentWhenTheDimensionHasNoDeclarations"property"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itIsSilentWhenTheDimensionHasNoDeclarations"return"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itJudgesEachDimensionAgainstItsOwnConfiguration
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itNamesItselfAndItsSingleChannel"param"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itNamesItselfAndItsSingleChannel"property"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itNamesItselfAndItsSingleChannel"return"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"param at error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"param at warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"param just below error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"param just below warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"property at error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"property at warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"property just below error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"property just below warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"return at error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"return at warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"return just below error"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itPreservesStrictBoundaries"return just below warning"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReadsNothingWhenDisabled"param"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReadsNothingWhenDisabled"property"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReadsNothingWhenDisabled"return"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itRejectsWrongOptionsTypeInConstructor"param"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itRejectsWrongOptionsTypeInConstructor"property"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itRejectsWrongOptionsTypeInConstructor"return"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReportsItsOwnCodeSeverityAndMessage"param"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReportsItsOwnCodeSeverityAndMessage"property"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itReportsItsOwnCodeSeverityAndMessage"return"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"param"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"property"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"return"
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageScaleTest::fullyTypedClassProducesPercentage100NotRatio1
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageScaleTest::halfTypedClassProducesPercentage50NotRatio05
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageScaleTest::partialCoverageProducesCorrectPercentage
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverageScaleTest::unTypedClassProducesPercentage0NotRatio0
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"accessor trait"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"accessors only"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"behaviour methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"delegating methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"no public members"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"public fields plus accessors"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"struct without methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itKeepsTheConstructorOutOfTheRatio
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itReportsTheWocShareItGatedOn
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itSeesOnlyMembersDeclaredByTheClassItself
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itSparesAClassWhoseComplexityExceedsTheWmcGate
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itTreatsTheThresholdItselfAsAFinding
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itAnalyzeDisabledReturnsEmpty
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDetectsLowWocLowWmc
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDisablesWhenLoadedFromEmptyArray
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDoesNotFlagHighWmc
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDoesNotFlagHighWoc
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDoesNotSkipExceptionClassWhenOptionFalse
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDoesNotSkipPromotedOnlyWhenOptionFalse
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDoesNotSkipReadonlyWhenOptionFalse
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itFiltersOnMinMembers
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itFlagsAClassMadeOfNothingButAccessors
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itGetsCliAliases
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itGetsDescription
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itGetsName
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itGetsOptionsClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itHasOptionsDefaults
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itLoadsOptionsFromArrayWithCustomValues
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itLoadsOptionsFromArrayWithDualKey
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itRequires
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itSkipsAbstractClasses
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itSkipsExceptionClassWhenExcluded
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itSkipsInterfaces
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itSkipsNullWoc
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itSkipsPromotedOnlyWhenExcluded
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itSkipsReadonlyWhenExcluded
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itSkipsZeroPropertyClasses
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itAdjustsEvaluableCountWhenTccIsMissing
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itAnalyzeDisabledReturnsEmpty
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itDetectsWhenAllFourCriteriaMet
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itDetectsWhenThreeOfFourCriteriaMet
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itDisablesWhenLoadedFromEmptyArray
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itDoesNotFlagWhenOnlyTwoOfFourCriteriaMet
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itDoesNotFlagWhenTccAndLcomAreMissing
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itDoesNotVetoLcomWhenTccIsBelowVetoThreshold
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itFiltersOnMinMethods
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itGetsCliAliases
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itGetsDescription
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itGetsName
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itGetsOptionsClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itHasOptionsDefaults
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itListsMatchedCriteriaInMessage
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itLoadsOptionsFromArrayWithCustomValues
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itLoadsOptionsFromArrayWithDualKey
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itRequires
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itRespectsCustomThresholds
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itSkipsReadonlyClassesWhenExcluded
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itVetoesLcomCriterionWhenTccIsHigh
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass\GodClassRuleTest::itVetoesLcomWhenTccIsExactlyHalf
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::classExtendsStandardPhpClass_ditOne
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::classWithNoParent_ditZero
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::crossNamespaceInheritance
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::getName_returnsDitGlobal
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::inheritanceChainWithStandardClassAtRoot
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::preservesExistingMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::provides_returnsDit
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::requires_returnsEmpty
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::threeLevelInheritance_crossFile_ditThree
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::twoLevelInheritance_crossFile_ditTwo
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingExternalClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingRuntimeException
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingSplStack
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingStandardException
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingStdClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForDateTimeClasses
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForMultipleBranches
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForSplClasses
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsSingleLevelInheritanceInSameFile
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsStandardPhpClassInReflectionDitChain
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsThreeLevelInheritance
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsTwoLevelInheritanceInSameFile
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDoesNotTreatNamespacedErrorAsStandardPhpClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDoesNotTreatNamespacedExceptionAsStandardPhpClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itGetsMetricDefinitions
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itGetsName
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itHandlesClassWithoutNamespace
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itHandlesFullyQualifiedExtends
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itHandlesRelativeExtends
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itIgnoresAnonymousClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itProvides
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itResetsState
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itReturnsZeroForClassWithNoParent
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itTreatsUnqualifiedExceptionAsStandardPhpClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::aliasedParentFromDifferentNamespaceIsResolvedCorrectly
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::aliasedParentInSameFileIsLinkedCorrectly
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::fullyQualifiedExtendsWorksCorrectly
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::simpleUseImportWithoutAlias
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::useImportWithSameFileParent
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::visitorResolvesAliasViaUseImport
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGeneratesError
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGeneratesWarning
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGetsCliAliases
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGetsDescription
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGetsName
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGetsOptionsClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itHasCorrectOptionDefaults
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itLoadsOptionsFromArray
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itProducesNoFindingForShallowDit
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itRequiresDit
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itRespectsBoundaryThresholds"above error threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itRespectsBoundaryThresholds"above warning, below error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itRespectsBoundaryThresholds"at error threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itRespectsBoundaryThresholds"at warning threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itRespectsBoundaryThresholds"below warning threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itReturnsEmptyWhenDisabled
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itReturnsEmptyWhenNoClasses
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itSkipsClassWithoutDitMetric
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itThrowsExceptionForWrongOptionsType
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::calculate_allClasses_haveNocMetric
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::calculate_childExtendingGlobalParent_skipsVendorParent
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::calculate_classWithOneChild_hasNocOne
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::calculate_classWithTwoChildren_hasNocTwo
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::calculate_classWithoutChildren_hasNocZero
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::calculate_crossFileInheritance_works
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::calculate_globalNamespaceClass_works
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::calculate_indirectChildren_notCounted
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::calculate_preservesExistingMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::getName_returnsNoc
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::provides_returnsNoc
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::requires_returnsEmpty
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itAppliesAnExactSubjectOverrideAtEquality
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itGeneratesError
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itGeneratesWarning
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itGetsCliAliases
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itGetsDescription
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itGetsName
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itGetsOptionsClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itHasCorrectOptionDefaults
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itLoadsOptionsFromArray
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itProducesNoFindingForFewChildren
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itRequiresNoc
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itRespectsBoundaryThresholds"above error threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itRespectsBoundaryThresholds"above warning, below error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itRespectsBoundaryThresholds"at error threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itRespectsBoundaryThresholds"at warning threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itRespectsBoundaryThresholds"below warning threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itReturnsEmptyWhenDisabled
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itReturnsEmptyWhenNoClasses
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itSkipsClassWithoutNocMetric
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itSkipsClassesWithZeroNoc
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocRuleTest::itThrowsExceptionForWrongOptionsType
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itClearsStateOnReset
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itCollectsTypeCoverageForEnumMethods
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itCollectsTypeCoverageForInterfaceMethods
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itCollectsTypeCoverageForTraitMethods
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itCountsAllPropertiesInSingleDeclaration
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itCountsEachHookParameterWithoutCountingThePropertyAgain
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itCountsMixedTypeAsTyped
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itCountsNullableTypeAsTyped
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itCountsPromotedPropertiesAsBothParamAndProperty
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itCountsPromotedPropertyHookParametersWithoutDuplicatingTheProperty
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itCountsUnionTypeAsTyped
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itDetectsMixedReadonlyAndVisibilityPromotedProperties
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itDetectsReadonlyPromotedPropertyWithoutVisibility
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itExcludesCloneFromReturnTypeCount
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itExcludesConstructorFromReturnTypeCount
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itExcludesDestructorFromReturnTypeCount
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itHandlesClassWithNoMethods
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itHandlesClassWithNoProperties
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itIncludesToStringInReturnTypeCount
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itProvidesExpectedMetricKeys
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itReports0PercentWhenNoTypesAtAll
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itReports100PercentForFullyTypedClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itReportsCorrectPercentageForMixedTypeCoverage
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itReturnsCollectorName
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itReturnsCorrectMetricDefinitions
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageCollectorTest::itSkipsAnonymousClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itAdvertisesOnlyTheBareShorthand
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itAppliesAnOverridePerBoundary
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itDefaultsToEightyAndFifty
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itDisablesOnAnEmptyConfig
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itDoesNotAnswerToTheOldPrefixedKeys
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itLetsTheBareThresholdShorthandSetBothBoundaries
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itReadsLessCoverageAsWorse
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itReadsTheBareThresholdPair
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itRefusesAThresholdMixedWithAGraduatedKey
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itValidatesOverridesInInvertedDirection
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itDefaultsMissingTypedCountsToZero
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itProvidesTypeCoveragePctMetric
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itRequiresTypeCoverageDependency
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturns0PercentForUntypedClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturns100PercentForEmptyBag
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturns100PercentForFullyTypedClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturns100PercentWhenAllTotalsAreZero
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturnsClassLevelMetricDefinitionWithNoAggregation
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturnsCollectorName
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturnsCorrectPercentageForPartiallyTypedClass
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itIsSilentOnFullCoverage"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itIsSilentOnFullCoverage"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itIsSilentOnFullCoverage"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itIsSilentWhenTheDimensionHasNoDeclarations"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itIsSilentWhenTheDimensionHasNoDeclarations"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itIsSilentWhenTheDimensionHasNoDeclarations"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itJudgesEachDimensionAgainstItsOwnConfiguration
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itNamesItselfAndItsSingleChannel"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itNamesItselfAndItsSingleChannel"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itNamesItselfAndItsSingleChannel"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"param at error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"param at warning"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"param just below error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"param just below warning"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"property at error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"property at warning"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"property just below error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"property just below warning"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"return at error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"return at warning"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"return just below error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itPreservesStrictBoundaries"return just below warning"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itReadsNothingWhenDisabled"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itReadsNothingWhenDisabled"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itReadsNothingWhenDisabled"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itRejectsWrongOptionsTypeInConstructor"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itRejectsWrongOptionsTypeInConstructor"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itRejectsWrongOptionsTypeInConstructor"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itReportsItsOwnCodeSeverityAndMessage"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itReportsItsOwnCodeSeverityAndMessage"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itReportsItsOwnCodeSeverityAndMessage"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"param"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"property"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageScaleTest::fullyTypedClassProducesPercentage100NotRatio1
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageScaleTest::halfTypedClassProducesPercentage50NotRatio05
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageScaleTest::partialCoverageProducesCorrectPercentage
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageScaleTest::unTypedClassProducesPercentage0NotRatio0
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::disabledRuleReturnsNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::duplicateBlockProducesFinding
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::duplicateBlockWithHintIncludesHintInMessage
@@ -2594,10 +2594,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector, flat namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Coupling\RfcCollector, braced namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Coupling\RfcCollector, flat namespace"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector, braced namespace"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector, flat namespace"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector, braced namespace"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector, flat namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector, braced namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector, flat namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector, braced namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector, flat namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\LocCollector, braced namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\LocCollector, flat namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\MethodCountCollector, braced namespace"

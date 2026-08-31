@@ -32,13 +32,13 @@ final class DesignConfigurator implements ContainerConfiguratorInterface
      * @var list<string>
      */
     private const array RULES = [
-        'DataClassRule',
-        'GodClassRule',
-        'InheritanceRule',
-        'NocRule',
-        'ParamTypeCoverageRule',
-        'ReturnTypeCoverageRule',
-        'PropertyTypeCoverageRule',
+        'DataClass\\DataClassRule',
+        'GodClass\\GodClassRule',
+        'Inheritance\\InheritanceRule',
+        'Inheritance\\NocRule',
+        'TypeCoverage\\ParamTypeCoverageRule',
+        'TypeCoverage\\ReturnTypeCoverageRule',
+        'TypeCoverage\\PropertyTypeCoverageRule',
     ];
 
     public function __construct(private readonly string $srcDir) {}

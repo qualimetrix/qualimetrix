@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -297,7 +298,7 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $channel = new FindingChannel('code-smell.goto');
 
-        return new InlineDirectivePolicy(
+        return new InlineDirectivePolicy(new DirectiveUsage(
             new ChannelUniverse(
                 [$channel->code => ChannelDeclaration::occurrence(SymbolLevel::Class_)],
                 ['code-smell.goto' => [$channel->code]],
@@ -306,7 +307,7 @@ final class InlineDirectivePolicyTest extends TestCase
             ),
             new RuleSelector(new InMemoryRuleChannelRegistry()),
             $configuration ?? new RuleOptionsRegistry(),
-        );
+        ));
     }
 
     private static function symbolDirective(): Suppression

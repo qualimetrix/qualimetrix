@@ -80,7 +80,7 @@ src/
 │   │   ├── Cohesion/             # class cohesion evidence and rules
 │   │   ├── Complexity/           # cyclomatic, cognitive and NPath evidence and rules
 │   │   ├── Coupling/             # coupling evidence, rules and run configuration
-│   │   ├── Design/               # inheritance and design evidence and rules
+│   │   ├── Design/               # DataClass, GodClass, Inheritance (with NOC), TypeCoverage
 │   │   ├── Maintainability/      # Halstead and maintainability evidence and rules
 │   │   ├── Measurement/         # collection facts, repository, attribution, aggregation
 │   │   ├── Prioritization/      # impact ranking and technical-debt evidence

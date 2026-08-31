@@ -73,7 +73,7 @@ final class MethodCountMetrics
      *
      * A class with no public members has no data surface to expose, so the
      * degenerate case is defined as 100 (fully functional) rather than left
-     * undefined — that keeps {@see \Qualimetrix\Analysis\Evidence\Design\DataClassRule}
+     * undefined — that keeps {@see \Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule}
      * a plain two-threshold gate.
      */
     public function woc(): int

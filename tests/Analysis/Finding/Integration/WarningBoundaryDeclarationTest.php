@@ -69,8 +69,8 @@ final class WarningBoundaryDeclarationTest extends TestCase
      * @var list<string>
      */
     private const array DECIDES_INSIDE_THE_RULE = [
-        'Qualimetrix\Analysis\Evidence\Design\DataClassOptions',
-        'Qualimetrix\Analysis\Evidence\Design\GodClassOptions',
+        'Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions',
+        'Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions',
     ];
 
     #[Test]

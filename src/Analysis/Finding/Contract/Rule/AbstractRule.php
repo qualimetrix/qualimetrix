@@ -24,7 +24,7 @@ abstract class AbstractRule implements RuleInterface
      * through one of the three shared abstract bases
      * ({@see \Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule},
      * {@see \Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule},
-     * {@see \Qualimetrix\Analysis\Evidence\Design\AbstractTypeCoverageRule}).
+     * {@see \Qualimetrix\Analysis\Evidence\Design\TypeCoverage\AbstractTypeCoverageRule}).
      * `ChannelDeclarationCompilerPass` refuses a rule class whose `SHAPE`
      * constant resolves to this one — the same "declaring class" check
      * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader}
