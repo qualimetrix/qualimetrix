@@ -2583,6 +2583,7 @@ function documentationDisposition(string $path): array
         'docs/internal/plans/rule-vocabulary/FOLLOWUPS.md',
         'docs/internal/plans/rule-vocabulary/P1-configured-boundary.md',
         'docs/internal/plans/rule-vocabulary/PLAN.md',
+        'docs/internal/plans/rule-vocabulary/X1-tail.md',
         'docs/internal/plans/client-requests/abstractness-enum-exclusion.md',
         'docs/internal/plans/client-requests/architecture-unassigned-class.md',
         'docs/internal/plans/client-requests/architecture-layer-pending.md',
