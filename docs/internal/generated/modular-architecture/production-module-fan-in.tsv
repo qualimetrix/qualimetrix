@@ -59,7 +59,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface	Anal
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	22	7
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	65	12
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface	Analysis.Evidence.Measurement	5	3
-Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	23	11
+Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	24	11
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface	Analysis.Evidence.Measurement	3	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree	Analysis.Evidence.Measurement	9	5
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics	Analysis.Evidence.Measurement	2	1
@@ -95,7 +95,7 @@ Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.F
 Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	59	17
-Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	13	6
+Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	14	6
 Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	37	14
 Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	8	5
 Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration	Analysis.Finding	1	1
@@ -213,7 +213,7 @@ Qualimetrix\Core\Symbol\DeclarationOrdinal	Core.Symbol	4	1
 Qualimetrix\Core\Symbol\DeclarationPath	Core.Symbol	7	2
 Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	11	2
 Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	7	3
-Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	40	15
+Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	41	15
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9

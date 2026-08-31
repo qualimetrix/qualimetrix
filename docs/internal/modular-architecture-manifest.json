@@ -4516,6 +4516,11 @@
           "closes_in": null
         },
         {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\ExplainedSubject",
+          "closes_in": null
+        },
+        {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Collection\\CollectionOrchestrator",
           "closes_in": null
@@ -6791,6 +6796,11 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\ExplainedSubject",
           "closes_in": null
         },
         {
@@ -11223,6 +11233,14 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\ExplainedSubject": {
+      "path": "src/Analysis/Policy/Baseline/ExplainedSubject.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "closure_package": "P6-C",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage": {
       "path": "src/Analysis/Policy/Baseline/Filter/BaselineCeilingStage.php",
       "kind": "class",
@@ -13176,7 +13194,7 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\ExplainedSubject",
           "closes_in": null
         },
         {
@@ -13852,6 +13870,11 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\ExplainedSubject",
           "closes_in": null
         },
         {
@@ -14587,7 +14610,7 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\ExplainedSubject",
           "closes_in": null
         },
         {

@@ -26,7 +26,7 @@ and zero enforcement seams. It records 64 permanent exact composition bindings,
 which retain 13 required coarse owner pairs; qmx has 227 declared allow edges.
 The generated test topology records 659 governed artifacts, 102 fixture
 directories, 518 PHPUnit classes, and 7,036 semantic IDs. The self-analysis
-input has 787 analyzed files, 229 active baseline groups across 173 subjects,
+input has 787 analyzed files, 227 active baseline groups across 173 subjects,
 and zero dogfood findings. These are measured publication facts, not a separate
 source of architectural authority.
 13. P0's participant inventory and the P1/P2 pilots inform the rejected phase-port hypotheses below, but do not make them binding. P3 introduces only the reviewed FileSetInspection and DependencyTraversal contracts and their contract tests. P4 and later packages must prove any further port from their actual input, output and consumers. The ADR must not describe unimplemented ports or target namespaces as current architecture.
@@ -87,7 +87,7 @@ explicit shared-governance disposition.
 | Exact owner graph              | 37 owner layers, 0 seams                                        | qmx enforces only semantic-owner topology; no declaration is split into a synthetic layer.          |
 | Permanent composition bindings | 64 exact rows → 13 coarse qmx pairs                             | the manifest authorizes exact composition imports; qmx retains the corresponding coarse pair edges. |
 | Generated qmx projection       | final `external`; allow-edge count in the generated summary     | uncovered declarations and coarse owner cycles fail closed.                                         |
-| Self-analysis                  | 787 files, active baseline 229 groups / 173 subjects, dogfood 0 | current repository analysis has no new accepted-warning delta.                                      |
+| Self-analysis                  | 787 files, active baseline 227 groups / 173 subjects, dogfood 0 | current repository analysis has no new accepted-warning delta.                                      |
 
 Composition bindings are permanent policy, not migration exceptions. They are
 reviewed exact source/target declarations in the manifest and remain stable

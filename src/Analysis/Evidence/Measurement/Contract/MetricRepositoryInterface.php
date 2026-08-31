@@ -13,7 +13,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /**
  * Mutable Measurement repository promise shared by collection, aggregation, and rules.
  *
- * @qmx-threshold coupling.cbo 46 -- Stable provider-owned repository fan-in gets one-edge headroom above raw CBO 45.
+ * @qmx-threshold coupling.cbo 47 -- Stable provider-owned repository fan-in gets one-edge headroom above raw CBO 46.
  */
 interface MetricRepositoryInterface
 {

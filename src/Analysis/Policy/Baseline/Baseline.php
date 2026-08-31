@@ -19,6 +19,11 @@ use InvalidArgumentException;
  * Valid and inert entries are kept apart (see {@see InertBaselineEntry}).
  * Everything that suppresses reads {@see $entries}; everything that reports
  * problems reads {@see $inertEntries}; nothing has to remember to filter.
+ *
+ * @qmx-threshold coupling.cbo 21 -- The capability's own aggregate root: raw
+ *                CBO 20 is almost entirely fan-in from the classes that read a
+ *                baseline, so splitting a reader in two raises it without
+ *                coupling this type to anything new.
  */
 final readonly class Baseline
 {

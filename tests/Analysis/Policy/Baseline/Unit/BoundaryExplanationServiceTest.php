@@ -28,6 +28,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus;
+use Qualimetrix\Analysis\Policy\Baseline\ExplainedSubject;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Core\Path\RelativePath;
@@ -42,6 +43,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionMethod;
 
 #[CoversClass(BoundaryExplanationService::class)]
+#[CoversClass(ExplainedSubject::class)]
 final class BoundaryExplanationServiceTest extends TestCase
 {
     private const string SYMBOL_KEY = 'declaration:callable:App\\Foo::bar@src/Foo.php';
@@ -480,7 +482,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             ],
         );
 
-        $method = new ReflectionMethod(BoundaryExplanationService::class, 'repositoryIndex');
+        $method = new ReflectionMethod(ExplainedSubject::class, 'index');
         $index = $method->invoke(null, $repository);
 
         self::assertIsArray($index);
@@ -527,7 +529,7 @@ final class BoundaryExplanationServiceTest extends TestCase
         $repository = new CountingBoundaryRepository(
             declarations: [new SymbolInfo(SymbolPath::forClass('App', 'Untyped'), null, null)],
         );
-        $method = new ReflectionMethod(BoundaryExplanationService::class, 'repositoryIndex');
+        $method = new ReflectionMethod(ExplainedSubject::class, 'index');
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Exact repository rows must retain their typed subject.');

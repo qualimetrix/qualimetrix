@@ -12,9 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 
 /**
@@ -35,7 +33,10 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
  * finding is the first source even when its occurrence or dependency edge
  * differs from the baseline identity; the repository supplies the same exact
  * subject when no current finding does. Logical projections never invent a
- * declaration subject.
+ * declaration subject. Which identities and which subject those are is
+ * {@see ExplainedSubject}'s answer, not this class's.
+ *
+ * @phpstan-import-type SubjectRecord from ExplainedSubject
  */
 final readonly class BoundaryExplanationService
 {
@@ -79,9 +80,8 @@ final readonly class BoundaryExplanationService
         array $configuredThresholds,
         ?MetricRepositoryInterface $symbolLocations = null,
     ): BoundaryExplanation {
-        $identities = self::relevantIdentities($subjectKey, $channelFilter, $baseline, $measuredFindings);
-        $repositoryIndex = self::repositoryIndex($symbolLocations);
-        $repositoryRecord = self::repositoryRecord($subjectKey, $repositoryIndex);
+        $identities = ExplainedSubject::identities($subjectKey, $channelFilter, $baseline, $measuredFindings);
+        $repositoryRecord = ExplainedSubject::recordFor($subjectKey, ExplainedSubject::index($symbolLocations));
 
         $boundaries = [];
         foreach ($identities as $identity) {
@@ -104,7 +104,7 @@ final readonly class BoundaryExplanationService
 
     /**
      * @param list<Finding> $measuredFindings
-     * @param ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} $repositoryRecord
+     * @param ?SubjectRecord $repositoryRecord
      */
     private static function statusFor(
         string $symbolKey,
@@ -133,70 +133,10 @@ final readonly class BoundaryExplanationService
     }
 
     /**
-     * Every identity worth reporting on: every baseline entry for this
-     * symbol, plus every channel currently firing for it, narrowed to one
-     * channel when `$channelFilter` is given. When neither source has
-     * anything and a channel was explicitly asked for, a bare identity with
-     * no edge is still returned — `qmx.yaml` and the annotation may have
-     * something to say about a channel that simply is not breaching right
-     * now.
-     *
-     * @param list<Finding> $measuredFindings
-     *
-     * @return list<BaselineIdentity>
-     */
-    private static function relevantIdentities(
-        string $symbolKey,
-        ?FindingChannel $channelFilter,
-        ?Baseline $baseline,
-        array $measuredFindings,
-    ): array {
-        /** @var array<string, BaselineIdentity> $byKey */
-        $byKey = [];
-
-        if ($baseline !== null) {
-            foreach ($baseline->entries as $entry) {
-                $identity = $entry->identity;
-
-                if ($identity->subjectKey !== $symbolKey) {
-                    continue;
-                }
-
-                if ($channelFilter !== null && !$identity->channel->equals($channelFilter)) {
-                    continue;
-                }
-
-                $byKey[$identity->key()] = $identity;
-            }
-        }
-
-        foreach ($measuredFindings as $finding) {
-            if ($finding->subject->toCanonical() !== $symbolKey) {
-                continue;
-            }
-
-            $identity = BaselineIdentity::forFinding($finding);
-
-            if ($channelFilter !== null && !$identity->channel->equals($channelFilter)) {
-                continue;
-            }
-
-            $byKey[$identity->key()] ??= $identity;
-        }
-
-        if ($byKey === [] && $channelFilter !== null) {
-            $bare = new BaselineIdentity($symbolKey, $channelFilter);
-            $byKey[$bare->key()] = $bare;
-        }
-
-        return array_values($byKey);
-    }
-
-    /**
      * @param list<Finding> $measuredFindings
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile
      * @param array<string, array<string, int|float>> $configuredThresholds
-     * @param ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} $repositoryRecord
+     * @param ?SubjectRecord $repositoryRecord
      */
     private function explainIdentity(
         BaselineIdentity $identity,
@@ -208,7 +148,7 @@ final readonly class BoundaryExplanationService
     ): EffectiveBoundary {
         $baselineSource = self::baselineSourceFor($identity, $baseline, $measuredFindings);
 
-        $subject = self::subjectForIdentity($identity, $measuredFindings, $repositoryRecord);
+        $subject = ExplainedSubject::subjectFor($identity, $measuredFindings, $repositoryRecord);
         $configuredThreshold = self::configuredThresholdFor(
             $configuredThresholds[$identity->channel->code] ?? [],
             $subject,
@@ -289,60 +229,6 @@ final readonly class BoundaryExplanationService
     }
 
     /**
-     * @return array<string, array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}}>
-     */
-    private static function repositoryIndex(?MetricRepositoryInterface $repository): array
-    {
-        if ($repository === null) {
-            return [];
-        }
-
-        $index = [];
-        foreach ([$repository->allDeclarations(), $repository->allCallables()] as $symbols) {
-            $exactRows = iterator_to_array($symbols);
-            array_walk($exactRows, static function ($info) use (&$index): void {
-                $subject = $info->subject ?? throw new InvalidArgumentException(
-                    'Exact repository rows must retain their typed subject.',
-                );
-                $index[$subject->toCanonical()] ??= self::recordFor($subject, $info->file, $info->line);
-            });
-        }
-
-        $projectedSources = [$repository->allLogicalClasses()];
-        foreach (SymbolLevel::cases() as $level) {
-            $projectedSources[] = $repository->all($level);
-        }
-
-        foreach ($projectedSources as $symbols) {
-            foreach ($symbols as $info) {
-                $key = $info->subject?->toCanonical() ?? $info->symbolPath->toCanonical();
-                $index[$key] ??= self::recordFor($info->subject, $info->file, $info->line);
-            }
-        }
-
-        return $index;
-    }
-
-    /** @return array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} */
-    private static function recordFor(?MetricSubject $subject, ?RelativePath $file, ?int $line): array
-    {
-        return [
-            'subject' => $subject,
-            'location' => $file !== null && $line !== null ? [$file, $line] : null,
-        ];
-    }
-
-    /**
-     * @param array<string, array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}}> $index
-     *
-     * @return ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}}
-     */
-    private static function repositoryRecord(string $subjectKey, array $index): ?array
-    {
-        return $index[$subjectKey] ?? null;
-    }
-
-    /**
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile
      */
     private function annotationFor(
@@ -380,21 +266,4 @@ final readonly class BoundaryExplanationService
         return $matches[0] ?? null;
     }
 
-    /**
-     * @param list<Finding> $measuredFindings
-     * @param ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} $repositoryRecord
-     */
-    private static function subjectForIdentity(
-        BaselineIdentity $identity,
-        array $measuredFindings,
-        ?array $repositoryRecord,
-    ): ?MetricSubject {
-        foreach ($measuredFindings as $finding) {
-            if ($finding->subject->toCanonical() === $identity->subjectKey) {
-                return $finding->subject;
-            }
-        }
-
-        return $repositoryRecord['subject'] ?? null;
-    }
 }

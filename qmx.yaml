@@ -622,6 +622,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary'
         - 'Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource'
         - 'Qualimetrix\Analysis\Policy\Baseline\EntrySelector'
+        - 'Qualimetrix\Analysis\Policy\Baseline\ExplainedSubject'
         - 'Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage'
         - 'Qualimetrix\Analysis\Policy\Baseline\Filter\CeilingOutcome'
         - 'Qualimetrix\Analysis\Policy\Baseline\Filter\GroupCeilingVerdict'
