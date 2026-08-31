@@ -33,7 +33,7 @@ complexity.wmc	channel	?		20	86	2	2	11	31	0	4
 coupling.cbo	channel	?		58	296	2	4	7	104	0	6
 coupling.class-rank	channel	?		22	98	0	2	2	26	0	30
 coupling.distance	channel	?		30	70	2	2	2	33	0	31
-coupling.instability	channel	?		31	88	2	4	8	48	0	8
+coupling.instability	channel	?		30	88	2	4	8	48	0	8
 design.data-class	channel	?		15	15	1	1	10	33	0	3
 design.god-class	channel	?		15	18	1	2	2	36	0	7
 design.inheritance	channel	?		6	10	2	2	0	20	0	3
@@ -76,7 +76,7 @@ coupling.ce-framework	metric-key	?		6	11	0	0	0	6	0	0
 coupling.ce-packages	metric-key	?		7	8	0	0	0	4	0	0
 coupling.class-rank	metric-key	?		22	98	0	2	2	26	0	30
 coupling.distance	metric-key	?		30	70	2	2	2	33	0	31
-coupling.instability	metric-key	?		31	88	2	4	8	48	0	8
+coupling.instability	metric-key	?		30	88	2	4	8	48	0	8
 coupling.rfc	metric-key	?		6	44	0	0	0	0	0	0
 coupling.rfc-external	metric-key	?		1	15	0	0	0	0	0	0
 coupling.rfc-own	metric-key	?		1	15	0	0	0	0	0	0
@@ -160,7 +160,7 @@ computed	producer	?		87	90	0	1	0	24	0	11
 coupling.cbo	producer	?		58	296	2	4	7	104	0	6
 coupling.class-rank	producer	?		22	98	0	2	2	26	0	30
 coupling.distance	producer	?		30	70	2	2	2	33	0	31
-coupling.instability	producer	?		31	88	2	4	8	48	0	8
+coupling.instability	producer	?		30	88	2	4	8	48	0	8
 design.data-class	producer	?		15	15	1	1	10	33	0	3
 design.god-class	producer	?		15	18	1	2	2	36	0	7
 design.inheritance	producer	?		6	10	2	2	0	20	0	3

@@ -56,6 +56,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string FILE_PROCESSOR_CLASS = 'Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor';
     private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
     private const string INLINE_DIRECTIVE_POLICY_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy';
+    private const string INLINE_DIRECTIVE_USAGE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveUsage';
     private const string INLINE_DIRECTIVE_RULE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule';
     private const string INLINE_DIRECTIVE_VALIDATOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator';
     private const string FILE_DISCOVERY_FACTORY = 'qmx.run.file_discovery_factory';
@@ -144,12 +145,18 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
      */
     private function registerInlineDirectivePolicy(ContainerBuilder $container): void
     {
-        $container->register(self::INLINE_DIRECTIVE_POLICY_CLASS, self::INLINE_DIRECTIVE_POLICY_CLASS)
+        $container->register(self::INLINE_DIRECTIVE_USAGE_CLASS, self::INLINE_DIRECTIVE_USAGE_CLASS)
             ->setArguments([
                 new Reference(ChannelIdentityInterface::class),
                 new Reference(RuleSelector::class),
                 new Reference(RuleConfigurationInterface::class),
-            ])
+            ]);
+
+        // The usage accounting is injected rather than built by the policy:
+        // the policy is the run's directive store, and the collaborators the
+        // accounting needs are not the store's.
+        $container->register(self::INLINE_DIRECTIVE_POLICY_CLASS, self::INLINE_DIRECTIVE_POLICY_CLASS)
+            ->setArguments([new Reference(self::INLINE_DIRECTIVE_USAGE_CLASS)])
             ->setPublic(true);
         $container->setAlias(InlineDirectivePolicyInterface::class, self::INLINE_DIRECTIVE_POLICY_CLASS)
             ->setPublic(true);

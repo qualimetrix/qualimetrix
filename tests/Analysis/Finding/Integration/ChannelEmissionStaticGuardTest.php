@@ -326,9 +326,9 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 . ' rule class chain leads here at all.',
             'src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php' =>
                 'A configuration validator, like the one above.',
-            'src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php' =>
-                'Policy state consulted by UnusedDirectiveRule; the construction sits on the policy, not on the'
-                . ' rule chain.',
+            'src/Analysis/Policy/Inline/Directive/DirectiveUsage.php' =>
+                'The usage accounting the policy state delegates to, itself consulted by UnusedDirectiveRule;'
+                . ' the construction sits there, not on the rule chain.',
         ];
     }
 

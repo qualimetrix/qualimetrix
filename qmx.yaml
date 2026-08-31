@@ -654,6 +654,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveNameHints'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveRejection'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator'

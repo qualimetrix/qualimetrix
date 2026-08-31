@@ -48,6 +48,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyI
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
@@ -401,11 +402,11 @@ final class ChannelCoverageTest extends TestCase
 
     private static function directivePolicy(): InlineDirectivePolicy
     {
-        return new InlineDirectivePolicy(
+        return new InlineDirectivePolicy(new DirectiveUsage(
             self::channelIdentity(),
             new RuleSelector(new InMemoryRuleChannelRegistry()),
             new RuleOptionsRegistry(),
-        );
+        ));
     }
 
     private static function channelIdentity(): ChannelIdentityInterface

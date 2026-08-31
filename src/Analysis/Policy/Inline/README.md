@@ -27,8 +27,9 @@ Inline/
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
 │   ├── DirectiveNameHints.php      # "did you mean" by reverse query
 │   ├── DirectiveRejection.php
+│   ├── DirectiveUsage.php          # which authored suppressions the run left unused
 │   ├── InlineDirectiveOptions.php
-│   ├── InlineDirectivePolicy.php   # per-run directives + usage accounting
+│   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting
 │   ├── InlineDirectiveValidator.php # owns the three annotation.* directive errors
 │   └── UnusedDirectiveRule.php     # owns annotation.unused-directive; arms usage reporting
 ├── Suppression/
@@ -73,6 +74,17 @@ them can be accepted by a baseline, and each fails the run without consulting
 validator names `annotation.directive` as its producer, so those three are
 registered, addressed, excluded and switched off exactly as they were while the
 rule declared them, and it answers to that rule's `enabled` option.
+
+**The run state and the usage accounting are two classes, not one.**
+`InlineDirectivePolicy` holds what the run carried — the suppressions,
+threshold overrides and diagnostics — and answers the authored views over them.
+`DirectiveUsage` turns prepared suppressions plus produced findings into stale
+findings; it is a pure function with no run state, and it is injected into the
+policy rather than built by it, so the store keeps the three collaborators a
+store needs and none of the ones the accounting needs. The port is unchanged:
+Run still calls `prepare()`, `reset()` and `auditDirectiveUsage()` on
+`InlineDirectivePolicyInterface`, and the policy forwards the third — under its
+own severity gate, which stays with the state the owning rule arms.
 
 The fourth, `annotation.unused-directive`, stays with `UnusedDirectiveRule`
 because it is ordinary debt: a suppression that
