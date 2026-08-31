@@ -1,0 +1,23 @@
+# Assignments to `$this->` outside the constructor, in every class that is a
+# rule. Empty body below the header means zero such assignments.
+#
+# WHAT PRODUCED IT: enumeration-execution-state.py — the rule set is built
+# TRANSITIVELY (implements RuleInterface, or reaches AbstractRule through any
+# chain of parents), then brace matching locates each constructor body and a
+# regex finds `$this->prop =` / `.=` / `+=` outside it. 49 rule classes in 49
+# files; 0 assignments.
+#
+# WHAT IT CANNOT SEE: second-order state — a rule calling a collaborator that
+# mutates itself (the known one is InlineDirectivePolicy::enableUsageReporting);
+# static properties; state held by configuration validators, which are
+# enumerated in enumeration-rule-collaborators.tsv instead; state inside the
+# capability preparation services the pipeline primes before execution;
+# mutation through a reference or an object the rule merely holds.
+#
+# WHY IT MATTERS: it is the STATIC half of the re-entrancy claim, and it is only
+# a half — absence of a written property is not proof of a stable outcome. The
+# empirical control (two passes, one fingerprint; verdict re-taken on the last
+# pass of the sweep) is what proves it. A previous version of this script
+# selected rules by a single declaration line and saw 35 of the 49; the numbers
+# were the same, the method was not.
+file	line	class	property

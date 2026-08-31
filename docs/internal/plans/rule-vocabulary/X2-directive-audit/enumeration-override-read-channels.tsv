@@ -1,0 +1,75 @@
+# Every source line in src/ by which a threshold override is read or applied.
+#
+# WHAT PRODUCED IT: enumeration-override-read-channels.py — line-level regex over
+# every .php file under src/, five patterns: `->getThresholdOverride(` (the only
+# read operation on AnalysisContext), `->thresholdOverrides` (direct property
+# access, which covers transport as well as reads), `->withOverride(` /
+# `->withVoOverride(` (the application sites on options objects), and the two
+# inherited helpers `getEffectiveOptions(` and `getEffectiveSeverity(` — the
+# second delegates to the first, so it is a consumer path, not a third read.
+#
+# WHAT IT CANNOT SEE: a read performed through reflection or a variable method
+# name; a collaborator handed `$context` that reads the map (only two such reads
+# exist, both listed); tests/ (out of scope — the claim is about production);
+# a future rule receiving the overrides through a constructor instead of the
+# context. The scan is per line, not per call graph, so it names sites and not
+# reachability.
+#
+# WHY IT MATTERS: leave-one-out is faithful only if every consumer of a
+# directive reads it from the AnalysisContext the audit rebuilds. Two read sites
+# carry that during rule execution — AbstractRule and LongParameterListRule —
+# each with one application site beside it. `ctx-property` rows outside
+# AnalysisContext itself are transport (collection -> pipeline -> result) and
+# one reader outside execution, BaselineExplainCommand, which explains a
+# boundary rather than deciding one.
+channel	file	line	source
+ctx-property	src/Analysis/Finding/Contract/Rule/AnalysisContext.php	39	foreach ($this->thresholdOverrides as $overrides) {
+ctx-property	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php	56	$this->thresholdOverrides = $thresholdOverrides;
+ctx-property	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php	93	$this->thresholdOverrides,
+ctx-property	src/Analysis/Run/Collection/CollectionOrchestrator.php	119	if ($result->thresholdOverrides() !== []) {
+ctx-property	src/Analysis/Run/Collection/CollectionOrchestrator.php	120	$allThresholdOverrides[$filePathKey] = $result->thresholdOverrides();
+ctx-property	src/Analysis/Run/Collection/FileProcessor.php	92	thresholdOverrides: $controls->thresholdOverrides,
+ctx-property	src/Analysis/Run/Contract/Collection/FileProcessingResult.php	89	return $this->successfulPayload()->thresholdOverrides;
+ctx-property	src/Analysis/Run/Contract/Pipeline/AnalysisResult.php	118	$mergedThresholdOverrides = $this->thresholdOverrides;
+ctx-property	src/Analysis/Run/Contract/Pipeline/AnalysisResult.php	119	foreach ($other->thresholdOverrides as $file => $list) {
+ctx-property	src/Analysis/Run/Pipeline/AnalysisPipeline.php	167	$collectionResult->thresholdOverrides,
+ctx-property	src/Analysis/Run/Pipeline/AnalysisPipeline.php	213	thresholdOverrides: $collectionResult->thresholdOverrides,
+ctx-property	src/Analysis/Run/Pipeline/AnalysisPipeline.php	236	thresholdOverrides: $collectionResult->thresholdOverrides,
+ctx-property	src/Infrastructure/Console/Command/BaselineExplainCommand.php	113	$context->result()->thresholdOverrides,
+ctx-read	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	183	$override = $context->getThresholdOverride($this->getName(), $subject);
+ctx-read	src/Analysis/Finding/Contract/Rule/AbstractRule.php	87	$override = $context->getThresholdOverride($this->getName(), $subject);
+helper-options	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php	128	$effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+helper-options	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	152	$effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+helper-options	src/Analysis/Evidence/Cohesion/LcomRule.php	96	$effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+helper-options	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	159	$effectiveMethodOptions = $this->getEffectiveOptions($context, $methodOptions, $subject);
+helper-options	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	209	$effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $subject);
+helper-options	src/Analysis/Evidence/Complexity/ComplexityRule.php	168	$effectiveMethodOptions = $this->getEffectiveOptions($context, $methodOptions, $subject);
+helper-options	src/Analysis/Evidence/Complexity/ComplexityRule.php	243	$effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $subject);
+helper-options	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	177	$effectiveMethodOptions = $this->getEffectiveOptions($context, $methodOptions, $subject);
+helper-options	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	229	$effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $subject);
+helper-options	src/Analysis/Evidence/Complexity/WmcRule.php	100	$effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+helper-options	src/Analysis/Evidence/Coupling/CboRule.php	233	$options = $this->getEffectiveOptions($context, $options, $subject);
+helper-options	src/Analysis/Evidence/Coupling/ClassRankRule.php	111	$effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+helper-options	src/Analysis/Evidence/Coupling/DistanceRule.php	153	$effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+helper-options	src/Analysis/Evidence/Coupling/InstabilityRule.php	185	$effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+helper-options	src/Analysis/Evidence/Coupling/InstabilityRule.php	252	$effectiveNsOptions = $this->getEffectiveOptions($context, $namespaceOptions, $subject);
+helper-options	src/Analysis/Evidence/Design/DataClass/DataClassRule.php	111	$effectiveOptions = $this->getEffectiveOptions(
+helper-options	src/Analysis/Evidence/Design/GodClass/GodClassRule.php	99	$effectiveOptions = $this->getEffectiveOptions(
+helper-options	src/Analysis/Evidence/Design/Inheritance/InheritanceRule.php	83	$effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+helper-options	src/Analysis/Evidence/Design/Inheritance/NocRule.php	95	$effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+helper-options	src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php	115	$effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+helper-options	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php	95	$effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+helper-options	src/Analysis/Evidence/Size/ClassCountRule.php	109	$effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+helper-options	src/Analysis/Evidence/Size/MethodCountRule.php	106	$effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+helper-options	src/Analysis/Evidence/Size/PropertyCountRule.php	117	$effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+helper-options	src/Analysis/Finding/Contract/Rule/AbstractRule.php	112	$effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+helper-options	src/Analysis/Finding/Contract/Rule/AbstractRule.php	82	protected function getEffectiveOptions(
+helper-severity	src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php	80	$severity = $this->getEffectiveSeverity($context, $this->options, $projectSubject, $cycle->getSize());
+helper-severity	src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php	115	$severity = $this->getEffectiveSeverity($context, $this->options, $subject, $unreachableCountValue);
+helper-severity	src/Analysis/Evidence/Duplication/CodeDuplicationRule.php	124	$severity = $this->getEffectiveSeverity($context, $this->options, $subject, $block->lines);
+helper-severity	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php	100	$severity = $this->getEffectiveSeverity($context, $this->options, $subject, 1);
+helper-severity	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php	141	* {@see \Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule::getEffectiveSeverity()}, and
+helper-severity	src/Analysis/Evidence/Security/SensitiveParameterRule.php	99	$severity = $this->getEffectiveSeverity($context, $this->options, $subject, 1);
+helper-severity	src/Analysis/Finding/Contract/Rule/AbstractRule.php	106	protected function getEffectiveSeverity(
+options-apply	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	186	: $options->withVoOverride($override->warning, $override->error);
+options-apply	src/Analysis/Finding/Contract/Rule/AbstractRule.php	90	return $options->withOverride($override->warning, $override->error);
