@@ -1306,6 +1306,8 @@ rules:
       # inside an excluded namespace still decides detection, so narrowing would
       # redistribute the silencing rather than add measurement — and the namespace
       # union it leaves behind is not addressable by a point threshold at all.
+      # Owner closed the question on 2026-09-01: this line stands as measured,
+      # and nothing further is owed to it.
       - Qualimetrix\Core\Symbol
       - Qualimetrix\Core\Path
     exclude_namespace_channels:
