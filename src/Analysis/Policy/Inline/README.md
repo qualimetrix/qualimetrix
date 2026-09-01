@@ -220,6 +220,12 @@ annotation beside a live one from being refused on the live one's account. Where
 the rule reports on that subject under no directive at all, both sides agree and
 every directive there is inert for real.
 
+The neighbour the verdict names is measured too, one at a time: put back on its
+own, the one that still makes this directive's removal invisible is the one
+named, so a report cannot call a directive a masker on the same page it calls
+that directive dead. Only joint hiding, where no single neighbour does it alone,
+leaves the name positional.
+
 The unit is every masker and not the first, because specificity has four steps:
 a class docblock, a property docblock and a property hook's docblock can all
 retune one subject, and then no single removal and no pair moves the outcome

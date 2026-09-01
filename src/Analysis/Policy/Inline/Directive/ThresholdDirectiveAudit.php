@@ -301,9 +301,50 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $withoutMaskers = ExecutionFingerprint::of($this->without($input, $maskers));
         $withoutAll = ExecutionFingerprint::of($this->without($input, [...$maskers, $measurable[$index]]));
 
-        return $withoutMaskers->compareTo($withoutAll) === DirectiveEffect::Inert
-            ? null
-            : $maskers[0]['site'];
+        if ($withoutMaskers->compareTo($withoutAll) === DirectiveEffect::Inert) {
+            return null;
+        }
+
+        return $this->hiddenBy($input, $measurable[$index], $maskers);
+    }
+
+    /**
+     * Which of the maskers is doing the hiding, asked one at a time.
+     *
+     * Naming the first neighbour by position would let a report call a
+     * directive the masker of another on the same page where it calls that
+     * neighbour dead. So each is put back on its own — everything else
+     * removed — and the one that still makes this directive's removal
+     * invisible is the one named.
+     *
+     * When no single neighbour does it alone, the hiding is joint and there is
+     * no one directive to name; the report then names the first, and that is
+     * the only case where the name is positional rather than measured.
+     *
+     * @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group
+     * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>, site: DirectiveSite}> $maskers
+     */
+    private function hiddenBy(ThresholdDirectiveAuditInput $input, array $group, array $maskers): DirectiveSite
+    {
+        if (\count($maskers) === 1) {
+            return $maskers[0]['site'];
+        }
+
+        foreach ($maskers as $candidate) {
+            $others = array_values(array_filter(
+                $maskers,
+                static fn(array $masker): bool => $masker['site'] !== $candidate['site'],
+            ));
+
+            $withOnlyCandidate = ExecutionFingerprint::of($this->without($input, $others));
+            $andWithoutTheDirective = ExecutionFingerprint::of($this->without($input, [...$others, $group]));
+
+            if ($withOnlyCandidate->compareTo($andWithoutTheDirective) === DirectiveEffect::Inert) {
+                return $candidate['site'];
+            }
+        }
+
+        return $maskers[0]['site'];
     }
 
     /**
@@ -355,10 +396,12 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * question could not be asked" beside an answer to it would be a report
      * contradicting itself.
      *
-     * Beside an `Inert` verdict the flag is exact rather than cautious: an
-     * inert verdict means the two runs produced the same findings, so the
-     * covered finding fired both times with the same prose, and a rule whose
-     * prose does not move when the boundary does published nothing to see.
+     * Beside an `Inert` verdict the flag is cautious rather than wrong. An
+     * inert verdict already means the two runs produced the same findings, so
+     * a rule that spells its boundary into prose has shown that boundary
+     * standing still — there was no overrun to miss. The flag still warns,
+     * because what it can read is the field, and the field is absent; the
+     * warning costs a reader a second look and never costs them a finding.
      *
      * @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group
      * @param list<Finding> $produced

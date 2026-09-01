@@ -199,7 +199,7 @@ final readonly class ExecutionFingerprint
     public function disagreementWith(self $other): array
     {
         $channels = array_unique(array_map(
-            fn(string $key): string => $this->channel[$key] ?? $other->channel[$key] ?? $key,
+            fn(string $key): string => $this->channel[$key] ?? $other->channel[$key] ?? '(unnamed channel)',
             [
                 ...array_keys(self::excess($this->tally, $other->tally)),
                 ...array_keys(self::excess($other->tally, $this->tally)),

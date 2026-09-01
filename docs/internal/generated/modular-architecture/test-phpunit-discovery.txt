@@ -5500,6 +5500,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itDoesNotCallAPairMaskedWhereTheRuleNeverReports
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itJudgesByWhatTheRulesProducedRatherThanWhatTheyPublished
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itMarksTheBoundaryUnobservableWhenTheRulePublishedNone
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itNamesTheNeighbourThatActuallyHidesIt
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesEveryVerdictWhenTheFirstControlDoesNotReproduceTheRun
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesEveryVerdictWhenTheLastControlDoesNotReproduceTheRun
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveMaskedOnlyByTwoNeighboursTogether

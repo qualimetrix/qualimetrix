@@ -374,6 +374,34 @@ final class ThresholdDirectiveAuditTest extends TestCase
     }
 
     /**
+     * The masker named is the one measured, not the one listed first.
+     *
+     * Two neighbours cover the subject; only the more specific one actually
+     * hides this directive, and it is written last. Naming by position would
+     * put a directive's name beside "masked by" on the same report where that
+     * directive is called something else entirely.
+     */
+    #[Test]
+    public function itNamesTheNeighbourThatActuallyHidesIt(): void
+    {
+        $method = self::subject('Widget', 'render');
+        $executor = self::executor([['subject' => $method, 'value' => 25]]);
+
+        $verdicts = self::audit($executor, [
+            // Least specific, and too tight to silence anything: not a masker.
+            self::override(5, $method, warning: 21, error: 40, scope: ControlScope::Class_),
+            // The directive under test.
+            self::override(9, $method, warning: 30, error: 40, scope: ControlScope::Callable),
+            // Most specific, and silences on its own: the real masker.
+            self::override(13, $method, warning: 30, error: 40, scope: ControlScope::Hook),
+        ]);
+
+        $underTest = $verdicts[1];
+        self::assertSame(DirectiveUnmeasurableReason::Masked, $underTest->reason);
+        self::assertSame(13, $underTest->maskedBy?->line);
+    }
+
+    /**
      * A rule that publishes no boundary cannot show one moving, so an inert
      * verdict on it cannot be told from a promise the measured value had
      * already overrun. The flag says the question was not asked.
