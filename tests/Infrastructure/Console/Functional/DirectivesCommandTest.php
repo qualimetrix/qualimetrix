@@ -215,6 +215,39 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
+     * The directive that produces the complaint about itself must not be
+     * credited with silencing it. A file-scoped suppression of the staleness
+     * channel covers every line of its file, its own included, so leaving that
+     * finding in the universe made the annotation prove itself alive — while
+     * `check` reports the same tree identically with and without it.
+     */
+    #[Test]
+    public function itDoesNotLetADirectiveJustifyItselfWithItsOwnComplaint(): void
+    {
+        $this->writeSource('SelfJustifying.php', <<<'SOURCE'
+            <?php
+            /** @qmx-ignore-file annotation.unused-directive — the only annotation in this file */
+
+            namespace Fixture;
+
+            final class SelfJustifying
+            {
+                public function trivial(): int
+                {
+                    return 1;
+                }
+            }
+            SOURCE);
+
+        $report = self::decode($this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--format' => 'json',
+        ])->getDisplay());
+
+        self::assertSame('inert', $report['directives'][0]['effect']);
+    }
+
+    /**
      * A configuration validator's channels are exempt from annotation
      * suppression by the kind of thing they are — no run and no configuration
      * lets a directive silence one. Reporting such a directive as effective

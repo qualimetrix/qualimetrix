@@ -303,15 +303,18 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $channel = new FindingChannel('code-smell.goto');
 
+        $universe = new ChannelUniverse(
+            [$channel->code => ChannelDeclaration::occurrence(SymbolLevel::Class_)],
+            ['code-smell.goto' => [$channel->code]],
+            ['code-smell.goto' => false],
+            new ResolvedComputedMetricDefinitions([]),
+        );
+
         return new InlineDirectivePolicy(new DirectiveUsage(
-            new ChannelUniverse(
-                [$channel->code => ChannelDeclaration::occurrence(SymbolLevel::Class_)],
-                ['code-smell.goto' => [$channel->code]],
-                ['code-smell.goto' => false],
-                new ResolvedComputedMetricDefinitions([]),
-            ),
+            $universe,
             new RuleSelector(new InMemoryRuleChannelRegistry()),
             $configuration ?? new RuleOptionsRegistry(),
+            $universe,
         ));
     }
 

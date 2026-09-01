@@ -349,8 +349,8 @@ final class Probes
                 'suppression-never-fires',
                 'a suppression that silenced a real finding is reported as silencing nothing',
                 self::USAGE,
-                ['                    self::anyOfTheGroupFired($file, $group, $findings) => DirectiveEffect::Effective,'
-                    => '                    false => DirectiveEffect::Effective,'],
+                ['                    self::anyOfTheGroupFired($file, $group, self::withoutOwnComplaint($file, $directive, $findings))'
+                    => '                    false'],
                 [
                     'itCallsASuppressionEffectiveWhenItSilencedAFinding',
                     'itJudgesASuppressionOfTheChannelProducedAfterRuleExecution',
@@ -442,6 +442,14 @@ final class Probes
                     'itRefusesToJudgeADirectiveWhoseProducerOptionsSwitchedOff',
                     'itRefusesToJudgeASelectorThatNamesNoChannelAtAll',
                 ],
+            ),
+            Probe::breaking(
+                'directive-justifies-itself',
+                'a directive is credited with silencing the complaint it produced by being dead',
+                self::USAGE,
+                ['                    self::anyOfTheGroupFired($file, $group, self::withoutOwnComplaint($file, $directive, $findings))'
+                    => '                    self::anyOfTheGroupFired($file, $group, $findings)'],
+                ['itDoesNotLetADirectiveJustifyItselfWithItsOwnComplaint'],
             ),
             Probe::breaking(
                 'suppression-silences-a-configuration-error',

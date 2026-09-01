@@ -2,7 +2,7 @@ old	kind	new	step	src	tests	presets	config	baseline	website_docs	benchmarks	find
 annotation.invalid-threshold	channel	?		2	5	0	0	0	17	0	1
 annotation.unresolved-directive	channel	?		10	13	0	0	0	31	0	1
 annotation.unsupported-threshold	channel	?		6	5	0	0	0	17	0	1
-annotation.unused-directive	channel	?		13	11	0	0	0	29	0	1
+annotation.unused-directive	channel	?		15	12	0	0	0	29	0	1
 architecture.circular-dependency	channel	?		9	29	0	2	0	39	0	1
 architecture.coverage	channel	?		18	70	0	0	0	43	0	1
 architecture.empty-template	channel	?		9	10	0	0	0	27	0	1

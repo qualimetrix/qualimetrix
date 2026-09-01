@@ -406,6 +406,7 @@ final class ChannelCoverageTest extends TestCase
             self::channelIdentity(),
             new RuleSelector(new InMemoryRuleChannelRegistry()),
             new RuleOptionsRegistry(),
+            self::channelIdentity(),
         ));
     }
 

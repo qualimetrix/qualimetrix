@@ -123,9 +123,13 @@ final class DirectivesCommand extends Command
         try {
             return $this->audit($input, $output, $format);
         } catch (InvalidArgumentException $failure) {
-            // The options this command accepts are parsed into value objects,
-            // and a malformed one is the caller's to fix — the same reading
-            // `check` gives it.
+            // Read as the caller's mistake, exactly as `check` reads it. The
+            // reading is coarser than it looks: the path and symbol value
+            // objects throw the same class on a violated invariant, and one of
+            // those is a bug in the tool wearing a configuration error's
+            // clothes. Diverging from `check` here would be worse — one
+            // malformed option, two exit codes, depending on which command saw
+            // it — so the coarseness is inherited deliberately.
             self::reportError(
                 $output,
                 $format,

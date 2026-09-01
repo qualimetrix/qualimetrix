@@ -796,7 +796,7 @@ bin/qmx directives src/ --format=json
 
 The four selection options exist because a verdict is relative to the run that produced it: point the command at the same rules and boundaries your CI checks with, or it will answer about a different run.
 
-Exit codes: `0` nothing inert, `2` at least one inert directive whose boundary was observable, `3` bad input or configuration — including a scope that discovered no PHP files at all, `4` the run failed to parse part of the tree, `1` the command itself failed unexpectedly.
+Exit codes: `0` nothing inert, `2` at least one inert directive whose boundary was observable, `3` bad input or configuration — including a scope that analysed no PHP files at all (a directory with no PHP in it, an `exclude` that swallowed everything, or nothing but `@generated` files), `4` the run failed to parse part of the tree, `1` the command itself failed unexpectedly.
 
 Four verdicts, of which three are answers and one is the absence of one:
 

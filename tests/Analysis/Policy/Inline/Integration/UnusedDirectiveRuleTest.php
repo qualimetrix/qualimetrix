@@ -606,10 +606,13 @@ final class UnusedDirectiveRuleTest extends TestCase
 
     private static function policy(?ChannelUniverseInterface $identity = null): InlineDirectivePolicy
     {
+        $universe = $identity ?? self::productionUniverse();
+
         return new InlineDirectivePolicy(new DirectiveUsage(
-            $identity ?? self::productionUniverse(),
+            $universe,
             new RuleSelector(new InMemoryRuleChannelRegistry()),
             new RuleOptionsRegistry(),
+            self::productionUniverse(),
         ));
     }
 

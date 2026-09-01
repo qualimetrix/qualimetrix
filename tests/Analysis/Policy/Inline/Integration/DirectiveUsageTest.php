@@ -321,6 +321,7 @@ final class DirectiveUsageTest extends TestCase
             self::productionUniverse(),
             new RuleSelector(new InMemoryRuleChannelRegistry()),
             $registry ?? new RuleOptionsRegistry(),
+            self::productionUniverse(),
         );
     }
 
