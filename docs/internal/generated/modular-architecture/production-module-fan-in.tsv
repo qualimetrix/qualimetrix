@@ -205,7 +205,7 @@ Qualimetrix\Core\Exception\ParseException	Core.Neutral	3	2
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	51	12
 Qualimetrix\Core\Path\PathFactory	Core.Path	17	7
-Qualimetrix\Core\Path\RelativePath	Core.Path	83	23
+Qualimetrix\Core\Path\RelativePath	Core.Path	84	23
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	22	8
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\DeclarationKey	Core.Symbol	3	2

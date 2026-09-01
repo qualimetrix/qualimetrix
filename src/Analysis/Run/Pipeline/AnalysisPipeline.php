@@ -250,14 +250,30 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
      * and the wording stay with the owning capability; Run only decides when
      * to ask.
      *
+     * **The audit is asked about `produced`, not `published`, and the two
+     * differ by exactly the wrong thing.** `published` has already lost the
+     * per-rule `exclude_namespaces` / `exclude_namespace_channels` /
+     * `exclude_paths` ledger and the per-finding channel selection — decisions
+     * about what a *report* shows. Judging an annotation by them means a
+     * suppression covering a finding the ledger would have dropped anyway is
+     * reported as silencing nothing: a statement about configuration dressed
+     * up as a statement about the author's annotation.
+     *
+     * The direction is one-way by construction rather than by measurement:
+     * `SuppressionFilter::suppressesAny()` is an existential over the finding
+     * list, so widening the list can only turn "matched nothing" into "matched
+     * something". This project's own `src` shows no difference today — the
+     * channel reports nothing either way — so the fixture in the usage tests
+     * is the only witness that the universe is the right one, and a green
+     * self-analysis proves nothing about it.
+     *
      * @return list<Finding>
      */
     private function reportedFindings(RuleExecutionResult $ruleExecution): array
     {
-        $findings = $ruleExecution->published;
-        $unused = $this->ruleProducerPreparation->auditInlineDirectives($findings);
+        $unused = $this->ruleProducerPreparation->auditInlineDirectives($ruleExecution->produced);
 
-        return $unused === [] ? $findings : array_merge($findings, $unused);
+        return $unused === [] ? $ruleExecution->published : array_merge($ruleExecution->published, $unused);
     }
 
     /** @return list<LogicalClassPath> */

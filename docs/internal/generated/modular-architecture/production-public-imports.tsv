@@ -1578,6 +1578,7 @@ Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Finding\RuleCo
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Policy\Baseline\ExplainedSubject	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/ExplainedSubject.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Contract/SourceControlExtractorInterface.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Directive/DirectiveUsage.php	ast-name
+Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveVerdict	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Directive/DirectiveVerdict.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Extraction/DeclarationControlBindings.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Extraction/SourceControlExtractor.php	ast-name

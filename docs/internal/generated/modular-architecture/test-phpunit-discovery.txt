@@ -5467,6 +5467,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aThresholdNamingAFamilyProducerIsRefusedAsUnretunableNotAsUnknown"health.overall"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aThresholdNamingAFamilyProducerIsRefusedAsUnretunableNotAsUnknown"health.typing"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aThresholdNamingNothingIsStillRefusedAsUnknown
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itCallsASuppressionEffectiveWhenSomethingItCoversWasProduced
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itCallsASuppressionInertWhenNothingItCoversWasProduced
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itKeepsTwoDirectiveFormsWrittenOnOneLineApart
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itProjectsExactlyTheInertVerdictsIntoStaleFindings
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeAChannelLevelPairAddressabilityAlreadyRefused
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeADirectiveWhoseProducerASelectorSwitchedOff
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeADirectiveWhoseProducerOptionsSwitchedOff
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeADirectiveWithoutARuleFilter
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeASelectorThatNamesNoChannelAtAll
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itReportsOneVerdictForAClassDocblockThatBoundSixDeclarations
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineSuppressionLayerViolationIntegrationTest::qmxIgnoreOnSourceDoesNotDropTargetAttributedArchitectureLayerViolation
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::hierarchicalRuleValidationDelegatesToLevelOptions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::independentAxisRuleAcceptsArbitraryOrdering
@@ -5709,6 +5719,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itRejectsExplicitErrorEvenWhenItEqualsWarning
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itRejectsExplicitErrorValue
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itRejectsNegativeWarning
+ - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditUniverseTest::itJudgesASuppressionByTheFindingsRulesProducedRatherThanThosePublished
+ - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditUniverseTest::itStillReportsASuppressionThatCoveredNothingProduced
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::circularDependencyRuleProducesFindingsForActualCycles
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::dependencyGraphIsPassedToAnalysisContext
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::globalCollectorMetricsAreAggregatedToNamespaceLevel

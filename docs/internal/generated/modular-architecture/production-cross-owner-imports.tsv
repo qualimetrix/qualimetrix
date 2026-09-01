@@ -1349,6 +1349,7 @@ Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage	Analysis.Policy.Inli
 Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage	Analysis.Policy.Inline	Qualimetrix\Core\Path\RelativePath	Core.Path	contract	P8
 Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract	P8
+Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveVerdict	Analysis.Policy.Inline	Qualimetrix\Core\Path\RelativePath	Core.Path	contract	P8
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract	P6-A

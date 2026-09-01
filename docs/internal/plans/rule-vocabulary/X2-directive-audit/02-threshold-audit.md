@@ -72,9 +72,18 @@ interface DirectiveAuditInterface {
 исполнения. `analyze()` и `auditDirectives()` зовут его одинаково. Отдельного
 публичного типа для шага нет — он не пересекает границу владельца.
 
-Подавляющая половина приходит в отчёт через операцию
-`InlineDirectivePolicyInterface::directiveVerdicts()`, заведённую в П1: Run во
-внутренности Inline не лезет.
+Подавляющая половина приходит в отчёт через операцию, которую
+`InlineDirectivePolicyInterface` получает **здесь**, вместе со своим первым
+читателем:
+
+```
+/** @return list<DirectiveVerdict> */
+public function directiveVerdicts(array $producedFindings): array;
+```
+
+Тем же пакетом типы вердиктов переезжают из `Directive/` в `Contract/Directive/`
+и получают поля, которые заполняет эта половина (`maskedBy`,
+`boundaryObservable`). Run во внутренности Inline не лезет.
 
 ## Метод и его границы
 

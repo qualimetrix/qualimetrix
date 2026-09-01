@@ -48,6 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   payload, so an ordinary product warning (e.g. a coverage notice) made the
   published artifact unparsable. stderr now goes to the Action log as a
   warning annotation instead.
+- `annotation.unused-directive` judged a suppression by the findings the report
+  published rather than by the findings the rules produced, so a `@qmx-ignore`
+  covering a finding that `exclude_namespaces`, `exclude_namespace_channels` or
+  `exclude_paths` would have dropped anyway was reported as silencing nothing.
 
 ### Changed
 - Every rule now declares its own estimated remediation time (in minutes) on its own class, alongside its documentation page and default thresholds. See [Remediation Time](reference/remediation-time.md) for the full table. `coupling.class-rank` debt is no longer scaled by overshoot: its rank is a project-wide normalised PageRank rescaled per class count, so a stored value is not comparable across runs — it now reports its flat base estimate like every other `occurrence`-shaped channel.

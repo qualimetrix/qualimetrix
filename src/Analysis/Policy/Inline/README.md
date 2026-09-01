@@ -27,7 +27,10 @@ Inline/
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
 │   ├── DirectiveNameHints.php      # "did you mean" by reverse query
 │   ├── DirectiveRejection.php
-│   ├── DirectiveUsage.php          # which authored suppressions the run left unused
+│   ├── DirectiveEffect.php         # effective / overrun / inert / unmeasured
+│   ├── DirectiveUnmeasurableReason.php # why a directive has no verdict
+│   ├── DirectiveUsage.php          # what each authored suppression did
+│   ├── DirectiveVerdict.php        # one authored site and its effect
 │   ├── InlineDirectiveOptions.php
 │   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting
 │   ├── InlineDirectiveValidator.php # owns the three annotation.* directive errors
@@ -78,15 +81,34 @@ rule declared them, and it answers to that rule's `enabled` option.
 **The run state and the usage accounting are two classes, not one.**
 `InlineDirectivePolicy` holds what the run carried — the suppressions,
 threshold overrides and diagnostics — and answers the authored views over them.
-`DirectiveUsage` turns prepared suppressions plus produced findings into stale
-findings; it is a pure function with no run state, and it is injected into the
-policy rather than built by it, so the store keeps the three collaborators a
-store needs and none of the ones the accounting needs. The port is unchanged:
+`DirectiveUsage` turns prepared suppressions plus produced findings into
+**verdicts**, and the stale findings are one projection of those; it is a pure
+function with no run state, and it is injected into the policy rather than built
+by it, so the store keeps the three collaborators a store needs and none of the
+ones the accounting needs. The port is unchanged:
 Run still calls `prepare()`, `reset()` and `auditDirectiveUsage()` on
 `InlineDirectivePolicyInterface`, and the policy forwards the third — under its
 own severity gate, which stays with the state the owning rule arms.
 
-The fourth, `annotation.unused-directive`, stays with `UnusedDirectiveRule`
+**A verdict is not a boolean, and the absence of an answer is not a verdict.**
+`DirectiveEffect` has four values. `Effective` and `Inert` are answers;
+`Overrun` belongs to the threshold half and is not produced here; `Unmeasured`
+means the question could not be asked, and `DirectiveUnmeasurableReason` says
+which of the four ways: the producer was switched off (by either mechanism), the
+directive was already refused elsewhere, it carries no rule filter, or another
+directive of the same rule covers the same subject. Reporting any of those as
+`Inert` would tell an author to delete an annotation on the strength of a
+question nobody asked — and for the "already refused" family it would answer one
+mistake twice, since `annotation.unresolved-directive` has already answered it.
+
+**The verdict is judged on what the rules produced, not on what the report
+published.** The two differ by the per-rule exclusion ledger and the per-finding
+channel selection, and both are decisions about a *report*: a suppression that
+covered a finding the ledger would have dropped anyway did not silence nothing.
+`AnalysisPipeline::reportedFindings()` hands the audit `produced` for that
+reason.
+
+The fourth channel, `annotation.unused-directive`, stays with `UnusedDirectiveRule`
 because it is ordinary debt: a suppression that
 addressed something real and matched nothing this run. It defaults below
 `Warning`, and its accounting is deliberately narrow — only directives naming
