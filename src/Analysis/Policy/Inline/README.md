@@ -10,7 +10,8 @@ Inline-owned extraction contract once; it owns no annotation policy state.
 ```text
 Inline/
 ├── Contract/
-│   ├── Directive/               # the four annotation.* channel names, run state
+│   ├── Directive/               # the four annotation.* channel names, run state,
+│   │                            # and the threshold audit's contract and input
 │   ├── Suppression/             # suppression value and type
 │   ├── Threshold/               # annotation diagnostic value
 │   ├── AnnotationSuppressionInterface.php
@@ -27,7 +28,11 @@ Inline/
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
 │   ├── DirectiveNameHints.php      # "did you mean" by reverse query
 │   ├── DirectiveRejection.php
-│   ├── DirectiveUsage.php          # which authored suppressions the run left unused
+│   ├── DirectiveEffect.php         # effective / overrun / inert / unmeasured
+│   ├── DirectiveUnmeasurableReason.php # why a directive has no verdict
+│   ├── DirectiveUsage.php          # what each authored suppression did
+│   ├── DirectiveVerdict.php        # one authored site and its effect
+│   ├── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── InlineDirectiveOptions.php
 │   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting
 │   ├── InlineDirectiveValidator.php # owns the three annotation.* directive errors
@@ -56,10 +61,16 @@ Inline/
   static entry point answers the per-directive question the indexed path
   cannot: whether *this* directive silenced anything.
 - `InlineDirectivePolicyInterface` promises the four `annotation.*` channel
-  names and the two moments Run needs: `prepare()` before rule execution,
-  `auditDirectiveUsage()` after it. Only `Analysis\Run\RuleProducerPreparation`
-  calls them, under the same producer-enablement rule as every other
-  capability preparation.
+  names and the moments Run needs: `prepare()` before rule execution,
+  `auditDirectiveUsage()` and `directiveVerdicts()` after it. Only
+  `Analysis\Run\RuleProducerPreparation` calls them, under the same
+  producer-enablement rule as every other capability preparation. The last of
+  the three is not gated on the owning rule having run: a channel is a rule's
+  output, a verdict is what a caller asked for.
+- `ThresholdDirectiveAuditInterface` promises the other half of the same
+  question to the same consumer, and `ThresholdDirectiveAuditInput` is the
+  prepared run it needs to answer: the context the rules already ran against,
+  the executor that ran them, and what they produced.
 
 ## The directive report
 
@@ -78,15 +89,34 @@ rule declared them, and it answers to that rule's `enabled` option.
 **The run state and the usage accounting are two classes, not one.**
 `InlineDirectivePolicy` holds what the run carried — the suppressions,
 threshold overrides and diagnostics — and answers the authored views over them.
-`DirectiveUsage` turns prepared suppressions plus produced findings into stale
-findings; it is a pure function with no run state, and it is injected into the
-policy rather than built by it, so the store keeps the three collaborators a
-store needs and none of the ones the accounting needs. The port is unchanged:
+`DirectiveUsage` turns prepared suppressions plus produced findings into
+**verdicts**, and the stale findings are one projection of those; it is a pure
+function with no run state, and it is injected into the policy rather than built
+by it, so the store keeps the three collaborators a store needs and none of the
+ones the accounting needs. The port is unchanged:
 Run still calls `prepare()`, `reset()` and `auditDirectiveUsage()` on
 `InlineDirectivePolicyInterface`, and the policy forwards the third — under its
 own severity gate, which stays with the state the owning rule arms.
 
-The fourth, `annotation.unused-directive`, stays with `UnusedDirectiveRule`
+**A verdict is not a boolean, and the absence of an answer is not a verdict.**
+`DirectiveEffect` has four values. `Effective` and `Inert` are answers;
+`Overrun` belongs to the threshold half and is not produced here; `Unmeasured`
+means the question could not be asked, and `DirectiveUnmeasurableReason` says
+which of the four ways: the producer was switched off (by either mechanism), the
+directive was already refused elsewhere, it carries no rule filter, or another
+directive of the same rule covers the same subject. Reporting any of those as
+`Inert` would tell an author to delete an annotation on the strength of a
+question nobody asked — and for the "already refused" family it would answer one
+mistake twice, since `annotation.unresolved-directive` has already answered it.
+
+**The verdict is judged on what the rules produced, not on what the report
+published.** The two differ by the per-rule exclusion ledger and the per-finding
+channel selection, and both are decisions about a *report*: a suppression that
+covered a finding the ledger would have dropped anyway did not silence nothing.
+`AnalysisPipeline::reportedFindings()` hands the audit `produced` for that
+reason.
+
+The fourth channel, `annotation.unused-directive`, stays with `UnusedDirectiveRule`
 because it is ordinary debt: a suppression that
 addressed something real and matched nothing this run. It defaults below
 `Warning`, and its accounting is deliberately narrow — only directives naming
@@ -138,3 +168,81 @@ When changing an inline annotation or its wire value:
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+## The threshold half
+
+A `@qmx-threshold` publishes nothing about itself. No rule reports the boundary
+it decided with, and the rule layer has no single notion of a boundary to ask
+about, so the only observable a threshold directive has is **the difference it
+makes**. `ThresholdDirectiveAudit` removes one authored directive at a time and
+executes the rules again over the context the run already prepared, comparing
+what the two executions produced.
+
+**One removal is one annotation, not one binding.** A class docblock
+materialises on the class and on every declaration inside it; removing the
+first of those and leaving the rest would report an annotation still in force
+as inert.
+
+**The fingerprint is the whole finding, split in two.** `threshold` and the
+prose that quotes it — `message` and `recommendation` — are the boundary a
+finding names; every other field is what the finding *is*. When two runs differ only in the boundary half, the directive
+applied and the finding fired regardless — `Overrun`, a promise made and not
+kept, which is not the same as an annotation that does nothing. The message
+belongs to that half because several rules spell the boundary into their prose
+instead of into the field, and so does the recommendation: `ComplexityRule`
+writes the threshold into the advice as well as into the message, and counting
+that as identity would turn every overrun on such a rule into `Effective`. What no field of the key names is invisible to the
+audit, so the split is checked against `Finding`'s constructor by reflection and
+each field is moved on its own in a test: a field added later cannot become a
+difference the audit silently ignores.
+
+`Overrun` names the common case rather than every one. A directive that
+*tightens* a boundary produces the same shape of difference, and the rule layer
+has no notion of which direction is stricter — instability is worse when higher,
+cohesion when lower — so what the verdict states exactly is "applied, and
+nothing moved except the boundary it printed".
+
+**Where no boundary is published, the question cannot be asked.** Nine of the
+twenty-seven rule files put no boundary in their findings and four of those
+accept overrides. On those, a boundary the measured value had already passed
+leaves the fingerprint unchanged, so the verdict is `Inert` and
+`DirectiveVerdict::$boundaryObservable` is false — read off the run's own
+findings rather than off a list of rule names, which would drift from the tree
+in silence.
+
+**Coalitions are refusals, not verdicts.** Directives of one rule covering the
+same subject mask each other: removing any one alone changes nothing, although
+removing them all changes the run. Overlap only makes that possible, so the
+answer is bought with two more executions, and the question is differential —
+the run without this directive's maskers against the run without them and it.
+What the neighbours do cancels between the two sides, which is what keeps a dead
+annotation beside a live one from being refused on the live one's account. Where
+the rule reports on that subject under no directive at all, both sides agree and
+every directive there is inert for real.
+
+The neighbour the verdict names is measured too, one at a time: put back on its
+own, the one that still makes this directive's removal invisible is the one
+named, so a report cannot call a directive a masker on the same page it calls
+that directive dead. Only joint hiding, where no single neighbour does it alone,
+leaves the name positional.
+
+The unit is every masker and not the first, because specificity has four steps:
+a class docblock, a property docblock and a property hook's docblock can all
+retune one subject, and then no single removal and no pair moves the outcome
+while the whole set does. It is also one hop and not a closure: a directive can
+only hide what it covers.
+
+**The method's own assumption is controlled, not assumed.** A sweep begins and
+ends with the full override set in place, and both control passes must
+reproduce the run exactly. A drift between them is shared state in the rules,
+which invalidates every verdict rather than any one directive, so the audit
+throws instead of answering, and it runs both controls through the same
+context-rebuilding path the counterfactuals use rather than against the original
+object. Measured on this project's own `src`: thirty-one authored directives,
+thirty-three executions, both controls reproducing.
+
+What the audit does **not** measure is a directive's effect on the parsing of
+itself. `InlineDirectiveValidator` reads the policy's own copy of the override
+map, which no counterfactual touches, so its diagnostics are identical on every
+pass — and the `annotation.*` channels have already answered for malformed,
+unresolvable and unsupported annotations.

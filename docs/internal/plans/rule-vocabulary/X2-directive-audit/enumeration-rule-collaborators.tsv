@@ -1,0 +1,66 @@
+kind	class	file	collaborator
+rule	AbstractCodeSmellRule	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php	(no constructor)
+rule	AbstractRule	src/Analysis/Finding/Contract/Rule/AbstractRule.php	RuleOptionsInterface
+rule	AbstractSecurityPatternRule	src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php	(no constructor)
+rule	AbstractTypeCoverageRule	src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php	(no constructor)
+rule	BooleanArgumentRule	src/Analysis/Evidence/CodeSmell/BooleanArgumentRule.php	(no constructor)
+rule	CboRule	src/Analysis/Evidence/Coupling/CboRule.php	(no constructor)
+rule	CircularDependencyRule	src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php	CircularDependencyAnalysis
+rule	CircularDependencyRule	src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php	RuleOptionsInterface
+rule	ClassCountRule	src/Analysis/Evidence/Size/ClassCountRule.php	(no constructor)
+rule	ClassRankRule	src/Analysis/Evidence/Coupling/ClassRankRule.php	(no constructor)
+rule	CodeDuplicationRule	src/Analysis/Evidence/Duplication/CodeDuplicationRule.php	DuplicationResultProvider
+rule	CodeDuplicationRule	src/Analysis/Evidence/Duplication/CodeDuplicationRule.php	RuleOptionsInterface
+rule	CognitiveComplexityRule	src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php	(no constructor)
+rule	CommandInjectionRule	src/Analysis/Evidence/Security/CommandInjectionRule.php	(no constructor)
+rule	ComplexityRule	src/Analysis/Evidence/Complexity/ComplexityRule.php	(no constructor)
+rule	ComputedMetricRule	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ComputedMetricDefinitionCatalogInterface
+rule	ComputedMetricRule	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ComputedMetricFindingBuilder
+rule	ComputedMetricRule	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ComputedMetricProducerOptions
+rule	ComputedMetricRule	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ComputedMetricRuleOptions
+rule	ComputedMetricRule	src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php	ProfilerInterface
+rule	ConstructorOverinjectionRule	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php	(no constructor)
+rule	CountInLoopRule	src/Analysis/Evidence/CodeSmell/CountInLoopRule.php	(no constructor)
+rule	DataClassRule	src/Analysis/Evidence/Design/DataClass/DataClassRule.php	(no constructor)
+rule	DebugCodeRule	src/Analysis/Evidence/CodeSmell/DebugCodeRule.php	(no constructor)
+rule	DistanceRule	src/Analysis/Evidence/Coupling/DistanceRule.php	LoggerInterface
+rule	DistanceRule	src/Analysis/Evidence/Coupling/DistanceRule.php	ProjectNamespaceResolverInterface
+rule	DistanceRule	src/Analysis/Evidence/Coupling/DistanceRule.php	RuleOptionsInterface
+rule	EmptyCatchRule	src/Analysis/Evidence/CodeSmell/EmptyCatchRule.php	(no constructor)
+rule	ErrorSuppressionRule	src/Analysis/Evidence/CodeSmell/ErrorSuppressionRule.php	(no constructor)
+rule	EvalRule	src/Analysis/Evidence/CodeSmell/EvalRule.php	(no constructor)
+rule	ExitRule	src/Analysis/Evidence/CodeSmell/ExitRule.php	(no constructor)
+rule	GodClassRule	src/Analysis/Evidence/Design/GodClass/GodClassRule.php	(no constructor)
+rule	GotoRule	src/Analysis/Evidence/CodeSmell/GotoRule.php	(no constructor)
+rule	HardcodedCredentialsRule	src/Analysis/Evidence/Security/HardcodedCredentialsRule.php	(no constructor)
+rule	IdenticalSubExpressionRule	src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php	(no constructor)
+rule	InheritanceRule	src/Analysis/Evidence/Design/Inheritance/InheritanceRule.php	(no constructor)
+rule	InstabilityRule	src/Analysis/Evidence/Coupling/InstabilityRule.php	(no constructor)
+rule	LayerViolationRule	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	LayerEvidenceCollector
+rule	LayerViolationRule	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	RuleOptionsInterface
+rule	LcomRule	src/Analysis/Evidence/Cohesion/LcomRule.php	(no constructor)
+rule	LongParameterListRule	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	(no constructor)
+rule	MaintainabilityRule	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php	(no constructor)
+rule	MethodCountRule	src/Analysis/Evidence/Size/MethodCountRule.php	(no constructor)
+rule	NocRule	src/Analysis/Evidence/Design/Inheritance/NocRule.php	(no constructor)
+rule	NpathComplexityRule	src/Analysis/Evidence/Complexity/NpathComplexityRule.php	(no constructor)
+rule	ParamTypeCoverageRule	src/Analysis/Evidence/Design/TypeCoverage/ParamTypeCoverageRule.php	(no constructor)
+rule	PropertyCountRule	src/Analysis/Evidence/Size/PropertyCountRule.php	(no constructor)
+rule	PropertyTypeCoverageRule	src/Analysis/Evidence/Design/TypeCoverage/PropertyTypeCoverageRule.php	(no constructor)
+rule	ReturnTypeCoverageRule	src/Analysis/Evidence/Design/TypeCoverage/ReturnTypeCoverageRule.php	(no constructor)
+rule	SensitiveParameterRule	src/Analysis/Evidence/Security/SensitiveParameterRule.php	(no constructor)
+rule	SqlInjectionRule	src/Analysis/Evidence/Security/SqlInjectionRule.php	(no constructor)
+rule	SuperglobalsRule	src/Analysis/Evidence/CodeSmell/SuperglobalsRule.php	(no constructor)
+rule	UnassignedClassRule	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassRule.php	LayerEvidenceCollector
+rule	UnassignedClassRule	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassRule.php	RuleOptionsInterface
+rule	UnreachableCodeRule	src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php	(no constructor)
+rule	UnusedDirectiveRule	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php	InlineDirectivePolicy
+rule	UnusedDirectiveRule	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php	RuleOptionsInterface
+rule	UnusedPrivateRule	src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php	(no constructor)
+rule	WmcRule	src/Analysis/Evidence/Complexity/WmcRule.php	(no constructor)
+rule	XssRule	src/Analysis/Evidence/Security/XssRule.php	(no constructor)
+validator	InlineDirectiveValidator	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	ChannelIdentityInterface
+validator	InlineDirectiveValidator	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	InlineDirectivePolicy
+validator	InlineDirectiveValidator	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	RuleOptionsInterface
+validator	LayerDeclarationValidator	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php	LayerEvidenceCollector
+validator	LayerDeclarationValidator	src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php	LayerViolationOptions

@@ -23,6 +23,8 @@ use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
 use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
@@ -86,6 +88,8 @@ final class TestPipelineBuilder
 
     private ?InlineDirectivePolicyInterface $inlineDirectivePolicy = null;
 
+    private ?ThresholdDirectiveAuditInterface $thresholdDirectiveAudit = null;
+
     private ?LoggerInterface $logger = null;
 
     private ?ProfilerInterface $profiler = null;
@@ -109,6 +113,13 @@ final class TestPipelineBuilder
     public function withCollectionOrchestrator(CollectionOrchestratorInterface $orchestrator): self
     {
         $this->collectionOrchestrator = $orchestrator;
+
+        return $this;
+    }
+
+    public function withThresholdDirectiveAudit(ThresholdDirectiveAuditInterface $audit): self
+    {
+        $this->thresholdDirectiveAudit = $audit;
 
         return $this;
     }
@@ -258,6 +269,7 @@ final class TestPipelineBuilder
                     . '(call withCircularDependencyPreparation())',
                 ),
                 $this->resolveInlineDirectivePolicy(),
+                $this->thresholdDirectiveAudit ?? self::inertThresholdAudit(),
                 $this->fileSetInspection ?? throw new LogicException(
                     'TestPipelineBuilder: fileSetInspection is required (call withFileSetInspection())',
                 ),
@@ -277,6 +289,23 @@ final class TestPipelineBuilder
                 'TestPipelineBuilder: profiler is required (call withProfiler())',
             ),
         );
+    }
+
+    /**
+     * The threshold audit a pipeline test does not exercise.
+     *
+     * An anonymous implementation rather than a stub: the builder is not a
+     * test case, and a sweep that answers "no directives" is what a run
+     * without threshold annotations produces anyway.
+     */
+    private static function inertThresholdAudit(): ThresholdDirectiveAuditInterface
+    {
+        return new class implements ThresholdDirectiveAuditInterface {
+            public function verdicts(ThresholdDirectiveAuditInput $input): array
+            {
+                return [];
+            }
+        };
     }
 
     private function resolveLayerPolicyPreparation(): LayerPolicyPreparationInterface

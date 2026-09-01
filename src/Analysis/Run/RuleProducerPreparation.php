@@ -7,11 +7,17 @@ namespace Qualimetrix\Analysis\Run;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
@@ -27,6 +33,7 @@ final readonly class RuleProducerPreparation
         private LayerPolicyPreparationInterface $layerPolicyPreparation,
         private CircularDependencyPreparationInterface $circularDependencyPreparation,
         private InlineDirectivePolicyInterface $inlineDirectivePolicy,
+        private ThresholdDirectiveAuditInterface $thresholdDirectiveAudit,
         private FileSetInspectionComposite $fileSetInspection,
         private RuleSelector $ruleSelector,
         private RuleConfigurationInterface $ruleConfiguration,
@@ -130,6 +137,42 @@ final readonly class RuleProducerPreparation
     }
 
     /**
+     * What each authored suppression did, as verdicts rather than as the one
+     * channel the run publishes.
+     *
+     * @param list<Finding> $findings
+     *
+     * @return list<DirectiveVerdict>
+     */
+    public function directiveVerdicts(array $findings): array
+    {
+        return $this->inlineDirectivePolicy->directiveVerdicts($findings);
+    }
+
+    /**
+     * The other half of the same question, and the expensive one: what each
+     * authored `@qmx-threshold` did.
+     *
+     * It is asked here rather than from the pipeline for the same reason
+     * {@see auditInlineDirectives()} is: this is where Run holds its side of
+     * the conversation with the capabilities that produce rules, so the
+     * pipeline keeps naming phases instead of collaborators.
+     *
+     * @return list<DirectiveVerdict>
+     */
+    public function auditThresholdDirectives(
+        AnalysisContext $context,
+        RuleExecutionInterface $executor,
+        RuleExecutionResult $baseline,
+    ): array {
+        return $this->thresholdDirectiveAudit->verdicts(
+            new ThresholdDirectiveAuditInput($context, $executor, $baseline),
+        );
+    }
+
+    /**
+     * @param list<SplFileInfo> $eligibleFiles
+     */    /**
      * @param list<SplFileInfo> $eligibleFiles
      */
     public function inspectFiles(array $eligibleFiles, AbsolutePath $projectRoot): void

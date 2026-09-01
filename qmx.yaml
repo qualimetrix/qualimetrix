@@ -642,7 +642,10 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SourceControls'
@@ -653,12 +656,17 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveEffect'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveNameHints'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveRejection'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveSite'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUnmeasurableReason'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\ExecutionFingerprint'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\ThresholdDirectiveAudit'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor'
@@ -703,6 +711,8 @@ architecture:
         - 'Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate'
         - 'Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline'
         - 'Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer'
+        - 'Qualimetrix\Analysis\Run\Pipeline\DirectiveAuditReport'
+        - 'Qualimetrix\Analysis\Run\Pipeline\PreparedRun'
         - 'Qualimetrix\Analysis\Run\RuleProducerPreparation'
     - name: core-neutral
       patterns:
@@ -1296,6 +1306,8 @@ rules:
       # inside an excluded namespace still decides detection, so narrowing would
       # redistribute the silencing rather than add measurement — and the namespace
       # union it leaves behind is not addressable by a point threshold at all.
+      # Owner closed the question on 2026-09-01: this line stands as measured,
+      # and nothing further is owed to it.
       - Qualimetrix\Core\Symbol
       - Qualimetrix\Core\Path
     exclude_namespace_channels:

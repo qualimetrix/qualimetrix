@@ -106,20 +106,37 @@
             "Composer\\Config::disableProcessTimeout",
             "php scripts/finding-gate-controls.php"
         ],
+        "directives:controls": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/directive-audit-controls.php"
+        ],
         "docs:check": "bash scripts/check-docs.sh",
         "check": [
             "@check-leaks",
+            "@check:code",
+            "@check:docs",
+            "@check:artifacts",
+            "@check:self"
+        ],
+        "check:code": [
             "@cs-check",
-            "@docs:check",
-            "@test",
-            "@test:cross-tool",
             "@phpstan",
+            "@test",
+            "@test:cross-tool"
+        ],
+        "check:docs": [
+            "@docs:check"
+        ],
+        "check:artifacts": [
+            "@architecture:check",
             "@enumeration:renames:check",
             "@enumeration:runtime-channels:check",
             "@enumeration:directives:check",
-            "@gate:self-test",
-            "@selfcheck",
             "@suppression-snapshot:check"
+        ],
+        "check:self": [
+            "@gate:self-test",
+            "@selfcheck"
         ]
     },
     "scripts-descriptions": {
@@ -145,7 +162,12 @@
         "suppression-snapshot": "Regenerate docs/internal/generated/suppression/{composition,inert}.tsv from a self-analysis of src/",
         "suppression-snapshot:check": "Fail if the suppression snapshot is stale against a fresh self-analysis, without writing",
         "selfcheck": "Validate modular-architecture governance, then run Qualimetrix on its own source code",
-        "check": "Run all checks: leaks, code style, strict docs build, PHP/Python tests, phpstan, selfcheck (selfcheck enforces architecture via qmx.yaml), suppression snapshot freshness"
+        "check": "Everything below, in the order a failure is cheapest to read",
+        "check:code": "What a code change invalidates: style, static analysis, tests",
+        "check:docs": "What a website change invalidates: a strict mkdocs build",
+        "check:artifacts": "What a manifest, config or corpus change invalidates: every generated artifact against a fresh measurement",
+        "check:self": "What the product says about this repository: the gate self-test and the qmx ratchet",
+        "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it"
     },
     "config": {
         "sort-packages": true,
