@@ -57,11 +57,6 @@ interface InlineDirectivePolicyInterface
     public const string UNUSED_DIRECTIVE_NAME = 'annotation.unused-directive';
 
     /**
-     * @param array<string, list<Suppression>> $suppressions file => directives
-     * @param array<string, list<ThresholdOverride>> $thresholdOverrides file => directives
-     * @param array<string, list<ThresholdDiagnostic>> $thresholdDiagnostics file => diagnostics
-     */
-    /**
      * Replaces the whole of the previous run's state, the reporting gate
      * included. There is no separate clearing operation: a run that prepares
      * nothing prepares an empty set through this same call, and a second way
@@ -83,10 +78,15 @@ interface InlineDirectivePolicyInterface
      * to disagree about one directive.
      *
      * Unlike the channel, this answer is not gated on the owning rule having
-     * run: a channel is a rule's output, while a verdict is what a caller
-     * asked for directly. The coarser gate still applies and is not this
-     * method's to lift — a run that switched the directive producer off
-     * prepared no directives at all, so there is nothing here to report on.
+     * run at all: a channel is a rule's output, while a verdict is what a
+     * caller asked for directly. Nor is it gated on the producer being
+     * selected — the run prepares its directives either way, because what is
+     * prepared is the author's own record and not the rule's state.
+     *
+     * `$producedFindings` must carry everything the run produced, the channel
+     * a run assembles *after* rule execution included. A caller that passes
+     * only the executor's own set reports every suppression aimed at that
+     * channel as silencing nothing.
      *
      * The threshold half of the same question costs one rule execution per
      * annotation and is answered by

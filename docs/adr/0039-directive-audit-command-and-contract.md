@@ -99,6 +99,43 @@ Two details are load-bearing and were each wrong in an earlier revision:
   baseline run charges a live neighbour's effect to the dead annotation beside
   it.
 
+## Decision 4 — the universe is what the run produced, including what it
+produces late
+
+The suppression half is judged against the findings the rules produced, not
+against what a report would have published: `exclude_paths`,
+`exclude_namespaces` and `exclude_namespace_channels` suppress publication, and
+a suppression covering a finding the ledger would have dropped anyway did not
+silence nothing.
+
+One channel makes "produced" less obvious than it sounds.
+`annotation.unused-directive` is not emitted inside rule execution — the owning
+rule returns nothing and merely arms a gate, and the findings are assembled
+afterwards. Judging against the executor's own set therefore reported *every*
+suppression aimed at that channel as inert, while removing one demonstrably
+adds findings to a `check` of the same tree: the command would have told an
+author to delete an annotation and turned their build red for obeying. So the
+universe is the executor's set plus that late channel — everything the run
+produced, in whichever step it produced it.
+
+The threshold half keeps the executor's own set, and correctly: a
+`@qmx-threshold` cannot move a channel that declares no boundary, and the late
+one declares none.
+
+## Decision 5 — a verdict fails the build only where the answer was observable
+
+Exit `2` means "this directive is proven dead". Where the addressed rule
+publishes no boundary with its finding, `Inert` and `Overrun` are the same
+observable, and the report says so. Failing the build on that would report an
+unasked question as proven debt — the exact error `Unmeasured` exists to
+prevent — so an inert verdict with `boundaryObservable = false` is printed with
+its note and moves nothing.
+
+A run that discovered no PHP file at all is refused with the configuration
+error code rather than reported clean. Its verdict list is empty for the same
+reason a run over an empty directory is: nothing was measured, and "nothing was
+measured" is not "nothing is wrong".
+
 ## Consequences
 
 - `qmx check` is unchanged. The audit is its own command and its own contract,

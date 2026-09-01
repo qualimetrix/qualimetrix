@@ -23,6 +23,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  * skips a step measures under a configuration the user did not ask for, and
  * nothing about the result says so.
  *
+ * `CheckCommand` still runs its own copy of the sequence, and knowingly: it
+ * interleaves git-scope resolution, finding exclusions and the output format
+ * with these steps, so lifting it here would mean pulling three subjects that
+ * only `check` has into a step every analysing command runs. Two copies is the
+ * declared cost; a `check` that silently disagreed with this one would be a
+ * defect, and the finding-equivalence gate is what would say so.
+ *
  * **The discovery comes out of the same step as the configuration it belongs
  * to.** That is the point of returning it rather than letting each caller
  * build one: `AnalysisFileDiscovery` falls back to a default that knows nothing

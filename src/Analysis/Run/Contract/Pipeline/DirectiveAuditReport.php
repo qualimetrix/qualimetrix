@@ -18,8 +18,9 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
  * produced it — a threshold retuning a metric computed over the analysed
  * subgraph can be live over one tree and dead over a subdirectory of it — so
  * the scope it was measured under travels with it. `$producedFindings` is the
- * size of the universe the verdicts were judged against, which is the produced
- * set and not the published one.
+ * size of the universe the verdicts were judged against: everything the run
+ * produced — including the one channel a run assembles after rule execution —
+ * and not what a report would have published.
  *
  * The **rule selection** the run resolved is the other half of that context and
  * is deliberately absent: `RuleSelection` is Finding's internal type, so

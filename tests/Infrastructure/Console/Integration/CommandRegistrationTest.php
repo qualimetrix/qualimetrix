@@ -44,11 +44,15 @@ final class CommandRegistrationTest extends TestCase
         string $class,
         string $name,
     ): void {
+        // The mapping, not merely the name: `'directives' => CheckCommand::class`
+        // would satisfy a test that only looked for the key, and the loader
+        // resolves whatever the value says.
         $binary = (string) file_get_contents(self::BINARY);
+        $shortName = substr((string) strrchr('\\' . $class, '\\'), 1);
         self::assertStringContainsString(
-            \sprintf("'%s' => ", $name),
+            \sprintf("'%s' => %s::class", $name, $shortName),
             $binary,
-            \sprintf('%s declares the name "%s" but bin/qmx does not map it.', $class, $name),
+            \sprintf('bin/qmx does not map "%s" to %s.', $name, $class),
         );
 
         $command = (new ContainerFactory())->create()->get($class);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Exception;
+use InvalidArgumentException;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
@@ -17,7 +19,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 
 /**
  * What every `@qmx-ignore` and `@qmx-threshold` in the analysed tree did.
@@ -72,7 +73,9 @@ final class DirectivesCommand extends Command
             'Paths to analyse (defaults to the paths configured in qmx.yaml)',
         );
 
-        AnalysisReportCommandDefinition::addOptions($this)
+        AnalysisReportCommandDefinition::addOptions($this);
+
+        AnalysisReportCommandDefinition::addSelectionOptions($this)
             ->setHelp(implode("\n", [
                 'Answers, for every inline directive in the analysed tree, whether it still',
                 'does anything. A `@qmx-ignore` is judged by what it silenced; a',
@@ -90,9 +93,10 @@ final class DirectivesCommand extends Command
                 'publication, not measurement, and a directive that moved such a finding',
                 'did something.',
                 '',
-                'Exit codes: <info>0</info> nothing inert, <info>2</info> at least one inert directive,',
-                '<info>3</info> bad input or configuration, <info>4</info> the run could not parse part of the',
-                'tree — which disqualifies it from calling anything dead.',
+                'Exit codes: <info>0</info> nothing inert, <info>2</info> at least one inert directive whose',
+                'boundary was observable, <info>3</info> bad input or configuration, <info>4</info> the run could',
+                'not parse part of the tree — which disqualifies it from calling anything',
+                'dead — and <info>1</info> if the command itself failed unexpectedly.',
                 '',
                 'Examples:',
                 '  <info>bin/qmx directives src/</info>',
@@ -118,7 +122,22 @@ final class DirectivesCommand extends Command
 
         try {
             return $this->audit($input, $output, $format);
-        } catch (Throwable $failure) {
+        } catch (InvalidArgumentException $failure) {
+            // The options this command accepts are parsed into value objects,
+            // and a malformed one is the caller's to fix — the same reading
+            // `check` gives it.
+            self::reportError(
+                $output,
+                $format,
+                \sprintf('Configuration error: %s', $failure->getMessage()),
+                self::EXIT_CONFIG_ERROR,
+            );
+
+            return self::EXIT_CONFIG_ERROR;
+        } catch (Exception $failure) {
+            // `Exception` and not `Throwable`: an `Error` is a bug in the tool,
+            // and swallowing it into an exit code would hide in CI exactly the
+            // failures CI exists to surface.
             $configuration = ConfigurationFailure::message($failure);
             if ($configuration !== null) {
                 self::reportError($output, $format, $configuration, self::EXIT_CONFIG_ERROR);
@@ -158,6 +177,21 @@ final class DirectivesCommand extends Command
             $prepared->fileDiscovery,
         );
 
+        if ($report->coverage->discoveredFiles() === 0) {
+            // A run that read nothing has no standing to call a tree clean. The
+            // paths existed — they were checked above — so this is `exclude`,
+            // an empty `paths:`, or a directory with no PHP in it, and every
+            // one of them is the caller's to fix.
+            self::reportError(
+                $output,
+                $format,
+                'Error: the configured scope discovered no PHP files, so no directive could be judged',
+                self::EXIT_CONFIG_ERROR,
+            );
+
+            return self::EXIT_CONFIG_ERROR;
+        }
+
         $exitCode = self::exitCodeFor($report);
         $selection = $prepared->findingConfiguration->selection;
         $presenter = new DirectiveAuditPresenter($report, $selection->only, $selection->disabled);
@@ -170,6 +204,14 @@ final class DirectivesCommand extends Command
     /**
      * `Overrun` and `Unmeasured` are printed and move nothing: the first is a
      * promise a human has to judge, the second is the absence of an answer.
+     *
+     * **An `Inert` verdict moves it only where the answer was observable.**
+     * Where the addressed rule published no boundary with its finding, an inert
+     * directive and one whose raised boundary the value had already passed
+     * produce the identical difference — the report says so, and a code that
+     * demands the author delete it would be reporting an unasked question as
+     * proven debt. That is what `Unmeasured` exists to prevent, and the reason
+     * does not change because the shape of the ignorance does.
      */
     private static function exitCodeFor(DirectiveAuditReport $report): int
     {
@@ -178,7 +220,7 @@ final class DirectivesCommand extends Command
         }
 
         foreach ($report->verdicts as $verdict) {
-            if ($verdict->effect === DirectiveEffect::Inert) {
+            if ($verdict->effect === DirectiveEffect::Inert && $verdict->boundaryObservable) {
                 return self::EXIT_INERT_FOUND;
             }
         }
@@ -186,7 +228,15 @@ final class DirectivesCommand extends Command
         return self::SUCCESS;
     }
 
-    /** In `json`, an error takes the envelope shape, so a parser always finds JSON on stdout. */
+    /**
+     * In `json`, an error takes the envelope shape, so a parser reading stdout
+     * finds JSON where a report would have been rather than an `<error>` line.
+     *
+     * On an interactive terminal the progress bar still writes control bytes
+     * ahead of it — that is this product's behaviour for every command with a
+     * machine-readable format, `check` included, and not something to fix in
+     * one command. Redirect, or run where the output is not a TTY.
+     */
     private static function reportError(OutputInterface $output, string $format, string $message, int $exitCode): void
     {
         if ($format === 'json') {

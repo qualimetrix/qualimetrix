@@ -785,12 +785,18 @@ bin/qmx directives src/
 bin/qmx directives src/ --format=json
 ```
 
-| Option                | Description                                                       |
-| --------------------- | ----------------------------------------------------------------- |
-| `-c`, `--config=FILE` | Path to `qmx.yaml` (default: `qmx.yaml` in the current directory) |
-| `--format=FORMAT`     | `text` (default) or `json`                                        |
+| Option                    | Description                                                       |
+| ------------------------- | ----------------------------------------------------------------- |
+| `-c`, `--config=FILE`     | Path to `qmx.yaml` (default: `qmx.yaml` in the current directory) |
+| `--format=FORMAT`         | `text` (default) or `json`                                        |
+| `--preset=PRESET`         | Apply a named preset (repeatable)                                 |
+| `--only-rule=RULE`        | Judge under a run that ran only these rules (repeatable)          |
+| `--disable-rule=RULE`     | Judge under a run with these rules off (repeatable)               |
+| `--rule-opt=RULE:OPT=VAL` | Judge under a run with this rule option (repeatable)              |
 
-Exit codes: `0` nothing inert, `2` at least one inert directive, `3` bad input or configuration, `4` the run failed to parse part of the tree.
+The four selection options exist because a verdict is relative to the run that produced it: point the command at the same rules and boundaries your CI checks with, or it will answer about a different run.
+
+Exit codes: `0` nothing inert, `2` at least one inert directive whose boundary was observable, `3` bad input or configuration — including a scope that discovered no PHP files at all, `4` the run failed to parse part of the tree, `1` the command itself failed unexpectedly.
 
 Four verdicts, of which three are answers and one is the absence of one:
 
@@ -811,7 +817,7 @@ Four verdicts, of which three are answers and one is the absence of one:
 
 The `applied-boundary-only` verdict deliberately makes no claim about direction. The rule layer has no notion of which way is stricter — `coupling.instability` is worse when higher, `cohesion.tcc` when lower — so a directive that tightens a boundary and one that raises a boundary the measured value had already passed are the same observable. In `--format=json` this verdict keeps the stable key `overrun`.
 
-Where a rule publishes no boundary alongside its finding, an `inert` verdict carries a note saying so: a boundary the value had already passed would have looked identical, and the question was not asked. `--format=json` reports that as `"boundary_observable": false`.
+Where a rule publishes no boundary alongside its finding, an `inert` verdict carries a note saying so, and **does not fail the build**: a boundary the value had already passed would have looked identical, so demanding the directive be deleted would report an unasked question as proven debt. `--format=json` reports it as `"boundary_observable": false`.
 
 On error, `--format=json` prints `{"error": "...", "exit_code": N}` to stdout instead of the human `<error>` line.
 

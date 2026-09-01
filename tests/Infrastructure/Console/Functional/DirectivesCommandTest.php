@@ -8,10 +8,17 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
 use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use ReflectionMethod;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -110,6 +117,111 @@ final class DirectivesCommandTest extends TestCase
         self::assertSame(1, $report['summary']['unmeasured']);
         self::assertSame('addresses-every-channel', $report['directives'][0]['reason']);
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+    }
+
+    /**
+     * The half of the subject nothing else here covers: a suppression that
+     * actually silenced something. Without it the whole file passes even if
+     * every `@qmx-ignore` in the world were reported inert.
+     */
+    #[Test]
+    public function itCallsASuppressionEffectiveWhenItSilencedAFinding(): void
+    {
+        $this->writeSource('Silenced.php', self::sevenParameterMethod(
+            '@qmx-ignore code-smell.long-parameter-list — silences the seven parameters below',
+        ));
+
+        $report = self::decode($this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--format' => 'json',
+        ])->getDisplay());
+
+        self::assertSame('effective', $report['directives'][0]['effect']);
+        self::assertSame(1, $report['summary']['effective']);
+    }
+
+    /**
+     * `annotation.unused-directive` is assembled after rule execution rather
+     * than inside it, so a universe taken from the executor alone cannot
+     * contain it — and every suppression aimed at it comes out inert while its
+     * removal demonstrably adds findings to a `check` of the same tree.
+     */
+    #[Test]
+    public function itJudgesASuppressionOfTheChannelProducedAfterRuleExecution(): void
+    {
+        $this->writeSource('Late.php', <<<'SOURCE'
+            <?php
+            /** @qmx-ignore-file annotation.unused-directive — hides the stale directive below */
+
+            namespace Fixture;
+
+            final class Late
+            {
+                /** @qmx-ignore complexity.cyclomatic — stale: a straight line reaches no boundary */
+                public function trivial(): int
+                {
+                    return 1;
+                }
+            }
+            SOURCE);
+
+        $report = self::decode($this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--format' => 'json',
+        ])->getDisplay());
+
+        $byTarget = [];
+        foreach ($report['directives'] as $directive) {
+            $byTarget[$directive['target']] = $directive['effect'];
+        }
+
+        self::assertSame(
+            ['annotation.unused-directive' => 'effective', 'complexity.cyclomatic' => 'inert'],
+            $byTarget,
+        );
+    }
+
+    /**
+     * Where the addressed rule publishes no boundary, an inert verdict cannot
+     * be told from a boundary the value had already passed. Printing it is
+     * honest; exiting 2 on it would demand the author act on a question the
+     * report says was never asked.
+     */
+    #[Test]
+    public function itDoesNotFailOnAnInertVerdictWhoseBoundaryWasNotObservable(): void
+    {
+        $report = new DirectiveAuditReport(
+            [new DirectiveVerdict(
+                site: new DirectiveSite(RelativePath::fromString('src/Foo.php'), 7, 'threshold', 'design.god-class'),
+                effect: DirectiveEffect::Inert,
+                boundaryObservable: false,
+            )],
+            new AnalysisCoverage([RelativePath::fromString('src/Foo.php')], [], []),
+            1,
+        );
+
+        self::assertSame(Command::SUCCESS, self::exitCodeFor($report));
+
+        $observable = new DirectiveAuditReport(
+            [new DirectiveVerdict(
+                site: new DirectiveSite(RelativePath::fromString('src/Foo.php'), 7, 'threshold', 'complexity.cyclomatic'),
+                effect: DirectiveEffect::Inert,
+            )],
+            new AnalysisCoverage([RelativePath::fromString('src/Foo.php')], [], []),
+            1,
+        );
+
+        self::assertSame(2, self::exitCodeFor($observable));
+    }
+
+    /** A run that discovered nothing has no standing to call a tree clean. */
+    #[Test]
+    public function itRefusesAScopeThatDiscoveredNoFiles(): void
+    {
+        $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('discovered no PHP files', $tester->getDisplay());
     }
 
     /**
@@ -288,6 +400,22 @@ final class DirectivesCommandTest extends TestCase
         $tester->execute($input);
 
         return $tester;
+    }
+
+    /**
+     * The exit-code rule alone, reached reflectively. Two of its branches —
+     * an unobservable boundary and an incomplete run — need a report shape a
+     * fixture cannot produce on demand, and the rule is exactly where the
+     * question "does this verdict deserve a red build" is answered.
+     */
+    private static function exitCodeFor(DirectiveAuditReport $report): int
+    {
+        $method = new ReflectionMethod(DirectivesCommand::class, 'exitCodeFor');
+
+        $exitCode = $method->invoke(null, $report);
+        self::assertIsInt($exitCode);
+
+        return $exitCode;
     }
 
     /** @param array<string, mixed> $input */

@@ -55,6 +55,15 @@ final readonly class DirectiveAuditPresenter
             $report->coverage->analyzedFilesCount(),
             $report->producedFindings,
         );
+        if ($report->coverage->generatedExcludedFilesCount() > 0) {
+            // A narrowed scope is the one thing that turns a live verdict dead,
+            // so the narrowing is stated rather than left to be inferred from a
+            // count that looks smaller than the tree.
+            $lines[] = \sprintf(
+                '  Generated    %d file(s) skipped as generated, and no directive in them was judged',
+                $report->coverage->generatedExcludedFilesCount(),
+            );
+        }
         if (!$report->coverage->isComplete()) {
             $lines[] = \sprintf(
                 '  Incomplete   %d file(s) failed to parse — no directive can be called dead by this run',
@@ -81,7 +90,7 @@ final readonly class DirectiveAuditPresenter
                 self::tag($verdict->site->form),
                 $verdict->site->target,
             );
-            foreach (self::statement($verdict) as $sentence) {
+            foreach ($this->statement($verdict) as $sentence) {
                 $lines[] = '      ' . $sentence;
             }
         }
@@ -101,6 +110,7 @@ final readonly class DirectiveAuditPresenter
         return self::encode([
             'scope' => [
                 'analyzed_files' => $report->coverage->analyzedFilesCount(),
+                'generated_excluded_files' => $report->coverage->generatedExcludedFilesCount(),
                 'failed_files' => $report->coverage->failedFilesCount(),
                 'complete' => $report->coverage->isComplete(),
                 'produced_findings' => $report->producedFindings,
@@ -148,7 +158,7 @@ final readonly class DirectiveAuditPresenter
      *
      * @return list<string>
      */
-    private static function statement(DirectiveVerdict $verdict): array
+    private function statement(DirectiveVerdict $verdict): array
     {
         return match ($verdict->effect) {
             DirectiveEffect::Effective => ['effective: removing it changes what the rules produce.'],
@@ -157,15 +167,21 @@ final readonly class DirectiveAuditPresenter
                 'Whether that is a promise unkept or a boundary deliberately tightened is not',
                 'observable here — the rule layer has no notion of stricter.',
             ],
-            DirectiveEffect::Inert => self::inertStatement($verdict),
+            DirectiveEffect::Inert => $this->inertStatement($verdict),
             DirectiveEffect::Unmeasured => self::unmeasuredStatement($verdict),
         };
     }
 
     /** @return list<string> */
-    private static function inertStatement(DirectiveVerdict $verdict): array
+    private function inertStatement(DirectiveVerdict $verdict): array
     {
-        $sentences = ['inert: removing it changes nothing.'];
+        // Under an incomplete run the claim is narrowed rather than repeated:
+        // the header says the run failed to read part of the tree, and a line
+        // that still reads "removing it changes nothing" would be the sentence
+        // the header just withdrew.
+        $sentences = $this->report->coverage->isComplete()
+            ? ['inert: removing it changes nothing.']
+            : ['inert in what this run managed to read; the rest of the tree was not measured.'];
 
         if (!$verdict->boundaryObservable) {
             $sentences[] = 'The addressed rule publishes no boundary with its finding, so a boundary the';

@@ -113,10 +113,25 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         ?FileDiscoveryInterface $discovery = null,
     ): DirectiveAuditReport {
         $prepared = $this->preparedRun($configuration, $discovery);
-        $produced = $prepared->ruleExecution->produced;
+
+        // Everything this run produced, and one channel is produced late:
+        // `annotation.unused-directive` is assembled after rule execution
+        // rather than inside it, so it is absent from `produced` by
+        // construction. Judging suppressions against `produced` alone made
+        // every suppression aimed at that channel inert — while removing one
+        // demonstrably adds findings to a `check` of the same tree. The
+        // universe is what the run produced, not what a report published, and
+        // a finding produced in a later step is still produced.
+        $produced = [
+            ...$prepared->ruleExecution->produced,
+            ...$this->ruleProducerPreparation->auditInlineDirectives($prepared->ruleExecution->produced),
+        ];
 
         $verdicts = [
             ...$this->ruleProducerPreparation->directiveVerdicts($produced),
+            // The threshold half keeps the executor's own set: a
+            // `@qmx-threshold` cannot move a channel that declares no
+            // boundary, and the late channel is one of those.
             ...$this->ruleProducerPreparation->auditThresholdDirectives(
                 $prepared->context,
                 $this->ruleExecutor,

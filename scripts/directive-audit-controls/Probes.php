@@ -26,6 +26,12 @@ final class Probes
 
     private const string PIPELINE = 'src/Analysis/Run/Pipeline/AnalysisPipeline.php';
 
+    private const string USAGE = 'src/Analysis/Policy/Inline/Directive/DirectiveUsage.php';
+
+    private const string COMMAND = 'src/Infrastructure/Console/Command/DirectivesCommand.php';
+
+    private const string FAILURE_TAXONOMY = 'src/Infrastructure/Console/ConfigurationFailure.php';
+
     /**
      * Field of a finding => the line the fingerprint reads it with.
      *
@@ -66,6 +72,7 @@ final class Probes
             ...self::reproducibility(),
             ...self::verdicts(),
             ...self::refusals(),
+            ...self::suppressions(),
             ...self::report(),
             ...self::fields(),
         ];
@@ -325,6 +332,149 @@ final class Probes
                     => '                boundaryObservable: true,',
                 ],
                 ['itMarksTheBoundaryUnobservableWhenTheRulePublishedNone'],
+            ),
+        ];
+    }
+
+    /**
+     * The other half of the subject: what a `@qmx-ignore` did, and what the
+     * command does with the answer.
+     *
+     * @return list<Probe>
+     */
+    private static function suppressions(): array
+    {
+        return [
+            Probe::breaking(
+                'suppression-never-fires',
+                'a suppression that silenced a real finding is reported as silencing nothing',
+                self::USAGE,
+                ['                    self::anyOfTheGroupFired($file, $group, $findings) => DirectiveEffect::Effective,'
+                    => '                    false => DirectiveEffect::Effective,'],
+                [
+                    'itCallsASuppressionEffectiveWhenItSilencedAFinding',
+                    'itJudgesASuppressionOfTheChannelProducedAfterRuleExecution',
+                ],
+            ),
+            Probe::breaking(
+                'universe-drops-the-late-channel',
+                'the universe is the executor\'s own set, so the channel assembled after execution is invisible',
+                self::PIPELINE,
+                ["        \$produced = [\n"
+                    . "            ...\$prepared->ruleExecution->produced,\n"
+                    . "            ...\$this->ruleProducerPreparation->auditInlineDirectives(\$prepared->ruleExecution->produced),\n"
+                    . '        ];' => '        $produced = $prepared->ruleExecution->produced;'],
+                ['itJudgesASuppressionOfTheChannelProducedAfterRuleExecution'],
+            ),
+            Probe::breaking(
+                'exit-on-an-unaskable-inert',
+                'an inert verdict whose boundary was never observable still fails the build',
+                self::COMMAND,
+                ['if ($verdict->effect === DirectiveEffect::Inert && $verdict->boundaryObservable) {'
+                    => 'if ($verdict->effect === DirectiveEffect::Inert) {'],
+                ['itDoesNotFailOnAnInertVerdictWhoseBoundaryWasNotObservable'],
+            ),
+            Probe::breaking(
+                'command-drops-the-discovery',
+                'the audited file set is not the one an analysis of the same configuration would measure',
+                self::COMMAND,
+                ['            $prepared->fileDiscovery,' => '            null,'],
+                ['itAnalysesTheSameFilesAsCheckUnderTheSameExcludes'],
+            ),
+            Probe::breaking(
+                'suppression-never-inert',
+                'a suppression that covered nothing produced is reported as doing something',
+                self::USAGE,
+                ['                    default => DirectiveEffect::Inert,' => '                    default => DirectiveEffect::Effective,'],
+                ['itCallsASuppressionInertWhenNothingItCoversWasProduced'],
+            ),
+            Probe::breaking(
+                'verdict-forgets-where-it-was-written',
+                'the verdict names a line other than the one the author wrote on',
+                self::USAGE,
+                ['                            line: $directive->line,' => '                            line: 1,'],
+                ['itCarriesTheSiteTheDirectiveWasWrittenAt'],
+            ),
+            Probe::breaking(
+                'grouping-ignores-the-tag',
+                'two directive forms written on one line are counted as one authored site',
+                self::USAGE,
+                ['            $groups[$suppression->line . "\0" . $suppression->type->value . "\0" . $suppression->rule][] = $suppression;'
+                    => '            $groups[$suppression->line . "\0" . $suppression->rule][] = $suppression;'],
+                ['itKeepsTwoDirectiveFormsWrittenOnOneLineApart'],
+            ),
+            Probe::breaking(
+                'grouping-splits-one-site',
+                'the bindings of one authored directive are counted as several directives',
+                self::USAGE,
+                ['            $groups[$suppression->line . "\0" . $suppression->type->value . "\0" . $suppression->rule][] = $suppression;'
+                    => '            $groups[spl_object_id($suppression)][] = $suppression;'],
+                ['itGroupsAuthoredSitesTheSameWayThePolicyDoes'],
+            ),
+            Probe::breaking(
+                'suppression-judges-the-unaddressable-pair',
+                'a channel:level pair addressability already refused is judged again',
+                self::USAGE,
+                ['        if ($this->levels->problemWith((string) $target) !== null) {' => '        if (false) {'],
+                ['itRefusesToJudgeAChannelLevelPairAddressabilityAlreadyRefused'],
+            ),
+            Probe::breaking(
+                'suppression-judges-every-channel',
+                'a suppression with no rule filter is judged as though it named one',
+                self::USAGE,
+                ['        if ($target->appliesToEveryChannel()) {' => '        if (false) {'],
+                ['itRefusesToJudgeADirectiveWithoutARuleFilter'],
+            ),
+            Probe::breaking(
+                'suppression-ignores-a-disabled-producer',
+                'a suppression addressing a switched-off producer is judged anyway',
+                self::USAGE,
+                ["        return \$sawDisabledProducer
+"
+                    . "            ? DirectiveUnmeasurableReason::ProducerDisabled
+"
+                    . '            : DirectiveUnmeasurableReason::AlreadyRefused;' => '        return null;'],
+                // The same return decides the third case: a selector that
+                // expands to no channel leaves the loop untouched and leaves
+                // through this line, not through the pair check above.
+                [
+                    'itRefusesToJudgeADirectiveWhoseProducerASelectorSwitchedOff',
+                    'itRefusesToJudgeADirectiveWhoseProducerOptionsSwitchedOff',
+                    'itRefusesToJudgeASelectorThatNamesNoChannelAtAll',
+                ],
+            ),
+            Probe::breaking(
+                'command-accepts-any-format',
+                'the command renders an unrecognised --format instead of refusing it',
+                self::COMMAND,
+                ['        if (!\in_array($format, self::SUPPORTED_FORMATS, true)) {' => '        if (false) {'],
+                ['itRefusesAnUnknownFormat'],
+            ),
+            Probe::breaking(
+                'command-errors-in-prose-under-json',
+                'an error under --format=json is written as an <error> line rather than an envelope',
+                self::COMMAND,
+                ["        if (\$format === 'json') {
+"
+                    . '            OutputHelper::write($output, DirectiveAuditPresenter::jsonError($message, $exitCode));'
+                    => "        if (false) {
+"
+                    . '            OutputHelper::write($output, DirectiveAuditPresenter::jsonError($message, $exitCode));'],
+                ['itPrintsTheErrorEnvelopeInJson'],
+            ),
+            Probe::breaking(
+                'unreadable-config-is-not-a-config-error',
+                'a configuration that failed to load is reported as an internal failure',
+                self::FAILURE_TAXONOMY,
+                ['            $failure instanceof ConfigLoadException,' => '            false,'],
+                ['itReportsAnUnreadableConfigAsAConfigurationError'],
+            ),
+            Probe::breaking(
+                'scope-that-read-nothing-is-clean',
+                'a run that discovered no file at all reports the tree clean',
+                self::COMMAND,
+                ['if ($report->coverage->discoveredFiles() === 0) {' => 'if (false) {'],
+                ['itRefusesAScopeThatDiscoveredNoFiles'],
             ),
         ];
     }
