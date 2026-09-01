@@ -76,11 +76,11 @@ Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue	Analysis.Evidenc
 Qualimetrix\Analysis\Finding\Contract\AcceptedLevel	Analysis.Finding	4	1
 Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	37	15
 Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	11	5
-Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface	Analysis.Finding	10	3
+Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface	Analysis.Finding	9	3
 Qualimetrix\Analysis\Finding\Contract\ChannelPresentation	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface	Analysis.Finding	3	3
 Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	41	16
-Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	5	3
+Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	7	4
 Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	6	2

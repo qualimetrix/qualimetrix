@@ -572,7 +572,7 @@ final class UnusedDirectiveRuleTest extends TestCase
     /**
      * @return list<Finding>
      */
-    private static function runWithSuppression(string $authored, ?ChannelIdentityInterface $identity = null): array
+    private static function runWithSuppression(string $authored, ?ChannelUniverseInterface $identity = null): array
     {
         $identity ??= self::productionUniverse();
         $policy = self::policy($identity);
@@ -604,7 +604,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         return self::analyzeFamily(new InlineDirectiveOptions(), $policy, $identity);
     }
 
-    private static function policy(?ChannelIdentityInterface $identity = null): InlineDirectivePolicy
+    private static function policy(?ChannelUniverseInterface $identity = null): InlineDirectivePolicy
     {
         return new InlineDirectivePolicy(new DirectiveUsage(
             $identity ?? self::productionUniverse(),

@@ -136,6 +136,30 @@ error code rather than reported clean. Its verdict list is empty for the same
 reason a run over an empty directory is: nothing was measured, and "nothing was
 measured" is not "nothing is wrong".
 
+## Decision 6 — a suppression is judged against what a suppression can reach
+
+A channel declared by a configuration validator is exempt from annotation
+suppression by the kind of thing it is: the projection never offers such a
+finding to an annotation, in any run and under any configuration. Counting one
+as something a suppression matched reported a directive as live that provably
+cannot work — measured on a fixture, `@qmx-ignore-file
+annotation.unresolved-directive` came out effective while `check` printed the
+very error it claimed to silence.
+
+This is not the publication ledger of Decision 4 returning. That ledger is a
+configuration choice about a report, and excluding it would have made a
+directive's verdict depend on someone's `exclude_namespaces`. This is a
+property of the producing type, identical in every run.
+
+**The two halves do not share one universe in one case, and it is recorded
+rather than hidden.** `annotation.unused-directive` is the staleness
+accounting's own output, so the accounting cannot be given a list containing
+it, while a caller asking for verdicts can be. A suppression aimed at that
+channel is therefore called live by `qmx directives` and stale by `check`. The
+command is the correct one of the two — it did silence the neighbour's finding
+— and closing the gap means making the channel's accounting two-pass, which
+changes a published channel and belongs to the package that owns it.
+
 ## Consequences
 
 - `qmx check` is unchanged. The audit is its own command and its own contract,

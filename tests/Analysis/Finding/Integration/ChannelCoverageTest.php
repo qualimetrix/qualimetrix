@@ -36,7 +36,7 @@ use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -409,10 +409,10 @@ final class ChannelCoverageTest extends TestCase
         ));
     }
 
-    private static function channelIdentity(): ChannelIdentityInterface
+    private static function channelIdentity(): ChannelUniverseInterface
     {
-        $identity = (new ContainerFactory())->create()->get(ChannelIdentityInterface::class);
-        \assert($identity instanceof ChannelIdentityInterface);
+        $identity = (new ContainerFactory())->create()->get(ChannelUniverseInterface::class);
+        \assert($identity instanceof ChannelUniverseInterface);
 
         return $identity;
     }

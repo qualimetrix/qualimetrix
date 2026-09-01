@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
@@ -31,6 +31,19 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * would be two chances to disagree about one directive, which is why the
  * projection reads the verdicts rather than repeating the accounting.
  *
+ * **One computation, but not always one universe, and the difference is
+ * visible.** `annotation.unused-directive` is this class's own output, so
+ * `stale()` cannot be given a finding list containing it — a caller asking for
+ * the channel is asking for that list to be produced. A caller asking for
+ * verdicts is not, and is given the wider list, the channel included. A
+ * suppression aimed at that channel is therefore answered differently by the
+ * two: a `@qmx-ignore-next-line annotation.unused-directive` above a stale
+ * directive is reported live by the verdicts and reported stale by the
+ * channel. The verdicts are the correct answer of the two — it did silence the
+ * neighbour's finding — and the channel's blind spot predates them. Recorded
+ * rather than papered over; narrowing the verdicts to match would restore the
+ * defect that made every such suppression inert by construction.
+ *
  * It is a pure function of the prepared directives and the produced findings,
  * and it holds no run state — {@see InlineDirectivePolicy} keeps that and asks
  * this once, after every rule has finished. Splitting the two is what keeps
@@ -52,8 +65,14 @@ final class DirectiveUsage
      */
     private readonly ChannelLevelAddressing $levels;
 
+    /**
+     * The universe rather than the identity view alone: this class asks it two
+     * different questions — which producer owns a code, and whether a channel
+     * is a configuration error — and taking them as two parameters would be an
+     * invariant ("the same universe, twice") that nothing enforces.
+     */
     public function __construct(
-        private readonly ChannelIdentityInterface $identity,
+        private readonly ChannelUniverseInterface $identity,
         private readonly RuleSelector $ruleSelector,
         private readonly RuleConfigurationInterface $ruleConfiguration,
     ) {
@@ -104,6 +123,35 @@ final class DirectiveUsage
     }
 
     /**
+     * The findings a suppression could have silenced at all.
+     *
+     * A channel a configuration validator declares is exempt from annotation
+     * suppression by the kind of thing it is, not by anyone's configuration:
+     * a misconfigured directive is not silenced by another directive, and the
+     * projection enforces that for every report. Counting such a finding as
+     * something a suppression matched would call a directive live that can
+     * never do anything — measured on a fixture, `@qmx-ignore-file
+     * annotation.unresolved-directive` reported "effective" while `check`
+     * printed the error it claimed to silence.
+     *
+     * This is not the publication ledger of D4 creeping back in. That ledger
+     * is a configuration choice about a report; this is a property of the
+     * producing type, true for every run and every configuration.
+     *
+     * @param list<Finding> $findings
+     *
+     * @return list<Finding>
+     */
+    private function suppressible(array $findings): array
+    {
+        return array_values(array_filter(
+            $findings,
+            fn(Finding $finding): bool
+                => $this->identity->declarationFor($finding->channel())?->isConfigurationError() !== true,
+        ));
+    }
+
+    /**
      * One verdict per authored site, paired with the directive it came from.
      *
      * The pair exists because the two projections need different halves: the
@@ -118,6 +166,7 @@ final class DirectiveUsage
     private function evaluate(array $suppressionsByFile, array $findings): array
     {
         $selection = $this->ruleConfiguration->selection();
+        $findings = $this->suppressible($findings);
         $evaluated = [];
 
         foreach ($suppressionsByFile as $file => $fileSuppressions) {

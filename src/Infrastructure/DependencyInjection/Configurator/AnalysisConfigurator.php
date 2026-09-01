@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorI
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -150,7 +151,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     {
         $container->register(self::INLINE_DIRECTIVE_USAGE_CLASS, self::INLINE_DIRECTIVE_USAGE_CLASS)
             ->setArguments([
-                new Reference(ChannelIdentityInterface::class),
+                new Reference(ChannelUniverseInterface::class),
                 new Reference(RuleSelector::class),
                 new Reference(RuleConfigurationInterface::class),
             ]);

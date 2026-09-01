@@ -444,6 +444,21 @@ final class Probes
                 ],
             ),
             Probe::breaking(
+                'suppression-silences-a-configuration-error',
+                'a directive is called live for silencing a finding no annotation can silence',
+                self::USAGE,
+                ['        $findings = $this->suppressible($findings);' => ''],
+                ['itDoesNotCallASuppressionOfAConfigurationErrorEffective'],
+            ),
+            Probe::breaking(
+                'guard-counts-discovered-not-analysed',
+                'a scope of nothing but skipped files counts as a scope that was read',
+                self::COMMAND,
+                ['if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete()) {'
+                    => 'if ($report->coverage->discoveredFiles() === 0) {'],
+                ['itRefusesAScopeOfNothingButGeneratedFiles'],
+            ),
+            Probe::breaking(
                 'command-accepts-any-format',
                 'the command renders an unrecognised --format instead of refusing it',
                 self::COMMAND,
@@ -473,8 +488,9 @@ final class Probes
                 'scope-that-read-nothing-is-clean',
                 'a run that discovered no file at all reports the tree clean',
                 self::COMMAND,
-                ['if ($report->coverage->discoveredFiles() === 0) {' => 'if (false) {'],
-                ['itRefusesAScopeThatDiscoveredNoFiles'],
+                ['if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete()) {'
+                    => 'if (false) {'],
+                ['itRefusesAScopeThatAnalysedNoFiles', 'itRefusesAScopeOfNothingButGeneratedFiles'],
             ),
         ];
     }

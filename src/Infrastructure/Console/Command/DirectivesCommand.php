@@ -177,15 +177,19 @@ final class DirectivesCommand extends Command
             $prepared->fileDiscovery,
         );
 
-        if ($report->coverage->discoveredFiles() === 0) {
-            // A run that read nothing has no standing to call a tree clean. The
-            // paths existed — they were checked above — so this is `exclude`,
-            // an empty `paths:`, or a directory with no PHP in it, and every
-            // one of them is the caller's to fix.
+        if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete()) {
+            // A run that measured nothing has no standing to call a tree clean.
+            // The paths existed — they were checked above — so this is
+            // `exclude`, an empty `paths:`, a directory with no PHP in it, or a
+            // scope of nothing but `@generated` files, and every one of them is
+            // the caller's to fix. Measured, not discovered: a discovered file
+            // the run then skipped was not read either. A run that failed to
+            // parse everything it found is a different answer, and the code
+            // below already gives it.
             self::reportError(
                 $output,
                 $format,
-                'Error: the configured scope discovered no PHP files, so no directive could be judged',
+                'Error: the configured scope analysed no PHP files, so no directive could be judged',
                 self::EXIT_CONFIG_ERROR,
             );
 
