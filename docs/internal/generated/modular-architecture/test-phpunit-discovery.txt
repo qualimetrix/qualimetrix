@@ -5469,6 +5469,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aThresholdNamingNothingIsStillRefusedAsUnknown
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itCallsASuppressionEffectiveWhenSomethingItCoversWasProduced
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itCallsASuppressionInertWhenNothingItCoversWasProduced
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itCarriesTheSiteTheDirectiveWasWrittenAt
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itGroupsAuthoredSitesTheSameWayThePolicyDoes
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itKeepsTwoDirectiveFormsWrittenOnOneLineApart
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itProjectsExactlyTheInertVerdictsIntoStaleFindings
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeAChannelLevelPairAddressabilityAlreadyRefused

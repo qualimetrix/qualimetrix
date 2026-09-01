@@ -19,8 +19,13 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
- * The post-execution half of the inline-directive subject: which authored
- * suppressions the run leaves behind unused.
+ * The post-execution half of the inline-directive subject: what each authored
+ * suppression did this run.
+ *
+ * The answer is a {@see DirectiveVerdict} per authored site, and the stale
+ * findings {@see stale()} returns are one projection of it. Two computations
+ * would be two chances to disagree about one directive, which is why the
+ * projection reads the verdicts rather than repeating the accounting.
  *
  * It is a pure function of the prepared directives and the produced findings,
  * and it holds no run state — {@see InlineDirectivePolicy} keeps that and asks
@@ -28,6 +33,11 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * the run state a store: the accounting needs the channel universe, the rule
  * selection and the finding vocabulary, and none of those has anything to do
  * with holding directives for the length of a run.
+ *
+ * `verdicts()` is public with no production caller yet: the operation that
+ * carries verdicts across the owner boundary lands with its consumer. That is a
+ * method on an internal class, invisible to the manifest — unlike a contract
+ * operation, which the checker refuses without a consumer that exists.
  */
 final class DirectiveUsage
 {
@@ -265,6 +275,11 @@ final class DirectiveUsage
         foreach ($this->addressedCodes($suppression) as $code) {
             $producer = $this->identity->producerOf($code);
             if ($producer === null) {
+                // Unreachable through a directive: `addressedCodes()` expands
+                // the selector over the same catalogue `producerOf()` reads, so
+                // a code that came out of the expansion has a producer. Kept as
+                // a type guard, not as a reason path — the answer below is the
+                // same either way, so nothing hangs on which way this exits.
                 continue;
             }
 

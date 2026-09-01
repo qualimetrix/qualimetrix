@@ -259,13 +259,10 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
      * reported as silencing nothing: a statement about configuration dressed
      * up as a statement about the author's annotation.
      *
-     * The direction is one-way by construction rather than by measurement:
-     * `SuppressionFilter::suppressesAny()` is an existential over the finding
-     * list, so widening the list can only turn "matched nothing" into "matched
-     * something". This project's own `src` shows no difference today — the
-     * channel reports nothing either way — so the fixture in the usage tests
-     * is the only witness that the universe is the right one, and a green
-     * self-analysis proves nothing about it.
+     * The direction is one-way by construction: `SuppressionFilter::suppressesAny()`
+     * is an existential over the finding list, so widening the list can only
+     * turn "matched nothing" into "matched something" — the audit can lose a
+     * stale report here, never gain one.
      *
      * @return list<Finding>
      */

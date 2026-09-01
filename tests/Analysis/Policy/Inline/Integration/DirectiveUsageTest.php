@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveVerdict;
+use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -168,6 +169,58 @@ final class DirectiveUsageTest extends TestCase
             [SuppressionType::File->value, SuppressionType::NextLine->value],
             array_map(static fn(DirectiveVerdict $verdict): string => $verdict->form, $verdicts),
         );
+    }
+
+    /**
+     * Where the directive was written, not where the finding was reported. The
+     * file and line are what a reader opens to delete the annotation, and they
+     * are also what the stale finding is keyed by, so nothing else in the suite
+     * would notice if the verdict carried the wrong site.
+     */
+    #[Test]
+    public function itCarriesTheSiteTheDirectiveWasWrittenAt(): void
+    {
+        $verdicts = self::usage()->verdicts(
+            ['src/Other.php' => [new Suppression(self::CHANNEL, 'reason', 42, SuppressionType::File)]],
+            [],
+        );
+
+        self::assertSame('src/Other.php', self::single($verdicts)->file->value());
+        self::assertSame(42, self::single($verdicts)->line);
+        self::assertSame(self::CHANNEL, self::single($verdicts)->target);
+    }
+
+    /**
+     * Three keys now describe one authored site — the two in the code and the
+     * verdict's own — and nothing forces them to agree. The fixture carries
+     * both shapes that could split them: a class docblock materialised on six
+     * declarations, and two forms written on one line.
+     */
+    #[Test]
+    public function itGroupsAuthoredSitesTheSameWayThePolicyDoes(): void
+    {
+        $directives = [self::FILE => [
+            ...self::classDocblockBindings(self::CHANNEL),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine),
+        ]];
+
+        $policy = new InlineDirectivePolicy(self::usage());
+        $policy->prepare($directives, [], []);
+        $authored = array_map(
+            static fn(Suppression $suppression): string => $suppression->line . '/' . $suppression->type->value,
+            $policy->authoredSuppressions()[self::FILE],
+        );
+        $judged = array_map(
+            static fn(DirectiveVerdict $verdict): string => $verdict->line . '/' . $verdict->form,
+            self::usage()->verdicts($directives, []),
+        );
+
+        sort($authored);
+        sort($judged);
+
+        self::assertSame($authored, $judged);
+        self::assertCount(3, $judged);
     }
 
     /**
