@@ -515,8 +515,12 @@ itself contain the private name, so echoing it would leak it into the build log.
 
 ```bash
 # Project validation
+composer check          # everything below, in the order a failure is cheapest to read
+composer check:code     # what a code change invalidates: cs-check, phpstan, PHPUnit, cross-tool
+composer check:docs     # what a website change invalidates: a strict mkdocs build
+composer check:artifacts # what a manifest, config or corpus change invalidates: every generated artifact
+composer check:self     # what the product says about this repo: gate self-test + qmx ratchet
 composer architecture:check # exact manifest policy + generated-artifact freshness
-composer check          # cs-check + strict docs build + tests + phpstan + manifest check + qmx selfcheck
 composer docs:check     # mkdocs --strict build of website/ (broken links, nav gaps)
 composer test           # PHPUnit
 composer phpstan        # PHPStan level 8
@@ -581,6 +585,18 @@ For multi-package changes, fail fast before paying for the full test suite:
 3. Run `composer check` once before review and once after confirmed review
    fixes. Repeat it earlier only when a change invalidates prior aggregate
    evidence.
+
+`composer check` is four groups plus the leak scan, and each group is named by
+what invalidates it, so a change that touched one thing pays for one group:
+`check:code` (style, static analysis, tests), `check:docs` (strict mkdocs),
+`check:artifacts` (manifest and every generated artifact against a fresh
+measurement) and `check:self` (the gate's self-test and the qmx ratchet). Sizes
+measured on this tree: the tests dominate at ~150s, the suppression snapshot
+costs ~20s, and everything else together is under 15s. `architecture:check`
+deliberately runs in both `check:artifacts` and — as its first half —
+`selfcheck`: the ratchet may not judge a tree whose generated artifacts are
+stale. Only the aggregate is evidence for review; a green group is evidence
+about that group.
 
 Subagents own focused package gates; the root orchestrator owns full aggregate
 gates. For every long-running or redirected command, persist its output under
