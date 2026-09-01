@@ -1353,6 +1353,8 @@ Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage	Analysis.Policy.Inli
 Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage	Analysis.Policy.Inline	Qualimetrix\Core\Path\RelativePath	Core.Path	contract	P8
 Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract	P8
+Qualimetrix\Analysis\Policy\Inline\Directive\ExecutionFingerprint	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract	P6-A
+Qualimetrix\Analysis\Policy\Inline\Directive\ExecutionFingerprint	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract	P6-A
@@ -1454,6 +1456,7 @@ Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Anal
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract	P6-A
+Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict	Analysis.Policy.Inline	contract	P6-B
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract	P8
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Core\Path\PathFactory	Core.Path	contract	P8
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Core\Path\RelativePath	Core.Path	contract	P8

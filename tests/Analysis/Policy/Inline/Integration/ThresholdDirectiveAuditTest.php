@@ -11,17 +11,20 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUnmeasurableReason;
-use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Directive\ThresholdDirectiveAudit;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -184,6 +187,102 @@ final class ThresholdDirectiveAuditTest extends TestCase
     }
 
     /**
+     * Specificity has four steps, so one subject can carry directives from a
+     * class docblock, a property docblock and a property hook's docblock at
+     * once. With three of them nothing moves when any one is removed **and
+     * nothing moves when any pair is** — only the whole coalition does, which
+     * is why the pass removes the component and not a pair. Answering `Inert`
+     * to each of the three is advice to delete all three, and that changes the
+     * run.
+     */
+    #[Test]
+    public function itRefusesToJudgeADirectiveMaskedOnlyByTwoNeighboursTogether(): void
+    {
+        $subject = self::subject('Widget', 'render');
+        $executor = self::executor([['subject' => $subject, 'value' => 25]]);
+
+        $verdicts = self::audit($executor, [
+            self::override(5, $subject, warning: 30, error: 40, scope: ControlScope::Class_),
+            self::override(9, $subject, warning: 30, error: 40, scope: ControlScope::Callable),
+            self::override(13, $subject, warning: 30, error: 40, scope: ControlScope::Hook),
+        ]);
+
+        self::assertSame(
+            [DirectiveEffect::Unmeasured, DirectiveEffect::Unmeasured, DirectiveEffect::Unmeasured],
+            array_map(static fn(DirectiveVerdict $v): DirectiveEffect => $v->effect, $verdicts),
+        );
+        self::assertSame(
+            [DirectiveUnmeasurableReason::Masked, DirectiveUnmeasurableReason::Masked, DirectiveUnmeasurableReason::Masked],
+            array_map(static fn(DirectiveVerdict $v): ?DirectiveUnmeasurableReason => $v->reason, $verdicts),
+        );
+    }
+
+    /**
+     * The control for the case above, and the reason it is not vacuous: with
+     * only two of the three, a pair pass would have been enough, so the triple
+     * has to be the thing that separates the two implementations.
+     */
+    #[Test]
+    public function itStillJudgesEachDirectiveOfAThreeWayCoalitionThatChangesNothingTogether(): void
+    {
+        $subject = self::subject('Widget', 'render');
+        $executor = self::executor([['subject' => $subject, 'value' => 5]]);
+
+        $verdicts = self::audit($executor, [
+            self::override(5, $subject, warning: 30, error: 40, scope: ControlScope::Class_),
+            self::override(9, $subject, warning: 30, error: 40, scope: ControlScope::Callable),
+            self::override(13, $subject, warning: 30, error: 40, scope: ControlScope::Hook),
+        ]);
+
+        self::assertSame(
+            [DirectiveEffect::Inert, DirectiveEffect::Inert, DirectiveEffect::Inert],
+            array_map(static fn(DirectiveVerdict $v): DirectiveEffect => $v->effect, $verdicts),
+        );
+    }
+
+    /**
+     * A directive that moves a finding from warning to error moves the
+     * outcome, not the boundary: severity belongs to what a finding is.
+     */
+    #[Test]
+    public function itCallsADirectiveEffectiveWhenItOnlyMovedTheSeverity(): void
+    {
+        $subject = self::subject('Widget', 'render');
+        $executor = self::executor([['subject' => $subject, 'value' => 45]]);
+
+        // Default: 45 >= error 40, so Error. With the directive: warning 20
+        // stays, error rises past the value, so the same finding is a Warning.
+        $verdicts = self::audit($executor, [self::override(10, $subject, warning: 20, error: 60)]);
+
+        self::assertSame(DirectiveEffect::Effective, $verdicts[0]->effect);
+    }
+
+    /**
+     * The other way to switch a producer off. `disabled_rules` stops the rule
+     * from running; `rules: { X: false }` lets it run and return nothing, and
+     * the author made the same decision either way — reading only the first is
+     * what once reported every annotation of a switched-off rule as leftover.
+     */
+    #[Test]
+    public function itRefusesToJudgeADirectiveWhoseProducerIsOffThroughItsOptions(): void
+    {
+        $subject = self::subject('Widget', 'render');
+        $executor = self::executor([['subject' => $subject, 'value' => 25]]);
+        $registry = new RuleOptionsRegistry();
+        $registry->replace(new FindingConfiguration(
+            new RuleOptionsDocument([self::RULE => ['enabled' => false]]),
+            new FindingCliOverrides([]),
+            new RuleSelection(),
+        ));
+
+        $verdicts = self::auditWith($executor, [self::override(10, $subject, warning: 30, error: 40)], $registry);
+
+        self::assertSame(DirectiveEffect::Unmeasured, $verdicts[0]->effect);
+        self::assertSame(DirectiveUnmeasurableReason::ProducerDisabled, $verdicts[0]->reason);
+        self::assertSame(1, $executor->executions, 'only the run itself: an unaskable directive costs no sweep');
+    }
+
+    /**
      * The same overlap over a subject the rule never reports on under any
      * directive. Nothing is being masked there, and answering `Masked` would
      * replace a true "does nothing" with a refusal.
@@ -300,6 +399,43 @@ final class ThresholdDirectiveAuditTest extends TestCase
     }
 
     /**
+     * The control has to walk the road it vouches for.
+     *
+     * A counterfactual executes against a **rebuilt** context; a control
+     * executing against the run's own object would vouch for a different path
+     * and miss a rule that tells the two apart. This executor does tell them
+     * apart, so the control must refuse the sweep — and it can only notice
+     * that by being rebuilt itself.
+     */
+    #[Test]
+    public function itControlsTheRunThroughTheSamePathTheCounterfactualsTake(): void
+    {
+        $subject = self::subject('Widget', 'render');
+        $context = self::context([self::override(10, $subject, warning: 30, error: 40)]);
+        $executor = new ScriptedThresholdRuleExecution(
+            self::RULE,
+            [['subject' => $subject, 'value' => 25]],
+            20,
+            40,
+            RelativePath::fromString(self::FILE),
+            answersOnlyFor: $context,
+        );
+
+        $registry = new RuleOptionsRegistry();
+        $registry->configureSelection(new RuleSelection());
+        $audit = new ThresholdDirectiveAudit(
+            self::productionUniverse(),
+            new RuleSelector(new InMemoryRuleChannelRegistry()),
+            $registry,
+        );
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('before the sweep');
+
+        $audit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $executor->execute($context)));
+    }
+
+    /**
      * @param list<ThresholdOverride> $overrides
      *
      * @return list<DirectiveVerdict>
@@ -312,10 +448,20 @@ final class ThresholdDirectiveAuditTest extends TestCase
         $registry = new RuleOptionsRegistry();
         $registry->configureSelection($selection ?? new RuleSelection());
 
-        $context = new AnalysisContext(
-            metrics: new InMemoryMetricRepository(),
-            thresholdOverrides: [self::FILE => $overrides],
-        );
+        return self::auditWith($executor, $overrides, $registry);
+    }
+
+    /**
+     * @param list<ThresholdOverride> $overrides
+     *
+     * @return list<DirectiveVerdict>
+     */
+    private static function auditWith(
+        ScriptedThresholdRuleExecution $executor,
+        array $overrides,
+        RuleOptionsRegistry $registry,
+    ): array {
+        $context = self::context($overrides);
 
         $audit = new ThresholdDirectiveAudit(
             self::productionUniverse(),
@@ -324,6 +470,15 @@ final class ThresholdDirectiveAuditTest extends TestCase
         );
 
         return $audit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $executor->execute($context)));
+    }
+
+    /** @param list<ThresholdOverride> $overrides */
+    private static function context(array $overrides): AnalysisContext
+    {
+        return new AnalysisContext(
+            metrics: new InMemoryMetricRepository(),
+            thresholdOverrides: [self::FILE => $overrides],
+        );
     }
 
     /** @param list<array{subject: MetricSubject, value: int|float}> $measurements */

@@ -642,6 +642,7 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface'
@@ -661,7 +662,6 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveSite'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUnmeasurableReason'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage'
-        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveVerdict'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\ExecutionFingerprint'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy'

@@ -8,7 +8,6 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
-use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveVerdict;
 
 /**
  * The run state of this capability's own subject: the inline directives an

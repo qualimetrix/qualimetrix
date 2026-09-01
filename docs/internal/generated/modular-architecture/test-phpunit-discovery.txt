@@ -5492,18 +5492,23 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::warningOnlyRuleAcceptsShorthandThatExpandsToEqualWarningAndError
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::warningOnlyRuleRejectsExplicitErrorValue
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::wildcardPatternParsesValidValueSyntax
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itCallsADirectiveEffectiveWhenItOnlyMovedTheSeverity
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itCallsADirectiveEffectiveWhenRemovingItChangesWhatTheRulesProduced
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itCallsADirectiveInertWhenRemovingItChangesNothing
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itCallsADirectiveOverrunWhenOnlyTheBoundaryMoved
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itControlsTheRunThroughTheSamePathTheCounterfactualsTake
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itDoesNotCallAPairMaskedWhereTheRuleNeverReports
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itJudgesByWhatTheRulesProducedRatherThanWhatTheyPublished
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itMarksTheBoundaryUnobservableWhenTheRulePublishedNone
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesEveryVerdictWhenTheFirstControlDoesNotReproduceTheRun
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesEveryVerdictWhenTheLastControlDoesNotReproduceTheRun
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveMaskedOnlyByTwoNeighboursTogether
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveNamingNoRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveWhoseProducerIsDisabled
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveWhoseProducerIsOffThroughItsOptions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeEitherDirectiveOfAMaskingPair
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRemovesEveryBindingOfOneAuthoredSite
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itStillJudgesEachDirectiveOfAThreeWayCoalitionThatChangesNothingTogether
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itStillJudgesTheOutcomeOfARuleThatPublishesNoBoundary
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::compilerPassNoOpsWhenExtractorIsAbsent
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::compilerPassWritesValidatorMapOntoExtractorArgument
@@ -5541,6 +5546,22 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itNamesTheBadHalfWhenTheThresholdRuleDoesNotExist
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itOnlyRecommendsRuleOptWhenBothHalvesOfTheThresholdPairAreValid
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itRefusesTheRetiredPairSpellingBeforeAskingAboutTheLevel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itNamesEveryFieldAFindingCarries
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"acceptedLevel"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"code"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"dependencyTarget"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"dependencyType"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"location"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"message"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"metricValue"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"occurrenceKey"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"recommendation"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"relatedLocations"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"ruleName"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"severity"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"subject"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"symbolPath"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"threshold"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsAValueWhoseCaseDiffersFromTheEnum
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsAnAlreadyResolvedSeverity
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsTheDocumentedSpelling

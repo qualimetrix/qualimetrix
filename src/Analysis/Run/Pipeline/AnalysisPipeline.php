@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
@@ -126,15 +127,27 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $prepared = $this->preparedRun($configuration, $discovery);
         $produced = $prepared->ruleExecution->produced;
 
+        $verdicts = [
+            ...$this->ruleProducerPreparation->directiveVerdicts($produced),
+            ...$this->ruleProducerPreparation->auditThresholdDirectives(
+                $prepared->context,
+                $this->ruleExecutor,
+                $prepared->ruleExecution,
+            ),
+        ];
+
+        // One list in the order an author reads a tree, not two halves
+        // concatenated: which of the two tags a directive is belongs on the
+        // verdict, not in the position it happens to occupy.
+        usort(
+            $verdicts,
+            static fn(DirectiveVerdict $left, DirectiveVerdict $right): int
+                => [$left->site->file->value(), $left->site->line, $left->site->form, $left->site->target]
+                <=> [$right->site->file->value(), $right->site->line, $right->site->form, $right->site->target],
+        );
+
         return new DirectiveAuditReport(
-            verdicts: [
-                ...$this->ruleProducerPreparation->directiveVerdicts($produced),
-                ...$this->ruleProducerPreparation->auditThresholdDirectives(
-                    $prepared->context,
-                    $this->ruleExecutor,
-                    $prepared->ruleExecution,
-                ),
-            ],
+            verdicts: $verdicts,
             coverage: $prepared->coverage,
             producedFindings: \count($produced),
         );

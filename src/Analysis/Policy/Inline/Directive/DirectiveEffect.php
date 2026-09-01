@@ -18,9 +18,17 @@ enum DirectiveEffect: string
     case Effective = 'effective';
 
     /**
-     * It applied and changed nothing that was promised: the measured value had
-     * already passed the boundary the directive raised, so the finding fired
-     * anyway. Produced by the threshold half only.
+     * It applied and changed nothing but the boundary the finding names: the
+     * measured value had already passed the boundary the directive raised, so
+     * the finding fired anyway. Produced by the threshold half only.
+     *
+     * The name describes the common case rather than every one. A directive
+     * that *tightens* a boundary and still leaves the finding standing
+     * produces the same shape of difference, and the rule layer has no notion
+     * of which direction is stricter — `coupling.instability` is worse when
+     * higher, `cohesion.tcc` when lower — so the two cannot be told apart
+     * here. What the verdict states exactly is: applied, and nothing moved
+     * except the boundary it printed.
      */
     case Overrun = 'overrun';
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Location;
 
 /**
  * What one rule execution produced, in the form two executions can be compared
@@ -16,10 +17,21 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
  * than only "something moved" — the difference between a directive that does
  * nothing and one whose promise the measured value had already overrun.
  *
- * The message belongs to the whole-finding key on purpose. Several rules spell
- * the boundary into their prose instead of, or as well as, the `threshold`
- * field, so a key built from the field alone would miss exactly the difference
- * the threshold audit exists to see.
+ * The message belongs to the boundary half on purpose. Several rules spell the
+ * boundary into their prose instead of, or as well as, the `threshold` field,
+ * so a key built from the field alone would miss exactly the difference the
+ * threshold audit exists to see.
+ *
+ * **Every other field of a finding is part of its identity, and the split is
+ * checked rather than trusted.** A field this class does not read does not
+ * exist for the audit: a difference in it reads as "nothing moved", which is
+ * the verdict that tells an author to delete an annotation. Since a field added
+ * to {@see Finding} with a default compiles fine everywhere, what catches the
+ * omission is
+ * {@see \Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest},
+ * which reads the constructor reflectively and fails on any parameter neither
+ * list names — the same treatment {@see Finding::reportedAsBreach()} already
+ * gets.
  */
 final readonly class ExecutionFingerprint
 {
@@ -32,6 +44,38 @@ final readonly class ExecutionFingerprint
         private array $identity,
     ) {}
 
+    /**
+     * The fields that say what a finding *is*. Everything not named here or in
+     * {@see BOUNDARY_FIELDS} is invisible to this comparison, which is why the
+     * two lists are checked against `Finding`'s constructor by test.
+     *
+     * @var list<string>
+     */
+    public const array IDENTITY_FIELDS = [
+        'location',
+        'subject',
+        'symbolPath',
+        'ruleName',
+        'code',
+        'severity',
+        'metricValue',
+        'relatedLocations',
+        'recommendation',
+        'dependencyTarget',
+        'dependencyType',
+        'acceptedLevel',
+        'occurrenceKey',
+    ];
+
+    /**
+     * The fields that say which boundary a finding was judged against — the
+     * two a threshold directive is allowed to move without that counting as a
+     * different outcome.
+     *
+     * @var list<string>
+     */
+    public const array BOUNDARY_FIELDS = ['threshold', 'message'];
+
     /** @param list<Finding> $findings */
     public static function of(array $findings): self
     {
@@ -39,13 +83,8 @@ final readonly class ExecutionFingerprint
         $identity = [];
 
         foreach ($findings as $finding) {
-            $identityKey = implode("\0", [
-                $finding->code,
-                $finding->subject->toCanonical(),
-                $finding->severity->value,
-                self::scalar($finding->metricValue),
-            ]);
-            $key = implode("\0", [$identityKey, self::scalar($finding->threshold), $finding->message]);
+            $identityKey = self::identityOf($finding);
+            $key = $identityKey . "\0" . self::boundaryOf($finding);
 
             $tally[$key] = ($tally[$key] ?? 0) + 1;
             $identity[$key] = $identityKey;
@@ -54,6 +93,57 @@ final readonly class ExecutionFingerprint
         ksort($tally);
 
         return new self($tally, $identity);
+    }
+
+    /**
+     * What a finding *is*: every field except the two that say which boundary
+     * it was judged against.
+     *
+     * Spelled out rather than read reflectively, because dynamic property
+     * access is not something static analysis can check — which is the whole
+     * point of the fields being named. {@see IDENTITY_FIELDS} declares what
+     * this reads, and two tests hold the declaration to it: one reflective over
+     * `Finding`'s constructor, one that moves each field in turn and demands
+     * the fingerprint notice.
+     */
+    private static function identityOf(Finding $finding): string
+    {
+        return implode("\0", [
+            self::location($finding->location),
+            $finding->subject->toCanonical(),
+            $finding->symbolPath->toString(),
+            $finding->ruleName,
+            $finding->code,
+            $finding->severity->value,
+            self::number($finding->metricValue),
+            implode('|', array_map(self::location(...), $finding->relatedLocations)),
+            $finding->recommendation ?? '',
+            $finding->dependencyTarget?->toCanonical() ?? '',
+            $finding->dependencyType->name ?? '',
+            $finding->acceptedLevel?->describe() ?? '',
+            $finding->occurrenceKey->value ?? '',
+        ]);
+    }
+
+    /** The boundary a finding names, in both places a rule may name it. */
+    private static function boundaryOf(Finding $finding): string
+    {
+        return implode("\0", [self::number($finding->threshold), $finding->message]);
+    }
+
+    private static function location(Location $location): string
+    {
+        return \sprintf(
+            '%s:%s:%s',
+            $location->file?->value() ?? '',
+            $location->line ?? '',
+            $location->precise ? '1' : '0',
+        );
+    }
+
+    private static function number(int|float|null $value): string
+    {
+        return $value === null ? '' : var_export($value, true);
     }
 
     /**
@@ -152,8 +242,4 @@ final readonly class ExecutionFingerprint
         return $counted;
     }
 
-    private static function scalar(int|float|null $value): string
-    {
-        return $value === null ? '' : var_export($value, true);
-    }
 }

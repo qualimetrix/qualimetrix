@@ -6773,6 +6773,11 @@
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressedFinding",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ExecutionFingerprint",
+          "closes_in": null
         }
       ]
     },
@@ -7045,6 +7050,11 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ExecutionFingerprint",
           "closes_in": null
         }
       ]
@@ -11480,6 +11490,20 @@
       "closure_package": "P6-D",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveVerdict": {
+      "path": "src/Analysis/Policy/Inline/Contract/Directive/DirectiveVerdict.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "contract",
+      "closure_package": "P6-B",
+      "consumers": [
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
+          "closes_in": null
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\InlineDirectivePolicyInterface": {
       "path": "src/Analysis/Policy/Inline/Contract/Directive/InlineDirectivePolicyInterface.php",
       "kind": "interface",
@@ -11703,14 +11727,6 @@
     },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveUsage": {
       "path": "src/Analysis/Policy/Inline/Directive/DirectiveUsage.php",
-      "kind": "class",
-      "owner": "Analysis.Policy.Inline",
-      "visibility": "internal",
-      "closure_package": "P6-B",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveVerdict": {
-      "path": "src/Analysis/Policy/Inline/Directive/DirectiveVerdict.php",
       "kind": "class",
       "owner": "Analysis.Policy.Inline",
       "visibility": "internal",

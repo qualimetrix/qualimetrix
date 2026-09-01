@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
 use Qualimetrix\Core\Path\RelativePath;
@@ -169,7 +170,11 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         ExecutionFingerprint $baseline,
         string $pass,
     ): void {
-        $repeat = ExecutionFingerprint::of($input->executor->execute($input->baseline)->produced);
+        // Through `without()` with nothing removed, not through the original
+        // context: the counterfactual passes execute against a rebuilt context,
+        // and a control that skips the rebuilding controls a different path
+        // from the one it is vouching for.
+        $repeat = ExecutionFingerprint::of($this->without($input, []));
 
         if ($repeat->reproduces($baseline)) {
             return;
@@ -235,7 +240,8 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
                 effect: $entry['effect'],
                 reason: $entry['reason'],
                 maskedBy: $entry['maskedBy'],
-                boundaryObservable: self::boundaryObservable($group, $produced),
+                boundaryObservable: $entry['effect'] === DirectiveEffect::Overrun
+                    || self::boundaryObservable($group, $produced),
             );
         }
 
@@ -256,25 +262,32 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * directive materialises on the class **and on every method in it**
      * (`DeclarationControlBindings`), a method directive materialises on the
      * method, and `AnalysisContext::getThresholdOverride()` picks one by
-     * specificity: when both would give the same answer, removing either alone
-     * changes nothing, and both would be called inert although removing both
-     * changes the run.
+     * specificity: when they would give the same answer, removing any one
+     * changes nothing, and each would be called inert although removing them
+     * all changes the run.
      *
      * **Overlap is the question, not the answer, and the answer costs a pass.**
      * Sharing a subject only makes masking possible. Confirming it by asking
      * whether the rule reported on that subject in the baseline gets the main
-     * case backwards: two directives silencing one finding leave nothing
-     * reported there *because* they work. So each overlapping neighbour is
-     * removed together with this directive and the rules are executed once
-     * more — a moved outcome is the masking, an unmoved one says the pair does
-     * nothing and this directive is inert for real.
+     * case backwards: directives silencing one finding leave nothing reported
+     * there *because* they work. So the whole coalition is removed at once and
+     * the rules are executed one more time — a moved outcome is the masking, an
+     * unmoved one says the coalition does nothing and this directive is inert
+     * for real.
      *
-     * The test is conservative on purpose. In a pair where the neighbour does
-     * something on its own, the joint removal moves the outcome partly on the
-     * neighbour's account, and this directive is still called masked —
-     * refusing to answer costs an author nothing, while advising them to
-     * delete an annotation whose removal alongside its neighbour changes the
-     * run costs them the finding.
+     * **The unit is the coalition, not a pair.** Specificity has four steps, so
+     * one subject can carry directives from a class docblock, a property
+     * docblock and a property hook's docblock at once; with three of them, no
+     * single removal and no pair moves the outcome while the triple does, and
+     * answering `Inert` to each is advice to delete all three. Three reviewers
+     * found that independently on the pairwise version of this method.
+     *
+     * The test is conservative on purpose. In a coalition where a neighbour
+     * does something on its own, the joint removal moves the outcome partly on
+     * the neighbour's account, and this directive is still called masked —
+     * refusing to answer costs an author nothing, while advising them to delete
+     * an annotation whose removal alongside its neighbours changes the run
+     * costs them the finding.
      *
      * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $measurable
      */
@@ -284,31 +297,69 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         array $measurable,
         int $index,
     ): ?DirectiveSite {
-        $group = $measurable[$index];
-        $subjects = self::subjects($group);
+        $coalition = self::coalition($measurable, $index);
 
-        foreach ($measurable as $position => $neighbour) {
-            if ($position === $index || $neighbour['rule'] !== $group['rule']) {
-                continue;
-            }
-
-            if (array_intersect($subjects, self::subjects($neighbour)) === []) {
-                continue;
-            }
-
-            $paired = $baseline->compareTo(ExecutionFingerprint::of($this->without($input, [$group, $neighbour])));
-            if ($paired !== DirectiveEffect::Inert) {
-                return self::site($neighbour);
-            }
+        if ($coalition === []) {
+            return null;
         }
 
-        return null;
+        $removed = $baseline->compareTo(ExecutionFingerprint::of(
+            $this->without($input, [$measurable[$index], ...array_map(
+                static fn(int $position): array => $measurable[$position],
+                $coalition,
+            )]),
+        ));
+
+        return $removed === DirectiveEffect::Inert ? null : self::site($measurable[$coalition[0]]);
+    }
+
+    /**
+     * The other directives whose removal this one's removal cannot be told
+     * apart from: same rule, joined by a shared subject, transitively.
+     *
+     * Transitively, because masking chains. A class directive and a hook
+     * directive need not share a subject with each other directly while both
+     * share one with the property directive between them, and removing two of
+     * the three still leaves the third in force.
+     *
+     * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $measurable
+     *
+     * @return list<int> positions in `$measurable`, without the directive asked about
+     */
+    private static function coalition(array $measurable, int $index): array
+    {
+        $rule = $measurable[$index]['rule'];
+        $subjects = self::subjects($measurable[$index]);
+        $joined = [$index => true];
+
+        do {
+            $grown = false;
+
+            foreach ($measurable as $position => $candidate) {
+                if (isset($joined[$position]) || $candidate['rule'] !== $rule) {
+                    continue;
+                }
+
+                $shared = array_intersect($subjects, self::subjects($candidate));
+                if ($shared === []) {
+                    continue;
+                }
+
+                $joined[$position] = true;
+                $subjects = array_values(array_unique([...$subjects, ...self::subjects($candidate)]));
+                $grown = true;
+            }
+        } while ($grown);
+
+        unset($joined[$index]);
+
+        return array_keys($joined);
     }
 
     /**
      * Whether an unfulfilled promise would have been visible here at all.
      *
-     * False exactly when the addressed rule reported on a subject this
+     * False when the addressed rule reported on a subject this
      * directive covers and published no boundary with the finding: the
      * fingerprint of such a rule cannot move when only the boundary moves, so
      * an `Inert` verdict there is indistinguishable from a boundary the
@@ -316,6 +367,14 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * publish no boundary and four of those support overrides; the flag is
      * read off the findings rather than off a list of those four names, which
      * would drift from the tree without a word.
+     *
+     * A verdict of {@see DirectiveEffect::Overrun} overrides this to true at
+     * the call site, and not as a courtesy: the boundary half of the
+     * fingerprint carries the message as well as the field, so a rule that
+     * spells its boundary into prose can produce an observed boundary
+     * difference while publishing no field. Answering "the question could not
+     * be asked" beside an answer to it would be a report contradicting
+     * itself.
      *
      * @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group
      * @param list<Finding> $produced

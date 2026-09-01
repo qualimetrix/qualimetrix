@@ -183,13 +183,22 @@ materialises on the class and on every declaration inside it; removing the
 first of those and leaving the rest would report an annotation still in force
 as inert.
 
-**The fingerprint carries the boundary and the message.** When the two runs
-differ *only* in what the same findings say their boundary was — same channel,
-same subject, same severity, same measured value — the directive applied and
-the finding fired regardless. That is `Overrun`: a promise made and not kept,
-which is not the same as an annotation that does nothing. The message is part
-of the key because several rules spell the boundary into their prose instead of
-into the `threshold` field.
+**The fingerprint is the whole finding, split in two.** `threshold` and
+`message` are the boundary a finding names; every other field is what the
+finding *is*. When two runs differ only in the boundary half, the directive
+applied and the finding fired regardless — `Overrun`, a promise made and not
+kept, which is not the same as an annotation that does nothing. The message
+belongs to that half because several rules spell the boundary into their prose
+instead of into the field. What no field of the key names is invisible to the
+audit, so the split is checked against `Finding`'s constructor by reflection and
+each field is moved on its own in a test: a field added later cannot become a
+difference the audit silently ignores.
+
+`Overrun` names the common case rather than every one. A directive that
+*tightens* a boundary produces the same shape of difference, and the rule layer
+has no notion of which direction is stricter — instability is worse when higher,
+cohesion when lower — so what the verdict states exactly is "applied, and
+nothing moved except the boundary it printed".
 
 **Where no boundary is published, the question cannot be asked.** Nine of the
 twenty-seven rule files put no boundary in their findings and four of those
@@ -199,19 +208,25 @@ leaves the fingerprint unchanged, so the verdict is `Inert` and
 findings rather than off a list of rule names, which would drift from the tree
 in silence.
 
-**Coalitions are refusals, not verdicts.** Two directives of one rule covering
-the same subject mask each other: removing either alone changes nothing,
-although removing both changes the run. Overlap only makes that possible, so
-the pair is removed together in one more pass and the answer decides. Where the
-rule reports on that subject under no directive at all, the pair moves nothing
-and both directives are inert for real.
+**Coalitions are refusals, not verdicts.** Directives of one rule covering the
+same subject mask each other: removing any one alone changes nothing, although
+removing them all changes the run. Overlap only makes that possible, so the
+whole connected component — same rule, joined transitively by a shared subject —
+is removed in one more pass and the answer decides. Where the rule reports on
+that subject under no directive at all, the component moves nothing and every
+directive in it is inert for real. The unit is the component and not a pair
+because specificity has four steps: a class docblock, a property docblock and a
+property hook's docblock can all retune one subject, and then no pair moves the
+outcome while the triple does.
 
 **The method's own assumption is controlled, not assumed.** A sweep begins and
 ends with the full override set in place, and both control passes must
 reproduce the run exactly. A drift between them is shared state in the rules,
 which invalidates every verdict rather than any one directive, so the audit
-throws instead of answering. Measured on this project's own `src`: thirty
-authored directives, thirty-two executions, both controls reproducing.
+throws instead of answering, and it runs both controls through the same
+context-rebuilding path the counterfactuals use rather than against the original
+object. Measured on this project's own `src`: thirty-one authored directives,
+thirty-three executions, both controls reproducing.
 
 What the audit does **not** measure is a directive's effect on the parsing of
 itself. `InlineDirectiveValidator` reads the policy's own copy of the override

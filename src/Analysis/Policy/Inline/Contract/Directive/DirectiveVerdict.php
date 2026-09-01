@@ -2,16 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Inline\Directive;
+namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
+
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveEffect;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveSite;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUnmeasurableReason;
 
 /**
  * One authored directive and what it did.
  *
- * Internal, although Run already holds lists of these: the crossing happens
- * inside an `array`, which is a shape PHP cannot express and the manifest
- * checker therefore cannot see — it counts a consumer only where a type is
- * named in the code itself. Promotion to `Contract/` lands with the first
- * consumer that names the type rather than a docblock, which is the command.
+ * A contract because Run names it: the pipeline sorts the two halves of an
+ * audit into one list and says so in the comparator's signature. Everything the
+ * verdict is *made of* stays internal until something outside names those too —
+ * a list held in an `array` crosses the boundary in a shape neither PHP nor the
+ * manifest checker can see, and it is the naming, not the holding, that makes a
+ * public surface.
  */
 final readonly class DirectiveVerdict
 {

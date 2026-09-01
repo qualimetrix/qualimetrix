@@ -36,6 +36,11 @@ final class ScriptedThresholdRuleExecution implements RuleExecutionInterface
      *                                    the published half, leaving it only in the produced one
      * @param ?int $driftsAtExecution the execution number that invents an extra finding, standing
      *                                in for a rule carrying state across runs
+     * @param ?AnalysisContext $answersOnlyFor a context this rule treats as the one true world: given
+     *                                         any other object, even an equal one, it reports one more
+     *                                         finding. Stands in for a rule that distinguishes the run's
+     *                                         own context from a rebuilt one, which is the drift a
+     *                                         control executing against the original object cannot see
      */
     public function __construct(
         private readonly string $rule,
@@ -46,6 +51,7 @@ final class ScriptedThresholdRuleExecution implements RuleExecutionInterface
         private readonly bool $publishesBoundary = true,
         private readonly bool $excludedFromPublished = false,
         private readonly ?int $driftsAtExecution = null,
+        private readonly ?AnalysisContext $answersOnlyFor = null,
     ) {}
 
     public function execute(AnalysisContext $context): RuleExecutionResult
@@ -75,6 +81,10 @@ final class ScriptedThresholdRuleExecution implements RuleExecutionInterface
                 $severity === Severity::Error ? $error : $warning,
                 $severity,
             );
+        }
+
+        if ($this->answersOnlyFor !== null && $context !== $this->answersOnlyFor) {
+            $produced[] = $this->finding($this->measurements[0]['subject'], 2, 2, Severity::Warning);
         }
 
         if ($this->driftsAtExecution === $this->executions) {

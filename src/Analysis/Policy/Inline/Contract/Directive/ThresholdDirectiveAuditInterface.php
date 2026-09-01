@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
 
 use LogicException;
-use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveVerdict;
 
 /**
  * What each authored `@qmx-threshold` did in one run.

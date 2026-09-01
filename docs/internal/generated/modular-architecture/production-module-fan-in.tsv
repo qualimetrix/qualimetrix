@@ -94,9 +94,9 @@ Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult	Analysis.F
 Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	59	17
+Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	60	17
 Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	14	6
-Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	37	14
+Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	38	14
 Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	8	5
 Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	12	6
@@ -171,6 +171,7 @@ Qualimetrix\Analysis\Policy\Baseline\EntrySelector	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	4	1
 Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface	Analysis.Policy.Inline	2	2
+Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict	Analysis.Policy.Inline	1	1
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface	Analysis.Policy.Inline	2	2
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput	Analysis.Policy.Inline	1	1
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface	Analysis.Policy.Inline	2	2
