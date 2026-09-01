@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
@@ -57,6 +58,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
     private const string INLINE_DIRECTIVE_POLICY_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy';
     private const string INLINE_DIRECTIVE_USAGE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveUsage';
+    private const string INLINE_THRESHOLD_AUDIT_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ThresholdDirectiveAudit';
     private const string INLINE_DIRECTIVE_RULE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule';
     private const string INLINE_DIRECTIVE_VALIDATOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator';
     private const string FILE_DISCOVERY_FACTORY = 'qmx.run.file_discovery_factory';
@@ -152,6 +154,17 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuleConfigurationInterface::class),
             ]);
 
+        // The threshold half is a service of its own rather than a method on
+        // the policy: it needs no run state at all — the run hands it the
+        // context it already prepared — while the policy is exactly that state.
+        $container->register(self::INLINE_THRESHOLD_AUDIT_CLASS, self::INLINE_THRESHOLD_AUDIT_CLASS)
+            ->setArguments([
+                new Reference(ChannelIdentityInterface::class),
+                new Reference(RuleSelector::class),
+                new Reference(RuleConfigurationInterface::class),
+            ]);
+        $container->setAlias(ThresholdDirectiveAuditInterface::class, self::INLINE_THRESHOLD_AUDIT_CLASS);
+
         // The usage accounting is injected rather than built by the policy:
         // the policy is the run's directive store, and the collaborators the
         // accounting needs are not the store's.
@@ -196,6 +209,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(LayerPolicyPreparationInterface::class),
                 new Reference(CircularDependencyPreparationInterface::class),
                 new Reference(InlineDirectivePolicyInterface::class),
+                new Reference(ThresholdDirectiveAuditInterface::class),
                 new Reference(self::FILE_SET_INSPECTION_COMPOSITE),
                 new Reference(RuleSelector::class),
                 new Reference(RuleConfigurationInterface::class),

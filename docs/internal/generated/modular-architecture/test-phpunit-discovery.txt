@@ -5492,6 +5492,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::warningOnlyRuleAcceptsShorthandThatExpandsToEqualWarningAndError
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::warningOnlyRuleRejectsExplicitErrorValue
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::wildcardPatternParsesValidValueSyntax
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itCallsADirectiveEffectiveWhenRemovingItChangesWhatTheRulesProduced
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itCallsADirectiveInertWhenRemovingItChangesNothing
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itCallsADirectiveOverrunWhenOnlyTheBoundaryMoved
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itDoesNotCallAPairMaskedWhereTheRuleNeverReports
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itJudgesByWhatTheRulesProducedRatherThanWhatTheyPublished
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itMarksTheBoundaryUnobservableWhenTheRulePublishedNone
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesEveryVerdictWhenTheFirstControlDoesNotReproduceTheRun
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesEveryVerdictWhenTheLastControlDoesNotReproduceTheRun
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveNamingNoRule
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveWhoseProducerIsDisabled
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeEitherDirectiveOfAMaskingPair
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRemovesEveryBindingOfOneAuthoredSite
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itStillJudgesTheOutcomeOfARuleThatPublishesNoBoundary
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::compilerPassNoOpsWhenExtractorIsAbsent
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::compilerPassWritesValidatorMapOntoExtractorArgument
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::factoryProducesValidatorForEveryThresholdAwareRuleInRegistry
@@ -5721,6 +5734,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itRejectsExplicitErrorEvenWhenItEqualsWarning
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itRejectsExplicitErrorValue
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itRejectsNegativeWarning
+ - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditPipelineTest::itReportsWhatTheRunMeasuredAlongsideTheVerdicts
+ - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditPipelineTest::itSeparatesTheLiveDirectiveFromTheDeadOneOnOneAnchor
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditUniverseTest::itJudgesASuppressionByTheFindingsRulesProducedRatherThanThosePublished
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditUniverseTest::itStillReportsASuppressionThatCoveredNothingProduced
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::circularDependencyRuleProducesFindingsForActualCycles

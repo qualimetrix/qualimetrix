@@ -10,7 +10,8 @@ Inline-owned extraction contract once; it owns no annotation policy state.
 ```text
 Inline/
 ├── Contract/
-│   ├── Directive/               # the four annotation.* channel names, run state
+│   ├── Directive/               # the four annotation.* channel names, run state,
+│   │                            # and the threshold audit's contract and input
 │   ├── Suppression/             # suppression value and type
 │   ├── Threshold/               # annotation diagnostic value
 │   ├── AnnotationSuppressionInterface.php
@@ -31,6 +32,7 @@ Inline/
 │   ├── DirectiveUnmeasurableReason.php # why a directive has no verdict
 │   ├── DirectiveUsage.php          # what each authored suppression did
 │   ├── DirectiveVerdict.php        # one authored site and its effect
+│   ├── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── InlineDirectiveOptions.php
 │   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting
 │   ├── InlineDirectiveValidator.php # owns the three annotation.* directive errors
@@ -59,10 +61,16 @@ Inline/
   static entry point answers the per-directive question the indexed path
   cannot: whether *this* directive silenced anything.
 - `InlineDirectivePolicyInterface` promises the four `annotation.*` channel
-  names and the two moments Run needs: `prepare()` before rule execution,
-  `auditDirectiveUsage()` after it. Only `Analysis\Run\RuleProducerPreparation`
-  calls them, under the same producer-enablement rule as every other
-  capability preparation.
+  names and the moments Run needs: `prepare()` before rule execution,
+  `auditDirectiveUsage()` and `directiveVerdicts()` after it. Only
+  `Analysis\Run\RuleProducerPreparation` calls them, under the same
+  producer-enablement rule as every other capability preparation. The last of
+  the three is not gated on the owning rule having run: a channel is a rule's
+  output, a verdict is what a caller asked for.
+- `ThresholdDirectiveAuditInterface` promises the other half of the same
+  question to the same consumer, and `ThresholdDirectiveAuditInput` is the
+  prepared run it needs to answer: the context the rules already ran against,
+  the executor that ran them, and what they produced.
 
 ## The directive report
 
@@ -160,3 +168,53 @@ When changing an inline annotation or its wire value:
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+## The threshold half
+
+A `@qmx-threshold` publishes nothing about itself. No rule reports the boundary
+it decided with, and the rule layer has no single notion of a boundary to ask
+about, so the only observable a threshold directive has is **the difference it
+makes**. `ThresholdDirectiveAudit` removes one authored directive at a time and
+executes the rules again over the context the run already prepared, comparing
+what the two executions produced.
+
+**One removal is one annotation, not one binding.** A class docblock
+materialises on the class and on every declaration inside it; removing the
+first of those and leaving the rest would report an annotation still in force
+as inert.
+
+**The fingerprint carries the boundary and the message.** When the two runs
+differ *only* in what the same findings say their boundary was — same channel,
+same subject, same severity, same measured value — the directive applied and
+the finding fired regardless. That is `Overrun`: a promise made and not kept,
+which is not the same as an annotation that does nothing. The message is part
+of the key because several rules spell the boundary into their prose instead of
+into the `threshold` field.
+
+**Where no boundary is published, the question cannot be asked.** Nine of the
+twenty-seven rule files put no boundary in their findings and four of those
+accept overrides. On those, a boundary the measured value had already passed
+leaves the fingerprint unchanged, so the verdict is `Inert` and
+`DirectiveVerdict::$boundaryObservable` is false — read off the run's own
+findings rather than off a list of rule names, which would drift from the tree
+in silence.
+
+**Coalitions are refusals, not verdicts.** Two directives of one rule covering
+the same subject mask each other: removing either alone changes nothing,
+although removing both changes the run. Overlap only makes that possible, so
+the pair is removed together in one more pass and the answer decides. Where the
+rule reports on that subject under no directive at all, the pair moves nothing
+and both directives are inert for real.
+
+**The method's own assumption is controlled, not assumed.** A sweep begins and
+ends with the full override set in place, and both control passes must
+reproduce the run exactly. A drift between them is shared state in the rules,
+which invalidates every verdict rather than any one directive, so the audit
+throws instead of answering. Measured on this project's own `src`: thirty
+authored directives, thirty-two executions, both controls reproducing.
+
+What the audit does **not** measure is a directive's effect on the parsing of
+itself. `InlineDirectiveValidator` reads the policy's own copy of the override
+map, which no counterfactual touches, so its diagnostics are identical on every
+pass — and the `annotation.*` channels have already answered for malformed,
+unresolvable and unsupported annotations.

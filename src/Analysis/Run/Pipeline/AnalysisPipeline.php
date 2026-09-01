@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -75,6 +74,84 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     public function analyze(RunConfiguration $configuration, ?FileDiscoveryInterface $discovery = null): AnalysisResult
     {
         $startTime = microtime(true);
+        $prepared = $this->preparedRun($configuration, $discovery);
+        $findings = $this->reportedFindings($prepared->ruleExecution);
+        $duration = microtime(true) - $startTime;
+
+        $this->logger->info('Analysis complete', [
+            'total_duration' => \sprintf('%.2fs', $duration),
+            'violations' => \count($findings),
+            'files_analyzed' => $prepared->collection->filesAnalyzed,
+            'files_skipped' => $prepared->coverage->skippedFilesCount(),
+        ]);
+
+        return new AnalysisResult(
+            findings: $findings,
+            duration: $duration,
+            metrics: $prepared->context->metrics,
+            coverage: $prepared->coverage,
+            suppressions: $prepared->collection->suppressions,
+            namespaceTree: $prepared->namespaceTree,
+            thresholdOverrides: $prepared->collection->thresholdOverrides,
+            ruleExecution: $prepared->ruleExecution,
+        );
+    }
+
+    /**
+     * The second question this pipeline answers about one prepared run: what
+     * each inline directive the run carried actually did.
+     *
+     * It is a second entry point rather than a second operation on
+     * {@see AnalysisPipelineInterface}, because the four consumers of that
+     * contract analyse and do not audit — the same split
+     * {@see \Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface}
+     * already makes for the graph. The public contract, and its only reader,
+     * arrive with the command.
+     *
+     * **What a verdict here is relative to.** The analysed scope, and nothing
+     * wider: a directive retuning a metric computed over the analysed subgraph
+     * — coupling is the standing case — is live over one tree and dead over a
+     * subdirectory of it, and neither answer is wrong. There is no "was the
+     * whole project analysed" flag to publish, because a resolved
+     * {@see RunConfiguration} no longer knows what it was resolved from, so
+     * the report states the coverage and the selection it measured under and
+     * lets the caller judge. An **incomplete** run — files that failed to
+     * parse — is a different thing, and `$coverage` answers it exactly as it
+     * does for `analyze()`.
+     */
+    public function auditDirectives(
+        RunConfiguration $configuration,
+        ?FileDiscoveryInterface $discovery = null,
+    ): DirectiveAuditReport {
+        $prepared = $this->preparedRun($configuration, $discovery);
+        $produced = $prepared->ruleExecution->produced;
+
+        return new DirectiveAuditReport(
+            verdicts: [
+                ...$this->ruleProducerPreparation->directiveVerdicts($produced),
+                ...$this->ruleProducerPreparation->auditThresholdDirectives(
+                    $prepared->context,
+                    $this->ruleExecutor,
+                    $prepared->ruleExecution,
+                ),
+            ],
+            coverage: $prepared->coverage,
+            producedFindings: \count($produced),
+        );
+    }
+
+    /**
+     * Everything both entry points need, run once: the discovered files
+     * measured, the capabilities that produce rules prepared, and the rules
+     * executed once over the context that came out of it.
+     *
+     * The step is shared rather than repeated because the audit's whole method
+     * is to re-execute rules **on the run's own context**: a second collection
+     * would measure a second world, and a difference between two worlds says
+     * nothing about a directive.
+     */
+    private function preparedRun(RunConfiguration $configuration, ?FileDiscoveryInterface $discovery): PreparedRun
+    {
         $profiler = $this->profiler;
 
         $profiler->start('analysis', 'pipeline');
@@ -173,18 +250,21 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $this->logger->debug('Starting analysis phase');
 
         $profiler->start('rules', 'pipeline');
-        $ruleExecution = $this->executeRulesForRun($repository, $graph, $namespaceTree, $collectionResult);
-        $findings = $this->reportedFindings($ruleExecution);
+        $context = new AnalysisContext(
+            metrics: $repository,
+            dependencyGraph: $graph,
+            namespaceTree: $namespaceTree,
+            thresholdOverrides: $collectionResult->thresholdOverrides,
+        );
+        $ruleExecution = $this->ruleExecutor->execute($context);
         $profiler->stop('rules');
 
         $analysisTime = microtime(true) - $phaseStartTime;
         $this->logger->info('Analysis completed', [
-            'violations' => \count($findings),
+            'violations' => \count($ruleExecution->published),
             'duration' => \sprintf('%.2fs', $analysisTime),
         ]);
 
-        // Build result
-        $duration = microtime(true) - $startTime;
         $eligiblePaths = array_map(
             static fn(SplFileInfo $file): RelativePath => PathFactory::bestEffortRelative(
                 $file->getPathname(),
@@ -192,26 +272,15 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             ),
             $files,
         );
-        $coverage = self::buildCoverage($eligiblePaths, $generatedExcludedFiles, $collectionResult);
-
-        $this->logger->info('Analysis complete', [
-            'total_duration' => \sprintf('%.2fs', $duration),
-            'violations' => \count($findings),
-            'files_analyzed' => $collectionResult->filesAnalyzed,
-            'files_skipped' => $coverage->skippedFilesCount(),
-        ]);
 
         $profiler->stop('analysis');
 
-        return new AnalysisResult(
-            findings: $findings,
-            duration: $duration,
-            metrics: $repository,
-            coverage: $coverage,
-            suppressions: $collectionResult->suppressions,
+        return new PreparedRun(
             namespaceTree: $namespaceTree,
-            thresholdOverrides: $collectionResult->thresholdOverrides,
+            collection: $collectionResult,
+            context: $context,
             ruleExecution: $ruleExecution,
+            coverage: self::buildCoverage($eligiblePaths, $generatedExcludedFiles, $collectionResult),
         );
     }
 
@@ -221,22 +290,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         MetricRepositoryInterface $repository,
     ): DependencyGraphInterface {
         return $this->graphBuilder->build($dependencies, self::collectLogicalClassPaths($repository));
-    }
-
-    private function executeRulesForRun(
-        MetricRepositoryInterface $repository,
-        DependencyGraphInterface $graph,
-        NamespaceTree $namespaceTree,
-        CollectionPhaseOutput $collectionResult,
-    ): RuleExecutionResult {
-        $context = new AnalysisContext(
-            metrics: $repository,
-            dependencyGraph: $graph,
-            namespaceTree: $namespaceTree,
-            thresholdOverrides: $collectionResult->thresholdOverrides,
-        );
-
-        return $this->ruleExecutor->execute($context);
     }
 
     /**

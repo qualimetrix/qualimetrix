@@ -26,7 +26,8 @@ Run/
 ├── Collection/                 # orchestration and per-file processing
 ├── Discovery/                  # discovery coordination and implementations
 ├── FileSetInspection/          # rule-selected composite
-├── Pipeline/                   # ordered analysis pipeline
+├── Pipeline/                   # ordered analysis pipeline, plus the prepared
+│                               # run both of its entry points share
 └── RuleProducerPreparation.php # capability-specific producer gating and reset
 ```
 
@@ -75,7 +76,30 @@ and stores no computed-metric state or result payload.
   contracts, not a generic lifecycle or graph-participant registry.
 - `RuleProducerPreparation` coordinates their rule selection, reset and
   profiling with file-set inspection while `AnalysisPipeline` retains the
-  complete phase order. It stores no capability result.
+  complete phase order. It stores no capability result. It is also where Run
+  asks the inline-directive capability its two post-execution questions —
+  which suppressions silenced nothing, and what each `@qmx-threshold` did —
+  through `InlineDirectivePolicyInterface` and
+  `ThresholdDirectiveAuditInterface`.
+
+## The two entry points
+
+`analyze()` answers what the code is like. `auditDirectives()` answers what the
+run's own annotations did, and both begin with the same private step: discover,
+measure, prepare every rule-producing capability, and execute the rules once.
+The step is shared rather than repeated because the directive audit's method is
+to re-execute rules **on this run's context** — a second collection would
+measure a second world, and a difference between two worlds says nothing about
+an annotation.
+
+`auditDirectives()` is a second entry point on the class rather than a second
+operation on `AnalysisPipelineInterface`: the consumers of that contract
+analyse and do not audit, the same split `DependencyGraphAnalyzerInterface`
+already makes for the graph. Its `DirectiveAuditReport` stays internal until
+the command that reads it lands, and it carries the coverage the verdicts were
+measured under, because a verdict is a statement about one run — a threshold
+retuning a metric computed over the analysed subgraph is live over one tree and
+dead over a subdirectory of it, and neither answer is wrong.
 
 ## Test ownership
 

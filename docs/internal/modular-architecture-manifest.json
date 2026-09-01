@@ -4624,11 +4624,6 @@
           "closes_in": null
         },
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
-          "closes_in": null
-        },
-        {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Health\\SummaryEnricher",
           "closes_in": null
@@ -4641,6 +4636,11 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\ReportBuilder",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\PreparedRun",
           "closes_in": null
         }
       ]
@@ -5900,6 +5900,11 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ThresholdDirectiveAudit",
           "closes_in": null
         }
       ]
@@ -7168,6 +7173,11 @@
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ThresholdDirectiveAudit",
+          "closes_in": null
         }
       ]
     },
@@ -7235,6 +7245,16 @@
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\ThresholdDirectiveAuditInput",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation",
+          "closes_in": null
         }
       ]
     },
@@ -7263,6 +7283,21 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\ThresholdDirectiveAuditInput",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\PreparedRun",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation",
           "closes_in": null
         }
       ]
@@ -7669,6 +7704,26 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnassignedClassRule",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\ThresholdDirectiveAuditInput",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ThresholdDirectiveAudit",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\PreparedRun",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation",
           "closes_in": null
         }
       ]
@@ -8960,6 +9015,11 @@
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ThresholdDirectiveAudit",
+          "closes_in": null
         }
       ]
     },
@@ -9972,6 +10032,11 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplainCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ThresholdDirectiveAudit",
           "closes_in": null
         }
       ]
@@ -11434,6 +11499,39 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\ThresholdDirectiveAuditInput": {
+      "path": "src/Analysis/Policy/Inline/Contract/Directive/ThresholdDirectiveAuditInput.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "contract",
+      "closure_package": "P6-B",
+      "consumers": [
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\ThresholdDirectiveAuditInterface": {
+      "path": "src/Analysis/Policy/Inline/Contract/Directive/ThresholdDirectiveAuditInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "contract",
+      "closure_package": "P6-B",
+      "consumers": [
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",
+          "closes_in": null
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\RuleValidatorMapFactory": {
       "path": "src/Analysis/Policy/Inline/Contract/RuleValidatorMapFactory.php",
       "kind": "class",
@@ -11587,6 +11685,14 @@
       "closure_package": "P6-B",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveSite": {
+      "path": "src/Analysis/Policy/Inline/Directive/DirectiveSite.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "closure_package": "P6-B",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveUnmeasurableReason": {
       "path": "src/Analysis/Policy/Inline/Directive/DirectiveUnmeasurableReason.php",
       "kind": "enum",
@@ -11611,6 +11717,14 @@
       "closure_package": "P6-B",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ExecutionFingerprint": {
+      "path": "src/Analysis/Policy/Inline/Directive/ExecutionFingerprint.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "closure_package": "P6-B",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions": {
       "path": "src/Analysis/Policy/Inline/Directive/InlineDirectiveOptions.php",
       "kind": "class",
@@ -11629,6 +11743,14 @@
     },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator": {
       "path": "src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "closure_package": "P6-B",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ThresholdDirectiveAudit": {
+      "path": "src/Analysis/Policy/Inline/Directive/ThresholdDirectiveAudit.php",
       "kind": "class",
       "owner": "Analysis.Policy.Inline",
       "visibility": "internal",
@@ -12325,6 +12447,22 @@
     },
     "Qualimetrix\\Analysis\\Run\\Pipeline\\DependencyGraphAnalyzer": {
       "path": "src/Analysis/Run/Pipeline/DependencyGraphAnalyzer.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "closure_package": "P3",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Pipeline\\DirectiveAuditReport": {
+      "path": "src/Analysis/Run/Pipeline/DirectiveAuditReport.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "closure_package": "P3",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Pipeline\\PreparedRun": {
+      "path": "src/Analysis/Run/Pipeline/PreparedRun.php",
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "internal",
@@ -13233,11 +13371,6 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveVerdict",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator",
           "closes_in": null
         },
@@ -13344,6 +13477,16 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FormatterContext",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ThresholdDirectiveAudit",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveSite",
           "closes_in": null
         }
       ]

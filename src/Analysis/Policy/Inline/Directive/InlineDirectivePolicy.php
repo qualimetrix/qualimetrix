@@ -148,6 +148,11 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         $this->usageReportingSeverity = $severity;
     }
 
+    public function directiveVerdicts(array $producedFindings): array
+    {
+        return $this->usage->verdicts($this->suppressions, $producedFindings);
+    }
+
     public function auditDirectiveUsage(array $findings): array
     {
         $severity = $this->usageReportingSeverity;

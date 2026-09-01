@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveVerdict;
 
 /**
  * The run state of this capability's own subject: the inline directives an
@@ -65,6 +66,32 @@ interface InlineDirectivePolicyInterface
 
     /** Clears prepared run state, including the reporting gate. */
     public function reset(): void;
+
+    /**
+     * What each authored suppression did this run, as values rather than as
+     * findings.
+     *
+     * The same accounting {@see auditDirectiveUsage()} projects into the
+     * `annotation.unused-directive` channel, handed over whole. Two
+     * computations of "did this annotation do anything" would be two chances
+     * to disagree about one directive.
+     *
+     * Unlike the channel, this answer is not gated on the owning rule having
+     * run: a channel is a rule's output, while a verdict is what a caller
+     * asked for directly. The coarser gate still applies and is not this
+     * method's to lift — a run that switched the directive producer off
+     * prepared no directives at all, so there is nothing here to report on.
+     *
+     * The threshold half of the same question costs one rule execution per
+     * annotation and is answered by
+     * {@see ThresholdDirectiveAuditInterface} instead.
+     *
+     * @param list<Finding> $producedFindings everything the rules produced this run, before the
+     *                                        per-rule exclusion ledger and the channel selection
+     *
+     * @return list<DirectiveVerdict>
+     */
+    public function directiveVerdicts(array $producedFindings): array;
 
     /**
      * The findings only the produced set can justify: suppressions that

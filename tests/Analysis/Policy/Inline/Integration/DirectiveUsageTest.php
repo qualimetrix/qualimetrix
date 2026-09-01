@@ -167,7 +167,7 @@ final class DirectiveUsageTest extends TestCase
         self::assertCount(2, $verdicts);
         self::assertSame(
             [SuppressionType::File->value, SuppressionType::NextLine->value],
-            array_map(static fn(DirectiveVerdict $verdict): string => $verdict->form, $verdicts),
+            array_map(static fn(DirectiveVerdict $verdict): string => $verdict->site->form, $verdicts),
         );
     }
 
@@ -185,9 +185,9 @@ final class DirectiveUsageTest extends TestCase
             [],
         );
 
-        self::assertSame('src/Other.php', self::single($verdicts)->file->value());
-        self::assertSame(42, self::single($verdicts)->line);
-        self::assertSame(self::CHANNEL, self::single($verdicts)->target);
+        self::assertSame('src/Other.php', self::single($verdicts)->site->file->value());
+        self::assertSame(42, self::single($verdicts)->site->line);
+        self::assertSame(self::CHANNEL, self::single($verdicts)->site->target);
     }
 
     /**
@@ -212,7 +212,7 @@ final class DirectiveUsageTest extends TestCase
             $policy->authoredSuppressions()[self::FILE],
         );
         $judged = array_map(
-            static fn(DirectiveVerdict $verdict): string => $verdict->line . '/' . $verdict->form,
+            static fn(DirectiveVerdict $verdict): string => $verdict->site->line . '/' . $verdict->site->form,
             self::usage()->verdicts($directives, []),
         );
 
@@ -245,9 +245,9 @@ final class DirectiveUsageTest extends TestCase
         $stale = $usage->stale($directives, [self::finding()], Severity::Warning);
 
         self::assertCount(1, $inert);
-        self::assertSame('complexity.cyclomatic', $inert[0]->target);
+        self::assertSame('complexity.cyclomatic', $inert[0]->site->target);
         self::assertCount(1, $stale);
-        self::assertSame($inert[0]->line, $stale[0]->location->line);
+        self::assertSame($inert[0]->site->line, $stale[0]->location->line);
     }
 
     /** @param list<DirectiveVerdict> $verdicts */

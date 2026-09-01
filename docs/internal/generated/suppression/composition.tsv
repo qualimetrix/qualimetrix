@@ -32,7 +32,7 @@ rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Fi
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Finding.php	Qualimetrix\Analysis\Finding\Contract\Finding	warning	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/FindingChannel.php	Qualimetrix\Analysis\Finding\Contract\FindingChannel	warning	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Rule/RuleOptionKey.php	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	warning	1
-rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Severity.php	Qualimetrix\Analysis\Finding\Contract\Severity	error	1
+rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Severity.php	Qualimetrix\Analysis\Finding\Contract\Severity	warning	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Symbol/MetricSubject.php	Qualimetrix\Core\Symbol\MetricSubject	warning	1
@@ -141,7 +141,8 @@ rule-path-exclusion	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Coupling/Rfc
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	error	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	error	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Size/MethodStatementCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodStatementCountVisitor	error	1
-rule-path-exclusion	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/AnalysisPipeline.php	Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	warning	1
+rule-path-exclusion	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/AnalysisPipeline.php	Qualimetrix\Analysis\Run\Pipeline	warning	1
+rule-path-exclusion	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/AnalysisPipeline.php	Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	error	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/AnalysisRuntimeConfigurator.php	Qualimetrix\Infrastructure\Console	error	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/BaselineCaptureReporter.php	Qualimetrix\Infrastructure\Console\Command	error	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	error	1

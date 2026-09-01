@@ -92,7 +92,7 @@ final class DirectiveUsage
 
         foreach ($this->evaluate($suppressionsByFile, $findings) as $pair) {
             if ($pair['verdict']->effect === DirectiveEffect::Inert) {
-                $stale[] = self::staleFinding($pair['verdict']->file, $pair['directive'], $severity);
+                $stale[] = self::staleFinding($pair['verdict']->site->file, $pair['directive'], $severity);
             }
         }
 
@@ -129,10 +129,12 @@ final class DirectiveUsage
 
                 $evaluated[] = [
                     'verdict' => new DirectiveVerdict(
-                        file: RelativePath::fromString($file),
-                        line: $directive->line,
-                        form: $directive->type->value,
-                        target: (string) $directive->target(),
+                        site: new DirectiveSite(
+                            file: RelativePath::fromString($file),
+                            line: $directive->line,
+                            form: $directive->type->value,
+                            target: (string) $directive->target(),
+                        ),
                         effect: $effect,
                         reason: $reason,
                     ),
