@@ -11,7 +11,7 @@ Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterf
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration	Analysis.Evidence.Cohesion	3	2
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface	Analysis.Evidence.Cohesion	3	2
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface	Analysis.Evidence.Cohesion	5	3
-Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException	Analysis.Evidence.ComputedMetrics	1	1
+Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException	Analysis.Evidence.ComputedMetrics	2	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface	Analysis.Evidence.ComputedMetrics	2	2
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface	Analysis.Evidence.ComputedMetrics	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition	Analysis.Evidence.ComputedMetrics	1	1
@@ -83,7 +83,7 @@ Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	41	16
 Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	5	2
+Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	6	2
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	5	1
 Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope	Analysis.Finding	1	1
@@ -171,7 +171,10 @@ Qualimetrix\Analysis\Policy\Baseline\EntrySelector	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	4	1
 Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface	Analysis.Policy.Inline	2	2
-Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict	Analysis.Policy.Inline	1	1
+Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect	Analysis.Policy.Inline	2	1
+Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite	Analysis.Policy.Inline	1	1
+Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason	Analysis.Policy.Inline	1	1
+Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict	Analysis.Policy.Inline	2	2
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface	Analysis.Policy.Inline	2	2
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput	Analysis.Policy.Inline	1	1
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface	Analysis.Policy.Inline	2	2
@@ -188,10 +191,10 @@ Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy	Analysis.Run	1	1
-Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	4	2
-Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	5	2
-Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface	Analysis.Run	6	3
-Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface	Analysis.Run	5	3
+Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	6	2
+Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	6	2
+Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface	Analysis.Run	7	3
+Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface	Analysis.Run	6	3
 Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage	Analysis.Run	1	1
@@ -201,6 +204,8 @@ Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface	Analysis.Ru
 Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult	Analysis.Run	5	1
 Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface	Analysis.Run	2	2
+Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface	Analysis.Run	3	2
+Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport	Analysis.Run	2	1
 Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface	Analysis.Run	4	2
 Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	8	3
@@ -236,7 +241,7 @@ Qualimetrix\Infrastructure\Cache\CacheInterface	Infrastructure.Cache	2	2
 Qualimetrix\Infrastructure\Cache\CacheKeyGenerator	Infrastructure.Cache	4	3
 Qualimetrix\Infrastructure\Cache\CacheWriteException	Infrastructure.Cache	1	1
 Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration	Infrastructure.Cache	1	1
-Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface	Infrastructure.Cache	6	2
+Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface	Infrastructure.Cache	7	2
 Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface	Infrastructure.Cache	4	3
 Qualimetrix\Infrastructure\Cache\FileCache	Infrastructure.Cache	1	1
 Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface	Infrastructure.Git	4	2
@@ -247,7 +252,7 @@ Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface	Infrastructur
 Qualimetrix\Infrastructure\Logging\LoggerFactory	Infrastructure.Logging	1	1
 Qualimetrix\Infrastructure\Logging\LoggerHolder	Infrastructure.Logging	3	2
 Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration	Infrastructure.Parallel	1	1
-Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface	Infrastructure.Parallel	6	2
+Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface	Infrastructure.Parallel	7	2
 Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface	Infrastructure.Parallel	4	2
 Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat	Infrastructure.Profiler	1	1
 Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface	Infrastructure.Profiler	3	2

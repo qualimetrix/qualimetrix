@@ -96,9 +96,21 @@ final readonly class RuleProducerPreparation
     }
 
     /**
-     * Hands this run's inline directives to the capability that owns them,
-     * under the same enablement rule as every other producer here: a disabled
-     * rule gets a cleared state rather than a prepared one.
+     * Hands this run's inline directives to the capability that owns them.
+     *
+     * Unlike every other producer prepared here, this one is prepared whether
+     * or not its rule is enabled, because what is prepared is not the rule's
+     * state — it is the run's own record of what the author wrote, and a
+     * caller may ask about it without asking the rule for findings.
+     *
+     * Switching the rule off still silences everything the rule emits, and by
+     * two gates that are not this one: the channel is opened by the rule as it
+     * runs ({@see InlineDirectivePolicyInterface::auditDirectiveUsage()}), and
+     * the validator that reports malformed directives executes inside its
+     * producer's slot, which a disabled producer does not get. Clearing the
+     * store as well silenced a third thing nobody asked to silence — the
+     * suppression half of a directive audit, which then read as "this tree has
+     * no annotations".
      *
      * @param array<string, list<Suppression>> $suppressions
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides
@@ -109,17 +121,6 @@ final readonly class RuleProducerPreparation
         array $thresholdOverrides,
         array $thresholdDiagnostics,
     ): void {
-        $selection = $this->ruleConfiguration->selection();
-        if (!$this->ruleSelector->isProducerEnabled(
-            InlineDirectivePolicyInterface::PRODUCER_RULE_NAME,
-            $selection->only,
-            $selection->disabled,
-        )) {
-            $this->inlineDirectivePolicy->reset();
-
-            return;
-        }
-
         $this->inlineDirectivePolicy->prepare($suppressions, $thresholdOverrides, $thresholdDiagnostics);
     }
 
@@ -171,8 +172,6 @@ final readonly class RuleProducerPreparation
     }
 
     /**
-     * @param list<SplFileInfo> $eligibleFiles
-     */    /**
      * @param list<SplFileInfo> $eligibleFiles
      */
     public function inspectFiles(array $eligibleFiles, AbsolutePath $projectRoot): void

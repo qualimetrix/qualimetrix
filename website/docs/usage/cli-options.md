@@ -774,6 +774,47 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 - `hasLayers` distinguishes "no layers configured" (`false`) from "layers configured but none matched this class" (`true` with `assigned: null`).
 - On error, `--format=json` prints `{"error": "...", "exit_code": N}` to stdout instead of the human `<error>` line, and an unrecognized `--format` value exits with code 2 regardless of format.
 
+### directives
+
+Report what every inline `@qmx-ignore` and `@qmx-threshold` in the analysed tree actually does. A suppression is judged by what it silenced; a threshold directive is judged by removing it and executing the rules again over the run's own measurements, which costs one rule execution per directive.
+
+```bash
+bin/qmx directives src/
+
+# Machine-readable output — for agents, scripts and CI
+bin/qmx directives src/ --format=json
+```
+
+| Option                | Description                                                       |
+| --------------------- | ----------------------------------------------------------------- |
+| `-c`, `--config=FILE` | Path to `qmx.yaml` (default: `qmx.yaml` in the current directory) |
+| `--format=FORMAT`     | `text` (default) or `json`                                        |
+
+Exit codes: `0` nothing inert, `2` at least one inert directive, `3` bad input or configuration, `4` the run failed to parse part of the tree.
+
+Four verdicts, of which three are answers and one is the absence of one:
+
+| Verdict               | What it states                                                                                                                                                                                                    |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| effective             | Removing it changes what the rules produce.                                                                                                                                                                       |
+| applied-boundary-only | It applied, and nothing moved except the boundary the finding prints.                                                                                                                                             |
+| inert                 | Removing it changes nothing. This is the only verdict that moves the exit code.                                                                                                                                   |
+| unmeasured            | No answer is available, and the report says why: the producer did not run, the directive was already refused elsewhere, it carries no rule filter, or another directive of the same rule covers the same subject. |
+
+!!! warning "A verdict is relative to the analysed scope"
+
+    A threshold on a metric computed over the analysed subgraph — coupling above all — can be alive over the whole project and dead over one directory of it, and neither answer is wrong. Point the command at what the project actually analyses. The report prints the scope it measured under, and a run that failed to parse part of the tree exits `4` instead of calling anything dead.
+
+!!! info "Judged against what the rules produced, not against the report"
+
+    `exclude_paths`, `exclude_namespaces` and `exclude_namespace_channels` suppress **publication**, not measurement. A directive that moved a finding inside an excluded namespace still did something, so the audit asks its question against every finding the rules produced.
+
+The `applied-boundary-only` verdict deliberately makes no claim about direction. The rule layer has no notion of which way is stricter — `coupling.instability` is worse when higher, `cohesion.tcc` when lower — so a directive that tightens a boundary and one that raises a boundary the measured value had already passed are the same observable. In `--format=json` this verdict keeps the stable key `overrun`.
+
+Where a rule publishes no boundary alongside its finding, an `inert` verdict carries a note saying so: a boundary the value had already passed would have looked identical, and the question was not asked. `--format=json` reports that as `"boundary_observable": false`.
+
+On error, `--format=json` prints `{"error": "...", "exit_code": N}` to stdout instead of the human `<error>` line.
+
 ### graph:export
 
 Export the dependency graph for visualization:

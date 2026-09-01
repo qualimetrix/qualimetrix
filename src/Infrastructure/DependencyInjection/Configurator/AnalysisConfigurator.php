@@ -26,6 +26,7 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -237,6 +238,12 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ])
             ->setPublic(true);
         $container->setAlias(AnalysisPipelineInterface::class, self::ANALYSIS_PIPELINE)
+            ->setPublic(true);
+
+        // The same instance under its second contract. Two aliases and not one
+        // wider interface: analysing and auditing directives are two questions,
+        // and every consumer of the first would otherwise carry the second.
+        $container->setAlias(DirectiveAuditInterface::class, self::ANALYSIS_PIPELINE)
             ->setPublic(true);
     }
 }

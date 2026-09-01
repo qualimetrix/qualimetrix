@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 
 /**
  * What one rule execution produced, in the form two executions can be compared

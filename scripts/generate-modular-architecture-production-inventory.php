@@ -2559,6 +2559,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0026-assigned-declaration-ordinal.md',
         'docs/adr/0028-lcom-rule-name-and-category.md',
         'docs/adr/0038-an-options-class-names-its-own-warning-boundary.md',
+        'docs/adr/0039-directive-audit-command-and-contract.md',
         'docs/internal/CLI_CONVENTIONS.md',
         'docs/internal/COMPETITOR_COMPARISON.md',
         'docs/internal/PRODUCT_ROADMAP.md',

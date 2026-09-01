@@ -261,7 +261,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationFailure",
           "closes_in": null
         }
       ]
@@ -1293,6 +1293,11 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationFailure",
           "closes_in": null
         }
       ]
@@ -6269,6 +6274,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput",
+          "closes_in": null
         }
       ]
     },
@@ -10404,7 +10414,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationFailure",
           "closes_in": null
         }
       ]
@@ -10460,7 +10470,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationFailure",
           "closes_in": null
         }
       ]
@@ -11490,6 +11500,53 @@
       "closure_package": "P6-D",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveEffect": {
+      "path": "src/Analysis/Policy/Inline/Contract/Directive/DirectiveEffect.php",
+      "kind": "enum",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "contract",
+      "closure_package": "P6-B",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveSite": {
+      "path": "src/Analysis/Policy/Inline/Contract/Directive/DirectiveSite.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "contract",
+      "closure_package": "P6-B",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveUnmeasurableReason": {
+      "path": "src/Analysis/Policy/Inline/Contract/Directive/DirectiveUnmeasurableReason.php",
+      "kind": "enum",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "contract",
+      "closure_package": "P6-B",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
+          "closes_in": null
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveVerdict": {
       "path": "src/Analysis/Policy/Inline/Contract/Directive/DirectiveVerdict.php",
       "kind": "class",
@@ -11500,6 +11557,11 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
           "closes_in": null
         }
       ]
@@ -11685,14 +11747,6 @@
       "closure_package": "P6-B",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveEffect": {
-      "path": "src/Analysis/Policy/Inline/Directive/DirectiveEffect.php",
-      "kind": "enum",
-      "owner": "Analysis.Policy.Inline",
-      "visibility": "internal",
-      "closure_package": "P6-B",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveNameHints": {
       "path": "src/Analysis/Policy/Inline/Directive/DirectiveNameHints.php",
       "kind": "class",
@@ -11704,22 +11758,6 @@
     "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveRejection": {
       "path": "src/Analysis/Policy/Inline/Directive/DirectiveRejection.php",
       "kind": "class",
-      "owner": "Analysis.Policy.Inline",
-      "visibility": "internal",
-      "closure_package": "P6-B",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveSite": {
-      "path": "src/Analysis/Policy/Inline/Directive/DirectiveSite.php",
-      "kind": "class",
-      "owner": "Analysis.Policy.Inline",
-      "visibility": "internal",
-      "closure_package": "P6-B",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveUnmeasurableReason": {
-      "path": "src/Analysis/Policy/Inline/Directive/DirectiveUnmeasurableReason.php",
-      "kind": "enum",
       "owner": "Analysis.Policy.Inline",
       "visibility": "internal",
       "closure_package": "P6-B",
@@ -12048,6 +12086,16 @@
           "owner": "Infrastructure.Git",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisPreflight",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput",
+          "closes_in": null
         }
       ]
     },
@@ -12081,6 +12129,11 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisPreflight",
           "closes_in": null
         }
       ]
@@ -12121,6 +12174,11 @@
           "owner": "Infrastructure.Git",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisPreflight",
+          "closes_in": null
         }
       ]
     },
@@ -12131,11 +12189,6 @@
       "visibility": "contract",
       "closure_package": "P3",
       "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "closes_in": null
-        },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet",
@@ -12154,6 +12207,16 @@
         {
           "owner": "Infrastructure.Git",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolution",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
           "closes_in": null
         }
       ]
@@ -12291,11 +12354,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\MeasuredAnalysisRun",
           "closes_in": null
         },
@@ -12307,6 +12365,11 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
           "closes_in": null
         }
       ]
@@ -12340,6 +12403,49 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DirectiveAuditInterface": {
+      "path": "src/Analysis/Run/Contract/Pipeline/DirectiveAuditInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Run",
+      "visibility": "contract",
+      "closure_package": "P3",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DirectiveAuditReport": {
+      "path": "src/Analysis/Run/Contract/Pipeline/DirectiveAuditReport.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "contract",
+      "closure_package": "P3",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
           "closes_in": null
         }
       ]
@@ -12463,14 +12569,6 @@
     },
     "Qualimetrix\\Analysis\\Run\\Pipeline\\DependencyGraphAnalyzer": {
       "path": "src/Analysis/Run/Pipeline/DependencyGraphAnalyzer.php",
-      "kind": "class",
-      "owner": "Analysis.Run",
-      "visibility": "internal",
-      "closure_package": "P3",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Run\\Pipeline\\DirectiveAuditReport": {
-      "path": "src/Analysis/Run/Pipeline/DirectiveAuditReport.php",
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "internal",
@@ -13502,7 +13600,7 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveSite",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveSite",
           "closes_in": null
         }
       ]
@@ -15867,6 +15965,11 @@
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisPreflight",
+          "closes_in": null
         }
       ]
     },
@@ -15912,6 +16015,33 @@
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\AnalysisPreflight": {
+      "path": "src/Infrastructure/Console/AnalysisPreflight.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\AnalysisReportCommandDefinition": {
+      "path": "src/Infrastructure/Console/AnalysisReportCommandDefinition.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": []
     },
     "Qualimetrix\\Infrastructure\\Console\\AnalysisRuntimeConfigurator": {
       "path": "src/Infrastructure/Console/AnalysisRuntimeConfigurator.php",
@@ -16167,6 +16297,24 @@
       "closure_package": "P8",
       "consumers": []
     },
+    "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand": {
+      "path": "src/Infrastructure/Console/Command/DirectivesCommand.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_registration"
+          ]
+        }
+      ]
+    },
     "Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand": {
       "path": "src/Infrastructure/Console/Command/GraphExportCommand.php",
       "kind": "class",
@@ -16257,6 +16405,14 @@
         }
       ]
     },
+    "Qualimetrix\\Infrastructure\\Console\\ConfigurationFailure": {
+      "path": "src/Infrastructure/Console/ConfigurationFailure.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": []
+    },
     "Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter": {
       "path": "src/Infrastructure/Console/ConfigurationInputAdapter.php",
       "kind": "class",
@@ -16303,6 +16459,14 @@
           ]
         }
       ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter": {
+      "path": "src/Infrastructure/Console/DirectiveAuditPresenter.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": []
     },
     "Qualimetrix\\Infrastructure\\Console\\ExitCodeResolver": {
       "path": "src/Infrastructure/Console/ExitCodeResolver.php",
@@ -16414,6 +16578,14 @@
     },
     "Qualimetrix\\Infrastructure\\Console\\OutputHelper": {
       "path": "src/Infrastructure/Console/OutputHelper.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\PreparedAnalysisInput": {
+      "path": "src/Infrastructure/Console/PreparedAnalysisInput.php",
       "kind": "class",
       "owner": "Infrastructure.Console",
       "visibility": "internal",
@@ -17268,6 +17440,11 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisPreflight",
           "closes_in": null
         }
       ]

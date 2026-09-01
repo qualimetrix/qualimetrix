@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Run\Pipeline;
+namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
 
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 
 /**
  * What every inline directive of one run did, plus what the answer is relative
@@ -25,10 +24,8 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
  * The **rule selection** the run resolved is the other half of that context and
  * is deliberately absent: `RuleSelection` is Finding's internal type, so
  * carrying it here would be an unapproved exact grant, and the caller that
- * needs to print it — a command — resolved those selectors itself.
- *
- * Internal to Run until the command that reads it lands: a contract with no
- * consumer is a declaration the manifest checker refuses, and rightly.
+ * needs to print it — a command — resolved those selectors itself and prints
+ * them from its own copy.
  */
 final readonly class DirectiveAuditReport
 {

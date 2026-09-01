@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-28T14:39:34+00:00",
+  "generated": "2026-09-01T14:32:57+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -444,7 +444,7 @@
       {"channel":"coupling.instability","magnitudes":[0.866667]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService@src/Analysis/Policy/Baseline/BoundaryExplanationService.php": [
-      {"channel":"coupling.instability","magnitudes":[0.9]}
+      {"channel":"coupling.instability","magnitudes":[0.894737]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\V5BaselineReader@src/Analysis/Policy/Baseline/V5BaselineReader.php": [
       {"channel":"health.cohesion","magnitudes":[30]}
@@ -471,6 +471,9 @@
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand@src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php": [
+      {"channel":"health.cohesion","magnitudes":[40]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand@src/Infrastructure/Console/Command/DirectivesCommand.php": [
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand@src/Infrastructure/Console/Command/HookUninstallCommand.php": [

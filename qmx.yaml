@@ -642,6 +642,9 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput'
@@ -656,11 +659,8 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability'
-        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveEffect'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveNameHints'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveRejection'
-        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveSite'
-        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUnmeasurableReason'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\ExecutionFingerprint'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions'
@@ -700,6 +700,8 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException'
         - 'Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface'
         - 'Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery'
@@ -711,7 +713,6 @@ architecture:
         - 'Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate'
         - 'Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline'
         - 'Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer'
-        - 'Qualimetrix\Analysis\Run\Pipeline\DirectiveAuditReport'
         - 'Qualimetrix\Analysis\Run\Pipeline\PreparedRun'
         - 'Qualimetrix\Analysis\Run\RuleProducerPreparation'
     - name: core-neutral
@@ -770,6 +771,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\Cache\FileCache'
     - name: infrastructure-console
       patterns:
+        - 'Qualimetrix\Infrastructure\Console\AnalysisPreflight'
+        - 'Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition'
         - 'Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Application'
         - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyHints'
@@ -790,13 +793,16 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\CheckCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand'
+        - 'Qualimetrix\Infrastructure\Console\Command\DirectivesCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\GraphExportCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\HookInstallCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\HookStatusCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\RulesCommand'
+        - 'Qualimetrix\Infrastructure\Console\ConfigurationFailure'
         - 'Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter'
         - 'Qualimetrix\Infrastructure\Console\DiagnosticOutput'
+        - 'Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter'
         - 'Qualimetrix\Infrastructure\Console\ExitCodeResolver'
         - 'Qualimetrix\Infrastructure\Console\ExitPolicy'
         - 'Qualimetrix\Infrastructure\Console\FilteredInputDefinition'
@@ -806,6 +812,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun'
         - 'Qualimetrix\Infrastructure\Console\MeasuredFindingSet'
         - 'Qualimetrix\Infrastructure\Console\OutputHelper'
+        - 'Qualimetrix\Infrastructure\Console\PreparedAnalysisInput'
         - 'Qualimetrix\Infrastructure\Console\ProfilePresenter'
         - 'Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer'
         - 'Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar'
@@ -1183,6 +1190,7 @@ architecture:
       - analysis-finding
       - analysis-policy-architecture
       - analysis-policy-baseline
+      - analysis-policy-inline
       - analysis-run
       - core-neutral
       - core-path

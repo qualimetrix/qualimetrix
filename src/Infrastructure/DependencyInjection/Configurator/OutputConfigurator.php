@@ -34,10 +34,12 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
@@ -47,6 +49,7 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRunInterface;
 use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
@@ -384,6 +387,27 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(HookStatusCommand::class)
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
+            ])
+            ->setPublic(true);
+
+        // DirectivesCommand. It reads the pipeline's *second* contract — the
+        // audit — and never AnalysisPipelineInterface: analysing and auditing
+        // are two questions, and the four consumers of the first do not ask
+        // the second.
+        $container->register(AnalysisPreflight::class)
+            ->setArguments([
+                new Reference(RuntimeConfigurator::class),
+                new Reference(ConfigurationInputAdapter::class),
+                new Reference(RunConfigurationResolverInterface::class),
+                new Reference(CacheConfigurationResolverInterface::class),
+                new Reference(ParallelConfigurationResolverInterface::class),
+                new Reference(RuleInputValidator::class),
+                new Reference(FileDiscoveryFactoryInterface::class),
+            ]);
+        $container->register(DirectivesCommand::class)
+            ->setArguments([
+                new Reference(DirectiveAuditInterface::class),
+                new Reference(AnalysisPreflight::class),
             ])
             ->setPublic(true);
 

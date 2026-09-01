@@ -61,10 +61,17 @@ interface InlineDirectivePolicyInterface
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides file => directives
      * @param array<string, list<ThresholdDiagnostic>> $thresholdDiagnostics file => diagnostics
      */
+    /**
+     * Replaces the whole of the previous run's state, the reporting gate
+     * included. There is no separate clearing operation: a run that prepares
+     * nothing prepares an empty set through this same call, and a second way
+     * to empty the store was only ever used to hide it from a caller.
+     *
+     * @param array<string, list<Suppression>> $suppressions file => directives
+     * @param array<string, list<ThresholdOverride>> $thresholdOverrides file => directives
+     * @param array<string, list<ThresholdDiagnostic>> $thresholdDiagnostics file => diagnostics
+     */
     public function prepare(array $suppressions, array $thresholdOverrides, array $thresholdDiagnostics): void;
-
-    /** Clears prepared run state, including the reporting gate. */
-    public function reset(): void;
 
     /**
      * What each authored suppression did this run, as values rather than as

@@ -92,14 +92,17 @@ to re-execute rules **on this run's context** — a second collection would
 measure a second world, and a difference between two worlds says nothing about
 an annotation.
 
-`auditDirectives()` is a second entry point on the class rather than a second
-operation on `AnalysisPipelineInterface`: the consumers of that contract
-analyse and do not audit, the same split `DependencyGraphAnalyzerInterface`
-already makes for the graph. Its `DirectiveAuditReport` stays internal until
-the command that reads it lands, and it carries the coverage the verdicts were
-measured under, because a verdict is a statement about one run — a threshold
-retuning a metric computed over the analysed subgraph is live over one tree and
-dead over a subdirectory of it, and neither answer is wrong.
+`auditDirectives()` is published as `DirectiveAuditInterface` — a second
+contract on the same class rather than a second operation on
+`AnalysisPipelineInterface`: the consumers of that contract analyse and do not
+audit, the same split `DependencyGraphAnalyzerInterface` already makes for the
+graph. The composition root binds one instance under both. `DirectiveAuditReport`
+carries the coverage the verdicts were measured under, because a verdict is a
+statement about one run — a threshold retuning a metric computed over the
+analysed subgraph is live over one tree and dead over a subdirectory of it, and
+neither answer is wrong. The rule selection is deliberately not carried: it is
+Finding's internal type, and the caller that prints it resolved those selectors
+itself. See ADR 0039.
 
 ## Test ownership
 

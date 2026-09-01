@@ -29,6 +29,8 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -53,7 +55,7 @@ use SplFileInfo;
  * 7. File-set inspection
  * 8. Rule execution
  */
-final class AnalysisPipeline implements AnalysisPipelineInterface
+final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAuditInterface
 {
     private readonly DependencyGraphBuilderInterface $graphBuilder;
 
@@ -99,26 +101,12 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     }
 
     /**
-     * The second question this pipeline answers about one prepared run: what
-     * each inline directive the run carried actually did.
+     * The audit half of {@see DirectiveAuditInterface}, which states what a
+     * verdict is relative to and what it does not measure.
      *
-     * It is a second entry point rather than a second operation on
-     * {@see AnalysisPipelineInterface}, because the four consumers of that
-     * contract analyse and do not audit — the same split
-     * {@see \Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface}
-     * already makes for the graph. The public contract, and its only reader,
-     * arrive with the command.
-     *
-     * **What a verdict here is relative to.** The analysed scope, and nothing
-     * wider: a directive retuning a metric computed over the analysed subgraph
-     * — coupling is the standing case — is live over one tree and dead over a
-     * subdirectory of it, and neither answer is wrong. There is no "was the
-     * whole project analysed" flag to publish, because a resolved
-     * {@see RunConfiguration} no longer knows what it was resolved from, so
-     * the report states the coverage and the selection it measured under and
-     * lets the caller judge. An **incomplete** run — files that failed to
-     * parse — is a different thing, and `$coverage` answers it exactly as it
-     * does for `analyze()`.
+     * Everything below is the wiring: one prepared run, both halves of the
+     * question asked against it, and one list in the order an author reads a
+     * tree.
      */
     public function auditDirectives(
         RunConfiguration $configuration,

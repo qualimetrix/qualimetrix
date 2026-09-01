@@ -58,11 +58,6 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         $this->usageReportingSeverity = null;
     }
 
-    public function reset(): void
-    {
-        $this->prepare([], [], []);
-    }
-
     /**
      * The directives **as authored**, one entry per line of source, keyed by
      * file.
