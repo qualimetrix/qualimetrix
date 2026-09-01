@@ -106,6 +106,10 @@
             "Composer\\Config::disableProcessTimeout",
             "php scripts/finding-gate-controls.php"
         ],
+        "directives:controls": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/directive-audit-controls.php"
+        ],
         "docs:check": "bash scripts/check-docs.sh",
         "check": [
             "@check-leaks",
@@ -162,7 +166,8 @@
         "check:code": "What a code change invalidates: style, static analysis, tests",
         "check:docs": "What a website change invalidates: a strict mkdocs build",
         "check:artifacts": "What a manifest, config or corpus change invalidates: every generated artifact against a fresh measurement",
-        "check:self": "What the product says about this repository: the gate self-test and the qmx ratchet"
+        "check:self": "What the product says about this repository: the gate self-test and the qmx ratchet",
+        "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it"
     },
     "config": {
         "sort-packages": true,

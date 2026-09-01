@@ -529,6 +529,10 @@ composer phpstan        # PHPStan level 8
 composer gate -- --reference=<git-ref>           # compare findings; GREEN 0, PARTIAL 2, RED 1, cannot-run 3
 composer gate:controls -- --reference=<git-ref>  # prove the gate is red under each planted breakage
 
+# Proving the threshold audit's own tests bite
+composer directives:controls                     # plant one breakage at a time; every case must be reddened by one
+composer directives:controls -- --only=<id,...>  # one probe, for iterating (coverage is then not evidence)
+
 # HTML report (run when modifying src/Reporting/Template/)
 composer test:js        # JS tests for HTML report (vitest)
 composer build:js       # Rebuild HTML report JS bundle
