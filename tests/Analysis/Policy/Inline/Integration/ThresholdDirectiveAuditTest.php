@@ -309,6 +309,71 @@ final class ThresholdDirectiveAuditTest extends TestCase
     }
 
     /**
+     * A dead directive beside a live one stays dead.
+     *
+     * They share a subject, so one could mask the other; the live one moves
+     * the outcome on its own account, and a coalition compared against the
+     * baseline would credit that movement to both and refuse to judge either.
+     * The comparison is differential for exactly this reason — with the
+     * neighbour already removed from both sides, what is left is what this
+     * directive does.
+     */
+    #[Test]
+    public function itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne(): void
+    {
+        $class = self::subject('Widget');
+        $method = self::subject('Widget', 'render');
+        $executor = self::executor([['subject' => $method, 'value' => 25]]);
+
+        $verdicts = self::audit($executor, [
+            // Live: covers the method the rule reports on, and the class beside it.
+            self::override(5, $class, warning: 30, error: 40, scope: ControlScope::Class_),
+            self::override(5, $method, warning: 30, error: 40, scope: ControlScope::Class_),
+            // Dead: covers only the class, where the rule reports nothing.
+            self::override(9, $class, warning: 30, error: 40),
+        ]);
+
+        self::assertSame(DirectiveEffect::Effective, $verdicts[0]->effect, 'the live one');
+        self::assertSame(DirectiveEffect::Inert, $verdicts[1]->effect, 'the dead one');
+        self::assertNull($verdicts[1]->maskedBy);
+    }
+
+    /**
+     * Every masker is taken out, not the first one.
+     *
+     * The same directive, now with two neighbours over the shared subject: one
+     * that does nothing and one that does. Removing only the first would leave
+     * the live one in the comparison and charge its effect to this directive,
+     * which is the mistake the differential form exists to avoid — and one
+     * neighbour is not enough to see it.
+     */
+    #[Test]
+    public function itTakesEveryMaskerOutOfTheComparison(): void
+    {
+        $class = self::subject('Widget');
+        $method = self::subject('Widget', 'render');
+        $executor = self::executor([['subject' => $method, 'value' => 25]]);
+
+        $verdicts = self::audit($executor, [
+            // The directive under test, and a neighbour beside it: both cover
+            // only the class, where the rule reports nothing.
+            self::override(3, $class, warning: 30, error: 40),
+            self::override(5, $class, warning: 30, error: 40),
+            // The live one, sharing the class with both and covering the
+            // method the rule does report on.
+            self::override(7, $class, warning: 30, error: 40, scope: ControlScope::Class_),
+            self::override(7, $method, warning: 30, error: 40, scope: ControlScope::Class_),
+        ]);
+
+        self::assertSame(
+            [DirectiveEffect::Inert, DirectiveEffect::Inert, DirectiveEffect::Effective],
+            array_map(static fn(DirectiveVerdict $v): DirectiveEffect => $v->effect, $verdicts),
+        );
+        self::assertNull($verdicts[0]->maskedBy);
+        self::assertNull($verdicts[1]->maskedBy);
+    }
+
+    /**
      * A rule that publishes no boundary cannot show one moving, so an inert
      * verdict on it cannot be told from a promise the measured value had
      * already overrun. The flag says the question was not asked.

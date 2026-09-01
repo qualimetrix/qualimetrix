@@ -102,10 +102,7 @@ final class ExecutionFingerprintFieldCoverageTest extends TestCase
             $f,
             relatedLocations: [new Location(RelativePath::fromString('src/Other.php'), 3)],
         ), $identity];
-        yield 'recommendation' => ['recommendation', static fn(Finding $f): Finding => self::with(
-            $f,
-            recommendation: 'do something else',
-        ), $identity];
+
         yield 'dependencyTarget' => ['dependencyTarget', static fn(Finding $f): Finding => self::with(
             $f,
             dependencyTarget: SymbolPath::forClass('App', 'Target'),
@@ -123,6 +120,13 @@ final class ExecutionFingerprintFieldCoverageTest extends TestCase
             occurrenceKey: OccurrenceKey::semantic('sample', ['seed' => 'a']),
         ), $identity];
 
+        // Prose, both of it: rules spell the boundary into the advice as
+        // readily as into the message, so a moved recommendation is a moved
+        // boundary and not a different finding.
+        yield 'recommendation' => ['recommendation', static fn(Finding $f): Finding => self::with(
+            $f,
+            recommendation: 'do something else',
+        ), $boundary];
         yield 'threshold' => ['threshold', static fn(Finding $f): Finding => self::with($f, threshold: 42), $boundary];
         yield 'message' => ['message', static fn(Finding $f): Finding => self::with($f, message: 'a different tale'), $boundary];
     }

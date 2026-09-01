@@ -108,7 +108,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         foreach ($measurable as $index => $group) {
             $effect = $effects[$index];
             $maskedBy = $effect === DirectiveEffect::Inert
-                ? $this->maskedBy($input, $baseline, $measurable, $index)
+                ? $this->maskedBy($input, $measurable, $index)
                 : null;
 
             $judged[] = [
@@ -248,8 +248,8 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         usort(
             $verdicts,
             static fn(DirectiveVerdict $left, DirectiveVerdict $right): int
-                => [$left->site->file->value(), $left->site->line, $left->site->target]
-                <=> [$right->site->file->value(), $right->site->line, $right->site->target],
+                => [$left->site->file->value(), $left->site->line, $left->site->form, $left->site->target]
+                <=> [$right->site->file->value(), $right->site->line, $right->site->form, $right->site->target],
         );
 
         return $verdicts;
@@ -266,94 +266,73 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * changes nothing, and each would be called inert although removing them
      * all changes the run.
      *
-     * **Overlap is the question, not the answer, and the answer costs a pass.**
-     * Sharing a subject only makes masking possible. Confirming it by asking
-     * whether the rule reported on that subject in the baseline gets the main
-     * case backwards: directives silencing one finding leave nothing reported
-     * there *because* they work. So the whole coalition is removed at once and
-     * the rules are executed one more time — a moved outcome is the masking, an
-     * unmoved one says the coalition does nothing and this directive is inert
-     * for real.
+     * **The question asked is differential, and that is what keeps the answer
+     * about this directive.** Not "does removing the whole coalition change
+     * the run" — a live neighbour would move the outcome on its own account
+     * and drag every dead annotation beside it into a refusal. What is asked
+     * is whether removing *this* directive changes anything **once its
+     * maskers are already gone**: the two runs compared are the coalition
+     * without this directive and the coalition with it, and everything the
+     * neighbours do cancels between them.
      *
-     * **The unit is the coalition, not a pair.** Specificity has four steps, so
-     * one subject can carry directives from a class docblock, a property
-     * docblock and a property hook's docblock at once; with three of them, no
-     * single removal and no pair moves the outcome while the triple does, and
-     * answering `Inert` to each is advice to delete all three. Three reviewers
-     * found that independently on the pairwise version of this method.
-     *
-     * The test is conservative on purpose. In a coalition where a neighbour
-     * does something on its own, the joint removal moves the outcome partly on
-     * the neighbour's account, and this directive is still called masked —
-     * refusing to answer costs an author nothing, while advising them to delete
-     * an annotation whose removal alongside its neighbours changes the run
-     * costs them the finding.
+     * **The unit is every directive that could hide this one, which is one
+     * hop and not a closure.** A directive can only mask what it covers, so a
+     * masker shares a subject with this one by definition; a directive two
+     * hops away touches subjects this one does not, and the differential
+     * comparison cancels it either way. Specificity has four steps, so one
+     * subject can carry a class docblock, a property docblock and a property
+     * hook's docblock at once — with three, no single removal and no pair
+     * moves the outcome while the triple does, which is what makes the unit a
+     * set rather than a pair.
      *
      * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $measurable
      */
     private function maskedBy(
         ThresholdDirectiveAuditInput $input,
-        ExecutionFingerprint $baseline,
         array $measurable,
         int $index,
     ): ?DirectiveSite {
-        $coalition = self::coalition($measurable, $index);
+        $maskers = self::overlapping($measurable, $index);
 
-        if ($coalition === []) {
+        if ($maskers === []) {
             return null;
         }
 
-        $removed = $baseline->compareTo(ExecutionFingerprint::of(
-            $this->without($input, [$measurable[$index], ...array_map(
-                static fn(int $position): array => $measurable[$position],
-                $coalition,
-            )]),
-        ));
+        $withoutMaskers = ExecutionFingerprint::of($this->without($input, $maskers));
+        $withoutAll = ExecutionFingerprint::of($this->without($input, [...$maskers, $measurable[$index]]));
 
-        return $removed === DirectiveEffect::Inert ? null : self::site($measurable[$coalition[0]]);
+        return $withoutMaskers->compareTo($withoutAll) === DirectiveEffect::Inert
+            ? null
+            : $maskers[0]['site'];
     }
 
     /**
-     * The other directives whose removal this one's removal cannot be told
-     * apart from: same rule, joined by a shared subject, transitively.
-     *
-     * Transitively, because masking chains. A class directive and a hook
-     * directive need not share a subject with each other directly while both
-     * share one with the property directive between them, and removing two of
-     * the three still leaves the third in force.
+     * Every other directive of the same rule bound to a subject this one also
+     * covers, in the order an author reads them.
      *
      * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $measurable
      *
-     * @return list<int> positions in `$measurable`, without the directive asked about
+     * @return list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>, site: DirectiveSite}>
      */
-    private static function coalition(array $measurable, int $index): array
+    private static function overlapping(array $measurable, int $index): array
     {
-        $rule = $measurable[$index]['rule'];
-        $subjects = self::subjects($measurable[$index]);
-        $joined = [$index => true];
+        $group = $measurable[$index];
+        $subjects = self::subjects($group);
+        $maskers = [];
 
-        do {
-            $grown = false;
-
-            foreach ($measurable as $position => $candidate) {
-                if (isset($joined[$position]) || $candidate['rule'] !== $rule) {
-                    continue;
-                }
-
-                $shared = array_intersect($subjects, self::subjects($candidate));
-                if ($shared === []) {
-                    continue;
-                }
-
-                $joined[$position] = true;
-                $subjects = array_values(array_unique([...$subjects, ...self::subjects($candidate)]));
-                $grown = true;
+        foreach ($measurable as $position => $candidate) {
+            if ($position === $index || $candidate['rule'] !== $group['rule']) {
+                continue;
             }
-        } while ($grown);
 
-        unset($joined[$index]);
+            if (array_intersect($subjects, self::subjects($candidate)) === []) {
+                continue;
+            }
 
-        return array_keys($joined);
+            $maskers[] = [...$candidate, 'site' => self::site($candidate)];
+        }
+
+        return $maskers;
     }
 
     /**
@@ -370,11 +349,16 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      *
      * A verdict of {@see DirectiveEffect::Overrun} overrides this to true at
      * the call site, and not as a courtesy: the boundary half of the
-     * fingerprint carries the message as well as the field, so a rule that
-     * spells its boundary into prose can produce an observed boundary
-     * difference while publishing no field. Answering "the question could not
-     * be asked" beside an answer to it would be a report contradicting
-     * itself.
+     * fingerprint carries the prose as well as the field, so a rule that
+     * spells its boundary into a message or a recommendation can produce an
+     * observed boundary difference while publishing no field. Answering "the
+     * question could not be asked" beside an answer to it would be a report
+     * contradicting itself.
+     *
+     * Beside an `Inert` verdict the flag is exact rather than cautious: an
+     * inert verdict means the two runs produced the same findings, so the
+     * covered finding fired both times with the same prose, and a rule whose
+     * prose does not move when the boundary does published nothing to see.
      *
      * @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group
      * @param list<Finding> $produced

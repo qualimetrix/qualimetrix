@@ -183,13 +183,15 @@ materialises on the class and on every declaration inside it; removing the
 first of those and leaving the rest would report an annotation still in force
 as inert.
 
-**The fingerprint is the whole finding, split in two.** `threshold` and
-`message` are the boundary a finding names; every other field is what the
-finding *is*. When two runs differ only in the boundary half, the directive
+**The fingerprint is the whole finding, split in two.** `threshold` and the
+prose that quotes it — `message` and `recommendation` — are the boundary a
+finding names; every other field is what the finding *is*. When two runs differ only in the boundary half, the directive
 applied and the finding fired regardless — `Overrun`, a promise made and not
 kept, which is not the same as an annotation that does nothing. The message
 belongs to that half because several rules spell the boundary into their prose
-instead of into the field. What no field of the key names is invisible to the
+instead of into the field, and so does the recommendation: `ComplexityRule`
+writes the threshold into the advice as well as into the message, and counting
+that as identity would turn every overrun on such a rule into `Effective`. What no field of the key names is invisible to the
 audit, so the split is checked against `Finding`'s constructor by reflection and
 each field is moved on its own in a test: a field added later cannot become a
 difference the audit silently ignores.
@@ -211,13 +213,18 @@ in silence.
 **Coalitions are refusals, not verdicts.** Directives of one rule covering the
 same subject mask each other: removing any one alone changes nothing, although
 removing them all changes the run. Overlap only makes that possible, so the
-whole connected component — same rule, joined transitively by a shared subject —
-is removed in one more pass and the answer decides. Where the rule reports on
-that subject under no directive at all, the component moves nothing and every
-directive in it is inert for real. The unit is the component and not a pair
-because specificity has four steps: a class docblock, a property docblock and a
-property hook's docblock can all retune one subject, and then no pair moves the
-outcome while the triple does.
+answer is bought with two more executions, and the question is differential —
+the run without this directive's maskers against the run without them and it.
+What the neighbours do cancels between the two sides, which is what keeps a dead
+annotation beside a live one from being refused on the live one's account. Where
+the rule reports on that subject under no directive at all, both sides agree and
+every directive there is inert for real.
+
+The unit is every masker and not the first, because specificity has four steps:
+a class docblock, a property docblock and a property hook's docblock can all
+retune one subject, and then no single removal and no pair moves the outcome
+while the whole set does. It is also one hop and not a closure: a directive can
+only hide what it covers.
 
 **The method's own assumption is controlled, not assumed.** A sweep begins and
 ends with the full override set in place, and both control passes must

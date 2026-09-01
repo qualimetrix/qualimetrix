@@ -38,10 +38,13 @@ final readonly class ExecutionFingerprint
     /**
      * @param array<string, int> $tally whole finding => how many were produced
      * @param array<string, string> $identity whole finding => the same finding without its boundary
+     * @param array<string, string> $channel whole finding => the channel it was published on, kept
+     *                                       beside the key rather than parsed back out of it
      */
     private function __construct(
         private array $tally,
         private array $identity,
+        private array $channel,
     ) {}
 
     /**
@@ -60,7 +63,6 @@ final readonly class ExecutionFingerprint
         'severity',
         'metricValue',
         'relatedLocations',
-        'recommendation',
         'dependencyTarget',
         'dependencyType',
         'acceptedLevel',
@@ -69,18 +71,26 @@ final readonly class ExecutionFingerprint
 
     /**
      * The fields that say which boundary a finding was judged against — the
-     * two a threshold directive is allowed to move without that counting as a
+     * ones a threshold directive is allowed to move without that counting as a
      * different outcome.
+     *
+     * Prose belongs here, and not only the `message`: rules spell the boundary
+     * into the recommendation as readily as into the message
+     * (`ComplexityRule` writes "Max cyclomatic complexity: 12 (threshold: 10)"
+     * there). Counting that prose as part of what a finding *is* would turn
+     * every overrun on such a rule into `Effective` — the finding fired both
+     * times, but the sentence advising a fix moved with the number.
      *
      * @var list<string>
      */
-    public const array BOUNDARY_FIELDS = ['threshold', 'message'];
+    public const array BOUNDARY_FIELDS = ['threshold', 'message', 'recommendation'];
 
     /** @param list<Finding> $findings */
     public static function of(array $findings): self
     {
         $tally = [];
         $identity = [];
+        $channel = [];
 
         foreach ($findings as $finding) {
             $identityKey = self::identityOf($finding);
@@ -88,11 +98,12 @@ final readonly class ExecutionFingerprint
 
             $tally[$key] = ($tally[$key] ?? 0) + 1;
             $identity[$key] = $identityKey;
+            $channel[$key] = $finding->code;
         }
 
         ksort($tally);
 
-        return new self($tally, $identity);
+        return new self($tally, $identity, $channel);
     }
 
     /**
@@ -117,7 +128,6 @@ final readonly class ExecutionFingerprint
             $finding->severity->value,
             self::number($finding->metricValue),
             implode('|', array_map(self::location(...), $finding->relatedLocations)),
-            $finding->recommendation ?? '',
             $finding->dependencyTarget?->toCanonical() ?? '',
             $finding->dependencyType->name ?? '',
             $finding->acceptedLevel?->describe() ?? '',
@@ -128,7 +138,11 @@ final readonly class ExecutionFingerprint
     /** The boundary a finding names, in both places a rule may name it. */
     private static function boundaryOf(Finding $finding): string
     {
-        return implode("\0", [self::number($finding->threshold), $finding->message]);
+        return implode("\0", [
+            self::number($finding->threshold),
+            $finding->message,
+            $finding->recommendation ?? '',
+        ]);
     }
 
     private static function location(Location $location): string
@@ -185,7 +199,7 @@ final readonly class ExecutionFingerprint
     public function disagreementWith(self $other): array
     {
         $channels = array_unique(array_map(
-            static fn(string $key): string => explode("\0", $key)[0],
+            fn(string $key): string => $this->channel[$key] ?? $other->channel[$key] ?? $key,
             [
                 ...array_keys(self::excess($this->tally, $other->tally)),
                 ...array_keys(self::excess($other->tally, $this->tally)),
