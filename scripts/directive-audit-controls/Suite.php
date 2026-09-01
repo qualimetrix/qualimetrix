@@ -13,17 +13,26 @@ use RuntimeException;
  *
  * Read from JUnit XML rather than from `--testdox`: the harness needs the name
  * of every case and its outcome as data, and a report written for a human eye
- * is not that. The three files below are the ones that assert what the audit
- * decides; a mutation that reddens something elsewhere in the project is not
- * evidence about a verdict, so nothing else is run.
+ * is not that. The files below are the ones that assert what the audit decides;
+ * a mutation that reddens something elsewhere in the project is not evidence
+ * about a verdict, so nothing else is run.
+ *
+ * **Both halves of the subject, and the command that renders them.** The list
+ * held only the threshold half for one package, and that gap was not academic:
+ * a defect in the suppression half — a whole channel missing from the universe
+ * it judges against — reached a release candidate with this bench reporting
+ * thirty-eight probes and no uncovered case. A bench that covers half a subject
+ * says so only if the list names what it covers.
  */
 final readonly class Suite
 {
     /** @var list<string> */
     public const array FILES = [
+        'tests/Analysis/Policy/Inline/Integration/DirectiveUsageTest.php',
         'tests/Analysis/Policy/Inline/Integration/ThresholdDirectiveAuditTest.php',
         'tests/Analysis/Policy/Inline/Unit/Directive/ExecutionFingerprintFieldCoverageTest.php',
         'tests/Analysis/Run/Integration/DirectiveAuditPipelineTest.php',
+        'tests/Infrastructure/Console/Functional/DirectivesCommandTest.php',
     ];
 
     /**

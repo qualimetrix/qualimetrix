@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Inline\Directive;
+namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
 
 /**
  * Why a directive has no verdict.

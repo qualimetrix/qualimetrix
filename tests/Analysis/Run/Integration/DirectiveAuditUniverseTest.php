@@ -109,6 +109,7 @@ final class DirectiveAuditUniverseTest extends TestCase
             self::productionUniverse(),
             new RuleSelector(new InMemoryRuleChannelRegistry()),
             new RuleOptionsRegistry(),
+            self::productionUniverse(),
         ));
 
         $discovery = self::createStub(FileDiscoveryInterface::class);

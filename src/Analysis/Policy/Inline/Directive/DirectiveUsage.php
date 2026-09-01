@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -11,6 +12,9 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -27,6 +31,23 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * findings {@see stale()} returns are one projection of it. Two computations
  * would be two chances to disagree about one directive, which is why the
  * projection reads the verdicts rather than repeating the accounting.
+ *
+ * **One computation, but not always one universe, and the difference is
+ * visible.** `annotation.unused-directive` is this class's own output, so
+ * `stale()` cannot be given a finding list containing it — a caller asking for
+ * the channel is asking for that list to be produced. A caller asking for
+ * verdicts is not, and is given the wider list, the channel included. A
+ * suppression aimed at that channel is therefore answered differently by the
+ * two: a `@qmx-ignore-next-line annotation.unused-directive` above a stale
+ * directive is reported live by the verdicts and stale by the channel. The
+ * verdicts are the correct answer of the two — it did silence the neighbour's
+ * finding — and the channel's blind spot predates them. Recorded rather than
+ * papered over; narrowing the verdicts back to the channel's list would
+ * restore the defect that made every such suppression inert by construction.
+ *
+ * The one narrowing that *is* correct is by directive rather than by channel,
+ * and {@see withoutOwnComplaint()} does it: a directive may not be credited
+ * with silencing the complaint it produced by being dead.
  *
  * It is a pure function of the prepared directives and the produced findings,
  * and it holds no run state — {@see InlineDirectivePolicy} keeps that and asks
@@ -49,10 +70,17 @@ final class DirectiveUsage
      */
     private readonly ChannelLevelAddressing $levels;
 
+    /**
+     * Two views and not the composite that implements both: the composite
+     * exists so one object can answer everything, not so every consumer may
+     * ask everything, and it says so itself. The composition root passes the
+     * same instance to both, which is what makes the two answers one universe.
+     */
     public function __construct(
         private readonly ChannelIdentityInterface $identity,
         private readonly RuleSelector $ruleSelector,
         private readonly RuleConfigurationInterface $ruleConfiguration,
+        private readonly ChannelDeclarationRegistryInterface $declarations,
     ) {
         $this->levels = new ChannelLevelAddressing($identity);
     }
@@ -101,6 +129,67 @@ final class DirectiveUsage
     }
 
     /**
+     * The findings this directive may be credited with, which are all of them
+     * except the complaint about itself.
+     *
+     * A directive that silences nothing produces one: `stale()` writes an
+     * `annotation.unused-directive` finding at the line the directive was
+     * written on, and a file-scoped suppression of that very channel covers
+     * every line of its file, its own included. Left in, the finding a
+     * directive earns by being dead is the finding that proves it alive —
+     * measured on a fixture whose only annotation is
+     * `@qmx-ignore-file annotation.unused-directive`, which `check` shows
+     * changes nothing and which came out `effective`.
+     *
+     * The exclusion is by line, so two directives authored on one line lose
+     * each other's complaint as well as their own. That is a deliberate
+     * approximation of an exact identity this class cannot read back off a
+     * finding, and it errs where the alternative errs worse: such a directive
+     * is still credited with every complaint elsewhere in its file, so the
+     * approximation bites only when the whole file has no other.
+     *
+     * @param list<Finding> $findings
+     *
+     * @return list<Finding>
+     */
+    private static function withoutOwnComplaint(string $file, Suppression $directive, array $findings): array
+    {
+        return array_values(array_filter($findings, static fn(Finding $finding): bool
+            => $finding->code !== InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME
+            || $finding->location->line !== $directive->line
+            || $finding->location->pathString() !== $file));
+    }
+
+    /**
+     * The findings a suppression could have silenced at all.
+     *
+     * A channel a configuration validator declares is exempt from annotation
+     * suppression by the kind of thing it is, not by anyone's configuration:
+     * a misconfigured directive is not silenced by another directive, and the
+     * projection enforces that for every report. Counting such a finding as
+     * something a suppression matched would call a directive live that can
+     * never do anything — measured on a fixture, `@qmx-ignore-file
+     * annotation.unresolved-directive` reported "effective" while `check`
+     * printed the error it claimed to silence.
+     *
+     * This is not the publication ledger of D4 creeping back in. That ledger
+     * is a configuration choice about a report; this is a property of the
+     * producing type, true for every run and every configuration.
+     *
+     * @param list<Finding> $findings
+     *
+     * @return list<Finding>
+     */
+    private function suppressible(array $findings): array
+    {
+        return array_values(array_filter(
+            $findings,
+            fn(Finding $finding): bool
+                => $this->declarations->declarationFor($finding->channel())?->isConfigurationError() !== true,
+        ));
+    }
+
+    /**
      * One verdict per authored site, paired with the directive it came from.
      *
      * The pair exists because the two projections need different halves: the
@@ -115,6 +204,7 @@ final class DirectiveUsage
     private function evaluate(array $suppressionsByFile, array $findings): array
     {
         $selection = $this->ruleConfiguration->selection();
+        $findings = $this->suppressible($findings);
         $evaluated = [];
 
         foreach ($suppressionsByFile as $file => $fileSuppressions) {
@@ -124,7 +214,8 @@ final class DirectiveUsage
 
                 $effect = match (true) {
                     $reason !== null => DirectiveEffect::Unmeasured,
-                    self::anyOfTheGroupFired($file, $group, $findings) => DirectiveEffect::Effective,
+                    self::anyOfTheGroupFired($file, $group, self::withoutOwnComplaint($file, $directive, $findings))
+                        => DirectiveEffect::Effective,
                     default => DirectiveEffect::Inert,
                 };
 

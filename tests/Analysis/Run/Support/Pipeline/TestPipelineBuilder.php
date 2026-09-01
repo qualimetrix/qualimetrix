@@ -240,10 +240,13 @@ final class TestPipelineBuilder
      */
     private function resolveInlineDirectivePolicy(): InlineDirectivePolicyInterface
     {
+        $universe = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
+
         return $this->inlineDirectivePolicy ?? new InlineDirectivePolicy(new DirectiveUsage(
-            new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([])),
+            $universe,
             $this->ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry()),
             $this->ruleConfiguration ?? new RuleOptionsRegistry(),
+            $universe,
         ));
     }
 

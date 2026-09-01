@@ -282,15 +282,20 @@ final class InlineDirectivePolicyTest extends TestCase
         self::assertSame([], $policy->auditDirectiveUsage([]));
     }
 
+    /**
+     * The gate belongs to a run, not to the store. Without this, a second run
+     * in one process would report the first run's directives as stale before
+     * its own rule had said a word.
+     */
     #[Test]
-    public function itForgetsTheReportingGateOnReset(): void
+    public function itForgetsTheReportingGateWhenTheNextRunPrepares(): void
     {
         $policy = self::policy();
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
         $policy->enableUsageReporting(Severity::Info);
         self::assertCount(1, $policy->auditDirectiveUsage([]));
 
-        $policy->reset();
+        $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
         self::assertSame([], $policy->auditDirectiveUsage([]));
     }
 
@@ -298,15 +303,18 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $channel = new FindingChannel('code-smell.goto');
 
+        $universe = new ChannelUniverse(
+            [$channel->code => ChannelDeclaration::occurrence(SymbolLevel::Class_)],
+            ['code-smell.goto' => [$channel->code]],
+            ['code-smell.goto' => false],
+            new ResolvedComputedMetricDefinitions([]),
+        );
+
         return new InlineDirectivePolicy(new DirectiveUsage(
-            new ChannelUniverse(
-                [$channel->code => ChannelDeclaration::occurrence(SymbolLevel::Class_)],
-                ['code-smell.goto' => [$channel->code]],
-                ['code-smell.goto' => false],
-                new ResolvedComputedMetricDefinitions([]),
-            ),
+            $universe,
             new RuleSelector(new InMemoryRuleChannelRegistry()),
             $configuration ?? new RuleOptionsRegistry(),
+            $universe,
         ));
     }
 

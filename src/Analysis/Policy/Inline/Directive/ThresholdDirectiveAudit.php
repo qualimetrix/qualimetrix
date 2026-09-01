@@ -11,6 +11,9 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
@@ -400,8 +403,14 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * inert verdict already means the two runs produced the same findings, so
      * a rule that spells its boundary into prose has shown that boundary
      * standing still — there was no overrun to miss. The flag still warns,
-     * because what it can read is the field, and the field is absent; the
-     * warning costs a reader a second look and never costs them a finding.
+     * because what it can read is the field, and the field is absent.
+     *
+     * **It is no longer free, and that is a deliberate trade.** The command
+     * refuses to fail a build on an inert verdict carrying this flag, so a
+     * genuinely dead directive on such a rule goes unenforced. The alternative
+     * is worse in the direction that matters: failing on it demands the author
+     * delete an annotation on the strength of a question the report itself
+     * says was never asked. Cautious here means silent, not wrong.
      *
      * @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group
      * @param list<Finding> $produced

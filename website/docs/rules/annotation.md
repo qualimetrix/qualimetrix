@@ -143,6 +143,12 @@ three tags reading the same way.
 !!! note "Validation happens after configuration resolves"
     The channel universe used for validation is built from the run's own resolved configuration, including the computed-metric family (`health.*` and any `computed.*` metrics the project defines). So `@qmx-ignore health.cohesion` resolves exactly like a statically declared channel. Two consequences follow: removing a computed metric from configuration turns every annotation that referenced it into an `annotation.unresolved-directive` error, the same as a typo; and `@qmx-threshold` on a **disabled** rule is valid and silent — enabledness is an execution filter, not a fact about whether the rule's name exists.
 
+### Auditing what a directive still does
+
+The channels above answer whether a directive is *addressable* — whether it names something, and whether a suppression silenced anything. Neither of them answers what a `@qmx-threshold` is doing, because nothing a rule publishes says which boundary it decided with.
+
+[`bin/qmx directives`](../usage/cli-options.md#directives) answers that separately, for both tags at once: it removes each threshold directive on its own and executes the rules again over the same run's measurements. It is not part of `qmx check` — one rule execution per directive is a price a normal run should not pay — and it is meant to be run deliberately, or as its own CI step.
+
 ### Options
 
 | Option                      | Default | Description                                                                             |

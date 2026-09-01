@@ -12,6 +12,7 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
+use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
@@ -58,6 +59,7 @@ $application->setCommandLoader(new ContainerCommandLoader($container, [
     'baseline:cleanup' => BaselineCleanupCommand::class,
     'baseline:explain' => BaselineExplainCommand::class,
     'debug:layer-assignment' => LayerAssignmentCommand::class,
+    'directives' => DirectivesCommand::class,
     'graph:export' => GraphExportCommand::class,
     'hook:install' => HookInstallCommand::class,
     'hook:uninstall' => HookUninstallCommand::class,

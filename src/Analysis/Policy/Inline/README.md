@@ -11,7 +11,11 @@ Inline-owned extraction contract once; it owns no annotation policy state.
 Inline/
 ├── Contract/
 │   ├── Directive/               # the four annotation.* channel names, run state,
-│   │                            # and the threshold audit's contract and input
+│   │                            # the threshold audit's contract and input, and
+│   │                            # the verdict vocabulary a report renders:
+│   │                            # DirectiveVerdict, DirectiveSite, DirectiveEffect
+│   │                            # (effective / overrun / inert / unmeasured) and
+│   │                            # DirectiveUnmeasurableReason
 │   ├── Suppression/             # suppression value and type
 │   ├── Threshold/               # annotation diagnostic value
 │   ├── AnnotationSuppressionInterface.php
@@ -28,10 +32,7 @@ Inline/
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
 │   ├── DirectiveNameHints.php      # "did you mean" by reverse query
 │   ├── DirectiveRejection.php
-│   ├── DirectiveEffect.php         # effective / overrun / inert / unmeasured
-│   ├── DirectiveUnmeasurableReason.php # why a directive has no verdict
 │   ├── DirectiveUsage.php          # what each authored suppression did
-│   ├── DirectiveVerdict.php        # one authored site and its effect
 │   ├── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── InlineDirectiveOptions.php
 │   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting
@@ -94,9 +95,21 @@ threshold overrides and diagnostics — and answers the authored views over them
 function with no run state, and it is injected into the policy rather than built
 by it, so the store keeps the three collaborators a store needs and none of the
 ones the accounting needs. The port is unchanged:
-Run still calls `prepare()`, `reset()` and `auditDirectiveUsage()` on
-`InlineDirectivePolicyInterface`, and the policy forwards the third — under its
-own severity gate, which stays with the state the owning rule arms.
+Run still calls `prepare()`, `directiveVerdicts()` and `auditDirectiveUsage()`
+on `InlineDirectivePolicyInterface`, and the policy forwards the last two —
+`auditDirectiveUsage()` under its own severity gate, which stays with the state
+the owning rule arms.
+
+There is no separate clearing operation. `prepare()` replaces the whole of the
+previous run's state, gate included, so a run that carries no directives
+prepares an empty set through the same call. The `reset()` that used to exist
+had one caller — Run clearing the store when the directive rule was disabled —
+and that call silenced something nobody asked to silence: with an empty store
+the audit's suppression half reports "this tree carries no annotations" beside
+real threshold verdicts. Switching the rule off still silences everything the
+rule emits, through the two gates that were always the real ones (the rule arms
+its own channel as it runs; the validator executes inside its producer's slot,
+which a disabled producer does not get).
 
 **A verdict is not a boolean, and the absence of an answer is not a verdict.**
 `DirectiveEffect` has four values. `Effective` and `Inert` are answers;

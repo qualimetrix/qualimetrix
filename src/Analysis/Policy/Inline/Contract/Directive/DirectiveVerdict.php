@@ -4,19 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
 
-use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveEffect;
-use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveSite;
-use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUnmeasurableReason;
-
 /**
  * One authored directive and what it did.
  *
  * A contract because Run names it: the pipeline sorts the two halves of an
- * audit into one list and says so in the comparator's signature. Everything the
- * verdict is *made of* stays internal until something outside names those too —
- * a list held in an `array` crosses the boundary in a shape neither PHP nor the
- * manifest checker can see, and it is the naming, not the holding, that makes a
- * public surface.
+ * audit into one list and says so in the comparator's signature. Its three
+ * component types became contracts on the same rule and not a step earlier —
+ * when the command that renders a verdict began naming them in code. A list
+ * held in an `array` crosses the boundary in a shape neither PHP nor the
+ * manifest checker can see, and it is the naming, not the holding, that makes
+ * a public surface.
  */
 final readonly class DirectiveVerdict
 {

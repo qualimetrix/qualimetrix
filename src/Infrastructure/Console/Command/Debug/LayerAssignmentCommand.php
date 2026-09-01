@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 
 use Exception;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
+use Qualimetrix\Infrastructure\Console\ConfigurationFailure;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
@@ -23,7 +22,6 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -76,25 +74,13 @@ final class LayerAssignmentCommand extends Command
 
     protected function configure(): void
     {
-        $this
-            ->addArgument(
-                'fqn',
-                InputArgument::REQUIRED,
-                'Fully qualified class name to inspect (e.g. App\\Service\\Foo)',
-            )
-            ->addOption(
-                'config',
-                'c',
-                InputOption::VALUE_REQUIRED,
-                'Path to qmx.yaml (defaults to qmx.yaml in the current working directory)',
-            )
-            ->addOption(
-                'format',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Output format: text or json',
-                'text',
-            )
+        $this->addArgument(
+            'fqn',
+            InputArgument::REQUIRED,
+            'Fully qualified class name to inspect (e.g. App\\Service\\Foo)',
+        );
+
+        AnalysisReportCommandDefinition::addOptions($this)
             ->setHelp(
                 'Reports the layer the given class is assigned to under the project'
                 . "\n" . 'architecture configuration, plus every other layer whose criteria'
@@ -171,32 +157,17 @@ final class LayerAssignmentCommand extends Command
                     $configuration->projectRoot,
                     $symbol,
                 );
-        } catch (ConfigLoadException|ArchitectureConfigurationException $e) {
-            $this->reportError(
-                $output,
-                $format,
-                \sprintf('Configuration error: %s', $e->getMessage()),
-                self::FAILURE,
-            );
-
-            return self::FAILURE;
-        } catch (ArchitecturePreparationException $e) {
-            $this->reportError(
-                $output,
-                $format,
-                \sprintf('Failed to load configuration: %s', $e->getMessage()),
-                self::FAILURE,
-            );
-
-            return self::FAILURE;
         } catch (Exception $e) {
             // Catches recoverable failures while bubbling up Errors (TypeError, etc.)
             // so genuine programming bugs in the pipeline surface in CI rather than
-            // being silently reported as exit code 1.
+            // being silently reported as exit code 1. Which of them the user can
+            // fix in their own configuration, and how each is worded, is
+            // {@see ConfigurationFailure}'s judgement rather than a second copy
+            // of the same taxonomy here.
             $this->reportError(
                 $output,
                 $format,
-                \sprintf('Failed to load configuration: %s', $e->getMessage()),
+                ConfigurationFailure::message($e) ?? \sprintf('Failed to load configuration: %s', $e->getMessage()),
                 self::FAILURE,
             );
 

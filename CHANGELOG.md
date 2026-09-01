@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `bin/qmx directives` reports what every inline `@qmx-ignore` and `@qmx-threshold`
+  in the analysed tree actually does — effective, applied-boundary-only, inert, or
+  unmeasured with a named reason — in `text` or `json`, under the same `--preset`,
+  `--only-rule`, `--disable-rule` and `--rule-opt` the run being defended uses.
+  It exits `2` on a proven inert directive and `4` when the run could not parse
+  part of the tree.
+
 ### Breaking
 
 - Every class of the `design.*` rules moves under a subject segment of its own:
