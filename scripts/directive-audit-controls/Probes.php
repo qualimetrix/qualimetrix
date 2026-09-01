@@ -26,6 +26,34 @@ final class Probes
 
     private const string PIPELINE = 'src/Analysis/Run/Pipeline/AnalysisPipeline.php';
 
+    /**
+     * Field of a finding => the line the fingerprint reads it with.
+     *
+     * The map is the bench's, not the product's, and deliberately: a probe
+     * generated from the product's own list would break in the same direction
+     * as the product and prove nothing. `Mutation` refuses an anchor that does
+     * not occur exactly once, so a line that moves is a loud refusal.
+     *
+     * @var array<string, string>
+     */
+    private const array FIELD_READS = [
+        'location' => '            self::location($finding->location),',
+        'subject' => '            $finding->subject->toCanonical(),',
+        'symbolPath' => '            $finding->symbolPath->toString(),',
+        'ruleName' => '            $finding->ruleName,',
+        'code' => '            $finding->code,',
+        'severity' => '            $finding->severity->value,',
+        'metricValue' => '            self::number($finding->metricValue),',
+        'relatedLocations' => "            implode('|', array_map(self::location(...), \$finding->relatedLocations)),",
+        'dependencyTarget' => "            \$finding->dependencyTarget?->toCanonical() ?? '',",
+        'dependencyType' => "            \$finding->dependencyType->name ?? '',",
+        'acceptedLevel' => "            \$finding->acceptedLevel?->describe() ?? '',",
+        'occurrenceKey' => "            \$finding->occurrenceKey->value ?? '',",
+        'threshold' => '            self::number($finding->threshold),',
+        'message' => '            $finding->message,',
+        'recommendation' => "            \$finding->recommendation ?? '',",
+    ];
+
     /** @return list<Probe> */
     public static function all(): array
     {
@@ -36,9 +64,40 @@ final class Probes
             ...self::fingerprint(),
             ...self::masking(),
             ...self::reproducibility(),
+            ...self::verdicts(),
             ...self::refusals(),
             ...self::report(),
+            ...self::fields(),
         ];
+    }
+
+    /**
+     * One probe per field of a finding: the line that reads it, gone.
+     *
+     * Written as a table rather than by hand because the claim is per field —
+     * "a difference in this field is a difference in the outcome" — and a
+     * hand-written subset is how eleven of the fifteen came to rest on the two
+     * blanket probes. Each anchor is the exact line the fingerprint reads that
+     * field with, so a field that moves in the product refuses its probe
+     * instead of silently losing it.
+     *
+     * @return list<Probe>
+     */
+    private static function fields(): array
+    {
+        $probes = [];
+
+        foreach (self::FIELD_READS as $field => $read) {
+            $probes[] = Probe::breaking(
+                'field-' . strtolower(preg_replace('/(?<!^)[A-Z]/', '-$0', $field) ?? $field),
+                \sprintf('the fingerprint stops reading %s', $field),
+                self::FINGERPRINT,
+                [$read . "\n" => ''],
+                [\sprintf('itSeesEveryFieldItNames with data set "%s"', $field)],
+            );
+        }
+
+        return $probes;
     }
 
     /**
@@ -77,14 +136,14 @@ final class Probes
         $sameness = '        if ($removed === [] && $added === []) {';
 
         return [
-            Probe::breaking(
+            Probe::blanket(
                 'outcome-always-matched',
                 'the comparison of two runs always answers "nothing moved"',
                 self::FINGERPRINT,
                 [$sameness => '        if (true) {'],
                 ['itCallsADirectiveEffectiveWhenRemovingItChangesWhatTheRulesProduced'],
             ),
-            Probe::breaking(
+            Probe::blanket(
                 'outcome-never-matched',
                 'the comparison of two runs always answers "something moved"',
                 self::FINGERPRINT,
@@ -134,17 +193,22 @@ final class Probes
             ),
             Probe::breaking(
                 'recommendation-as-identity',
-                'the advice a finding gives counts as part of what the finding is',
+                'the advice a finding gives counts as part of what the finding is rather than as prose',
                 self::FINGERPRINT,
                 ["            \$finding->recommendation ?? '',\n        ]);" => '        ]);'],
                 ['itSeesEveryFieldItNames with data set "recommendation"'],
             ),
             Probe::breaking(
-                'identity-without-related-locations',
-                'one field of a finding is missing from the key',
+                'field-lists-drift-from-the-code',
+                'a field name moves between the declared identity and boundary lists',
                 self::FINGERPRINT,
-                ["            implode('|', array_map(self::location(...), \$finding->relatedLocations))," => "            '',"],
-                ['itSeesEveryFieldItNames with data set "relatedLocations"'],
+                [
+                    "        'severity',\n        'metricValue',"
+                    => "        'metricValue',",
+                    "    public const array BOUNDARY_FIELDS = ['threshold', 'message', 'recommendation'];"
+                    => "    public const array BOUNDARY_FIELDS = ['threshold', 'message', 'recommendation', 'severity'];",
+                ],
+                ['itSeesEveryFieldItNames with data set "severity"'],
             ),
         ];
     }
@@ -231,6 +295,36 @@ final class Probes
                     => '$repeat = ExecutionFingerprint::of($input->executor->execute($input->baseline)->produced);',
                 ],
                 ['itControlsTheRunThroughTheSamePathTheCounterfactualsTake'],
+            ),
+        ];
+    }
+
+    /**
+     * What the sweep reports, as opposed to what it measured.
+     *
+     * @return list<Probe>
+     */
+    private static function verdicts(): array
+    {
+        return [
+            Probe::breaking(
+                'verdict-ignores-the-measurement',
+                'the verdict is not the effect the sweep measured',
+                self::AUDIT,
+                ['            $effect = $effects[$index];' => '            $effect = DirectiveEffect::Effective;'],
+                ['itCallsADirectiveInertWhenRemovingItChangesNothing'],
+            ),
+            Probe::breaking(
+                'boundary-always-observable',
+                'every verdict claims the boundary could have been seen',
+                self::AUDIT,
+                [
+                    "                boundaryObservable: \$entry['effect'] === DirectiveEffect::Overrun
+"
+                    . "                    || self::boundaryObservable(\$group, \$produced),"
+                    => '                boundaryObservable: true,',
+                ],
+                ['itMarksTheBoundaryUnobservableWhenTheRulePublishedNone'],
             ),
         ];
     }

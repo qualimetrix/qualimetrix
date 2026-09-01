@@ -18,12 +18,19 @@ use QmxFindingGateControls\Mutation;
  */
 final readonly class Probe
 {
-    /** @param list<string> $reddens case names, matched as substrings */
+    /**
+     * @param list<string> $reddens case names, matched as substrings
+     * @param bool $blanket whether this breakage short-circuits the whole comparison rather than
+     *                      denying one claim. Such a probe reddens most of the suite by design, and
+     *                      is deliberately not allowed to count as the thing that guards a case:
+     *                      review measured eleven of the fifteen field cases resting on nothing else
+     */
     private function __construct(
         public string $id,
         public string $claim,
         public Mutation $mutation,
         public array $reddens,
+        public bool $blanket = false,
     ) {}
 
     /**
@@ -55,6 +62,26 @@ final readonly class Probe
         array $reddens,
     ): self {
         return new self($id, $claim, Mutation::edit($file, $replacement, $claim), $reddens);
+    }
+
+    /**
+     * A breakage that denies nothing in particular by denying everything: the
+     * comparison of two runs, short-circuited.
+     *
+     * Kept because it is the one probe that proves the suite notices damage at
+     * all, and kept out of the coverage count for the same reason.
+     *
+     * @param array<string, string> $replacement
+     * @param list<string> $reddens
+     */
+    public static function blanket(
+        string $id,
+        string $claim,
+        string $file,
+        array $replacement,
+        array $reddens,
+    ): self {
+        return new self($id, $claim, Mutation::edit($file, $replacement, $claim), $reddens, true);
     }
 
     public function isPositive(): bool

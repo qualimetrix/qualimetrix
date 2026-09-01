@@ -26,8 +26,14 @@ final readonly class Suite
         'tests/Analysis/Run/Integration/DirectiveAuditPipelineTest.php',
     ];
 
-    /** @param array<string, bool> $cases case name => whether it passed */
-    private function __construct(public array $cases) {}
+    /**
+     * @param array<string, bool> $cases case name => whether it passed
+     * @param int $exit what PHPUnit itself said about the run
+     */
+    private function __construct(
+        public array $cases,
+        public int $exit,
+    ) {}
 
     public static function runIn(string $tree): self
     {
@@ -49,7 +55,7 @@ final readonly class Suite
             ));
         }
 
-        return self::fromJUnit(Shell::read($log));
+        return self::fromJUnit(Shell::read($log), $result['exit']);
     }
 
     /**
@@ -58,8 +64,13 @@ final readonly class Suite
      * Skipped counts as red too, and deliberately: a mutation that turns a case
      * into a skip has removed the check exactly as thoroughly as one that
      * deletes it, and the harness must not read that as "the claim still holds".
+     *
+     * The exit code travels with the cases because it carries what no log
+     * shows. This project fails on warnings and on risky tests, and both leave
+     * every case green in the JUnit document while the run exits non-zero — a
+     * bench reading only the document would call such a breakage unnoticed.
      */
-    private static function fromJUnit(string $xml): self
+    private static function fromJUnit(string $xml, int $exit): self
     {
         $document = @simplexml_load_string($xml);
 
@@ -91,7 +102,7 @@ final readonly class Suite
 
         ksort($cases);
 
-        return new self($cases);
+        return new self($cases, $exit);
     }
 
     /** @return list<string> */

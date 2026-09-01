@@ -61,12 +61,25 @@ final class ExecutionFingerprintFieldCoverageTest extends TestCase
     }
 
     /**
+     * The expectation is read off the declared lists, not written beside each
+     * field.
+     *
+     * That is what makes the two guards cover each other. The reflective one
+     * sees a field name disappear from the lists; it cannot see a name **move**
+     * between them, because their union does not change. Deriving the
+     * expectation here does: a moved name flips what this test demands while
+     * the code that reads the field stands still, and the case goes red.
+     *
      * @param callable(Finding): Finding $move
      */
     #[Test]
     #[DataProvider('provideMovedFields')]
-    public function itSeesEveryFieldItNames(string $field, callable $move, DirectiveEffect $expected): void
+    public function itSeesEveryFieldItNames(string $field, callable $move): void
     {
+        $expected = \in_array($field, ExecutionFingerprint::BOUNDARY_FIELDS, true)
+            ? DirectiveEffect::Overrun
+            : DirectiveEffect::Effective;
+
         $before = ExecutionFingerprint::of([self::finding()]);
         $after = ExecutionFingerprint::of([$move(self::finding())]);
 
@@ -75,60 +88,58 @@ final class ExecutionFingerprintFieldCoverageTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string, callable(Finding): Finding, DirectiveEffect}>
+     * @return iterable<string, array{string, callable(Finding): Finding}>
      */
     public static function provideMovedFields(): iterable
     {
-        $identity = DirectiveEffect::Effective;
-        $boundary = DirectiveEffect::Overrun;
-
         yield 'location' => ['location', static fn(Finding $f): Finding => self::with($f, location: new Location(
             RelativePath::fromString('src/Sample.php'),
             99,
-        )), $identity];
+        ))];
         yield 'subject' => ['subject', static fn(Finding $f): Finding => self::with(
             $f,
             subject: self::subject('Other'),
-        ), $identity];
+        )];
         yield 'symbolPath' => ['symbolPath', static fn(Finding $f): Finding => self::with(
             $f,
             symbolPath: SymbolPath::forClass('App', 'Other'),
-        ), $identity];
-        yield 'ruleName' => ['ruleName', static fn(Finding $f): Finding => self::with($f, ruleName: 'other.rule'), $identity];
-        yield 'code' => ['code', static fn(Finding $f): Finding => self::with($f, code: 'other.rule'), $identity];
-        yield 'severity' => ['severity', static fn(Finding $f): Finding => self::with($f, severity: Severity::Error), $identity];
-        yield 'metricValue' => ['metricValue', static fn(Finding $f): Finding => self::with($f, metricValue: 99), $identity];
+        )];
+        yield 'ruleName' => ['ruleName', static fn(Finding $f): Finding => self::with($f, ruleName: 'other.rule')];
+        yield 'code' => ['code', static fn(Finding $f): Finding => self::with($f, code: 'other.rule')];
+        yield 'severity' => ['severity', static fn(Finding $f): Finding => self::with($f, severity: Severity::Error)];
+        yield 'metricValue' => ['metricValue', static fn(Finding $f): Finding => self::with($f, metricValue: 99)];
         yield 'relatedLocations' => ['relatedLocations', static fn(Finding $f): Finding => self::with(
             $f,
             relatedLocations: [new Location(RelativePath::fromString('src/Other.php'), 3)],
-        ), $identity];
+        )];
 
         yield 'dependencyTarget' => ['dependencyTarget', static fn(Finding $f): Finding => self::with(
             $f,
             dependencyTarget: SymbolPath::forClass('App', 'Target'),
-        ), $identity];
+        )];
         yield 'dependencyType' => ['dependencyType', static fn(Finding $f): Finding => self::with(
             $f,
             dependencyType: DependencyType::Extends,
-        ), $identity];
+        )];
         yield 'acceptedLevel' => ['acceptedLevel', static fn(Finding $f): Finding => self::with(
             $f,
             acceptedLevel: new AcceptedLevel([7.0], 1),
-        ), $identity];
+        )];
         yield 'occurrenceKey' => ['occurrenceKey', static fn(Finding $f): Finding => self::with(
             $f,
             occurrenceKey: OccurrenceKey::semantic('sample', ['seed' => 'a']),
-        ), $identity];
+        )];
 
         // Prose, both of it: rules spell the boundary into the advice as
         // readily as into the message, so a moved recommendation is a moved
-        // boundary and not a different finding.
+        // boundary and not a different finding — which is what the boundary
+        // list says, and what this case therefore demands.
         yield 'recommendation' => ['recommendation', static fn(Finding $f): Finding => self::with(
             $f,
             recommendation: 'do something else',
-        ), $boundary];
-        yield 'threshold' => ['threshold', static fn(Finding $f): Finding => self::with($f, threshold: 42), $boundary];
-        yield 'message' => ['message', static fn(Finding $f): Finding => self::with($f, message: 'a different tale'), $boundary];
+        )];
+        yield 'threshold' => ['threshold', static fn(Finding $f): Finding => self::with($f, threshold: 42)];
+        yield 'message' => ['message', static fn(Finding $f): Finding => self::with($f, message: 'a different tale')];
     }
 
     private static function finding(): Finding

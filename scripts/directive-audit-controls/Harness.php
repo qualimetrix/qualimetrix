@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QmxDirectiveAuditControls;
 
 use QmxFindingGateControls\Scratch;
+use QmxFindingGateControls\Shell;
 use RuntimeException;
 use Throwable;
 
@@ -41,7 +42,16 @@ final class Harness
     public static function main(array $arguments): int
     {
         $repository = \dirname(__DIR__, 2);
-        $only = self::only($arguments);
+        self::armCleanup();
+
+        try {
+            $only = self::only($arguments);
+        } catch (RuntimeException $error) {
+            fwrite(\STDERR, 'directive-audit-controls: ' . $error->getMessage() . "\n");
+
+            return 3;
+        }
+
         $probes = array_values(array_filter(
             Probes::all(),
             static fn(Probe $probe): bool => $only === [] || \in_array($probe->id, $only, true),
@@ -63,6 +73,40 @@ final class Harness
     }
 
     /**
+     * Every scratch tree removed on every way out, including the ones no
+     * `finally` sees.
+     *
+     * A clone left behind is a hardlink farm pointing at the developer's
+     * working tree, and the run that leaves it is exactly the interrupted one
+     * nobody is watching. Signals only raise a flag — `Shell` acts on it
+     * between reads, after killing the process tree — and the shutdown function
+     * is the backstop for a fatal error or an exit from elsewhere.
+     */
+    private static function armCleanup(): void
+    {
+        register_shutdown_function(static function (): void {
+            Shell::terminateAll();
+            Scratch::removeAll();
+        });
+
+        Shell::superviseFor(false, static function (string $reason): void {
+            fwrite(\STDERR, \sprintf("\nInterrupted: %s. Removed the scratch trees.\n", $reason));
+        });
+
+        if (!\function_exists('pcntl_async_signals')) {
+            return;
+        }
+
+        pcntl_async_signals(true);
+
+        foreach ([\SIGINT, \SIGTERM, \SIGHUP] as $signal) {
+            pcntl_signal($signal, static function (int $received): void {
+                Shell::requestStop('signal ' . $received);
+            });
+        }
+    }
+
+    /**
      * One probe: clone, plant, run, read.
      *
      * The clone is thrown away whatever happens, including on a refusal — a
@@ -74,10 +118,24 @@ final class Harness
         $scratch = Scratch::cloneOf($repository);
 
         try {
+            // A worktree's `.git` is a pointer at the main repository, so the
+            // clone's copy of it is not the isolation `Scratch` describes. The
+            // suite needs no history, so the safe move is to leave it none.
+            Shell::removeRecursively($scratch->path('.git'));
+
             $probe->mutation->apply($scratch, $repository);
             $suite = Suite::runIn($scratch->tree);
+            $red = $suite->red();
 
-            return Outcome::of($probe, $suite->names(), $suite->red());
+            if ($red === [] && $suite->exit !== 0) {
+                return Outcome::refused($probe, \sprintf(
+                    'PHPUnit exited %d with every case green, so it failed on something the log does not'
+                    . ' record — a warning or a risky test. This probe measured nothing.',
+                    $suite->exit,
+                ));
+            }
+
+            return Outcome::of($probe, $suite->names(), $red);
         } catch (Throwable $failure) {
             return Outcome::refused($probe, $failure->getMessage());
         } finally {

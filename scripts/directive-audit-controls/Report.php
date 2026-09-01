@@ -80,10 +80,8 @@ final readonly class Report
     }
 
     /**
-     * The cases no probe reddens.
-     *
-     * Counted over the breakages only: the positive probe reddens nothing by
-     * design, and counting it would make every case look guarded.
+     * The cases no probe reddens, counting neither the positive probe nor the
+     * blanket ones.
      *
      * @return list<string>
      */
@@ -95,7 +93,11 @@ final readonly class Report
         foreach ($this->outcomes as $outcome) {
             $cases = [...$cases, ...$outcome->cases];
 
-            if ($outcome->probe->isPositive()) {
+            // The positive probe reddens nothing by design; a blanket one
+            // reddens nearly everything, also by design. Counting either as the
+            // thing that guards a case is how eleven of the fifteen field cases
+            // came to look guarded while no breakage denied their claim.
+            if ($outcome->probe->isPositive() || $outcome->probe->blanket) {
                 continue;
             }
 
