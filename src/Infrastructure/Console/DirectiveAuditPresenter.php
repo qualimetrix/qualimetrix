@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
@@ -70,6 +71,7 @@ final readonly class DirectiveAuditPresenter
                 $report->coverage->failedFilesCount(),
             );
         }
+        $lines[] = \sprintf('  Sweep        %s', self::sweepLine($report->sweep));
         foreach ($this->selectionLines() as $line) {
             $lines[] = $line;
         }
@@ -116,6 +118,7 @@ final readonly class DirectiveAuditPresenter
                 'produced_findings' => $report->producedFindings,
             ],
             'selection' => ['only' => $this->only, 'disabled' => $this->disabled],
+            'sweep' => $report->sweep->value,
             'directives' => array_map(self::verdictToArray(...), $report->verdicts),
             'summary' => [
                 'total' => \count($report->verdicts),
@@ -136,6 +139,22 @@ final readonly class DirectiveAuditPresenter
     public static function jsonError(string $message, int $exitCode): string
     {
         return self::encode(['error' => $message, 'exit_code' => $exitCode]);
+    }
+
+    /**
+     * How the verdicts were measured, said in the report that carries them.
+     *
+     * Printed on every run and not only on the expensive one: a reader
+     * comparing two reports has to be able to see which measurement each came
+     * from, and a line that appears only sometimes is one a reader learns to
+     * stop looking for.
+     */
+    private static function sweepLine(DirectiveSweepScope $sweep): string
+    {
+        return match ($sweep) {
+            DirectiveSweepScope::Narrow => 'narrow — each directive is judged by re-executing the rule it addresses',
+            DirectiveSweepScope::Full => 'full — each directive is judged by re-executing every enabled rule',
+        };
     }
 
     /** @return list<string> */
