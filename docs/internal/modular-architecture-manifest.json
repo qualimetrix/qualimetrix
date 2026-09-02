@@ -10073,6 +10073,11 @@
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ThresholdDirectiveAudit",
           "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveMaskingCoalition",
+          "closes_in": null
         }
       ]
     },
@@ -11795,6 +11800,14 @@
     },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveAddressability": {
       "path": "src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "closure_package": "P6-B",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveMaskingCoalition": {
+      "path": "src/Analysis/Policy/Inline/Directive/DirectiveMaskingCoalition.php",
       "kind": "class",
       "owner": "Analysis.Policy.Inline",
       "visibility": "internal",
@@ -13649,12 +13662,12 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\ThresholdDirectiveAudit",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveSite",
           "closes_in": null
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveSite",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveMaskingCoalition",
           "closes_in": null
         }
       ]

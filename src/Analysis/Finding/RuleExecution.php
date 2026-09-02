@@ -116,6 +116,19 @@ final class RuleExecution implements RuleExecutionInterface
      * all seven. The granularity of {@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats}
      * follows, which is a declared consequence rather than a side effect.
      *
+     * The narrowing half is exact producer-name equality against `$producer`
+     * — not {@see RuleSelector::isChannelEnabled()}'s selector grammar, which
+     * also matches by channel code. `$producer` here is already the finding's
+     * true owning producer ({@see producerOf()}), so a channel-code match
+     * would only ever fire on a name collision with a *different* producer's
+     * channel — a configuration validator running inside this rule's slot can
+     * legitimately publish on a channel another capability owns (see the
+     * class docblock this method's own docblock continues), and that other
+     * producer's channel code coinciding with `$restrictToProducer` must not
+     * leak its finding into a run narrowed to someone else. This mirrors
+     * {@see isEnabled()}'s own narrowing, and for the same reason: one
+     * contract, one comparison, not two vocabularies that can disagree.
+     *
      * @param list<Finding> $findings
      *
      * @return list<Finding>
@@ -141,13 +154,7 @@ final class RuleExecution implements RuleExecutionInterface
                 $finding->level(),
                 $selection->only,
                 $selection->disabled,
-            ) && ($restrictToProducer === null || $this->ruleSelector->isChannelEnabled(
-                $producer,
-                $finding->channel(),
-                $finding->level(),
-                [$restrictToProducer],
-                [],
-            ));
+            ) && ($restrictToProducer === null || $producer === $restrictToProducer);
 
             if ($enabled) {
                 $kept[] = $finding;
@@ -270,6 +277,13 @@ final class RuleExecution implements RuleExecutionInterface
      * Merging them would let a narrowing to `X` re-enable an `X` the
      * configuration had disabled, which is exactly what the narrowing must not
      * do.
+     *
+     * The narrowing checks exact producer-name equality, not
+     * {@see RuleSelector::isProducerEnabled()}: that selector grammar also
+     * matches a producer by any channel it publishes, which would enable a
+     * second producer whose channel code happens to equal
+     * `$restrictToProducer`. The contract this narrows to is one exact name,
+     * not the broader "selector" vocabulary `--only-rule` accepts.
      */
     private function isEnabled(
         string $producerRuleName,
@@ -280,8 +294,7 @@ final class RuleExecution implements RuleExecutionInterface
             return false;
         }
 
-        return $restrictToProducer === null
-            || $this->ruleSelector->isProducerEnabled($producerRuleName, [$restrictToProducer], []);
+        return $restrictToProducer === null || $producerRuleName === $restrictToProducer;
     }
 
     /**

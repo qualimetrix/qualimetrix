@@ -22,6 +22,8 @@ final class Probes
 {
     private const string AUDIT = 'src/Analysis/Policy/Inline/Directive/ThresholdDirectiveAudit.php';
 
+    private const string COALITION = 'src/Analysis/Policy/Inline/Directive/DirectiveMaskingCoalition.php';
+
     private const string FINGERPRINT = 'src/Analysis/Policy/Inline/Directive/ExecutionFingerprint.php';
 
     private const string PIPELINE = 'src/Analysis/Run/Pipeline/AnalysisPipeline.php';
@@ -223,8 +225,14 @@ final class Probes
     /** @return list<Probe> */
     private static function masking(): array
     {
+        // DirectiveMaskingCoalition::maskedBy() closes over `$without` rather
+        // than taking `$input`, so the counterfactual call reads
+        // `($this->without)(...)` — a property-held closure invocation, not a
+        // method call on `$this` — and it has no `$input` to reach for a raw
+        // baseline. Removing nothing (`[]`) reproduces that same baseline
+        // through the closure instead.
         $maskerRun = '        $withoutMaskers = ExecutionFingerprint::of('
-            . '$this->without($input, $maskers, $restrictToProducer));';
+            . '($this->without)($maskers, $restrictToProducer));';
 
         return [
             Probe::breaking(
@@ -241,7 +249,7 @@ final class Probes
             Probe::breaking(
                 'structural-masking',
                 'overlap alone is taken as the fact of masking, without running anything',
-                self::AUDIT,
+                self::COALITION,
                 [
                     "        if (\$withoutMaskers->compareTo(\$withoutAll) === DirectiveEffect::Inert) {\n"
                     . "            return null;\n"
@@ -252,22 +260,23 @@ final class Probes
             Probe::breaking(
                 'pairwise-masking',
                 'only the first masker leaves the comparison, not every one',
-                self::AUDIT,
+                self::COALITION,
                 [$maskerRun => '        $withoutMaskers = ExecutionFingerprint::of('
-                    . '$this->without($input, [$maskers[0]], $restrictToProducer));'],
+                    . '($this->without)([$maskers[0]], $restrictToProducer));'],
                 ['itTakesEveryMaskerOutOfTheComparison'],
             ),
             Probe::breaking(
                 'coalition-against-the-run',
                 'the coalition is compared against the run instead of against itself without this directive',
-                self::AUDIT,
-                [$maskerRun => '        $withoutMaskers = ExecutionFingerprint::of($input->baselineResult->produced);'],
+                self::COALITION,
+                [$maskerRun => '        $withoutMaskers = ExecutionFingerprint::of('
+                    . '($this->without)([], $restrictToProducer));'],
                 ['itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne'],
             ),
             Probe::breaking(
                 'masker-named-by-position',
                 'the neighbour reported as the masker is the first in the list rather than the measured one',
-                self::AUDIT,
+                self::COALITION,
                 ['        if (\count($maskers) === 1) {' => '        if (true) {'],
                 ['itNamesTheNeighbourThatActuallyHidesIt'],
             ),

@@ -658,6 +658,25 @@ final class ThresholdDirectiveAuditTest extends TestCase
         );
 
         $narrow = $audit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $baseline, DirectiveSweepScope::Narrow));
+
+        // The baseline call above ran C once (executions === 1), and
+        // ThresholdDirectiveAudit::sweep()'s two reproducibility controls
+        // ("before"/"after") always run the whole rule set unrestricted, by
+        // design, whichever scope was asked for — that is +2, unconditionally.
+        // What the docblock claims is narrower: the *per-directive*
+        // reference and removal passes for rule A and rule B must stay
+        // restricted to their own rule and never touch C. A narrow sweep
+        // that leaked those two passes into unrestricted runs would add two
+        // more C executions on top (one per directive: A's and B's), landing
+        // on 5 — indistinguishable from a `Full` sweep's own count. 3 is the
+        // value only a genuinely narrow removal/reference pass produces.
+        self::assertSame(
+            3,
+            $execC->executions,
+            'rule C must run only for the sweep\'s own before/after reproducibility controls (unrestricted by'
+            . ' design), never for rule A\'s or rule B\'s narrowed reference/removal passes',
+        );
+
         $full = $audit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $baseline, DirectiveSweepScope::Full));
 
         self::assertEquals($full, $narrow);

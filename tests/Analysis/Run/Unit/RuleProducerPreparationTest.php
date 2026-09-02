@@ -11,14 +11,21 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
@@ -178,6 +185,43 @@ final class RuleProducerPreparationTest extends TestCase
     }
 
     /**
+     * `auditThresholdDirectives()` is the last hop of a value that also lands,
+     * independently, in `DirectiveAuditReport::$sweep`
+     * ({@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline::auditDirectives()}).
+     * A mutation that hardcodes the scope passed into the audit — while
+     * leaving the report field alone — would keep that field correct and
+     * every verdict self-consistent, so nothing downstream would catch it.
+     * This spies on the actual {@see ThresholdDirectiveAuditInput} the
+     * interface receives, which a `createStub()` double (unable to observe
+     * its own arguments) cannot do.
+     */
+    #[Test]
+    #[TestWith([DirectiveSweepScope::Narrow])]
+    #[TestWith([DirectiveSweepScope::Full])]
+    public function itPassesTheRequestedSweepScopeThroughToTheThresholdAudit(DirectiveSweepScope $sweep): void
+    {
+        $spy = new class implements ThresholdDirectiveAuditInterface {
+            public ?ThresholdDirectiveAuditInput $received = null;
+
+            public function verdicts(ThresholdDirectiveAuditInput $input): array
+            {
+                $this->received = $input;
+
+                return [];
+            }
+        };
+
+        $context = new AnalysisContext(metrics: new InMemoryMetricRepository());
+        $executor = self::createStub(RuleExecutionInterface::class);
+        $baseline = new RuleExecutionResult([], [], new RuleExclusionStats());
+
+        $this->preparation(thresholdAudit: $spy)
+            ->auditThresholdDirectives($context, $executor, $baseline, $sweep);
+
+        self::assertSame($sweep, $spy->received?->sweep);
+    }
+
+    /**
      * @param (LayerPolicyPreparationInterface&MockObject)|null $architecture
      * @param (CircularDependencyPreparationInterface&MockObject)|null $circular
      * @param list<FileSetInspectionParticipantInterface> $participants
@@ -188,6 +232,7 @@ final class RuleProducerPreparationTest extends TestCase
         ?RuleSelector $selector = null,
         ?RuleSelection $selection = null,
         array $participants = [],
+        ?ThresholdDirectiveAuditInterface $thresholdAudit = null,
     ): RuleProducerPreparation {
         $selector ??= new RuleSelector(new InMemoryRuleChannelRegistry());
         $registry = new RuleOptionsRegistry();
@@ -197,7 +242,7 @@ final class RuleProducerPreparationTest extends TestCase
             $architecture ?? self::createStub(LayerPolicyPreparationInterface::class),
             $circular ?? self::createStub(CircularDependencyPreparationInterface::class),
             self::createStub(InlineDirectivePolicyInterface::class),
-            self::createStub(ThresholdDirectiveAuditInterface::class),
+            $thresholdAudit ?? self::createStub(ThresholdDirectiveAuditInterface::class),
             new FileSetInspectionComposite(
                 $participants,
                 new RuleSelectorProducerGate($selector),

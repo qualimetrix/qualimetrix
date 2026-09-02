@@ -660,6 +660,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveMaskingCoalition'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveNameHints'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveRejection'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage'

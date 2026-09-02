@@ -136,7 +136,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface	Analys
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	30	8
 Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	102	17
-Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	8	3
+Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	9	3
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory	Analysis.Finding	1	1

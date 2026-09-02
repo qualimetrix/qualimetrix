@@ -3605,6 +3605,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyProducerOfTheComputedFamilyIsOnTheReferencePage
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRegisteredRuleDeclaresItsOwnRemediationMinutes
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRulesRemediationMinutesMatchTheReferencePage
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::everyCallSitePassesItsOwnRuleNameAsTheFirstArgument
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itFindsAtLeastTheTwoKnownProductionCallSites
  - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::anOverriddenCopyReportsTheOverriddenNumber
  - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::everyDeclaredBoundaryIsWhereSeverityStarts
  - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::moreThanOneBoundaryIsClaimedOnlyWithASecondDecision
@@ -3826,6 +3828,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotCaptureExcludedFindingsWhenCaptureHolderIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotCaptureExcludedPathFindingsWhenCaptureHolderIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotExecuteAProducerDisabledByConfigurationEvenWhenNarrowingNamesIt
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotExecuteAProducerWhoseChannelCodeCollidesWithTheNarrowedName
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotPublishAFindingWhoseProducerCollidesWithTheNarrowedNameByChannelCodeAlone
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotTreatABarePrefixAsAGroup
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExcludePathsAreIsolatedPerRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExcludePathsWithEmptyFilePassesThrough
@@ -5916,6 +5920,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\DependencyGraphAnalyzerTest::itClassifiesParseAndProcessingFailuresWithoutDiscardingSuccessfulFiles
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\DependencyGraphAnalyzerTest::itReturnsGraphAndCanonicalCoverageForMixedDependencies
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\DependencyGraphAnalyzerTest::itUsesTheTraversalContractWithoutImportingDependencyModelInternals
+ - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itPassesTheRequestedSweepScopeThroughToTheThresholdAudit#0
+ - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itPassesTheRequestedSweepScopeThroughToTheThresholdAudit#1
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itPreparesArchitecturePolicyForEitherOfItsProducersAlone#0
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itPreparesArchitecturePolicyForEitherOfItsProducersAlone#1
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itPreparesArchitecturePolicyWhenLayerViolationRuleIsEnabled
