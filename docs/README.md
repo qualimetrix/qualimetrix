@@ -103,7 +103,7 @@ composer install
 
 # Run tests
 composer test                 # Run PHPUnit
-composer test:coverage        # With coverage report
+XDEBUG_MODE=coverage composer test:coverage   # HTML + clover; needs an active driver
 
 # Static analysis
 composer phpstan              # Run PHPStan level 8
