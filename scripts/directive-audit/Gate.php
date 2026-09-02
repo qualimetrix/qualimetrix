@@ -31,19 +31,23 @@ use RuntimeException;
  *    directives on the same site into one and never notice one of them going
  *    missing; {@see Population::diff()} does not.
  *
- *    **This pair is not two independent witnesses.** The enumeration script
- *    keeps a hand-copied duplicate of
+ *    **The two measures are written differently on purpose.** The enumeration
+ *    used to hold a hand-copied duplicate of
  *    {@see \Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor}'s
- *    private extraction pattern, and
- *    `ThresholdDirectivePatternSyncTest` forces the copy to stay byte-identical
- *    to the original — so a regex-level regression in the pattern itself (a
- *    class narrowed, an anchor loosened) is authored once and lands in both
- *    measurements, and this check cannot see it. What it does catch is every
- *    disagreement that is *not* pattern-level: the audit and the enumerator
- *    reach the pattern through unrelated pipelines — file discovery,
- *    `exclude_paths`/`exclude_namespaces`, addressability refusal, rule
- *    selection — and none of that machinery is shared, so a regression there
- *    still shows up as a mismatch.
+ *    private extraction pattern, kept byte-identical to it by a test — so a
+ *    regression inside the pattern (a character class narrowed, an anchor
+ *    loosened) was authored once and landed in both measurements, and this
+ *    check could not see the one class of defect the pair exists for.
+ *    {@see ThresholdDirectiveScan} shares no expression with the product: it
+ *    reads a docblock line word by word and cuts the target with a character
+ *    list of its own. Nothing forces those two spellings together, so
+ *    `ThresholdPopulationAgreementTest` asserts what actually matters — that
+ *    they answer alike on a fixture of authored forms, including the six
+ *    character classes `src/` happens never to use. On top of that this check
+ *    still catches every disagreement that is not pattern-level: the audit and
+ *    the enumerator reach their answer through unrelated pipelines — file
+ *    discovery, `exclude_paths`/`exclude_namespaces`, addressability refusal,
+ *    rule selection — and none of that machinery is shared.
  *
  * 2. **Non-emptiness of what was actually measured**: population matching is
  *    silent when every `@qmx-threshold` site becomes

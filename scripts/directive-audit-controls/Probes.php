@@ -52,6 +52,10 @@ final class Probes
 
     private const string GATE = 'scripts/directive-audit/Gate.php';
 
+    private const string SCAN = 'scripts/directive-audit/ThresholdDirectiveScan.php';
+
+    private const string EXTRACTOR = 'src/Analysis/Policy/Inline/Contract/ThresholdOverrideExtractor.php';
+
     /**
      * Field of a finding => the line the fingerprint reads it with.
      *
@@ -99,6 +103,7 @@ final class Probes
             ...self::reading(),
             ...self::enumeration(),
             ...self::projections(),
+            ...self::agreement(),
         ];
     }
 
@@ -352,6 +357,125 @@ final class Probes
                     . " ? '' : \sprintf('%d %s', \$this->counts[\$effect->value], self::label(\$effect));",
                 ],
                 ['itPrintsOneTallyPerVerdictTheVocabularyDefinesInTheTextSummary'],
+            ),
+        ];
+    }
+
+    /**
+     * The second measure of the authored population, and the product measure it
+     * has to agree with.
+     *
+     * One probe per rule of the scan rather than per authored form: a rule
+     * broken once reddens every form written for it, and planting the same
+     * breakage under several names would inflate the table without covering
+     * anything more. The last two break the *product's* character class
+     * instead — that is the defect this pair exists to catch, and the one the
+     * live tree cannot show, because no target in `src/` is spelled with
+     * anything but lowercase letters, dots and hyphens.
+     *
+     * @return list<Probe>
+     */
+    private static function agreement(): array
+    {
+        return [
+            Probe::breaking(
+                'scan-target-class-narrowed',
+                'the second measure cuts a target at characters a channel is legitimately made of',
+                self::SCAN,
+                [
+                    "        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:-';"
+                    => "        'abcdefghijklmnopqrstuvwxyz';",
+                ],
+                [
+                    'data set "plain"',
+                    'data set "target cut at a call"',
+                    'data set "digit"',
+                    'data set "underscore"',
+                    'data set "capital"',
+                    'itMeasuresTheSamePopulationOverTheWholeFixture',
+                ],
+            ),
+            Probe::breaking(
+                'scan-demands-a-whole-word',
+                'a tag written against the docblock star is read as no directive at all',
+                self::SCAN,
+                ['!str_ends_with($word, self::DIRECTIVE)' => '$word !== self::DIRECTIVE'],
+                ['data set "glued to the docblock star"'],
+            ),
+            Probe::breaking(
+                'scan-accepts-a-tag-with-a-suffix',
+                'a word that merely contains the tag is read as a directive',
+                self::SCAN,
+                ['!str_ends_with($word, self::DIRECTIVE)' => '!str_contains($word, self::DIRECTIVE)'],
+                ['data set "tag with a suffix"'],
+            ),
+            Probe::breaking(
+                'scan-reads-backticked-documentation',
+                'a documented example is counted as an authored directive',
+                self::SCAN,
+                [
+                    'foreach (explode("\n", self::blankBacktickRegions($token[1])) as $offset => $line) {'
+                    => 'foreach (explode("\n", $token[1]) as $offset => $line) {',
+                ],
+                ['data set "backticked"'],
+            ),
+            Probe::breaking(
+                'scan-cuts-a-backtick-region-out',
+                'a backtick region is removed rather than blanked, so everything below it moves up',
+                self::SCAN,
+                [
+                    "            static fn(array \$match): string => preg_replace('/[^\\r\\n]/', ' ', \$match[0]) ?? \$match[0],"
+                    => "            static fn(array \$match): string => '',",
+                ],
+                ['data set "after a multiline backtick region"'],
+            ),
+            Probe::breaking(
+                'scan-keeps-reading-past-a-directive',
+                'the values of a directive are scanned for another one, so a documented tag becomes a site',
+                self::SCAN,
+                [
+                    "            if (\$address !== null) {\n                return \$address;\n            }"
+                    => "            if (\$address !== null) {\n"
+                    . "                return self::recognise(substr(\$line, \$cursor)) ?? \$address;\n            }",
+                ],
+                ['data set "two on one line"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ),
+            Probe::breaking(
+                'scan-admits-an-empty-target',
+                'a tag followed by something no channel starts with is admitted as a site addressing nothing',
+                self::SCAN,
+                ["        if (\$target === '') {" => '        if (false) {'],
+                ['data set "target wrapped in parens"'],
+            ),
+            Probe::breaking(
+                'scan-reads-ordinary-comments',
+                'a tag in a line comment is counted, where the product reads docblocks only',
+                self::SCAN,
+                [
+                    '            if (!\is_array($token) || $token[0] !== \T_DOC_COMMENT) {'
+                    => '            if (!\is_array($token) || !\in_array($token[0], [\T_DOC_COMMENT, \T_COMMENT], true)) {',
+                ],
+                ['data set "outside a docblock"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ),
+            Probe::breaking(
+                'extractor-class-drops-punctuation',
+                "the product's own target class stops admitting the separators it captures in order to refuse",
+                self::EXTRACTOR,
+                [
+                    "'/@qmx-threshold\\s+([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
+                    => "'/@qmx-threshold\\s+([\\w.-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
+                ],
+                ['data set "star"', 'data set "hash"', 'data set "colon"'],
+            ),
+            Probe::breaking(
+                'extractor-class-drops-word-characters',
+                "the product's own target class stops admitting digits, underscores and capitals",
+                self::EXTRACTOR,
+                [
+                    "'/@qmx-threshold\\s+([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
+                    => "'/@qmx-threshold\\s+([a-z.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
+                ],
+                ['data set "digit"', 'data set "underscore"', 'data set "capital"'],
             ),
         ];
     }

@@ -29,6 +29,12 @@ use RuntimeException;
  * regression stops a build, and until it was listed here no probe could reach
  * it: the bench runs PHPUnit files, and the floor lived in a script that runs
  * on include.
+ *
+ * **And the second measure that step compares the audit against.** That measure
+ * used to be a copy of the product's own extraction pattern, so the only thing
+ * guarding it was a text comparison of the two copies — which no breakage of
+ * the measure could fail. What guards it now is agreement with the product on
+ * authored forms, and that is a suite file like any other.
  */
 final readonly class Suite
 {
@@ -42,6 +48,7 @@ final readonly class Suite
         'tests/Infrastructure/Console/Unit/DirectiveAuditSummaryProjectionTest.php',
         'tests/Unit/RuleVocabulary/DirectiveAuditGateTest.php',
         'tests/Unit/RuleVocabulary/DirectiveAuditReportReadingTest.php',
+        'tests/Unit/RuleVocabulary/ThresholdPopulationAgreementTest.php',
     ];
 
     /**

@@ -18,6 +18,10 @@ parameters:
         - tests/Analysis/Policy/Architecture/Fixtures
         - tests/Analysis/Policy/Baseline/Fixtures
         - tests/Analysis/Policy/Inline/Fixtures
+        # Authored directive shapes, one of them deliberately unparseable: the
+        # fixture states what the product does with a malformed target, so its
+        # docblocks are data rather than documentation.
+        - tests/Unit/RuleVocabulary/Fixtures
         - tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures
     tmpDir: .phpstan.cache
     reportUnmatchedIgnoredErrors: true

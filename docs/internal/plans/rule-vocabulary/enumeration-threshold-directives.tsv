@@ -18,8 +18,13 @@
 #
 # HOW THIS WAS PRODUCED
 # Token-level, not line-level: only T_DOC_COMMENT tokens are read, backtick-
-# delimited regions are stripped first (the product strips them too — AGENTS.md
-# §8), and what remains is matched with ThresholdOverrideExtractor's own pattern.
+# delimited regions are blanked first — every character of them but the line
+# breaks becomes a space, which is what the product does too (AGENTS.md §8) —
+# and what remains is read word by word: a word ending in the tag, then the
+# next word cut to the characters a channel is made of. The measure is
+# deliberately not the product's own pattern: a copy of it could not disagree
+# with the original, and disagreeing is the only reason a second measure of the
+# same population is run at all.
 # Two cruder probes were run first and both were wrong in both directions. A
 # plain grep counts 127 occurrences of the tag in `src/**/*.php` and 136 in
 # `src/**` — the second number is the one AUDIT.md quotes as "136 directives",
@@ -39,8 +44,9 @@
 #   DirectiveAddressability's answer, published today as annotation.* findings.
 # - Whether the site changes any decision. That is precisely what the product
 #   cannot answer today and what this step adds.
-# - The `values` column carries the reason text with backticked spans removed,
-#   because the strip runs before the match; it is a locator, not a quotation.
+# - The `values` column carries the reason text with backticked spans blanked
+#   out to spaces, because the blanking runs before the match; it is a locator,
+#   not a quotation.
 file	line	channel	values
 src/Analysis/Evidence/Measurement/Contract/CallableWithMetrics.php	26	code-smell.constructor-overinjection	warning=9 error=9 -- Exact callable measurement record carries eight independent facts about one declaration; bundling them would recreate the prohibited array record.
 src/Analysis/Evidence/Measurement/Contract/VisitorCallableScope.php	14	code-smell.constructor-overinjection	warning=14 error=14 -- Exact immutable callable scope exposes thirteen independent identity fields, in-run join position beside durable ordinal; bundling them would recreate the prohibited array record. One field of headroom, as before.
@@ -51,11 +57,11 @@ src/Analysis/Evidence/Measurement/Contract/CallableWithMetrics.php	27	code-smell
 src/Analysis/Evidence/Measurement/Contract/VisitorCallableScope.php	15	code-smell.long-parameter-list	warning=14 error=14 -- Exact immutable callable scope constructor mirrors thirteen readonly identity fields, in-run join position beside durable ordinal; bundling them would recreate the prohibited array record. One field of headroom, as before.
 src/Analysis/Evidence/Measurement/Visitor/VisitorLexicalScope.php	112	code-smell.long-parameter-list	warning=9 error=9 -- Sole mutable traversal scope atomically validates and constructs callable identity from eight context inputs.
 src/Analysis/Run/Contract/Pipeline/AnalysisResult.php	55	code-smell.long-parameter-list	warning=9 error=9 -- Same VO, same unsplit shape; see the
-src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	52	complexity.cyclomatic	warning=15 error=15 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra (grew by one arm for the  assignment-coalesce operator).
+src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	52	complexity.cyclomatic	warning=15 error=15 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra (grew by one arm for the       assignment-coalesce operator).
 src/Core/Symbol/MetricSubjectCodec.php	68	complexity.cyclomatic	warning=13 error=13 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
 src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	74	complexity.cyclomatic	warning=11 error=11 — Finite attachment projection keeps node lookup, magnitude normalization, and payload fields together.
 src/Core/Symbol/MetricSubjectCodec.php	69	complexity.npath	warning=289 error=289 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
-src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	30	complexity.wmc	warning=52 error=52 -- Finite php-parser expression algebra keeps exact NPath composition and saturation together (grew by one arm for the  assignment-coalesce operator).
+src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	30	complexity.wmc	warning=52 error=52 -- Finite php-parser expression algebra keeps exact NPath composition and saturation together (grew by one arm for the       assignment-coalesce operator).
 src/Analysis/Evidence/Coupling/CboRule.php	34	coupling.cbo	21 -- Raw CBO 20: this hierarchical rule's own dependencies
 src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	18	coupling.cbo	27 -- Measurement collector base is a stable provider-owned extension hub; current raw CBO 26 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php	10	coupling.cbo	38 -- Aggregation definitions and consumers intentionally share this provider-owned enum; current raw CBO 37 gets one-edge headroom.
@@ -67,7 +73,7 @@ src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php	16	coup
 src/Analysis/Evidence/Measurement/Contract/ResettableVisitorInterface.php	10	coupling.cbo	23 -- Measurement visitors intentionally share this lifecycle promise; current raw CBO 22 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	25	coupling.cbo	22 -- Composition root of traversal identity: four collaborators plus the node types it routes; raw CBO 21 gets one-edge headroom.
 src/Analysis/Policy/Baseline/Baseline.php	23	coupling.cbo	21 -- The capability's own aggregate root: raw
-src/Reporting/FormatterContext.php	14	coupling.cbo	warning=31 error=31 -- Formatter context is the immutable Reporting input boundary every formatter's  signature depends on; the prior threshold of 30 reserved room for exactly one more dependent, and Ш6's  formatter () is that one. The inclusive threshold of 31 again rejects one additional dependency beyond it.
+src/Reporting/FormatterContext.php	14	coupling.cbo	warning=31 error=31 -- Formatter context is the immutable Reporting input boundary every formatter's                                    signature depends on; the prior threshold of 30 reserved room for exactly one more dependent, and Ш6's              formatter (                     ) is that one. The inclusive threshold of 31 again rejects one additional dependency beyond it.
 src/Reporting/Report.php	19	coupling.cbo	warning=31 error=31 -- Report is the transport VO every formatter's
 src/Analysis/Evidence/Measurement/Contract/MetricBag.php	15	coupling.class-rank	warning=0.035 error=0.035 -- Intentional contract hub:
 src/Core/Symbol/SymbolLevel.php	19	coupling.class-rank	warning=0.045 error=0.045 -- Same intentional contract-hub

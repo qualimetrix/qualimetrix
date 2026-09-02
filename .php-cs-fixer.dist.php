@@ -11,7 +11,11 @@ $finder = PhpCsFixer\Finder::create()
     ->name('*.php')
     ->ignoreDotFiles(true)
     ->ignoreVCS(true)
-    ->notPath('Fixtures/Ast/invalid_syntax.php');
+    ->notPath('Fixtures/Ast/invalid_syntax.php')
+    // The authored shapes of a threshold directive are the subject of that
+    // fixture, down to whether a space follows the docblock star. A fixer
+    // tidying one of them would rewrite the case rather than the file.
+    ->notPath('Unit/RuleVocabulary/Fixtures/AuthoredThresholdForms.php');
 
 return (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
