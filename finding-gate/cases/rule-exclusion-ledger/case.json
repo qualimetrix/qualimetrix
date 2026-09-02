@@ -1,6 +1,6 @@
 {
     "id": "rule-exclusion-ledger",
-    "description": "Auxiliary: the only case configuring per-rule exclude_namespaces and exclude_paths (RuleExclusionStats' two ledger halves) and the only one pairing them with a top-level exclude_namespaces (the global namespace-exclusion stage) in one run, silencing three fixtures that would otherwise fire code-smell.long-parameter-list. The global exclude_paths stage is witnessed separately by the excluded-path case.",
+    "description": "Auxiliary: the only case configuring per-rule exclude_namespaces and exclude_paths (RuleExclusionStats' two ledger halves) and the only one pairing them with a top-level exclude_namespaces (the global namespace-exclusion stage) in one run, silencing three fixtures that would otherwise fire code-smell.long-parameter-list. The global exclude_paths stage is witnessed separately by the excluded-path case. It also carries the only suppression written on top of a ledger exclusion: SuppressedInsideExcluded reports nothing today because the directive audit reads what the run produced, and would report annotation.unused-directive if it read what a report published.",
     "coverage": "auxiliary",
     "paths": [
         "src"

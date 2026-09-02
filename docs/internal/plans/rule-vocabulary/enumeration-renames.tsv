@@ -2,7 +2,7 @@ old	kind	new	step	src	tests	presets	config	baseline	website_docs	benchmarks	find
 annotation.invalid-threshold	channel	?		2	5	0	0	0	17	0	1
 annotation.unresolved-directive	channel	?		10	13	0	0	0	31	0	1
 annotation.unsupported-threshold	channel	?		6	5	0	0	0	17	0	1
-annotation.unused-directive	channel	?		15	12	0	0	0	29	0	1
+annotation.unused-directive	channel	?		15	12	0	0	0	29	0	2
 architecture.circular-dependency	channel	?		9	29	0	2	0	39	0	1
 architecture.coverage	channel	?		18	71	0	0	0	43	0	1
 architecture.empty-template	channel	?		9	11	0	0	0	27	0	1
@@ -21,7 +21,7 @@ code-smell.eval	channel	?		1	23	0	0	0	16	0	8
 code-smell.exit	channel	?		1	7	0	0	0	16	0	1
 code-smell.goto	channel	?		2	113	0	0	0	12	0	3
 code-smell.identical-subexpression	channel	?		2	5	0	0	0	13	0	1
-code-smell.long-parameter-list	channel	?		17	63	2	2	3	33	0	13
+code-smell.long-parameter-list	channel	?		17	63	2	2	3	33	0	14
 code-smell.superglobals	channel	?		1	5	1	0	0	12	0	1
 code-smell.unreachable-code	channel	?		8	37	0	1	0	23	0	1
 code-smell.unused-private	channel	?		2	6	0	0	0	15	0	3
@@ -147,7 +147,7 @@ code-smell.eval	producer	?		1	23	0	0	0	16	0	8
 code-smell.exit	producer	?		1	7	0	0	0	16	0	1
 code-smell.goto	producer	?		2	113	0	0	0	12	0	3
 code-smell.identical-subexpression	producer	?		2	5	0	0	0	13	0	1
-code-smell.long-parameter-list	producer	?		17	63	2	2	3	33	0	13
+code-smell.long-parameter-list	producer	?		17	63	2	2	3	33	0	14
 code-smell.superglobals	producer	?		1	5	1	0	0	12	0	1
 code-smell.unreachable-code	producer	?		8	37	0	1	0	23	0	1
 code-smell.unused-private	producer	?		2	6	0	0	0	15	0	3
