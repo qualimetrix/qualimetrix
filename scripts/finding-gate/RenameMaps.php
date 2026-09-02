@@ -128,7 +128,7 @@ final class RenameMaps
      * The restriction is a measurement, not a convenience: Ш5e3 measured which
      * surfaces publish a metric key at all — `format:metrics` (282 spellings),
      * `format:json` (13) and the HTML report, which embeds the JSON payload.
-     * The other eight formats, the baseline, `baseline:explain` and the `rules`
+     * The other nine formats, the baseline, `baseline:explain` and the `rules`
      * listing publish none. A key that later reaches one of those is therefore
      * NOT silently translated: it stands as an undeclared difference and the run
      * goes red, which is the direction this has to fail in.

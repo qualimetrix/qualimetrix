@@ -1022,7 +1022,7 @@ final class Gate
     /**
      * Reported ahead of the surface comparison because "how many findings" is
      * the question a reader asks first, and a count change otherwise arrives as
-     * a diff of twelve formats.
+     * a diff across every format that publishes the findings it moved.
      *
      * @param array<string, string> $candidate
      * @param array<string, string> $reference

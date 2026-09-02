@@ -1,35 +1,67 @@
 file	line	meaning	action
-AGENTS.md	629	gate: compared check formats	eleven -> twelve
+AGENTS.md	629	gate: compared check formats	edited: eleven -> twelve
+CHANGELOG.md	86	baseline entries per line	no
+CHANGELOG.md	106	built-in health dimensions	no
 CHANGELOG.md	107	channels a past step collapsed	no
-CHANGELOG.md	111	product: output formats, in an [Unreleased] entry whose count is already understated	drop the count, name no number
+CHANGELOG.md	109	the names a channel has	no
+CHANGELOG.md	111	the count this entry used to spell is gone; the numerals left are other subjects	no
+CHANGELOG.md	118	a metric axis	no
+CHANGELOG.md	151	selector groups	no
 docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	32	metric keys: collector-owned literals	no
 docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	43	metric keys: collector-owned literals	no
-docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	692	the open entry saying FORMATS lists eleven	closed by B1, with the count it now holds
-docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	750	signatures carrying a directive shape	no
-docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	756	docblocks repeating a name	no
-finding-gate/README.md	221	gate: compared check formats, named as a list	eleven -> twelve, `suppressed` joins the list; the false parenthetical about --format=json goes with it
-finding-gate/README.md	290	corpus: GitLab fingerprints in one case	no
-finding-gate/README.md	325	gate: surfaces a prefix was measured across	eleven -> twelve
-finding-gate/README.md	423	metric keys: collector-owned literals	no
-finding-gate/README.md	463	gate: surface diffs an untranslated input would arrive as	eleven -> twelve
-finding-gate/README.md	691	gate: compared check formats	eleven -> twelve
-finding-gate/README.md	701	gate: formats still compared for equality beside one declared surface	ten -> eleven
-finding-gate/README.md	728	corpus: findings carrying a split half	no
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	123	steps a surface was allowed to move in	no
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	173	corpus cases, in the entry B1 closed: a record of its own time	no
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	174	corpus cases, in the entry B1 closed: a record of its own time	no
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	710	gate: compared check formats, inside an entry that stays open	edited: eleven -> twelve
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	768	signatures carrying a directive shape	no
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	774	docblocks repeating a name	no
+finding-gate/README.md	221	gate: compared check formats, named as a list	edited: eleven -> twelve, `suppressed` joined the list
+finding-gate/README.md	224	the two publications of the suppressed composition	edited: the false claim that --format=json breaks the artifact is gone
+finding-gate/README.md	293	GitLab fingerprints in one case	no
+finding-gate/README.md	328	gate: surfaces a prefix was measured across	edited: eleven -> twelve
+finding-gate/README.md	426	metric keys: collector-owned literals	no
+finding-gate/README.md	466	gate: surface diffs an untranslated input arrives as	edited: eleven -> twelve
+finding-gate/README.md	559	the two trees	no
+finding-gate/README.md	638	green controls	no
+finding-gate/README.md	669	surfaces aligning on a name — a property, not the total	no
+finding-gate/README.md	685	surfaces split by a property — a partition, not the total	no
+finding-gate/README.md	694	gate: compared check formats	edited: eleven -> twelve
+finding-gate/README.md	704	gate: formats still compared beside one declared surface	edited: ten -> eleven
+finding-gate/README.md	731	findings carrying a split half	no
+finding-gate/cases/complexity/case.json	3	fixtures of one corpus case	no
 qmx.yaml	1333	layer edges	no
-scripts/finding-gate-controls/Control.php	122	gate: formats a case-wide pin spans, and how many stay compared	eleven -> twelve, ten -> eleven
+qmx.yaml	1439	layer edges	no
+scripts/finding-gate-controls/Control.php	16	the two trees	no
+scripts/finding-gate-controls/Control.php	122	gate: formats a case-wide pin spans, and how many stay compared	edited: eleven -> twelve, ten -> eleven
+scripts/finding-gate-controls/Controls.php	102	controls, not surfaces	no
 scripts/finding-gate-controls/Controls.php	201	channels of a past step	no
+scripts/finding-gate-controls/Controls.php	305	the two trees	no
 scripts/finding-gate-controls/Controls.php	332	bare names counted by a past plan	no
 scripts/finding-gate-controls/Controls.php	381	delta classes and their tolerations	no
-scripts/finding-gate-controls/Controls.php	461	gate: surface diffs an untranslated input would arrive as	eleven -> twelve
+scripts/finding-gate-controls/Controls.php	461	gate: surface diffs an untranslated input arrives as	edited: eleven -> twelve
+scripts/finding-gate-controls/Controls.php	496	surfaces that pad a column — a property, not the total	no
+scripts/finding-gate-controls/Controls.php	555	surfaces publishing one field — a property, not the total	no
+scripts/finding-gate-controls/Controls.php	678	surfaces that pad a column — a property, not the total	no
 scripts/finding-gate-controls/Controls.php	682	findings in one corpus case	no
 scripts/finding-gate-controls/Controls.php	691	findings in one corpus case	no
+scripts/finding-gate-controls/Controls.php	745	surfaces of one case that differ — a property, not the total	no
+scripts/finding-gate-controls/Controls.php	789	the two trees	no
 scripts/finding-gate-controls/Controls.php	791	findings in one corpus case	no
-scripts/finding-gate-controls/Controls.php	1036	gate: artifacts a declared surface is one of	eleven -> twelve
+scripts/finding-gate-controls/Controls.php	840	corpus cases: stale at fourteen, and its own follow-up entry	no
+scripts/finding-gate-controls/Controls.php	1036	gate: artifacts a declared surface is one of	edited: eleven -> twelve
 scripts/finding-gate-controls/Harness.php	312	seconds a clone takes	no
+scripts/finding-gate-controls/Outcome.php	161	failure classes scoped by a surface key	no
+scripts/finding-gate-controls/Outcome.php	175	reasons a control lands on a declared surface	no
 scripts/finding-gate-controls/Shell.php	30	seconds a clone takes	no
-scripts/finding-gate/Gate.php	939	gate: surface diffs an untranslated input would arrive as	eleven -> twelve
-scripts/finding-gate/Gate.php	1025	gate: formats a finding-count change would arrive as	eleven -> twelve
+scripts/finding-gate/FailureClass.php	82	the two trees	no
+scripts/finding-gate/Gate.php	730	properties of a declaration	no
+scripts/finding-gate/Gate.php	927	the two trees	no
+scripts/finding-gate/Gate.php	939	gate: surface diffs an untranslated input arrives as	edited: eleven -> twelve
 scripts/finding-gate/Gate.php	1183	failures one reference run reported	no
 scripts/finding-gate/MetricVocabulary.php	33	metric keys: collector-owned literals	no
-scripts/finding-gate/RenameMaps.php	157	gate: surfaces a prefix was measured across	eleven -> twelve
+scripts/finding-gate/RenameMaps.php	131	gate: formats publishing no metric key, derived from the total	edited: eight -> nine; the first revision of this script missed it
+scripts/finding-gate/RenameMaps.php	157	gate: surfaces a prefix was measured across	edited: eleven -> twelve
 scripts/finding-gate/RenameMaps.php	1101	metric keys: collector-owned literals	no
+scripts/finding-gate/ReportPayload.php	14	files of the HTML bundle	no
+scripts/finding-gate/TreeRun.php	60	the two publications of the suppressed composition	edited: the stale half of the comment is gone
+scripts/finding-gate/TreeRun.php	116	baseline surfaces an empty file would fail	no
