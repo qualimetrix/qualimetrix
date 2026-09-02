@@ -24,8 +24,40 @@ interface RuleExecutionInterface
 {
     /**
      * Executes all active rules and returns what happened.
+     *
+     * `$restrictToProducer` **narrows** the run's own selection and never
+     * widens it: a producer the configuration disabled stays disabled even
+     * when named here. It exists for the threshold audit, which asks what one
+     * `@qmx-threshold` did and can only be answered about the single rule the
+     * directive addresses by exact name — executing the other forty-eight
+     * rules to compare them against themselves is the cost the narrowing
+     * removes.
+     *
+     * A name rather than a {@see RuleSelection} because one name is the whole
+     * subject: a directive addresses exactly one rule, by exact equality —
+     * never the broader selector grammar `--only-rule` accepts (a glob, or a
+     * match by channel code). The host of a classless producer still runs
+     * when the narrowing names one of the producers it hosts, exactly as
+     * `--only-rule` makes it run.
+     *
+     * **What is reachable from the one production caller today.** The
+     * threshold audit is the sole caller that ever passes a non-null name,
+     * and it always passes the exact name of the rule an authored
+     * `@qmx-threshold` addresses. Two things follow that this signature does
+     * not itself guarantee, and are true only because of that caller:
+     * a classless producer can never be named here, because
+     * `ComputedMetricChannelFamily::SUPPORTS_THRESHOLD_OVERRIDE` is `false`
+     * and no other producer of the family declares support either — so the
+     * "host of a classless producer" branch above is exercised only by unit
+     * tests, never by a running audit. And the `published` half of the
+     * returned result is read by nothing downstream of that caller — it asks
+     * only for `->produced` — so a narrowed execution's channel filtering
+     * ({@see \Qualimetrix\Analysis\Finding\RuleExecution::published()})
+     * currently has no reader either. Both stay defined and tested because
+     * the contract narrows **execution**, not visibility, and either fact
+     * changes the moment a second caller narrows for a different reason.
      */
-    public function execute(AnalysisContext $context): RuleExecutionResult;
+    public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult;
 
     /**
      * Every registered producer, each carrying whether the resolved selection

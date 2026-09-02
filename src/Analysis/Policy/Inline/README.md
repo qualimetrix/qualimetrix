@@ -30,6 +30,7 @@ Inline/
 │   └── SourceControlExtractor.php
 ├── Directive/
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
+│   ├── DirectiveMaskingCoalition.php # which threshold directives of one rule hide one another
 │   ├── DirectiveNameHints.php      # "did you mean" by reverse query
 │   ├── DirectiveRejection.php
 │   ├── DirectiveUsage.php          # what each authored suppression did
@@ -191,6 +192,17 @@ makes**. `ThresholdDirectiveAudit` removes one authored directive at a time and
 executes the rules again over the context the run already prepared, comparing
 what the two executions produced.
 
+**The counterfactual executes one rule, not the whole layer, by default.** A
+`@qmx-threshold` addresses exactly one rule by exact name, so only that rule's
+producer needs re-executing (`DirectiveSweepScope::Narrow`, the `bin/qmx
+directives` default); `--sweep=full` re-executes every enabled rule for the
+same verdicts. `full` is not a slower fallback — it is the control that
+measures, rather than assumes, that removing a directive of one rule cannot
+move another rule's findings: the two scopes are run over the same tree and
+compared verdict for verdict, and a disagreement between them is a defect in
+the narrowing. On this project's own `src`, narrowing is the difference between
+eight rule executions and thirty-three whole ones.
+
 **One removal is one annotation, not one binding.** A class docblock
 materialises on the class and on every declaration inside it; removing the
 first of those and leaving the rest would report an annotation still in force
@@ -223,7 +235,11 @@ leaves the fingerprint unchanged, so the verdict is `Inert` and
 findings rather than off a list of rule names, which would drift from the tree
 in silence.
 
-**Coalitions are refusals, not verdicts.** Directives of one rule covering the
+**Coalitions are refusals, not verdicts.** `DirectiveMaskingCoalition` answers
+which directives of one leave-one-out sweep hide one another; `ThresholdDirectiveAudit`
+is its only caller and is the one that owns the prepared run, so the
+counterfactual operation crosses that boundary as an injected closure rather
+than the coalition class seeing the run itself. Directives of one rule covering the
 same subject mask each other: removing any one alone changes nothing, although
 removing them all changes the run. Overlap only makes that possible, so the
 answer is bought with two more executions, and the question is differential —

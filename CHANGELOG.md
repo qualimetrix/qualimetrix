@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--only-rule`, `--disable-rule` and `--rule-opt` the run being defended uses.
   It exits `2` on a proven inert directive and `4` when the run could not parse
   part of the tree.
+- `bin/qmx directives` takes `--sweep=narrow|full` (default `narrow`): a
+  `@qmx-threshold` names one rule, so by default only that rule is re-executed
+  to judge it; `--sweep=full` re-executes every enabled rule for the same
+  verdicts. Both the text and `--format=json` report carry the sweep the
+  verdicts were measured under.
+- `composer check` now audits inline directives as part of `check:self`: a
+  proven inert directive fails the aggregate the same way a red gate does.
 
 ### Breaking
 

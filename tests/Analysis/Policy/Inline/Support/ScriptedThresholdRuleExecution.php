@@ -41,6 +41,11 @@ final class ScriptedThresholdRuleExecution implements RuleExecutionInterface
      *                                         finding. Stands in for a rule that distinguishes the run's
      *                                         own context from a rebuilt one, which is the drift a
      *                                         control executing against the original object cannot see
+     * @param bool $driftsWhenRestricted whether this rule reports one extra finding whenever it runs
+     *                                   alone (`$restrictToProducer !== null`). Stands in for a rule
+     *                                   whose output depends on a neighbour having run beside it — the
+     *                                   drift a narrowed reference pass, not a naively-full one, exists
+     *                                   to catch
      */
     public function __construct(
         private readonly string $rule,
@@ -52,10 +57,19 @@ final class ScriptedThresholdRuleExecution implements RuleExecutionInterface
         private readonly bool $excludedFromPublished = false,
         private readonly ?int $driftsAtExecution = null,
         private readonly ?AnalysisContext $answersOnlyFor = null,
+        private readonly bool $driftsWhenRestricted = false,
     ) {}
 
-    public function execute(AnalysisContext $context): RuleExecutionResult
+    public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult
     {
+        // Honoured rather than ignored, and the count is not incremented when
+        // the narrowing excludes this rule: a double that ran anyway would make
+        // a narrowed sweep and a full one indistinguishable here, which is the
+        // one difference the tests using it are about.
+        if ($restrictToProducer !== null && $restrictToProducer !== $this->rule) {
+            return new RuleExecutionResult([], [], new RuleExclusionStats());
+        }
+
         ++$this->executions;
 
         $produced = [];
@@ -89,6 +103,10 @@ final class ScriptedThresholdRuleExecution implements RuleExecutionInterface
 
         if ($this->driftsAtExecution === $this->executions) {
             $produced[] = $this->finding($this->measurements[0]['subject'], 1, 1, Severity::Warning);
+        }
+
+        if ($this->driftsWhenRestricted && $restrictToProducer !== null) {
+            $produced[] = $this->finding($this->measurements[0]['subject'], 3, 3, Severity::Warning);
         }
 
         return new RuleExecutionResult(

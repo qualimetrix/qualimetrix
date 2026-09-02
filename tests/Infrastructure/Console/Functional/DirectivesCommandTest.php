@@ -353,6 +353,99 @@ final class DirectivesCommandTest extends TestCase
         self::assertStringContainsString('Unknown format "yaml"', $tester->getDisplay());
     }
 
+    /** No `--sweep` at all must run exactly what `--sweep=narrow` runs, not a third scope. */
+    #[Test]
+    public function itDefaultsToTheNarrowSweep(): void
+    {
+        $this->writeSource('Live.php', self::sevenParameterMethod(
+            '@qmx-threshold code-smell.long-parameter-list warning=9 error=12 — live',
+        ));
+
+        $report = self::decode($this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--format' => 'json',
+        ])->getDisplay());
+
+        self::assertSame('narrow', $report['sweep']);
+    }
+
+    #[Test]
+    public function itAcceptsAnExplicitFullSweep(): void
+    {
+        $this->writeSource('Live.php', self::sevenParameterMethod(
+            '@qmx-threshold code-smell.long-parameter-list warning=9 error=12 — live',
+        ));
+
+        $report = self::decode($this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--format' => 'json',
+            '--sweep' => 'full',
+        ])->getDisplay());
+
+        self::assertSame('full', $report['sweep']);
+        self::assertSame('effective', $report['directives'][0]['effect']);
+    }
+
+    /**
+     * The sweep field is printed on every run, not only the expensive one — a
+     * reader comparing two reports must be able to see which measurement each
+     * came from without re-running the command.
+     */
+    #[Test]
+    public function itPrintsTheSweepScopeInBothFormats(): void
+    {
+        $this->writeSource('Live.php', self::sevenParameterMethod(
+            '@qmx-threshold code-smell.long-parameter-list warning=9 error=12 — live',
+        ));
+
+        $text = $this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--sweep' => 'full',
+        ])->getDisplay();
+        $json = self::decode($this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--format' => 'json',
+            '--sweep' => 'full',
+        ])->getDisplay());
+
+        self::assertSame('full', $json['sweep']);
+        self::assertStringContainsString(
+            'full — each directive is judged by re-executing every enabled rule',
+            $text,
+        );
+    }
+
+    /**
+     * A caller who mistypes `--sweep` has asked for a measurement this command
+     * cannot make. Both formats must refuse before running anything, exactly as
+     * an unknown `--format` does.
+     */
+    #[Test]
+    public function itRefusesAnUnknownSweep(): void
+    {
+        $tester = $this->audit(['paths' => [$this->tempDir . '/src'], '--sweep' => 'quick']);
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('Unknown sweep "quick"', $tester->getDisplay());
+        self::assertStringContainsString('narrow', $tester->getDisplay());
+        self::assertStringContainsString('full', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itRefusesAnUnknownSweepInJson(): void
+    {
+        $tester = $this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--sweep' => 'quick',
+            '--format' => 'json',
+        ]);
+
+        $decoded = self::decode($tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame(3, $decoded['exit_code']);
+        self::assertStringContainsString('Unknown sweep "quick"', $decoded['error']);
+    }
+
     #[Test]
     public function itReportsAnUnreadableConfigAsAConfigurationError(): void
     {

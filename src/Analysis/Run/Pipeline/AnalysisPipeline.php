@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
@@ -111,6 +112,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     public function auditDirectives(
         RunConfiguration $configuration,
         ?FileDiscoveryInterface $discovery = null,
+        DirectiveSweepScope $sweep = DirectiveSweepScope::Narrow,
     ): DirectiveAuditReport {
         $prepared = $this->preparedRun($configuration, $discovery);
 
@@ -136,6 +138,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
                 $prepared->context,
                 $this->ruleExecutor,
                 $prepared->ruleExecution,
+                $sweep,
             ),
         ];
 
@@ -153,6 +156,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             verdicts: $verdicts,
             coverage: $prepared->coverage,
             producedFindings: \count($produced),
+            sweep: $sweep,
         );
     }
 

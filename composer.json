@@ -110,6 +110,11 @@
             "Composer\\Config::disableProcessTimeout",
             "php scripts/directive-audit-controls.php"
         ],
+        "directives:narrow-control": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/directive-narrow-control.php"
+        ],
+        "directives:audit": "php scripts/directive-audit-gate.php",
         "docs:check": "bash scripts/check-docs.sh",
         "check": [
             "@check-leaks",
@@ -136,7 +141,8 @@
         ],
         "check:self": [
             "@gate:self-test",
-            "@selfcheck"
+            "@selfcheck",
+            "@directives:audit"
         ]
     },
     "scripts-descriptions": {
@@ -166,8 +172,10 @@
         "check:code": "What a code change invalidates: style, static analysis, tests",
         "check:docs": "What a website change invalidates: a strict mkdocs build",
         "check:artifacts": "What a manifest, config or corpus change invalidates: every generated artifact against a fresh measurement",
-        "check:self": "What the product says about this repository: the gate self-test and the qmx ratchet",
-        "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it"
+        "check:self": "What the product says about this repository: the gate self-test, the qmx ratchet and the directive audit",
+        "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it",
+        "directives:narrow-control": "Prove --sweep=narrow and --sweep=full agree over src/, verdict for verdict",
+        "directives:audit": "Fail if any inline @qmx directive over src/ does nothing"
     },
     "config": {
         "sort-packages": true,

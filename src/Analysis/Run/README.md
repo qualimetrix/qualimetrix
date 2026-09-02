@@ -90,7 +90,10 @@ measure, prepare every rule-producing capability, and execute the rules once.
 The step is shared rather than repeated because the directive audit's method is
 to re-execute rules **on this run's context** — a second collection would
 measure a second world, and a difference between two worlds says nothing about
-an annotation.
+an annotation. By default a counterfactual re-executes only the rule the
+directive addresses (`DirectiveSweepScope::Narrow`); the caller can ask for
+every enabled rule instead (`Full`), which answers the same question at higher
+cost and exists to measure that the narrowing is safe.
 
 `auditDirectives()` is published as `DirectiveAuditInterface` — a second
 contract on the same class rather than a second operation on

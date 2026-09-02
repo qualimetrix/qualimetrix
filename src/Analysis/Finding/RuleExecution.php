@@ -72,7 +72,7 @@ final class RuleExecution implements RuleExecutionInterface
         $this->exclusions = new FindingExclusionLedger($ruleOptionsRegistry);
     }
 
-    public function execute(AnalysisContext $context): RuleExecutionResult
+    public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult
     {
         $produced = [];
         $published = [];
@@ -81,7 +81,7 @@ final class RuleExecution implements RuleExecutionInterface
         $this->exclusions->begin();
 
         $selection = $this->ruleOptionsRegistry->selection();
-        foreach ($this->activeRuleInstances($selection) as $rule) {
+        foreach ($this->activeRuleInstances($selection, $restrictToProducer) as $rule) {
             $ruleName = $rule->getName();
 
             // One span, and the validators run inside it: a configuration
@@ -98,7 +98,7 @@ final class RuleExecution implements RuleExecutionInterface
             $profiler->stop($spanName);
 
             $produced = [...$produced, ...$ruleFindings];
-            $published = [...$published, ...$this->published($ruleName, $ruleFindings, $selection)];
+            $published = [...$published, ...$this->published($ruleName, $ruleFindings, $selection, $restrictToProducer)];
         }
 
         return new RuleExecutionResult($produced, $published, $this->exclusions->stats());
@@ -116,12 +116,29 @@ final class RuleExecution implements RuleExecutionInterface
      * all seven. The granularity of {@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats}
      * follows, which is a declared consequence rather than a side effect.
      *
+     * The narrowing half is exact producer-name equality against `$producer`
+     * — not {@see RuleSelector::isChannelEnabled()}'s selector grammar, which
+     * also matches by channel code. `$producer` here is already the finding's
+     * true owning producer ({@see producerOf()}), so a channel-code match
+     * would only ever fire on a name collision with a *different* producer's
+     * channel — a configuration validator running inside this rule's slot can
+     * legitimately publish on a channel another capability owns (see the
+     * class docblock this method's own docblock continues), and that other
+     * producer's channel code coinciding with `$restrictToProducer` must not
+     * leak its finding into a run narrowed to someone else. This mirrors
+     * {@see isEnabled()}'s own narrowing, and for the same reason: one
+     * contract, one comparison, not two vocabularies that can disagree.
+     *
      * @param list<Finding> $findings
      *
      * @return list<Finding>
      */
-    private function published(string $ruleName, array $findings, RuleSelection $selection): array
-    {
+    private function published(
+        string $ruleName,
+        array $findings,
+        RuleSelection $selection,
+        ?string $restrictToProducer,
+    ): array {
         $kept = [];
 
         foreach ($findings as $finding) {
@@ -137,7 +154,7 @@ final class RuleExecution implements RuleExecutionInterface
                 $finding->level(),
                 $selection->only,
                 $selection->disabled,
-            );
+            ) && ($restrictToProducer === null || $producer === $restrictToProducer);
 
             if ($enabled) {
                 $kept[] = $finding;
@@ -249,9 +266,35 @@ final class RuleExecution implements RuleExecutionInterface
         return $producers;
     }
 
-    private function isEnabled(string $producerRuleName, RuleSelection $selection): bool
-    {
-        return $this->ruleSelector->isProducerEnabled($producerRuleName, $selection->only, $selection->disabled);
+    /**
+     * Whether the run's selection leaves this producer enabled, and — when the
+     * caller narrowed the execution — whether the narrowing leaves it enabled
+     * too.
+     *
+     * The two are asked in series rather than merged into one selection
+     * because they are different claims: the first is what the run was
+     * configured to do, the second is what this one execution was asked about.
+     * Merging them would let a narrowing to `X` re-enable an `X` the
+     * configuration had disabled, which is exactly what the narrowing must not
+     * do.
+     *
+     * The narrowing checks exact producer-name equality, not
+     * {@see RuleSelector::isProducerEnabled()}: that selector grammar also
+     * matches a producer by any channel it publishes, which would enable a
+     * second producer whose channel code happens to equal
+     * `$restrictToProducer`. The contract this narrows to is one exact name,
+     * not the broader "selector" vocabulary `--only-rule` accepts.
+     */
+    private function isEnabled(
+        string $producerRuleName,
+        RuleSelection $selection,
+        ?string $restrictToProducer = null,
+    ): bool {
+        if (!$this->ruleSelector->isProducerEnabled($producerRuleName, $selection->only, $selection->disabled)) {
+            return false;
+        }
+
+        return $restrictToProducer === null || $producerRuleName === $restrictToProducer;
     }
 
     /**
@@ -265,19 +308,25 @@ final class RuleExecution implements RuleExecutionInterface
      *
      * @return list<RuleInterface>
      */
-    private function activeRuleInstances(RuleSelection $selection): array
+    private function activeRuleInstances(RuleSelection $selection, ?string $restrictToProducer): array
     {
         return array_values(array_filter(
             $this->allRules,
-            fn(RuleInterface $rule): bool => $this->isEnabled($rule->getName(), $selection)
-                || $this->hostsAnEnabledProducer($rule->getName(), $selection),
+            fn(RuleInterface $rule): bool => $this->isEnabled($rule->getName(), $selection, $restrictToProducer)
+                || $this->hostsAnEnabledProducer($rule->getName(), $selection, $restrictToProducer),
         ));
     }
 
-    private function hostsAnEnabledProducer(string $hostRuleName, RuleSelection $selection): bool
-    {
+    private function hostsAnEnabledProducer(
+        string $hostRuleName,
+        RuleSelection $selection,
+        ?string $restrictToProducer = null,
+    ): bool {
         foreach ($this->classlessProducers as $producer) {
-            if ($producer->hostRuleName === $hostRuleName && $this->isEnabled($producer->name, $selection)) {
+            if (
+                $producer->hostRuleName === $hostRuleName
+                && $this->isEnabled($producer->name, $selection, $restrictToProducer)
+            ) {
                 return true;
             }
         }

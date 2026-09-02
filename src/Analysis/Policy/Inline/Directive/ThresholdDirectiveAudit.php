@@ -13,11 +13,11 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
-use Qualimetrix\Core\Path\RelativePath;
 
 /**
  * The threshold half of the inline-directive subject, answered by difference
@@ -34,12 +34,46 @@ use Qualimetrix\Core\Path\RelativePath;
  * with the full override set, and both control passes must reproduce the
  * baseline exactly; a drift between them is shared state in the rules, which
  * invalidates every verdict rather than any one directive.
+ *
+ * **A counterfactual executes only the rule the directive addresses**, unless
+ * the caller asked for {@see DirectiveSweepScope::Full}. A directive names one
+ * rule by exact name, so the other rules would be executed only to be compared
+ * against themselves. Two things keep the narrowing honest and both are here
+ * rather than in a comment: the baseline a counterfactual is compared against
+ * is taken by the same narrowing ({@see reference()}), and a rule executed on
+ * its own must reproduce what it produced inside the whole run
+ * ({@see assertNarrowingChangedNothing()}). Neither sees a directive of one
+ * rule moving a finding of another: a narrowed sweep never executes the other
+ * rule, so no comparison here contains it. `Full` compares the two scopes
+ * verdict for verdict, not finding for finding, and is silent exactly where a
+ * moved finding does not cross a verdict's own category — see
+ * `docs/adr/0040-narrow-directive-sweep.md` for what that bound does and does
+ * not cover. What holds the claim up is structural, not measured: **a rule
+ * cannot read another rule's directive.** Inside the rule layer,
+ * {@see AnalysisContext::getThresholdOverride()} is the only accessor a rule
+ * calls, and every call site passes the calling rule's own name — held by
+ * `ThresholdOverrideOwnRuleNameGuardTest`, which reddens on a foreign name.
+ * That guard's property check is textual, not a type solver, so it also names
+ * this class as one of two legitimate direct readers of the override map —
+ * this class reads and rewrites `$input->baseline->thresholdOverrides` below
+ * to build each counterfactual, which is the map's owning subject doing its
+ * job, not a rule reading a neighbour's directive.
+ *
+ * **This is the one caller that makes
+ * {@see \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::execute()}'s
+ * narrowing parameter safe by construction, not merely by contract.** Every
+ * name this class passes as `$restrictToProducer` comes from an authored
+ * `@qmx-threshold`'s own rule name ({@see narrowedTo()}), and a classless
+ * producer of the computed-metric family can never own one —
+ * `ComputedMetricChannelFamily::SUPPORTS_THRESHOLD_OVERRIDE` is `false` for
+ * all seven, refused earlier by {@see unmeasurableReason()} before a name ever
+ * reaches `execute()`. {@see \Qualimetrix\Analysis\Finding\RuleExecution::published()}'s
+ * own half of the narrowed result — the per-channel filter — is likewise
+ * never read here: {@see without()} reads only `->produced`. A second caller
+ * narrowing for a different reason would need to revisit both assumptions.
  */
 final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditInterface
 {
-    /** The one form an author can write, and the only value {@see DirectiveVerdict::$form} takes here. */
-    private const string FORM = 'threshold';
-
     /**
      * Built rather than injected, exactly as {@see DirectiveUsage} builds its
      * level addressing: a pure function of the same universe, with no
@@ -102,9 +136,14 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $baseline = ExecutionFingerprint::of($input->baselineResult->produced);
         $this->assertReproducible($input, $baseline, 'before');
 
+        $references = [];
         $effects = [];
         foreach ($measurable as $group) {
-            $effects[] = $baseline->compareTo(ExecutionFingerprint::of($this->without($input, [$group])));
+            $rule = $group['rule'];
+            $references[$rule] ??= $this->reference($input, $rule, $baseline);
+            $effects[] = $references[$rule]->compareTo(
+                ExecutionFingerprint::of($this->without($input, [$group], self::narrowedTo($input, $rule))),
+            );
         }
 
         $judged = [];
@@ -140,8 +179,11 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      *
      * @return list<Finding>
      */
-    private function without(ThresholdDirectiveAuditInput $input, array $groups): array
-    {
+    private function without(
+        ThresholdDirectiveAuditInput $input,
+        array $groups,
+        ?string $restrictToProducer = null,
+    ): array {
         $overrides = $input->baseline->thresholdOverrides;
 
         foreach ($groups as $group) {
@@ -157,7 +199,105 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
             dependencyGraph: $input->baseline->dependencyGraph,
             namespaceTree: $input->baseline->namespaceTree,
             thresholdOverrides: $overrides,
-        ))->produced;
+        ), $restrictToProducer)->produced;
+    }
+
+    /**
+     * The producer a counterfactual for this rule may execute, or null when
+     * the sweep was asked for the full rule layer.
+     */
+    private static function narrowedTo(ThresholdDirectiveAuditInput $input, string $rule): ?string
+    {
+        return $input->sweep === DirectiveSweepScope::Narrow ? $rule : null;
+    }
+
+    /**
+     * The run every counterfactual for this rule is compared against.
+     *
+     * **Both sides of a comparison must be measured the same way.** Under a
+     * narrowed sweep the counterfactual executes one producer, so the baseline
+     * it is compared against is that same producer executed the same way — not
+     * the full run projected onto the rule's name. A projection would compare
+     * a run against a filtered other run and read every difference in how the
+     * two were produced as the work of a directive.
+     *
+     * Taken once per rule and reused across its directives: it is the same run
+     * every time, and the sweep's whole point is to stop paying for executions
+     * that answer nothing.
+     */
+    private function reference(
+        ThresholdDirectiveAuditInput $input,
+        string $rule,
+        ExecutionFingerprint $baseline,
+    ): ExecutionFingerprint {
+        if ($input->sweep === DirectiveSweepScope::Full) {
+            return $baseline;
+        }
+
+        // Through the same narrowing the counterfactuals use, and not a second
+        // expression that happens to spell it the same way: "both sides are
+        // measured alike" has to be one decision, or it is two that can part.
+        $narrowed = $this->without($input, [], self::narrowedTo($input, $rule));
+        $this->assertNarrowingChangedNothing($input, $narrowed, $rule);
+
+        return ExecutionFingerprint::of($narrowed);
+    }
+
+    /**
+     * The third control, and the one that only a narrowed sweep needs: a rule
+     * executed on its own produced what it produced inside the whole run.
+     *
+     * It is what stands between the narrowing and a silent lie. The narrowing
+     * assumes a rule's output does not depend on its neighbours having run;
+     * where that fails, every verdict for the rule is measured against a
+     * baseline the run never had, and each one would still look perfectly
+     * ordinary. The comparison costs nothing — the full baseline is already in
+     * hand.
+     *
+     * **What it can and cannot see.** It sees a rule that behaves differently
+     * in isolation. It does **not** see removing a directive of rule X moving
+     * a finding of rule Y: a narrowed sweep never executes Y, so neither side
+     * of that comparison contains it. That claim is measured by sweeping the
+     * tree both ways and comparing verdicts — the control the `Full` scope
+     * exists for.
+     *
+     * The names compared are those the narrowed run produced plus the
+     * addressed rule itself, so a rule that produced nothing in isolation
+     * while producing findings in the full run is caught rather than filtered
+     * out of its own control.
+     *
+     * @param list<Finding> $narrowed
+     */
+    private function assertNarrowingChangedNothing(
+        ThresholdDirectiveAuditInput $input,
+        array $narrowed,
+        string $rule,
+    ): void {
+        $names = [$rule => true];
+        foreach ($narrowed as $finding) {
+            $names[$finding->ruleName] = true;
+        }
+
+        $expected = array_values(array_filter(
+            $input->baselineResult->produced,
+            static fn(Finding $finding): bool => isset($names[$finding->ruleName]),
+        ));
+
+        $narrowedFingerprint = ExecutionFingerprint::of($narrowed);
+        $expectedFingerprint = ExecutionFingerprint::of($expected);
+
+        if ($narrowedFingerprint->reproduces($expectedFingerprint)) {
+            return;
+        }
+
+        throw new LogicException(\sprintf(
+            'Executing "%s" on its own did not reproduce what it produced in the full run: %s.'
+            . ' A threshold directive cannot be judged against a baseline the run never had, so the'
+            . ' narrowed sweep is refused; the disagreement is shared state between rules, not a'
+            . ' statement about any directive.',
+            $rule,
+            implode(', ', $expectedFingerprint->disagreementWith($narrowedFingerprint)),
+        ));
     }
 
     /**
@@ -239,7 +379,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
             $group = $entry['group'];
 
             $verdicts[] = new DirectiveVerdict(
-                site: self::site($group),
+                site: DirectiveMaskingCoalition::site($group),
                 effect: $entry['effect'],
                 reason: $entry['reason'],
                 maskedBy: $entry['maskedBy'],
@@ -261,32 +401,15 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
     /**
      * The directive that makes this one's removal invisible, or null.
      *
-     * Leave-one-out is blind to mutual masking by construction. A class
-     * directive materialises on the class **and on every method in it**
-     * (`DeclarationControlBindings`), a method directive materialises on the
-     * method, and `AnalysisContext::getThresholdOverride()` picks one by
-     * specificity: when they would give the same answer, removing any one
-     * changes nothing, and each would be called inert although removing them
-     * all changes the run.
+     * The coalition reasoning — which neighbours overlap, whether the
+     * coalition without them is inert, and which one of several is doing the
+     * hiding — is a subject of its own, answered by {@see DirectiveMaskingCoalition}
+     * rather than here. What stays here is the one thing that class cannot
+     * do itself: execute a counterfactual against the run this sweep owns.
      *
-     * **The question asked is differential, and that is what keeps the answer
-     * about this directive.** Not "does removing the whole coalition change
-     * the run" — a live neighbour would move the outcome on its own account
-     * and drag every dead annotation beside it into a refusal. What is asked
-     * is whether removing *this* directive changes anything **once its
-     * maskers are already gone**: the two runs compared are the coalition
-     * without this directive and the coalition with it, and everything the
-     * neighbours do cancels between them.
-     *
-     * **The unit is every directive that could hide this one, which is one
-     * hop and not a closure.** A directive can only mask what it covers, so a
-     * masker shares a subject with this one by definition; a directive two
-     * hops away touches subjects this one does not, and the differential
-     * comparison cancels it either way. Specificity has four steps, so one
-     * subject can carry a class docblock, a property docblock and a property
-     * hook's docblock at once — with three, no single removal and no pair
-     * moves the outcome while the triple does, which is what makes the unit a
-     * set rather than a pair.
+     * Every masker is a directive of the same rule by construction
+     * ({@see DirectiveMaskingCoalition}'s own overlap test), so the narrowing
+     * that serves the directive serves the whole coalition.
      *
      * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $measurable
      */
@@ -295,88 +418,13 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         array $measurable,
         int $index,
     ): ?DirectiveSite {
-        $maskers = self::overlapping($measurable, $index);
+        $restrictToProducer = self::narrowedTo($input, $measurable[$index]['rule']);
 
-        if ($maskers === []) {
-            return null;
-        }
+        $coalition = new DirectiveMaskingCoalition(
+            fn(array $groups, ?string $forProducer): array => $this->without($input, $groups, $forProducer),
+        );
 
-        $withoutMaskers = ExecutionFingerprint::of($this->without($input, $maskers));
-        $withoutAll = ExecutionFingerprint::of($this->without($input, [...$maskers, $measurable[$index]]));
-
-        if ($withoutMaskers->compareTo($withoutAll) === DirectiveEffect::Inert) {
-            return null;
-        }
-
-        return $this->hiddenBy($input, $measurable[$index], $maskers);
-    }
-
-    /**
-     * Which of the maskers is doing the hiding, asked one at a time.
-     *
-     * Naming the first neighbour by position would let a report call a
-     * directive the masker of another on the same page where it calls that
-     * neighbour dead. So each is put back on its own — everything else
-     * removed — and the one that still makes this directive's removal
-     * invisible is the one named.
-     *
-     * When no single neighbour does it alone, the hiding is joint and there is
-     * no one directive to name; the report then names the first, and that is
-     * the only case where the name is positional rather than measured.
-     *
-     * @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group
-     * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>, site: DirectiveSite}> $maskers
-     */
-    private function hiddenBy(ThresholdDirectiveAuditInput $input, array $group, array $maskers): DirectiveSite
-    {
-        if (\count($maskers) === 1) {
-            return $maskers[0]['site'];
-        }
-
-        foreach ($maskers as $candidate) {
-            $others = array_values(array_filter(
-                $maskers,
-                static fn(array $masker): bool => $masker['site'] !== $candidate['site'],
-            ));
-
-            $withOnlyCandidate = ExecutionFingerprint::of($this->without($input, $others));
-            $andWithoutTheDirective = ExecutionFingerprint::of($this->without($input, [...$others, $group]));
-
-            if ($withOnlyCandidate->compareTo($andWithoutTheDirective) === DirectiveEffect::Inert) {
-                return $candidate['site'];
-            }
-        }
-
-        return $maskers[0]['site'];
-    }
-
-    /**
-     * Every other directive of the same rule bound to a subject this one also
-     * covers, in the order an author reads them.
-     *
-     * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $measurable
-     *
-     * @return list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>, site: DirectiveSite}>
-     */
-    private static function overlapping(array $measurable, int $index): array
-    {
-        $group = $measurable[$index];
-        $subjects = self::subjects($group);
-        $maskers = [];
-
-        foreach ($measurable as $position => $candidate) {
-            if ($position === $index || $candidate['rule'] !== $group['rule']) {
-                continue;
-            }
-
-            if (array_intersect($subjects, self::subjects($candidate)) === []) {
-                continue;
-            }
-
-            $maskers[] = [...$candidate, 'site' => self::site($candidate)];
-        }
-
-        return $maskers;
+        return $coalition->maskedBy($measurable, $index, $restrictToProducer);
     }
 
     /**
@@ -417,7 +465,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      */
     private static function boundaryObservable(array $group, array $produced): bool
     {
-        $subjects = self::subjects($group);
+        $subjects = DirectiveMaskingCoalition::subjects($group);
 
         foreach ($produced as $finding) {
             if (
@@ -430,30 +478,6 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         }
 
         return true;
-    }
-
-    /** @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group */
-    private static function site(array $group): DirectiveSite
-    {
-        return new DirectiveSite(
-            file: RelativePath::fromString($group['file']),
-            line: $group['line'],
-            form: self::FORM,
-            target: $group['rule'],
-        );
-    }
-
-    /**
-     * @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group
-     *
-     * @return list<string>
-     */
-    private static function subjects(array $group): array
-    {
-        return array_values(array_unique(array_map(
-            static fn(ThresholdOverride $override): string => $override->subject->toCanonical(),
-            $group['bindings'],
-        )));
     }
 
     /**

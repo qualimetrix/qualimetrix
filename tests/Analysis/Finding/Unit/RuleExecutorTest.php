@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
@@ -348,6 +349,195 @@ final class RuleExecutorTest extends TestCase
 
         self::assertSame([], $findings);
         self::assertSame([], self::activeRules($executor));
+    }
+
+    // --- Narrowed execution tests ($restrictToProducer) ---
+
+    /**
+     * `$restrictToProducer` intersects the run's own selection; it never
+     * overrides it. A producer the configuration disabled must stay silent
+     * even when the narrowing names it by its exact name — otherwise a
+     * threshold audit's counterfactual could re-enable a rule the run itself
+     * turned off.
+     */
+    #[Test]
+    public function itDoesNotExecuteAProducerDisabledByConfigurationEvenWhenNarrowingNamesIt(): void
+    {
+        $finding = $this->createFinding('rule1');
+        $rule = $this->createRule('rule1', [$finding]);
+
+        $provider = $this->createConfiguredProvider(new RuleSelection(disabled: ['rule1']));
+        $executor = $this->createExecution([$rule], $provider);
+
+        $result = $executor->execute($this->createMinimalContext(), 'rule1');
+
+        self::assertSame([], $result->produced);
+        self::assertSame([], $result->published);
+    }
+
+    /**
+     * Narrowing also filters `published()`, not only which rule instances
+     * run: a rule sharing one class across several classless producers keeps
+     * running because one of them is the restricted producer, but only that
+     * producer's findings may come out the other end.
+     *
+     * Modelled with two declared classless producers hosted by the same
+     * instance — the computed-metric family's actual shape — rather than
+     * through a `RuleChannelRegistryInterface` that maps the instance's own
+     * name to those channels: {@see RuleExecution::isEnabled()} narrows by
+     * exact producer-name equality, so an instance runs under narrowing only
+     * through its own name or {@see RuleExecution::hostsAnEnabledProducer()}.
+     *
+     * A `$channelIdentity` is wired for the same reason `FindingConfigurator`
+     * wires one in production: {@see RuleExecution::published()} narrows by
+     * comparing `$producer` — resolved through
+     * {@see RuleExecution::producerOf()} — against the restricted name, and
+     * without an identity view `producerOf()` falls back to the *instance's*
+     * name (`computed.health`), which would never equal either classless
+     * producer and silently empty `published` regardless of which one was
+     * asked for.
+     */
+    #[Test]
+    public function itRestrictsPublishedFindingsToTheNarrowedProducerNotJustWhichRulesRun(): void
+    {
+        $complexity = $this->createFinding('computed.health', code: 'health.complexity');
+        $cohesion = $this->createFinding('computed.health', code: 'health.cohesion');
+        $rule = $this->createRule('computed.health', [$complexity, $cohesion]);
+
+        // A classless producer's channel code is its own name, so resolving
+        // "the producer of this code" is the identity function here — exactly
+        // as the container's real ChannelIdentity resolves it for this family.
+        $channelIdentity = self::createStub(ChannelIdentityInterface::class);
+        $channelIdentity->method('producerOf')->willReturnArgument(0);
+
+        $executor = $this->createExecution(
+            [$rule],
+            $this->createConfiguredProvider(),
+            classlessProducers: [
+                new ProducerDeclaration(
+                    name: 'health.complexity',
+                    hostRuleName: 'computed.health',
+                    optionsClass: RuleExecutionFixtureOptions::class,
+                    description: 'Complexity health, hosted by computed.health',
+                ),
+                new ProducerDeclaration(
+                    name: 'health.cohesion',
+                    hostRuleName: 'computed.health',
+                    optionsClass: RuleExecutionFixtureOptions::class,
+                    description: 'Cohesion health, hosted by computed.health',
+                ),
+            ],
+            channelIdentity: $channelIdentity,
+        );
+
+        $result = $executor->execute($this->createMinimalContext(), 'health.complexity');
+
+        // produced is untouched by narrowing — it is what the rule instance
+        // that ran actually returned, both channels included.
+        self::assertSame([$complexity, $cohesion], $result->produced);
+        self::assertSame([$complexity], $result->published);
+    }
+
+    /**
+     * The `published()` half of the same guarantee {@see RuleExecution::isEnabled()}
+     * gives {@see itDoesNotExecuteAProducerWhoseChannelCodeCollidesWithTheNarrowedName()}:
+     * a configuration validator can legitimately publish a finding whose true
+     * producer differs from the rule instance it ran inside
+     * ({@see RuleExecution::published()}'s own docblock), so `$producer` here
+     * is not always `$ruleName`. Narrowing to `ruleA` must not keep a finding
+     * whose real producer is `ruleB`, even when `ruleB`'s channel happens to
+     * be coded `ruleA`.
+     */
+    #[Test]
+    public function itDoesNotPublishAFindingWhoseProducerCollidesWithTheNarrowedNameByChannelCodeAlone(): void
+    {
+        $finding = $this->createFinding('ruleB', code: 'ruleA');
+        $rule = $this->createRule('ruleA', [$finding]);
+
+        $channelIdentity = self::createStub(ChannelIdentityInterface::class);
+        $channelIdentity->method('producerOf')->willReturn('ruleB');
+
+        $executor = $this->createExecution(
+            [$rule],
+            $this->createConfiguredProvider(),
+            channelIdentity: $channelIdentity,
+        );
+
+        $result = $executor->execute($this->createMinimalContext(), 'ruleA');
+
+        self::assertSame(
+            [],
+            $result->published,
+            'a finding whose true producer is "ruleB" must not publish under a sweep narrowed to "ruleA",'
+            . ' even though the finding\'s own channel is coded "ruleA"',
+        );
+    }
+
+    /**
+     * `--only-rule health.typing` names a producer with no rule class of its
+     * own; the instance that hosts it must still run, and an unrelated
+     * instance must not, which is the pair of facts a single-instance fixture
+     * cannot show.
+     */
+    #[Test]
+    public function itExecutesTheHostOfAClasslessProducerWhenNarrowingNamesThatProducer(): void
+    {
+        $typingFinding = $this->createFinding('typing.health', code: 'health.typing');
+        $host = $this->createRule('typing.health', [$typingFinding]);
+
+        $otherFinding = $this->createFinding('other.rule');
+        $other = $this->createRule('other.rule', [$otherFinding]);
+
+        $classlessProducer = new ProducerDeclaration(
+            name: 'health.typing',
+            hostRuleName: 'typing.health',
+            optionsClass: RuleExecutionFixtureOptions::class,
+            description: 'Typing health, hosted by typing.health',
+        );
+
+        $executor = $this->createExecution(
+            [$host, $other],
+            $this->createConfiguredProvider(),
+            classlessProducers: [$classlessProducer],
+        );
+
+        $result = $executor->execute($this->createMinimalContext(), 'health.typing');
+
+        self::assertSame([$typingFinding], $result->produced);
+    }
+
+    /**
+     * The narrowing addresses one producer by exact name, not by the broader
+     * "selector" grammar `--only-rule` accepts: a selector also matches a
+     * producer by any channel it publishes, and `ruleB` here publishes a
+     * channel coded exactly `ruleA`. Narrowing to `ruleA` must run only
+     * `ruleA`, never `ruleB` on account of that channel-code coincidence.
+     */
+    #[Test]
+    public function itDoesNotExecuteAProducerWhoseChannelCodeCollidesWithTheNarrowedName(): void
+    {
+        $findingA = $this->createFinding('ruleA');
+        $ruleA = $this->createRule('ruleA', [$findingA]);
+
+        $findingB = $this->createFinding('ruleB', code: 'ruleA');
+        $ruleB = $this->createRule('ruleB', [$findingB]);
+
+        $selector = new RuleSelector(new class implements RuleChannelRegistryInterface {
+            public function channelsProducedBy(string $producerRuleName): array
+            {
+                return $producerRuleName === 'ruleB' ? [new FindingChannel('ruleA')] : [];
+            }
+        });
+
+        $executor = $this->createExecution([$ruleA, $ruleB], $this->createConfiguredProvider(), $selector);
+
+        $result = $executor->execute($this->createMinimalContext(), 'ruleA');
+
+        self::assertSame(
+            [$findingA],
+            $result->produced,
+            'narrowing to "ruleA" must not run "ruleB" merely because it publishes a channel coded "ruleA"',
+        );
     }
 
     // --- Group selector tests ---
@@ -991,12 +1181,14 @@ final class RuleExecutorTest extends TestCase
 
     /**
      * @param iterable<RuleInterface> $rules
+     * @param iterable<ProducerDeclaration> $classlessProducers
      */
     private function createExecution(
         iterable $rules,
         ?RuleOptionsRegistry $registry = null,
         ?RuleSelector $ruleSelector = null,
         ?ChannelIdentityInterface $channelIdentity = null,
+        iterable $classlessProducers = [],
     ): RuleExecution {
         $registry ??= new RuleOptionsRegistry();
         if ($this->captureExcludedFindings) {
@@ -1008,6 +1200,7 @@ final class RuleExecutorTest extends TestCase
             self::createStub(ProfilerInterface::class),
             $registry,
             $ruleSelector,
+            classlessProducers: $classlessProducers,
             channelIdentity: $channelIdentity,
         );
     }

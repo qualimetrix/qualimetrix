@@ -776,25 +776,31 @@ bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
 
 ### directives
 
-Report what every inline `@qmx-ignore` and `@qmx-threshold` in the analysed tree actually does. A suppression is judged by what it silenced; a threshold directive is judged by removing it and executing the rules again over the run's own measurements, which costs one rule execution per directive.
+Report what every inline `@qmx-ignore` and `@qmx-threshold` in the analysed tree actually does. A suppression is judged by what it silenced; a threshold directive is judged by removing it and executing the rules again over the run's own measurements — by default only the rule it addresses, one execution per directive.
 
 ```bash
 bin/qmx directives src/
+
+# Re-execute every enabled rule instead of just the addressed one — the control the narrow default is measured against
+bin/qmx directives src/ --sweep=full
 
 # Machine-readable output — for agents, scripts and CI
 bin/qmx directives src/ --format=json
 ```
 
-| Option                    | Description                                                       |
-| ------------------------- | ----------------------------------------------------------------- |
-| `-c`, `--config=FILE`     | Path to `qmx.yaml` (default: `qmx.yaml` in the current directory) |
-| `--format=FORMAT`         | `text` (default) or `json`                                        |
-| `--preset=PRESET`         | Apply a named preset (repeatable)                                 |
-| `--only-rule=RULE`        | Judge under a run that ran only these rules (repeatable)          |
-| `--disable-rule=RULE`     | Judge under a run with these rules off (repeatable)               |
-| `--rule-opt=RULE:OPT=VAL` | Judge under a run with this rule option (repeatable)              |
+| Option                    | Description                                                                              |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| `-c`, `--config=FILE`     | Path to `qmx.yaml` (default: `qmx.yaml` in the current directory)                        |
+| `--format=FORMAT`         | `text` (default) or `json`                                                               |
+| `--sweep=SCOPE`           | How much of the rule layer each counterfactual re-executes: `narrow` (default) or `full` |
+| `--preset=PRESET`         | Apply a named preset (repeatable)                                                        |
+| `--only-rule=RULE`        | Judge under a run that ran only these rules (repeatable)                                 |
+| `--disable-rule=RULE`     | Judge under a run with these rules off (repeatable)                                      |
+| `--rule-opt=RULE:OPT=VAL` | Judge under a run with this rule option (repeatable)                                     |
 
 The four selection options exist because a verdict is relative to the run that produced it: point the command at the same rules and boundaries your CI checks with, or it will answer about a different run.
+
+A `@qmx-threshold` names exactly one rule, so under `--sweep=narrow` a counterfactual re-executes only that rule. `--sweep=full` re-executes every enabled rule for the same verdicts, at far higher cost — it is not a slower fallback but the control that measures, rather than assumes, that removing a directive of one rule cannot move another rule's findings: the two scopes are swept over the same tree and compared verdict for verdict. On this project's own `src/` the narrow sweep is several times cheaper and the two scopes agree on every verdict. Both the text report and `--format=json` state the sweep the verdicts were measured under.
 
 Exit codes: `0` nothing inert, `2` at least one inert directive whose boundary was observable, `3` bad input or configuration — including a scope that analysed no PHP files at all (a directory with no PHP in it, an `exclude` that swallowed everything, or nothing but `@generated` files), `4` the run failed to parse part of the tree, `1` the command itself failed unexpectedly.
 

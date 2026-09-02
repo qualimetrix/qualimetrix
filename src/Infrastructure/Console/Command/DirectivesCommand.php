@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 use Exception;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
@@ -18,6 +19,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -75,6 +77,14 @@ final class DirectivesCommand extends Command
 
         AnalysisReportCommandDefinition::addOptions($this);
 
+        $this->addOption(
+            'sweep',
+            null,
+            InputOption::VALUE_REQUIRED,
+            'How much of the rule layer each counterfactual runs: narrow (default) or full',
+            DirectiveSweepScope::Narrow->value,
+        );
+
         AnalysisReportCommandDefinition::addSelectionOptions($this)
             ->setHelp(implode("\n", [
                 'Answers, for every inline directive in the analysed tree, whether it still',
@@ -92,6 +102,13 @@ final class DirectivesCommand extends Command
                 '<info>exclude_namespaces</info> or <info>exclude_namespace_channels</info>: those suppress',
                 'publication, not measurement, and a directive that moved such a finding',
                 'did something.',
+                '',
+                'A <info>@qmx-threshold</info> names one rule, so by default only that rule is',
+                "re-executed — <info>--sweep=narrow</info>. <info>--sweep=full</info> re-executes every enabled rule",
+                'for the same answer at many times the cost; it exists so the two can be',
+                'compared on a real tree: that removing a directive of one rule cannot move',
+                "another rule's findings is a claim this project measures rather than assumes,",
+                'and a difference between the two scopes is a defect, not a preference.',
                 '',
                 'Exit codes: <info>0</info> nothing inert, <info>2</info> at least one inert directive whose',
                 'boundary was observable, <info>3</info> bad input or configuration, <info>4</info> the run could',
@@ -162,6 +179,32 @@ final class DirectivesCommand extends Command
 
     private function audit(InputInterface $input, OutputInterface $output, string $format): int
     {
+        /** @var string $requestedSweep */
+        $requestedSweep = $input->getOption('sweep');
+        $sweep = DirectiveSweepScope::tryFrom($requestedSweep);
+
+        if ($sweep === null) {
+            // Refused before the run rather than defaulted through: an
+            // unrecognised value is a caller who asked for a measurement this
+            // command cannot make, and answering with the other one would put
+            // a scope in the report's header that nobody requested.
+            self::reportError(
+                $output,
+                $format,
+                \sprintf(
+                    'Unknown sweep "%s". Supported scopes: %s.',
+                    $requestedSweep,
+                    implode(', ', array_map(
+                        static fn(DirectiveSweepScope $scope): string => $scope->value,
+                        DirectiveSweepScope::cases(),
+                    )),
+                ),
+                self::EXIT_CONFIG_ERROR,
+            );
+
+            return self::EXIT_CONFIG_ERROR;
+        }
+
         $prepared = $this->preflight->resolve($input, $output);
 
         $missing = AnalysisPreflight::missingPaths($prepared->runConfiguration);
@@ -179,6 +222,7 @@ final class DirectivesCommand extends Command
         $report = $this->directiveAudit->auditDirectives(
             $prepared->runConfiguration,
             $prepared->fileDiscovery,
+            $sweep,
         );
 
         if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete()) {
