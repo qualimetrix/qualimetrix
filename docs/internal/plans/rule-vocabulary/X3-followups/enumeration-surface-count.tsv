@@ -15,6 +15,7 @@ docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	174	corpus cases, in the entry 
 docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	710	gate: compared check formats, inside an entry that stays open	edited: eleven -> twelve
 docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	768	signatures carrying a directive shape	no
 docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	774	docblocks repeating a name	no
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	849	the counts this class covers, named in the follow-up itself	no
 finding-gate/README.md	221	gate: compared check formats, named as a list	edited: eleven -> twelve, `suppressed` joined the list
 finding-gate/README.md	224	the two publications of the suppressed composition	edited: the false claim that --format=json breaks the artifact is gone
 finding-gate/README.md	293	GitLab surfaces that differed in one measurement — a measured population, not the total	no
