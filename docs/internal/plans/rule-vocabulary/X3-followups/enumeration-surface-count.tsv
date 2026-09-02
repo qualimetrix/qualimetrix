@@ -1,0 +1,35 @@
+file	line	meaning	action
+AGENTS.md	629	gate: compared check formats	eleven -> twelve
+CHANGELOG.md	107	channels a past step collapsed	no
+CHANGELOG.md	111	product: output formats, in an [Unreleased] entry whose count is already understated	drop the count, name no number
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	32	metric keys: collector-owned literals	no
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	43	metric keys: collector-owned literals	no
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	692	the open entry saying FORMATS lists eleven	closed by B1, with the count it now holds
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	750	signatures carrying a directive shape	no
+docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	756	docblocks repeating a name	no
+finding-gate/README.md	221	gate: compared check formats, named as a list	eleven -> twelve, `suppressed` joins the list; the false parenthetical about --format=json goes with it
+finding-gate/README.md	290	corpus: GitLab fingerprints in one case	no
+finding-gate/README.md	325	gate: surfaces a prefix was measured across	eleven -> twelve
+finding-gate/README.md	423	metric keys: collector-owned literals	no
+finding-gate/README.md	463	gate: surface diffs an untranslated input would arrive as	eleven -> twelve
+finding-gate/README.md	691	gate: compared check formats	eleven -> twelve
+finding-gate/README.md	701	gate: formats still compared for equality beside one declared surface	ten -> eleven
+finding-gate/README.md	728	corpus: findings carrying a split half	no
+qmx.yaml	1333	layer edges	no
+scripts/finding-gate-controls/Control.php	122	gate: formats a case-wide pin spans, and how many stay compared	eleven -> twelve, ten -> eleven
+scripts/finding-gate-controls/Controls.php	201	channels of a past step	no
+scripts/finding-gate-controls/Controls.php	332	bare names counted by a past plan	no
+scripts/finding-gate-controls/Controls.php	381	delta classes and their tolerations	no
+scripts/finding-gate-controls/Controls.php	461	gate: surface diffs an untranslated input would arrive as	eleven -> twelve
+scripts/finding-gate-controls/Controls.php	682	findings in one corpus case	no
+scripts/finding-gate-controls/Controls.php	691	findings in one corpus case	no
+scripts/finding-gate-controls/Controls.php	791	findings in one corpus case	no
+scripts/finding-gate-controls/Controls.php	1036	gate: artifacts a declared surface is one of	eleven -> twelve
+scripts/finding-gate-controls/Harness.php	312	seconds a clone takes	no
+scripts/finding-gate-controls/Shell.php	30	seconds a clone takes	no
+scripts/finding-gate/Gate.php	939	gate: surface diffs an untranslated input would arrive as	eleven -> twelve
+scripts/finding-gate/Gate.php	1025	gate: formats a finding-count change would arrive as	eleven -> twelve
+scripts/finding-gate/Gate.php	1183	failures one reference run reported	no
+scripts/finding-gate/MetricVocabulary.php	33	metric keys: collector-owned literals	no
+scripts/finding-gate/RenameMaps.php	157	gate: surfaces a prefix was measured across	eleven -> twelve
+scripts/finding-gate/RenameMaps.php	1101	metric keys: collector-owned literals	no
