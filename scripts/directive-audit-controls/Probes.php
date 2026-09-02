@@ -223,7 +223,8 @@ final class Probes
     /** @return list<Probe> */
     private static function masking(): array
     {
-        $maskerRun = '        $withoutMaskers = ExecutionFingerprint::of($this->without($input, $maskers));';
+        $maskerRun = '        $withoutMaskers = ExecutionFingerprint::of('
+            . '$this->without($input, $maskers, $restrictToProducer));';
 
         return [
             Probe::breaking(
@@ -252,7 +253,8 @@ final class Probes
                 'pairwise-masking',
                 'only the first masker leaves the comparison, not every one',
                 self::AUDIT,
-                [$maskerRun => '        $withoutMaskers = ExecutionFingerprint::of($this->without($input, [$maskers[0]]));'],
+                [$maskerRun => '        $withoutMaskers = ExecutionFingerprint::of('
+                    . '$this->without($input, [$maskers[0]], $restrictToProducer));'],
                 ['itTakesEveryMaskerOutOfTheComparison'],
             ),
             Probe::breaking(
@@ -302,6 +304,16 @@ final class Probes
                     => '$repeat = ExecutionFingerprint::of($input->executor->execute($input->baseline)->produced);',
                 ],
                 ['itControlsTheRunThroughTheSamePathTheCounterfactualsTake'],
+            ),
+            Probe::breaking(
+                'no-control-narrowing',
+                'the narrowed sweep is never checked against how the rule behaved inside the full run',
+                self::AUDIT,
+                [
+                    "        \$this->assertNarrowingChangedNothing(\$input, \$narrowed, \$rule);\n\n"
+                    . '        return ExecutionFingerprint::of($narrowed);' => '        return ExecutionFingerprint::of($narrowed);',
+                ],
+                ['itRefusesTheNarrowedSweepWhenARuleBehavesDifferentlyInIsolation'],
             ),
         ];
     }
@@ -474,6 +486,16 @@ final class Probes
                 ['itRefusesAnUnknownFormat'],
             ),
             Probe::breaking(
+                'command-accepts-any-sweep',
+                'an unrecognised --sweep value is defaulted through instead of refused',
+                self::COMMAND,
+                [
+                    '$sweep = DirectiveSweepScope::tryFrom($requestedSweep);'
+                    => '$sweep = DirectiveSweepScope::tryFrom($requestedSweep) ?? DirectiveSweepScope::Narrow;',
+                ],
+                ['itRefusesAnUnknownSweep'],
+            ),
+            Probe::breaking(
                 'command-errors-in-prose-under-json',
                 'an error under --format=json is written as an <error> line rather than an envelope',
                 self::COMMAND,
@@ -528,7 +550,7 @@ final class Probes
                 'judge-by-published',
                 'the universe is what the report publishes rather than what the rules produced',
                 self::AUDIT,
-                ['        ))->produced;' => '        ))->published;'],
+                ['        ), $restrictToProducer)->produced;' => '        ), $restrictToProducer)->published;'],
                 ['itJudgesByWhatTheRulesProducedRatherThanWhatTheyPublished'],
             ),
         ];
