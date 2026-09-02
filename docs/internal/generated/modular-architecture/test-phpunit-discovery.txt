@@ -6261,6 +6261,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itStopsAProducerWhoseEveryDeclaredLevelTheRunDisabled
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itValidatesEveryComputedChannelSelectorFromTheSameResolvedDefinitions
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itAppliesOwnerConfigurationsOnlyAfterEveryValueResolves
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itDisablesProgressForAnOutputWithoutAnErrorStream
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itDisablesProgressWhenNoProgressIsRequested
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itDisablesProgressWhenTheErrorStreamIsNotATerminal
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itDrawsProgressOnTheErrorStreamOnly
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itEnablesProgressWhenOnlyTheErrorStreamIsATerminal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"Architecture"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"ComputedMetrics"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"Coupling"
@@ -7061,9 +7066,9 @@ Available tests:
  - Qualimetrix\Tests\Unit\Infrastructure\Console\MeasuredFindingSetTest::itReturnsTheRunAlongsideTheSameMeasuredSetForPathsReturns
  - Qualimetrix\Tests\Unit\Infrastructure\Console\MeasuredFindingSetTest::itUsesExplicitDiscoveryWithoutCallingTheFactory
  - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itCanBeFinishedMultipleTimes
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itDrawsInTheSectionItWasGiven
  - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itHandlesAdvanceBeforeStart
  - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itSkipsProgressBarForFewFiles
- - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itSkipsProgressBarForNonConsoleOutput
  - Qualimetrix\Tests\Unit\Infrastructure\Console\RuntimeLoggerConfiguratorTest::itCreatesPublishesAndReturnsTheSameLogger
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ScopeWarningCheckerTest::itDoesNotCheckAutoloadDev
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ScopeWarningCheckerTest::itReturnsNoWarningsForFullCoverage

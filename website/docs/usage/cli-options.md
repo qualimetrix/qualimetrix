@@ -497,6 +497,16 @@ Disable the progress bar. Useful in CI pipelines:
 bin/qmx check src/ --no-progress
 ```
 
+Accepted by every command that runs an analysis: `check`, `directives`,
+`debug:layer-assignment`, `baseline:generate`, `baseline:update`,
+`baseline:cleanup` and `baseline:explain`.
+
+The progress bar is written to standard error, so the report on standard output
+stays machine-readable even on a terminal — `bin/qmx check src/ --format=json >
+report.json` produces valid JSON without this flag. It is drawn only when
+standard error is a terminal; redirect standard error to silence it without
+touching the report.
+
 ---
 
 <!-- llms:skip-begin -->

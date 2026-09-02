@@ -496,6 +496,16 @@ bin/qmx check src/ --log-file=qmx.log --log-level=debug
 bin/qmx check src/ --no-progress
 ```
 
+Принимается каждой командой, которая запускает анализ: `check`, `directives`,
+`debug:layer-assignment`, `baseline:generate`, `baseline:update`,
+`baseline:cleanup` и `baseline:explain`.
+
+Прогресс-бар пишется в поток ошибок, поэтому отчёт в стандартном выводе остаётся
+машиночитаемым даже на терминале — `bin/qmx check src/ --format=json >
+report.json` даёт валидный JSON и без этого флага. Бар рисуется, только если
+поток ошибок — терминал; перенаправление потока ошибок гасит его, не трогая
+отчёт.
+
 ---
 
 <!-- llms:skip-begin -->

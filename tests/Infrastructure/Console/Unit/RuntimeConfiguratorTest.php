@@ -44,12 +44,14 @@ use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\OutputInterface;
 
 #[CoversClass(RuntimeConfigurator::class)]
 #[CoversClass(RuntimeLimitsController::class)]
@@ -422,6 +424,104 @@ final class RuntimeConfiguratorTest extends TestCase
         } finally {
             restore_error_handler();
         }
+    }
+
+    /**
+     * The payload goes to stdout and the bar to stderr; a test that reads only
+     * one of the two cannot tell the arrangement from its predecessor, which
+     * drew the bar into the payload.
+     */
+    #[Test]
+    public function itDrawsProgressOnTheErrorStreamOnly(): void
+    {
+        $output = new SplitStreamConsoleOutput(stdoutDecorated: true, stderrDecorated: true);
+
+        $this->configureWith($output, $this->input());
+
+        $this->progress->start(100);
+        $this->progress->advance();
+        $this->progress->finish();
+
+        self::assertStringContainsString('0/100', $output->errorOutputContent());
+        self::assertSame('', $output->standardOutputContent());
+    }
+
+    /**
+     * The run this package exists for: `qmx check --format=json > report.json`
+     * from a terminal. stdout is a file and undecorated, stderr is the
+     * terminal — and the bar must still be drawn. Asking stdout instead, as
+     * the previous gate did, silently answers "no progress here".
+     */
+    #[Test]
+    public function itEnablesProgressWhenOnlyTheErrorStreamIsATerminal(): void
+    {
+        $output = new SplitStreamConsoleOutput(stdoutDecorated: false, stderrDecorated: true);
+
+        $this->configureWith($output, $this->input());
+
+        $this->progress->start(100);
+        $this->progress->finish();
+
+        self::assertStringContainsString('0/100', $output->errorOutputContent());
+        self::assertSame('', $output->standardOutputContent());
+    }
+
+    /** The mirror case: a live stdout does not license drawing into a redirected stderr. */
+    #[Test]
+    public function itDisablesProgressWhenTheErrorStreamIsNotATerminal(): void
+    {
+        $output = new SplitStreamConsoleOutput(stdoutDecorated: true, stderrDecorated: false);
+
+        $this->configureWith($output, $this->input());
+
+        $this->progress->start(100);
+        $this->progress->finish();
+
+        self::assertSame('', $output->errorOutputContent());
+        self::assertSame('', $output->standardOutputContent());
+    }
+
+    #[Test]
+    public function itDisablesProgressWhenNoProgressIsRequested(): void
+    {
+        $output = new SplitStreamConsoleOutput(stdoutDecorated: true, stderrDecorated: true);
+
+        $this->configureWith($output, $this->input(['--no-progress' => true]));
+
+        $this->progress->start(100);
+        $this->progress->finish();
+
+        self::assertSame('', $output->errorOutputContent());
+        self::assertSame('', $output->standardOutputContent());
+    }
+
+    /** An output with no distinguishable error stream cannot carry a bar at all. */
+    #[Test]
+    public function itDisablesProgressForAnOutputWithoutAnErrorStream(): void
+    {
+        $output = new BufferedOutput(decorated: true);
+
+        $this->configureWith($output, $this->input());
+
+        $this->progress->start(100);
+        $this->progress->finish();
+
+        self::assertSame('', $output->fetch());
+    }
+
+    private function configureWith(OutputInterface $output, ArrayInput $input): void
+    {
+        $this->configurator->resetRunState();
+
+        $document = $this->customDocument();
+        $this->configurator->configure(
+            $document,
+            (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([])),
+            (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString('/project')),
+            (new ParallelConfigurationResolver())->resolve($document),
+            $input,
+            $output,
+        );
     }
 
     private function configure(

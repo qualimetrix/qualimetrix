@@ -70,6 +70,12 @@ final class BaselineCommandDefinition
      * spelling here would leave the option accepted and inert — the failure
      * mode where a user narrows one side of the comparison and is never told
      * the other side did not follow.
+     *
+     * `--no-progress` is here for a different reason than the rest: it changes
+     * nothing about the measured set, only about what the run draws on the
+     * error stream while measuring it. It is the run's input all the same, and
+     * a baseline command that measures a whole tree without offering it would
+     * be the one analysing command a caller cannot quiet.
      */
     public static function addMeasuredRunInput(Command $command): void
     {
@@ -113,6 +119,12 @@ final class BaselineCommandDefinition
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Rule-specific option (format: rule-name:option=value)',
                 [],
+            )
+            ->addOption(
+                'no-progress',
+                null,
+                InputOption::VALUE_NONE,
+                'Disable progress bar',
             );
     }
 }

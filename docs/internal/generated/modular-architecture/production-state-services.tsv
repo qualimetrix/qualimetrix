@@ -86,6 +86,7 @@ src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\C
 src/Infrastructure/Console/FilteredInputDefinition.php	Qualimetrix\Infrastructure\Console\FilteredInputDefinition	Infrastructure.Console	P8	"adapter session or cache"	-	hiddenOptionNames	setHiddenOptionNames
 src/Infrastructure/Console/Progress/ConsoleProgressBar.php	Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar	Infrastructure.Console	P8	"adapter session or cache"	-	progressBar	setMessage
 src/Infrastructure/Console/Progress/SwitchableProgressReporter.php	Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter	Infrastructure.Console	P8	"adapter session or cache"	-	delegate	reset,setMessage
+src/Infrastructure/Console/RuntimeConfigurator.php	Qualimetrix\Infrastructure\Console\RuntimeConfigurator	Infrastructure.Console	P8	"adapter session or cache"	-	progressSections	clearCacheIfRequested,configure,configureProfiler,configureProgressReporter,resetRunState
 src/Infrastructure/Git/GitClient.php	Qualimetrix\Infrastructure\Git\GitClient	Infrastructure.Git	P8	"adapter session or cache"	-	gitToplevelCache	collectRow
 src/Infrastructure/Logging/FileLogger.php	Qualimetrix\Infrastructure\Logging\FileLogger	Infrastructure.Logging	P8	"adapter session or cache"	-	handle	-
 src/Infrastructure/Logging/LoggerHolder.php	Qualimetrix\Infrastructure\Logging\LoggerHolder	Infrastructure.Logging	P8	"runtime holder"	-	logger	setLogger

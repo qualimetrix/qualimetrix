@@ -8,14 +8,22 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 
 /**
- * The two options every command that renders one analysis of a configured run
- * takes: which configuration to read, and how to render the answer.
+ * What every command that renders one analysis of a configured run takes: which
+ * configuration to read, how to render the answer, and whether the run reports
+ * its progress.
  *
- * Declared once rather than per command because the pair is a contract with the
+ * Declared once rather than per command because these are a contract with the
  * user, not a detail of any one command: `--format` must be the way a machine
  * representation is asked for everywhere (`CLI_CONVENTIONS.md`), and a second
  * spelling of `--config` in one command would be a second place to forget the
  * shortcut or the default.
+ *
+ * `--no-progress` is not about rendering the answer — it is about the run that
+ * produces it, which is why the group is no longer described as a rendering
+ * contract. It belongs with the others all the same: a command that runs an
+ * analysis without it leaves the caller no way to silence the bar, and
+ * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator} reads the
+ * flag off the input by name for every command alike.
  */
 final class AnalysisReportCommandDefinition
 {
@@ -34,6 +42,12 @@ final class AnalysisReportCommandDefinition
                 InputOption::VALUE_REQUIRED,
                 'Output format: text or json',
                 'text',
+            )
+            ->addOption(
+                'no-progress',
+                null,
+                InputOption::VALUE_NONE,
+                'Disable progress bar',
             );
     }
 
