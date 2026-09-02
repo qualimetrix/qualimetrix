@@ -68,11 +68,21 @@ tree — the movement is real and the comparison is silent.
 
 What holds the claim up is therefore structural, and it is worth stating because
 it is cheaper and stronger than the sweep: a rule cannot read another rule's
-directive. `AnalysisContext::getThresholdOverride()` is the sole reader of the
-override map in the rule layer, it is called from exactly two places, both pass
+directive. `AnalysisContext::getThresholdOverride()` is the only accessor a rule
+calls to reach the override map, it is called from exactly two places, both pass
 the calling rule's own name, and `ThresholdOverride::matches()` is equality. A
 guard test holds that shape, so a third call site with a foreign name reddens
 immediately rather than waiting for someone to run the full sweep.
+
+The map itself has readers outside the rule layer — `AnalysisContext` owns it,
+and `ThresholdDirectiveAudit` reads and rewrites it directly to build each
+counterfactual, which is this feature doing its job. The guard names both as
+declared exceptions rather than missing them by accident; it is a textual
+check, not a type solver, so it cannot see every shape a read could take
+(`docs/internal/plans/rule-vocabulary/FOLLOWUPS.md` carries what a type-aware
+successor would close). What the guard does hold is the shape that matters: a
+rule's own `analyze(AnalysisContext $context)` parameter, which is the only
+form a rule has ever used to reach the map.
 
 ## Decision 3 — the full sweep stays in the product, as the other side of a control
 

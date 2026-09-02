@@ -13,10 +13,19 @@ use RecursiveIteratorIterator;
 use RuntimeException;
 
 /**
- * The narrow sweep's whole invariant — that a rule can read only its own
- * `@qmx-threshold`, never a neighbour's — is not enforced by any type. It
- * holds only because every `AnalysisContext::getThresholdOverride()` call
- * site passes `$this->getName()` for the rule name, which
+ * The narrow sweep's whole invariant is narrower than "nothing reads the
+ * override map" — it is that **a rule cannot read another rule's
+ * `@qmx-threshold`**. The map itself has legitimate readers outside the rule
+ * layer: {@see \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext}
+ * owns it, and {@see \Qualimetrix\Analysis\Policy\Inline\Directive\ThresholdDirectiveAudit},
+ * the directive subject's own audit, reads and rewrites it directly to build
+ * each counterfactual run — that is its job, not a leak. Both are named,
+ * narrow exceptions below ({@see LEGITIMATE_DIRECT_READER_RELATIVE_PATHS}),
+ * not files the checks below happen to miss.
+ *
+ * Inside the rule layer, the invariant holds only because every
+ * `AnalysisContext::getThresholdOverride()` call site passes `$this->getName()`
+ * for the rule name, which
  * {@see \Qualimetrix\Analysis\Finding\RuleExecution::isEnabled()} narrows by
  * exact producer name (see `docs/adr/0040-narrow-directive-sweep.md`). A third
  * call site passing a literal, a foreign variable, or another rule's name
@@ -32,7 +41,19 @@ use RuntimeException;
  * of the same map — `AnalysisContext::$thresholdOverrides` is a public
  * property, so a rule could read it directly without ever calling the method
  * this guard was watching. Both doors are closed the same way: anything this
- * guard cannot positively recognize as safe is a violation, not a skip.
+ * guard cannot positively recognize as safe is a violation, not a skip — with
+ * the two named exceptions above.
+ *
+ * **What this guard is blind to.** The property check recognizes only the
+ * project's one call convention for a rule's own parameter —
+ * `AnalysisContext $context` typed directly in the same file — not a value
+ * reached through another type's public field, of which there are two today:
+ * `PreparedRun::$context` and `ThresholdDirectiveAuditInput::$baseline` (the
+ * one `ThresholdDirectiveAudit` itself reads through). It sees form, not type,
+ * so this exemption for `ThresholdDirectiveAudit` is stated rather than
+ * exercised by the property check below — `docs/internal/plans/rule-vocabulary/FOLLOWUPS.md`,
+ * "Страж инварианта видит форму, а не тип", carries the open question of a
+ * type-aware successor.
  *
  * - **Method calls.** Every occurrence of the identifier `getThresholdOverride`
  *   is found by token type, which already excludes docblocks and comments (the
@@ -54,17 +75,40 @@ use RuntimeException;
  * - **Property reads.** A variable whose parameter type-hint reads
  *   `AnalysisContext $name` in the same file is tracked, and a bare
  *   `->thresholdOverrides` (or `?->thresholdOverrides`, not followed by `(`)
- *   on it outside `AnalysisContext.php` itself is a violation. The tracking is
- *   textual, not a type solver: it follows this project's one call convention
+ *   on it outside {@see LEGITIMATE_DIRECT_READER_RELATIVE_PATHS} is a
+ *   violation. The tracking is textual, not a type solver: it follows this
+ *   project's one call convention for a rule's own parameter
  *   (`analyze(AnalysisContext $context)`) rather than aliasing through
- *   reassignment, which is enough to catch a rule reading the map directly
- *   without inventing a second type checker.
+ *   reassignment or another type's field, which is enough to catch a rule
+ *   reading the map directly without inventing a second type checker.
  */
 final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
 {
     private const string METHOD = 'getThresholdOverride';
     private const string PROPERTY = 'thresholdOverrides';
     private const string OWNING_TYPE_RELATIVE_PATH = 'src/Analysis/Finding/Contract/Rule/AnalysisContext.php';
+
+    /**
+     * Files allowed to read `AnalysisContext::$thresholdOverrides` directly,
+     * outside the rule layer this guard polices:
+     *
+     * - the owning type itself, whose accessor reads its own state;
+     * - {@see \Qualimetrix\Analysis\Policy\Inline\Directive\ThresholdDirectiveAudit},
+     *   the directive subject's own audit, which reads and rewrites the map
+     *   through `ThresholdDirectiveAuditInput::$baseline` to build each
+     *   counterfactual run — the one thing this feature exists to do, not a
+     *   rule reading a neighbour's directive.
+     *
+     * A file earns a place here by being named, not by the property check
+     * failing to recognize its access pattern; see the class docblock for
+     * what the check cannot see today.
+     *
+     * @var list<string>
+     */
+    private const array LEGITIMATE_DIRECT_READER_RELATIVE_PATHS = [
+        self::OWNING_TYPE_RELATIVE_PATH,
+        'src/Analysis/Policy/Inline/Directive/ThresholdDirectiveAudit.php',
+    ];
 
     #[Test]
     public function everyCallSitePassesItsOwnRuleNameAsTheFirstArgument(): void
@@ -75,9 +119,9 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
         foreach (self::productionPhpFiles($root) as $absolutePath) {
             $relative = substr($absolutePath, \strlen($root) + 1);
             $source = self::readSource($absolutePath);
-            $isOwningFile = $relative === self::OWNING_TYPE_RELATIVE_PATH;
+            $isLegitimateDirectReader = \in_array($relative, self::LEGITIMATE_DIRECT_READER_RELATIVE_PATHS, true);
 
-            foreach (self::violations($source, $isOwningFile) as [$line, $message]) {
+            foreach (self::violations($source, $isLegitimateDirectReader) as [$line, $message]) {
                 $violations[] = \sprintf('%s:%d %s', $relative, $line, $message);
             }
         }
@@ -118,7 +162,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
     {
         $source = '<?php $override = $context->getThresholdOverride($this->getName(), $subject);';
 
-        self::assertSame([], self::violations($source, isOwningFile: false));
+        self::assertSame([], self::violations($source, isLegitimateDirectReader: false));
     }
 
     /**
@@ -138,7 +182,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
     #[DataProvider('provideFormsThatMustNotBeInvisible')]
     public function itTreatsEveryUnrecognizedOrForeignCallFormAsAViolation(string $source): void
     {
-        self::assertNotSame([], self::violations($source, isOwningFile: false));
+        self::assertNotSame([], self::violations($source, isLegitimateDirectReader: false));
     }
 
     /**
@@ -190,7 +234,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
             }
             PHP;
 
-        self::assertNotSame([], self::violations($source, isOwningFile: false));
+        self::assertNotSame([], self::violations($source, isLegitimateDirectReader: false));
     }
 
     /**
@@ -201,13 +245,14 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
     {
         $source = '<?php function f(AnalysisContext $context) { return $context?->thresholdOverrides; }';
 
-        self::assertNotSame([], self::violations($source, isOwningFile: false));
+        self::assertNotSame([], self::violations($source, isLegitimateDirectReader: false));
     }
 
     /**
-     * The one legitimate reader of the property is the type that owns it. The
-     * property check must not fire inside `AnalysisContext.php` itself, or the
-     * guard would forbid the accessor method from reading its own state.
+     * One of the two files in {@see LEGITIMATE_DIRECT_READER_RELATIVE_PATHS}
+     * is the type that owns the property. The property check must not fire
+     * inside `AnalysisContext.php` itself, or the guard would forbid the
+     * accessor method from reading its own state.
      */
     #[Test]
     public function itAllowsTheOwningTypeToReadItsOwnProperty(): void
@@ -226,7 +271,35 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
             }
             PHP;
 
-        self::assertSame([], self::violations($source, isOwningFile: true));
+        self::assertSame([], self::violations($source, isLegitimateDirectReader: true));
+    }
+
+    /**
+     * The exception is a property of the file, not a coincidence of a pattern
+     * the property check fails to recognize: a form that would otherwise be
+     * flagged ({@see itTreatsADirectPropertyReadAsAViolation()}) must pass
+     * once the file is one of the named legitimate direct readers. Without
+     * this, {@see LEGITIMATE_DIRECT_READER_RELATIVE_PATHS} could grow without
+     * ever changing an outcome, which would make it decoration rather than an
+     * enforced exception.
+     */
+    #[Test]
+    public function itAllowsADeclaredLegitimateReaderToReadThePropertyDirectly(): void
+    {
+        $source = <<<'PHP'
+            <?php
+            final class ThresholdDirectiveAudit
+            {
+                public function verdicts(AnalysisContext $context): array
+                {
+                    $overrides = $context->thresholdOverrides;
+
+                    return [];
+                }
+            }
+            PHP;
+
+        self::assertSame([], self::violations($source, isLegitimateDirectReader: true));
     }
 
     /**
@@ -236,13 +309,13 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
      *
      * @return list<array{0: int, 1: string}> [line, message] pairs
      */
-    private static function violations(string $source, bool $isOwningFile): array
+    private static function violations(string $source, bool $isLegitimateDirectReader): array
     {
         $tokens = token_get_all($source);
 
         return [
             ...self::methodCallViolations($tokens),
-            ...self::propertyReadViolations($tokens, $isOwningFile),
+            ...self::propertyReadViolations($tokens, $isLegitimateDirectReader),
         ];
     }
 
@@ -349,9 +422,9 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
      *
      * @return list<array{0: int, 1: string}>
      */
-    private static function propertyReadViolations(array $tokens, bool $isOwningFile): array
+    private static function propertyReadViolations(array $tokens, bool $isLegitimateDirectReader): array
     {
-        if ($isOwningFile) {
+        if ($isLegitimateDirectReader) {
             return [];
         }
 

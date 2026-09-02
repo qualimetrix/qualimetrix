@@ -48,11 +48,16 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAudi
  * verdict for verdict, not finding for finding, and is silent exactly where a
  * moved finding does not cross a verdict's own category — see
  * `docs/adr/0040-narrow-directive-sweep.md` for what that bound does and does
- * not cover. What holds the claim up is structural, not measured: a rule
- * cannot read another rule's directive, because
- * {@see AnalysisContext::getThresholdOverride()} is the sole reader of the
- * override map and every call site passes the calling rule's own name — held
- * by `ThresholdOverrideOwnRuleNameGuardTest`, which reddens on a foreign name.
+ * not cover. What holds the claim up is structural, not measured: **a rule
+ * cannot read another rule's directive.** Inside the rule layer,
+ * {@see AnalysisContext::getThresholdOverride()} is the only accessor a rule
+ * calls, and every call site passes the calling rule's own name — held by
+ * `ThresholdOverrideOwnRuleNameGuardTest`, which reddens on a foreign name.
+ * That guard's property check is textual, not a type solver, so it also names
+ * this class as one of two legitimate direct readers of the override map —
+ * this class reads and rewrites `$input->baseline->thresholdOverrides` below
+ * to build each counterfactual, which is the map's owning subject doing its
+ * job, not a rule reading a neighbour's directive.
  *
  * **This is the one caller that makes
  * {@see \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::execute()}'s
