@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
@@ -172,7 +173,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             namespaceExclusionsByRule: ['coupling.cbo' => 1],
             excludedFindings: [$finding],
             attributions: [new RuleExclusionAttribution('coupling.cbo', isPathExclusion: false, matchedPatterns: ['App\\Excluded'])],
-        ));
+        ), LevelActivity::empty());
 
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
@@ -195,7 +196,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             pathExclusionsByRule: ['code-smell.long-parameter-list' => 1],
             excludedFindings: [$finding],
             attributions: [new RuleExclusionAttribution('code-smell.long-parameter-list', isPathExclusion: true, matchedPatterns: ['src/Excluded'])],
-        ));
+        ), LevelActivity::empty());
 
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
@@ -265,7 +266,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             namespaceExclusionsByRule: [$channel => 1],
             excludedFindings: [$finding],
             attributions: [new RuleExclusionAttribution($channel, isPathExclusion: false, matchedPatterns: ['App\\Excluded'])],
-        ));
+        ), LevelActivity::empty());
 
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
@@ -295,7 +296,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
                 isPathExclusion: false,
                 matchedChannelPatterns: [['selector' => $channel, 'pattern' => 'App\\Excluded']],
             )],
-        ));
+        ), LevelActivity::empty());
 
         $composition = $this->builder->build(
             new FindingProjectionResult(findings: []),
@@ -407,7 +408,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
 
     private function ruleExecution(): RuleExecutionResult
     {
-        return new RuleExecutionResult([], [], new RuleExclusionStats());
+        return new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty());
     }
 
     /**
@@ -443,11 +444,6 @@ final class SuppressionCompositionBuilderTest extends TestCase
             public function selection(): RuleSelection
             {
                 return new RuleSelection();
-            }
-
-            public function isRuleDisabledByOptions(string $ruleName): bool
-            {
-                return false;
             }
 
             public function captureExcludedFindings(): void {}

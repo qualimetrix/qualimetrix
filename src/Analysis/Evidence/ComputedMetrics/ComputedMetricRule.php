@@ -102,6 +102,45 @@ final class ComputedMetricRule extends AbstractRule
     }
 
     /**
+     * One instance, several producers, each switched on its own — so the
+     * default answer on {@see \Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule}
+     * (which speaks for `getName()` alone) would report this rule's six
+     * classless producers under the host's name and lose them.
+     *
+     * Read from the same two sources {@see analyze()} reads: the definition
+     * catalog for which producers and levels exist at all, and
+     * {@see ComputedMetricProducerOptions::isEnabledFor()} for whether each
+     * one runs. A definition excluded through the `computed_metrics` section
+     * never reaches the catalog, so it is absent here rather than present and
+     * false — which is correct: addressability already answers a directive
+     * naming a channel that left the universe.
+     *
+     * Deliberately **not** the whole of what {@see analyze()} decides: that
+     * method also skips a definition carrying no thresholds, because there is
+     * no boundary to breach. That is not a disablement — the producer ran and
+     * had nothing to say — so mirroring the skip here would report a live
+     * producer as switched off. This answer is about configuration, not about
+     * whether a finding was possible.
+     *
+     * @return array<string, array<string, bool>>
+     */
+    public function levelActivity(): array
+    {
+        $activity = [];
+
+        foreach ($this->definitionCatalog->all() as $definition) {
+            $ran = $this->producerOptions->isEnabledFor($definition->name);
+
+            foreach ($definition->levels as $level) {
+                $producer = $definition->producerRuleName();
+                $activity[$producer][$level->value] = ($activity[$producer][$level->value] ?? false) || $ran;
+            }
+        }
+
+        return $activity;
+    }
+
+    /**
      * @param list<Finding> $findings
      */
     private function checkLevel(

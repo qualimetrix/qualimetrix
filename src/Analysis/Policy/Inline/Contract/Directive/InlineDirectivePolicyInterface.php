@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
@@ -97,7 +98,7 @@ interface InlineDirectivePolicyInterface
      *
      * @return list<DirectiveVerdict>
      */
-    public function directiveVerdicts(array $producedFindings): array;
+    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity): array;
 
     /**
      * The findings only the produced set can justify: suppressions that
@@ -111,5 +112,5 @@ interface InlineDirectivePolicyInterface
      *
      * @return list<Finding>
      */
-    public function auditDirectiveUsage(array $findings): array;
+    public function auditDirectiveUsage(array $findings, LevelActivity $levelActivity): array;
 }

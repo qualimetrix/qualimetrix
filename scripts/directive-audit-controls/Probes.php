@@ -30,6 +30,8 @@ final class Probes
 
     private const string USAGE = 'src/Analysis/Policy/Inline/Directive/DirectiveUsage.php';
 
+    private const string LEVEL_ACTIVITY = 'src/Analysis/Finding/Contract/LevelActivity.php';
+
     private const string COMMAND = 'src/Infrastructure/Console/Command/DirectivesCommand.php';
 
     private const string FAILURE_TAXONOMY = 'src/Infrastructure/Console/ConfigurationFailure.php';
@@ -383,7 +385,10 @@ final class Probes
                 self::PIPELINE,
                 ["        \$produced = [\n"
                     . "            ...\$prepared->ruleExecution->produced,\n"
-                    . "            ...\$this->ruleProducerPreparation->auditInlineDirectives(\$prepared->ruleExecution->produced),\n"
+                    . "            ...\$this->ruleProducerPreparation->auditInlineDirectives(\n"
+                    . "                \$prepared->ruleExecution->produced,\n"
+                    . "                \$prepared->ruleExecution->levelActivity,\n"
+                    . "            ),\n"
                     . '        ];' => '        $produced = $prepared->ruleExecution->produced;'],
                 ['itJudgesASuppressionOfTheChannelProducedAfterRuleExecution'],
             ),
@@ -554,6 +559,17 @@ final class Probes
                     'itRefusesToJudgeADirectiveWhoseProducerIsDisabled',
                     'itRefusesToJudgeADirectiveWhoseProducerIsOffThroughItsOptions',
                 ],
+            ),
+            Probe::breaking(
+                'producer-granularity-instead-of-level',
+                'enablement is judged per producer, so a rule switched off only at the'
+                . ' directive\'s level still reads as running',
+                self::LEVEL_ACTIVITY,
+                [
+                    'return $declared ? false : !$this->disabledEverywhere($producer);' =>
+                        'return !$this->disabledEverywhere($producer);',
+                ],
+                ['itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff'],
             ),
             Probe::breaking(
                 'judge-by-published',

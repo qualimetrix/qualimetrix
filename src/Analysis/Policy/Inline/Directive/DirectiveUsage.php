@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
@@ -20,8 +20,6 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyI
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * The post-execution half of the inline-directive subject: what each authored
@@ -98,11 +96,11 @@ final class DirectiveUsage
      *
      * @return list<DirectiveVerdict>
      */
-    public function verdicts(array $suppressionsByFile, array $findings): array
+    public function verdicts(array $suppressionsByFile, array $findings, LevelActivity $activity): array
     {
         return array_map(
             static fn(array $pair): DirectiveVerdict => $pair['verdict'],
-            $this->evaluate($suppressionsByFile, $findings),
+            $this->evaluate($suppressionsByFile, $findings, $activity),
         );
     }
 
@@ -115,13 +113,17 @@ final class DirectiveUsage
      *
      * @return list<Finding>
      */
-    public function stale(array $suppressionsByFile, array $findings, Severity $severity): array
-    {
+    public function stale(
+        array $suppressionsByFile,
+        array $findings,
+        Severity $severity,
+        LevelActivity $activity,
+    ): array {
         $stale = [];
 
-        foreach ($this->evaluate($suppressionsByFile, $findings) as $pair) {
+        foreach ($this->evaluate($suppressionsByFile, $findings, $activity) as $pair) {
             if ($pair['verdict']->effect === DirectiveEffect::Inert) {
-                $stale[] = self::staleFinding($pair['verdict']->site->file, $pair['directive'], $severity);
+                $stale[] = StaleDirectiveFinding::of($pair['verdict']->site->file, $pair['directive'], $severity);
             }
         }
 
@@ -201,7 +203,7 @@ final class DirectiveUsage
      *
      * @return list<array{verdict: DirectiveVerdict, directive: Suppression}>
      */
-    private function evaluate(array $suppressionsByFile, array $findings): array
+    private function evaluate(array $suppressionsByFile, array $findings, LevelActivity $activity): array
     {
         $selection = $this->ruleConfiguration->selection();
         $findings = $this->suppressible($findings);
@@ -210,7 +212,7 @@ final class DirectiveUsage
         foreach ($suppressionsByFile as $file => $fileSuppressions) {
             foreach (self::groupByAuthoredSite($fileSuppressions) as $group) {
                 $directive = $group[0];
-                $reason = $this->unmeasurableReason($directive, $selection->only, $selection->disabled);
+                $reason = $this->unmeasurableReason($group, $activity, $selection->only, $selection->disabled);
 
                 $effect = match (true) {
                     $reason !== null => DirectiveEffect::Unmeasured,
@@ -249,7 +251,7 @@ final class DirectiveUsage
      *
      * @param list<Suppression> $suppressions
      *
-     * @return list<list<Suppression>>
+     * @return list<non-empty-list<Suppression>>
      */
     private static function groupByAuthoredSite(array $suppressions): array
     {
@@ -279,40 +281,6 @@ final class DirectiveUsage
         }
 
         return false;
-    }
-
-    /**
-     * The subject is the **file**, never a declaration the directive happened
-     * to be bound to.
-     *
-     * Two reasons, and both are about the directive rather than the code. A
-     * finding about an annotation belongs where the annotation was written,
-     * and the `Location` line already says exactly where. And this is the one
-     * of the four channels a project may ratchet: a declaration subject
-     * carries the declaration's byte offset, so every edit above it would
-     * rewrite the entry's key for reasons that have nothing to do with the
-     * annotation.
-     */
-    private static function staleFinding(
-        RelativePath $path,
-        Suppression $suppression,
-        Severity $severity,
-    ): Finding {
-        $subject = MetricSubject::aggregate(SymbolPath::forFile($path));
-
-        return new Finding(
-            location: new Location($path, $suppression->line, precise: true),
-            subject: $subject,
-            symbolPath: $subject->toSymbolPath(),
-            ruleName: InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
-            code: InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
-            message: \sprintf(
-                'Suppression "%s" matched nothing in this run — the finding it silences is gone.',
-                $suppression->target(),
-            ),
-            severity: $severity,
-            recommendation: 'Remove the annotation, or keep it and note why the finding is expected to return.',
-        );
     }
 
     /**
@@ -350,11 +318,24 @@ final class DirectiveUsage
      * {@see DirectiveAddressability} already raised would answer one mistake
      * twice. All three arrive here as the same answer for the same reason.
      *
+     * The levels come from the whole authored group rather than from its first
+     * binding: one authored site expands to a binding per applicable
+     * declaration, and those need not share a level — a class docblock covers
+     * the class and every callable in it. Judging by the first alone reports a
+     * directive that is alive at one of its levels as unmeasured, which is the
+     * mirror image of the defect this reading exists to remove.
+     *
+     * @param non-empty-list<Suppression> $group
      * @param list<string> $only
      * @param list<string> $disabled
      */
-    private function unmeasurableReason(Suppression $suppression, array $only, array $disabled): ?DirectiveUnmeasurableReason
-    {
+    private function unmeasurableReason(
+        array $group,
+        LevelActivity $activity,
+        array $only,
+        array $disabled,
+    ): ?DirectiveUnmeasurableReason {
+        $suppression = $group[0];
         $target = $suppression->target();
         if ($target->appliesToEveryChannel()) {
             return DirectiveUnmeasurableReason::AddressesEveryChannel;
@@ -379,7 +360,7 @@ final class DirectiveUsage
 
             if (
                 $this->ruleSelector->isProducerEnabled($producer, $only, $disabled)
-                && !$this->ruleConfiguration->isRuleDisabledByOptions($producer)
+                && $activity->ranAtAnyOf($producer, DirectiveLevels::ofGroup($group))
             ) {
                 return null;
             }

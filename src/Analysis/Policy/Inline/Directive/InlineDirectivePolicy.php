@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -143,18 +144,18 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         $this->usageReportingSeverity = $severity;
     }
 
-    public function directiveVerdicts(array $producedFindings): array
+    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity): array
     {
-        return $this->usage->verdicts($this->suppressions, $producedFindings);
+        return $this->usage->verdicts($this->suppressions, $producedFindings, $levelActivity);
     }
 
-    public function auditDirectiveUsage(array $findings): array
+    public function auditDirectiveUsage(array $findings, LevelActivity $levelActivity): array
     {
         $severity = $this->usageReportingSeverity;
         if ($severity === null) {
             return [];
         }
 
-        return $this->usage->stale($this->suppressions, $findings, $severity);
+        return $this->usage->stale($this->suppressions, $findings, $severity, $levelActivity);
     }
 }

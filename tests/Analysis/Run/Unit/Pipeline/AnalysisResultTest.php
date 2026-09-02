@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -30,6 +31,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(AnalysisResult::class)]
@@ -330,6 +332,7 @@ final class AnalysisResultTest extends TestCase
                 produced: [$left],
                 published: [$left],
                 exclusions: new RuleExclusionStats(namespaceExclusionsByRule: ['rule1' => 1]),
+                levelActivity: LevelActivity::empty(),
             ),
         );
 
@@ -342,6 +345,7 @@ final class AnalysisResultTest extends TestCase
                 produced: [$right],
                 published: [$right],
                 exclusions: new RuleExclusionStats(pathExclusionsByRule: ['rule2' => 2]),
+                levelActivity: LevelActivity::empty(),
             ),
         );
 
@@ -354,6 +358,36 @@ final class AnalysisResultTest extends TestCase
         self::assertSame(['rule2' => 2], $merged->ruleExecution->exclusions->pathExclusionsByRule);
     }
 
+    /**
+     * Merging two activity records keeps what either side was able to do.
+     *
+     * Written because the other cases merge two empty records, where every
+     * merge rule agrees: `||`, `&&`, and "take the left" are indistinguishable
+     * on nothing. This is the only place the choice is observable.
+     */
+    #[Test]
+    public function itKeepsALevelThatRanOnEitherSideOfTheMerge(): void
+    {
+        $left = LevelActivity::fromMap([
+            'complexity.cyclomatic' => ['callable' => true, 'class' => false],
+            'coupling.cbo' => ['class' => false],
+        ]);
+        $right = LevelActivity::fromMap([
+            'complexity.cyclomatic' => ['callable' => false, 'class' => false],
+            'coupling.cbo' => ['class' => true],
+            'design.god-class' => ['class' => true],
+        ]);
+
+        $merged = (new RuleExecutionResult([], [], new RuleExclusionStats(), $left))
+            ->merge(new RuleExecutionResult([], [], new RuleExclusionStats(), $right))
+            ->levelActivity;
+
+        self::assertTrue($merged->ran('complexity.cyclomatic', SymbolLevel::Callable), 'true on the left survives');
+        self::assertTrue($merged->ran('coupling.cbo', SymbolLevel::Class_), 'true on the right survives');
+        self::assertFalse($merged->ran('complexity.cyclomatic', SymbolLevel::Class_), 'false on both stays false');
+        self::assertTrue($merged->declares('design.god-class', SymbolLevel::Class_), 'a producer only one side knew is kept');
+    }
+
     #[Test]
     public function itKeepsTheOtherSidesRuleExecutionWhenOneSideHasNone(): void
     {
@@ -362,6 +396,7 @@ final class AnalysisResultTest extends TestCase
             produced: [$finding],
             published: [$finding],
             exclusions: new RuleExclusionStats(),
+            levelActivity: LevelActivity::empty(),
         );
 
         $withRuleExecution = new AnalysisResult(

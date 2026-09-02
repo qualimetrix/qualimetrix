@@ -341,6 +341,17 @@ final class StampRule implements RuleInterface
         return [];
     }
 
+    /**
+     * A double with no producers of its own: an empty activity declares
+     * nothing, and absence is not disablement.
+     *
+     * @return array<string, array<string, bool>>
+     */
+    public function levelActivity(): array
+    {
+        return [];
+    }
+
     public function analyze(AnalysisContext $context): array
     {
         return [];

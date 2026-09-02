@@ -22,10 +22,25 @@ Finding/
 rather than a bare finding list: `$produced` (everything rules and their
 configuration validators produced, before the per-rule exclusion ledger and
 per-finding channel selection ran), `$published` (the subset `execute()` used
-to return), and `$exclusions` (`RuleExclusionStats`, unchanged). Reporting's
+to return), `$exclusions` (`RuleExclusionStats`, unchanged), and
+`$levelActivity` (`LevelActivity`). Reporting's
 `SuppressionCompositionBuilder` reads `$produced` and `$exclusions` to publish
 `--format=suppressed`; every other caller keeps reading `$published`. See
 `docs/adr/0037-suppressed-format-and-produced-findings.md`.
+
+`LevelActivity` records which producer/level pairs this configuration let run,
+asked of the rules themselves during execution and published beside the
+findings it explains (`RuleExecutionInterface::levelActivity()` answers the same
+question without executing anything, because it is a fact about configuration).
+A rule answers for itself through `RuleInterface::levelActivity()`, whose
+default on `AbstractRule` reads its own channel declarations and its options —
+per level when they are hierarchical; `ComputedMetricRule` overrides it for the
+producers it hosts without a class of their own. `RuleExecution` completes the
+record for channels a configuration validator declares in its producer's slot.
+
+The directive audit reads this record instead of re-deriving enablement from
+the merged configuration: three answers, not two, because a producer that does
+not declare a level at all is a different fact from one switched off there.
 
 `RuleExecutionInterface` exposes immutable `RuleMetadata`; concrete rule instances never cross the capability boundary. `RuleConfigurationInterface` is the only external mutation/query surface for per-run options, selection, and exclusions. Runtime reset clears CLI selection and exclusion state before every run.
 

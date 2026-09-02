@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Run;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
@@ -133,9 +134,9 @@ final readonly class RuleProducerPreparation
      *
      * @return list<Finding>
      */
-    public function auditInlineDirectives(array $findings): array
+    public function auditInlineDirectives(array $findings, LevelActivity $levelActivity): array
     {
-        return $this->inlineDirectivePolicy->auditDirectiveUsage($findings);
+        return $this->inlineDirectivePolicy->auditDirectiveUsage($findings, $levelActivity);
     }
 
     /**
@@ -146,9 +147,9 @@ final readonly class RuleProducerPreparation
      *
      * @return list<DirectiveVerdict>
      */
-    public function directiveVerdicts(array $findings): array
+    public function directiveVerdicts(array $findings, LevelActivity $levelActivity): array
     {
-        return $this->inlineDirectivePolicy->directiveVerdicts($findings);
+        return $this->inlineDirectivePolicy->directiveVerdicts($findings, $levelActivity);
     }
 
     /**

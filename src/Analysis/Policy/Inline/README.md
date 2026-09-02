@@ -34,6 +34,8 @@ Inline/
 │   ├── DirectiveNameHints.php      # "did you mean" by reverse query
 │   ├── DirectiveRejection.php
 │   ├── DirectiveUsage.php          # what each authored suppression did
+│   ├── DirectiveLevels.php         # which levels one directive can silence a channel at
+│   ├── StaleDirectiveFinding.php   # the finding that says a directive silenced nothing
 │   ├── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── InlineDirectiveOptions.php
 │   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting
@@ -97,7 +99,10 @@ function with no run state, and it is injected into the policy rather than built
 by it, so the store keeps the three collaborators a store needs and none of the
 ones the accounting needs. The port is unchanged:
 Run still calls `prepare()`, `directiveVerdicts()` and `auditDirectiveUsage()`
-on `InlineDirectivePolicyInterface`, and the policy forwards the last two —
+on `InlineDirectivePolicyInterface` — the last two now take the run's
+`LevelActivity` beside the findings, because whether a producer was switched
+off is a fact the execution recorded rather than one the audit may re-derive
+from configuration — and the policy forwards them —
 `auditDirectiveUsage()` under its own severity gate, which stays with the state
 the owning rule arms.
 

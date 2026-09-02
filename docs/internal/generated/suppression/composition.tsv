@@ -36,6 +36,7 @@ rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Analysis/Fi
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Symbol/MetricSubject.php	Qualimetrix\Core\Symbol\MetricSubject	warning	1
+rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolLevel.php	Qualimetrix\Core\Symbol\SymbolLevel	error	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolPath.php	Qualimetrix\Core\Symbol\SymbolPath	error	1
 rule-namespace-exclusion	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolType.php	Qualimetrix\Core\Symbol\SymbolType	warning	1
 rule-namespace-exclusion	coupling.distance	coupling.distance	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Score/DecompositionItem.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score	error	1

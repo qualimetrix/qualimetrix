@@ -99,6 +99,13 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
         'src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php' =>
             'enumerates the configured warning boundary of each channel at each level it declares, for'
             . ' baseline:explain; it judges no authored text and refuses nothing',
+        'src/Analysis/Finding/Contract/Rule/AbstractRule.php' =>
+            'a rule reading its own declarations to say which of its levels this configuration let run'
+            . ' (levelActivity()); the levels come from the rule itself, no authored text is involved,'
+            . ' and nothing here refuses anything',
+        'src/Analysis/Finding/RuleExecution.php' =>
+            'completes that same snapshot for channels a producer owns but does not declare itself —'
+            . ' its configuration validator\'s — by reading the registry, not any authored pair',
     ];
 
     /**

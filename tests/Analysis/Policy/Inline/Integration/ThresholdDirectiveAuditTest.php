@@ -11,12 +11,9 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
@@ -268,20 +265,20 @@ final class ThresholdDirectiveAuditTest extends TestCase
      * from running; `rules: { X: false }` lets it run and return nothing, and
      * the author made the same decision either way — reading only the first is
      * what once reported every annotation of a switched-off rule as leftover.
+     *
+     * The second decision is read off what the run recorded rather than
+     * re-derived from configuration here, which is why the executor is
+     * scripted as switched off instead of the registry being loaded with the
+     * spelling: the audit's input is the record, and the spellings themselves
+     * are covered where they are read, on the rule.
      */
     #[Test]
     public function itRefusesToJudgeADirectiveWhoseProducerIsOffThroughItsOptions(): void
     {
         $subject = self::subject('Widget', 'render');
-        $executor = self::executor([['subject' => $subject, 'value' => 25]]);
-        $registry = new RuleOptionsRegistry();
-        $registry->replace(new FindingConfiguration(
-            new RuleOptionsDocument([self::RULE => ['enabled' => false]]),
-            new FindingCliOverrides([]),
-            new RuleSelection(),
-        ));
+        $executor = self::executor([['subject' => $subject, 'value' => 25]], switchedOffByItsOptions: true);
 
-        $verdicts = self::auditWith($executor, [self::override(10, $subject, warning: 30, error: 40)], $registry);
+        $verdicts = self::auditWith($executor, [self::override(10, $subject, warning: 30, error: 40)]);
 
         self::assertSame(DirectiveEffect::Unmeasured, $verdicts[0]->effect);
         self::assertSame(DirectiveUnmeasurableReason::ProducerDisabled, $verdicts[0]->reason);
@@ -711,8 +708,10 @@ final class ThresholdDirectiveAuditTest extends TestCase
     private static function auditWith(
         ScriptedThresholdRuleExecution $executor,
         array $overrides,
-        RuleOptionsRegistry $registry,
+        ?RuleOptionsRegistry $registry = null,
     ): array {
+        $registry ??= new RuleOptionsRegistry();
+
         $context = self::context($overrides);
 
         $audit = new ThresholdDirectiveAudit(
@@ -739,6 +738,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
         bool $publishesBoundary = true,
         bool $excludedFromPublished = false,
         ?int $driftsAtExecution = null,
+        bool $switchedOffByItsOptions = false,
     ): ScriptedThresholdRuleExecution {
         return new ScriptedThresholdRuleExecution(
             self::RULE,
@@ -749,6 +749,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
             $publishesBoundary,
             $excludedFromPublished,
             $driftsAtExecution,
+            switchedOffByItsOptions: $switchedOffByItsOptions,
         );
     }
 

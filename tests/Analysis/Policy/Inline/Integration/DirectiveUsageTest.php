@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedCo
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
@@ -29,6 +30,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
@@ -52,7 +54,7 @@ final class DirectiveUsageTest extends TestCase
     #[Test]
     public function itCallsASuppressionEffectiveWhenSomethingItCoversWasProduced(): void
     {
-        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL), [self::finding()]);
+        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL), [self::finding()], LevelActivity::empty());
 
         self::assertSame(DirectiveEffect::Effective, self::single($verdicts)->effect);
         self::assertNull(self::single($verdicts)->reason);
@@ -61,7 +63,7 @@ final class DirectiveUsageTest extends TestCase
     #[Test]
     public function itCallsASuppressionInertWhenNothingItCoversWasProduced(): void
     {
-        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL), []);
+        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL), [], LevelActivity::empty());
 
         self::assertSame(DirectiveEffect::Inert, self::single($verdicts)->effect);
     }
@@ -73,7 +75,7 @@ final class DirectiveUsageTest extends TestCase
     #[Test]
     public function itRefusesToJudgeADirectiveWithoutARuleFilter(): void
     {
-        $verdicts = self::usage()->verdicts(self::fileDirective(SuppressionTarget::NO_RULE_FILTER), []);
+        $verdicts = self::usage()->verdicts(self::fileDirective(SuppressionTarget::NO_RULE_FILTER), [], LevelActivity::empty());
 
         self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
         self::assertSame(DirectiveUnmeasurableReason::AddressesEveryChannel, self::single($verdicts)->reason);
@@ -87,7 +89,7 @@ final class DirectiveUsageTest extends TestCase
     #[Test]
     public function itRefusesToJudgeAChannelLevelPairAddressabilityAlreadyRefused(): void
     {
-        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL . ':project'), []);
+        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL . ':project'), [], LevelActivity::empty());
 
         self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
         self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason);
@@ -96,7 +98,7 @@ final class DirectiveUsageTest extends TestCase
     #[Test]
     public function itRefusesToJudgeASelectorThatNamesNoChannelAtAll(): void
     {
-        $verdicts = self::usage()->verdicts(self::fileDirective('coupling.instabilty'), []);
+        $verdicts = self::usage()->verdicts(self::fileDirective('coupling.instabilty'), [], LevelActivity::empty());
 
         self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
         self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason);
@@ -108,7 +110,7 @@ final class DirectiveUsageTest extends TestCase
         $registry = new RuleOptionsRegistry();
         $registry->configureSelection(new RuleSelection(disabled: [self::CHANNEL]));
 
-        $verdicts = self::usage($registry)->verdicts(self::fileDirective(self::CHANNEL), []);
+        $verdicts = self::usage($registry)->verdicts(self::fileDirective(self::CHANNEL), [], LevelActivity::empty());
 
         self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
         self::assertSame(DirectiveUnmeasurableReason::ProducerDisabled, self::single($verdicts)->reason);
@@ -118,14 +120,21 @@ final class DirectiveUsageTest extends TestCase
      * The other way of switching a rule off: it runs and returns nothing.
      * Reading only the selector is what made this path report every annotation
      * of the switched-off rule as a leftover.
+     *
+     * The switch is read off what the run recorded, not re-derived from the
+     * registry here — the spellings that put it there are covered on the rule
+     * that reads them.
      */
     #[Test]
     public function itRefusesToJudgeADirectiveWhoseProducerOptionsSwitchedOff(): void
     {
         $registry = new RuleOptionsRegistry();
-        $registry->configureCli(self::CHANNEL, ['enabled' => false]);
 
-        $verdicts = self::usage($registry)->verdicts(self::fileDirective(self::CHANNEL), []);
+        $verdicts = self::usage($registry)->verdicts(
+            self::fileDirective(self::CHANNEL),
+            [],
+            LevelActivity::fromMap([self::CHANNEL => [SymbolLevel::Class_->value => false]]),
+        );
 
         self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
         self::assertSame(DirectiveUnmeasurableReason::ProducerDisabled, self::single($verdicts)->reason);
@@ -146,6 +155,7 @@ final class DirectiveUsageTest extends TestCase
                 RelativePath::fromString(self::FILE),
                 DeclarationOrdinal::fromRank(0),
             )))],
+            LevelActivity::empty(),
         );
 
         self::assertSame(DirectiveEffect::Effective, self::single($verdicts)->effect);
@@ -162,7 +172,7 @@ final class DirectiveUsageTest extends TestCase
         $verdicts = self::usage()->verdicts([self::FILE => [
             new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File),
             new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine),
-        ]], []);
+        ]], [], LevelActivity::empty());
 
         self::assertCount(2, $verdicts);
         self::assertSame(
@@ -183,6 +193,7 @@ final class DirectiveUsageTest extends TestCase
         $verdicts = self::usage()->verdicts(
             ['src/Other.php' => [new Suppression(self::CHANNEL, 'reason', 42, SuppressionType::File)]],
             [],
+            LevelActivity::empty(),
         );
 
         self::assertSame('src/Other.php', self::single($verdicts)->site->file->value());
@@ -213,7 +224,7 @@ final class DirectiveUsageTest extends TestCase
         );
         $judged = array_map(
             static fn(DirectiveVerdict $verdict): string => $verdict->site->line . '/' . $verdict->site->form,
-            self::usage()->verdicts($directives, []),
+            self::usage()->verdicts($directives, [], LevelActivity::empty()),
         );
 
         sort($authored);
@@ -239,10 +250,10 @@ final class DirectiveUsageTest extends TestCase
         $usage = self::usage();
 
         $inert = array_values(array_filter(
-            $usage->verdicts($directives, [self::finding()]),
+            $usage->verdicts($directives, [self::finding()], LevelActivity::empty()),
             static fn(DirectiveVerdict $verdict): bool => $verdict->effect === DirectiveEffect::Inert,
         ));
-        $stale = $usage->stale($directives, [self::finding()], Severity::Warning);
+        $stale = $usage->stale($directives, [self::finding()], Severity::Warning, LevelActivity::empty());
 
         self::assertCount(1, $inert);
         self::assertSame('complexity.cyclomatic', $inert[0]->site->target);

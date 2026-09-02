@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
@@ -51,7 +52,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        $findings = $policy->auditDirectiveUsage([]);
+        $findings = $policy->auditDirectiveUsage([], LevelActivity::empty());
 
         self::assertCount(1, $findings);
         self::assertSame(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->code);
@@ -65,7 +66,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::declarationSubject(), 42)]));
+        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::declarationSubject(), 42)], LevelActivity::empty()));
     }
 
     #[Test]
@@ -79,8 +80,8 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertCount(1, $policy->auditDirectiveUsage([]));
-        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 99)]));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 99)], LevelActivity::empty()));
     }
 
     #[Test]
@@ -96,10 +97,10 @@ final class InlineDirectivePolicyTest extends TestCase
 
         self::assertCount(
             1,
-            $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 12)]),
+            $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 12)], LevelActivity::empty()),
             'A finding two lines down is not the next line, so the directive did nothing.',
         );
-        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 11)]));
+        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 11)], LevelActivity::empty()));
     }
 
     /**
@@ -121,7 +122,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([]));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
     /**
@@ -135,7 +136,6 @@ final class InlineDirectivePolicyTest extends TestCase
     public function itIgnoresDirectivesAddressingARuleSwitchedOffByItsOwnOptions(): void
     {
         $configuration = new RuleOptionsRegistry();
-        $configuration->setConfigFileOptions(['code-smell.goto' => ['enabled' => false]]);
 
         $policy = self::policy($configuration);
         $policy->prepare(
@@ -145,25 +145,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([]));
-    }
-
-    /** The scalar spelling of the same thing. */
-    #[Test]
-    public function itIgnoresDirectivesAddressingARuleSwitchedOffByTheScalarSpelling(): void
-    {
-        $configuration = new RuleOptionsRegistry();
-        $configuration->setConfigFileOptions(['code-smell.goto' => false]);
-
-        $policy = self::policy($configuration);
-        $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
-            [],
-            [],
-        );
-        $policy->enableUsageReporting(Severity::Info);
-
-        self::assertSame([], $policy->auditDirectiveUsage([]));
+        self::assertSame([], $policy->auditDirectiveUsage([], self::gotoDidNotRun()));
     }
 
     /** A live rule is still accounted for — the guard above is not a blanket. */
@@ -181,7 +163,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertCount(1, $policy->auditDirectiveUsage([]));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
     /**
@@ -199,8 +181,8 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertCount(1, $policy->auditDirectiveUsage([]));
-        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 99)]));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 99)], LevelActivity::empty()));
     }
 
     /**
@@ -220,7 +202,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([]));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
     /**
@@ -235,7 +217,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([]));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
     /**
@@ -258,7 +240,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([]));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
     /** "Everything here" has no channel to check, so it is never stale. */
@@ -269,7 +251,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([self::FILE => [new Suppression('*', null, 1, SuppressionType::File)]], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([]));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
     /** Without the owning rule having run, the post-execution half says nothing. */
@@ -279,7 +261,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy = self::policy();
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
 
-        self::assertSame([], $policy->auditDirectiveUsage([]));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
     /**
@@ -293,10 +275,10 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy = self::policy();
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
         $policy->enableUsageReporting(Severity::Info);
-        self::assertCount(1, $policy->auditDirectiveUsage([]));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty()));
 
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
-        self::assertSame([], $policy->auditDirectiveUsage([]));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
     private static function policy(?RuleOptionsRegistry $configuration = null): InlineDirectivePolicy
@@ -352,4 +334,17 @@ final class InlineDirectivePolicyTest extends TestCase
             severity: Severity::Warning,
         );
     }
+
+    /**
+     * What a run records when `code-smell.goto` was switched off by its own
+     * options: the producer reports at callable level and nowhere else, so one
+     * false pair is the whole snapshot for it. Built here rather than taken
+     * from a real execution because this is a unit test of the policy, not of
+     * how the executor fills the record.
+     */
+    private static function gotoDidNotRun(): LevelActivity
+    {
+        return LevelActivity::fromMap(['code-smell.goto' => [SymbolLevel::Callable->value => false]]);
+    }
+
 }

@@ -402,6 +402,66 @@ final class ComputedMetricRuleTest extends TestCase
     }
 
     /**
+     * One instance hosts the whole family, so the activity record it writes
+     * must switch one producer without its neighbours. The default answer on
+     * `AbstractRule` speaks for `getName()` alone, which for this rule would
+     * put all seven producers under the host's name and lose them — the reason
+     * {@see ComputedMetricRule::levelActivity()} overrides it.
+     */
+    #[Test]
+    public function itRecordsOneProducerAsSwitchedOffWithoutItsNeighbours(): void
+    {
+        // A definition's name is not always its producer's: the six health
+        // dimensions are named after theirs, while every user metric shares
+        // the one open producer, `computed`. Both halves are here so the
+        // record is checked on the mapping and not only on the easy identity.
+        $definitionNames = [...ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES, 'computed.branch-load'];
+        $off = $definitionNames[0];
+
+        $byProducer = [];
+        $definitions = [];
+
+        foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producer) {
+            $byProducer[$producer] = new ComputedMetricRuleOptions(enabled: $producer !== $off);
+        }
+
+        foreach ($definitionNames as $name) {
+            $definitions[] = new ComputedMetricDefinition(
+                name: $name,
+                formulas: ['class' => 'complexity.ccn'],
+                description: $name,
+                levels: [SymbolLevel::Class_],
+                warningThreshold: 50.0,
+                errorThreshold: 30.0,
+            );
+        }
+
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('all')->willReturn($definitions);
+
+        $rule = new ComputedMetricRule(
+            new ComputedMetricRuleOptions(enabled: true),
+            $catalog,
+            new ComputedMetricFindingBuilder(),
+            self::createStub(ProfilerInterface::class),
+            new ComputedMetricProducerOptions($byProducer),
+        );
+
+        $activity = $rule->levelActivity();
+
+        self::assertNotSame([], $activity[$off] ?? [], 'the switched-off producer still declares its levels');
+        self::assertSame([], array_filter($activity[$off]), $off . ' must be recorded as not run');
+
+        foreach (\array_slice(ComputedMetricChannelFamily::PRODUCER_RULE_NAMES, 1) as $neighbour) {
+            self::assertNotSame(
+                [],
+                array_filter($activity[$neighbour] ?? []),
+                $neighbour . ' must stay live while only ' . $off . ' is switched off',
+            );
+        }
+    }
+
+    /**
      * @param list<ComputedMetricDefinition> $definitions
      */
     private function createRuleWithDefinitions(array $definitions): ComputedMetricRule
