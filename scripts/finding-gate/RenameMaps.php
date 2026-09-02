@@ -128,7 +128,7 @@ final class RenameMaps
      * The restriction is a measurement, not a convenience: Ш5e3 measured which
      * surfaces publish a metric key at all — `format:metrics` (282 spellings),
      * `format:json` (13) and the HTML report, which embeds the JSON payload.
-     * The other eight formats, the baseline, `baseline:explain` and the `rules`
+     * The other nine formats, the baseline, `baseline:explain` and the `rules`
      * listing publish none. A key that later reaches one of those is therefore
      * NOT silently translated: it stands as an undeclared difference and the run
      * goes red, which is the direction this has to fail in.
@@ -154,7 +154,7 @@ final class RenameMaps
      * Prefixes an artifact writes in front of a name, which the boundary
      * assertion would otherwise refuse to look past.
      *
-     * Measured across all eleven formats plus the baseline file, `baseline:explain`
+     * Measured across all twelve formats plus the baseline file, `baseline:explain`
      * and the `bin/qmx rules` snapshot: `qmx.` in checkstyle's `source` attribute
      * is the only one. A dot continues a name, so `source="qmx.code-smell.eval"`
      * has no left boundary and the row would translate nothing there — a rename

@@ -20,6 +20,7 @@ final class Surfaces
         'metrics',
         'health',
         'html',
+        'suppressed',
     ];
 
     public static function key(string $scope, string $surface): string

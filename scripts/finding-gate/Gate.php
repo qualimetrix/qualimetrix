@@ -936,7 +936,7 @@ final class Gate
      * Exit code 3 is the product's "config/input error", so a reference run that
      * exits 3 where the candidate does not was handed a name that does not exist
      * yet — a rule renamed by the step and written into a case's input with no
-     * `inputs.tsv` row to restate it. Left to itself that arrives as eleven
+     * `inputs.tsv` row to restate it. Left to itself that arrives as twelve
      * surface diffs and an empty findings section, which reads as a product
      * change; it is neither, and it says so.
      *
@@ -1022,7 +1022,7 @@ final class Gate
     /**
      * Reported ahead of the surface comparison because "how many findings" is
      * the question a reader asks first, and a count change otherwise arrives as
-     * a diff of eleven formats.
+     * a diff across every format that publishes the findings it moved.
      *
      * @param array<string, string> $candidate
      * @param array<string, string> $reference

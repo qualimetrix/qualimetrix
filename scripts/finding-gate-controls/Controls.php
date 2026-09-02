@@ -458,7 +458,7 @@ final class Controls
      * `inputs.tsv` row to restate it, so the reference — which predates the
      * rename — is handed a token it cannot resolve. It answers with the
      * product's config-error exit code, and the point of the control is that
-     * this is reported as its own class instead of arriving as eleven surface
+     * this is reported as its own class instead of arriving as twelve surface
      * diffs and an empty findings section, which reads as a product change.
      *
      * **Why a CHANNEL of a multi-channel rule, and not a rule.** This control
@@ -1033,7 +1033,7 @@ final class Controls
      * lcomChannelMutation()}: the fingerprint pair needs a case that declares no
      * delta, and the two controls that share the lcom mutation both pin their
      * expectations to the whole `case:complexity`, where the declared sarif
-     * surface is one artifact among eleven and cannot swallow the control.
+     * surface is one format among twelve and cannot swallow the control.
      */
     private static function unusedPrivateChannelMutation(): Mutation
     {

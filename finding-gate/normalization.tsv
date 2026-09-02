@@ -6,3 +6,4 @@ format:json	summary.duration	json-path	diverged across repeated runs of one unch
 format:metrics	summary.duration	json-path	diverged across repeated runs of one unchanged tree
 format:metrics	timestamp	json-path	diverged across repeated runs of one unchanged tree
 format:summary	~(— \d+ files? analyzed, ).*(s)$~m	line-regex	diverged across repeated runs of one unchanged tree
+format:suppressed	meta.timestamp	json-path	diverged across repeated runs of one unchanged tree

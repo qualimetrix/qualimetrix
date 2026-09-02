@@ -218,11 +218,14 @@ other field.
 
 ## Surfaces
 
-Per case: the eleven formats (`summary`, `text`, `text-verbose`, `json`,
-`checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health`, `html`), the
-exit code, `check --show-suppressed --format=text` (suppression is a text-only
-surface — with `--format=json` the flag prepends a plain-text report and the
-artifact stops parsing), the baseline `baseline:generate` writes,
+Per case: the twelve formats (`summary`, `text`, `text-verbose`, `json`,
+`checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health`, `html`,
+`suppressed`), the exit code, `check --show-suppressed --format=text` (the flag
+and the `suppressed` format are two publications of one composition, and both
+are compared; the flag's report goes to stderr whatever the format, so it is
+captured as an artifact of its own beside a stdout payload that is
+byte-identical with and without the flag), the baseline `baseline:generate`
+writes,
 and `baseline:explain` for each subject in `explainSubjects`. Once per tree:
 the `bin/qmx rules` snapshot.
 
@@ -322,7 +325,7 @@ declaration to these properties:
   every spelling is substituted by that same row: the
   JSON-escaped form of a backslash-bearing symbol, checkstyle's
   `source="qmx.<code>"` — the only prefix any surface adds, measured across all
-  eleven formats, the baseline file, `baseline:explain` and the rules snapshot —
+  twelve formats, the baseline file, `baseline:explain` and the rules snapshot —
   and SARIF's `rules[].name`, which is the channel code title-cased. The
   title-cased spelling belongs to channel rows whose two sides are plain names:
   title-casing a whole `rule#code` key or a class FQN produces a phrase no
@@ -460,7 +463,7 @@ occurrence belonged to is not a measurable question.
 An input that does need translating says so with an `inputs.tsv` row. One that
 needs it and has no row makes the reference refuse its input with exit 3, which
 the gate reports as `reference-input-untranslated` rather than letting it arrive
-as eleven surface diffs and an empty findings section.
+as twelve surface diffs and an empty findings section.
 
 An `inputs.tsv` row names a **whole token**: `rule:option-key` as `--rule-opt=`
 writes it, a flag together with its two dashes, or a dotted producer name as a
@@ -688,7 +691,7 @@ differs. Three properties of the declaration are worth knowing before adding one
   gate's maps ever touch, so a rename this repository declares cannot move that
   column at all. And even a hypothetical rename of a layer name could not surface
   here regardless: `debug:layer-assignment` is a diagnostic console command, and
-  it is not among the gate's compared surfaces — the eleven `check` formats, the
+  it is not among the gate's compared surfaces — the twelve `check` formats, the
   exit code, the suppression report, the baseline file, `baseline:explain`, and
   the `bin/qmx rules` snapshot (see "Surfaces" above).
 - **An expectation may not be pinned to the exact surface a declaration covers.**
@@ -698,7 +701,7 @@ differs. Three properties of the declaration are worth knowing before adding one
   control before it clones anything; the repair is to move the mutation to a case
   that declares nothing, not to repin onto a `delta-*` class, which would move
   the control off its own subject. A broader pin that merely spans a declared
-  surface is fine: the other ten formats and the baseline file are still compared
+  surface is fine: the other eleven formats and the baseline file are still compared
   for equality, and the declared one among them is absorbed as declaration noise.
 - **A step's own declarations reach into the controls twice more, and both are
   fail-closed rather than obvious.** A control that plants a declared delta

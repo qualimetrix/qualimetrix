@@ -6595,6 +6595,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itPreservesAllDependencyTypes
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itSortsEdgesByFromThenTo
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itUsesSummaryByDefaultAndTheLastExplicitFormat
+ - Qualimetrix\Tests\System\TestRunnerConfiguration\Unit\CoverageIsRequestedExplicitlyTest::itKeepsTheCoverageReportWritersOutOfTheTrackedConfiguration
  - Qualimetrix\Tests\Unit\Analysis\RuleExecution\RuleExclusionStatsTest::itCarriesExcludedFindings
  - Qualimetrix\Tests\Unit\Analysis\RuleExecution\RuleExclusionStatsTest::itHasExactlyTwoPerRuleExclusionHalves
  - Qualimetrix\Tests\Unit\Analysis\RuleExecution\RuleExclusionStatsTest::itIsEmptyByDefault

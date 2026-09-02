@@ -372,7 +372,7 @@ log_info ""
 # Print available composer commands
 log_info "Available composer commands:"
 log_info "  composer test         - Run PHPUnit tests"
-log_info "  composer test:coverage - Tests with HTML coverage"
+log_info "  composer test:coverage - Tests with HTML and clover coverage"
 log_info "  composer phpstan      - Static analysis (level 8)"
 log_info "  composer selfcheck    - Analyze this codebase with qmx (architecture included)"
 log_info "  composer check        - All checks (leaks + cs + docs + test + phpstan + selfcheck)"
