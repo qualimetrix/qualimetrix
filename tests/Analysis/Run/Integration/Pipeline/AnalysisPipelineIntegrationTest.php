@@ -430,6 +430,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             [],
             [],
             new \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats(),
+            \Qualimetrix\Analysis\Finding\Contract\LevelActivity::empty(),
         ));
 
         $pipeline = $this->createPipelineWithGlobalCollectors(

@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -359,7 +360,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             duration: 0.1,
             metrics: $repository,
             coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
-            ruleExecution: new RuleExecutionResult($findings, $findings, new RuleExclusionStats()),
+            ruleExecution: new RuleExecutionResult($findings, $findings, new RuleExclusionStats(), LevelActivity::empty()),
         );
     }
 

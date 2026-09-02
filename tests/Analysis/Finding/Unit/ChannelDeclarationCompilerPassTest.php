@@ -375,6 +375,17 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
     /**
      * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
+    /**
+     * A double with no producers of its own: an empty activity declares
+     * nothing, and absence is not disablement.
+     *
+     * @return array<string, array<string, bool>>
+     */
+    public function levelActivity(): array
+    {
+        return [];
+    }
+
     public function analyze(AnalysisContext $context): array
     {
         return [];
@@ -431,6 +442,17 @@ final class FixtureRuleWithShapeMismatch implements RuleInterface
     /**
      * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
+    /**
+     * A double with no producers of its own: an empty activity declares
+     * nothing, and absence is not disablement.
+     *
+     * @return array<string, array<string, bool>>
+     */
+    public function levelActivity(): array
+    {
+        return [];
+    }
+
     public function analyze(AnalysisContext $context): array
     {
         return [];
@@ -498,6 +520,17 @@ final class FixtureRuleForShapeAgreement implements RuleInterface
     /**
      * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
+    /**
+     * A double with no producers of its own: an empty activity declares
+     * nothing, and absence is not disablement.
+     *
+     * @return array<string, array<string, bool>>
+     */
+    public function levelActivity(): array
+    {
+        return [];
+    }
+
     public function analyze(AnalysisContext $context): array
     {
         return [];
@@ -622,6 +655,17 @@ final class FixtureRuleWithoutAFamily implements RuleInterface
     /**
      * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
+    /**
+     * A double with no producers of its own: an empty activity declares
+     * nothing, and absence is not disablement.
+     *
+     * @return array<string, array<string, bool>>
+     */
+    public function levelActivity(): array
+    {
+        return [];
+    }
+
     public function analyze(AnalysisContext $context): array
     {
         return [];

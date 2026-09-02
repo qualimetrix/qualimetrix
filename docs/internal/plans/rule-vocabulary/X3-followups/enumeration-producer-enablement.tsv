@@ -1,0 +1,52 @@
+rule	class	options	shape	isEnabled_sites	first_site
+annotation.directive	UnusedDirectiveRule	InlineDirectiveOptions	flat	1	isEnabled@src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php:101
+architecture.circular-dependency	CircularDependencyRule	CircularDependencyOptions	flat	1	isEnabled@src/Analysis/Evidence/CircularDependency/CircularDependencyRule.php:70
+architecture.layer-violation	LayerViolationRule	LayerViolationOptions	flat	1	isEnabled@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php:122
+architecture.unassigned-class	UnassignedClassRule	UnassignedClassOptions	flat	1	isEnabled@src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassRule.php:109
+code-smell.boolean-argument	BooleanArgumentRule	BooleanArgumentOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php:127
+code-smell.constructor-overinjection	ConstructorOverinjectionRule	ConstructorOverinjectionOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php:84
+code-smell.count-in-loop	CountInLoopRule	CodeSmellOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php:127
+code-smell.debug-code	DebugCodeRule	CodeSmellOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php:127
+code-smell.empty-catch	EmptyCatchRule	CodeSmellOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php:127
+code-smell.error-suppression	ErrorSuppressionRule	ErrorSuppressionOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php:127
+code-smell.eval	EvalRule	CodeSmellOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php:127
+code-smell.exit	ExitRule	CodeSmellOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php:127
+code-smell.goto	GotoRule	CodeSmellOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php:127
+code-smell.identical-subexpression	IdenticalSubExpressionRule	IdenticalSubExpressionOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php:88
+code-smell.long-parameter-list	LongParameterListRule	LongParameterListOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/LongParameterListRule.php:98
+code-smell.superglobals	SuperglobalsRule	CodeSmellOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php:127
+code-smell.unreachable-code	UnreachableCodeRule	UnreachableCodeOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php:86
+code-smell.unused-private	UnusedPrivateRule	UnusedPrivateOptions	flat	1	isEnabled@src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php:67
+cohesion.lcom	LcomRule	LcomOptions	flat	1	isEnabled@src/Analysis/Evidence/Cohesion/LcomRule.php:66
+complexity.cognitive	CognitiveComplexityRule	CognitiveComplexityOptions	hierarchical	1	isEnabled@src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php:79
+complexity.cyclomatic	ComplexityRule	ComplexityOptions	hierarchical	1	isEnabled@src/Analysis/Evidence/Complexity/ComplexityRule.php:87
+complexity.npath	NpathComplexityRule	NpathComplexityOptions	hierarchical	1	isEnabled@src/Analysis/Evidence/Complexity/NpathComplexityRule.php:83
+complexity.wmc	WmcRule	WmcOptions	flat	1	isEnabled@src/Analysis/Evidence/Complexity/WmcRule.php:65
+computed	ComputedMetricRule	ComputedMetricRuleOptions	flat	1	isEnabledFor@src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php:81
+coupling.cbo	CboRule	CboOptions	hierarchical	2	isEnabled@src/Analysis/Evidence/Coupling/CboRule.php:88
+coupling.class-rank	ClassRankRule	ClassRankOptions	flat	1	isEnabled@src/Analysis/Evidence/Coupling/ClassRankRule.php:61
+coupling.distance	DistanceRule	DistanceOptions	flat	1	isEnabled@src/Analysis/Evidence/Coupling/DistanceRule.php:87
+coupling.instability	InstabilityRule	InstabilityOptions	hierarchical	1	isEnabled@src/Analysis/Evidence/Coupling/InstabilityRule.php:85
+design.data-class	DataClassRule	DataClassOptions	flat	1	isEnabled@src/Analysis/Evidence/Design/DataClass/DataClassRule.php:86
+design.god-class	GodClassRule	GodClassOptions	flat	1	isEnabled@src/Analysis/Evidence/Design/GodClass/GodClassRule.php:74
+design.inheritance	InheritanceRule	InheritanceOptions	flat	1	isEnabled@src/Analysis/Evidence/Design/Inheritance/InheritanceRule.php:63
+design.noc	NocRule	NocOptions	flat	1	isEnabled@src/Analysis/Evidence/Design/Inheritance/NocRule.php:65
+design.type-coverage.param	ParamTypeCoverageRule	TypeCoverageOptions	flat	1	isEnabled@src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php:73
+design.type-coverage.property	PropertyTypeCoverageRule	TypeCoverageOptions	flat	1	isEnabled@src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php:73
+design.type-coverage.return	ReturnTypeCoverageRule	TypeCoverageOptions	flat	1	isEnabled@src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php:73
+duplication.code-duplication	CodeDuplicationRule	CodeDuplicationOptions	flat	1	isEnabled@src/Analysis/Evidence/Duplication/CodeDuplicationRule.php:59
+health.cohesion	-	ComputedMetricRuleOptions	flat	NONE	
+health.complexity	-	ComputedMetricRuleOptions	flat	NONE	
+health.coupling	-	ComputedMetricRuleOptions	flat	NONE	
+health.maintainability	-	ComputedMetricRuleOptions	flat	NONE	
+health.overall	-	ComputedMetricRuleOptions	flat	NONE	
+health.typing	-	ComputedMetricRuleOptions	flat	NONE	
+maintainability.index	MaintainabilityRule	MaintainabilityOptions	flat	1	isEnabled@src/Analysis/Evidence/Maintainability/MaintainabilityRule.php:66
+security.command-injection	CommandInjectionRule	SecurityPatternOptions	flat	1	isEnabled@src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php:126
+security.hardcoded-credentials	HardcodedCredentialsRule	HardcodedCredentialsOptions	flat	1	isEnabled@src/Analysis/Evidence/Security/HardcodedCredentialsRule.php:65
+security.sensitive-parameter	SensitiveParameterRule	SensitiveParameterOptions	flat	1	isEnabled@src/Analysis/Evidence/Security/SensitiveParameterRule.php:65
+security.sql-injection	SqlInjectionRule	SecurityPatternOptions	flat	1	isEnabled@src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php:126
+security.xss	XssRule	SecurityPatternOptions	flat	1	isEnabled@src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php:126
+size.class-count	ClassCountRule	ClassCountOptions	flat	1	isEnabled@src/Analysis/Evidence/Size/ClassCountRule.php:84
+size.method-count	MethodCountRule	MethodCountOptions	flat	1	isEnabled@src/Analysis/Evidence/Size/MethodCountRule.php:86
+size.property-count	PropertyCountRule	PropertyCountOptions	flat	1	isEnabled@src/Analysis/Evidence/Size/PropertyCountRule.php:84

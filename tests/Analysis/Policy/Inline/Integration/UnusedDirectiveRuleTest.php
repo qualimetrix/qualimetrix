@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -437,7 +438,7 @@ final class UnusedDirectiveRuleTest extends TestCase
             $policy,
             self::productionUniverse(),
         ));
-        self::assertSame([], $policy->auditDirectiveUsage([]));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
     /**

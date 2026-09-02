@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
@@ -130,7 +131,7 @@ final class DirectiveAuditUniverseTest extends TestCase
             static function (AnalysisContext $context) use ($policy, $produced, $published): RuleExecutionResult {
                 $policy->enableUsageReporting(Severity::Warning);
 
-                return new RuleExecutionResult($produced, $published, new RuleExclusionStats());
+                return new RuleExecutionResult($produced, $published, new RuleExclusionStats(), LevelActivity::empty());
             },
         );
         $rules->method('allRules')->willReturn([]);

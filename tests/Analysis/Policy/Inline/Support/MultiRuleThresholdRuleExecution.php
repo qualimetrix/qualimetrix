@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Support;
 
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -37,7 +38,18 @@ final class MultiRuleThresholdRuleExecution implements RuleExecutionInterface
             $published = [...$published, ...$result->published];
         }
 
-        return new RuleExecutionResult($produced, $published, new RuleExclusionStats());
+        return new RuleExecutionResult($produced, $published, new RuleExclusionStats(), LevelActivity::empty());
+    }
+
+    /**
+     * A scripted executor answers about the rules it was scripted with, and
+     * nothing here is switched off by configuration: an empty snapshot
+     * declares no pair, which the audit reads as "not a disablement" rather
+     * than as "disabled".
+     */
+    public function levelActivity(): LevelActivity
+    {
+        return LevelActivity::empty();
     }
 
     public function allRules(): array

@@ -23,6 +23,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `composer check` now audits inline directives as part of `check:self`: a
   proven inert directive fails the aggregate the same way a red gate does.
 
+### Fixed
+
+- `bin/qmx directives` no longer demands the removal of a live directive whose
+  rule the configuration switched off per level. A directive bound to a
+  declaration — `@qmx-threshold`, and `@qmx-ignore` in a docblock — now reports
+  `unmeasured` and exit `0` when the rule is off at the level it sits on, as a
+  rule disabled through a plain `enabled: false` already did, instead of
+  `inert` and exit `2`. The two physical forms, `@qmx-ignore-file` and
+  `@qmx-ignore-next-line`, carry no declaration and are still answered at
+  producer granularity: a rule off at only one of its levels still reports them
+  `inert`.
+
 ### Breaking
 
 - Every class of the `design.*` rules moves under a subject segment of its own:

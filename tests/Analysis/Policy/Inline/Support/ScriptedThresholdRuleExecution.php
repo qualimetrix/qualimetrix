@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Support;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
@@ -13,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * One rule, honestly obeying `@qmx-threshold`, and counting how often it ran.
@@ -46,6 +48,14 @@ final class ScriptedThresholdRuleExecution implements RuleExecutionInterface
      *                                   whose output depends on a neighbour having run beside it — the
      *                                   drift a narrowed reference pass, not a naively-full one, exists
      *                                   to catch
+     * @param bool $switchedOffByItsOptions whether the run recorded this producer as having run at none
+     *                                      of its levels. Scripted rather than derived, because the
+     *                                      double has no options object to ask — what the audit reads
+     *                                      is the record, and this is that record. The record it
+     *                                      writes names one level, `callable`, because every subject
+     *                                      this double measures is a method; a double reporting at
+     *                                      more levels than it measures would let a test pass on a
+     *                                      pair the product never produces
      */
     public function __construct(
         private readonly string $rule,
@@ -58,6 +68,7 @@ final class ScriptedThresholdRuleExecution implements RuleExecutionInterface
         private readonly ?int $driftsAtExecution = null,
         private readonly ?AnalysisContext $answersOnlyFor = null,
         private readonly bool $driftsWhenRestricted = false,
+        private readonly bool $switchedOffByItsOptions = false,
     ) {}
 
     public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult
@@ -67,7 +78,7 @@ final class ScriptedThresholdRuleExecution implements RuleExecutionInterface
         // a narrowed sweep and a full one indistinguishable here, which is the
         // one difference the tests using it are about.
         if ($restrictToProducer !== null && $restrictToProducer !== $this->rule) {
-            return new RuleExecutionResult([], [], new RuleExclusionStats());
+            return new RuleExecutionResult([], [], new RuleExclusionStats(), $this->levelActivity());
         }
 
         ++$this->executions;
@@ -113,6 +124,20 @@ final class ScriptedThresholdRuleExecution implements RuleExecutionInterface
             $produced,
             $this->excludedFromPublished ? [] : $produced,
             new RuleExclusionStats(),
+            levelActivity: $this->levelActivity(),
+        );
+    }
+
+    /**
+     * A scripted executor answers about the rules it was scripted with, and
+     * nothing here is switched off by configuration: an empty snapshot
+     * declares no pair, which the audit reads as "not a disablement" rather
+     * than as "disabled".
+     */
+    public function levelActivity(): LevelActivity
+    {
+        return LevelActivity::fromMap(
+            [$this->rule => [SymbolLevel::Callable->value => !$this->switchedOffByItsOptions]],
         );
     }
 

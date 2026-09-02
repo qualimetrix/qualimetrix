@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependency
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
@@ -213,7 +214,7 @@ final class RuleProducerPreparationTest extends TestCase
 
         $context = new AnalysisContext(metrics: new InMemoryMetricRepository());
         $executor = self::createStub(RuleExecutionInterface::class);
-        $baseline = new RuleExecutionResult([], [], new RuleExclusionStats());
+        $baseline = new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty());
 
         $this->preparation(thresholdAudit: $spy)
             ->auditThresholdDirectives($context, $executor, $baseline, $sweep);

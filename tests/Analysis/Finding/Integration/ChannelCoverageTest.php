@@ -39,6 +39,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
@@ -369,7 +370,7 @@ final class ChannelCoverageTest extends TestCase
             self::assertDeclared($finding->channel());
         }
 
-        $unused = $policy->auditDirectiveUsage([]);
+        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty());
         self::assertCount(0, $unused, 'An unresolvable suppression is a configuration error, never stale debt.');
     }
 
@@ -390,7 +391,7 @@ final class ChannelCoverageTest extends TestCase
         self::assertSame([], (new UnusedDirectiveRule($options, $policy))->analyze($context));
         self::assertSame([], (new InlineDirectiveValidator($options, $policy, self::channelIdentity()))->validate($context));
 
-        $unused = $policy->auditDirectiveUsage([]);
+        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty());
         self::assertCount(1, $unused);
         self::assertSame(
             InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,

@@ -94,8 +94,9 @@ Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult	Analysis.F
 Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	61	17
+Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	62	17
 Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	14	6
+Qualimetrix\Analysis\Finding\Contract\LevelActivity	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	38	14
 Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	8	5
 Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration	Analysis.Finding	1	1
@@ -135,7 +136,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface	Analysis
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface	Analysis.Finding	29	10
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	30	8
-Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	102	17
+Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	103	17
 Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	9	3
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	1	1
@@ -214,7 +215,7 @@ Qualimetrix\Core\Exception\ParseException	Core.Neutral	3	2
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	51	12
 Qualimetrix\Core\Path\PathFactory	Core.Path	17	7
-Qualimetrix\Core\Path\RelativePath	Core.Path	85	23
+Qualimetrix\Core\Path\RelativePath	Core.Path	86	23
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	22	8
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\DeclarationKey	Core.Symbol	3	2
@@ -226,8 +227,8 @@ Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	41	15
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
-Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	104	21
-Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	4	3
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	105	21
+Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	64	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	30	11
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2

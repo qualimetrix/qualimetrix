@@ -1619,6 +1619,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itProcessesMultipleDefinitions
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itProcessesMultipleLevels
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarationsInEitherMergeOrder
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRecordsOneProducerAsSwitchedOffWithoutItsNeighbours
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRequiresNothing
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsCorrectName
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsCorrectOptionsClass
@@ -3587,6 +3588,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"architecture.potential-shadow"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::selectingOneDiagnosticOnLeavesExactlyThatOne"architecture.unreachable-layer"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationValidatorSilencingPathsTest::theEnumeratedEightAreExactlyTheConfigurationErrorChannels
+ - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.cognitive"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.cyclomatic"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.npath"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"coupling.cbo"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"coupling.instability"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsOnlyTheLevelItsConfigurationSwitchedOff"complexity.cognitive"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsOnlyTheLevelItsConfigurationSwitchedOff"complexity.cyclomatic"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsOnlyTheLevelItsConfigurationSwitchedOff"complexity.npath"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsOnlyTheLevelItsConfigurationSwitchedOff"coupling.cbo"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsOnlyTheLevelItsConfigurationSwitchedOff"coupling.instability"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\LevelActivityCoversEveryDeclaredLevelTest::itRecordsALevelAsNotRunOnlyWhereADefaultSwitchesItOff
+ - Qualimetrix\Tests\Analysis\Finding\Integration\LevelActivityCoversEveryDeclaredLevelTest::itRecordsEveryLevelTheChannelsDeclare
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyClasslessProducerOfTheComputedFamilyCarriesItsAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyDeclaredDocsPageCarriesTheRulesOwnAnchor
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleDocsPageCoverageTest::everyRegisteredRuleDeclaresItsOwnDocsPage
@@ -4210,6 +4223,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"size.class-count::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"size.method-count::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"size.property-count::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Rule\LevelActivityReadsBothDisablingSpellingsTest::itReportsEveryDeclaredLevelAsNotRun"the explicit key"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Rule\LevelActivityReadsBothDisablingSpellingsTest::itReportsEveryDeclaredLevelAsNotRun"the scalar shorthand"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Rule\LevelActivityReadsBothDisablingSpellingsTest::itReportsTheLevelAsRunWhenNothingSwitchedItOff
  - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itAcceptsOnlyExactProducerNamesAsOptionOwners
  - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"bare prefix without a star selects nothing"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"exact descendant does not swallow its own descendant"
@@ -5598,7 +5614,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itDoesNotAlsoCallAnUnaddressableTargetStale
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itForgetsTheReportingGateWhenTheNextRunPrepares
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itIgnoresDirectivesAddressingARuleSwitchedOffByItsOwnOptions
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itIgnoresDirectivesAddressingARuleSwitchedOffByTheScalarSpelling
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itIgnoresDirectivesAddressingARuleThisRunDisabled
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itNeverCallsAnImpossiblePairStale
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itNeverReportsTheNoRuleFilterForm
@@ -5918,6 +5933,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itHasNoWarningsWhenEmpty
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itHasNoWarningsWhenOnlyErrors
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itHasWarningsWhenWarningFindingPresent
+ - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itKeepsALevelThatRanOnEitherSideOfTheMerge
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itKeepsTheLeftRepositoryWhenTheRightRepositoryCannotMerge
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itKeepsTheOtherSidesRuleExecutionWhenOneSideHasNone
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesBothSidesOfRuleExecutionRatherThanKeepingOnlyOne
@@ -6107,6 +6123,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itCallsASuppressionEffectiveWhenItSilencedAFinding
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDefaultsToTheNarrowSweep
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotFailOnAnInertVerdictWhoseBoundaryWasNotObservable
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotLetADirectiveJustifyItselfWithItsOwnComplaint
@@ -6116,6 +6133,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsFourWhenTheRunCouldNotParsePartOfTheTree
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsTwoOnAnInertDirective
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itJudgesASuppressionOfTheChannelProducedAfterRuleExecution
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"every level of it"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the level the directive sits on"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the whole rule"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheErrorEnvelopeInJson
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAScopeOfNothingButGeneratedFiles

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -638,6 +639,98 @@ final class DirectivesCommandTest extends TestCase
         file_put_contents($path, $body);
 
         return $path;
+    }
+
+    /**
+     * A directive on a rule its configuration switched off is not the author's
+     * mistake, and the command must not demand its removal.
+     *
+     * Three configurations, one directive, and the reason they belong in one
+     * test: before this was fixed the flat one already answered correctly
+     * while both per-level ones answered `Inert` on exit code 2, because the
+     * answer was re-derived from the top-level `enabled` key alone. Keeping
+     * them side by side is what makes a regression visible as a disagreement
+     * between rows rather than as one changed string.
+     */
+    #[Test]
+    #[DataProvider('provideDisablingConfigurations')]
+    public function itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff(string $rules): void
+    {
+        $this->writeSource('Branchy.php', self::branchyMethod(
+            '@qmx-threshold complexity.cyclomatic warning=1 error=2 — measured against a switched-off rule',
+        ));
+
+        $tester = $this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $this->writeConfig("paths: []\nrules:\n" . $rules),
+        ]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+        self::assertStringContainsString(
+            'unmeasured: the producer of the addressed channel did not run.',
+            $tester->getDisplay(),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideDisablingConfigurations(): iterable
+    {
+        yield 'the whole rule' => ["  complexity.cyclomatic:\n    enabled: false\n"];
+
+        yield 'every level of it' => [
+            "  complexity.cyclomatic:\n    callable:\n      enabled: false\n    class:\n      enabled: false\n",
+        ];
+
+        yield 'the level the directive sits on' => [
+            "  complexity.cyclomatic:\n    callable:\n      enabled: false\n    class:\n      enabled: true\n",
+        ];
+    }
+
+    /**
+     * The other side of the same answer: a producer that does not report at
+     * the directive's level was never switched off, and calling it disabled
+     * would answer a question the directive did not ask. `coupling.cbo`
+     * reports at class and namespace level, so a directive on a method is
+     * simply inert.
+     */
+    #[Test]
+    public function itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt(): void
+    {
+        $this->writeSource('Branchy.php', self::branchyMethod(
+            '@qmx-threshold coupling.cbo warning=1 error=2 — a level this rule never reports at',
+        ));
+
+        $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
+
+        self::assertSame(2, $tester->getStatusCode());
+        self::assertStringContainsString('inert: removing it changes nothing.', $tester->getDisplay());
+    }
+
+    /** A method whose branches a cyclomatic boundary of 1/2 reports. */
+    private static function branchyMethod(string $directive): string
+    {
+        return <<<PHP
+            <?php
+
+            namespace Fixture;
+
+            class Branchy
+            {
+                /**
+                 * {$directive}
+                 */
+                public function decide(int \$a, int \$b): int
+                {
+                    if (\$a > 0) { return 1; }
+                    if (\$b > 0) { return 2; }
+                    if (\$a > \$b) { return 3; }
+
+                    return 4;
+                }
+            }
+            PHP;
     }
 
     /**

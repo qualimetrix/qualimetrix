@@ -45,11 +45,18 @@ final readonly class RuleExecutionResult
      *                                executed at all.
      * @param list<Finding> $published The subset {@see RuleExecutionInterface::execute()} returns:
      *                                 `$produced` after the ledger and channel selection.
+     * @param LevelActivity $levelActivity What this run's configuration let each producer do, recorded
+     *                                     by the execution that decided it. Required rather than
+     *                                     defaulted: a caller that has no answer says so with
+     *                                     {@see LevelActivity::empty()}, and an omitted argument would
+     *                                     read as "nothing is disabled" at every call site that forgot
+     *                                     it.
      */
     public function __construct(
         public array $produced,
         public array $published,
         public RuleExclusionStats $exclusions,
+        public LevelActivity $levelActivity,
     ) {}
 
     /**
@@ -62,6 +69,9 @@ final readonly class RuleExecutionResult
         return new self(
             produced: [...$this->produced, ...$other->produced],
             published: [...$this->published, ...$other->published],
+            levelActivity: LevelActivity::fromMap(
+                self::mergeActivity($this->levelActivity->toMap(), $other->levelActivity->toMap()),
+            ),
             exclusions: new RuleExclusionStats(
                 namespaceExclusionsByRule: self::sumByRule(
                     $this->exclusions->namespaceExclusionsByRule,
@@ -74,6 +84,33 @@ final readonly class RuleExecutionResult
                 excludedFindings: [...$this->exclusions->excludedFindings, ...$other->exclusions->excludedFindings],
             ),
         );
+    }
+
+    /**
+     * The record is an answer about configuration, not a log of what executed:
+     * it is asked of every registered rule, including ones this run never ran.
+     * Two runs of the same configuration therefore answer the same way, the
+     * two sides agree wherever they overlap, and `||` is the identity on them. It is
+     * written as a merge rather than as "take either side" because nothing
+     * makes the two configurations equal by type: a future caller merging runs
+     * of *different* configurations gets the honest answer — the merged value
+     * says what any of the merged runs was able to do — instead of silently
+     * inheriting whichever side was written first.
+     *
+     * @param array<string, array<string, bool>> $left
+     * @param array<string, array<string, bool>> $right
+     *
+     * @return array<string, array<string, bool>>
+     */
+    private static function mergeActivity(array $left, array $right): array
+    {
+        foreach ($right as $producer => $levels) {
+            foreach ($levels as $level => $ran) {
+                $left[$producer][$level] = ($left[$producer][$level] ?? false) || $ran;
+            }
+        }
+
+        return $left;
     }
 
     /**

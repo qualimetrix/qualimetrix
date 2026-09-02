@@ -71,4 +71,16 @@ interface RuleExecutionInterface
      * @return list<RuleMetadata>
      */
     public function allRules(): array;
+
+    /**
+     * What this configuration lets each producer do, per declared level.
+     *
+     * A fact about configuration rather than about a run, which is why it can
+     * be asked without executing anything: {@see execute()} records the same
+     * answer on its result so consumers read it beside the findings it
+     * explains. Asked separately, it is also what lets a guard check the
+     * snapshot against the channel declarations without needing a prepared
+     * policy for every producer.
+     */
+    public function levelActivity(): LevelActivity;
 }

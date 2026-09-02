@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
@@ -18,6 +19,8 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableR
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 
 /**
  * The threshold half of the inline-directive subject, answered by difference
@@ -100,7 +103,12 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $measurable = [];
 
         foreach ($groups as $group) {
-            $reason = $this->unmeasurableReason($group['bindings'][0], $selection->only, $selection->disabled);
+            $reason = $this->unmeasurableReason(
+                $group['bindings'],
+                $input->baselineResult->levelActivity,
+                $selection->only,
+                $selection->disabled,
+            );
 
             if ($reason === null) {
                 $measurable[] = $group;
@@ -343,22 +351,60 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * `annotation.unresolved-directive` and `annotation.unsupported-threshold`,
      * and repeating it here would judge one mistake twice.
      *
+     * Enablement by configuration is **read**, not re-derived: the run records
+     * which producer/level pairs it let run ({@see LevelActivity}), and asking
+     * the merged configuration again here is what once reported a rule
+     * disabled at every level as enabled, leaving a live directive `Inert` on
+     * exit code 2.
+     *
+     * The levels come from the whole authored group rather than its first
+     * binding: one authored site expands to a binding per applicable
+     * declaration, and those need not share a level. A level the producer does
+     * not declare is not counted — absence is not disablement, so
+     * `@qmx-threshold coupling.cbo` on a method stays whatever it was instead
+     * of becoming `ProducerDisabled`.
+     *
+     * @param list<ThresholdOverride> $bindings
      * @param list<string> $only
      * @param list<string> $disabled
      */
     private function unmeasurableReason(
-        ThresholdOverride $override,
+        array $bindings,
+        LevelActivity $activity,
         array $only,
         array $disabled,
     ): ?DirectiveUnmeasurableReason {
+        $override = $bindings[0];
+
         if ($this->addressability->problemWithThreshold($override) !== null) {
             return DirectiveUnmeasurableReason::AlreadyRefused;
         }
 
         $enabled = $this->ruleSelector->isProducerEnabled($override->rulePattern, $only, $disabled)
-            && !$this->ruleConfiguration->isRuleDisabledByOptions($override->rulePattern);
+            && $activity->ranAtAnyOf($override->rulePattern, self::levelsOf($bindings));
 
         return $enabled ? null : DirectiveUnmeasurableReason::ProducerDisabled;
+    }
+
+    /**
+     * The levels an authored group landed on, read off its bindings' subjects
+     * with the same projection {@see \Qualimetrix\Analysis\Finding\Contract\Finding::level()}
+     * uses, so the two cannot disagree about what level a subject is.
+     *
+     * @param list<ThresholdOverride> $bindings
+     *
+     * @return list<SymbolLevel>
+     */
+    private static function levelsOf(array $bindings): array
+    {
+        $levels = [];
+
+        foreach ($bindings as $binding) {
+            $level = SymbolLevelProjection::ofDeclaration($binding->subject->toSymbolPath()->getType());
+            $levels[$level->value] = $level;
+        }
+
+        return array_values($levels);
     }
 
     /**

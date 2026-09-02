@@ -126,11 +126,14 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         // a finding produced in a later step is still produced.
         $produced = [
             ...$prepared->ruleExecution->produced,
-            ...$this->ruleProducerPreparation->auditInlineDirectives($prepared->ruleExecution->produced),
+            ...$this->ruleProducerPreparation->auditInlineDirectives(
+                $prepared->ruleExecution->produced,
+                $prepared->ruleExecution->levelActivity,
+            ),
         ];
 
         $verdicts = [
-            ...$this->ruleProducerPreparation->directiveVerdicts($produced),
+            ...$this->ruleProducerPreparation->directiveVerdicts($produced, $prepared->ruleExecution->levelActivity),
             // The threshold half keeps the executor's own set: a
             // `@qmx-threshold` cannot move a channel that declares no
             // boundary, and the late channel is one of those.
@@ -341,7 +344,10 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      */
     private function reportedFindings(RuleExecutionResult $ruleExecution): array
     {
-        $unused = $this->ruleProducerPreparation->auditInlineDirectives($ruleExecution->produced);
+        $unused = $this->ruleProducerPreparation->auditInlineDirectives(
+            $ruleExecution->produced,
+            $ruleExecution->levelActivity,
+        );
 
         return $unused === [] ? $ruleExecution->published : array_merge($ruleExecution->published, $unused);
     }
