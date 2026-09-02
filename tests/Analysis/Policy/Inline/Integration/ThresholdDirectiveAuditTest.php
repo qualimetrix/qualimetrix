@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
@@ -33,6 +34,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
+use Qualimetrix\Tests\Analysis\Policy\Inline\Support\MultiRuleThresholdRuleExecution;
 use Qualimetrix\Tests\Analysis\Policy\Inline\Support\ScriptedThresholdRuleExecution;
 
 /**
@@ -151,7 +153,11 @@ final class ThresholdDirectiveAuditTest extends TestCase
 
         self::assertCount(1, $verdicts, 'three bindings of one annotation are one directive');
         self::assertSame(DirectiveEffect::Effective, $verdicts[0]->effect);
-        self::assertSame(4, $executor->executions, 'the run, one removal, and the two controls around it');
+        // Baseline (from the test helper) + before-control + narrowed
+        // reference + one removal + after-control = 5. The narrowed sweep
+        // adds the reference pass, which a Full sweep would have gotten for
+        // free from the baseline already in hand.
+        self::assertSame(5, $executor->executions, 'baseline, before-control, narrowed reference, removal, after-control');
     }
 
     /**
@@ -478,12 +484,16 @@ final class ThresholdDirectiveAuditTest extends TestCase
      * And at the far end, which is the half a single control cannot give:
      * this executor reproduces the run until the sweep is over and drifts on
      * the last pass.
+     *
+     * That pass is the fifth execution under a narrowed sweep: baseline (the
+     * test helper), before-control, the narrowed reference, one removal, then
+     * after-control.
      */
     #[Test]
     public function itRefusesEveryVerdictWhenTheLastControlDoesNotReproduceTheRun(): void
     {
         $subject = self::subject('Widget', 'render');
-        $executor = self::executor([['subject' => $subject, 'value' => 25]], driftsAtExecution: 4);
+        $executor = self::executor([['subject' => $subject, 'value' => 25]], driftsAtExecution: 5);
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('after the sweep');
@@ -526,6 +536,136 @@ final class ThresholdDirectiveAuditTest extends TestCase
         $this->expectExceptionMessage('before the sweep');
 
         $audit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $executor->execute($context)));
+    }
+
+    /**
+     * The third control, and the one the narrowed sweep alone needs: a rule
+     * that behaves differently when executed on its own than it did inside
+     * the full run must refuse the sweep, naming itself.
+     */
+    #[Test]
+    public function itRefusesTheNarrowedSweepWhenARuleBehavesDifferentlyInIsolation(): void
+    {
+        $subject = self::subject('Widget', 'render');
+        $executor = new ScriptedThresholdRuleExecution(
+            self::RULE,
+            [['subject' => $subject, 'value' => 25]],
+            20,
+            40,
+            RelativePath::fromString(self::FILE),
+            driftsWhenRestricted: true,
+        );
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage(self::RULE);
+        $this->expectExceptionMessage('did not reproduce what it produced in the full run');
+
+        self::audit($executor, [self::override(10, $subject, warning: 30, error: 40)]);
+    }
+
+    /**
+     * The reference a counterfactual is measured against must be taken by the
+     * same narrowing as the counterfactual itself — never the full baseline
+     * projected onto one rule's name.
+     *
+     * Rule A's own directive genuinely changes nothing; a neighbour, Rule B,
+     * fires in the baseline and is never touched by any directive. A
+     * reference taken with the full selection would carry Rule B's finding,
+     * which the narrowed counterfactual (Rule A only) never produces —
+     * reading that absence as Rule A's directive removing something, and
+     * reporting `Effective` where the truth is `Inert`.
+     */
+    #[Test]
+    public function itComparesTheCounterfactualAgainstAReferenceTakenByTheSameNarrowing(): void
+    {
+        $ruleA = 'coupling.cbo';
+        $ruleB = 'complexity.cyclomatic';
+        $subjectA = self::subject('Widget', 'render');
+        $subjectB = self::subject('Gadget', 'compute');
+        $file = RelativePath::fromString(self::FILE);
+
+        // Rule A: the override raises its warning to 30, but the measured
+        // value never crosses either boundary — its directive is inert.
+        $execA = new ScriptedThresholdRuleExecution($ruleA, [['subject' => $subjectA, 'value' => 5]], 20, 40, $file);
+        // Rule B: fires under its own defaults, untouched by any directive.
+        $execB = new ScriptedThresholdRuleExecution($ruleB, [['subject' => $subjectB, 'value' => 100]], 20, 40, $file);
+        $executor = new MultiRuleThresholdRuleExecution([$ruleA => $execA, $ruleB => $execB]);
+
+        $overrideA = new ThresholdOverride($ruleA, 30, 40, 10, $subjectA, ControlScope::Callable);
+        $context = self::context([$overrideA]);
+        $baseline = $executor->execute($context);
+
+        $registry = new RuleOptionsRegistry();
+        $registry->configureSelection(new RuleSelection());
+        $audit = new ThresholdDirectiveAudit(
+            self::productionUniverse(),
+            new RuleSelector(new InMemoryRuleChannelRegistry()),
+            $registry,
+        );
+
+        $verdicts = $audit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $baseline));
+
+        self::assertCount(1, $verdicts, 'only rule A authored a directive');
+        self::assertSame(DirectiveEffect::Inert, $verdicts[0]->effect);
+    }
+
+    /**
+     * A narrow sweep and a full sweep must agree, verdict for verdict, on a
+     * tree carrying several rules' directives and a mix of outcomes — the
+     * control {@see DirectiveSweepScope::Full} exists for, per
+     * {@see ThresholdDirectiveAudit::reference()}.
+     *
+     * Rule C authors no directive and fires unconditionally: it is the third
+     * producer the narrow sweep must never execute for Rule B's removal, and
+     * whose absence-versus-presence a `Full` sweep must not confuse for Rule
+     * B's own directive doing something — Rule B's own change is genuinely
+     * inert. A `Narrow` implementation that leaked Rule C into the removal
+     * pass but kept its reference narrowed (or the reverse) would answer
+     * `Effective` here where `Full` answers `Inert`.
+     */
+    #[Test]
+    public function itProducesTheSameVerdictsUnderANarrowAndAFullSweepOnATreeWithSeveralRules(): void
+    {
+        $ruleA = 'coupling.cbo';
+        $ruleB = 'complexity.cyclomatic';
+        $ruleC = 'complexity.cognitive';
+        $subjectA = self::subject('Widget', 'render');
+        $subjectB = self::subject('Gadget', 'compute');
+        $subjectC = self::subject('Thing', 'run');
+        $file = RelativePath::fromString(self::FILE);
+
+        // Rule A: removing the directive raises the finding — Effective.
+        $execA = new ScriptedThresholdRuleExecution($ruleA, [['subject' => $subjectA, 'value' => 25]], 20, 40, $file);
+        // Rule B: never crosses either boundary, with or without its
+        // directive — genuinely Inert on its own.
+        $execB = new ScriptedThresholdRuleExecution($ruleB, [['subject' => $subjectB, 'value' => 5]], 20, 40, $file);
+        // Rule C: no authored directive at all, and fires unconditionally —
+        // present in every removal pass a correct sweep runs unrestricted.
+        $execC = new ScriptedThresholdRuleExecution($ruleC, [['subject' => $subjectC, 'value' => 100]], 20, 40, $file);
+        $executor = new MultiRuleThresholdRuleExecution([$ruleA => $execA, $ruleB => $execB, $ruleC => $execC]);
+
+        $overrideA = new ThresholdOverride($ruleA, 30, 40, 10, $subjectA, ControlScope::Callable);
+        $overrideB = new ThresholdOverride($ruleB, 30, 40, 20, $subjectB, ControlScope::Callable);
+        $context = self::context([$overrideA, $overrideB]);
+        $baseline = $executor->execute($context);
+
+        $registry = new RuleOptionsRegistry();
+        $registry->configureSelection(new RuleSelection());
+        $audit = new ThresholdDirectiveAudit(
+            self::productionUniverse(),
+            new RuleSelector(new InMemoryRuleChannelRegistry()),
+            $registry,
+        );
+
+        $narrow = $audit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $baseline, DirectiveSweepScope::Narrow));
+        $full = $audit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $baseline, DirectiveSweepScope::Full));
+
+        self::assertEquals($full, $narrow);
+        self::assertCount(2, $narrow);
+        self::assertSame(
+            [DirectiveEffect::Effective, DirectiveEffect::Inert],
+            array_map(static fn(DirectiveVerdict $v): DirectiveEffect => $v->effect, $narrow),
+        );
     }
 
     /**

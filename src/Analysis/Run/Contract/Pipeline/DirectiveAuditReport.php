@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
 
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 
 /**
@@ -22,6 +23,12 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
  * produced — including the one channel a run assembles after rule execution —
  * and not what a report would have published.
  *
+ * The **sweep scope** is context of the same kind and is carried for the same
+ * reason: it says how each verdict was measured. The two scopes answer the same
+ * question and a difference between them is a defect rather than a preference,
+ * so this is not an invitation to compare reports — it is what lets a report
+ * state which measurement produced it.
+ *
  * The **rule selection** the run resolved is the other half of that context and
  * is deliberately absent: `RuleSelection` is Finding's internal type, so
  * carrying it here would be an unapproved exact grant, and the caller that
@@ -35,5 +42,6 @@ final readonly class DirectiveAuditReport
         public array $verdicts,
         public AnalysisCoverage $coverage,
         public int $producedFindings,
+        public DirectiveSweepScope $sweep = DirectiveSweepScope::Narrow,
     ) {}
 }

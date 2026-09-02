@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
@@ -348,6 +349,90 @@ final class RuleExecutorTest extends TestCase
 
         self::assertSame([], $findings);
         self::assertSame([], self::activeRules($executor));
+    }
+
+    // --- Narrowed execution tests ($restrictToProducer) ---
+
+    /**
+     * `$restrictToProducer` intersects the run's own selection; it never
+     * overrides it. A producer the configuration disabled must stay silent
+     * even when the narrowing names it by its exact name — otherwise a
+     * threshold audit's counterfactual could re-enable a rule the run itself
+     * turned off.
+     */
+    #[Test]
+    public function itDoesNotExecuteAProducerDisabledByConfigurationEvenWhenNarrowingNamesIt(): void
+    {
+        $finding = $this->createFinding('rule1');
+        $rule = $this->createRule('rule1', [$finding]);
+
+        $provider = $this->createConfiguredProvider(new RuleSelection(disabled: ['rule1']));
+        $executor = $this->createExecution([$rule], $provider);
+
+        $result = $executor->execute($this->createMinimalContext(), 'rule1');
+
+        self::assertSame([], $result->produced);
+        self::assertSame([], $result->published);
+    }
+
+    /**
+     * Narrowing also filters `published()`, not only which rule instances
+     * run: a rule sharing one class across several channels keeps running
+     * because one of its channels is the restricted producer, but only that
+     * channel's findings may come out the other end.
+     */
+    #[Test]
+    public function itRestrictsPublishedFindingsToTheNarrowedProducerNotJustWhichRulesRun(): void
+    {
+        $complexity = $this->createFinding('computed.health', code: 'health.complexity');
+        $cohesion = $this->createFinding('computed.health', code: 'health.cohesion');
+        $rule = $this->createRule('computed.health', [$complexity, $cohesion]);
+
+        $executor = $this->createExecution(
+            [$rule],
+            $this->createConfiguredProvider(),
+            $this->computedRuleSelector(),
+        );
+
+        $result = $executor->execute($this->createMinimalContext(), 'health.complexity');
+
+        // produced is untouched by narrowing — it is what the rule instance
+        // that ran actually returned, both channels included.
+        self::assertSame([$complexity, $cohesion], $result->produced);
+        self::assertSame([$complexity], $result->published);
+    }
+
+    /**
+     * `--only-rule health.typing` names a producer with no rule class of its
+     * own; the instance that hosts it must still run, and an unrelated
+     * instance must not, which is the pair of facts a single-instance fixture
+     * cannot show.
+     */
+    #[Test]
+    public function itExecutesTheHostOfAClasslessProducerWhenNarrowingNamesThatProducer(): void
+    {
+        $typingFinding = $this->createFinding('typing.health', code: 'health.typing');
+        $host = $this->createRule('typing.health', [$typingFinding]);
+
+        $otherFinding = $this->createFinding('other.rule');
+        $other = $this->createRule('other.rule', [$otherFinding]);
+
+        $classlessProducer = new ProducerDeclaration(
+            name: 'health.typing',
+            hostRuleName: 'typing.health',
+            optionsClass: RuleExecutionFixtureOptions::class,
+            description: 'Typing health, hosted by typing.health',
+        );
+
+        $executor = $this->createExecution(
+            [$host, $other],
+            $this->createConfiguredProvider(),
+            classlessProducers: [$classlessProducer],
+        );
+
+        $result = $executor->execute($this->createMinimalContext(), 'health.typing');
+
+        self::assertSame([$typingFinding], $result->produced);
     }
 
     // --- Group selector tests ---
@@ -992,11 +1077,16 @@ final class RuleExecutorTest extends TestCase
     /**
      * @param iterable<RuleInterface> $rules
      */
+    /**
+     * @param iterable<RuleInterface> $rules
+     * @param iterable<ProducerDeclaration> $classlessProducers
+     */
     private function createExecution(
         iterable $rules,
         ?RuleOptionsRegistry $registry = null,
         ?RuleSelector $ruleSelector = null,
         ?ChannelIdentityInterface $channelIdentity = null,
+        iterable $classlessProducers = [],
     ): RuleExecution {
         $registry ??= new RuleOptionsRegistry();
         if ($this->captureExcludedFindings) {
@@ -1008,6 +1098,7 @@ final class RuleExecutorTest extends TestCase
             self::createStub(ProfilerInterface::class),
             $registry,
             $ruleSelector,
+            classlessProducers: $classlessProducers,
             channelIdentity: $channelIdentity,
         );
     }

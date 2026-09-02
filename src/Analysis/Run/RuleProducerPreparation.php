@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
@@ -165,9 +166,10 @@ final readonly class RuleProducerPreparation
         AnalysisContext $context,
         RuleExecutionInterface $executor,
         RuleExecutionResult $baseline,
+        DirectiveSweepScope $sweep,
     ): array {
         return $this->thresholdDirectiveAudit->verdicts(
-            new ThresholdDirectiveAuditInput($context, $executor, $baseline),
+            new ThresholdDirectiveAuditInput($context, $executor, $baseline, $sweep),
         );
     }
 

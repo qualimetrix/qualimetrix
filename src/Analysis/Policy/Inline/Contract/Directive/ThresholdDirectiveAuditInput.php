@@ -19,6 +19,11 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
  * for it again is what keeps the sweep at one execution per directive plus the
  * two identity passes.
  *
+ * The sweep scope is a field because it belongs to the question rather than to
+ * the auditor: the same audit answers it narrowly for a run and fully for the
+ * control that licenses the narrowing, and an auditor holding the choice would
+ * have to be rebuilt to be asked the other way.
+ *
  * The authored directives are not a field: they are already in
  * {@see AnalysisContext::$thresholdOverrides}, keyed by file, in exactly the
  * expansion the rules read. A second copy would be a second chance to disagree
@@ -30,5 +35,6 @@ final readonly class ThresholdDirectiveAuditInput
         public AnalysisContext $baseline,
         public RuleExecutionInterface $executor,
         public RuleExecutionResult $baselineResult,
+        public DirectiveSweepScope $sweep = DirectiveSweepScope::Narrow,
     ) {}
 }

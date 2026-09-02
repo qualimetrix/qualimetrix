@@ -24,8 +24,21 @@ interface RuleExecutionInterface
 {
     /**
      * Executes all active rules and returns what happened.
+     *
+     * `$restrictToProducer` **narrows** the run's own selection and never
+     * widens it: a producer the configuration disabled stays disabled even
+     * when named here. It exists for the threshold audit, which asks what one
+     * `@qmx-threshold` did and can only be answered about the single rule the
+     * directive addresses by exact name — executing the other forty-eight
+     * rules to compare them against themselves is the cost the narrowing
+     * removes.
+     *
+     * A name rather than a {@see RuleSelection} because one name is the whole
+     * subject: a directive addresses exactly one rule. The host of a classless
+     * producer still runs when the narrowing names one of the producers it
+     * hosts, exactly as `--only-rule` makes it run.
      */
-    public function execute(AnalysisContext $context): RuleExecutionResult;
+    public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult;
 
     /**
      * Every registered producer, each carrying whether the resolved selection
