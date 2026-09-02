@@ -626,7 +626,7 @@ Run the gate for any change that renames a channel, a rule, a metric key or a
 published finding field, and for any change to how a finding is published.
 `composer gate -- --reference=<the commit the change starts from>` checks out that
 commit, runs both binaries over the current corpus and compares findings, the
-eleven formats, exit codes, `qmx rules`, `baseline:explain`, the generated
+twelve formats, exit codes, `qmx rules`, `baseline:explain`, the generated
 baseline and the suppressed report. Corpus, maps, normalization list and
 equivalence tuple live in `finding-gate/`; its README holds the case schema and
 the surface list.

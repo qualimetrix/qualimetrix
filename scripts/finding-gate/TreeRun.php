@@ -57,12 +57,12 @@ final class TreeRun
             );
         }
 
-        // Captured on the text surface because that is where the flag speaks:
-        // the JSON finding payload is byte-identical with and without it. The
-        // machine-readable composition is a format of its own (`suppressed`),
-        // and it is deliberately not in Surfaces::FORMATS while the reference
-        // predates it — a format the reference cannot run compares as fourteen
-        // "unknown format" diffs rather than as a fact about the product.
+        // The flag and the `suppressed` format are two publications of one
+        // composition, and both are compared. This one is captured on the text
+        // surface because the format makes no difference to it: the flag writes
+        // its report to stderr, where `capture()` keeps it as its own artifact,
+        // and the finding payload on stdout is byte-identical with and without
+        // it. Text is the surface whose stdout the flag is documented against.
         $artifacts += $this->capture(
             $scope,
             'show-suppressed',

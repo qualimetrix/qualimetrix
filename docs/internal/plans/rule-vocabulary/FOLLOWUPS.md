@@ -180,10 +180,12 @@ product. So the format is not in the list, and the step's own tests plus the
   cross-version comparison. The snapshot catches a change in *what* is
   suppressed on our own `src`; it does not catch a change in *how* the format
   spells it, and no corpus case compares the format at all.
-- **What closes it, checkably:** the first step whose reference already knows
-  `suppressed` adds it to `Surfaces::FORMATS`. That is a property of the
-  reference commit, not a promise about the next step: if the next step's
-  reference predates the format, the entry stays.
+- **Closed by package Х3-B1 (2026-09-02).** The entry's own condition came true:
+  `38ad58e9` knows the format, so `suppressed` joined `Surfaces::FORMATS` and the
+  composition is compared on every case. Deriving the normalization list
+  measured exactly one new row for it (`format:suppressed` / `meta.timestamp`)
+  and the equivalence tuple did not move, as its rows all come from
+  `JsonFindingSection::formatFinding`.
 
 ### `contract_surface` cannot express a chain through another owner's carrier
 
@@ -695,9 +697,9 @@ directives` называет её `effective`. Проверено исполне
 
 ### Вывод команды `directives` не входит в сравниваемые поверхности гейта
 
-Открыто ревью плана Х3-A. `Surfaces::FORMATS` перечисляет одиннадцать форматов
-`check` плюс `rules`, `baseline:explain` и сгенерированный baseline; вердиктов
-команды `directives` там нет.
+Открыто ревью плана Х3-A. `Surfaces::FORMATS` перечисляет двенадцать форматов
+`check` (с Х3-B1 — включая `suppressed`) плюс `rules`, `baseline:explain` и
+сгенерированный baseline; вердиктов команды `directives` там нет.
 
 - **Цена:** для шага, меняющего вердикт директивы, зелёный гейт свидетельствует
   «ничто другое не сдвинулось», а не «изменение верно» — и это приходится
@@ -807,3 +809,24 @@ directives` называет её `effective`. Проверено исполне
 
 - **Цена:** контроль своей полноты слабее, чем читается.
 - **Что закроет:** проверка присутствия вызова именно в названных файлах.
+
+## Х3 (2026-09-02) — разбор follow-ups
+
+### Число кейсов корпуса написано прозой и устарело на два
+
+Найдено пакетом B1 по дороге, тем же скриптом, что искал счёт поверхностей.
+Семь живых мест говорят «fourteen cases» при шестнадцати каталогах под
+`finding-gate/cases/`: `finding-gate/README.md:394`,
+`scripts/finding-gate-controls/Controls.php:840`, `Harness.php:39-40`,
+`Shell.php:324`, `scripts/finding-gate/RenameMaps.php:50`,
+`ReportPayload.php:17`, `SelfTest.php:612`. Одно из них B1 переписал заодно —
+`TreeRun.php` держал этот счёт внутри объяснения, которое перестало быть верным.
+
+- **Цена:** та же, что у счёта поверхностей, и она уже реализовалась однажды.
+  Комментарий, объясняющий калибровку числом, читается как измеренный факт;
+  расходясь с деревом, он аргументирует решение, которого больше нет. Здесь ни
+  одно из семи мест не несёт исполняемой арифметики — цена пока только в чтении.
+- **Что закроет:** те же два шага, что у счёта поверхностей, — перечисление
+  скриптом с окном числительных, покрывающим этот счёт, и правка по таблице.
+  Окно `enumeration-surface-count.sh` (`nine…thirteen`) его не видит: скрипт
+  писался под другой предмет и об этом ограничении говорит сам.

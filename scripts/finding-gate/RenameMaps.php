@@ -154,7 +154,7 @@ final class RenameMaps
      * Prefixes an artifact writes in front of a name, which the boundary
      * assertion would otherwise refuse to look past.
      *
-     * Measured across all eleven formats plus the baseline file, `baseline:explain`
+     * Measured across all twelve formats plus the baseline file, `baseline:explain`
      * and the `bin/qmx rules` snapshot: `qmx.` in checkstyle's `source` attribute
      * is the only one. A dot continues a name, so `source="qmx.code-smell.eval"`
      * has no left boundary and the row would translate nothing there — a rename

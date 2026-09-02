@@ -119,7 +119,7 @@ final class Control
      * Exact equality, not substring containment, and that is the whole
      * calibration. A pin naming one artifact of one case (`case:coupling|format:sarif`)
      * claims that artifact and nothing else; a broader pin (`case:coupling`)
-     * spans eleven formats plus the baseline file, ten of which are still
+     * spans twelve formats plus the baseline file, eleven of which are still
      * compared for equality, so the control keeps its subject and the declared
      * one among them is absorbed as declaration noise by
      * {@see Outcome::isDeclarationNoise()}. Refusing the broad pin too would
