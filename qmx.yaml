@@ -1647,6 +1647,21 @@ rules:
 
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
+    exclude_namespaces:
+      # A console command shares no fields by construction: `configure()` touches
+      # none of them and the helpers are static, so shared-field cohesion
+      # mis-models the design rather than reporting debt. Seven commands sat at
+      # exactly 40 and all seven were accepted in the ratchet; one scoped
+      # exclusion states that one decision once. Plain prefix form on purpose —
+      # the `[Q]` idiom would make this a glob and leave `Command\Debug\*` out.
+      #
+      # What this costs, precisely: five of those seven classes are left with no
+      # ratchet entry at all (only BaselineCleanupCommand and BaselineUpdateCommand
+      # keep callable-level entries on other channels), and on this root cohesion
+      # fired earlier than any size channel — six methods at lcom=2 against the
+      # twenty of size.method-count. Command bloat is still caught here by
+      # size.method-count (20) and cohesion.lcom (5), just later.
+      - Qualimetrix\Infrastructure\Console\Command
     exclude_namespace_channels:
       health.cohesion:
         # Stateless expansion algorithms and their immutable result do not share

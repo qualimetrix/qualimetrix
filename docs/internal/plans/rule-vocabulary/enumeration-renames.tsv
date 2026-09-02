@@ -25,7 +25,7 @@ code-smell.long-parameter-list	channel	?		17	63	2	2	3	33	0	14
 code-smell.superglobals	channel	?		1	5	1	0	0	12	0	1
 code-smell.unreachable-code	channel	?		8	37	0	1	0	23	0	1
 code-smell.unused-private	channel	?		2	6	0	0	0	15	0	3
-cohesion.lcom	channel	?		41	151	2	2	0	31	0	4
+cohesion.lcom	channel	?		41	151	2	3	0	31	0	4
 complexity.cognitive	channel	?		24	81	2	2	31	48	0	12
 complexity.cyclomatic	channel	?		37	644	2	2	55	120	0	11
 complexity.npath	channel	?		22	95	2	2	12	38	0	8
@@ -49,7 +49,7 @@ security.sensitive-parameter	channel	?		5	19	0	0	0	13	0	1
 security.sql-injection	channel	?		3	6	0	0	0	13	0	1
 security.xss	channel	?		4	17	0	0	0	13	0	1
 size.class-count	channel	?		27	88	2	1	4	29	0	4
-size.method-count	channel	?		24	152	2	2	0	50	0	3
+size.method-count	channel	?		24	152	2	3	0	50	0	3
 size.property-count	channel	?		20	36	2	2	0	24	0	3
 code-smell.is-vo-constructor	metric-key	?		1	25	0	0	0	0	0	1
 code-smell.parameter-count	metric-key	?		2	53	0	0	0	0	0	0
@@ -60,7 +60,7 @@ code-smell.unused-private.method	metric-key	?		1	42	0	0	0	0	0	0
 code-smell.unused-private.property	metric-key	?		1	20	0	0	0	0	0	0
 code-smell.unused-private.total	metric-key	?		1	20	0	0	0	0	0	0
 cohesion.lcc	metric-key	?		7	44	0	0	0	6	0	0
-cohesion.lcom	metric-key	?		41	151	2	2	0	31	0	4
+cohesion.lcom	metric-key	?		41	151	2	3	0	31	0	4
 cohesion.pure-method-count	metric-key	?		3	8	0	0	0	2	0	0
 cohesion.tcc	metric-key	?		23	85	0	0	0	12	0	0
 complexity.ccn	metric-key	?		42	317	0	0	0	4	0	0
@@ -118,7 +118,7 @@ size.implementing-enum-count	metric-key	?		13	9	0	0	0	0	0	0
 size.interface-count	metric-key	?		13	17	0	0	0	0	0	0
 size.lloc	metric-key	?		8	18	0	0	0	3	0	0
 size.loc	metric-key	?		11	194	0	0	0	5	0	0
-size.method-count	metric-key	?		24	152	2	2	0	50	0	3
+size.method-count	metric-key	?		24	152	2	3	0	50	0	3
 size.method-count.private	metric-key	?		4	6	0	0	0	0	0	0
 size.method-count.protected	metric-key	?		4	6	0	0	0	0	0	0
 size.method-count.public	metric-key	?		4	8	0	0	0	0	0	0
@@ -151,7 +151,7 @@ code-smell.long-parameter-list	producer	?		17	63	2	2	3	33	0	14
 code-smell.superglobals	producer	?		1	5	1	0	0	12	0	1
 code-smell.unreachable-code	producer	?		8	37	0	1	0	23	0	1
 code-smell.unused-private	producer	?		2	6	0	0	0	15	0	3
-cohesion.lcom	producer	?		41	151	2	2	0	31	0	4
+cohesion.lcom	producer	?		41	151	2	3	0	31	0	4
 complexity.cognitive	producer	?		24	81	2	2	31	48	0	12
 complexity.cyclomatic	producer	?		37	644	2	2	55	120	0	11
 complexity.npath	producer	?		22	95	2	2	12	38	0	8
@@ -169,7 +169,7 @@ design.type-coverage.param	producer	?		10	54	2	1	1	23	0	3
 design.type-coverage.property	producer	?		10	25	2	1	1	22	0	4
 design.type-coverage.return	producer	?		10	32	2	1	0	22	0	4
 duplication.code-duplication	producer	?		14	54	0	2	12	35	0	4
-health.cohesion	producer	?		38	119	0	2	31	36	0	19
+health.cohesion	producer	?		38	119	0	2	24	36	0	19
 health.complexity	producer	?		49	178	0	1	0	22	0	22
 health.coupling	producer	?		39	38	0	0	0	13	0	19
 health.maintainability	producer	?		16	28	0	0	0	13	0	19
@@ -182,7 +182,7 @@ security.sensitive-parameter	producer	?		5	19	0	0	0	13	0	1
 security.sql-injection	producer	?		3	6	0	0	0	13	0	1
 security.xss	producer	?		4	17	0	0	0	13	0	1
 size.class-count	producer	?		27	88	2	1	4	29	0	4
-size.method-count	producer	?		24	152	2	2	0	50	0	3
+size.method-count	producer	?		24	152	2	3	0	50	0	3
 size.property-count	producer	?		20	36	2	2	0	24	0	3
 #
 # ROW COUNTS: 52 channel, 51 producer, 82 metric-key

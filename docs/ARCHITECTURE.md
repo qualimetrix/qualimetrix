@@ -76,7 +76,7 @@ an uncovered project class fail even when it has no dependency edges.
 Every test, support file, and fixture directory is governed by the same
 manifest; `test-topology.tsv` in the generated directory reports how many of
 each. Self-analysis runs against the versioned v13 root baseline, whose
-228 groups across 174 subjects are checked against the file itself by
+221 groups across 167 subjects are checked against the file itself by
 `DocumentationConsistencyTest`, and the current dogfood result is zero findings.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
