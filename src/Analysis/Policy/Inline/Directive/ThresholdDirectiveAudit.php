@@ -42,10 +42,17 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAudi
  * rather than in a comment: the baseline a counterfactual is compared against
  * is taken by the same narrowing ({@see reference()}), and a rule executed on
  * its own must reproduce what it produced inside the whole run
- * ({@see assertNarrowingChangedNothing()}). The claim the narrowing rests on
- * that neither of them can see — that removing a directive of one rule cannot
- * move another rule's findings — is measured by sweeping a tree both ways,
- * which is what `Full` is for.
+ * ({@see assertNarrowingChangedNothing()}). Neither sees a directive of one
+ * rule moving a finding of another: a narrowed sweep never executes the other
+ * rule, so no comparison here contains it. `Full` compares the two scopes
+ * verdict for verdict, not finding for finding, and is silent exactly where a
+ * moved finding does not cross a verdict's own category — see
+ * `docs/adr/0040-narrow-directive-sweep.md` for what that bound does and does
+ * not cover. What holds the claim up is structural, not measured: a rule
+ * cannot read another rule's directive, because
+ * {@see AnalysisContext::getThresholdOverride()} is the sole reader of the
+ * override map and every call site passes the calling rule's own name — held
+ * by `ThresholdOverrideOwnRuleNameGuardTest`, which reddens on a foreign name.
  *
  * **This is the one caller that makes
  * {@see \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::execute()}'s

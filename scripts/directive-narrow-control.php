@@ -29,7 +29,6 @@ use RuntimeException;
  * scopes change, same as `gate:controls` and `directives:controls`.
  */
 
-require __DIR__ . '/finding-gate/GateError.php';
 require __DIR__ . '/finding-gate/Process.php';
 
 final class Harness

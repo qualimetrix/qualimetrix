@@ -103,11 +103,13 @@ documented as what it is: an expensive re-measurement of a cheap answer.
   the population it runs on. On `src/` every verdict is `Effective`, so a defect
   that yields `Effective` everywhere passes it — measured, not supposed: a
   mutation narrowing to the wrong rule passed while the narrowing was written in
-  two expressions. Review then ran the control over a tree seeded with an
+  two expressions. Review once ran the control over a tree seeded with an
   `Overrun`, a dead directive and a masking pair — 45 verdicts, both scopes
-  agreeing — which is the first run in which the coalition and `Overrun`
-  branches executed at all. Verdicts this tree does not produce are held by
-  tests, not by the control.
+  agreeing, the only run in which the coalition and `Overrun` branches have
+  executed under the control at all. **That tree is not in the repository and
+  the control cannot be pointed at another one**, so the run is a session
+  record rather than evidence anyone can repeat; `FOLLOWUPS.md` carries what
+  would close it. Verdicts this tree does not produce are held by tests.
 - Per-directive cost is now the addressed rule's own cost, so a directive on an
   expensive rule costs more than one on a cheap rule. The population figure that
   would reopen the question is no longer directive count alone.
