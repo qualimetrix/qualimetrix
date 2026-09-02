@@ -2592,6 +2592,8 @@ function documentationDisposition(string $path): array
         'docs/internal/plans/rule-vocabulary/X2-directive-audit/03-controls.md',
         'docs/internal/plans/rule-vocabulary/X2-directive-audit/04-command.md',
         'docs/internal/plans/rule-vocabulary/X2-directive-audit/05-ci-and-narrow-pass.md',
+        'docs/internal/plans/rule-vocabulary/X3-followups/00-overview.md',
+        'docs/internal/plans/rule-vocabulary/X3-followups/01-producer-enablement.md',
         'docs/internal/plans/README.md',
         'src/Core/Path/README.md',
         'src/Infrastructure/Cache/README.md',
