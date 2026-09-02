@@ -7,12 +7,14 @@ namespace QmxDirectiveAuditControls;
 /**
  * The controls, as a list.
  *
- * A positive probe and seventeen breakages, one per claim the threshold audit
- * makes. The list is not a design: every entry here was planted by hand during
- * P2 and its three rounds of execution review, and every one of them reddened
- * something. Eight of the seventeen exist because a reviewer found the claim
- * broken — the masking mechanism alone was rewritten twice, and each edition
- * passed the previous edition's controls.
+ * A positive probe and one breakage per claim the directive audit makes — about
+ * what it decides, about what the command renders, and about the CI step that
+ * reads the answer. The list is not a design: every entry here was planted by
+ * hand and every one of them reddened something. Several exist because a
+ * reviewer found the claim broken — the masking mechanism alone was rewritten
+ * twice, and each edition passed the previous edition's controls. How many
+ * there are is not written here on purpose: the count lives in {@see all()},
+ * and prose repeating it is the defect this bench exists to catch.
  *
  * Each probe names the cases it must redden. That is stricter than "reddens
  * something": a breakage that fails the suite somewhere else proves the suite
@@ -35,6 +37,20 @@ final class Probes
     private const string COMMAND = 'src/Infrastructure/Console/Command/DirectivesCommand.php';
 
     private const string FAILURE_TAXONOMY = 'src/Infrastructure/Console/ConfigurationFailure.php';
+
+    private const string TALLY = 'src/Infrastructure/Console/DirectiveVerdictTally.php';
+
+    private const string FLOOR = 'scripts/directive-audit/MeasuredEffects.php';
+
+    private const string READER = 'scripts/directive-audit/VerdictReport.php';
+
+    private const string ENTRY = 'scripts/directive-audit/AuditedVerdict.php';
+
+    private const string ENUMERATION = 'scripts/directive-audit/SiteEnumeration.php';
+
+    private const string POPULATION = 'scripts/directive-audit/Population.php';
+
+    private const string GATE = 'scripts/directive-audit/Gate.php';
 
     /**
      * Field of a finding => the line the fingerprint reads it with.
@@ -79,6 +95,264 @@ final class Probes
             ...self::suppressions(),
             ...self::report(),
             ...self::fields(),
+            ...self::floor(),
+            ...self::reading(),
+            ...self::enumeration(),
+            ...self::projections(),
+        ];
+    }
+
+    /**
+     * The CI step that reads the audit's answer, and the floor it puts under it.
+     *
+     * One probe per validator rather than per case: a broken validator reddens
+     * every case written for it at once, and a probe per case would be the same
+     * breakage planted several times under different names.
+     *
+     * @return list<Probe>
+     */
+    private static function floor(): array
+    {
+        return [
+            Probe::breaking(
+                'measured-table-flipped',
+                'the frozen table calls an unmeasured verdict a measurement',
+                self::FLOOR,
+                ["        'unmeasured' => false," => "        'unmeasured' => true,"],
+                [
+                    'itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
+                    'itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured',
+                ],
+            ),
+            Probe::breaking(
+                'unknown-verdict-guessed',
+                'a verdict value nobody named is guessed at instead of refused',
+                self::FLOOR,
+                [
+                    '        return self::TABLE[$effect] ?? self::refuse($effect);'
+                    => "        return self::TABLE[\$effect] ?? \$effect !== 'unmeasured';",
+                ],
+                [
+                    'itRefusesAVerdictValueTheFloorDoesNotName',
+                    'itRefusesAnUnknownVerdictOnTheSuppressionHalf',
+                    'itRefusesToJudgeAVerdictValueTheFloorCannotWeigh',
+                    'itRefusesAnUnknownVerdictOnASuppressionSite',
+                    'itRefusesAnUnknownVerdictWhereTheFloorIsNeverReached',
+                ],
+            ),
+            Probe::breaking(
+                'table-forgets-a-verdict',
+                'the frozen table stops naming a verdict the product publishes',
+                self::FLOOR,
+                ["        'inert' => true,\n" => ''],
+                [
+                    'itNamesEveryVerdictTheProductCanPublishAndNoOther',
+                    'itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
+                ],
+            ),
+            Probe::breaking(
+                'floor-removed',
+                'a population that matches exactly is accepted even when nothing in it was measured',
+                self::GATE,
+                ['        if ($measured === 0) {' => '        if (false) {'],
+                ['itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured'],
+            ),
+            Probe::breaking(
+                'population-never-mismatches',
+                'the two measures of the population are compared and the answer discarded',
+                self::GATE,
+                ['        if ($onlyAudited !== [] || $onlyEnumerated !== []) {' => '        if (false) {'],
+                ['itReportsAPopulationMismatch'],
+            ),
+            Probe::breaking(
+                'empty-population-floored',
+                'a tree with no threshold directive is failed for having measured nothing',
+                self::GATE,
+                ['        if ($auditedSites === []) {' => '        if (false) {'],
+                ['itFloorsNothingWhenNoThresholdSiteIsInScope'],
+            ),
+            Probe::breaking(
+                'disqualified-run-judged',
+                'a run the command already disqualified is judged anyway',
+                self::GATE,
+                ['        if ($auditExit !== 0 && $auditExit !== 2) {' => '        if (false) {'],
+                ['itPropagatesARunThatWasAlreadyDisqualified'],
+            ),
+            Probe::breaking(
+                'no-report-read-as-a-report',
+                'a run that wrote no JSON at all is answered as a malformed report',
+                self::GATE,
+                ['        if (!\is_array(json_decode($auditStdout, true))) {' => '        if (false) {'],
+                ['itRefusesAnAuditThatProducedNoJson'],
+            ),
+        ];
+    }
+
+    /**
+     * The reader both scripts share: what it refuses to read.
+     *
+     * @return list<Probe>
+     */
+    private static function reading(): array
+    {
+        return [
+            Probe::breaking(
+                'missing-field-defaulted',
+                'a string field the audit did not publish is defaulted rather than refused',
+                self::ENTRY,
+                [
+                    "            throw new AuditReportError(self::wrongType(\$where, \$key, 'a string', \$value));"
+                    => "            return 'unmeasured';",
+                ],
+                [
+                    'data set "effect missing"',
+                    'data set "form missing"',
+                    'data set "file missing"',
+                    'data set "target missing"',
+                    'data set "effect null"',
+                    'data set "effect not a string"',
+                ],
+            ),
+            Probe::breaking(
+                'missing-line-defaulted',
+                'a line number published as something other than a number is defaulted rather than refused',
+                self::ENTRY,
+                [
+                    "            throw new AuditReportError(self::wrongType(\$where, \$key, 'an integer', \$value));"
+                    => '            return 0;',
+                ],
+                ['data set "line not a number"'],
+            ),
+            Probe::breaking(
+                'verdict-list-unchecked',
+                'whatever stands where the verdict list should be is read as one',
+                self::READER,
+                [
+                    '        $directives = self::directiveListOf($decoded);'
+                    => "        \$directives = (array) (\$decoded['directives'] ?? []);",
+                ],
+                ['itRefusesAReportWhoseDirectivesAreNotAList', 'itRefusesAReportWithNoDirectivesAtAll'],
+            ),
+            Probe::breaking(
+                'envelope-read-as-a-measurement',
+                'an error envelope is read as a report that should have carried verdicts',
+                self::READER,
+                ["        \$errorEnvelope = isset(\$decoded['error']);" => '        $errorEnvelope = false;'],
+                [
+                    'itReadsAnErrorEnvelopeWithoutDemandingVerdicts',
+                    'itPropagatesTheCommandsOwnCodeThroughAnErrorEnvelope',
+                ],
+            ),
+            Probe::breaking(
+                'population-holds-both-halves',
+                'the suppression half is counted into the population the enumeration measures',
+                self::READER,
+                [
+                    '            static fn(AuditedVerdict $verdict): bool => $verdict->isThreshold(),'
+                    => '            static fn(AuditedVerdict $verdict): bool => true,',
+                ],
+                [
+                    'itReadsAWellFormedReportAsOneMeasurementAndItsContext',
+                    'itAcceptsATreeWhoseSitesMatchAndWhereSomethingWasMeasured',
+                ],
+            ),
+            Probe::breaking(
+                'verdict-map-drops-a-duplicate',
+                'the by-site map keeps one entry per site, so a site authored twice loses one of them',
+                self::READER,
+                [
+                    '            $bySite[$verdict->keyedSite()][] = $this->rawVerdicts[$index];'
+                    => '            $bySite[$verdict->keyedSite()] = [$this->rawVerdicts[$index]];',
+                ],
+                ['itKeepsEveryEntryOfASiteAuthoredTwice'],
+            ),
+            Probe::breaking(
+                'population-as-a-set',
+                'two directives authored on one site are compared as one',
+                self::POPULATION,
+                [
+                    '            $delta = ($leftCounts[$site] ?? 0) - ($rightCounts[$site] ?? 0);'
+                    => '            $delta = min(1, $leftCounts[$site] ?? 0) - min(1, $rightCounts[$site] ?? 0);',
+                ],
+                ['itCountsEveryOccurrenceOfARepeatedSite', 'itSeesOneOfTwoDirectivesOnASiteGoMissing'],
+            ),
+        ];
+    }
+
+    /**
+     * The authored population, as read out of the enumeration's TSV.
+     *
+     * @return list<Probe>
+     */
+    private static function enumeration(): array
+    {
+        return [
+            Probe::breaking(
+                'tsv-split-unbounded',
+                'a tab inside the authored values is read as a column of its own',
+                self::ENUMERATION,
+                ['        $columns = explode("\t", $line, 4);' => '        $columns = explode("\t", $line);'],
+                ['itReadsEveryEnumeratedSiteAndKeepsATabInsideItsValues'],
+            ),
+            Probe::breaking(
+                'tsv-columns-unchecked',
+                'a row short of a column is padded out instead of refused',
+                self::ENUMERATION,
+                [
+                    '            [$file, $number, $target, $values] = self::columnsOf($line, $offset + 1);'
+                    => '            [$file, $number, $target, $values] = array_pad(explode("\t", $line, 4), 4, \'\');',
+                ],
+                ['itRefusesAnEnumerationRowShortOfAColumn'],
+            ),
+            Probe::breaking(
+                'tsv-line-number-untyped',
+                'whatever stands in the line-number column is cast to a number',
+                self::ENUMERATION,
+                ["            if (preg_match('/^\d+$/', \$number) !== 1) {" => '            if (false) {'],
+                ['itRefusesAnEnumerationRowWhoseLineIsNotANumber'],
+            ),
+            Probe::breaking(
+                'tsv-empty-target-accepted',
+                'a row addressing nothing is admitted to the population',
+                self::ENUMERATION,
+                ["            if (\$target === '') {" => '            if (false) {'],
+                ['itRefusesAnEnumerationRowThatAddressesNothing'],
+            ),
+        ];
+    }
+
+    /**
+     * The two projections of one audit, which must tally one vocabulary.
+     *
+     * @return list<Probe>
+     */
+    private static function projections(): array
+    {
+        return [
+            Probe::breaking(
+                'json-summary-by-hand',
+                'the machine summary names its keys by hand, so a verdict is counted and published nowhere',
+                self::TALLY,
+                [
+                    "        return ['total' => \$this->total, ...\$this->counts];"
+                    => "        return [\n            'total' => \$this->total,\n"
+                    . "            'effective' => \$this->counts['effective'],\n"
+                    . "            'overrun' => \$this->counts['overrun'],\n"
+                    . "            'inert' => \$this->counts['inert'],\n        ];",
+                ],
+                ['itPublishesOneSummaryKeyPerVerdictTheVocabularyDefines'],
+            ),
+            Probe::breaking(
+                'text-summary-by-hand',
+                'the text summary tallies a hand-written list of verdicts rather than the vocabulary',
+                self::TALLY,
+                [
+                    "            \$tallied[] = \sprintf('%d %s', \$this->counts[\$effect->value], self::label(\$effect));"
+                    => '            $tallied[] = $effect === DirectiveEffect::Unmeasured'
+                    . " ? '' : \sprintf('%d %s', \$this->counts[\$effect->value], self::label(\$effect));",
+                ],
+                ['itPrintsOneTallyPerVerdictTheVocabularyDefinesInTheTextSummary'],
+            ),
         ];
     }
 

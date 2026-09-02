@@ -172,11 +172,11 @@ Qualimetrix\Analysis\Policy\Baseline\EntrySelector	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	4	1
 Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface	Analysis.Policy.Inline	2	2
-Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect	Analysis.Policy.Inline	2	1
+Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect	Analysis.Policy.Inline	3	1
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite	Analysis.Policy.Inline	1	1
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope	Analysis.Policy.Inline	6	2
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason	Analysis.Policy.Inline	1	1
-Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict	Analysis.Policy.Inline	2	2
+Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict	Analysis.Policy.Inline	3	2
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface	Analysis.Policy.Inline	2	2
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput	Analysis.Policy.Inline	1	1
 Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface	Analysis.Policy.Inline	2	2

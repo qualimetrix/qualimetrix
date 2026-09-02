@@ -63,7 +63,7 @@ cohesion.lcc	metric-key	?		7	44	0	0	0	6	0	0
 cohesion.lcom	metric-key	?		41	151	2	2	0	31	0	4
 cohesion.pure-method-count	metric-key	?		3	8	0	0	0	2	0	0
 cohesion.tcc	metric-key	?		23	85	0	0	0	12	0	0
-complexity.ccn	metric-key	?		42	291	0	0	0	4	0	0
+complexity.ccn	metric-key	?		42	317	0	0	0	4	0	0
 complexity.cognitive	metric-key	?		24	81	2	2	31	48	0	12
 complexity.npath	metric-key	?		22	95	2	2	12	38	0	8
 complexity.wmc	metric-key	?		20	86	2	2	10	31	0	4
@@ -117,7 +117,7 @@ size.getter-count	metric-key	?		7	13	0	0	0	0	0	0
 size.implementing-enum-count	metric-key	?		13	9	0	0	0	0	0	0
 size.interface-count	metric-key	?		13	17	0	0	0	0	0	0
 size.lloc	metric-key	?		8	18	0	0	0	3	0	0
-size.loc	metric-key	?		11	193	0	0	0	5	0	0
+size.loc	metric-key	?		11	194	0	0	0	5	0	0
 size.method-count	metric-key	?		24	152	2	2	0	50	0	3
 size.method-count.private	metric-key	?		4	6	0	0	0	0	0	0
 size.method-count.protected	metric-key	?		4	6	0	0	0	0	0	0

@@ -11580,6 +11580,11 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveVerdictTally",
+          "closes_in": null
         }
       ]
     },
@@ -11665,6 +11670,11 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveVerdictTally",
           "closes_in": null
         }
       ]
@@ -16609,6 +16619,14 @@
     },
     "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter": {
       "path": "src/Infrastructure/Console/DirectiveAuditPresenter.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\DirectiveVerdictTally": {
+      "path": "src/Infrastructure/Console/DirectiveVerdictTally.php",
       "kind": "class",
       "owner": "Infrastructure.Console",
       "visibility": "internal",

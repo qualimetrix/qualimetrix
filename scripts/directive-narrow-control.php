@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace QmxDirectiveNarrowControl;
 
+use QmxDirectiveAudit\AuditReportError;
+use QmxDirectiveAudit\VerdictReport;
 use QmxFindingGate\Process;
 use RuntimeException;
 
@@ -22,7 +24,15 @@ use RuntimeException;
  * scope, an empty directive list, a directive list with no measured
  * `@qmx-threshold` verdict (the only kind `--sweep` can move), or a genuine
  * verdict disagreement. A comparator that returned 0 on any of those would be
- * green regardless of whether narrow and full agree.
+ * green regardless of whether narrow and full agree. Each of those leaves here
+ * as a code rather than as an uncaught exception: 7 when a report cannot be
+ * read at all, 4 when both were readable and neither is comparable, 1 on a real
+ * disagreement.
+ *
+ * The report itself is read by {@see \QmxDirectiveAudit\VerdictReport}, the
+ * same reader `composer directives:audit` uses. The floor on measured
+ * threshold verdicts used to be spelled out here and there in byte-identical
+ * words, which is a pair that drifts apart the first time one of them is fixed.
  *
  * Not part of `composer check`: it pays both sweeps' cost on top of what
  * `directives:audit` already pays once. Run it when the audit or the sweep
@@ -31,6 +41,18 @@ use RuntimeException;
 
 require __DIR__ . '/finding-gate/Process.php';
 
+foreach ([
+    'AuditReportError',
+    'MeasuredEffects',
+    'AuditedVerdict',
+    'VerdictReport',
+    'EnumeratedSite',
+    'SiteEnumeration',
+    'Population',
+] as $part) {
+    require __DIR__ . '/directive-audit/' . $part . '.php';
+}
+
 final class Harness
 {
     private const string ROOT = __DIR__ . '/..';
@@ -38,7 +60,38 @@ final class Harness
     /** @var list<string> */
     private const array TARGET = ['src/'];
 
+    /** The report is not of a shape this comparison knows how to read — the audit gate's code for the same event. */
+    private const int EXIT_UNREADABLE = 7;
+
+    /**
+     * The two runs were readable and still cannot be compared: one of them did
+     * not complete, judged nothing, or disagrees with itself about its own exit
+     * code.
+     *
+     * A code of its own rather than the unreadable one, because the two are
+     * different news: "the report is not of a shape I know" points at the
+     * report's producer, "this run is not comparable" points at the run. Both
+     * used to leave here as an uncaught exception and a shell's 255, which
+     * names neither.
+     */
+    private const int EXIT_NOT_COMPARABLE = 4;
+
     public static function main(): int
+    {
+        try {
+            return self::compareSweeps();
+        } catch (AuditReportError $error) {
+            fwrite(\STDERR, 'UNREADABLE: ' . $error->getMessage() . "\n");
+
+            return self::EXIT_UNREADABLE;
+        } catch (RuntimeException $error) {
+            fwrite(\STDERR, 'NOT COMPARABLE: ' . $error->getMessage() . "\n");
+
+            return self::EXIT_NOT_COMPARABLE;
+        }
+    }
+
+    private static function compareSweeps(): int
     {
         [$narrow, $narrowSeconds] = self::run('narrow');
         [$full, $fullSeconds] = self::run('full');
@@ -52,8 +105,8 @@ final class Harness
             fwrite(\STDOUT, \sprintf(
                 "MATCH: %d directive verdict(s) agree between narrow and full (%d of them threshold " .
                     "verdicts with a measured outcome — the only ones --sweep can affect).\n",
-                \count($narrow['directives']),
-                \count(self::measuredThresholdVerdicts($narrow['directives'])),
+                \count($narrow->verdicts()),
+                $narrow->measuredThresholdCount(),
             ));
 
             return 0;
@@ -62,10 +115,8 @@ final class Harness
         fwrite(\STDOUT, \sprintf("MISMATCH: %d directive verdict(s) disagree.\n", \count($mismatches)));
         foreach ($mismatches as $mismatch) {
             fwrite(\STDOUT, \sprintf(
-                "  %s:%d %s — narrow=%s full=%s\n",
-                $mismatch['file'],
-                $mismatch['line'],
-                $mismatch['target'],
+                "  %s — narrow=%s full=%s\n",
+                $mismatch['site'],
                 json_encode($mismatch['narrow']),
                 json_encode($mismatch['full']),
             ));
@@ -75,14 +126,14 @@ final class Harness
     }
 
     /**
-     * One sweep, as the fully-decoded and validated report plus its wall time.
+     * One sweep, as the fully-read and validated report plus its wall time.
      *
      * Validation happens here rather than in `compare()`: a report that fails
      * these checks has nothing to compare, and folding the checks into the
      * comparison would let a caller who only reads `$mismatches` mistake "ran
      * with nothing to say" for "matched".
      *
-     * @return array{0: array<string, mixed>, 1: float}
+     * @return array{0: VerdictReport, 1: float}
      */
     private static function run(string $sweep): array
     {
@@ -92,23 +143,8 @@ final class Harness
         $result = Process::run($command, self::rootPath());
         $seconds = microtime(true) - $startedAt;
 
-        $report = self::decode($sweep, $result);
-        self::validate($sweep, $report, $result['exit']);
-
-        return [$report, $seconds];
-    }
-
-    /**
-     * @param array{stdout: string, stderr: string, exit: int} $result
-     *
-     * @return array<string, mixed>
-     */
-    private static function decode(string $sweep, array $result): array
-    {
-        $decoded = json_decode($result['stdout'], true);
-
-        if (!\is_array($decoded)) {
-            throw new RuntimeException(\sprintf(
+        if (!\is_array(json_decode($result['stdout'], true))) {
+            throw new AuditReportError(\sprintf(
                 "--sweep=%s produced no parseable JSON (exit %d).\nstdout: %s\nstderr: %s",
                 $sweep,
                 $result['exit'],
@@ -117,17 +153,19 @@ final class Harness
             ));
         }
 
-        return $decoded;
+        $report = VerdictReport::fromJson($result['stdout']);
+        self::validate($sweep, $report, $result['exit']);
+
+        return [$report, $seconds];
     }
 
-    /** @param array<string, mixed> $report */
-    private static function validate(string $sweep, array $report, int $processExit): void
+    private static function validate(string $sweep, VerdictReport $report, int $processExit): void
     {
-        if (isset($report['error'])) {
+        if ($report->isErrorEnvelope()) {
             throw new RuntimeException(\sprintf(
                 '--sweep=%s failed before producing a report: %s',
                 $sweep,
-                (string) $report['error'],
+                $report->errorText(),
             ));
         }
 
@@ -143,30 +181,41 @@ final class Harness
             ));
         }
 
-        $exitCode = $report['exit_code'] ?? null;
-        if ($exitCode !== $processExit) {
+        if ($report->exitCode() !== $processExit) {
             throw new RuntimeException(\sprintf(
-                '--sweep=%s: the process exit code (%d) disagrees with the report\'s own exit_code field (%s).',
+                '--sweep=%s: the process exit code (%d) disagrees with the report\'s own exit_code field (%d).',
                 $sweep,
                 $processExit,
-                var_export($exitCode, true),
+                $report->exitCode(),
             ));
         }
 
-        $scope = $report['scope'] ?? null;
-        if (!\is_array($scope) || ($scope['complete'] ?? false) !== true) {
+        // Without this the comparison could be two runs of one sweep: a
+        // `--sweep` the command silently defaulted would leave both halves
+        // measured the same way and the match would say nothing.
+        if ($report->sweep() !== $sweep) {
+            throw new RuntimeException(\sprintf(
+                '--sweep=%s produced a report that says it was measured with sweep "%s".',
+                $sweep,
+                $report->sweep(),
+            ));
+        }
+
+        $scope = $report->scope();
+        if (($scope['complete'] ?? false) !== true) {
             throw new RuntimeException(\sprintf('--sweep=%s did not complete: %s', $sweep, var_export($scope, true)));
         }
 
-        if (($scope['analyzed_files'] ?? 0) === 0) {
+        $analyzed = $scope['analyzed_files'] ?? null;
+        if (!\is_int($analyzed) || $analyzed === 0) {
             throw new RuntimeException(\sprintf(
-                '--sweep=%s analysed zero files — a comparison against that scope would prove nothing.',
+                '--sweep=%s analysed %s files — a comparison against that scope would prove nothing.',
                 $sweep,
+                var_export($analyzed, true),
             ));
         }
 
-        $directives = $report['directives'] ?? null;
-        if (!\is_array($directives) || $directives === []) {
+        if ($report->verdicts() === []) {
             throw new RuntimeException(\sprintf(
                 '--sweep=%s found no directives to judge — a comparison against an empty list would ' .
                     'trivially "match" without proving anything.',
@@ -181,7 +230,7 @@ final class Harness
         // verdicts, `Unmeasured` ones never reached the rule the sweep width
         // would have affected. A report with directives but none of that kind
         // would "MATCH" while proving nothing about `--sweep` at all.
-        if (self::measuredThresholdVerdicts($directives) === []) {
+        if ($report->measuredThresholdCount() === 0) {
             throw new RuntimeException(\sprintf(
                 '--sweep=%s produced zero measured @qmx-threshold verdict(s) — --sweep only affects how a ' .
                     'threshold verdict is produced, so a report with none actually exercised proves nothing.',
@@ -191,55 +240,36 @@ final class Harness
     }
 
     /**
-     * `$directives` at the `validate()` call site is only proven to be array
-     * (via `is_array()`, ahead of a JSON-decoded, string-keyed `$report`) —
-     * not proven to be a list, since PHPStan cannot see past `json_decode()`
-     * that `directives` was JSON-encoded from a `list`. Widening to a
-     * non-list-constrained shape here describes what is actually known, it
-     * does not give up on element precision.
-     *
-     * @param array<array<string, mixed>> $directives
-     *
-     * @return list<array<string, mixed>>
-     */
-    private static function measuredThresholdVerdicts(array $directives): array
-    {
-        return array_values(array_filter(
-            $directives,
-            static fn(array $directive): bool => ($directive['form'] ?? null) === 'threshold'
-                && ($directive['effect'] ?? null) !== 'unmeasured',
-        ));
-    }
-
-    /**
      * Every field but the one that must differ by design (`sweep` itself).
      *
-     * @param array<string, mixed> $narrow
-     * @param array<string, mixed> $full
-     *
-     * @return list<array{file: string, line: int, target: string, narrow: array<string, mixed>, full: array<string, mixed>}>
+     * @return list<array{site: string, narrow: list<array<string, mixed>>, full: list<array<string, mixed>>}>
      */
-    private static function compare(array $narrow, array $full): array
+    private static function compare(VerdictReport $narrow, VerdictReport $full): array
     {
         // `summary` is a tally derived from `directives` and deliberately not
         // compared here: it would fail with a generic message on the first
         // verdict disagreement, before the per-site loop below ever names
         // which rules disagree. If every site matches, the tallies computed
         // from them cannot disagree either.
-        foreach (['scope', 'selection'] as $key) {
-            if ($narrow[$key] !== $full[$key]) {
+        $describing = [
+            'scope' => [$narrow->scope(), $full->scope()],
+            'selection' => [$narrow->selection(), $full->selection()],
+        ];
+
+        foreach ($describing as $key => [$left, $right]) {
+            if ($left !== $right) {
                 throw new RuntimeException(\sprintf(
                     "narrow and full disagree on \"%s\", which describes the run rather than a verdict:\n" .
                         "narrow: %s\nfull:   %s",
                     $key,
-                    json_encode($narrow[$key]),
-                    json_encode($full[$key]),
+                    json_encode($left),
+                    json_encode($right),
                 ));
             }
         }
 
-        $narrowBySite = self::bySite($narrow['directives']);
-        $fullBySite = self::bySite($full['directives']);
+        $narrowBySite = $narrow->rawVerdictsBySite();
+        $fullBySite = $full->rawVerdictsBySite();
 
         if (array_keys($narrowBySite) !== array_keys($fullBySite)) {
             throw new RuntimeException(
@@ -250,48 +280,17 @@ final class Harness
 
         $mismatches = [];
 
-        foreach ($narrowBySite as $site => $narrowVerdict) {
-            $fullVerdict = $fullBySite[$site];
+        foreach ($narrowBySite as $site => $narrowVerdicts) {
+            $fullVerdicts = $fullBySite[$site];
 
-            if ($narrowVerdict === $fullVerdict) {
+            if ($narrowVerdicts === $fullVerdicts) {
                 continue;
             }
 
-            $mismatches[] = [
-                'file' => (string) $narrowVerdict['file'],
-                'line' => (int) $narrowVerdict['line'],
-                'target' => (string) $narrowVerdict['target'],
-                'narrow' => $narrowVerdict,
-                'full' => $fullVerdict,
-            ];
+            $mismatches[] = ['site' => $site, 'narrow' => $narrowVerdicts, 'full' => $fullVerdicts];
         }
 
         return $mismatches;
-    }
-
-    /**
-     * Keyed by file:line:form:target rather than array position: both sweeps
-     * walk the same discovery, so position matches too, but the site identity
-     * is what a verdict is actually about and is not more expensive to key by.
-     * `form` is part of the key, not just `target`: a suppression and a
-     * threshold authored on the same line against the same channel are two
-     * distinct sites — `DirectiveSite` carries both — and collapsing them onto
-     * one key would silently drop one from the comparison on a collision.
-     *
-     * @param list<array<string, mixed>> $directives
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    private static function bySite(array $directives): array
-    {
-        $bySite = [];
-
-        foreach ($directives as $directive) {
-            $key = \sprintf('%s:%d:%s:%s', $directive['file'], $directive['line'], $directive['form'], $directive['target']);
-            $bySite[$key] = $directive;
-        }
-
-        return $bySite;
     }
 
     private static function rootPath(): string

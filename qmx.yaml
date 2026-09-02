@@ -808,6 +808,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter'
         - 'Qualimetrix\Infrastructure\Console\DiagnosticOutput'
         - 'Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter'
+        - 'Qualimetrix\Infrastructure\Console\DirectiveVerdictTally'
         - 'Qualimetrix\Infrastructure\Console\ExitCodeResolver'
         - 'Qualimetrix\Infrastructure\Console\ExitPolicy'
         - 'Qualimetrix\Infrastructure\Console\FilteredInputDefinition'
