@@ -19,9 +19,10 @@ use RuntimeException;
  *
  * Every non-zero exit prints what would have gone unnoticed as a silent
  * "matched": a run that produced no JSON, an error envelope, an incomplete
- * scope, an empty directive list, or a genuine verdict disagreement. A
- * comparator that returned 0 on any of those would be green regardless of
- * whether narrow and full agree.
+ * scope, an empty directive list, a directive list with no measured
+ * `@qmx-threshold` verdict (the only kind `--sweep` can move), or a genuine
+ * verdict disagreement. A comparator that returned 0 on any of those would be
+ * green regardless of whether narrow and full agree.
  *
  * Not part of `composer check`: it pays both sweeps' cost on top of what
  * `directives:audit` already pays once. Run it when the audit or the sweep
@@ -50,8 +51,10 @@ final class Harness
 
         if ($mismatches === []) {
             fwrite(\STDOUT, \sprintf(
-                "MATCH: %d directive verdict(s) agree between narrow and full.\n",
+                "MATCH: %d directive verdict(s) agree between narrow and full (%d of them threshold " .
+                    "verdicts with a measured outcome — the only ones --sweep can affect).\n",
                 \count($narrow['directives']),
+                \count(self::measuredThresholdVerdicts($narrow['directives'])),
             ));
 
             return 0;
@@ -171,6 +174,42 @@ final class Harness
                 $sweep,
             ));
         }
+
+        // `--sweep` only changes how a `threshold` verdict is produced — a
+        // `symbol` verdict is judged by what it silenced, not by re-executing a
+        // rule, so `--sweep=narrow` and `--sweep=full` are guaranteed to agree
+        // on every `symbol` site by construction. And within `threshold`
+        // verdicts, `Unmeasured` ones never reached the rule the sweep width
+        // would have affected. A report with directives but none of that kind
+        // would "MATCH" while proving nothing about `--sweep` at all.
+        if (self::measuredThresholdVerdicts($directives) === []) {
+            throw new RuntimeException(\sprintf(
+                '--sweep=%s produced zero measured @qmx-threshold verdict(s) — --sweep only affects how a ' .
+                    'threshold verdict is produced, so a report with none actually exercised proves nothing.',
+                $sweep,
+            ));
+        }
+    }
+
+    /**
+     * `$directives` at the `validate()` call site is only proven to be array
+     * (via `is_array()`, ahead of a JSON-decoded, string-keyed `$report`) —
+     * not proven to be a list, since PHPStan cannot see past `json_decode()`
+     * that `directives` was JSON-encoded from a `list`. Widening to a
+     * non-list-constrained shape here describes what is actually known, it
+     * does not give up on element precision.
+     *
+     * @param array<array<string, mixed>> $directives
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function measuredThresholdVerdicts(array $directives): array
+    {
+        return array_values(array_filter(
+            $directives,
+            static fn(array $directive): bool => ($directive['form'] ?? null) === 'threshold'
+                && ($directive['effect'] ?? null) !== 'unmeasured',
+        ));
     }
 
     /**
@@ -232,9 +271,13 @@ final class Harness
     }
 
     /**
-     * Keyed by file:line:target rather than array position: both sweeps walk
-     * the same discovery, so position matches too, but the site identity is
-     * what a verdict is actually about and is not more expensive to key by.
+     * Keyed by file:line:form:target rather than array position: both sweeps
+     * walk the same discovery, so position matches too, but the site identity
+     * is what a verdict is actually about and is not more expensive to key by.
+     * `form` is part of the key, not just `target`: a suppression and a
+     * threshold authored on the same line against the same channel are two
+     * distinct sites — `DirectiveSite` carries both — and collapsing them onto
+     * one key would silently drop one from the comparison on a collision.
      *
      * @param list<array<string, mixed>> $directives
      *
@@ -245,7 +288,7 @@ final class Harness
         $bySite = [];
 
         foreach ($directives as $directive) {
-            $key = \sprintf('%s:%d:%s', $directive['file'], $directive['line'], $directive['target']);
+            $key = \sprintf('%s:%d:%s:%s', $directive['file'], $directive['line'], $directive['form'], $directive['target']);
             $bySite[$key] = $directive;
         }
 

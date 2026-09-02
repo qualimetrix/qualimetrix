@@ -114,7 +114,7 @@
             "Composer\\Config::disableProcessTimeout",
             "php scripts/directive-narrow-control.php"
         ],
-        "directives:audit": "php bin/qmx directives src/",
+        "directives:audit": "php scripts/directive-audit-gate.php",
         "docs:check": "bash scripts/check-docs.sh",
         "check": [
             "@check-leaks",

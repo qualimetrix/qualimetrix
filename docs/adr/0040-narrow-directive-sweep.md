@@ -59,7 +59,20 @@ subsumes another:
 
 What none of the three can see: removing a directive of rule X moving a finding
 of rule Y. A narrowed sweep never executes Y, so neither side of that comparison
-contains it. That is what Decision 3 exists for.
+contains it. Decision 3 addresses it, and the first draft of this ADR claimed it
+*measured* it — which is the same mistake, one layer up. What the control
+compares is **verdicts**, not findings: a moved finding of Y is visible only
+where it changes X's verdict from one category to another. Where X is
+`Effective` on its own account either way — the state of every directive on this
+tree — the movement is real and the comparison is silent.
+
+What holds the claim up is therefore structural, and it is worth stating because
+it is cheaper and stronger than the sweep: a rule cannot read another rule's
+directive. `AnalysisContext::getThresholdOverride()` is the sole reader of the
+override map in the rule layer, it is called from exactly two places, both pass
+the calling rule's own name, and `ThresholdOverride::matches()` is equality. A
+guard test holds that shape, so a third call site with a foreign name reddens
+immediately rather than waiting for someone to run the full sweep.
 
 ## Decision 3 — the full sweep stays in the product, as the other side of a control
 
@@ -86,12 +99,15 @@ documented as what it is: an expensive re-measurement of a cheap answer.
   spending the owner's stated budget of roughly one minute.
 - The remaining cost is dominated by the prepared run itself, which repeats
   Collection in a separate process. Narrowing does not touch it.
-- The first equivalence control was green: 43 verdicts, identical scope,
-  identical exit codes. **Its discriminating power is limited by the
-  population**: every verdict on this tree is `Effective`, so the control would
-  not have caught a defect that turns every verdict into `Effective`. The tests
-  cover the verdicts this tree does not currently produce; the control on `src/`
-  is evidence about this tree, not about the vocabulary.
+- The equivalence control is green, and its discriminating power is bounded by
+  the population it runs on. On `src/` every verdict is `Effective`, so a defect
+  that yields `Effective` everywhere passes it — measured, not supposed: a
+  mutation narrowing to the wrong rule passed while the narrowing was written in
+  two expressions. Review then ran the control over a tree seeded with an
+  `Overrun`, a dead directive and a masking pair — 45 verdicts, both scopes
+  agreeing — which is the first run in which the coalition and `Overrun`
+  branches executed at all. Verdicts this tree does not produce are held by
+  tests, not by the control.
 - Per-directive cost is now the addressed rule's own cost, so a directive on an
   expensive rule costs more than one on a cheap rule. The population figure that
   would reopen the question is no longer directive count alone.
