@@ -644,6 +644,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface'

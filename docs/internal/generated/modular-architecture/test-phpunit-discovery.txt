@@ -3825,6 +3825,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDisabledRulesTakePrecedenceOverOnlyRules
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotCaptureExcludedFindingsWhenCaptureHolderIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotCaptureExcludedPathFindingsWhenCaptureHolderIsDisabled
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotExecuteAProducerDisabledByConfigurationEvenWhenNarrowingNamesIt
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotTreatABarePrefixAsAGroup
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExcludePathsAreIsolatedPerRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExcludePathsWithEmptyFilePassesThrough
@@ -3835,6 +3836,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesHierarchicalRuleWithAllLevelsEnabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesHierarchicalRuleWithEntireRuleDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesHierarchicalRuleWithSpecificCodeDisabled
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesTheHostOfAClasslessProducerWhenNarrowingNamesThatProducer
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesWithAllRulesEnabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesWithGroupDisable
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesWithIterableRules
@@ -3858,6 +3860,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itPublishesRuleMetadataWithExactAliasMappingWithoutConcreteRuleInstances
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itRecordsEveryConfiguredPathPatternThatIndependentlyMatchesTheExcludedFinding
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itRecordsTheFiringNamespaceChannelSelectorAndPatternInTheAttribution
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itRestrictsPublishedFindingsToTheNarrowedProducerNotJustWhichRulesRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itRunsTheComputedProducerWhenOnlyItsCodeIsSelected
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleFamilyTest::itReadsTheFamilyOffTheProducerName"dotless name is its own family"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleFamilyTest::itReadsTheFamilyOffTheProducerName"hyphenated family"
@@ -5496,13 +5499,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itCallsADirectiveEffectiveWhenRemovingItChangesWhatTheRulesProduced
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itCallsADirectiveInertWhenRemovingItChangesNothing
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itCallsADirectiveOverrunWhenOnlyTheBoundaryMoved
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itComparesTheCounterfactualAgainstAReferenceTakenByTheSameNarrowing
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itControlsTheRunThroughTheSamePathTheCounterfactualsTake
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itDoesNotCallAPairMaskedWhereTheRuleNeverReports
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itJudgesByWhatTheRulesProducedRatherThanWhatTheyPublished
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itMarksTheBoundaryUnobservableWhenTheRulePublishedNone
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itNamesTheNeighbourThatActuallyHidesIt
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itProducesTheSameVerdictsUnderANarrowAndAFullSweepOnATreeWithSeveralRules
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesEveryVerdictWhenTheFirstControlDoesNotReproduceTheRun
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesEveryVerdictWhenTheLastControlDoesNotReproduceTheRun
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesTheNarrowedSweepWhenARuleBehavesDifferentlyInIsolation
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveMaskedOnlyByTwoNeighboursTogether
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveNamingNoRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveWhoseProducerIsDisabled
@@ -6080,8 +6086,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandTest::itSupportsSarifFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandTest::itSupportsSummaryFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandTest::itUsesBaseline
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAcceptsAnExplicitFullSweep
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itCallsASuppressionEffectiveWhenItSilencedAFinding
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDefaultsToTheNarrowSweep
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotFailOnAnInertVerdictWhoseBoundaryWasNotObservable
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotLetADirectiveJustifyItselfWithItsOwnComplaint
@@ -6092,9 +6100,12 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsTwoOnAnInertDirective
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itJudgesASuppressionOfTheChannelProducedAfterRuleExecution
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheErrorEnvelopeInJson
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAScopeOfNothingButGeneratedFiles
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAScopeThatAnalysedNoFiles
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAnUnknownFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAnUnknownSweep
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAnUnknownSweepInJson
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsAnUnreadableConfigAsAConfigurationError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itSaysTheSameThingInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled

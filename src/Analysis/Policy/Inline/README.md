@@ -191,6 +191,17 @@ makes**. `ThresholdDirectiveAudit` removes one authored directive at a time and
 executes the rules again over the context the run already prepared, comparing
 what the two executions produced.
 
+**The counterfactual executes one rule, not the whole layer, by default.** A
+`@qmx-threshold` addresses exactly one rule by exact name, so only that rule's
+producer needs re-executing (`DirectiveSweepScope::Narrow`, the `bin/qmx
+directives` default); `--sweep=full` re-executes every enabled rule for the
+same verdicts. `full` is not a slower fallback — it is the control that
+measures, rather than assumes, that removing a directive of one rule cannot
+move another rule's findings: the two scopes are run over the same tree and
+compared verdict for verdict, and a disagreement between them is a defect in
+the narrowing. On this project's own `src`, narrowing is the difference between
+eight rule executions and thirty-three whole ones.
+
 **One removal is one annotation, not one binding.** A class docblock
 materialises on the class and on every declaration inside it; removing the
 first of those and leaving the rest would report an annotation still in force

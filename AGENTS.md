@@ -519,7 +519,7 @@ composer check          # everything below, in the order a failure is cheapest t
 composer check:code     # what a code change invalidates: cs-check, phpstan, PHPUnit, cross-tool
 composer check:docs     # what a website change invalidates: a strict mkdocs build
 composer check:artifacts # what a manifest, config or corpus change invalidates: every generated artifact
-composer check:self     # what the product says about this repo: gate self-test + qmx ratchet
+composer check:self     # what the product says about this repo: gate self-test + qmx ratchet + directive audit
 composer architecture:check # exact manifest policy + generated-artifact freshness
 composer docs:check     # mkdocs --strict build of website/ (broken links, nav gaps)
 composer test           # PHPUnit
@@ -529,8 +529,13 @@ composer phpstan        # PHPStan level 8
 composer gate -- --reference=<git-ref>           # compare findings; GREEN 0, PARTIAL 2, RED 1, cannot-run 3
 composer gate:controls -- --reference=<git-ref>  # prove the gate is red under each planted breakage
 
-# What each inline @qmx directive in a tree still does (one rule execution per directive)
+# What each inline @qmx directive in a tree still does (--sweep=narrow re-executes only the addressed rule; default)
 bin/qmx directives src/                          # 0 clean, 2 an inert directive, 3 bad config, 4 run incomplete
+bin/qmx directives src/ --sweep=full             # same verdicts, every enabled rule re-executed instead of one
+composer directives:audit                        # bin/qmx directives over src/, part of check:self after selfcheck
+
+# The narrow/full control itself: prove both scopes agree on this tree (not part of composer check)
+composer directives:narrow-control
 
 # Proving the threshold audit's own tests bite
 composer directives:controls                     # plant one breakage at a time; every case must be reddened by one
@@ -597,7 +602,8 @@ For multi-package changes, fail fast before paying for the full test suite:
 what invalidates it, so a change that touched one thing pays for one group:
 `check:code` (style, static analysis, tests), `check:docs` (strict mkdocs),
 `check:artifacts` (manifest and every generated artifact against a fresh
-measurement) and `check:self` (the gate's self-test and the qmx ratchet). Sizes
+measurement) and `check:self` (the gate's self-test, the qmx ratchet, and the
+inline-directive audit). Sizes
 measured on this tree: the tests dominate at ~150s, the suppression snapshot
 costs ~20s, and everything else together is under 15s. `architecture:check`
 deliberately runs in both `check:artifacts` and — as its first half —
