@@ -11,8 +11,9 @@ use PHPUnit\Framework\TestCase;
 final class CoverageIsRequestedExplicitlyTest extends TestCase
 {
     /**
-     * With the block back, a direct `vendor/bin/phpunit` runs no test at all on
-     * a machine with no coverage driver, and `composer test` stays green.
+     * With the block back, a direct `vendor/bin/phpunit` runs no test at all
+     * wherever no coverage driver is *active* -- an installed Xdebug in its
+     * default mode is enough -- while `composer test` stays green.
      */
     #[Test]
     public function itKeepsTheCoverageReportWritersOutOfTheTrackedConfiguration(): void

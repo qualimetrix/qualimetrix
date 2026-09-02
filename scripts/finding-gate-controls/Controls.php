@@ -1033,7 +1033,7 @@ final class Controls
      * lcomChannelMutation()}: the fingerprint pair needs a case that declares no
      * delta, and the two controls that share the lcom mutation both pin their
      * expectations to the whole `case:complexity`, where the declared sarif
-     * surface is one artifact among twelve and cannot swallow the control.
+     * surface is one format among twelve and cannot swallow the control.
      */
     private static function unusedPrivateChannelMutation(): Mutation
     {

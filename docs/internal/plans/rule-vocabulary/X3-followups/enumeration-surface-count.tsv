@@ -17,7 +17,7 @@ docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	768	signatures carrying a direc
 docs/internal/plans/rule-vocabulary/FOLLOWUPS.md	774	docblocks repeating a name	no
 finding-gate/README.md	221	gate: compared check formats, named as a list	edited: eleven -> twelve, `suppressed` joined the list
 finding-gate/README.md	224	the two publications of the suppressed composition	edited: the false claim that --format=json breaks the artifact is gone
-finding-gate/README.md	293	GitLab fingerprints in one case	no
+finding-gate/README.md	293	GitLab surfaces that differed in one measurement — a measured population, not the total	no
 finding-gate/README.md	328	gate: surfaces a prefix was measured across	edited: eleven -> twelve
 finding-gate/README.md	426	metric keys: collector-owned literals	no
 finding-gate/README.md	466	gate: surface diffs an untranslated input arrives as	edited: eleven -> twelve
@@ -64,4 +64,4 @@ scripts/finding-gate/RenameMaps.php	157	gate: surfaces a prefix was measured acr
 scripts/finding-gate/RenameMaps.php	1101	metric keys: collector-owned literals	no
 scripts/finding-gate/ReportPayload.php	14	files of the HTML bundle	no
 scripts/finding-gate/TreeRun.php	60	the two publications of the suppressed composition	edited: the stale half of the comment is gone
-scripts/finding-gate/TreeRun.php	116	baseline surfaces an empty file would fail	no
+scripts/finding-gate/TreeRun.php	116	failed runs that could agree by producing nothing	no
