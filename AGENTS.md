@@ -534,8 +534,12 @@ bin/qmx directives src/                          # 0 clean, 2 an inert directive
 bin/qmx directives src/ --sweep=full             # same verdicts, every enabled rule re-executed instead of one
 composer directives:audit                        # bin/qmx directives over src/, part of check:self after selfcheck
 
-# The narrow/full control itself: prove both scopes agree on this tree (not part of composer check)
-composer directives:narrow-control
+# The narrow/full control itself (not part of composer check): two comparisons, src/ and a seeded
+# fixture whose population carries every verdict and every refusal. Both name their target and their
+# config; the fixture run also demands that heterogeneity, because an agreement over a population of
+# one verdict is a measurement of the tree, not of the sweeps.
+composer directives:narrow-control                # 0 agreed, 1 disagreed, 2 population too uniform,
+                                                  # 3 a run that cannot be compared, 7 an unreadable report
 
 # Proving the threshold audit's own tests bite
 composer directives:controls                     # plant one breakage at a time; every case must be reddened by one

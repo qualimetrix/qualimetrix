@@ -59,6 +59,9 @@ final class ThresholdPopulationAgreementTest extends TestCase
 {
     private const string FIXTURE = 'tests/Unit/RuleVocabulary/Fixtures/AuthoredThresholdForms.php';
 
+    /** The seeded tree `composer directives:narrow-control` measures its heterogeneous half over. */
+    private const string SEEDED_FIXTURE = 'tests/Analysis/Policy/Inline/Fixtures/NarrowControl';
+
     /** @var list<string> scratch trees to remove, whatever the case did with them */
     private static array $trees = [];
 
@@ -76,6 +79,19 @@ final class ThresholdPopulationAgreementTest extends TestCase
         }
 
         self::$trees = [];
+    }
+
+    /**
+     * A site by what it says rather than by where it is: file name, line,
+     * target and values.
+     *
+     * The directory is deliberately not part of it. An identity carrying the
+     * path would report two copies of one fixture as two different sites, and
+     * the mistake this case guards against is exactly a copy that moved.
+     */
+    private static function contentIdentity(EnumeratedSite $site): string
+    {
+        return \sprintf('%s:%d:%s:%s', basename($site->file), $site->line, $site->target, $site->values);
     }
 
     private static function removeTree(string $path): void
@@ -238,6 +254,41 @@ final class ThresholdPopulationAgreementTest extends TestCase
     {
         self::assertSame(self::productSites(), self::scanSites());
         self::assertNotSame([], self::productSites(), 'a fixture nobody read is not an agreement');
+    }
+
+    /**
+     * The seeded directives stay out of the tree's own measurement.
+     *
+     * `NarrowControl` exists to make the narrow/full comparison face a
+     * population it could disagree over: a dead directive, an overrun boundary,
+     * a masking coalition and three refusals, all authored on purpose. None of
+     * them is a statement about this project's code, and the enumeration over
+     * `src/` — the measure `composer directives:audit` judges the tree against
+     * — must not carry them.
+     *
+     * The enumerator has no exclusion mechanism, so what keeps the two apart is
+     * the target `src`, which is a convention rather than a barrier. This case
+     * is the barrier. It compares by the site's own content rather than by its
+     * path, so it still reddens when the fixture is moved under `src/`, which is
+     * exactly the mistake a convention permits.
+     *
+     * @throws RuntimeException
+     */
+    #[Test]
+    public function itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc(): void
+    {
+        $root = \dirname(__DIR__, 3);
+
+        $seeded = array_map(self::contentIdentity(...), ThresholdDirectiveScan::overTree($root, self::SEEDED_FIXTURE));
+        self::assertNotSame([], $seeded, 'the seeded fixture carries no directive, so this case proves nothing');
+
+        $enumerated = array_map(self::contentIdentity(...), ThresholdDirectiveScan::overTree($root, 'src'));
+
+        self::assertSame(
+            [],
+            array_values(array_unique(array_intersect($enumerated, $seeded))),
+            'a seeded directive reached the enumeration over src/',
+        );
     }
 
     /**

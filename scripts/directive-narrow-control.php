@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace QmxDirectiveNarrowControl;
 
 use QmxDirectiveAudit\AuditReportError;
+use QmxDirectiveAudit\HeterogeneityFloor;
 use QmxDirectiveAudit\VerdictReport;
 use QmxFindingGate\Process;
 use RuntimeException;
 
 /**
- * Proves that `--sweep=narrow` and `--sweep=full` agree, by measuring both.
+ * Proves that `--sweep=narrow` and `--sweep=full` agree, by measuring both over
+ * a named tree under a named configuration.
  *
  * `DirectiveSweepScope::Narrow` re-executes only the rule a directive
  * addresses; `Full` re-executes every enabled rule. They are supposed to be
@@ -19,15 +21,35 @@ use RuntimeException;
  * reading the two rule executors side by side proves nothing about shared
  * mutable state between them.
  *
- * Every non-zero exit prints what would have gone unnoticed as a silent
- * "matched": a run that produced no JSON, an error envelope, an incomplete
- * scope, an empty directive list, a directive list with no measured
- * `@qmx-threshold` verdict (the only kind `--sweep` can move), or a genuine
- * verdict disagreement. A comparator that returned 0 on any of those would be
- * green regardless of whether narrow and full agree. Each of those leaves here
- * as a code rather than as an uncaught exception: 7 when a report cannot be
- * read at all, 4 when both were readable and neither is comparable, 1 on a real
- * disagreement.
+ * **The target is an argument, and so is the configuration.** Both used to be
+ * implicit: `src/` was a constant and the configuration arrived through the
+ * working directory, because the product reads `qmx.yaml` from wherever it was
+ * started. The second is the one worth spelling out — the same fixture judged
+ * from the repository root and from its own directory produces different
+ * verdicts, so a run that does not name its configuration is not reproducible
+ * by anyone who reads its command line.
+ *
+ * **An agreement is only evidence if the population could have disagreed.**
+ * Over `src/` every verdict is `Effective`, so this comparison reddens for a
+ * defect that turns verdicts into `Inert` or `Unmeasured` and stays green for
+ * one that turns everything into `Effective` — which is the outcome it watches
+ * as normal. `--require-heterogeneity` is the floor that refuses such a
+ * population, and {@see HeterogeneityFloor} says what it asks for and why.
+ * `src/` is still measured, without the floor: it is the real population, and
+ * the fixture is the vocabulary.
+ *
+ * Every non-zero exit names what would otherwise have gone unnoticed as a
+ * silent "matched". Codes: `1` a verdict disagreement; `2` a population the
+ * floor refuses; `3` a run that cannot be compared at all — no parseable JSON
+ * from one of the sweeps, an error envelope, an exit code no completed audit
+ * returns, a process exit disagreeing with the report's own, a report measured
+ * with the other sweep, an incomplete scope, zero analysed files, no
+ * directives, no measured threshold verdict, a disagreement about `scope` or
+ * `selection`, two different sets of judged sites, or an unusable target,
+ * configuration or repository root; `7` a report of a shape
+ * {@see VerdictReport} cannot read, which is the audit gate's code for the same
+ * event. None of them leaves here as an uncaught exception and a shell's 255,
+ * which names nothing.
  *
  * The report itself is read by {@see \QmxDirectiveAudit\VerdictReport}, the
  * same reader `composer directives:audit` uses. The floor on measured
@@ -37,6 +59,10 @@ use RuntimeException;
  * Not part of `composer check`: it pays both sweeps' cost on top of what
  * `directives:audit` already pays once. Run it when the audit or the sweep
  * scopes change, same as `gate:controls` and `directives:controls`.
+ *
+ * Usage:
+ *   php scripts/directive-narrow-control.php --target=<path> --config=<path>
+ *       [--require-heterogeneity] [--min-measured=<n>]
  */
 
 require __DIR__ . '/finding-gate/Process.php';
@@ -46,6 +72,7 @@ foreach ([
     'MeasuredEffects',
     'AuditedVerdict',
     'VerdictReport',
+    'HeterogeneityFloor',
     'EnumeratedSite',
     'SiteEnumeration',
     'Population',
@@ -53,33 +80,153 @@ foreach ([
     require __DIR__ . '/directive-audit/' . $part . '.php';
 }
 
+/**
+ * One comparison's subject: which tree, under which configuration, judged
+ * against which floor.
+ */
+final readonly class Subject
+{
+    public function __construct(
+        public string $target,
+        public string $config,
+        public bool $requireHeterogeneity,
+        public int $minimumMeasured,
+    ) {}
+
+    /**
+     * @param list<string> $arguments as the shell handed them over, script name included
+     *
+     * @throws RuntimeException on anything this script would otherwise have to guess
+     */
+    public static function fromArguments(array $arguments, string $root): self
+    {
+        $target = null;
+        $config = null;
+        $requireHeterogeneity = false;
+        $minimumMeasured = 1;
+
+        foreach (\array_slice($arguments, 1) as $argument) {
+            if ($argument === '--require-heterogeneity') {
+                $requireHeterogeneity = true;
+
+                continue;
+            }
+
+            [$name, $value] = array_pad(explode('=', $argument, 2), 2, null);
+
+            match ($name) {
+                '--target' => $target = self::valueOf($name, $value),
+                '--config' => $config = self::valueOf($name, $value),
+                '--min-measured' => $minimumMeasured = self::countOf($name, self::valueOf($name, $value)),
+                default => throw new RuntimeException(\sprintf('unknown argument "%s". %s', $argument, self::USAGE)),
+            };
+        }
+
+        if ($target === null || $config === null) {
+            // Neither is defaulted, and the configuration is why. The product
+            // resolves `qmx.yaml` from the working directory, so a run without
+            // `--config` would be measured under whichever configuration the
+            // caller happened to stand in — including, for `src/`, the
+            // repository's own, which is not the product's defaults and would
+            // have changed this comparison's meaning without a word.
+            throw new RuntimeException('both --target and --config are required. ' . self::USAGE);
+        }
+
+        return new self(
+            self::existing($root, $target, '--target'),
+            self::existing($root, $config, '--config'),
+            $requireHeterogeneity,
+            $minimumMeasured,
+        );
+    }
+
+    public function describe(): string
+    {
+        return \sprintf(
+            '%s under %s%s',
+            $this->target,
+            $this->config,
+            $this->requireHeterogeneity
+                ? \sprintf(' (heterogeneity required, at least %d measured)', $this->minimumMeasured)
+                : '',
+        );
+    }
+
+    private const string USAGE =
+        'Usage: php scripts/directive-narrow-control.php --target=<path> --config=<path>'
+        . ' [--require-heterogeneity] [--min-measured=<n>]';
+
+    /** @throws RuntimeException */
+    private static function valueOf(string $name, ?string $value): string
+    {
+        if ($value === null || $value === '') {
+            throw new RuntimeException(\sprintf('%s needs a value. %s', $name, self::USAGE));
+        }
+
+        return $value;
+    }
+
+    /** @throws RuntimeException */
+    private static function countOf(string $name, string $value): int
+    {
+        if (preg_match('/^\d+$/', $value) !== 1) {
+            throw new RuntimeException(\sprintf('%s must be a whole number, got "%s".', $name, $value));
+        }
+
+        return (int) $value;
+    }
+
+    /**
+     * A path the run will actually find, refused here rather than through a
+     * sweep that analysed nothing and a comparison that matched trivially.
+     *
+     * @throws RuntimeException
+     */
+    private static function existing(string $root, string $path, string $name): string
+    {
+        if (!file_exists($root . '/' . $path)) {
+            throw new RuntimeException(\sprintf('%s "%s" does not exist under %s.', $name, $path, $root));
+        }
+
+        return $path;
+    }
+}
+
 final class Harness
 {
     private const string ROOT = __DIR__ . '/..';
 
-    /** @var list<string> */
-    private const array TARGET = ['src/'];
+    /** The two sweeps judged the same sites differently, which is the news this script exists to carry. */
+    private const int EXIT_MISMATCH = 1;
+
+    /**
+     * The two sweeps agreed over a population that could not have disagreed.
+     *
+     * Its own code rather than a mismatch's: nothing about the product is
+     * wrong, and the repair is to the fixture, not to a sweep.
+     */
+    private const int EXIT_POPULATION = 2;
+
+    /**
+     * The runs cannot be compared: one of them did not complete, judged
+     * nothing, disagrees with itself about its own exit code, or was never
+     * started because the target, the configuration or the repository root is
+     * unusable.
+     *
+     * A code of its own rather than the unreadable one, because the two are
+     * different news: "the report is not of a shape I know" points at the
+     * report's producer, "this run is not comparable" points at the run.
+     */
+    private const int EXIT_NOT_COMPARABLE = 3;
 
     /** The report is not of a shape this comparison knows how to read — the audit gate's code for the same event. */
     private const int EXIT_UNREADABLE = 7;
 
-    /**
-     * The two runs were readable and still cannot be compared: one of them did
-     * not complete, judged nothing, or disagrees with itself about its own exit
-     * code.
-     *
-     * A code of its own rather than the unreadable one, because the two are
-     * different news: "the report is not of a shape I know" points at the
-     * report's producer, "this run is not comparable" points at the run. Both
-     * used to leave here as an uncaught exception and a shell's 255, which
-     * names neither.
-     */
-    private const int EXIT_NOT_COMPARABLE = 4;
-
-    public static function main(): int
+    /** @param list<string> $arguments */
+    public static function main(array $arguments): int
     {
         try {
-            return self::compareSweeps();
+            return self::compareSweeps(Subject::fromArguments($arguments, self::rootPath()));
         } catch (AuditReportError $error) {
             fwrite(\STDERR, 'UNREADABLE: ' . $error->getMessage() . "\n");
 
@@ -91,38 +238,67 @@ final class Harness
         }
     }
 
-    private static function compareSweeps(): int
+    private static function compareSweeps(Subject $subject): int
     {
-        [$narrow, $narrowSeconds] = self::run('narrow');
-        [$full, $fullSeconds] = self::run('full');
+        fwrite(\STDOUT, \sprintf("comparing %s\n", $subject->describe()));
+
+        [$narrow, $narrowSeconds] = self::run($subject, 'narrow');
+        [$full, $fullSeconds] = self::run($subject, 'full');
 
         fwrite(\STDOUT, \sprintf("narrow sweep: %.1fs\n", $narrowSeconds));
         fwrite(\STDOUT, \sprintf("full sweep:   %.1fs\n", $fullSeconds));
+        fwrite(\STDOUT, HeterogeneityFloor::describe($narrow));
 
         $mismatches = self::compare($narrow, $full);
 
-        if ($mismatches === []) {
+        if ($mismatches !== []) {
             fwrite(\STDOUT, \sprintf(
-                "MATCH: %d directive verdict(s) agree between narrow and full (%d of them threshold " .
-                    "verdicts with a measured outcome — the only ones --sweep can affect).\n",
-                \count($narrow->verdicts()),
-                $narrow->measuredThresholdCount(),
+                "MISMATCH: %s — %d directive verdict(s) disagree.\n",
+                $subject->describe(),
+                \count($mismatches),
             ));
+            foreach ($mismatches as $mismatch) {
+                fwrite(\STDOUT, \sprintf(
+                    "  %s — narrow=%s full=%s\n",
+                    $mismatch['site'],
+                    json_encode($mismatch['narrow']),
+                    json_encode($mismatch['full']),
+                ));
+            }
 
-            return 0;
+            return self::EXIT_MISMATCH;
         }
 
-        fwrite(\STDOUT, \sprintf("MISMATCH: %d directive verdict(s) disagree.\n", \count($mismatches)));
-        foreach ($mismatches as $mismatch) {
+        // Asked after the comparison, not before it: a disagreement is a defect
+        // in the product whatever the population looks like, while an agreement
+        // over a population that could not disagree is a statement about the
+        // population. Reporting the floor first would answer the smaller
+        // question and hide the larger one.
+        $shortfalls = $subject->requireHeterogeneity
+            ? HeterogeneityFloor::shortfalls($narrow, $subject->minimumMeasured)
+            : [];
+
+        if ($shortfalls !== []) {
             fwrite(\STDOUT, \sprintf(
-                "  %s — narrow=%s full=%s\n",
-                $mismatch['site'],
-                json_encode($mismatch['narrow']),
-                json_encode($mismatch['full']),
+                "POPULATION: %s — the sweeps agree, and this population could not have made them disagree.\n",
+                $subject->describe(),
             ));
+            foreach ($shortfalls as $shortfall) {
+                fwrite(\STDOUT, '  ' . $shortfall . "\n");
+            }
+
+            return self::EXIT_POPULATION;
         }
 
-        return 1;
+        fwrite(\STDOUT, \sprintf(
+            "MATCH: %s — %d directive verdict(s) agree between narrow and full (%d of them threshold " .
+                "verdicts with a measured outcome — the only ones --sweep can affect).\n",
+            $subject->describe(),
+            \count($narrow->verdicts()),
+            $narrow->measuredThresholdCount(),
+        ));
+
+        return 0;
     }
 
     /**
@@ -135,9 +311,17 @@ final class Harness
      *
      * @return array{0: VerdictReport, 1: float}
      */
-    private static function run(string $sweep): array
+    private static function run(Subject $subject, string $sweep): array
     {
-        $command = ['php', 'bin/qmx', 'directives', ...self::TARGET, '--format=json', '--sweep=' . $sweep];
+        $command = [
+            'php',
+            'bin/qmx',
+            'directives',
+            $subject->target,
+            '--config=' . $subject->config,
+            '--format=json',
+            '--sweep=' . $sweep,
+        ];
 
         $startedAt = microtime(true);
         $result = Process::run($command, self::rootPath());
@@ -305,4 +489,7 @@ final class Harness
     }
 }
 
-exit(Harness::main());
+/** @var list<string> $arguments */
+$arguments = $_SERVER['argv'] ?? [];
+
+exit(Harness::main($arguments));

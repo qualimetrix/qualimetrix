@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace QmxDirectiveAuditControls;
 
+use RuntimeException;
+
 /**
  * The controls, as a list.
  *
@@ -41,6 +43,13 @@ final class Probes
     private const string TALLY = 'src/Infrastructure/Console/DirectiveVerdictTally.php';
 
     private const string FLOOR = 'scripts/directive-audit/MeasuredEffects.php';
+
+    private const string HETEROGENEITY = 'scripts/directive-audit/HeterogeneityFloor.php';
+
+    private const string SEEDED = 'tests/Analysis/Policy/Inline/Fixtures/NarrowControl/OverrunBoundary.php';
+
+    /** Where the copy is planted: a path `src/` does not have, so creating it states the mistake. */
+    private const string SEEDED_LEAK = 'src/NarrowControlLeak/OverrunBoundary.php';
 
     private const string READER = 'scripts/directive-audit/VerdictReport.php';
 
@@ -181,7 +190,91 @@ final class Probes
             ...self::enumeration(),
             ...self::projections(),
             ...self::agreement(),
+            ...self::heterogeneity(),
         ];
+    }
+
+    /**
+     * The floor the narrow/full comparison puts under its population, and the
+     * barrier that keeps the seeded fixture out of the tree's own measurement.
+     *
+     * Both are claims about what a *green* run means, which is the kind a
+     * control bench exists for: nothing about them fails on its own, and an
+     * agreement measured over a population that could not disagree looks
+     * exactly like an agreement that proves something.
+     *
+     * @return list<Probe>
+     */
+    private static function heterogeneity(): array
+    {
+        return [
+            Probe::breaking(
+                'heterogeneity-forgets-a-verdict',
+                'the floor stops asking for a verdict the product can publish',
+                self::HETEROGENEITY,
+                ["'effective', 'overrun', 'inert', 'unmeasured'" => "'effective', 'overrun', 'unmeasured'"],
+                [
+                    'itAsksForEveryVerdictTheProductCanPublishAndNoOther',
+                    'itNamesEveryRequirementAHomogeneousPopulationMisses',
+                ],
+            ),
+            Probe::breaking(
+                'heterogeneity-forgets-a-refusal',
+                'the floor stops asking for the masking coalition, the branch it was written for',
+                self::HETEROGENEITY,
+                ["        'masked',\n" => ''],
+                [
+                    'itAsksForEveryRefusalTheProductCanPublishAndNoOther',
+                    'itNamesEveryRequirementAHomogeneousPopulationMisses',
+                ],
+            ),
+            Probe::breaking(
+                'heterogeneity-reports-one-shortfall',
+                'the floor answers with the first thing missing instead of everything missing',
+                self::HETEROGENEITY,
+                [
+                    "                \$shortfalls[] = \sprintf('no directive was judged \"%s\".', \$effect);"
+                    => "                return [\sprintf('no directive was judged \"%s\".', \$effect)];",
+                ],
+                ['itNamesEveryRequirementAHomogeneousPopulationMisses'],
+            ),
+            Probe::breaking(
+                'reason-key-defaulted',
+                'a report that stopped publishing refusals is read as a population carrying none',
+                self::ENTRY,
+                [
+                    "            throw new AuditReportError(\sprintf('%s: \"%s\" is missing.', \$where, \$key));"
+                    => '            return null;',
+                ],
+                ['itRefusesAnEntryWithoutAReasonKey'],
+            ),
+            Probe::planting(
+                'seeded-fixture-copied-into-src',
+                'a copy of the seeded directive fixture appears under src/ and the tree enumeration swallows it',
+                [self::SEEDED_LEAK => self::seededFixture()],
+                ['itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc'],
+            ),
+        ];
+    }
+
+    /**
+     * The seeded fixture file as it stands, read rather than copied.
+     *
+     * A literal here would keep reddening the case after the fixture moved a
+     * line, which is the one thing the case is about: the identity it compares
+     * carries the line number, so a stale copy would stop matching and the
+     * probe would report the claim unguarded — loudly, but for the wrong
+     * reason.
+     */
+    private static function seededFixture(): string
+    {
+        $contents = file_get_contents(\dirname(__DIR__, 2) . '/' . self::SEEDED);
+
+        if ($contents === false) {
+            throw new RuntimeException(\sprintf('Cannot read %s, so the leak cannot be planted.', self::SEEDED));
+        }
+
+        return $contents;
     }
 
     /**

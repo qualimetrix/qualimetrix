@@ -90,6 +90,7 @@ tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Controller	Analysis/Policy/In
 tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Domain	Analysis/Policy/Inline	P8	"Move atomically with the owning subject."
 tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Repository	Analysis/Policy/Inline	P8	"Move atomically with the owning subject."
 tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Service	Analysis/Policy/Inline	P8	"Move atomically with the owning subject."
+tests/Analysis/Policy/Inline/Fixtures/NarrowControl	Analysis/Policy/Inline	P8	"Move atomically with the owning subject."
 tests/Analysis/Policy/Inline/Fixtures/ThresholdAudit	Analysis/Policy/Inline	P8	"Move atomically with the owning subject."
 tests/Analysis/Run/Fixtures	Analysis/Run	P3	"Move atomically with the owning subject."
 tests/Analysis/Run/Fixtures/CouplingProject	Analysis/Run	P3	"Move atomically with the owning subject."

@@ -7,11 +7,17 @@ namespace QmxDirectiveAudit;
 /**
  * One entry of the audit's `directives[]`, read strictly.
  *
- * Every field is required. The audit publishes all five on every entry, so an
+ * Every field is required. The audit publishes all six on every entry, so an
  * entry missing one is a report of a shape this library does not know how to
  * judge — and the defaults that used to stand in for the missing ones
  * (`form ?? 'threshold'`) were how one parameter came to accept two different
  * shapes of data.
+ *
+ * `reason` is required and nullable, which is not the same as optional: the
+ * audit publishes the key on every entry and its value only beside
+ * `unmeasured`. A reader treating the key as optional would read a report that
+ * stopped publishing reasons at all as a population with none, which is exactly
+ * the shape the heterogeneity floor is there to refuse.
  */
 final readonly class AuditedVerdict
 {
@@ -21,6 +27,7 @@ final readonly class AuditedVerdict
         public string $form,
         public string $target,
         public string $effect,
+        public ?string $reason,
     ) {}
 
     /**
@@ -38,6 +45,7 @@ final readonly class AuditedVerdict
             self::requireString($row, 'form', $where),
             self::requireString($row, 'target', $where),
             self::requireString($row, 'effect', $where),
+            self::requireNullableString($row, 'reason', $where),
         );
     }
 
@@ -93,6 +101,26 @@ final readonly class AuditedVerdict
 
         if (!\is_string($value)) {
             throw new AuditReportError(self::wrongType($where, $key, 'a string', $value));
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param array<mixed, mixed> $row
+     *
+     * @throws AuditReportError
+     */
+    private static function requireNullableString(array $row, string $key, string $where): ?string
+    {
+        if (!\array_key_exists($key, $row)) {
+            throw new AuditReportError(\sprintf('%s: "%s" is missing.', $where, $key));
+        }
+
+        $value = $row[$key];
+
+        if ($value !== null && !\is_string($value)) {
+            throw new AuditReportError(self::wrongType($where, $key, 'a string or null', $value));
         }
 
         return $value;
