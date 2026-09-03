@@ -84,10 +84,10 @@ interface InlineDirectivePolicyInterface
      * selected — the run prepares its directives either way, because what is
      * prepared is the author's own record and not the rule's state.
      *
-     * `$producedFindings` must carry everything the run produced, the channel
-     * a run assembles *after* rule execution included. A caller that passes
-     * only the executor's own set reports every suppression aimed at that
-     * channel as silencing nothing.
+     * `$producedFindings` carries what the rules produced. The channel a run
+     * assembles *after* rule execution is deliberately not part of it: a
+     * suppression may not address that channel at all, so adding it could only
+     * widen the universe past anything a verdict is judged against.
      *
      * The threshold half of the same question costs one rule execution per
      * annotation and is answered by

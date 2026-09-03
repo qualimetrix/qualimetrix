@@ -181,7 +181,7 @@ Suppression "complexity" addresses no channel. Addressable names closest to it: 
 | `annotation.invalid-threshold`     | сам payload `@qmx-threshold` некорректен                                                                                                              |
 | `annotation.unused-directive`      | директива корректна, но ничего из адресованного ею не сработало за этот прогон — обычный долг по уборке                                               |
 
-Только `annotation.unused-directive` ведёт себя как обычное нарушение: по умолчанию это `Info`, серьёзность настраивается через опцию правила `unused_directive_severity`, и его можно принять в baseline или подавить как любой другой канал. `@qmx-threshold` никогда в него не засчитывается.
+Только `annotation.unused-directive` ведёт себя как обычное нарушение: по умолчанию это `Info`, серьёзность настраивается через опцию правила `unused_directive_severity`, его можно принять в baseline, исключить или сузить git-скоупом как любой другой канал. Это единственный канал, который нельзя погасить `@qmx-ignore`: директива, адресующая его, отвергается как `annotation.unresolved-directive`, — поэтому принять его на месте можно записью в baseline. `@qmx-threshold` никогда в него не засчитывается.
 
 Inline-комментарий на той же строке не поддерживается.
 

@@ -16,8 +16,8 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan;
 use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
@@ -31,22 +31,17 @@ use Qualimetrix\Core\Path\RelativePath;
  * would be two chances to disagree about one directive, which is why the
  * projection reads the verdicts rather than repeating the accounting.
  *
- * **One computation, but not always one universe, and the difference is
- * visible.** `annotation.unused-directive` is this class's own output, so
- * `stale()` cannot be given a finding list containing it — a caller asking for
- * the channel is asking for that list to be produced. A caller asking for
- * verdicts is not, and is given the wider list, the channel included. A
- * suppression aimed at that channel is therefore answered differently by the
- * two: a `@qmx-ignore-next-line annotation.unused-directive` above a stale
- * directive is reported live by the verdicts and stale by the channel. The
- * verdicts are the correct answer of the two — it did silence the neighbour's
- * finding — and the channel's blind spot predates them. Recorded rather than
- * papered over; narrowing the verdicts back to the channel's list would
- * restore the defect that made every such suppression inert by construction.
- *
- * The one narrowing that *is* correct is by directive rather than by channel,
- * and {@see withoutOwnComplaint()} does it: a directive may not be credited
- * with silencing the complaint it produced by being dead.
+ * **One computation, one universe.** `annotation.unused-directive` is this
+ * class's own output, and {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan} is why no accounting
+ * has to be done about it: a directive that reaches the channel is refused
+ * where it was written, and one that reaches it without naming it — the form
+ * with no rule filter — silences nothing, because the publication filter
+ * declines to apply any directive to that channel. Two devices used to hold
+ * that line and are gone with the loophole they patched: the verdicts were
+ * judged against a wider list than the findings were, and a directive had to
+ * be denied credit for the complaint it earned by being dead. Both existed
+ * only to correct the crediting of this one channel, and nothing is credited
+ * with it any more.
  *
  * It is a pure function of the prepared directives and the produced findings,
  * and it holds no run state — {@see \Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy} keeps that and asks
@@ -70,6 +65,15 @@ final class DirectiveUsage
     private readonly ChannelLevelAddressing $levels;
 
     /**
+     * The refusal an author already read, asked here rather than derived
+     * again: a directive reaching the banned channel is refused where it was
+     * written, and this class has to answer "already refused" about the very
+     * same directive. Two derivations would let `check` refuse a form that
+     * `directives` still judged.
+     */
+    private readonly DirectiveChannelBan $ban;
+
+    /**
      * Two views and not the composite that implements both: the composite
      * exists so one object can answer everything, not so every consumer may
      * ask everything, and it says so itself. The composition root passes the
@@ -82,6 +86,7 @@ final class DirectiveUsage
         private readonly ChannelDeclarationRegistryInterface $declarations,
     ) {
         $this->levels = new ChannelLevelAddressing($identity);
+        $this->ban = new DirectiveChannelBan($identity);
     }
 
     /**
@@ -132,38 +137,6 @@ final class DirectiveUsage
     }
 
     /**
-     * The findings this directive may be credited with, which are all of them
-     * except the complaint about itself.
-     *
-     * A directive that silences nothing produces one: `stale()` writes an
-     * `annotation.unused-directive` finding at the line the directive was
-     * written on, and a file-scoped suppression of that very channel covers
-     * every line of its file, its own included. Left in, the finding a
-     * directive earns by being dead is the finding that proves it alive —
-     * measured on a fixture whose only annotation is
-     * `@qmx-ignore-file annotation.unused-directive`, which `check` shows
-     * changes nothing and which came out `effective`.
-     *
-     * The exclusion is by line, so two directives authored on one line lose
-     * each other's complaint as well as their own. That is a deliberate
-     * approximation of an exact identity this class cannot read back off a
-     * finding, and it errs where the alternative errs worse: such a directive
-     * is still credited with every complaint elsewhere in its file, so the
-     * approximation bites only when the whole file has no other.
-     *
-     * @param list<Finding> $findings
-     *
-     * @return list<Finding>
-     */
-    private static function withoutOwnComplaint(string $file, Suppression $directive, array $findings): array
-    {
-        return array_values(array_filter($findings, static fn(Finding $finding): bool
-            => $finding->code !== InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME
-            || $finding->location->line !== $directive->line
-            || $finding->location->pathString() !== $file));
-    }
-
-    /**
      * The findings a suppression could have silenced at all.
      *
      * A channel a configuration validator declares is exempt from annotation
@@ -178,6 +151,16 @@ final class DirectiveUsage
      * This is not the publication ledger of D4 creeping back in. That ledger
      * is a configuration choice about a report; this is a property of the
      * producing type, true for every run and every configuration.
+     *
+     * **The banned channel is deliberately not filtered here, and the omission
+     * is a decision.** {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan} makes every directive
+     * that could reach it unmeasurable, and {@see evaluate()} short-circuits on
+     * a reason before it ever asks what a directive silenced — so a branch
+     * dropping that channel here could not be reached by any authored form,
+     * and nothing could prove it right or wrong. The symmetry a later reader
+     * will be tempted to complete is untestable, not missing. A configuration
+     * error is the opposite case: those directives are accepted, and this
+     * filter is the only thing that keeps them from being called live.
      *
      * @param list<Finding> $findings
      *
@@ -217,8 +200,7 @@ final class DirectiveUsage
 
                 $effect = match (true) {
                     $reason !== null => DirectiveEffect::Unmeasured,
-                    self::anyOfTheGroupFired($file, $group, self::withoutOwnComplaint($file, $directive, $findings))
-                        => DirectiveEffect::Effective,
+                    self::anyOfTheGroupFired($file, $group, $findings) => DirectiveEffect::Effective,
                     default => DirectiveEffect::Inert,
                 };
 
@@ -312,12 +294,16 @@ final class DirectiveUsage
      * cleanliness as a defect.
      *
      * Nor is one judged whose pair {@see ChannelLevelAddressing} already
-     * refused, whose selector expands to no channel at all, or whose channels
-     * no producer owns: `coupling.cbo:project`, naming a level
-     * `coupling.cbo` never reports at, can never be silenced by any finding,
-     * so calling it stale on top of the `annotation.unresolved-directive`
+     * refused, whose selector expands to no channel at all, whose channels no
+     * producer owns, or which reaches the channel
+     * {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan} refuses: `coupling.cbo:project`, naming a
+     * level `coupling.cbo` never reports at, can never be silenced by any
+     * finding, so calling it stale on top of the
+     * `annotation.unresolved-directive`
      * {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability} already raised would answer one mistake
-     * twice. All three arrive here as the same answer for the same reason.
+     * twice. All four arrive here as the same answer for the same reason, and
+     * the ban is asked in the order the refusal decides it — after the pair,
+     * so that a wrong level is still reported as a wrong level.
      *
      * The levels come from the whole authored group rather than from its first
      * binding: one authored site expands to a binding per applicable
@@ -342,7 +328,7 @@ final class DirectiveUsage
             return DirectiveUnmeasurableReason::AddressesEveryChannel;
         }
 
-        if ($this->levels->problemWith((string) $target) !== null) {
+        if ($this->alreadyRefused($suppression)) {
             return DirectiveUnmeasurableReason::AlreadyRefused;
         }
 
@@ -376,6 +362,28 @@ final class DirectiveUsage
         return $sawDisabledProducer
             ? DirectiveUnmeasurableReason::ProducerDisabled
             : DirectiveUnmeasurableReason::AlreadyRefused;
+    }
+
+    /**
+     * Whether the author has already been told about this directive.
+     *
+     * Two refusals, one answer, and both are asked in the order
+     * {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability} decides them in: the pair first, so
+     * that a level a channel never reports at is reported as a wrong level,
+     * and the ban second. Asking either differently here is how `check` and
+     * `directives` would come to disagree about one authored line.
+     */
+    private function alreadyRefused(Suppression $suppression): bool
+    {
+        $target = $suppression->target();
+
+        if ($this->levels->problemWith((string) $target) !== null) {
+            return true;
+        }
+
+        $selector = $target->selector();
+
+        return $selector !== null && $this->ban->problemWith((string) $target, $selector->channel()) !== null;
     }
 
     /**

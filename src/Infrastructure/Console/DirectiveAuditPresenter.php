@@ -210,8 +210,8 @@ final readonly class DirectiveAuditPresenter
             DirectiveUnmeasurableReason::ProducerDisabled
                 => 'unmeasured: the producer of the addressed channel did not run.',
             DirectiveUnmeasurableReason::AlreadyRefused
-                => 'unmeasured: the directive addresses nothing this run could apply it to; '
-                    . '`annotation.unresolved-directive` answers it.',
+                => 'unmeasured: the directive addresses nothing this run could apply it to, or a channel no '
+                    . 'directive may address; `annotation.unresolved-directive` answers it.',
             DirectiveUnmeasurableReason::AddressesEveryChannel
                 => 'unmeasured: it carries no rule filter, so there is no producer to consult.',
             DirectiveUnmeasurableReason::Masked => self::maskedSentence($verdict->maskedBy),

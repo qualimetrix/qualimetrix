@@ -5889,6 +5889,11 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveChannelBan",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveNameHints",
           "closes_in": null
         },
@@ -8232,6 +8237,11 @@
         {
           "owner": "Infrastructure.Rule",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveChannelBan",
           "closes_in": null
         }
       ]
@@ -11862,6 +11872,14 @@
     },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveAddressability": {
       "path": "src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "closure_package": "P6-B",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveChannelBan": {
+      "path": "src/Analysis/Policy/Inline/Directive/DirectiveChannelBan.php",
       "kind": "class",
       "owner": "Analysis.Policy.Inline",
       "visibility": "internal",

@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan;
 
 /**
  * Filters findings based on suppression tags in code.
@@ -122,9 +123,23 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
      * declaration is presented. The two physical forms are bound to the file
      * they were written in, and the next-line form additionally to the line
      * after it.
+     *
+     * {@see DirectiveChannelBan} is asked first and about the finding alone:
+     * no directive silences the banned channel, the form that names it having
+     * been refused where it was written and the form that names nothing having
+     * covered it only by covering everything. Asking here rather than in the
+     * two callers is what makes publication and the usage accounting one
+     * answer — both reach a finding through this method — and it leaves the
+     * finding *retained* rather than lifted out of the pipeline, so it goes on
+     * through the exclusions, the baseline ceiling and the git scope like the
+     * ordinary debt it is.
      */
     private static function applies(string $file, Suppression $suppression, Finding $finding): bool
     {
+        if (DirectiveChannelBan::covers($finding->code)) {
+            return false;
+        }
+
         if (!$suppression->matches($finding->code, $finding->level())) {
             return false;
         }

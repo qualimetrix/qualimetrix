@@ -30,7 +30,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
  * `new Finding(...)` so the emission guard can still read the channel of
  * each one off a `self::` constant.
  *
- * @qmx-threshold coupling.instability warning=0.85 error=0.85 -- Ca=2, Ce=9: this class answers for the whole directive vocabulary, so it depends outward on every part of it and is depended on by the two halves that ask. The measured 0.82 did not move when the threshold half arrived; the second dependent is what made an always-structural value reportable at all, since the class rule needs min_afferent=2. Same shape as VisitorMethodContext's composition root.
+ * @qmx-threshold coupling.instability warning=0.85 error=0.85 -- Ca=2, Ce=10: this class answers for the whole directive vocabulary, so it depends outward on every part of it and is depended on by the two halves that ask. The measured 0.83 moved by one dependency when the ban arrived and stays structural; the second dependent is what made an always-structural value reportable at all, since the class rule needs min_afferent=2. Same shape as VisitorMethodContext's composition root.
  */
 final readonly class DirectiveAddressability
 {
@@ -43,11 +43,20 @@ final readonly class DirectiveAddressability
      */
     private ChannelLevelAddressing $levels;
 
+    /**
+     * The channel no directive may address, built here for the same reason as
+     * the two above and asked by {@see \Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage} as well: the
+     * refusal an author reads and the reason the audit reports are the same
+     * answer, and deriving it twice would be two chances to disagree.
+     */
+    private DirectiveChannelBan $ban;
+
     public function __construct(
         private ChannelIdentityInterface $identity,
     ) {
         $this->hints = new DirectiveNameHints($identity);
         $this->levels = new ChannelLevelAddressing($identity);
+        $this->ban = new DirectiveChannelBan($identity);
     }
 
     /**
@@ -59,6 +68,13 @@ final readonly class DirectiveAddressability
      * An impossible pair is refused by {@see ChannelLevelAddressing} and by
      * nothing here: the configuration seam asks the same question of the same
      * object, so the two families of directive cannot answer it differently.
+     *
+     * {@see DirectiveChannelBan} is asked **last**, and the order is load
+     * bearing rather than incidental: `annotation.unused-directive:class`
+     * names a level that channel never reports at, and a ban asked first would
+     * answer that mistake with the wrong sentence — the author would be told
+     * the channel may not be addressed when what they wrote is a pair that
+     * cannot exist.
      */
     public function problemWithSuppression(Suppression $suppression): ?string
     {
@@ -104,16 +120,16 @@ final readonly class DirectiveAddressability
             );
         }
 
-        if ($this->identity->expand($selector->channel()) !== []) {
-            return null;
+        if ($this->identity->expand($selector->channel()) === []) {
+            return \sprintf(
+                'Suppression "%s" addresses no channel. %s Prose belongs after "%s".',
+                $raw,
+                $this->hints->forChannelSelector($selector->channel()),
+                Suppression::REASON_SEPARATOR,
+            );
         }
 
-        return \sprintf(
-            'Suppression "%s" addresses no channel. %s Prose belongs after "%s".',
-            $raw,
-            $this->hints->forChannelSelector($selector->channel()),
-            Suppression::REASON_SEPARATOR,
-        );
+        return $this->ban->problemWith($raw, $selector->channel());
     }
 
     /**

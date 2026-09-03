@@ -181,7 +181,7 @@ A directive that names something invalid, or that no longer fires, is not silent
 | `annotation.invalid-threshold`     | the `@qmx-threshold` payload itself is malformed                                                                                                         |
 | `annotation.unused-directive`      | the directive is valid but nothing it addressed fired this run — ordinary cleanup debt                                                                   |
 
-Only `annotation.unused-directive` behaves like an ordinary finding: it defaults to `Info`, its severity is configurable via the `unused_directive_severity` rule option, and it can be baselined or suppressed like any other channel. `@qmx-threshold` never counts toward it.
+Only `annotation.unused-directive` behaves like an ordinary finding: it defaults to `Info`, its severity is configurable via the `unused_directive_severity` rule option, and it can be baselined, excluded or narrowed by a git scope like any other channel. It is the one channel no `@qmx-ignore` can silence — a directive addressing it is refused as an `annotation.unresolved-directive` — so a baseline entry is the way to accept it in place. `@qmx-threshold` never counts toward it.
 
 An inline same-line comment is not supported.
 

@@ -32,7 +32,9 @@ An annotation is a claim about the code: "this finding is expected and accepted.
 
 The first three are **configuration errors**: they report a mistake in what was written, not debt in the analysed code. Like the architecture configuration diagnostics (see [Architecture Rules](architecture.md#coverage-modes)), they fail the run unconditionally whenever they fire — `fail_on` is not consulted, not even `fail_on: none` — and none of them can be accepted into a baseline or silenced with another `@qmx-ignore`. A severity option on any of them would look like a behaviour switch while changing nothing, so none of the three exposes one.
 
-`annotation.unused-directive` is different: the directive was well-formed and once mattered, it just did not suppress or override anything this particular run. That is ordinary cleanup debt, not a mistake — it behaves like any other rule, with a configurable severity, and it can be baselined or suppressed like any other finding.
+`annotation.unused-directive` is different: the directive was well-formed and once mattered, it just did not suppress or override anything this particular run. That is ordinary cleanup debt, not a mistake — it behaves like any other rule, with a configurable severity, and it can be accepted into a baseline, excluded by path or namespace, and narrowed by a git scope like any other finding.
+
+The one thing it cannot be is **suppressed by a directive**. `@qmx-ignore`, `@qmx-ignore-next-line` and `@qmx-ignore-file` are all refused when their target reaches `annotation.unused-directive` — by its exact name, through `annotation.*`, or with `:file` after either — and the refusal is reported as `annotation.unresolved-directive` on the line the directive was written on. A directive that hid this channel would hide the answer to the question the channel exists to ask. A bare `@qmx-ignore-file` with no channel at all is not refused, since it names nothing to refuse, but it no longer silences the channel either.
 
 <!-- llms:skip-begin -->
 ### Example
@@ -127,7 +129,7 @@ three tags reading the same way.
 - **`annotation.unresolved-directive`** — fix the name. Use the exact channel name for `@qmx-ignore` (or `X.*` for every descendant of `X`), and the exact rule name for `@qmx-threshold`. If a computed metric annotation started failing, either restore the metric in `computed_metrics:` or remove the now-dangling annotation. If the message points at the first word of your reason, you wrote `@qmx-ignore-file` followed directly by prose with no channel — add `--` before the reason (see the example above).
 - **`annotation.unsupported-threshold`** — remove the `@qmx-threshold`; the targeted rule has no options a threshold can override. Check the rule's `Options` section on its own page for what it does accept.
 - **`annotation.invalid-threshold`** — fix the payload to match the rule's option shape (see that rule's `Configuration` section for the expected keys and value types).
-- **`annotation.unused-directive`** — delete the annotation. It is not doing anything, and leaving it in place misleads the next reader into thinking a finding is still being suppressed.
+- **`annotation.unused-directive`** — delete the annotation. It is not doing anything, and leaving it in place misleads the next reader into thinking a finding is still being suppressed. If deleting it is not an option yet, accept the finding into a baseline or exclude the path; another `@qmx-ignore` is not one of the choices, and is refused.
 
 <!-- llms:skip-end -->
 

@@ -668,6 +668,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\StaleDirectiveFinding'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveAudit'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveNameHints'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveRejection'

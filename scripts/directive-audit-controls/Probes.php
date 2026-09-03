@@ -34,6 +34,14 @@ final class Probes
 
     private const string USAGE = 'src/Analysis/Policy/Inline/Directive/Audit/DirectiveUsage.php';
 
+    private const string BAN = 'src/Analysis/Policy/Inline/Directive/DirectiveChannelBan.php';
+
+    private const string ADDRESSABILITY = 'src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php';
+
+    private const string FILTER = 'src/Analysis/Policy/Inline/Suppression/SuppressionFilter.php';
+
+    private const string PROJECTOR = 'src/Reporting/FindingProjection/FindingProjector.php';
+
     private const string LEVEL_ACTIVITY = 'src/Analysis/Finding/Contract/LevelActivity.php';
 
     private const string COMMAND = 'src/Infrastructure/Console/Command/DirectivesCommand.php';
@@ -1050,25 +1058,9 @@ final class Probes
                 'suppression-never-fires',
                 'a suppression that silenced a real finding is reported as silencing nothing',
                 self::USAGE,
-                ['                    self::anyOfTheGroupFired($file, $group, self::withoutOwnComplaint($file, $directive, $findings))'
-                    => '                    false'],
-                [
-                    'itCallsASuppressionEffectiveWhenItSilencedAFinding',
-                    'itJudgesASuppressionOfTheChannelProducedAfterRuleExecution',
-                ],
-            ),
-            Probe::breaking(
-                'universe-drops-the-late-channel',
-                'the universe is the executor\'s own set, so the channel assembled after execution is invisible',
-                self::PIPELINE,
-                ["        \$produced = [\n"
-                    . "            ...\$prepared->ruleExecution->produced,\n"
-                    . "            ...\$this->ruleProducerPreparation->auditInlineDirectives(\n"
-                    . "                \$prepared->ruleExecution->produced,\n"
-                    . "                \$prepared->ruleExecution->levelActivity,\n"
-                    . "            ),\n"
-                    . '        ];' => '        $produced = $prepared->ruleExecution->produced;'],
-                ['itJudgesASuppressionOfTheChannelProducedAfterRuleExecution'],
+                ['                    self::anyOfTheGroupFired($file, $group, $findings) => DirectiveEffect::Effective,'
+                    => '                    false => DirectiveEffect::Effective,'],
+                ['itCallsASuppressionEffectiveWhenItSilencedAFinding'],
             ),
             Probe::breaking(
                 'exit-on-an-unaskable-inert',
@@ -1148,12 +1140,63 @@ final class Probes
                 ],
             ),
             Probe::breaking(
-                'directive-justifies-itself',
-                'a directive is credited with silencing the complaint it produced by being dead',
-                self::USAGE,
-                ['                    self::anyOfTheGroupFired($file, $group, self::withoutOwnComplaint($file, $directive, $findings))'
-                    => '                    self::anyOfTheGroupFired($file, $group, $findings)'],
-                ['itDoesNotLetADirectiveJustifyItselfWithItsOwnComplaint'],
+                'ban-refuses-nothing',
+                'a directive addressing the channel that reports what directives did is accepted after all',
+                self::BAN,
+                ['        foreach ($this->identity->expand($selector) as $channel) {'
+                    => '        foreach ([] as $channel) {'],
+                [
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel',
+                    'itRefusesToJudgeADirectiveThatReachesTheBannedChannel',
+                ],
+            ),
+            Probe::breaking(
+                'ban-spreads-to-configuration-errors',
+                'the ban creeps onto the three neighbouring channels, which are accepted and judged inert',
+                self::BAN,
+                ['        return $code === InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME;'
+                    => "        return str_starts_with(\$code, 'annotation.');"],
+                ['itDoesNotCallASuppressionOfAConfigurationErrorEffective'],
+            ),
+            Probe::breaking(
+                'ban-yields-to-the-pair-grammar',
+                'the ban is asked before the channel:level grammar, so a wrong level is answered as a ban',
+                self::ADDRESSABILITY,
+                [
+                    '        $pairProblem = $this->levels->problemWith($raw, \sprintf(\'Suppression "%s"\', $raw));'
+                    => "        \$banFirst = \$target->selector();
+"
+                        . "        if (\$banFirst !== null && \$this->ban->problemWith(\$raw, \$banFirst->channel()) !== null) {
+"
+                        . "            return \$this->ban->problemWith(\$raw, \$banFirst->channel());
+"
+                        . "        }
+"
+                        . '        $pairProblem = $this->levels->problemWith($raw, \'Suppression "\' . $raw . \'"\');',
+                ],
+                ['itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan'],
+            ),
+            Probe::breaking(
+                'publication-silences-the-banned-channel',
+                'a directive with no rule filter goes on hiding the channel it cannot name',
+                self::FILTER,
+                ["        if (DirectiveChannelBan::covers(\$finding->code)) {
+            return false;
+        }
+
+"
+                    => ''],
+                ['itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel'],
+            ),
+            Probe::breaking(
+                'banned-channel-lifted-out-of-the-pipeline',
+                'the banned channel is treated as a configuration error, so no exclusion or baseline reaches it',
+                self::PROJECTOR,
+                ['        return $this->declarations->declarationFor($finding->channel())?->isConfigurationError() === true;'
+                    => "        return \$this->declarations->declarationFor(\$finding->channel())?->isConfigurationError() === true
+"
+                        . "            || \$finding->code === 'annotation.unused-directive';"],
+                ['itLeavesTheBannedChannelInsideEveryStageAfterSuppression'],
             ),
             Probe::breaking(
                 'suppression-silences-a-configuration-error',

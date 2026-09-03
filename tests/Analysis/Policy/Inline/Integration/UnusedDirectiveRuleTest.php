@@ -89,11 +89,77 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::assertStringContainsString('coupling.instability', $findings[0]->message);
     }
 
+    /**
+     * Both spellings reach `annotation.unused-directive`, and no directive may
+     * address it: the channel reports the directives that did nothing, so a
+     * directive silencing it would hide its own answer. The refusal names the
+     * channel rather than the selector, because the group form does not
+     * contain it.
+     */
     #[Test]
-    public function itAcceptsAnExactChannelAndAGroupThatCoversSomething(): void
+    #[DataProvider('provideSpellingsThatReachTheBannedChannel')]
+    public function itRefusesAnExactChannelAndAGroupThatReachTheBannedChannel(string $spelling): void
     {
-        self::assertSame([], self::runWithSuppression(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME));
-        self::assertSame([], self::runWithSuppression('annotation.*'));
+        $findings = self::runWithSuppression($spelling);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
+            $findings[0]->code,
+        );
+        self::assertStringContainsString(
+            InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
+            $findings[0]->message,
+        );
+        self::assertStringContainsString('which no directive may silence', $findings[0]->message);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideSpellingsThatReachTheBannedChannel(): iterable
+    {
+        yield 'the exact name' => [InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME];
+        yield 'a group that covers it' => ['annotation.*'];
+        yield 'the exact name at the level it reports at' => [
+            InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME . ':file',
+        ];
+        yield 'a group that covers it, at that level' => ['annotation.*:file'];
+    }
+
+    /**
+     * The ban stands after the pair grammar, not before it. `:class` is a
+     * level this channel never reports at, and an author who wrote that
+     * mistake must read about the level rather than about the ban.
+     */
+    #[Test]
+    public function itStillAnswersAnImpossiblePairAboutTheLevel(): void
+    {
+        $findings = self::runWithSuppression(
+            InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME . ':class',
+        );
+
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('it does not report at level "class"', $findings[0]->message);
+        self::assertStringNotContainsString('no directive may silence', $findings[0]->message);
+    }
+
+    /**
+     * The three neighbouring channels are configuration errors, and the ban
+     * does not reach them: a directive naming one is still accepted, still
+     * inert, and still says so.
+     */
+    #[Test]
+    #[DataProvider('provideNeighbouringChannels')]
+    public function itAcceptsADirectiveNamingANeighbouringConfigurationErrorChannel(string $channel): void
+    {
+        self::assertSame([], self::runWithSuppression($channel));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideNeighbouringChannels(): iterable
+    {
+        yield 'unresolved' => [InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME];
+        yield 'unsupported threshold' => [InlineDirectivePolicyInterface::UNSUPPORTED_THRESHOLD_NAME];
+        yield 'invalid threshold' => [InlineDirectivePolicyInterface::INVALID_THRESHOLD_NAME];
     }
 
     /**

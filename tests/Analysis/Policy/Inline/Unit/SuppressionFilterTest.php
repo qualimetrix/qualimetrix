@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
@@ -115,6 +116,63 @@ final class SuppressionFilterTest extends TestCase
 
         self::assertFalse($filter->shouldInclude($finding1));
         self::assertFalse($filter->shouldInclude($finding2));
+    }
+
+    /**
+     * No directive silences `annotation.unused-directive`, whatever its form:
+     * the channel reports what directives did, and a directive hiding it would
+     * answer for itself. The form that names it is refused where it is
+     * written; the form that names nothing reaches here, and here is where it
+     * stops.
+     *
+     * The finding is *retained*, not lifted out: everything after this stage —
+     * the exclusions, the baseline ceiling, the git scope — still sees it.
+     */
+    #[Test]
+    #[DataProvider('provideDirectivesThatCannotSilenceTheBannedChannel')]
+    public function itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid(
+        Suppression $suppression,
+    ): void {
+        $filter = new SuppressionFilter();
+        $filter->setSuppressions('src/Foo.php', [$suppression]);
+
+        $banned = $this->createFinding('src/Foo.php', 11, 'annotation.unused-directive');
+
+        self::assertTrue($filter->shouldInclude($banned));
+        self::assertSame([], $filter->getSuppressedFindings([$banned]));
+        self::assertFalse(SuppressionFilter::suppressesAny('src/Foo.php', $suppression, [$banned]));
+    }
+
+    /** @return iterable<string, array{Suppression}> */
+    public static function provideDirectivesThatCannotSilenceTheBannedChannel(): iterable
+    {
+        yield 'no rule filter' => [new Suppression('*', null, 1, SuppressionType::File)];
+        yield 'the exact name' => [
+            new Suppression('annotation.unused-directive', null, 1, SuppressionType::File),
+        ];
+        yield 'a group that covers it' => [new Suppression('annotation.*', null, 1, SuppressionType::File)];
+        yield 'the line above' => [
+            new Suppression('annotation.unused-directive', null, 10, SuppressionType::NextLine),
+        ];
+    }
+
+    /**
+     * The neighbour a reader will expect to behave the same way does not: a
+     * configuration error is kept out of a report by the projection, not by
+     * this filter, and widening the ban to it here would be a second answer to
+     * a question already answered elsewhere.
+     */
+    #[Test]
+    public function itStillMatchesADirectiveAgainstANeighbouringAnnotationChannel(): void
+    {
+        $filter = new SuppressionFilter();
+        $filter->setSuppressions('src/Foo.php', [
+            new Suppression('annotation.unresolved-directive', null, 1, SuppressionType::File),
+        ]);
+
+        self::assertFalse($filter->shouldInclude(
+            $this->createFinding('src/Foo.php', 11, 'annotation.unresolved-directive'),
+        ));
     }
 
     #[Test]

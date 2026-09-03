@@ -24,9 +24,10 @@ enum DirectiveUnmeasurableReason: string
 
     /**
      * The directive was already refused elsewhere — an unaddressable
-     * `channel:level` pair, a selector that expands to no channel, or a
-     * channel no producer owns. `annotation.unresolved-directive` answers all
-     * three, and answering again would judge one mistake twice.
+     * `channel:level` pair, a selector that expands to no channel, a channel
+     * no producer owns, or a target reaching the one channel no directive may
+     * address at all. `annotation.unresolved-directive` answers all four, and
+     * answering again would judge one mistake twice.
      */
     case AlreadyRefused = 'already-refused';
 

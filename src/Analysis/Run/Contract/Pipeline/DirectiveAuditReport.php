@@ -19,9 +19,12 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
  * produced it — a threshold retuning a metric computed over the analysed
  * subgraph can be live over one tree and dead over a subdirectory of it — so
  * the scope it was measured under travels with it. `$producedFindings` is the
- * size of the universe the verdicts were judged against: everything the run
- * produced — including the one channel a run assembles after rule execution —
- * and not what a report would have published.
+ * size of the universe the verdicts were judged against: what the rules
+ * produced, and not what a report would have published. It stops one short of
+ * everything a run assembles: the channel put together after rule execution is
+ * outside it, because no directive may address that channel and so no verdict
+ * is judged against it. A count including it would name a universe the
+ * verdicts were not measured in.
  *
  * The **sweep scope** is context of the same kind and is carried for the same
  * reason: it says how each verdict was measured. The two scopes answer the same
