@@ -1,0 +1,247 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Derives, from the types themselves, the complete set of authored directive
+ * forms that can address the channel `annotation.unused-directive`, and prints
+ * it as the markdown the stand keeps beside it.
+ *
+ * A tool of this push, not a standing gate: the standing guards of the ban are
+ * the tests and probes of package 2. It exists because a hand-written
+ * enumeration in this repository has been wrong three times, each time by a new
+ * mechanism.
+ *
+ * Four axes, each read from the code rather than from prose:
+ *
+ * - tag        — `SuppressionType::cases()`;
+ * - selector   — the grammar of `NameSelector::tryParse()`, derived and then
+ *                cross-checked by brute force over a candidate space;
+ * - level      — `SymbolLevel::cases()` against the levels the channel is
+ *                declared at;
+ * - no filter  — `SuppressionTarget`, whose two spellings desugar into one.
+ *
+ * Usage: php stand-enumerate-forms.php [--output=<file>]
+ */
+
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+
+$root = dirname(__DIR__, 5);
+require $root . '/vendor/autoload.php';
+
+const CHANNEL = 'annotation.unused-directive';
+
+$output = null;
+foreach (array_slice($argv, 1) as $argument) {
+    if (str_starts_with($argument, '--output=')) {
+        $output = substr($argument, \strlen('--output='));
+
+        continue;
+    }
+
+    fwrite(\STDERR, 'unknown argument: ' . $argument . "\n");
+
+    exit(2);
+}
+
+$fail = static function (string $message): never {
+    fwrite(\STDERR, 'stand-enumerate-forms: ' . $message . "\n");
+
+    exit(1);
+};
+
+$container = (new ContainerFactory())->create();
+$identity = $container->get(ChannelIdentityInterface::class);
+if (!$identity instanceof ChannelIdentityInterface) {
+    $fail('the container did not answer with a channel identity');
+}
+
+if (!$identity->hasChannel(CHANNEL)) {
+    $fail('the tree does not declare ' . CHANNEL);
+}
+
+// Axis "tag".
+$tags = array_map(static fn(SuppressionType $type): string => $type->value, SuppressionType::cases());
+
+// Axis "selector", derived from the grammar: equality with the channel itself,
+// plus one group selector per proper dotted prefix.
+$derived = [CHANNEL];
+$segments = explode('.', CHANNEL);
+for ($i = 1; $i < \count($segments); $i++) {
+    $derived[] = implode('.', \array_slice($segments, 0, $i)) . '.*';
+}
+sort($derived);
+
+// The same set, obtained by brute force over a deliberately wider candidate
+// space, so that the derivation is checked against something it did not write.
+$stems = [
+    '',
+    '*',
+    '**',
+    'a',
+    'annotation',
+    'annotation.unused',
+    'annotation.unused-directive',
+    'annotation.unused-directive.x',
+    'unused-directive',
+];
+$candidates = [];
+foreach ($stems as $stem) {
+    $candidates[] = $stem;
+    $candidates[] = $stem . '.*';
+    $candidates[] = $stem . '*';
+}
+$candidates = array_values(array_unique($candidates));
+
+$bruteForced = [];
+$candidateVerdicts = [];
+foreach ($candidates as $candidate) {
+    $selector = NameSelector::tryParse($candidate);
+    if ($selector === null) {
+        $candidateVerdicts[$candidate] = 'not a selector';
+
+        continue;
+    }
+
+    $expanded = array_map(
+        static fn(FindingChannel $channel): string => (string) $channel,
+        $identity->expand($selector),
+    );
+    $covers = \in_array(CHANNEL, $expanded, true);
+    $candidateVerdicts[$candidate] = \sprintf('expand -> %d%s', \count($expanded), $covers ? ', COVERS' : '');
+    if ($covers) {
+        $bruteForced[] = $candidate;
+    }
+}
+sort($bruteForced);
+
+$agree = $derived === $bruteForced;
+
+// Axis "level".
+$levelVocabulary = array_map(static fn(SymbolLevel $level): string => $level->value, SymbolLevel::cases());
+$declaredLevels = array_map(static fn(SymbolLevel $level): string => $level->value, $identity->levelsOf(CHANNEL));
+
+// Axis "no rule filter": both spellings desugar into the same target.
+$noFilterSpellings = ['*' => SuppressionTarget::fromAnnotation('*'), '(omitted argument)' => SuppressionTarget::fromAnnotation(SuppressionTarget::NO_RULE_FILTER)];
+$noFilterStates = [];
+foreach ($noFilterSpellings as $spelling => $target) {
+    $noFilterStates[$spelling] = $target->appliesToEveryChannel() ? 'every channel' : 'selector';
+}
+
+$selectorCount = \count($bruteForced);
+$levelCount = \count($levelVocabulary);
+$formsPerTag = $selectorCount * (1 + $levelCount) + 1;
+$grid = \count($tags) * $formsPerTag;
+
+$lines = [];
+$lines[] = '<!-- Generated by stand-enumerate-forms.php. Do not edit by hand. -->';
+$lines[] = '';
+$lines[] = '# X4 — the grid of authored forms, re-derived from the code';
+$lines[] = '';
+$lines[] = 'Produced by `stand-enumerate-forms.php`, which reads the types rather than the';
+$lines[] = 'prose. It re-derives §2 of `measurement-directive-forms.md` for the stand, so';
+$lines[] = 'that the stand\'s grid rests on a run of this tree and not on a table copied';
+$lines[] = 'from an earlier one.';
+$lines[] = '';
+$lines[] = 'Subject channel: `' . CHANNEL . '`.';
+$lines[] = '';
+$lines[] = '## Axis "tag"';
+$lines[] = '';
+$lines[] = '`SuppressionType::cases()` -> ' . \count($tags) . ': `' . implode('`, `', $tags) . '`.';
+$lines[] = 'Where a directive is written does not add a form: the type is fixed by the tag,';
+$lines[] = 'not by the place (`SuppressionExtractor::PATTERN_SYMBOL/NEXT_LINE/FILE`). The';
+$lines[] = 'stand carries case `S-method` — a symbol form in a method docblock instead of a';
+$lines[] = 'class one — to check that by execution rather than by reading.';
+$lines[] = '';
+$lines[] = '## Axis "selector"';
+$lines[] = '';
+$lines[] = 'Derived from the grammar (equality plus one group selector per proper dotted';
+$lines[] = 'prefix): `' . implode('`, `', $derived) . '`.';
+$lines[] = '';
+$lines[] = 'Brute-forced over ' . \count($candidates) . ' candidates through the real';
+$lines[] = '`ChannelIdentityInterface::expand()`: `' . implode('`, `', $bruteForced) . '`.';
+$lines[] = '';
+$lines[] = 'AGREE: ' . ($agree ? 'yes' : 'NO');
+$lines[] = '';
+$lines[] = '| candidate | verdict |';
+$lines[] = '| --------- | ------- |';
+foreach ($candidateVerdicts as $candidate => $verdict) {
+    $lines[] = '| `' . ($candidate === '' ? '(empty string)' : $candidate) . '` | ' . $verdict . ' |';
+}
+$lines[] = '';
+$lines[] = '## Axis "level"';
+$lines[] = '';
+$lines[] = '`SymbolLevel::cases()` -> ' . $levelCount . ': `' . implode('`, `', $levelVocabulary) . '`.';
+$lines[] = 'The channel is declared at: `' . implode('`, `', $declaredLevels) . '`.';
+$lines[] = 'Every other level is a pair the channel does not report at.';
+$lines[] = '';
+$lines[] = '## Axis "no rule filter"';
+$lines[] = '';
+foreach ($noFilterStates as $spelling => $state) {
+    $lines[] = '- `' . $spelling . '` -> ' . $state;
+}
+$lines[] = '';
+$lines[] = 'Both spellings desugar into `SuppressionTarget::NO_RULE_FILTER`, so the axis';
+$lines[] = 'contributes one form per tag, not two.';
+$lines[] = '';
+$lines[] = '## The grid';
+$lines[] = '';
+$lines[] = \sprintf(
+    '%d tags x (%d selectors x (no level + %d levels) + 1 form without a filter) = %d x %d = **%d**.',
+    \count($tags),
+    $selectorCount,
+    $levelCount,
+    \count($tags),
+    $formsPerTag,
+    $grid,
+);
+$lines[] = '';
+$lines[] = 'The `@qmx-threshold` family is a fourth tag, but it addresses a **rule**, not a';
+$lines[] = 'channel, so it is not part of the suppression grid; the stand measures both of';
+$lines[] = 'its forms separately (`TH-channel`, `TH-producer`).';
+$lines[] = '';
+$lines[] = '## The blind spot, named on the same line as the claim';
+$lines[] = '';
+$lines[] = 'The grid enumerates **forms that address the channel**. It does **not**';
+$lines[] = 'enumerate compositions of several directives in one file: one directive masking';
+$lines[] = 'another, two forms addressing the same finding, a file form and a next-line form';
+$lines[] = 'competing for one line. Every case carries at most one directive under test plus';
+$lines[] = 'the fixed victim, and that pair is the only composition the stand observes.';
+$lines[] = '';
+
+$text = implode("\n", $lines);
+if ($output === null) {
+    echo $text;
+
+    exit($agree ? 0 : 1);
+}
+
+if (file_put_contents($output, $text) === false) {
+    $fail('could not write ' . $output);
+}
+
+// The pre-commit hook aligns staged markdown tables, so a generator that writes
+// unaligned ones dirties the tree on every run and `git status` stops being
+// evidence. Format what was written, then ask the formatter whether anything is
+// left to do: a silent no-op here would bring the noise straight back.
+$formatter = $root . '/scripts/format-md-tables.py';
+$formatCode = 0;
+$checkCode = 0;
+exec(escapeshellcmd('python3') . ' ' . escapeshellarg($formatter) . ' --in-place ' . escapeshellarg($output), $ignored, $formatCode);
+if ($formatCode !== 0) {
+    $fail('the markdown table formatter exited ' . $formatCode . ' on ' . $output);
+}
+exec(escapeshellcmd('python3') . ' ' . escapeshellarg($formatter) . ' --check ' . escapeshellarg($output), $ignored, $checkCode);
+if ($checkCode !== 0) {
+    $fail($output . ' still needs formatting after the formatter ran over it');
+}
+
+fwrite(\STDERR, 'wrote ' . $output . ($agree ? "\n" : " (AGREE: NO)\n"));
+
+exit($agree ? 0 : 1);

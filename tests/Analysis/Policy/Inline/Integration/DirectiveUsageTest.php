@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -93,6 +94,23 @@ final class DirectiveUsageTest extends TestCase
 
         self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
         self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason);
+    }
+
+    /**
+     * The directive was refused where it was written, so the audit answers
+     * about it with the same refusal rather than judging it a second time —
+     * which would print a staleness complaint on the line the refusal already
+     * occupies.
+     */
+    #[Test]
+    public function itRefusesToJudgeADirectiveThatReachesTheBannedChannel(): void
+    {
+        foreach ([InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, 'annotation.*'] as $target) {
+            $verdicts = self::usage()->verdicts(self::fileDirective($target), [], LevelActivity::empty());
+
+            self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect, $target);
+            self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason, $target);
+        }
     }
 
     #[Test]

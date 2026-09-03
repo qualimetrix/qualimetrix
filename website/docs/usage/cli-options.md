@@ -830,9 +830,11 @@ Four verdicts, of which three are answers and one is the absence of one:
 
 !!! info "Judged against what the rules produced, not against the report"
 
-    `exclude_paths`, `exclude_namespaces` and `exclude_namespace_channels` suppress **publication**, not measurement. A directive that moved a finding inside an excluded namespace still did something, so the audit asks its question against every finding the rules produced — including `annotation.unused-directive`, which a run assembles after the rules have run.
+    `exclude_paths`, `exclude_namespaces` and `exclude_namespace_channels` suppress **publication**, not measurement. A directive that moved a finding inside an excluded namespace still did something, so the audit asks its question against every finding the rules produced, not against the report. The one channel outside that universe is `annotation.unused-directive`, which a run assembles after the rules have run — no directive may address it, so no verdict is judged against it.
 
     The one thing a suppression is *not* credited with is silencing a configuration error (`annotation.unresolved-directive` and its two siblings). Those channels are exempt from annotation suppression by construction, not by configuration, so a directive aimed at one is reported inert however it is written.
+
+    `annotation.unused-directive` is exempt in a louder way: a directive addressing it is **refused** rather than judged, and the audit reports it `unmeasured / already-refused` — the same answer `check` gives as an `annotation.unresolved-directive` on that line.
 
 The `applied-boundary-only` verdict deliberately makes no claim about direction. The rule layer has no notion of which way is stricter — `coupling.instability` is worse when higher, `cohesion.tcc` when lower — so a directive that tightens a boundary and one that raises a boundary the measured value had already passed are the same observable. In `--format=json` this verdict keeps the stable key `overrun`.
 

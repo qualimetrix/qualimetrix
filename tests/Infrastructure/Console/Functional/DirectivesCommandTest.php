@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -15,6 +16,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
 use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
@@ -35,6 +37,14 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(DirectiveAuditPresenter::class)]
 final class DirectivesCommandTest extends TestCase
 {
+    /**
+     * The fixtures below are one class each, and a lone class is the whole
+     * graph: `coupling.class-rank` reports every one of them. Narrowing here
+     * rather than asserting around the noise keeps each case about the
+     * directive it was written for.
+     */
+    private const string WITHOUT_COUPLING = "disabled_rules: ['coupling.*']\n";
+
     private string $tempDir;
 
     protected function setUp(): void
@@ -142,47 +152,6 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
-     * `annotation.unused-directive` is assembled after rule execution rather
-     * than inside it, so a universe taken from the executor alone cannot
-     * contain it — and every suppression aimed at it comes out inert while its
-     * removal demonstrably adds findings to a `check` of the same tree.
-     */
-    #[Test]
-    public function itJudgesASuppressionOfTheChannelProducedAfterRuleExecution(): void
-    {
-        $this->writeSource('Late.php', <<<'SOURCE'
-            <?php
-            /** @qmx-ignore-file annotation.unused-directive — hides the stale directive below */
-
-            namespace Fixture;
-
-            final class Late
-            {
-                /** @qmx-ignore complexity.cyclomatic — stale: a straight line reaches no boundary */
-                public function trivial(): int
-                {
-                    return 1;
-                }
-            }
-            SOURCE);
-
-        $report = self::decode($this->audit([
-            'paths' => [$this->tempDir . '/src'],
-            '--format' => 'json',
-        ])->getDisplay());
-
-        $byTarget = [];
-        foreach ($report['directives'] as $directive) {
-            $byTarget[$directive['target']] = $directive['effect'];
-        }
-
-        self::assertSame(
-            ['annotation.unused-directive' => 'effective', 'complexity.cyclomatic' => 'inert'],
-            $byTarget,
-        );
-    }
-
-    /**
      * Where the addressed rule publishes no boundary, an inert verdict cannot
      * be told from a boundary the value had already passed. Printing it is
      * honest; exiting 2 on it would demand the author act on a question the
@@ -216,65 +185,45 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
-     * The directive that produces the complaint about itself must not be
-     * credited with silencing it. A file-scoped suppression of the staleness
-     * channel covers every line of its file, its own included, so leaving that
-     * finding in the universe made the annotation prove itself alive — while
-     * `check` reports the same tree identically with and without it.
-     */
-    #[Test]
-    public function itDoesNotLetADirectiveJustifyItselfWithItsOwnComplaint(): void
-    {
-        $this->writeSource('SelfJustifying.php', <<<'SOURCE'
-            <?php
-            /** @qmx-ignore-file annotation.unused-directive — the only annotation in this file */
-
-            namespace Fixture;
-
-            final class SelfJustifying
-            {
-                public function trivial(): int
-                {
-                    return 1;
-                }
-            }
-            SOURCE);
-
-        $report = self::decode($this->audit([
-            'paths' => [$this->tempDir . '/src'],
-            '--format' => 'json',
-        ])->getDisplay());
-
-        self::assertSame('inert', $report['directives'][0]['effect']);
-    }
-
-    /**
      * A configuration validator's channels are exempt from annotation
      * suppression by the kind of thing they are — no run and no configuration
      * lets a directive silence one. Reporting such a directive as effective
      * tells the author to keep an annotation that provably cannot work.
+     *
+     * All three are asked, each through a directive that actually produces it:
+     * the exemption is declared per channel, so a regression that reinstates
+     * suppression for one of them leaves the other two answering correctly.
+     * The verdict is half the claim — the finding the directive claimed to
+     * silence has to be in the report for `inert` to mean "the suppression
+     * failed" rather than "the channel never fired".
      */
     #[Test]
-    public function itDoesNotCallASuppressionOfAConfigurationErrorEffective(): void
-    {
-        $this->writeSource('Unsuppressable.php', <<<'SOURCE'
+    #[DataProvider('provideConfigurationErrorChannels')]
+    public function itDoesNotCallASuppressionOfAConfigurationErrorEffective(
+        string $channel,
+        string $producer,
+    ): void {
+        $this->writeSource('Unsuppressable.php', \sprintf(<<<'SOURCE'
             <?php
-            /** @qmx-ignore-file annotation.unresolved-directive — claims to silence the error below */
+            /** @qmx-ignore-file %s — claims to silence the error below */
 
             namespace Fixture;
 
             final class Unsuppressable
             {
-                /** @qmx-ignore no.such.rule — an unresolvable name */
+                /** %s */
                 public function trivial(): int
                 {
                     return 1;
                 }
             }
-            SOURCE);
+            SOURCE, $channel, $producer));
+
+        $config = $this->writeConfig(self::WITHOUT_COUPLING);
 
         $report = self::decode($this->audit([
             'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
             '--format' => 'json',
         ])->getDisplay());
 
@@ -283,7 +232,371 @@ final class DirectivesCommandTest extends TestCase
             $byTarget[$directive['target']] = $directive['effect'];
         }
 
-        self::assertSame('inert', $byTarget['annotation.unresolved-directive']);
+        self::assertSame('inert', $byTarget[$channel]);
+
+        $reported = self::decode($this->runCheck([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--format' => 'json',
+        ])->getDisplay())['violations'];
+
+        self::assertContains($channel, array_column($reported, 'channel'));
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function provideConfigurationErrorChannels(): iterable
+    {
+        yield 'an unresolvable name' => [
+            'annotation.unresolved-directive',
+            '@qmx-ignore no.such.rule — an unresolvable name',
+        ];
+        yield 'a rule that declares no override support' => [
+            'annotation.unsupported-threshold',
+            '@qmx-threshold annotation.directive warning=1 — a rule that supports no override',
+        ];
+        yield 'an unparsable payload' => [
+            'annotation.invalid-threshold',
+            '@qmx-threshold complexity.cyclomatic warning=abc — an unparsable payload',
+        ];
+    }
+
+    /**
+     * The channel that reports what a directive did is the one channel a
+     * directive may not address. Twelve authored forms reach it — three tags
+     * against the exact name, the exact name at the level it reports at, the
+     * group that covers it, and that group at the same level — and each is
+     * refused where it was written.
+     *
+     * Both commands are asked about the same fixture, and that is the point of
+     * the case rather than a convenience: a form `check` refuses and
+     * `directives` still judges would print two complaints about one authored
+     * line, which is the shape this ban was written to avoid. The refusal
+     * naming the **channel** matters for the group form, whose text does not
+     * contain it.
+     */
+    #[Test]
+    #[DataProvider('provideFormsThatReachTheBannedChannel')]
+    public function itRefusesEveryDirectiveFormThatReachesTheBannedChannel(string $tag, string $target): void
+    {
+        [$source, $line] = self::directiveFixture($tag, $target);
+        $this->writeSource('Banned.php', $source);
+        $config = $this->writeConfig(self::WITHOUT_COUPLING);
+
+        $check = $this->runCheck([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--format' => 'json',
+        ]);
+        $report = self::decode($check->getDisplay());
+
+        self::assertSame(2, $check->getStatusCode(), $check->getDisplay());
+        self::assertCount(1, $report['violations']);
+        self::assertSame('annotation.unresolved-directive', $report['violations'][0]['channel']);
+        self::assertSame($line, $report['violations'][0]['line']);
+        self::assertStringContainsString('annotation.unused-directive', $report['violations'][0]['message']);
+        self::assertStringContainsString('which no directive may silence', $report['violations'][0]['message']);
+
+        $audit = $this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--format' => 'json',
+        ]);
+        $verdicts = self::decode($audit->getDisplay())['directives'];
+
+        self::assertCount(1, $verdicts);
+        self::assertSame('unmeasured', $verdicts[0]['effect']);
+        self::assertSame('already-refused', $verdicts[0]['reason']);
+        self::assertSame(Command::SUCCESS, $audit->getStatusCode(), $audit->getDisplay());
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function provideFormsThatReachTheBannedChannel(): iterable
+    {
+        foreach (['file', 'next-line', 'symbol'] as $tag) {
+            foreach ([
+                'the exact name' => 'annotation.unused-directive',
+                'the exact name at file level' => 'annotation.unused-directive:file',
+                'a group that covers it' => 'annotation.*',
+                'that group at file level' => 'annotation.*:file',
+            ] as $shape => $target) {
+                yield $tag . ', ' . $shape => [$tag, $target];
+            }
+        }
+    }
+
+    /**
+     * The ban is asked after the `channel:level` grammar, and an author who
+     * wrote a level the channel never reports at must read about the level.
+     * Asked first, the ban would answer a different mistake than the one made
+     * — and the only observation that separates the two orders is this text.
+     *
+     * The group form is asked too, and not as a variation: it is the form the
+     * ban swallows whole, since expanding `annotation.*` reaches the banned
+     * channel. Only the exact form was covered, so an order that held for one
+     * spelling and not the other would have gone unread.
+     */
+    #[Test]
+    #[DataProvider('provideImpossiblePairsThatCoverTheBannedChannel')]
+    public function itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan(
+        string $target,
+        string $expected,
+    ): void {
+        [$source] = self::directiveFixture('file', $target);
+        $this->writeSource('Pair.php', $source);
+
+        $report = self::decode($this->runCheck([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $this->writeConfig(self::WITHOUT_COUPLING),
+            '--format' => 'json',
+        ])->getDisplay());
+
+        self::assertCount(1, $report['violations']);
+        self::assertStringContainsString($expected, $report['violations'][0]['message']);
+        self::assertStringNotContainsString('no directive may silence', $report['violations'][0]['message']);
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function provideImpossiblePairsThatCoverTheBannedChannel(): iterable
+    {
+        yield 'the exact name' => [
+            'annotation.unused-directive:class',
+            'it does not report at level "class"',
+        ];
+        yield 'a group that covers it' => [
+            'annotation.*:class',
+            'none of them reports at level "class"',
+        ];
+    }
+
+    /**
+     * A directive with no rule filter names no channel, so there is nothing to
+     * refuse — and it no longer silences the banned channel either. Its verdict
+     * does not move; what moves is the finding, which comes back into the
+     * report and is not counted as suppressed.
+     */
+    #[Test]
+    public function itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel(): void
+    {
+        $this->writeSource('NoFilter.php', <<<'SOURCE'
+            <?php
+            // @qmx-ignore-file -- whatever is here
+
+            namespace Fixture;
+
+            final class NoFilter
+            {
+                /** @qmx-ignore complexity.cyclomatic -- stale: a straight line reaches no boundary */
+                public function trivial(): int
+                {
+                    return 1;
+                }
+            }
+            SOURCE);
+
+        $config = $this->writeConfig(self::WITHOUT_COUPLING);
+
+        $report = self::decode($this->runCheck([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--format' => 'json',
+        ])->getDisplay());
+
+        self::assertCount(1, $report['violations']);
+        self::assertSame('annotation.unused-directive', $report['violations'][0]['channel']);
+        self::assertSame(8, $report['violations'][0]['line']);
+        // The severity is what keeps the returning finding out of the exit
+        // code: it comes back as the ordinary debt it always was.
+        self::assertSame('info', $report['violations'][0]['severity']);
+
+        $suppressed = self::decode($this->runCheck([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--format' => 'suppressed',
+            '--show-suppressed' => true,
+        ])->getDisplay());
+
+        self::assertSame(0, $suppressed['byMechanism']['suppression']);
+        self::assertSame([], $suppressed['suppressed']);
+
+        $verdicts = self::decode($this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--format' => 'json',
+        ])->getDisplay())['directives'];
+
+        $byLine = [];
+        foreach ($verdicts as $verdict) {
+            $byLine[$verdict['line']] = $verdict['effect'] . ' / ' . ($verdict['reason'] ?? '');
+        }
+
+        self::assertSame(
+            [2 => 'unmeasured / addresses-every-channel', 8 => 'inert / '],
+            $byLine,
+        );
+    }
+
+    /**
+     * A refusal answers one authored line and leaves the rest of the file
+     * alone. Every refusal case is a fixture with one directive in it, so a
+     * refusal that consumed the file's other verdicts — or that pushed its own
+     * complaint onto someone else's line — would have read as correct.
+     */
+    #[Test]
+    public function itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt(): void
+    {
+        $this->writeSource('Both.php', <<<'SOURCE'
+            <?php
+            // @qmx-ignore-file annotation.unused-directive -- refused
+
+            namespace Fixture;
+
+            final class Both
+            {
+                /** @qmx-ignore complexity.cyclomatic -- stale: a straight line reaches no boundary */
+                public function trivial(): int
+                {
+                    return 1;
+                }
+            }
+            SOURCE);
+
+        $config = $this->writeConfig(self::WITHOUT_COUPLING);
+
+        $check = $this->runCheck([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--format' => 'json',
+        ]);
+        $violations = self::decode($check->getDisplay())['violations'];
+
+        self::assertSame(2, $check->getStatusCode(), $check->getDisplay());
+        self::assertCount(2, $violations);
+
+        $byLine = [];
+        foreach ($violations as $violation) {
+            $byLine[$violation['line']] = $violation['channel'];
+        }
+
+        self::assertSame(
+            [2 => 'annotation.unresolved-directive', 8 => 'annotation.unused-directive'],
+            $byLine,
+        );
+        self::assertStringContainsString(
+            'which no directive may silence',
+            (string) $violations[array_search(2, array_column($violations, 'line'), true)]['message'],
+        );
+
+        $audit = $this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--format' => 'json',
+        ]);
+        $verdicts = self::decode($audit->getDisplay())['directives'];
+
+        $byVerdictLine = [];
+        foreach ($verdicts as $verdict) {
+            $byVerdictLine[$verdict['line']] = $verdict['effect'] . ' / ' . ($verdict['reason'] ?? '');
+        }
+
+        self::assertSame(
+            [2 => 'unmeasured / already-refused', 8 => 'inert / '],
+            $byVerdictLine,
+        );
+        self::assertSame(2, $audit->getStatusCode(), $audit->getDisplay());
+    }
+
+    /**
+     * The ban withdraws one mechanism from the channel and grants it no
+     * exemption from any other. A finding on it is ordinary debt: the path
+     * exclusions drop it and a baseline accepts it, exactly as before.
+     *
+     * The configuration errors are the precedent this case rules out. Those
+     * are lifted out of the pipeline before the suppression stage and rejoin
+     * the report at the very end, and reinstating that arrangement here would
+     * silently take the channel out of both `exclude_paths` and the ratchet.
+     */
+    #[Test]
+    public function itLeavesTheBannedChannelInsideEveryStageAfterSuppression(): void
+    {
+        $this->writeSource('Debt.php', <<<'SOURCE'
+            <?php
+
+            namespace Fixture;
+
+            final class Debt
+            {
+                /** @qmx-ignore complexity.cyclomatic -- stale: a straight line reaches no boundary */
+                public function trivial(): int
+                {
+                    return 1;
+                }
+            }
+            SOURCE);
+
+        $excluded = self::decode($this->runCheck([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $this->writeConfig(self::WITHOUT_COUPLING . "exclude_paths: ['*Debt.php']\n"),
+            '--format' => 'json',
+        ])->getDisplay());
+
+        self::assertSame([], $excluded['violations']);
+
+        $baseline = $this->tempDir . '/baseline.json';
+        $config = $this->writeConfig(self::WITHOUT_COUPLING);
+        $container = (new ContainerFactory())->create();
+        $generate = $container->get(BaselineGenerateCommand::class);
+        self::assertInstanceOf(BaselineGenerateCommand::class, $generate);
+
+        $generator = new CommandTester($generate);
+        $generator->execute([
+            'baseline' => $baseline,
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+        ]);
+        self::assertSame(0, $generator->getStatusCode(), $generator->getDisplay());
+
+        $captured = json_decode((string) file_get_contents($baseline), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($captured);
+        self::assertStringContainsString('annotation.unused-directive', (string) file_get_contents($baseline));
+
+        $accepted = $this->runCheck([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $config,
+            '--baseline' => $baseline,
+            '--format' => 'json',
+        ]);
+
+        self::assertSame([], self::decode($accepted->getDisplay())['violations']);
+    }
+
+    /**
+     * One fixture, three lines, thirteen characters of difference: the tag.
+     *
+     * @return array{string, int} the source and the line the directive sits on
+     */
+    private static function directiveFixture(string $tag, string $target): array
+    {
+        $body = <<<SOURCE
+            <?php
+            %s
+            namespace Fixture;
+
+            final class Banned
+            {
+            %s
+                public function trivial(): int
+                {
+                    return 1;
+                }
+            }
+            SOURCE;
+
+        return match ($tag) {
+            'file' => [\sprintf($body, "// @qmx-ignore-file {$target} -- tested\n", ''), 2],
+            'next-line' => [\sprintf($body, '', "    // @qmx-ignore-next-line {$target} -- tested"), 7],
+            'symbol' => [\sprintf($body, '', "    /** @qmx-ignore {$target} -- tested */"), 7],
+            default => throw new LogicException('unknown tag ' . $tag),
+        };
     }
 
     /**

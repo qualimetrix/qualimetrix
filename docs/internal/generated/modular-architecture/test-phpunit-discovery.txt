@@ -5518,6 +5518,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itKeepsTwoDirectiveFormsWrittenOnOneLineApart
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itProjectsExactlyTheInertVerdictsIntoStaleFindings
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeAChannelLevelPairAddressabilityAlreadyRefused
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeADirectiveThatReachesTheBannedChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeADirectiveWhoseProducerASelectorSwitchedOff
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeADirectiveWhoseProducerOptionsSwitchedOff
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeADirectiveWithoutARuleFilter
@@ -5565,9 +5566,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::factoryProducesValidatorForEveryThresholdAwareRuleInRegistry
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAComputedMetricChannelThatOnlyTheResolvedConfigurationKnows
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsADeclaredLevelBesideAChannelNameAndRefusesAnUndeclaredOne
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsADirectiveNamingANeighbouringConfigurationErrorChannel"invalid threshold"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsADirectiveNamingANeighbouringConfigurationErrorChannel"unresolved"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsADirectiveNamingANeighbouringConfigurationErrorChannel"unsupported threshold"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAThresholdOnARuleThatDeclaresOverrideSupport
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAThresholdOnOneTypeCoverageDimension
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAnExactChannelAndAGroupThatCoversSomething
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsAnExactChannelName
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsTheNoRuleFilterForm
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itExplainsTheGrammarWhenAFileFormCarriesABareReason
@@ -5576,6 +5579,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itPointsAThresholdNamingAChannelAtTheProducingRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRefusesALevelOnAThresholdInsteadOfTruncatingIt
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRefusesALevelThatIsNotOne
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRefusesAnExactChannelAndAGroupThatReachTheBannedChannel"a group that covers it"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRefusesAnExactChannelAndAGroupThatReachTheBannedChannel"a group that covers it, at that level"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRefusesAnExactChannelAndAGroupThatReachTheBannedChannel"the exact name at the level it reports at"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRefusesAnExactChannelAndAGroupThatReachTheBannedChannel"the exact name"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsADanglingReferenceToAMetricNoLongerConfigured
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAGroupFormThatCoversNoChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAMisspelledChannel
@@ -5591,6 +5598,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsNothingWhenTheOwningRuleIsDisabled
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredDirectiveNotPerBoundDeclaration
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredThresholdDirective
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itStillAnswersAnImpossiblePairAboutTheLevel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itGivesTheSuppressionRefusalOneSubjectNotTwo
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itNamesTheBadHalfWhenTheThresholdLevelDoesNotParse
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itNamesTheBadHalfWhenTheThresholdRuleDoesNotExist
@@ -5724,6 +5732,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itFileLevelSuppressesAllMatchingFindingsInFile
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itGetSuppressedFindings
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itHealthDimensionSuppressionLeavesSiblingChannelsActive
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid"a group that covers it"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid"no rule filter on the line above"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid"no rule filter"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid"the exact name"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid"the line above"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itMultipleSuppressionsForSameFile
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itNextLineDoesNotSuppressLinePlus2
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itNextLineSuppressesOnlySpecificNextLine
@@ -5731,6 +5744,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itPassesThroughWhenDifferentFile
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itPassesThroughWhenNoSuppressions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itResolvesTargetControlsIndependentlyOfThePresentationFileAndRebuildsTheIndex
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itStillMatchesADirectiveAgainstANeighbouringAnnotationChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSuppressionMatchesCodeWithAGroupSelector
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSuppressionsDoNotAccumulateAcrossMultipleLoads
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSymbolLevelDoesNotAffectFindingsBeforeSuppressionLine
@@ -6136,21 +6150,25 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandTest::itUsesBaseline
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAcceptsAnExplicitFullSweep
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan"a group that covers it"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan"the exact name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itCallsASuppressionEffectiveWhenItSilencedAFinding
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDefaultsToTheNarrowSweep
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective"a rule that declares no override support"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective"an unparsable payload"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective"an unresolvable name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotFailOnAnInertVerdictWhoseBoundaryWasNotObservable
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotLetADirectiveJustifyItselfWithItsOwnComplaint
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsCleanWhenADirectiveCouldNotBeMeasured
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsCleanWhenEveryDirectiveStillDoesSomething
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsFourWhenTheRunCouldNotParsePartOfTheTree
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsTwoOnAnInertDirective
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itJudgesASuppressionOfTheChannelProducedAfterRuleExecution
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"every level of it"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the level the directive sits on"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the whole rule"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesTheBannedChannelInsideEveryStageAfterSuppression
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheErrorEnvelopeInJson
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAScopeOfNothingButGeneratedFiles
@@ -6158,6 +6176,19 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAnUnknownFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAnUnknownSweep
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAnUnknownSweepInJson
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"file, a group that covers it"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"file, that group at file level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"file, the exact name at file level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"file, the exact name"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"next-line, a group that covers it"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"next-line, that group at file level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"next-line, the exact name at file level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"next-line, the exact name"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"symbol, a group that covers it"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"symbol, that group at file level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"symbol, the exact name at file level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"symbol, the exact name"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsAnUnreadableConfigAsAConfigurationError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itSaysTheSameThingInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled

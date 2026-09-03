@@ -38,6 +38,7 @@ Inline/
 │   │   ├── StaleDirectiveFinding.php # the finding that says a directive silenced nothing
 │   │   └── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
+│   ├── DirectiveChannelBan.php     # the one channel no directive may address or silence
 │   ├── DirectiveLevels.php         # which levels one directive can silence a channel at
 │   ├── DirectiveNameHints.php      # "did you mean" by reverse query
 │   ├── DirectiveRejection.php
@@ -145,6 +146,29 @@ addressed something real and matched nothing this run. It defaults below
 `Warning`, and its accounting is deliberately narrow — only directives naming
 enabled rules, and only files this run analysed. The rule emits nothing itself;
 it arms the usage report, which can only be assembled after every rule has run.
+
+**The fourth channel is the one channel a directive may not address.**
+`DirectiveChannelBan` refuses every directive whose target reaches
+`annotation.unused-directive` — the exact name, `annotation.*`, either of them
+with `:file`, under any of the three tags — with an
+`annotation.unresolved-directive` on the line it was written on, and the audit
+reports the same directive `unmeasured / already-refused` rather than judging it
+a second time. The ban is asked **after** the `channel:level` grammar, so
+`annotation.unused-directive:class` is still answered as the impossible pair it
+is. The form with no rule filter names no channel and is not refused; it simply
+no longer silences the channel, because `SuppressionFilter` applies no directive
+to it. Both questions read one object, so a form cannot be refused by `check`
+and still judged by `directives`.
+
+The ban is not an exemption from the report. Unlike the three configuration
+errors, a finding on this channel stays inside the pipeline: the top-level
+`exclude_paths` drops it, a baseline ceiling accepts it, and a git scope narrows
+it, exactly as before. Two exclusions never reach it, and did not before the ban
+either: the top-level `exclude_namespaces` matches on a namespace, and this
+finding's subject is the **file** the annotation sits in; the producer's own
+`exclude_paths` / `exclude_namespaces` run inside `RuleExecution`, and the
+channel is assembled after it. What the ban removes is only the ability to hide
+the finding with the mechanism it exists to audit.
 
 **All four channels report once per authored annotation.** The extractor binds
 a class docblock to the class and to every declaration inside it, so a single
