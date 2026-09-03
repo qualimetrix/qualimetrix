@@ -88,6 +88,9 @@ final class FailureClass
     /** A declared delta changes a field the equivalence tuple compares, unexplained. */
     public const DELTA_OVERREACH = 'delta-overreach';
 
+    /** A declared field move no diff line performed. */
+    public const FIELD_MOVE_STALE = 'field-move-stale';
+
     /** The reference binary was handed input in a vocabulary it does not know. */
     public const REFERENCE_INPUT_UNTRANSLATED = 'reference-input-untranslated';
 
@@ -123,6 +126,7 @@ final class FailureClass
         self::DELTA_STALE,
         self::DELTA_TOO_LARGE,
         self::DELTA_OVERREACH,
+        self::FIELD_MOVE_STALE,
         self::REFERENCE_INPUT_UNTRANSLATED,
         self::NONDETERMINISM_UNDECLARED,
         self::PATH_LEAK,

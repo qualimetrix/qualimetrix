@@ -29,6 +29,8 @@ final class Gate
 
     private readonly DeclaredDelta $declaredDelta;
 
+    private readonly DeclaredFieldMoves $declaredFieldMoves;
+
     private readonly ChannelSplit $split;
 
     private readonly string $temporaryDirectory;
@@ -65,6 +67,7 @@ final class Gate
         $this->vocabulary = MetricVocabulary::ofTree($this->options->candidateRoot);
         $this->maps = RenameMaps::load($root . '/maps', $this->vocabulary);
         $this->declaredDelta = DeclaredDelta::load($root);
+        $this->declaredFieldMoves = DeclaredFieldMoves::load($root);
         $this->split = ChannelSplit::of($this->maps);
         $this->corpus = Corpus::load($this->options->candidateRoot, $this->options->cases);
         $this->witness = new ChannelWitness($this->options->candidateRoot);
@@ -101,6 +104,19 @@ final class Gate
                 '%d surface(s) are compared against a declared delta rather than for equality: %s.',
                 $this->declaredDelta->count(),
                 implode(', ', $this->declaredDelta->surfaces()),
+            ));
+        }
+
+        // Loud for the same reason: a declared field move is the only thing that
+        // lets a compared field differ inside a declared diff, so how many there
+        // are belongs in what a reader of a GREEN run sees.
+        $this->report->fact('declared field moves', $this->declaredFieldMoves->count());
+
+        if (!$this->declaredFieldMoves->isEmpty()) {
+            $this->report->warn(\sprintf(
+                '%d move(s) of a compared field are licensed by %s rather than refused.',
+                $this->declaredFieldMoves->count(),
+                DeclaredFieldMoves::INDEX,
             ));
         }
 
@@ -149,6 +165,7 @@ final class Gate
             $this->checkStaleNormalization();
             $this->checkStaleMaps();
             $this->checkStaleDeclaredDelta();
+            $this->checkStaleFieldMoves();
         } finally {
             $reference->remove();
             $this->cleanUp();
@@ -748,12 +765,14 @@ final class Gate
             );
         }
 
-        foreach ($this->overreachingLines($diff) as $problem) {
+        foreach ($this->overreachingLines($key, $diff) as $problem) {
             $this->report->fail(
                 FailureClass::DELTA_OVERREACH,
                 $key,
                 $problem . ' A declared delta may change a compared field only inside a record whose (rule, code)'
-                . ' pair a declared split already explains — the waiver normalization was refused is refused here too.',
+                . ' pair a declared split already explains, or where a ' . DeclaredFieldMoves::INDEX . ' row names'
+                . ' this exact pair of values on this exact surface — the waiver normalization was refused is'
+                . ' refused here too.',
             );
         }
 
@@ -786,9 +805,17 @@ final class Gate
      * the plain-text surfaces print a bare name that no field syntax marks, and
      * for those the record-level split check is the guard.
      *
+     * Two sources of permission, and they answer different questions. A
+     * declared split says "this record was renamed, so its fields moved with
+     * it"; a {@see DeclaredFieldMoves} row says "this exact value became that
+     * exact value on this exact surface, and here is why". The second exists
+     * because the first can only ever speak about `channel`, `rule` and `code`
+     * — the fields a channel rename rewrites — so every other compared field
+     * was unlicensable by construction rather than by judgement.
+     *
      * @return list<string>
      */
-    private function overreachingLines(ExactDiff $diff): array
+    private function overreachingLines(string $key, ExactDiff $diff): array
     {
         $fields = EquivalenceTuple::load($this->options->candidateRoot)->fields;
         $problems = [];
@@ -836,9 +863,13 @@ final class Gate
                         continue;
                     }
 
+                    if ($this->declaredFieldMoves->allows($key, $field, $referenceValue, $candidateValue)) {
+                        continue;
+                    }
+
                     $problems[] = \sprintf(
-                        'Hunk line %d changes the compared field "%s" ("%s" -> "%s"), a move no declared split'
-                        . ' explains.',
+                        'Hunk line %d changes the compared field "%s" ("%s" -> "%s"), a move neither a declared'
+                        . ' split nor a licensed field move explains.',
                         $index + 1,
                         $field,
                         $referenceValue,
@@ -926,6 +957,37 @@ final class Gate
                 $surface,
                 'A delta is declared for this surface, and the two trees agree on it. A declaration of a change that'
                 . ' did not happen fails until it is corrected or removed.',
+            );
+        }
+    }
+
+    /**
+     * A licensed move no diff line performed.
+     *
+     * The same lie as a stale map row, and it has to fail the same way: a row
+     * here is the one declaration that lets a compared field differ, so one
+     * that describes nothing is a permission sitting in the tree waiting for
+     * some later step's diff to walk into it.
+     *
+     * Skipped while deriving for the reason the declared delta's staleness is:
+     * a derive run absorbs every differing surface instead of judging it, so no
+     * row can be credited and all of them would read as stale.
+     */
+    private function checkStaleFieldMoves(): void
+    {
+        if ($this->derived !== null) {
+            return;
+        }
+
+        foreach ($this->declaredFieldMoves->staleMoves() as $stale) {
+            $this->report->fail(
+                FailureClass::FIELD_MOVE_STALE,
+                $stale['surface'],
+                \sprintf(
+                    'The move of %s is licensed on this surface and no diff line performed it. A licence for a'
+                    . ' change that did not happen fails until it is corrected or removed.',
+                    $stale['move'],
+                ),
             );
         }
     }

@@ -32,7 +32,10 @@ finding-gate/
 │   └── inputs.tsv         # option keys, flag aliases, names inside selectors
 ├── declared-delta.tsv     # surfaces that changed structurally, not by rename;
 ├── declared-delta/        # with one exact unified diff each. Both appear only
-│                          # when a step declares one, and neither exists now
+│                          # when a step declares one
+├── declared-field-moves.tsv # one exact (surface, field, from, to) pair each,
+│                          # licensing a compared field to move inside a
+│                          # declared diff. Typed, not derived
 ├── normalization.tsv      # fields excluded from comparison, each with its reason
 └── equivalence-tuple.tsv  # the finding fields the gate compares, derived from code
 ```
@@ -560,8 +563,9 @@ judged on the diff the run **measures**, not on the declared text:
 - `delta-too-large` — the diff is past the limit, so the pressure stays on
   declaring another map row rather than dropping in a blob.
 - `delta-overreach` — a diff line *moves* a field the equivalence tuple
-  compares, and no declared split performed that move. Three properties, each
-  narrower than the obvious version:
+  compares, and neither a declared split nor a row of
+  `declared-field-moves.tsv` (below) accounts for that move. Three properties,
+  each narrower than the obvious version:
   - **Moved, not mentioned.** A compact JSON record names `channel` on the same
     line as the magnitude it records, so pairing the removed and added lines is
     what makes the question answerable at all.
@@ -601,6 +605,49 @@ a differing span whose line pairs exceed the search budget is **refused** rather
 than emitted as one padded hunk — falling back would silently restore the
 behaviour the hunks exist to remove.
 
+## What a declared field move declares
+
+`delta-overreach` refuses a diff line that *moves* a field the equivalence tuple
+compares. Until this file existed its only source of permission was a declared
+split, and a split can only ever produce moves of `channel`, `rule` and `code` —
+the fields a channel rename rewrites. So `message`, `techDebtMinutes`, `file`,
+`line` and `subject` could not be licensed by any declaration that existed: not
+because moving them is dangerous, but because there was no list for it. A step
+that changes the *text* of a finding — a diagnostic's "did you mean" list, say —
+had nothing to declare it with.
+
+`declared-field-moves.tsv` (`surface`, `field`, `from`, `to`, `reason`) is that
+list. One row licenses one move:
+
+```
+surface                        field    from                to                 reason
+case:annotations|format:json   message  …unused-directive.  …directive.        why the text moved
+```
+
+- **The key is the whole quadruple, and it is exact.** Not a prefix, not a
+  pattern, not "any value of this field". A line moving the same field between
+  any other pair of values on that surface is refused exactly as before.
+- **A row fires on equality, never on containment.** A `from` that merely occurs
+  inside what the run measured would license a move nobody declared.
+- **A row nothing fired is `field-move-stale`** — the same lie as `map-stale`,
+  `normalization-stale` and `delta-stale`, and it fails the same way. It is
+  reported against the surface the row names.
+- **It is not a waiver of the declared delta.** The surface still needs its
+  `declared-delta` row, that diff is still compared byte for byte
+  (`delta-mismatch`) and still refused past the size limit
+  (`delta-too-large`). This removes one wall inside a diff that was already
+  measured and already declared, and no other.
+
+Unlike the diff files, these rows are **typed**. The pair a row names is printed
+verbatim in the `delta-overreach` failure of the run it explains, so what a hand
+writes here is a transcription of a measurement — and a mistranscription is
+`field-move-stale` rather than a silent widening.
+
+A row is written against one reference. Once the step is merged, the next step's
+reference already contains the change, both sides agree, and the row becomes
+stale: **the following step empties this file**, exactly as it empties the maps
+and the declared delta.
+
 ## Who reads the corpus
 
 `case.json` and the case directories have a schema, and **four** consumers read
@@ -609,12 +656,12 @@ to touch this list; it exists because the last change to the claim format
 recorded its blast radius as "one literal, one mutation" and two of these four
 survived by luck.
 
-| Consumer                                                                  | What it reads                                                                                                                                                                                                                                                                                                                                   |
-| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`                  | every `cases/*/case.json`, as the schema                                                                                                                                                                                                                                                                                                        |
-| `scripts/finding-gate-controls/Controls.php`                              | seven exact corpus paths it mutates: `cases/smells/src/Dead.php`, `cases/health/qmx.yaml`, `cases/disabled-rule/case.json`, `cases/layers/case.json`, `cases/smells/case.json`, `maps/channels.tsv`, `declared-delta.tsv`; it also reads `maps/channels.tsv` to write it back with a control's row, and creates `declared-delta/control-*.diff` |
-| `tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check`                                                                                                                                                                                                                             |
-| `scripts/generate-rename-enumeration.php`                                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                                                                                                                                                                                                                                              |
+| Consumer                                                                  | What it reads                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/finding-gate/Corpus.php` + `CaseDefinition.php`                  | every `cases/*/case.json`, as the schema                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `scripts/finding-gate-controls/Controls.php`                              | eight exact corpus paths it mutates: `cases/smells/src/Dead.php`, `cases/health/qmx.yaml`, `cases/disabled-rule/case.json`, `cases/layers/case.json`, `cases/smells/case.json`, `maps/channels.tsv`, `declared-delta.tsv`, `declared-field-moves.tsv`; it also reads `maps/channels.tsv` to write it back with a control's row, creates `declared-delta/control-*.diff`, and digests `declared-delta.tsv` and `declared-delta/` around a derive run |
+| `tests/Analysis/Finding/Integration/ChannelLevelDeclarationDriftTest.php` | every `cases/*/case.json` — `paths`, `config`, `args` — and runs `bin/qmx` over each; it is inside `composer check`                                                                                                                                                                                                                                                                                                                                 |
+| `scripts/generate-rename-enumeration.php`                                 | `cases/*/qmx.yaml`, and counts occurrences under `finding-gate/**`                                                                                                                                                                                                                                                                                                                                                                                  |
 
 Measured, not recalled: `git grep -E "finding-gate/cases|case\.json"` over a
 stopped tree, minus prose. The product test is one field-read away from breaking
@@ -633,10 +680,10 @@ while the channel fires.
 
 ## The controls
 
-`composer gate:controls` runs seventeen controls, each on its own hardlink clone:
-fifteen planted breakages, each required to produce a named failure class at a
-named surface, and two green ones. The newest of them,
-`moved-aggregated-spelling`, is the control on the suffix expansion: the metrics
+`composer gate:controls` runs nineteen controls, each on its own hardlink clone:
+seventeen planted breakages, each required to produce a named failure class at a
+named surface, and two green ones. `moved-aggregated-spelling`
+is the control on the suffix expansion: the metrics
 surface publishes `<key>.pct95` where the product computed `<key>.p95`, the base
 keys stay exactly where they are, and the gate has to be red rather than absorbing
 a movement in the suffix that no row states. It mutates the *formatter* on
@@ -739,6 +786,19 @@ differs. Three properties of the declaration are worth knowing before adding one
   movement test, and both controls still PASS — a corpus run cannot see the
   difference, because the records in it move. Those two properties are held by
   self-test cases (`producerMoves()`) and by them alone.
+- `field-move-stale` and `derive-refuses-broken-run` are the two newest, and the
+  second is the first control in this harness whose subject is not in the report
+  at all. `field-move-stale` replaces `declared-field-moves.tsv` with one row
+  licensing a move on a surface where nothing moves; the step's own licence goes
+  with the replacement, so the move that *does* happen returns to being
+  `delta-overreach` on a surface the step declares and is absorbed as declaration
+  noise. `derive-refuses-broken-run` runs `--derive-declared-delta` over a tree
+  with one finding dropped: the comparison fails, the run must exit non-zero with
+  `finding-count-mismatch`, and `declared-delta.tsv` and `declared-delta/` must
+  come out of it byte-identical. That last half is checked by digesting the two
+  paths before and after, because the report is exactly what could not be
+  trusted — measured on 2026-09-04, the gate printed "nothing was written" and
+  had already replaced a planted declaration with thirteen derived rows.
 - `lost-level-fixture` is the control on a lost level. Its mutation takes the
   `class` level away from the `health` case's user-defined computed metric, which
   is the only way this corpus can lose one level of a multi-level channel:

@@ -31,7 +31,9 @@ final class SelfTest
         $this->levelVocabulary();
         $this->ambiguities();
         $this->producerMoves();
+        $this->writesNeverFollowHardlinks();
         $this->declaredDelta();
+        $this->declaredFieldMoves();
         $this->normalization();
         $this->deriver();
         $this->tuple();
@@ -1481,6 +1483,172 @@ final class SelfTest
             );
         }
         $this->same(null, $delta->claim('case:smells|format:json'), 'a surface nothing declares claims nothing');
+    }
+
+    /**
+     * Every tracked declaration this gate writes is written through
+     * {@see Fs::write()}, and the controls harness clones the working tree by
+     * **hardlinking** its content. A write in place therefore lands in the
+     * developer's own repository: measured on 2026-09-04, one control run left
+     * this repository's `declared-delta.tsv` holding thirteen rows derived from
+     * a mutated clone.
+     */
+    private function writesNeverFollowHardlinks(): void
+    {
+        $root = Fs::temporaryDirectory('self-test-hardlink-');
+        Fs::write($root . '/original', "before\n");
+        $this->assert(link($root . '/original', $root . '/clone'), 'the hardlink case can be set up at all');
+        Fs::write($root . '/clone', "after\n");
+        $this->same("before\n", Fs::read($root . '/original'), 'writing a hardlinked file does not write through the link');
+    }
+
+    /**
+     * The second source of permission `delta-overreach` consults, and the four
+     * properties that keep it from being `normalization` under another name.
+     *
+     * Every case here is written against a synthetic index rather than the
+     * tracked one, for the reason {@see maps()} spells out at length: what a
+     * step happens to license is a fact about that step, and the mechanism is
+     * entitled to no opinion about it. The tracked file is asserted to *load*,
+     * and nothing more.
+     */
+    private function declaredFieldMoves(): void
+    {
+        $refusal = null;
+
+        try {
+            DeclaredFieldMoves::load($this->candidateRoot . '/finding-gate');
+        } catch (GateError $error) {
+            $refusal = $error->getMessage();
+        }
+
+        $this->assert($refusal === null, 'the tracked field moves do not load: ' . ($refusal ?? ''));
+
+        $this->same(
+            0,
+            DeclaredFieldMoves::load(sys_get_temp_dir() . '/qmx-gate-no-declared-field-moves')->count(),
+            'a tree with no index licenses no move',
+        );
+
+        $surface = 'case:annotations|format:json';
+        $moves = self::fieldMoves([[$surface, 'message', 'said A and B', 'said A', 'B stopped being suggested']]);
+
+        // Equality, and every column of the key is part of it. A substring, a
+        // prefix, a neighbouring surface or a neighbouring field must all miss:
+        // the harness next door has already paid once for a licence that fired
+        // on containment.
+        $this->assert($moves->allows($surface, 'message', 'said A and B', 'said A'), 'the declared pair is licensed');
+        $this->assert(
+            !$moves->allows($surface, 'message', 'said A and B', 'said A too'),
+            'a value the declared one is a prefix of is not licensed',
+        );
+        $this->assert(
+            !$moves->allows($surface, 'message', 'and B', 'said A'),
+            'a value that is a substring of the declared one is not licensed',
+        );
+        $this->assert(
+            !$moves->allows('case:annotations|format:sarif', 'message', 'said A and B', 'said A'),
+            'the same move on another surface is not licensed',
+        );
+        $this->assert(
+            !$moves->allows($surface, 'recommendation', 'said A and B', 'said A'),
+            'the same move of another field is not licensed',
+        );
+        $this->assert(
+            !$moves->allows($surface, 'message', 'said A', 'said A and B'),
+            'the licence is directional: the reverse move is a move of its own',
+        );
+
+        // Staleness is measured on what fired, exactly as a map row's is.
+        $this->same([], $moves->staleMoves(), 'a row a diff line used is not stale');
+
+        $unused = self::fieldMoves([
+            [$surface, 'message', 'from', 'to', 'used'],
+            [$surface, 'message', 'never', 'happened', 'unused'],
+        ]);
+        $unused->allows($surface, 'message', 'from', 'to');
+        $this->same(
+            [['surface' => $surface, 'move' => '"message" ("never" -> "happened")']],
+            $unused->staleMoves(),
+            'a row nothing fired is stale, and is reported against the surface it names',
+        );
+
+        $this->same(
+            'declares the same move of "message" on "' . $surface . '" twice',
+            self::refusalOfFieldMoves([
+                [$surface, 'message', 'from', 'to', 'first'],
+                [$surface, 'message', 'from', 'to', 'second'],
+            ]),
+            'a duplicated key is refused, so two rows can never disagree about one licence',
+        );
+        $this->same(
+            'licenses a move of "message" on "' . $surface . '" with no reason',
+            self::refusalOfFieldMoves([[$surface, 'message', 'from', 'to', '']]),
+            'a row with no reason is refused',
+        );
+        $this->same(
+            'licenses a move of "message" on "' . $surface . '" with no reason',
+            self::refusalOfFieldMoves([[$surface, 'message', 'from', 'to', '?']]),
+            'and so is one still carrying the derived placeholder',
+        );
+        $this->same(
+            'has a row naming no field',
+            self::refusalOfFieldMoves([[$surface, '', 'from', 'to', 'why']]),
+            'a row naming no field is refused, since it would license whatever a diff contains',
+        );
+        $this->same(
+            'has a row naming no surface',
+            self::refusalOfFieldMoves([['', 'message', 'from', 'to', 'why']]),
+            'and so is one naming no surface',
+        );
+        $this->same(
+            'moving from a value to itself',
+            self::refusalOfFieldMoves([[$surface, 'message', 'same', 'same', 'why']]),
+            'a row declaring no movement is refused',
+        );
+    }
+
+    /**
+     * @param list<array{0: string, 1: string, 2: string, 3: string, 4: string}> $rows
+     */
+    private static function fieldMoves(array $rows): DeclaredFieldMoves
+    {
+        $root = Fs::temporaryDirectory('self-test-field-moves-');
+        Fs::write(
+            $root . '/' . DeclaredFieldMoves::INDEX,
+            Tsv::render(DeclaredFieldMoves::COLUMNS, $rows),
+        );
+
+        return DeclaredFieldMoves::load($root);
+    }
+
+    /**
+     * The refusal such an index gets, reduced to the fragment that names the
+     * defect — the sentence around it is a message, not a contract.
+     *
+     * @param list<array{0: string, 1: string, 2: string, 3: string, 4: string}> $rows
+     */
+    private static function refusalOfFieldMoves(array $rows): string
+    {
+        try {
+            self::fieldMoves($rows);
+        } catch (GateError $error) {
+            foreach ([
+                'declares the same move of "message" on "case:annotations|format:json" twice',
+                'licenses a move of "message" on "case:annotations|format:json" with no reason',
+                'has a row naming no field',
+                'has a row naming no surface',
+                'moving from a value to itself',
+            ] as $fragment) {
+                if (str_contains($error->getMessage(), $fragment)) {
+                    return $fragment;
+                }
+            }
+
+            return 'refused, but for none of the reasons this self-test knows: ' . $error->getMessage();
+        }
+
+        return 'not refused at all';
     }
 
     private function normalization(): void

@@ -37,6 +37,7 @@ foreach (
         'RenameMaps',
         'ChannelSplit',
         'DeclaredDelta',
+        'DeclaredFieldMoves',
         'NormalizationRule',
         'Normalization',
         'NormalizationDeriver',
