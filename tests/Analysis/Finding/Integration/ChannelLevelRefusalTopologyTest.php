@@ -92,7 +92,7 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
             . ' registry it holds',
         'src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php' =>
             'builds the registry: it reads every rule class to compose the universe, and no user text reaches it',
-        'src/Analysis/Policy/Inline/Directive/DirectiveUsage.php' =>
+        'src/Analysis/Policy/Inline/Directive/Audit/DirectiveUsage.php' =>
             'reads a declaration for one property that is not a level — whether the channel belongs to a'
             . ' configuration validator, which no annotation can suppress — and delegates every judgement'
             . ' about an authored channel:level pair to ChannelLevelAddressing, which is why it holds one',

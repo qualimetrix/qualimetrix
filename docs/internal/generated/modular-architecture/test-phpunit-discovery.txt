@@ -5596,6 +5596,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itNamesTheBadHalfWhenTheThresholdRuleDoesNotExist
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itOnlyRecommendsRuleOptWhenBothHalvesOfTheThresholdPairAreValid
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itRefusesTheRetiredPairSpellingBeforeAskingAboutTheLevel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itAnswersNoMaskerWhenTheCoalitionChangesNothing
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itFindsAMaskerAtAllWhenTwoNeighboursCoverTheSubject
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itHasNoCoalitionWhenTheNeighboursAddressAnotherRule
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itNamesTheFirstOfTwoWhenNeitherHidesItAlone
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itNamesTheMeasuredMaskerRatherThanTheFirstOfThree
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itNamesTheMeasuredMaskerRatherThanTheFirstOfTwo
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itNamesEveryFieldAFindingCarries
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"acceptedLevel"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"code"

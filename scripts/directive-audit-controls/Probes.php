@@ -24,15 +24,15 @@ use RuntimeException;
  */
 final class Probes
 {
-    private const string AUDIT = 'src/Analysis/Policy/Inline/Directive/ThresholdDirectiveAudit.php';
+    private const string AUDIT = 'src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php';
 
-    private const string COALITION = 'src/Analysis/Policy/Inline/Directive/DirectiveMaskingCoalition.php';
+    private const string COALITION = 'src/Analysis/Policy/Inline/Directive/Audit/DirectiveMaskingCoalition.php';
 
-    private const string FINGERPRINT = 'src/Analysis/Policy/Inline/Directive/ExecutionFingerprint.php';
+    private const string FINGERPRINT = 'src/Analysis/Policy/Inline/Directive/Audit/ExecutionFingerprint.php';
 
     private const string PIPELINE = 'src/Analysis/Run/Pipeline/AnalysisPipeline.php';
 
-    private const string USAGE = 'src/Analysis/Policy/Inline/Directive/DirectiveUsage.php';
+    private const string USAGE = 'src/Analysis/Policy/Inline/Directive/Audit/DirectiveUsage.php';
 
     private const string LEVEL_ACTIVITY = 'src/Analysis/Finding/Contract/LevelActivity.php';
 
@@ -848,8 +848,8 @@ final class Probes
         // Written as a concatenation rather than a heredoc: an indented
         // closing marker strips that indentation from every line, and this
         // fragment has to match the product byte for byte.
-        $filter = "                static fn(ThresholdOverride \$override): bool => \$override->line !== \$group['line']\n"
-            . "                    || \$override->rulePattern !== \$group['rule'],";
+        $filter = "                static fn(ThresholdOverride \$override): bool => \$override->line !== \$group->line\n"
+            . "                    || \$override->rulePattern !== \$group->rule,";
 
         return [
             Probe::breaking(
@@ -863,7 +863,7 @@ final class Probes
                 'first-binding-only',
                 'the unit of removal is the first binding rather than the authored directive',
                 self::AUDIT,
-                [$filter => "                static fn(ThresholdOverride \$override): bool => \$override !== \$group['bindings'][0],"],
+                [$filter => "                static fn(ThresholdOverride \$override): bool => \$override !== \$group->bindings[0],"],
                 ['itRemovesEveryBindingOfOneAuthoredSite'],
             ),
         ];
@@ -1027,9 +1027,9 @@ final class Probes
                 'every verdict claims the boundary could have been seen',
                 self::AUDIT,
                 [
-                    "                boundaryObservable: \$entry['effect'] === DirectiveEffect::Overrun
+                    "                boundaryObservable: \$entry->effect === DirectiveEffect::Overrun
 "
-                    . "                    || self::boundaryObservable(\$group, \$produced),"
+                    . "                    || self::boundaryObservable(\$entry->group, \$produced),"
                     => '                boundaryObservable: true,',
                 ],
                 ['itMarksTheBoundaryUnobservableWhenTheRulePublishedNone'],

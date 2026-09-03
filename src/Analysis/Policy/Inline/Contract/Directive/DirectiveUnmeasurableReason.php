@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
 /**
  * Why a directive has no verdict.
  *
- * These are the paths {@see DirectiveUsage::unmeasurableReason()} refuses to
+ * These are the paths {@see \Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage::unmeasurableReason()} refuses to
  * account for, named rather than silently dropped. Reporting any of them as
  * `inert` would tell an author to remove an annotation on the strength of a
  * question that was never asked.

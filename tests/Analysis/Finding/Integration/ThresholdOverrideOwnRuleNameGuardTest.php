@@ -17,7 +17,7 @@ use RuntimeException;
  * override map" — it is that **a rule cannot read another rule's
  * `@qmx-threshold`**. The map itself has legitimate readers outside the rule
  * layer: {@see \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext}
- * owns it, and {@see \Qualimetrix\Analysis\Policy\Inline\Directive\ThresholdDirectiveAudit},
+ * owns it, and {@see \Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveAudit},
  * the directive subject's own audit, reads and rewrites it directly to build
  * each counterfactual run — that is its job, not a leak. Both are named,
  * narrow exceptions below ({@see LEGITIMATE_DIRECT_READERS}), and both are
@@ -108,7 +108,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
     private const string PROPERTY = 'thresholdOverrides';
     private const string CONTEXT_TYPE = 'AnalysisContext';
     private const string OWNING_TYPE_RELATIVE_PATH = 'src/Analysis/Finding/Contract/Rule/AnalysisContext.php';
-    private const string AUDIT_RELATIVE_PATH = 'src/Analysis/Policy/Inline/Directive/ThresholdDirectiveAudit.php';
+    private const string AUDIT_RELATIVE_PATH = 'src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php';
 
     /**
      * Every production call site of `AnalysisContext::getThresholdOverride()`,

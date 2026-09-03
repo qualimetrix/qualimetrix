@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Inline\Directive;
+namespace Qualimetrix\Analysis\Policy\Inline\Directive\Audit;
 
 use Closure;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
-use Qualimetrix\Core\Path\RelativePath;
 
 /**
  * Which directives of one leave-one-out sweep hide one another, answered by
@@ -44,30 +41,22 @@ use Qualimetrix\Core\Path\RelativePath;
 final readonly class DirectiveMaskingCoalition
 {
     /**
-     * The one form an author can write for a threshold override, and the only
-     * value {@see \Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict::$form}
-     * takes for a group this class or {@see ThresholdDirectiveAudit} builds a
-     * site for.
-     */
-    private const string FORM = 'threshold';
-
-    /**
      * `$without` produces every finding the rules give with the named authored
      * directives taken out of the context that owns this sweep. It arrives as
      * a closure because it is the one counterfactual operation this class is
      * not trusted to perform itself: the sweep owns the prepared run, and this
      * class never sees it.
      *
-     * @param Closure(list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}>, ?string): list<Finding> $without
+     * @param Closure(list<AuthoredDirectiveGroup>, ?string): list<Finding> $without
      */
     public function __construct(private Closure $without) {}
 
     /**
      * The directive that makes this one's removal invisible, or null.
      *
-     * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $measurable
+     * @param list<AuthoredDirectiveGroup> $measurable
      */
-    public function maskedBy(array $measurable, int $index, ?string $restrictToProducer): ?DirectiveSite
+    public function maskedBy(array $measurable, int $index, ?string $restrictToProducer): ?AuthoredDirectiveGroup
     {
         $maskers = self::overlapping($measurable, $index);
 
@@ -90,6 +79,10 @@ final readonly class DirectiveMaskingCoalition
     /**
      * Which of the maskers is doing the hiding, asked one at a time.
      *
+     * The neighbour is answered as itself rather than as its site: what the
+     * report prints is one step away, and the group is what the caller can ask
+     * anything else of.
+     *
      * Naming the first neighbour by position would let a report call a
      * directive the masker of another on the same page where it calls that
      * neighbour dead. So each is put back on its own — everything else
@@ -100,19 +93,21 @@ final readonly class DirectiveMaskingCoalition
      * no one directive to name; the report then names the first, and that is
      * the only case where the name is positional rather than measured.
      *
-     * @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group
-     * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>, site: DirectiveSite}> $maskers
+     * @param list<AuthoredDirectiveGroup> $maskers
      */
-    private function hiddenBy(array $group, array $maskers, ?string $restrictToProducer): DirectiveSite
-    {
+    private function hiddenBy(
+        AuthoredDirectiveGroup $group,
+        array $maskers,
+        ?string $restrictToProducer,
+    ): AuthoredDirectiveGroup {
         if (\count($maskers) === 1) {
-            return $maskers[0]['site'];
+            return $maskers[0];
         }
 
         foreach ($maskers as $candidate) {
             $others = array_values(array_filter(
                 $maskers,
-                static fn(array $masker): bool => $masker['site'] !== $candidate['site'],
+                static fn(AuthoredDirectiveGroup $masker): bool => $masker->site() !== $candidate->site(),
             ));
 
             $withOnlyCandidate = ExecutionFingerprint::of(($this->without)($others, $restrictToProducer));
@@ -121,75 +116,39 @@ final readonly class DirectiveMaskingCoalition
             );
 
             if ($withOnlyCandidate->compareTo($andWithoutTheDirective) === DirectiveEffect::Inert) {
-                return $candidate['site'];
+                return $candidate;
             }
         }
 
-        return $maskers[0]['site'];
+        return $maskers[0];
     }
 
     /**
      * Every other directive of the same rule bound to a subject this one also
      * covers, in the order an author reads them.
      *
-     * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $measurable
+     * @param list<AuthoredDirectiveGroup> $measurable
      *
-     * @return list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>, site: DirectiveSite}>
+     * @return list<AuthoredDirectiveGroup>
      */
     private static function overlapping(array $measurable, int $index): array
     {
         $group = $measurable[$index];
-        $subjects = self::subjects($group);
+        $subjects = $group->subjects;
         $maskers = [];
 
         foreach ($measurable as $position => $candidate) {
-            if ($position === $index || $candidate['rule'] !== $group['rule']) {
+            if ($position === $index || $candidate->rule !== $group->rule) {
                 continue;
             }
 
-            if (array_intersect($subjects, self::subjects($candidate)) === []) {
+            if (array_intersect($subjects, $candidate->subjects) === []) {
                 continue;
             }
 
-            $maskers[] = [...$candidate, 'site' => self::site($candidate)];
+            $maskers[] = $candidate;
         }
 
         return $maskers;
-    }
-
-    /**
-     * The directive's site, addressable from {@see ThresholdDirectiveAudit::report()}
-     * as well as from {@see overlapping()}: both need the identity a group of
-     * bindings resolves to, not just the verdict built from it. Kept here
-     * rather than on the audit so that this class never has to depend back on
-     * its own caller.
-     *
-     * @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group
-     */
-    public static function site(array $group): DirectiveSite
-    {
-        return new DirectiveSite(
-            file: RelativePath::fromString($group['file']),
-            line: $group['line'],
-            form: self::FORM,
-            target: $group['rule'],
-        );
-    }
-
-    /**
-     * The subjects a group of bindings covers — read by the overlap test here
-     * and by {@see ThresholdDirectiveAudit::boundaryObservable()}, which is why
-     * this stays public rather than being duplicated.
-     *
-     * @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group
-     *
-     * @return list<string>
-     */
-    public static function subjects(array $group): array
-    {
-        return array_values(array_unique(array_map(
-            static fn(ThresholdOverride $override): string => $override->subject->toCanonical(),
-            $group['bindings'],
-        )));
     }
 }

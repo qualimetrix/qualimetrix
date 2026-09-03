@@ -28,15 +28,19 @@ Inline/
 ├── Extraction/
 │   ├── DeclarationControlBindings.php
 │   └── SourceControlExtractor.php
-├── Directive/
+├── Directive/                      # the directive itself: store, addressing, validation
+│   ├── Audit/                      # what each authored directive did, both halves
+│   │   ├── AuthoredDirectiveGroup.php # one authored @qmx-threshold, its bindings, site and subjects
+│   │   ├── DirectiveMaskingCoalition.php # which threshold directives of one rule hide one another
+│   │   ├── DirectiveUsage.php      # what each authored suppression did
+│   │   ├── ExecutionFingerprint.php # what one rule execution produced, compared as a whole
+│   │   ├── MaskingOutcome.php      # what the sweep decided about one group, before it is reported
+│   │   ├── StaleDirectiveFinding.php # the finding that says a directive silenced nothing
+│   │   └── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
-│   ├── DirectiveMaskingCoalition.php # which threshold directives of one rule hide one another
+│   ├── DirectiveLevels.php         # which levels one directive can silence a channel at
 │   ├── DirectiveNameHints.php      # "did you mean" by reverse query
 │   ├── DirectiveRejection.php
-│   ├── DirectiveUsage.php          # what each authored suppression did
-│   ├── DirectiveLevels.php         # which levels one directive can silence a channel at
-│   ├── StaleDirectiveFinding.php   # the finding that says a directive silenced nothing
-│   ├── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── InlineDirectiveOptions.php
 │   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting
 │   ├── InlineDirectiveValidator.php # owns the three annotation.* directive errors
