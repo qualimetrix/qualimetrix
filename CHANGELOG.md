@@ -29,6 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to judge it; `--sweep=full` re-executes every enabled rule for the same
   verdicts. Both the text and `--format=json` report carry the sweep the
   verdicts were measured under.
+- The `produced_findings` count `bin/qmx directives` reports is the number of
+  findings the rules produced. It no longer includes `annotation.unused-directive`,
+  which a run assembles after rule execution: no directive may address that
+  channel, so no verdict is measured against it. On a tree with stale directives
+  the number is lower than before.
 - `composer check` now audits inline directives as part of `check:self`: a
   proven inert directive fails the aggregate the same way a red gate does.
 
@@ -46,6 +51,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- No inline directive can silence `annotation.unused-directive` any more — the
+  channel that reports which directives did nothing. Three separate things
+  change for a project that used it.
+
+  **A directive naming the channel is now refused.** `@qmx-ignore`,
+  `@qmx-ignore-next-line` and `@qmx-ignore-file` all fail the run with
+  `annotation.unresolved-directive` on the line the directive was written on,
+  whether the target is the exact name, `annotation.*`, or either with `:file`
+  after it. Twelve spellings in total.
+
+  **The form with no rule filter stops silencing it — with no diagnostic.**
+  A bare `@qmx-ignore-file` with no channel, or an explicit `*` target on
+  `@qmx-ignore-file` / `@qmx-ignore-next-line`, names nothing, so there is
+  nothing to refuse and nothing to report; findings it hid until now simply
+  appear in the report. There is no warning for this one, and there cannot be:
+  this entry is the only notice of it.
+
+  **`@qmx-ignore-file annotation.*` no longer addresses the three
+  configuration-error channels.** It used to be a legal way to address
+  `annotation.unresolved-directive`, `annotation.unsupported-threshold` and
+  `annotation.invalid-threshold` together, and was reported `inert`. It is now
+  refused whole, because its expansion reaches the banned channel. Naming any
+  of the three by its exact name is unchanged.
+
+  What to do instead, with what else each choice takes with it:
+
+| Instead of the directive                 | What else it silences                                                                                                                                                                                             |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Delete the directive it complains about  | nothing                                                                                                                                                                                                           |
+| Accept the finding into a baseline       | nothing; the channel stays ratchetable on purpose                                                                                                                                                                 |
+| Narrow the run with a git scope          | nothing on this channel; the scope applies to the whole run as always                                                                                                                                             |
+| Top-level `exclude_paths`                | the file leaves the analysis entirely, with every channel on it                                                                                                                                                   |
+| `rules: { annotation.directive: false }` | the three configuration-error channels above go with it — `annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold` — because the same rule's validator declares them |
+
+  Two exclusions do **not** work on this channel and never did: the top-level
+  `exclude_namespaces` (the finding's subject is the file the annotation sits
+  in, so it carries no namespace to match) and the rule's own `exclude_paths` /
+  `exclude_namespaces` (they close with rule execution, and this channel is
+  assembled after it).
+
+  A finding on the channel is otherwise unchanged: ordinary debt with a
+  configurable severity, inside every stage of the pipeline. Rationale and the
+  rejected alternatives are in ADR 0041,
+  `docs/adr/0041-no-directive-may-silence-the-unused-directive-channel.md`.
 - Every class of the `design.*` rules moves under a subject segment of its own:
   `Qualimetrix\Analysis\Evidence\Design\DitGlobalCollector` becomes
   `Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector`, and likewise

@@ -45,6 +45,7 @@ docs/adr/0037-suppressed-format-and-produced-findings.md	Reporting	P6-D	"Move or
 docs/adr/0038-an-options-class-names-its-own-warning-boundary.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/adr/0039-directive-audit-command-and-contract.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/adr/0040-narrow-directive-sweep.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
+docs/adr/0041-no-directive-may-silence-the-unused-directive-channel.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/adr/README.md	Architecture.Governance	P0-D	"P0 governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."

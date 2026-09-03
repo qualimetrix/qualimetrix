@@ -1,8 +1,8 @@
 old	kind	new	step	src	tests	presets	config	baseline	website_docs	benchmarks	finding_gate
-annotation.invalid-threshold	channel	?		2	6	0	0	0	17	0	1
-annotation.unresolved-directive	channel	?		11	16	0	0	0	37	0	1
-annotation.unsupported-threshold	channel	?		6	6	0	0	0	17	0	1
-annotation.unused-directive	channel	?		16	21	0	0	0	33	0	2
+annotation.invalid-threshold	channel	?		2	6	0	0	0	19	0	1
+annotation.unresolved-directive	channel	?		11	16	0	0	0	40	0	1
+annotation.unsupported-threshold	channel	?		6	6	0	0	0	19	0	1
+annotation.unused-directive	channel	?		16	21	0	0	0	35	0	2
 architecture.circular-dependency	channel	?		9	29	0	2	0	39	0	1
 architecture.coverage	channel	?		18	71	0	0	0	43	0	1
 architecture.empty-template	channel	?		9	11	0	0	0	27	0	1
@@ -133,7 +133,7 @@ size.setter-count	metric-key	?		5	11	0	0	0	0	0	0
 size.symbol-class-count	metric-key	?		1	0	0	0	0	0	0	0
 size.symbol-method-count	metric-key	?		6	3	0	0	0	2	0	0
 size.trait-count	metric-key	?		11	13	0	0	0	0	0	0
-annotation.directive	producer	?		4	6	0	0	0	25	0	1
+annotation.directive	producer	?		4	6	0	0	0	26	0	1
 architecture.circular-dependency	producer	?		9	29	0	2	0	39	0	1
 architecture.layer-violation	producer	?		27	105	0	3	0	79	0	1
 architecture.unassigned-class	producer	?		25	18	0	0	0	21	0	2
