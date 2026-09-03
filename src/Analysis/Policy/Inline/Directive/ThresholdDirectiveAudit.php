@@ -56,11 +56,12 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
  * {@see AnalysisContext::getThresholdOverride()} is the only accessor a rule
  * calls, and every call site passes the calling rule's own name — held by
  * `ThresholdOverrideOwnRuleNameGuardTest`, which reddens on a foreign name.
- * That guard's property check is textual, not a type solver, so it also names
- * this class as one of two legitimate direct readers of the override map —
- * this class reads and rewrites `$input->baseline->thresholdOverrides` below
- * to build each counterfactual, which is the map's owning subject doing its
- * job, not a rule reading a neighbour's directive.
+ * That guard also names this class as one of two legitimate direct readers of
+ * the override map: it reads and rewrites `$input->baseline->thresholdOverrides`
+ * below to build each counterfactual, which is the map's owning subject doing
+ * its job, not a rule reading a neighbour's directive. The exception is
+ * exercised, not stated — the guard sees this read and reddens on it the moment
+ * the name is removed from its list.
  *
  * **This is the one caller that makes
  * {@see \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::execute()}'s
