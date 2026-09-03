@@ -90,15 +90,30 @@ final class ChannelSuggestionTieTest extends TestCase
      * apart, so a string three from two of them exists, and
      * `design.type-coverage.propurn` is one.
      *
-     * That string cannot be in the finding-gate corpus during the step that
-     * renames the three channels, and neither could the one before it. The two
-     * vocabularies are fourteen edits apart, so by the triangle inequality no
-     * single string is within five of a channel under both — whichever
-     * spelling the corpus holds, one side prints two suggestions and the other
-     * prints none, and `message` is a compared field a declared delta may not
-     * cover (`delta-overreach`). Ш4c added the fixture once the split names
-     * were on both sides; Ш5e3 retired it for the same reason, and the step
-     * after this one puts it back.
+     * That string reaches a published `message` through the finding-gate
+     * corpus, which is what makes the order below observable rather than
+     * internal — and it used to be the reason the fixture could not stay there
+     * across a rename of these three channels. The two vocabularies are
+     * fourteen edits apart, so by the triangle inequality no single string is
+     * within five of a channel under both: whichever spelling the corpus
+     * holds, one side prints two suggestions and the other prints none, the
+     * `message` field moves, and nothing could license that. `message` is a
+     * compared field, and the only source of permission `delta-overreach`
+     * consulted was a declared split, which produces moves of `channel`,
+     * `rule` and `code` and of nothing else. Ш4c added the fixture once the
+     * split names were on both sides; Ш5e3 retired it again for exactly that
+     * reason.
+     *
+     * That premise no longer holds, and the fixture is no longer hostage to
+     * it. `finding-gate/declared-field-moves.tsv` licenses one exact
+     * `(surface, field, from, to)` quadruple at a time, so a step that moves
+     * this `message` declares the move instead of removing the fixture that
+     * produces it. What it costs was measured on the step that introduced the
+     * form: one record's `message`, nine surfaces declared as exact diffs, and
+     * a single licence row — `delta-overreach` reads the published
+     * `"field": value` syntax, so only the surfaces publishing it need one.
+     * The fixture therefore stays, and a renaming step pays a declaration
+     * rather than a hole in what the gate observes.
      */
     #[Test]
     public function aTieIsReachableBetweenTheThreeTypeCoverageChannels(): void

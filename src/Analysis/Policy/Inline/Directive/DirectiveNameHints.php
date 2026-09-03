@@ -114,24 +114,43 @@ final readonly class DirectiveNameHints
      * would otherwise get "no close match" while its channels sat one letter
      * away from what the author meant.
      *
+     * Both hops offer addressable names only, which is why the banned channel
+     * is filtered out of the candidates rather than out of the answer: it is
+     * near-spelled by everything in its own family, so an author who mistyped a
+     * neighbouring `annotation.*` name would be handed the one name a directive
+     * may not carry, and the directive written from that advice is refused.
+     *
      * @return list<string>
      */
     private function nearestChannels(string $name): array
     {
-        $near = self::nearest($name, array_map(
+        $near = self::nearest($name, self::addressable(array_map(
             static fn(FindingChannel $channel): string => $channel->code,
             $this->identity->channels(),
-        ));
+        )));
 
         if ($near !== []) {
             return $near;
         }
 
         foreach (self::nearest($name, $this->identity->ruleNames()) as $ruleName) {
-            $near = [...$near, ...$this->channelsOf($ruleName)];
+            $near = [...$near, ...self::addressable($this->channelsOf($ruleName))];
         }
 
         return \array_slice($near, 0, self::SUGGESTION_LIMIT);
+    }
+
+    /**
+     * @param list<string> $codes
+     *
+     * @return list<string>
+     */
+    private static function addressable(array $codes): array
+    {
+        return array_values(array_filter(
+            $codes,
+            static fn(string $code): bool => !DirectiveChannelBan::covers($code),
+        ));
     }
 
     /**
