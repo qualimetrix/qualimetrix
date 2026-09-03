@@ -109,6 +109,25 @@ final class Probes
     ];
 
     /**
+     * Field of a finding => why losing it reaches further than the coverage
+     * case written for it, and how far.
+     *
+     * One field only, and that is the measurement rather than an oversight: the
+     * fingerprint is read positionally by the coverage cases, so most fields
+     * move nothing else, while a claim written about severity alone rests on
+     * the fingerprint seeing severity.
+     *
+     * @var array<string, array{0: string, 1: list<string>}>
+     */
+    private const array FIELD_CASCADES = [
+        'severity' => [
+            'severity is the field the effective-on-severity-alone case rests on, so the fingerprint no longer'
+            . ' seeing it denies that case too',
+            ['itCallsADirectiveEffectiveWhenItOnlyMovedTheSeverity'],
+        ],
+    ];
+
+    /**
      * One character of the target list => what breaking it claims, the list it
      * leaves behind, and the cases that must notice.
      *
@@ -119,19 +138,19 @@ final class Probes
             'the second measure stops reading a dotted channel whole',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_*#:-',
             [
-                'data set "plain"',
-                'data set "glued to the docblock star"',
-                'data set "after a multiline backtick region"',
-                'data set "two on one line"',
-                'data set "target cut at a call"',
-                'data set "star"',
-                'data set "hash"',
-                'data set "colon"',
-                'data set "digit"',
-                'data set "capital"',
-                'data set "cut target then a second directive"',
-                'data set "single-line docblock"',
-                'data set "comma"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "plain"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "glued to the docblock star"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "after a multiline backtick region"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "two on one line"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "target cut at a call"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "hash"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "colon"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "digit"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "capital"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "cut target then a second directive"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "single-line docblock"',
+                'itReadsAnAuthoredFormTheWayTheProductDoes with data set "comma"',
                 'itMeasuresTheSamePopulationOverTheWholeFixture',
                 'itScansATreeAndSkipsWhatIsNotPhp',
             ],
@@ -139,47 +158,47 @@ final class Probes
         'drops-the-underscore' => [
             'the second measure cuts a target at an underscore the product admits',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.*#:-',
-            ['data set "underscore"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "underscore"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-digits' => [
             'the second measure cuts a target at a digit the product admits',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_.*#:-',
-            ['data set "digit"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "digit"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-capitals' => [
             'the second measure cuts a target at a capital the product admits',
             'abcdefghijklmnopqrstuvwxyz0123456789_.*#:-',
-            ['data set "capital"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "capital"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-the-star' => [
             'the second measure cuts a wildcard target short',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.#:-',
-            ['data set "star"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-the-hash' => [
             'the second measure cuts the retired rule#code spelling short',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*:-',
-            ['data set "hash"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "hash"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-the-colon' => [
             'the second measure cuts a channel:level pair short, which is the pair the product refuses by name',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#-',
-            ['data set "colon"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "colon"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'drops-the-hyphen' => [
             'the second measure cuts a hyphenated channel short',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:',
-            ['data set "hyphen"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "hyphen"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'admits-a-slash' => [
             'the second measure reads past a slash the product stops at',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:-/',
-            ['data set "slash"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "slash"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
         'admits-a-plus' => [
             'the second measure reads past a plus the product stops at',
             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:-+',
-            ['data set "plus"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "plus"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
         ],
     ];
 
@@ -230,6 +249,12 @@ final class Probes
                     'itAsksForEveryVerdictTheProductCanPublishAndNoOther',
                     'itNamesEveryRequirementAHomogeneousPopulationMisses',
                 ],
+            )->alsoReddens(
+                'the floor\'s requirement list is read both when it refuses and when it reports what the population carries',
+                [
+                    'itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
+                    'itRefusesAVerdictCarriedOnlyByASuppression',
+                ],
             ),
             Probe::breaking(
                 'heterogeneity-forgets-a-refusal',
@@ -239,6 +264,11 @@ final class Probes
                 [
                     'itAsksForEveryRefusalTheProductCanPublishAndNoOther',
                     'itNamesEveryRequirementAHomogeneousPopulationMisses',
+                ],
+            )->alsoReddens(
+                'the floor\'s requirement list is read both when it refuses and when it reports what the population carries',
+                [
+                    'itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
                 ],
             ),
             Probe::breaking(
@@ -270,12 +300,22 @@ final class Probes
                     => '        foreach ($report->verdicts() as $verdict) {',
                 ],
                 ['itRefusesAVerdictCarriedOnlyByASuppression'],
+            )->alsoReddens(
+                'the floor\'s requirement list is read both when it refuses and when it reports what the population carries',
+                [
+                    'itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
+                ],
             ),
             Probe::planting(
                 'seeded-fixture-copied-into-src',
                 'a copy of the seeded directive fixture appears under src/ and the tree enumeration swallows it',
                 [self::SEEDED_LEAK => self::seededFile(self::SEEDED)],
                 ['itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc'],
+            )->alsoReddens(
+                'both cases forbid a seeded fixture under src/, and the planted copy is one file breaking both',
+                [
+                    'itKeepsEverySeededFixtureFileOutOfSrc',
+                ],
             ),
             Probe::planting(
                 'seeded-suppression-copied-into-src',
@@ -327,6 +367,12 @@ final class Probes
                     'itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
                     'itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured',
                 ],
+            )->alsoReddens(
+                'the measured meaning of a verdict is what the reader refuses a population by and the floor reports on',
+                [
+                    'itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
+                    'itRefusesAPopulationShortOfMeasuredThresholdVerdicts',
+                ],
             ),
             Probe::breaking(
                 'unknown-verdict-guessed',
@@ -353,6 +399,17 @@ final class Probes
                     'itNamesEveryVerdictTheProductCanPublishAndNoOther',
                     'itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday',
                 ],
+            )->alsoReddens(
+                'the frozen table is the vocabulary the reader, the floor and the gate all validate a report against',
+                [
+                    'itAcceptsAPopulationCarryingEveryVerdictAndEveryRefusal',
+                    'itAcceptsATreeWhoseSitesMatchAndWhereSomethingWasMeasured',
+                    'itKeepsEveryEntryOfASiteAuthoredTwice',
+                    'itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
+                    'itReadsAWellFormedReportAsOneMeasurementAndItsContext',
+                    'itRefusesAPopulationShortOfMeasuredThresholdVerdicts',
+                    'itRefusesAVerdictCarriedOnlyByASuppression',
+                ],
             ),
             Probe::breaking(
                 'floor-removed',
@@ -367,6 +424,11 @@ final class Probes
                 self::GATE,
                 ['        if ($onlyAudited !== [] || $onlyEnumerated !== []) {' => '        if (false) {'],
                 ['itReportsAPopulationMismatch'],
+            )->alsoReddens(
+                'the mismatch the gate discards is what the case about a directive gone missing reads',
+                [
+                    'itSeesOneOfTwoDirectivesOnASiteGoMissing',
+                ],
             ),
             Probe::breaking(
                 'empty-population-floored',
@@ -421,12 +483,12 @@ final class Probes
                     => "            return 'unmeasured';",
                 ],
                 [
-                    'data set "effect missing"',
-                    'data set "form missing"',
-                    'data set "file missing"',
-                    'data set "target missing"',
-                    'data set "effect null"',
-                    'data set "effect not a string"',
+                    'itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "effect missing"',
+                    'itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "form missing"',
+                    'itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "file missing"',
+                    'itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "target missing"',
+                    'itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "effect null"',
+                    'itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "effect not a string"',
                 ],
             ),
             Probe::breaking(
@@ -437,7 +499,7 @@ final class Probes
                     "            throw new AuditReportError(self::wrongType(\$where, \$key, 'an integer', \$value));"
                     => '            return 0;',
                 ],
-                ['data set "line not a number"'],
+                ['itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "line not a number"'],
             ),
             Probe::breaking(
                 'verdict-list-unchecked',
@@ -470,6 +532,13 @@ final class Probes
                 [
                     'itReadsAWellFormedReportAsOneMeasurementAndItsContext',
                     'itAcceptsATreeWhoseSitesMatchAndWhereSomethingWasMeasured',
+                ],
+            )->alsoReddens(
+                'the population the enumeration measures is the one the floor weighs and the gate reports on',
+                [
+                    'itFloorsNothingWhenNoThresholdSiteIsInScope',
+                    'itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet',
+                    'itRefusesAVerdictCarriedOnlyByASuppression',
                 ],
             ),
             Probe::breaking(
@@ -557,6 +626,11 @@ final class Probes
                     . "            'inert' => \$this->counts['inert'],\n        ];",
                 ],
                 ['itPublishesOneSummaryKeyPerVerdictTheVocabularyDefines'],
+            )->alsoReddens(
+                'a summary key named by hand is missing for the verdict the clean-exit case counts',
+                [
+                    'itExitsCleanWhenADirectiveCouldNotBeMeasured',
+                ],
             ),
             Probe::breaking(
                 'text-summary-by-hand',
@@ -568,6 +642,11 @@ final class Probes
                     . " ? '' : \sprintf('%d %s', \$this->counts[\$effect->value], self::label(\$effect));",
                 ],
                 ['itPrintsOneTallyPerVerdictTheVocabularyDefinesInTheTextSummary'],
+            )->alsoReddens(
+                'a hand-written text tally is exactly what makes the two formats disagree',
+                [
+                    'itSaysTheSameThingInBothFormats',
+                ],
             ),
         ];
     }
@@ -626,14 +705,24 @@ final class Probes
                 'a tag written against the docblock star is read as no directive at all',
                 self::SCAN,
                 ['!str_ends_with($word, self::DIRECTIVE)' => '$word !== self::DIRECTIVE'],
-                ['data set "glued to the docblock star"'],
+                ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "glued to the docblock star"'],
+            )->alsoReddens(
+                'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
+                [
+                    'itMeasuresTheSamePopulationOverTheWholeFixture',
+                ],
             ),
             Probe::breaking(
                 'scan-accepts-a-tag-with-a-suffix',
                 'a word that merely contains the tag is read as a directive',
                 self::SCAN,
                 ['!str_ends_with($word, self::DIRECTIVE)' => '!str_contains($word, self::DIRECTIVE)'],
-                ['data set "tag with a suffix"'],
+                ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "tag with a suffix"'],
+            )->alsoReddens(
+                'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
+                [
+                    'itMeasuresTheSamePopulationOverTheWholeFixture',
+                ],
             ),
             Probe::breaking(
                 'scan-reads-backticked-documentation',
@@ -643,7 +732,12 @@ final class Probes
                     'foreach (explode("\n", self::blankBacktickRegions($token[1])) as $offset => $line) {'
                     => 'foreach (explode("\n", $token[1]) as $offset => $line) {',
                 ],
-                ['data set "backticked"'],
+                ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "backticked"'],
+            )->alsoReddens(
+                'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
+                [
+                    'itMeasuresTheSamePopulationOverTheWholeFixture',
+                ],
             ),
             Probe::breaking(
                 'scan-cuts-a-backtick-region-out',
@@ -653,7 +747,12 @@ final class Probes
                     "            static fn(array \$match): string => preg_replace('/[^\\r\\n]/', ' ', \$match[0]) ?? \$match[0],"
                     => "            static fn(array \$match): string => '',",
                 ],
-                ['data set "after a multiline backtick region"'],
+                ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "after a multiline backtick region"'],
+            )->alsoReddens(
+                'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
+                [
+                    'itMeasuresTheSamePopulationOverTheWholeFixture',
+                ],
             ),
             Probe::breaking(
                 'scan-splits-on-a-comma',
@@ -661,7 +760,7 @@ final class Probes
                 self::SCAN,
                 ["    private const string WORD_SEPARATORS = \" \\t\";"
                     => "    private const string WORD_SEPARATORS = \" \\t,\";"],
-                ['data set "comma"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+                ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "comma"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
             ),
             Probe::breaking(
                 'scan-keeps-the-docblock-terminator',
@@ -671,7 +770,7 @@ final class Probes
                     "        if (!str_ends_with(\$trimmed, '*/')) {" => '        if (true) {',
                 ],
                 [
-                    'data set "single-line docblock"',
+                    'itReadsAnAuthoredFormTheWayTheProductDoes with data set "single-line docblock"',
                     'itMeasuresTheSamePopulationOverTheWholeFixture',
                     'itScansATreeAndSkipsWhatIsNotPhp',
                 ],
@@ -685,7 +784,7 @@ final class Probes
                     => '            if (true) {',
                 ],
                 [
-                    'data set "cut target then a second directive"',
+                    'itReadsAnAuthoredFormTheWayTheProductDoes with data set "cut target then a second directive"',
                     'itMeasuresTheSamePopulationOverTheWholeFixture',
                 ],
             ),
@@ -726,14 +825,19 @@ final class Probes
                     "            if (\$address['values'] !== '' || \$address['carriesValues']) {"
                     => '            if (false) {',
                 ],
-                ['data set "two on one line"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+                ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "two on one line"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
             ),
             Probe::breaking(
                 'scan-admits-an-empty-target',
                 'a tag followed by something no channel starts with is admitted as a site addressing nothing',
                 self::SCAN,
                 ["        if (\$target === '') {" => '        if (false) {'],
-                ['data set "target wrapped in parens"'],
+                ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "target wrapped in parens"'],
+            )->alsoReddens(
+                'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
+                [
+                    'itMeasuresTheSamePopulationOverTheWholeFixture',
+                ],
             ),
             Probe::breaking(
                 'scan-reads-ordinary-comments',
@@ -743,7 +847,7 @@ final class Probes
                     '            if (!\is_array($token) || $token[0] !== \T_DOC_COMMENT) {'
                     => '            if (!\is_array($token) || !\in_array($token[0], [\T_DOC_COMMENT, \T_COMMENT], true)) {',
                 ],
-                ['data set "outside a docblock"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+                ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "outside a docblock"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
             ),
             Probe::breaking(
                 'extractor-class-drops-punctuation',
@@ -753,7 +857,12 @@ final class Probes
                     "'/@qmx-threshold\\s+([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
                     => "'/@qmx-threshold\\s+([\\w.-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
                 ],
-                ['data set "star"', 'data set "hash"', 'data set "colon"'],
+                ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"', 'itReadsAnAuthoredFormTheWayTheProductDoes with data set "hash"', 'itReadsAnAuthoredFormTheWayTheProductDoes with data set "colon"'],
+            )->alsoReddens(
+                'the whole-fixture agreement reads the same target class as the per-form cases, so narrowing it moves that too',
+                [
+                    'itMeasuresTheSamePopulationOverTheWholeFixture',
+                ],
             ),
             Probe::breaking(
                 'extractor-class-drops-word-characters',
@@ -763,7 +872,12 @@ final class Probes
                     "'/@qmx-threshold\\s+([\\w.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'"
                     => "'/@qmx-threshold\\s+([a-z.*#:-]+)(?:[ \\t]+([^\\n\\r]*))?/'",
                 ],
-                ['data set "digit"', 'data set "underscore"', 'data set "capital"'],
+                ['itReadsAnAuthoredFormTheWayTheProductDoes with data set "digit"', 'itReadsAnAuthoredFormTheWayTheProductDoes with data set "underscore"', 'itReadsAnAuthoredFormTheWayTheProductDoes with data set "capital"'],
+            )->alsoReddens(
+                'the whole-fixture agreement reads the same target class as the per-form cases, so narrowing it moves that too',
+                [
+                    'itMeasuresTheSamePopulationOverTheWholeFixture',
+                ],
             ),
         ];
     }
@@ -785,13 +899,17 @@ final class Probes
         $probes = [];
 
         foreach (self::FIELD_READS as $field => $read) {
-            $probes[] = Probe::breaking(
+            $probe = Probe::breaking(
                 'field-' . strtolower(preg_replace('/(?<!^)[A-Z]/', '-$0', $field) ?? $field),
                 \sprintf('the fingerprint stops reading %s', $field),
                 self::FINGERPRINT,
                 [$read . "\n" => ''],
                 [\sprintf('itSeesEveryFieldItNames with data set "%s"', $field)],
             );
+
+            $probes[] = isset(self::FIELD_CASCADES[$field])
+                ? $probe->alsoReddens(self::FIELD_CASCADES[$field][0], self::FIELD_CASCADES[$field][1])
+                : $probe;
         }
 
         return $probes;
@@ -823,6 +941,43 @@ final class Probes
                     => "            verdicts: \$verdicts,\n            coverage: new AnalysisCoverage([], [], []),",
                 ],
                 ['itReportsWhatTheRunMeasuredAlongsideTheVerdicts'],
+            )->alsoReddens(
+                'every case of the command reads the coverage the pipeline hands back, so emptying it moves the whole rendered report, not one line of it',
+                [
+                    'itAcceptsAnExplicitFullSweep',
+                    'itAnalysesTheSameFilesAsCheckUnderTheSameExcludes',
+                    'itCallsASuppressionEffectiveWhenItSilencedAFinding',
+                    'itDefaultsToTheNarrowSweep',
+                    'itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt',
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "a rule that declares no override support"',
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unparsable payload"',
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unresolvable name"',
+                    'itExitsCleanWhenADirectiveCouldNotBeMeasured',
+                    'itExitsCleanWhenEveryDirectiveStillDoesSomething',
+                    'itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse',
+                    'itExitsFourWhenTheRunCouldNotParsePartOfTheTree',
+                    'itExitsTwoOnAnInertDirective',
+                    'itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "every level of it"',
+                    'itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the level the directive sits on"',
+                    'itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the whole rule"',
+                    'itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel',
+                    'itPrintsTheSweepScopeInBothFormats',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, a group that covers it"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, that group at file level"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, the exact name at file level"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, the exact name"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, a group that covers it"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, that group at file level"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, the exact name at file level"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, the exact name"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, a group that covers it"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, that group at file level"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, the exact name at file level"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, the exact name"',
+                    'itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
+                    'itSaysTheSameThingInBothFormats',
+                    'itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled',
+                ],
             ),
         ];
     }
@@ -839,6 +994,41 @@ final class Probes
                 self::FINGERPRINT,
                 [$sameness => '        if (true) {'],
                 ['itCallsADirectiveEffectiveWhenRemovingItChangesWhatTheRulesProduced'],
+            )->alsoReddens(
+                'a blanket denial of the comparison every verdict rests on; the flag exempts it from the upper bound, not from naming what it reaches',
+                [
+                    'itAcceptsAnExplicitFullSweep',
+                    'itCallsADirectiveEffectiveWhenItOnlyMovedTheSeverity',
+                    'itCallsADirectiveOverrunWhenOnlyTheBoundaryMoved',
+                    'itExitsCleanWhenEveryDirectiveStillDoesSomething',
+                    'itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse',
+                    'itJudgesByWhatTheRulesProducedRatherThanWhatTheyPublished',
+                    'itNamesTheNeighbourThatActuallyHidesIt',
+                    'itProducesTheSameVerdictsUnderANarrowAndAFullSweepOnATreeWithSeveralRules',
+                    'itRefusesToJudgeADirectiveMaskedOnlyByTwoNeighboursTogether',
+                    'itRefusesToJudgeEitherDirectiveOfAMaskingPair',
+                    'itRemovesEveryBindingOfOneAuthoredSite',
+                    'itSaysTheSameThingInBothFormats',
+                    'itSeesEveryFieldItNames with data set "acceptedLevel"',
+                    'itSeesEveryFieldItNames with data set "code"',
+                    'itSeesEveryFieldItNames with data set "dependencyTarget"',
+                    'itSeesEveryFieldItNames with data set "dependencyType"',
+                    'itSeesEveryFieldItNames with data set "location"',
+                    'itSeesEveryFieldItNames with data set "message"',
+                    'itSeesEveryFieldItNames with data set "metricValue"',
+                    'itSeesEveryFieldItNames with data set "occurrenceKey"',
+                    'itSeesEveryFieldItNames with data set "recommendation"',
+                    'itSeesEveryFieldItNames with data set "relatedLocations"',
+                    'itSeesEveryFieldItNames with data set "ruleName"',
+                    'itSeesEveryFieldItNames with data set "severity"',
+                    'itSeesEveryFieldItNames with data set "subject"',
+                    'itSeesEveryFieldItNames with data set "symbolPath"',
+                    'itSeesEveryFieldItNames with data set "threshold"',
+                    'itSeparatesTheLiveDirectiveFromTheDeadOneOnOneAnchor',
+                    'itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne',
+                    'itStillJudgesTheOutcomeOfARuleThatPublishesNoBoundary',
+                    'itTakesEveryMaskerOutOfTheComparison',
+                ],
             ),
             Probe::blanket(
                 'outcome-never-matched',
@@ -846,6 +1036,24 @@ final class Probes
                 self::FINGERPRINT,
                 [$sameness => '        if (false) {'],
                 ['itCallsADirectiveInertWhenRemovingItChangesNothing'],
+            )->alsoReddens(
+                'a blanket denial of the comparison every verdict rests on; the flag exempts it from the upper bound, not from naming what it reaches',
+                [
+                    'itComparesTheCounterfactualAgainstAReferenceTakenByTheSameNarrowing',
+                    'itDoesNotCallAPairMaskedWhereTheRuleNeverReports',
+                    'itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt',
+                    'itExitsTwoOnAnInertDirective',
+                    'itMarksTheBoundaryUnobservableWhenTheRulePublishedNone',
+                    'itNamesTheNeighbourThatActuallyHidesIt',
+                    'itProducesTheSameVerdictsUnderANarrowAndAFullSweepOnATreeWithSeveralRules',
+                    'itRefusesToJudgeADirectiveMaskedOnlyByTwoNeighboursTogether',
+                    'itRefusesToJudgeEitherDirectiveOfAMaskingPair',
+                    'itSaysTheSameThingInBothFormats',
+                    'itSeparatesTheLiveDirectiveFromTheDeadOneOnOneAnchor',
+                    'itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne',
+                    'itStillJudgesEachDirectiveOfAThreeWayCoalitionThatChangesNothingTogether',
+                    'itTakesEveryMaskerOutOfTheComparison',
+                ],
             ),
         ];
     }
@@ -866,6 +1074,26 @@ final class Probes
                 self::AUDIT,
                 [$filter => '                static fn(ThresholdOverride $override): bool => true,'],
                 ['itCallsADirectiveEffectiveWhenRemovingItChangesWhatTheRulesProduced'],
+            )->alsoReddens(
+                'removal is the counterfactual every verdict is measured against, so a removal that removes nothing moves every measured case',
+                [
+                    'itAcceptsAnExplicitFullSweep',
+                    'itCallsADirectiveEffectiveWhenItOnlyMovedTheSeverity',
+                    'itCallsADirectiveOverrunWhenOnlyTheBoundaryMoved',
+                    'itExitsCleanWhenEveryDirectiveStillDoesSomething',
+                    'itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse',
+                    'itJudgesByWhatTheRulesProducedRatherThanWhatTheyPublished',
+                    'itNamesTheNeighbourThatActuallyHidesIt',
+                    'itProducesTheSameVerdictsUnderANarrowAndAFullSweepOnATreeWithSeveralRules',
+                    'itRefusesToJudgeADirectiveMaskedOnlyByTwoNeighboursTogether',
+                    'itRefusesToJudgeEitherDirectiveOfAMaskingPair',
+                    'itRemovesEveryBindingOfOneAuthoredSite',
+                    'itSaysTheSameThingInBothFormats',
+                    'itSeparatesTheLiveDirectiveFromTheDeadOneOnOneAnchor',
+                    'itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne',
+                    'itStillJudgesTheOutcomeOfARuleThatPublishesNoBoundary',
+                    'itTakesEveryMaskerOutOfTheComparison',
+                ],
             ),
             Probe::breaking(
                 'first-binding-only',
@@ -873,6 +1101,14 @@ final class Probes
                 self::AUDIT,
                 [$filter => "                static fn(ThresholdOverride \$override): bool => \$override !== \$group->bindings[0],"],
                 ['itRemovesEveryBindingOfOneAuthoredSite'],
+            )->alsoReddens(
+                'removing a binding rather than an authored site changes what every masking and outcome case removes',
+                [
+                    'itRefusesToJudgeEitherDirectiveOfAMaskingPair',
+                    'itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne',
+                    'itStillJudgesTheOutcomeOfARuleThatPublishesNoBoundary',
+                    'itTakesEveryMaskerOutOfTheComparison',
+                ],
             ),
         ];
     }
@@ -887,6 +1123,14 @@ final class Probes
                 self::FINGERPRINT,
                 ['$key = $identityKey . "\0" . self::boundaryOf($finding);' => '$key = $identityKey;'],
                 ['itCallsADirectiveOverrunWhenOnlyTheBoundaryMoved'],
+            )->alsoReddens(
+                'the fingerprint is read positionally by the field-coverage cases, so dropping one field shifts the ones written after it',
+                [
+                    'itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse',
+                    'itSeesEveryFieldItNames with data set "message"',
+                    'itSeesEveryFieldItNames with data set "recommendation"',
+                    'itSeesEveryFieldItNames with data set "threshold"',
+                ],
             ),
             Probe::breaking(
                 'recommendation-as-identity',
@@ -933,6 +1177,12 @@ final class Probes
                     . '                : null;' => '            $maskedBy = null;',
                 ],
                 ['itRefusesToJudgeEitherDirectiveOfAMaskingPair'],
+            )->alsoReddens(
+                'the coalition pass is what both neighbour cases read; skipping it denies them together',
+                [
+                    'itNamesTheNeighbourThatActuallyHidesIt',
+                    'itRefusesToJudgeADirectiveMaskedOnlyByTwoNeighboursTogether',
+                ],
             ),
             Probe::breaking(
                 'structural-masking',
@@ -944,6 +1194,13 @@ final class Probes
                     . '        }' => "        if (false) {\n            return null;\n        }",
                 ],
                 ['itDoesNotCallAPairMaskedWhereTheRuleNeverReports'],
+            )->alsoReddens(
+                'masking decided by overlap alone changes every coalition case, which read the same decision',
+                [
+                    'itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne',
+                    'itStillJudgesEachDirectiveOfAThreeWayCoalitionThatChangesNothingTogether',
+                    'itTakesEveryMaskerOutOfTheComparison',
+                ],
             ),
             Probe::breaking(
                 'pairwise-masking',
@@ -960,6 +1217,11 @@ final class Probes
                 [$maskerRun => '        $withoutMaskers = ExecutionFingerprint::of('
                     . '($this->without)([], $restrictToProducer));'],
                 ['itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne'],
+            )->alsoReddens(
+                'the comparison the coalition is taken against is the one the masker-removal case reads',
+                [
+                    'itTakesEveryMaskerOutOfTheComparison',
+                ],
             ),
             Probe::breaking(
                 'masker-named-by-position',
@@ -981,6 +1243,14 @@ final class Probes
                 self::AUDIT,
                 ["        \$this->assertReproducible(\$input, \$baseline, 'before');\n" => ''],
                 ['itRefusesEveryVerdictWhenTheFirstControlDoesNotReproduceTheRun'],
+            )->alsoReddens(
+                'the control run is the reference every later comparison of the sweep is taken against',
+                [
+                    'itControlsTheRunThroughTheSamePathTheCounterfactualsTake',
+                    'itProducesTheSameVerdictsUnderANarrowAndAFullSweepOnATreeWithSeveralRules',
+                    'itRefusesEveryVerdictWhenTheLastControlDoesNotReproduceTheRun',
+                    'itRemovesEveryBindingOfOneAuthoredSite',
+                ],
             ),
             Probe::breaking(
                 'no-control-after',
@@ -991,6 +1261,12 @@ final class Probes
                     . '        return $judged;' => '        return $judged;',
                 ],
                 ['itRefusesEveryVerdictWhenTheLastControlDoesNotReproduceTheRun'],
+            )->alsoReddens(
+                'the closing control is the second half of the reference the whole sweep is compared against',
+                [
+                    'itProducesTheSameVerdictsUnderANarrowAndAFullSweepOnATreeWithSeveralRules',
+                    'itRemovesEveryBindingOfOneAuthoredSite',
+                ],
             ),
             Probe::breaking(
                 'control-skips-the-rebuild',
@@ -1029,6 +1305,26 @@ final class Probes
                 self::AUDIT,
                 ['            $effect = $effects[$index];' => '            $effect = DirectiveEffect::Effective;'],
                 ['itCallsADirectiveInertWhenRemovingItChangesNothing'],
+            )->alsoReddens(
+                'the verdict is what every audit and every command case reads, so denying the measurement behind it moves all of them',
+                [
+                    'itCallsADirectiveOverrunWhenOnlyTheBoundaryMoved',
+                    'itComparesTheCounterfactualAgainstAReferenceTakenByTheSameNarrowing',
+                    'itDoesNotCallAPairMaskedWhereTheRuleNeverReports',
+                    'itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt',
+                    'itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse',
+                    'itExitsTwoOnAnInertDirective',
+                    'itMarksTheBoundaryUnobservableWhenTheRulePublishedNone',
+                    'itNamesTheNeighbourThatActuallyHidesIt',
+                    'itProducesTheSameVerdictsUnderANarrowAndAFullSweepOnATreeWithSeveralRules',
+                    'itRefusesToJudgeADirectiveMaskedOnlyByTwoNeighboursTogether',
+                    'itRefusesToJudgeEitherDirectiveOfAMaskingPair',
+                    'itSaysTheSameThingInBothFormats',
+                    'itSeparatesTheLiveDirectiveFromTheDeadOneOnOneAnchor',
+                    'itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne',
+                    'itStillJudgesEachDirectiveOfAThreeWayCoalitionThatChangesNothingTogether',
+                    'itTakesEveryMaskerOutOfTheComparison',
+                ],
             ),
             Probe::breaking(
                 'boundary-always-observable',
@@ -1041,6 +1337,11 @@ final class Probes
                     => '                boundaryObservable: true,',
                 ],
                 ['itMarksTheBoundaryUnobservableWhenTheRulePublishedNone'],
+            )->alsoReddens(
+                'observability is the same flag the no-boundary-published case reads',
+                [
+                    'itStillJudgesTheOutcomeOfARuleThatPublishesNoBoundary',
+                ],
             ),
         ];
     }
@@ -1092,6 +1393,17 @@ final class Probes
                 self::USAGE,
                 ['                    default => DirectiveEffect::Inert,' => '                    default => DirectiveEffect::Effective,'],
                 ['itCallsASuppressionInertWhenNothingItCoversWasProduced'],
+            )->alsoReddens(
+                'the suppression half of the usage verdict is what the command, the ban and the stale-projection cases read',
+                [
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "a rule that declares no override support"',
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unparsable payload"',
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unresolvable name"',
+                    'itLeavesTheBannedChannelInsideEveryStageAfterSuppression',
+                    'itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel',
+                    'itProjectsExactlyTheInertVerdictsIntoStaleFindings',
+                    'itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
+                ],
             ),
             Probe::breaking(
                 'verdict-forgets-where-it-was-written',
@@ -1099,6 +1411,14 @@ final class Probes
                 self::USAGE,
                 ['                            line: $directive->line,' => '                            line: 1,'],
                 ['itCarriesTheSiteTheDirectiveWasWrittenAt'],
+            )->alsoReddens(
+                'the site is the identity a verdict is grouped, projected and refused by, so moving it moves each of those',
+                [
+                    'itGroupsAuthoredSitesTheSameWayThePolicyDoes',
+                    'itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel',
+                    'itProjectsExactlyTheInertVerdictsIntoStaleFindings',
+                    'itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
+                ],
             ),
             Probe::breaking(
                 'grouping-ignores-the-tag',
@@ -1107,6 +1427,11 @@ final class Probes
                 ['            $groups[$suppression->line . "\0" . $suppression->type->value . "\0" . $suppression->rule][] = $suppression;'
                     => '            $groups[$suppression->line . "\0" . $suppression->rule][] = $suppression;'],
                 ['itKeepsTwoDirectiveFormsWrittenOnOneLineApart'],
+            )->alsoReddens(
+                'the grouping this breaks is the one the policy-agreement case reads as well',
+                [
+                    'itGroupsAuthoredSitesTheSameWayThePolicyDoes',
+                ],
             ),
             Probe::breaking(
                 'grouping-splits-one-site',
@@ -1115,6 +1440,11 @@ final class Probes
                 ['            $groups[$suppression->line . "\0" . $suppression->type->value . "\0" . $suppression->rule][] = $suppression;'
                     => '            $groups[spl_object_id($suppression)][] = $suppression;'],
                 ['itGroupsAuthoredSitesTheSameWayThePolicyDoes'],
+            )->alsoReddens(
+                'the grouping this breaks is the one both the policy-agreement case and the class-docblock case read',
+                [
+                    'itReportsOneVerdictForAClassDocblockThatBoundSixDeclarations',
+                ],
             ),
             Probe::breaking(
                 'suppression-judges-the-unaddressable-pair',
@@ -1129,6 +1459,12 @@ final class Probes
                 self::USAGE,
                 ['        if ($target->appliesToEveryChannel()) {' => '        if (false) {'],
                 ['itRefusesToJudgeADirectiveWithoutARuleFilter'],
+            )->alsoReddens(
+                'a suppression judged without its rule filter reaches the banned channel and the unmeasured verdict alike',
+                [
+                    'itExitsCleanWhenADirectiveCouldNotBeMeasured',
+                    'itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel',
+                ],
             ),
             Probe::breaking(
                 'suppression-ignores-a-disabled-producer',
@@ -1274,7 +1610,7 @@ final class Probes
                     '$sweep = DirectiveSweepScope::tryFrom($requestedSweep);'
                     => '$sweep = DirectiveSweepScope::tryFrom($requestedSweep) ?? DirectiveSweepScope::Narrow;',
                 ],
-                ['itRefusesAnUnknownSweep'],
+                ['itRefusesAnUnknownSweep', 'itRefusesAnUnknownSweepInJson'],
             ),
             Probe::breaking(
                 'command-errors-in-prose-under-json',
@@ -1287,6 +1623,11 @@ final class Probes
 "
                     . '            OutputHelper::write($output, DirectiveAuditPresenter::jsonError($message, $exitCode));'],
                 ['itPrintsTheErrorEnvelopeInJson'],
+            )->alsoReddens(
+                'the unknown-sweep-in-JSON case is refused through the same envelope this breakage removes',
+                [
+                    'itRefusesAnUnknownSweepInJson',
+                ],
             ),
             Probe::breaking(
                 'unreadable-config-is-not-a-config-error',
@@ -1294,6 +1635,11 @@ final class Probes
                 self::FAILURE_TAXONOMY,
                 ['            $failure instanceof ConfigLoadException,' => '            false,'],
                 ['itReportsAnUnreadableConfigAsAConfigurationError'],
+            )->alsoReddens(
+                'the JSON envelope case reaches the same failure taxonomy this breakage rewrites',
+                [
+                    'itPrintsTheErrorEnvelopeInJson',
+                ],
             ),
             Probe::breaking(
                 'scope-that-read-nothing-is-clean',
@@ -1326,6 +1672,13 @@ final class Probes
                     'itRefusesToJudgeADirectiveWhoseProducerIsDisabled',
                     'itRefusesToJudgeADirectiveWhoseProducerIsOffThroughItsOptions',
                 ],
+            )->alsoReddens(
+                'the enablement check is the single read behind every case about a producer that is switched off',
+                [
+                    'itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "every level of it"',
+                    'itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the level the directive sits on"',
+                    'itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the whole rule"',
+                ],
             ),
             Probe::breaking(
                 'producer-granularity-instead-of-level',
@@ -1336,7 +1689,7 @@ final class Probes
                     'return $declared ? false : !$this->disabledEverywhere($producer);' =>
                         'return !$this->disabledEverywhere($producer);',
                 ],
-                ['itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff'],
+                ['itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the level the directive sits on"'],
             ),
             Probe::breaking(
                 'judge-by-published',
