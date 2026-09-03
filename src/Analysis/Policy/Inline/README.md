@@ -28,15 +28,19 @@ Inline/
 ├── Extraction/
 │   ├── DeclarationControlBindings.php
 │   └── SourceControlExtractor.php
-├── Directive/
+├── Directive/                      # the directive itself: store, addressing, validation
+│   ├── Audit/                      # what each authored directive did, both halves
+│   │   ├── AuthoredDirectiveGroup.php # one authored @qmx-threshold, its bindings, site and subjects
+│   │   ├── DirectiveMaskingCoalition.php # which threshold directives of one rule hide one another
+│   │   ├── DirectiveUsage.php      # what each authored suppression did
+│   │   ├── ExecutionFingerprint.php # what one rule execution produced, compared as a whole
+│   │   ├── MaskingOutcome.php      # what the sweep decided about one group, before it is reported
+│   │   ├── StaleDirectiveFinding.php # the finding that says a directive silenced nothing
+│   │   └── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
-│   ├── DirectiveMaskingCoalition.php # which threshold directives of one rule hide one another
+│   ├── DirectiveLevels.php         # which levels one directive can silence a channel at
 │   ├── DirectiveNameHints.php      # "did you mean" by reverse query
 │   ├── DirectiveRejection.php
-│   ├── DirectiveUsage.php          # what each authored suppression did
-│   ├── DirectiveLevels.php         # which levels one directive can silence a channel at
-│   ├── StaleDirectiveFinding.php   # the finding that says a directive silenced nothing
-│   ├── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── InlineDirectiveOptions.php
 │   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting
 │   ├── InlineDirectiveValidator.php # owns the three annotation.* directive errors
@@ -207,6 +211,26 @@ move another rule's findings: the two scopes are run over the same tree and
 compared verdict for verdict, and a disagreement between them is a defect in
 the narrowing. On this project's own `src`, narrowing is the difference between
 eight rule executions and thirty-three whole ones.
+
+That comparison is `composer directives:narrow-control`, and it runs three
+times. Over `tests/Analysis/Policy/Inline/Fixtures/NarrowControl`, whose
+directives are seeded so that every verdict and every reason for refusing one
+occurs at least once — the run demands that and refuses the population
+otherwise; over that fixture's `Silenced/` half, where every addressed rule was
+silenced by its own directive; and over `src/`, the real population. `src/`
+alone would not do: every verdict in it is `Effective`, so an agreement there
+reddens for a defect that kills verdicts and stays silent for one that revives
+them, which is the direction it watches as normal. Measured: collapsing the
+narrowed baseline onto the full one flips four of the fixture's eight verdicts
+and none of `src/`'s.
+
+`Silenced/` is a second window on the same fixture rather than a second fixture,
+and it exists because the floor and the discrimination pull apart. The floor
+demands an `Overrun`; an `Overrun` demands a finding the addressed rule actually
+produced; and a produced finding is exactly what makes
+`assertNarrowingChangedNothing()` refuse a sweep narrowed to the wrong producer
+before any verdict is reached. Measured: that defect leaves the whole fixture as
+"not comparable" and the `Silenced/` half as three disagreeing verdicts.
 
 **One removal is one annotation, not one binding.** A class docblock
 materialises on the class and on every declaration inside it; removing the

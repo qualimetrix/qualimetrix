@@ -21,6 +21,15 @@ parameters:
         - tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures
     tmpDir: .phpstan.cache
     reportUnmatchedIgnoredErrors: true
+    ignoreErrors:
+        # One authored form in the agreement fixture is a target the product
+        # refuses to read — `(paren.wrapped)` — and PHPDoc cannot parse it
+        # either. The file is analysed like any other; only the one shape it
+        # exists to state is ignored, and `reportUnmatchedIgnoredErrors` turns
+        # the day it stops being written into a failure.
+        -
+            identifier: phpDoc.parseError
+            path: tests/Unit/RuleVocabulary/Fixtures/AuthoredThresholdForms.php
     treatPhpDocTypesAsCertain: false
 
 services:

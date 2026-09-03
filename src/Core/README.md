@@ -678,8 +678,9 @@ in P2. P4 moved cycle values and their preparation to
 ## Progress and profiling boundaries
 
 Collection progress is a Run-owned consumer port implemented by the Console
-adapter. The Console switch is instance-owned and resets to no-op for quiet,
-non-TTY, and `--no-progress` runs; Core has no progress type.
+adapter. The Console switch is instance-owned and resets to no-op for quiet
+runs, `--no-progress` runs, and runs whose **error** stream is not a terminal —
+the bar is drawn there, not on standard output. Core has no progress type.
 
 `Core\Profiler\Contract\ProfilerInterface` contains only neutral
 instrumentation operations (`start()` and `stop()`). Profiling session state,

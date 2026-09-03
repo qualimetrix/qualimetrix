@@ -660,18 +660,20 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\AuthoredDirectiveGroup'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveMaskingCoalition'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ExecutionFingerprint'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\MaskingOutcome'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\StaleDirectiveFinding'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveAudit'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels'
-        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveMaskingCoalition'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveNameHints'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveRejection'
-        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveUsage'
-        - 'Qualimetrix\Analysis\Policy\Inline\Directive\ExecutionFingerprint'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator'
-        - 'Qualimetrix\Analysis\Policy\Inline\Directive\StaleDirectiveFinding'
-        - 'Qualimetrix\Analysis\Policy\Inline\Directive\ThresholdDirectiveAudit'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor'
@@ -808,6 +810,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter'
         - 'Qualimetrix\Infrastructure\Console\DiagnosticOutput'
         - 'Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter'
+        - 'Qualimetrix\Infrastructure\Console\DirectiveVerdictTally'
         - 'Qualimetrix\Infrastructure\Console\ExitCodeResolver'
         - 'Qualimetrix\Infrastructure\Console\ExitPolicy'
         - 'Qualimetrix\Infrastructure\Console\FilteredInputDefinition'
@@ -1646,6 +1649,21 @@ rules:
 
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
+    exclude_namespaces:
+      # A console command shares no fields by construction: `configure()` touches
+      # none of them and the helpers are static, so shared-field cohesion
+      # mis-models the design rather than reporting debt. Seven commands sat at
+      # exactly 40 and all seven were accepted in the ratchet; one scoped
+      # exclusion states that one decision once. Plain prefix form on purpose —
+      # the `[Q]` idiom would make this a glob and leave `Command\Debug\*` out.
+      #
+      # What this costs, precisely: five of those seven classes are left with no
+      # ratchet entry at all (only BaselineCleanupCommand and BaselineUpdateCommand
+      # keep callable-level entries on other channels), and on this root cohesion
+      # fired earlier than any size channel — six methods at lcom=2 against the
+      # twenty of size.method-count. Command bloat is still caught here by
+      # size.method-count (20) and cohesion.lcom (5), just later.
+      - Qualimetrix\Infrastructure\Console\Command
     exclude_namespace_channels:
       health.cohesion:
         # Stateless expansion algorithms and their immutable result do not share

@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The progress bar is drawn on standard error instead of standard output, so a
+  report on a terminal is no longer prefixed with terminal control bytes:
+  `bin/qmx check src/ --format=json > report.json` now writes valid JSON without
+  `--no-progress`. The bar is shown when standard error is a terminal, which it
+  still is when standard output has been redirected.
+- `--no-progress` is accepted by every command that shows progress, not by
+  `check` alone: `directives`, `debug:layer-assignment`, `baseline:generate`,
+  `baseline:update`, `baseline:cleanup` and `baseline:explain` take it too.
+  `graph:export` analyses too but has never drawn a bar, so it does not take it.
 - `bin/qmx directives` reports what every inline `@qmx-ignore` and `@qmx-threshold`
   in the analysed tree actually does — effective, applied-boundary-only, inert, or
   unmeasured with a named reason — in `text` or `json`, under the same `--preset`,

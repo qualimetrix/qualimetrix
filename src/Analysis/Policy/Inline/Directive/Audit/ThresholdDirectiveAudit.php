@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Inline\Directive;
+namespace Qualimetrix\Analysis\Policy\Inline\Directive\Audit;
 
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
@@ -13,12 +13,12 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 
@@ -56,11 +56,12 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
  * {@see AnalysisContext::getThresholdOverride()} is the only accessor a rule
  * calls, and every call site passes the calling rule's own name — held by
  * `ThresholdOverrideOwnRuleNameGuardTest`, which reddens on a foreign name.
- * That guard's property check is textual, not a type solver, so it also names
- * this class as one of two legitimate direct readers of the override map —
- * this class reads and rewrites `$input->baseline->thresholdOverrides` below
- * to build each counterfactual, which is the map's owning subject doing its
- * job, not a rule reading a neighbour's directive.
+ * That guard also names this class as one of two legitimate direct readers of
+ * the override map: it reads and rewrites `$input->baseline->thresholdOverrides`
+ * below to build each counterfactual, which is the map's owning subject doing
+ * its job, not a rule reading a neighbour's directive. The exception is
+ * exercised, not stated — the guard sees this read and reddens on it the moment
+ * the name is removed from its list.
  *
  * **This is the one caller that makes
  * {@see \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::execute()}'s
@@ -104,7 +105,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
 
         foreach ($groups as $group) {
             $reason = $this->unmeasurableReason(
-                $group['bindings'],
+                $group->bindings,
                 $input->baselineResult->levelActivity,
                 $selection->only,
                 $selection->disabled,
@@ -116,12 +117,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
                 continue;
             }
 
-            $judged[] = [
-                'group' => $group,
-                'effect' => DirectiveEffect::Unmeasured,
-                'reason' => $reason,
-                'maskedBy' => null,
-            ];
+            $judged[] = new MaskingOutcome($group, DirectiveEffect::Unmeasured, $reason, null);
         }
 
         return self::report([...$judged, ...$this->sweep($input, $measurable)], $input->baselineResult->produced);
@@ -131,9 +127,9 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * One removal per authored directive, bracketed by the control that says
      * the removals mean anything at all.
      *
-     * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $measurable
+     * @param list<AuthoredDirectiveGroup> $measurable
      *
-     * @return list<array{group: array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}, effect: DirectiveEffect, reason: ?DirectiveUnmeasurableReason, maskedBy: ?DirectiveSite}>
+     * @return list<MaskingOutcome>
      */
     private function sweep(ThresholdDirectiveAuditInput $input, array $measurable): array
     {
@@ -147,7 +143,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $references = [];
         $effects = [];
         foreach ($measurable as $group) {
-            $rule = $group['rule'];
+            $rule = $group->rule;
             $references[$rule] ??= $this->reference($input, $rule, $baseline);
             $effects[] = $references[$rule]->compareTo(
                 ExecutionFingerprint::of($this->without($input, [$group], self::narrowedTo($input, $rule))),
@@ -161,12 +157,12 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
                 ? $this->maskedBy($input, $measurable, $index)
                 : null;
 
-            $judged[] = [
-                'group' => $group,
-                'effect' => $maskedBy === null ? $effect : DirectiveEffect::Unmeasured,
-                'reason' => $maskedBy === null ? null : DirectiveUnmeasurableReason::Masked,
-                'maskedBy' => $maskedBy,
-            ];
+            $judged[] = new MaskingOutcome(
+                $group,
+                $maskedBy === null ? $effect : DirectiveEffect::Unmeasured,
+                $maskedBy === null ? null : DirectiveUnmeasurableReason::Masked,
+                $maskedBy,
+            );
         }
 
         $this->assertReproducible($input, $baseline, 'after');
@@ -183,7 +179,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * carried over by reference, so the copy costs nothing and the rules see
      * the same measured world with one annotation missing.
      *
-     * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $groups
+     * @param list<AuthoredDirectiveGroup> $groups
      *
      * @return list<Finding>
      */
@@ -195,10 +191,10 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $overrides = $input->baseline->thresholdOverrides;
 
         foreach ($groups as $group) {
-            $overrides[$group['file']] = array_values(array_filter(
-                $overrides[$group['file']] ?? [],
-                static fn(ThresholdOverride $override): bool => $override->line !== $group['line']
-                    || $override->rulePattern !== $group['rule'],
+            $overrides[$group->fileKey] = array_values(array_filter(
+                $overrides[$group->fileKey] ?? [],
+                static fn(ThresholdOverride $override): bool => $override->line !== $group->line
+                    || $override->rulePattern !== $group->rule,
             ));
         }
 
@@ -412,7 +408,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * read off the baseline, and the whole list in the order an author reads a
      * tree.
      *
-     * @param list<array{group: array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}, effect: DirectiveEffect, reason: ?DirectiveUnmeasurableReason, maskedBy: ?DirectiveSite}> $judged
+     * @param list<MaskingOutcome> $judged
      * @param list<Finding> $produced
      *
      * @return list<DirectiveVerdict>
@@ -422,15 +418,13 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $verdicts = [];
 
         foreach ($judged as $entry) {
-            $group = $entry['group'];
-
             $verdicts[] = new DirectiveVerdict(
-                site: DirectiveMaskingCoalition::site($group),
-                effect: $entry['effect'],
-                reason: $entry['reason'],
-                maskedBy: $entry['maskedBy'],
-                boundaryObservable: $entry['effect'] === DirectiveEffect::Overrun
-                    || self::boundaryObservable($group, $produced),
+                site: $entry->group->site(),
+                effect: $entry->effect,
+                reason: $entry->reason,
+                maskedBy: $entry->maskedBy?->site(),
+                boundaryObservable: $entry->effect === DirectiveEffect::Overrun
+                    || self::boundaryObservable($entry->group, $produced),
             );
         }
 
@@ -457,14 +451,14 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * ({@see DirectiveMaskingCoalition}'s own overlap test), so the narrowing
      * that serves the directive serves the whole coalition.
      *
-     * @param list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $measurable
+     * @param list<AuthoredDirectiveGroup> $measurable
      */
     private function maskedBy(
         ThresholdDirectiveAuditInput $input,
         array $measurable,
         int $index,
-    ): ?DirectiveSite {
-        $restrictToProducer = self::narrowedTo($input, $measurable[$index]['rule']);
+    ): ?AuthoredDirectiveGroup {
+        $restrictToProducer = self::narrowedTo($input, $measurable[$index]->rule);
 
         $coalition = new DirectiveMaskingCoalition(
             fn(array $groups, ?string $forProducer): array => $this->without($input, $groups, $forProducer),
@@ -506,17 +500,16 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * delete an annotation on the strength of a question the report itself
      * says was never asked. Cautious here means silent, not wrong.
      *
-     * @param array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>} $group
      * @param list<Finding> $produced
      */
-    private static function boundaryObservable(array $group, array $produced): bool
+    private static function boundaryObservable(AuthoredDirectiveGroup $group, array $produced): bool
     {
-        $subjects = DirectiveMaskingCoalition::subjects($group);
+        $subjects = $group->subjects;
 
         foreach ($produced as $finding) {
             if (
                 $finding->threshold === null
-                && $finding->ruleName === $group['rule']
+                && $finding->ruleName === $group->rule
                 && \in_array($finding->subject->toCanonical(), $subjects, true)
             ) {
                 return false;
@@ -529,33 +522,47 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
     /**
      * The bindings of one authored annotation, kept together.
      *
-     * The key is the one {@see InlineDirectivePolicy::authoredThresholdOverrides()}
+     * The key is the one {@see \Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy::authoredThresholdOverrides()}
      * uses — line and rule name — because the unit an author edits is the tag
      * they wrote, not the declarations it was expanded onto. Removing the first
      * binding instead of the group would leave the annotation in force on every
      * other declaration it governs and call it inert.
      *
+     * The bindings are gathered into a keyed map first and the groups built
+     * from it afterwards, because gathering is incremental and the group is
+     * not: a binding joins a site already seen, which an immutable object
+     * cannot be asked to do.
+     *
      * @param array<string, list<ThresholdOverride>> $byFile
      *
-     * @return list<array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}>
+     * @return list<AuthoredDirectiveGroup>
      */
     private static function groupByAuthoredSite(array $byFile): array
     {
-        $groups = [];
+        /** @var array<string, array{file: string, line: int, rule: string, bindings: list<ThresholdOverride>}> $gathered */
+        $gathered = [];
 
         foreach ($byFile as $file => $overrides) {
             foreach ($overrides as $override) {
                 $key = $file . "\0" . $override->line . "\0" . $override->rulePattern;
-                $groups[$key] ??= [
+                $gathered[$key] ??= [
                     'file' => $file,
                     'line' => $override->line,
                     'rule' => $override->rulePattern,
                     'bindings' => [],
                 ];
-                $groups[$key]['bindings'][] = $override;
+                $gathered[$key]['bindings'][] = $override;
             }
         }
 
-        return array_values($groups);
+        return array_values(array_map(
+            static fn(array $group): AuthoredDirectiveGroup => AuthoredDirectiveGroup::of(
+                $group['file'],
+                $group['line'],
+                $group['rule'],
+                $group['bindings'],
+            ),
+            $gathered,
+        ));
     }
 }

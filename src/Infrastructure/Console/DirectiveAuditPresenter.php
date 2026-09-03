@@ -98,7 +98,7 @@ final readonly class DirectiveAuditPresenter
         }
 
         $lines[] = '';
-        $lines[] = '  ' . $this->summaryLine();
+        $lines[] = '  ' . DirectiveVerdictTally::of($report->verdicts)->line();
         $lines[] = '';
 
         return implode("\n", $lines) . "\n";
@@ -107,7 +107,6 @@ final readonly class DirectiveAuditPresenter
     public function json(int $exitCode): string
     {
         $report = $this->report;
-        $counts = self::counts($report);
 
         return self::encode([
             'scope' => [
@@ -120,13 +119,7 @@ final readonly class DirectiveAuditPresenter
             'selection' => ['only' => $this->only, 'disabled' => $this->disabled],
             'sweep' => $report->sweep->value,
             'directives' => array_map(self::verdictToArray(...), $report->verdicts),
-            'summary' => [
-                'total' => \count($report->verdicts),
-                'effective' => $counts[DirectiveEffect::Effective->value],
-                'overrun' => $counts[DirectiveEffect::Overrun->value],
-                'inert' => $counts[DirectiveEffect::Inert->value],
-                'unmeasured' => $counts[DirectiveEffect::Unmeasured->value],
-            ],
+            'summary' => DirectiveVerdictTally::of($report->verdicts)->summary(),
             'exit_code' => $exitCode,
         ]);
     }
@@ -239,35 +232,6 @@ final readonly class DirectiveAuditPresenter
             $maskedBy->file->value(),
             $maskedBy->line,
         );
-    }
-
-    private function summaryLine(): string
-    {
-        $report = $this->report;
-        $counts = self::counts($report);
-
-        return \sprintf(
-            '%d directive(s): %d effective, %d applied-boundary-only, %d inert, %d unmeasured',
-            \count($report->verdicts),
-            $counts[DirectiveEffect::Effective->value],
-            $counts[DirectiveEffect::Overrun->value],
-            $counts[DirectiveEffect::Inert->value],
-            $counts[DirectiveEffect::Unmeasured->value],
-        );
-    }
-
-    /** @return array<string, int> */
-    private static function counts(DirectiveAuditReport $report): array
-    {
-        $counts = [];
-        foreach (DirectiveEffect::cases() as $effect) {
-            $counts[$effect->value] = 0;
-        }
-        foreach ($report->verdicts as $verdict) {
-            ++$counts[$verdict->effect->value];
-        }
-
-        return $counts;
     }
 
     /**

@@ -15,7 +15,10 @@ use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileSessionControlInterface;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
+use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Output\StreamOutput;
 
 /**
  * Configures runtime services (logger, progress reporter, profiler, rule options)
@@ -23,6 +26,17 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 final class RuntimeConfigurator
 {
+    /**
+     * The sections drawn over the error stream, owned here because
+     * `ConsoleSectionOutput` takes the list by reference and keeps the
+     * reference: whoever holds the array is what makes several sections over
+     * one stream redraw around each other. The error stream has no owner that
+     * already holds one — `ConsoleOutput` keeps its list for stdout only.
+     *
+     * @var array<int, ConsoleSectionOutput>
+     */
+    private array $progressSections = [];
+
     public function __construct(
         private readonly RuntimeLoggerConfigurator $runtimeLoggerConfigurator,
         private readonly SwitchableProgressReporter $progressReporter,
@@ -41,6 +55,7 @@ final class RuntimeConfigurator
         $this->analysisRuntimeConfigurator->resetRunState();
         $this->profileSession->disable();
         $this->progressReporter->reset();
+        $this->progressSections = [];
         $this->runtimeLimitsController->reset();
     }
 
@@ -160,11 +175,27 @@ final class RuntimeConfigurator
      *
      * Selects the per-run reporter on the stable console-owned switch so the
      * analysis pipeline can report progress without owning adapter state.
+     *
+     * **Every question below is asked of the error stream, because that is
+     * where the bar is drawn.** Asking stdout instead would answer for the
+     * wrong file: `qmx check --format=json > report.json` on a terminal has an
+     * undecorated stdout and a live stderr, and that run is exactly the one
+     * this arrangement exists for.
      */
     private function configureProgressReporter(InputInterface $input, OutputInterface $output): void
     {
-        // Disable for non-TTY (CI, pipes)
-        if (!$output->isDecorated()) {
+        $error = $this->progressStream($output);
+
+        // No distinguishable error stream: a buffer, a NullOutput. Progress is
+        // not possible, so nothing is enabled.
+        if ($error === null) {
+            $this->progressReporter->reset();
+
+            return;
+        }
+
+        // Disable for non-TTY (CI, pipes, a redirected error stream)
+        if (!$error->isDecorated()) {
             $this->progressReporter->reset();
 
             return;
@@ -178,14 +209,55 @@ final class RuntimeConfigurator
         }
 
         // Disable for quiet mode
-        if ($output->getVerbosity() === OutputInterface::VERBOSITY_QUIET) {
+        if ($error->getVerbosity() === OutputInterface::VERBOSITY_QUIET) {
             $this->progressReporter->reset();
 
             return;
         }
 
         // Use console progress bar
-        $this->progressReporter->enable(new ConsoleProgressBar($output));
+        $this->progressReporter->enable(new ConsoleProgressBar($this->progressSection($error)));
+    }
+
+    /**
+     * The error stream this run may draw progress on, or null when it has none
+     * of its own — a buffered output, a `NullOutput`, anything that is not a
+     * console.
+     */
+    private function progressStream(OutputInterface $output): ?StreamOutput
+    {
+        if (!$output instanceof ConsoleOutputInterface) {
+            return null;
+        }
+
+        $error = $output->getErrorOutput();
+
+        return $error instanceof StreamOutput ? $error : null;
+    }
+
+    /**
+     * A redrawable section over the error stream.
+     *
+     * Built by hand rather than asked for: `getErrorOutput()` hands back a
+     * plain `StreamOutput`, which has no `section()`. Verbosity, decoration and
+     * the formatter come from that stream for the same reason the gates above
+     * are asked of it — they describe the file being written to.
+     *
+     * Diagnostics do not pass through this section:
+     * {@see \Qualimetrix\Infrastructure\Console\DiagnosticOutput} and the
+     * logger factory write to `getErrorOutput()` directly. A warning emitted
+     * mid-run can therefore tear the bar's frame. That is the accepted price of
+     * not rewiring four unrelated seams here, not an oversight.
+     */
+    private function progressSection(StreamOutput $error): ConsoleSectionOutput
+    {
+        return new ConsoleSectionOutput(
+            $error->getStream(),
+            $this->progressSections,
+            $error->getVerbosity(),
+            $error->isDecorated(),
+            $error->getFormatter(),
+        );
     }
 
     /**

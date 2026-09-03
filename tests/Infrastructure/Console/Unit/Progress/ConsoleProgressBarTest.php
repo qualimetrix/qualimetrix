@@ -7,7 +7,9 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Console\Progress;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar;
-use Symfony\Component\Console\Output\BufferedOutput;
+use RuntimeException;
+use Symfony\Component\Console\Formatter\OutputFormatter;
+use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 final class ConsoleProgressBarTest extends TestCase
@@ -15,33 +17,29 @@ final class ConsoleProgressBarTest extends TestCase
     #[Test]
     public function itSkipsProgressBarForFewFiles(): void
     {
-        self::expectNotToPerformAssertions();
-
-        $output = self::createStub(OutputInterface::class);
-        $reporter = new ConsoleProgressBar($output, minFilesForProgress: 10);
+        $section = self::section();
+        $reporter = new ConsoleProgressBar($section, minFilesForProgress: 10);
 
         // Should not create progress bar for 5 files
         $reporter->start(5);
         $reporter->advance();
         $reporter->setMessage('test');
         $reporter->finish();
+
+        self::assertSame('', self::contentOf($section));
     }
 
     #[Test]
-    public function itSkipsProgressBarForNonConsoleOutput(): void
+    public function itDrawsInTheSectionItWasGiven(): void
     {
-        // BufferedOutput is not ConsoleOutputInterface
-        $output = new BufferedOutput();
-        $reporter = new ConsoleProgressBar($output);
+        $section = self::section();
+        $reporter = new ConsoleProgressBar($section);
 
-        // Should not create progress bar for non-console output
         $reporter->start(100);
         $reporter->advance();
-        $reporter->setMessage('test');
         $reporter->finish();
 
-        // Output should be empty (no progress bar)
-        self::assertSame('', $output->fetch());
+        self::assertStringContainsString('0/100', self::contentOf($section));
     }
 
     #[Test]
@@ -49,8 +47,7 @@ final class ConsoleProgressBarTest extends TestCase
     {
         self::expectNotToPerformAssertions();
 
-        $output = self::createStub(OutputInterface::class);
-        $reporter = new ConsoleProgressBar($output);
+        $reporter = new ConsoleProgressBar(self::section());
 
         // Should not throw when advancing before start
         $reporter->advance();
@@ -63,11 +60,35 @@ final class ConsoleProgressBarTest extends TestCase
     {
         self::expectNotToPerformAssertions();
 
-        $output = self::createStub(OutputInterface::class);
-        $reporter = new ConsoleProgressBar($output);
+        $reporter = new ConsoleProgressBar(self::section());
 
         $reporter->start(5); // Too few files, progress bar not created
         $reporter->finish();
         $reporter->finish(); // Should not throw
+    }
+
+    private static function section(): ConsoleSectionOutput
+    {
+        $stream = fopen('php://memory', 'w+b');
+        if ($stream === false) {
+            throw new RuntimeException('Cannot open an in-memory stream');
+        }
+        $sections = [];
+
+        return new ConsoleSectionOutput(
+            $stream,
+            $sections,
+            OutputInterface::VERBOSITY_NORMAL,
+            true,
+            new OutputFormatter(true),
+        );
+    }
+
+    private static function contentOf(ConsoleSectionOutput $section): string
+    {
+        $stream = $section->getStream();
+        rewind($stream);
+
+        return (string) stream_get_contents($stream);
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Inline\Directive;
+namespace Qualimetrix\Analysis\Policy\Inline\Directive\Audit;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableR
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
 
@@ -48,7 +49,7 @@ use Qualimetrix\Core\Path\RelativePath;
  * with silencing the complaint it produced by being dead.
  *
  * It is a pure function of the prepared directives and the produced findings,
- * and it holds no run state — {@see InlineDirectivePolicy} keeps that and asks
+ * and it holds no run state — {@see \Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy} keeps that and asks
  * this once, after every rule has finished. Splitting the two is what keeps
  * the run state a store: the accounting needs the channel universe, the rule
  * selection and the finding vocabulary, and none of those has anything to do
@@ -63,7 +64,7 @@ final class DirectiveUsage
 {
     /**
      * The shared refusal for a `channel:level` pair. Built here rather than
-     * injected, mirroring {@see DirectiveAddressability}: a pure function of
+     * injected, mirroring {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability}: a pure function of
      * the same universe, with no lifecycle of its own.
      */
     private readonly ChannelLevelAddressing $levels;
@@ -241,7 +242,7 @@ final class DirectiveUsage
     }
 
     /**
-     * The same identity as {@see InlineDirectivePolicy::authoredSuppressions()},
+     * The same identity as {@see \Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy::authoredSuppressions()},
      * but keeping every binding rather than one.
      *
      * The usage question genuinely needs them all: the author wrote one
@@ -315,7 +316,7 @@ final class DirectiveUsage
      * no producer owns: `coupling.cbo:project`, naming a level
      * `coupling.cbo` never reports at, can never be silenced by any finding,
      * so calling it stale on top of the `annotation.unresolved-directive`
-     * {@see DirectiveAddressability} already raised would answer one mistake
+     * {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability} already raised would answer one mistake
      * twice. All three arrive here as the same answer for the same reason.
      *
      * The levels come from the whole authored group rather than from its first

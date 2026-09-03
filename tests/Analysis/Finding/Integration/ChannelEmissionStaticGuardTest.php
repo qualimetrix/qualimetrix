@@ -326,7 +326,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 . ' rule class chain leads here at all.',
             'src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php' =>
                 'A configuration validator, like the one above.',
-            'src/Analysis/Policy/Inline/Directive/StaleDirectiveFinding.php' =>
+            'src/Analysis/Policy/Inline/Directive/Audit/StaleDirectiveFinding.php' =>
                 'The shape of the stale-directive finding, built for the usage accounting the policy state'
                 . ' delegates to and which UnusedDirectiveRule consults; the construction sits there, not'
                 . ' on the rule chain.',

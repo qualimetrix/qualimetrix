@@ -3618,19 +3618,29 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyProducerOfTheComputedFamilyIsOnTheReferencePage
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRegisteredRuleDeclaresItsOwnRemediationMinutes
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleRemediationMinutesCoverageTest::everyRulesRemediationMinutesMatchTheReferencePage
- - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::everyCallSitePassesItsOwnRuleNameAsTheFirstArgument
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::everyCallSiteOnAContextPassesItsOwnRuleNameAsTheFirstArgument
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itAcceptsASameNamedMethodOnAForeignType
  - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itAcceptsThePlainCallWithItsOwnRuleName
- - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itAllowsADeclaredLegitimateReaderToReadThePropertyDirectly
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itAllowsADeclaredLegitimateReaderToReadThroughAFieldCarrier
  - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itAllowsTheOwningTypeToReadItsOwnProperty
- - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itFindsAtLeastTheTwoKnownProductionCallSites
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itFindsExactlyTheKnownProductionCallSites
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itFindsThePublicFieldsThatCarryAContext
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itFlagsTheAuditsChainedReadWhenItIsNotExcused
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itFlagsTheOwningTypesOwnReadWhenItIsNotExcused
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itFlagsTheOwningTypesShapeWithoutTheException
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itIgnoresASameNamedFieldOnAForeignType
  - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsADirectPropertyReadAsAViolation
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsAForeignRuleNameOnAContextAsAViolation
  - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsANullsafeDirectPropertyReadAsAViolation
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsAPropertyReadThroughAFieldCarrierAsAViolation
  - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsEveryUnrecognizedOrForeignCallFormAsAViolation"brace dispatch with a string literal"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsEveryUnrecognizedOrForeignCallFormAsAViolation"call through a field carrier"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsEveryUnrecognizedOrForeignCallFormAsAViolation"call_user_func with a string literal"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsEveryUnrecognizedOrForeignCallFormAsAViolation"comment between operator and name"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsEveryUnrecognizedOrForeignCallFormAsAViolation"doc-comment between operator and name"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsEveryUnrecognizedOrForeignCallFormAsAViolation"first-class callable"
  - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsEveryUnrecognizedOrForeignCallFormAsAViolation"nullsafe operator"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ThresholdOverrideOwnRuleNameGuardTest::itTreatsEveryUnrecognizedOrForeignCallFormAsAViolation"static reference on a context variable"
  - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::anOverriddenCopyReportsTheOverriddenNumber
  - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::everyDeclaredBoundaryIsWhereSeverityStarts
  - Qualimetrix\Tests\Analysis\Finding\Integration\WarningBoundaryDeclarationTest::moreThanOneBoundaryIsClaimedOnlyWithASecondDecision
@@ -5586,6 +5596,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itNamesTheBadHalfWhenTheThresholdRuleDoesNotExist
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itOnlyRecommendsRuleOptWhenBothHalvesOfTheThresholdPairAreValid
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itRefusesTheRetiredPairSpellingBeforeAskingAboutTheLevel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itAnswersNoMaskerWhenTheCoalitionChangesNothing
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itFindsAMaskerAtAllWhenTwoNeighboursCoverTheSubject
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itHasNoCoalitionWhenTheNeighboursAddressAnotherRule
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itNamesTheFirstOfTwoWhenNeitherHidesItAlone
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itNamesTheMeasuredMaskerRatherThanTheFirstOfThree
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itNamesTheMeasuredMaskerRatherThanTheFirstOfTwo
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itNamesEveryFieldAFindingCarries
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"acceptedLevel"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"code"
@@ -5737,7 +5753,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itMatchesStrictDescendantsOfAGroupSelector
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itReverseDoesNotMatch
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itWildcardMatchesAllRules
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdDirectivePatternSyncTest::itKeepsTheEnumerationScriptPatternInSyncWithTheExtractor
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itAcceptsNonemptyReasonAfterAsciiSeparator
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itAcceptsNonemptyReasonAfterExplicitSeparator
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itBacktickEscapedThresholdIsNotExtracted
@@ -6211,6 +6226,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesALevelTheOptionNeverAsksAbout
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesAWildcardKeyWhoseLevelAndProductionWitnessesAreDifferentChannels
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesTheRetiredPairBeforeTheLevel
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DirectiveAuditSummaryProjectionTest::itPrintsOneTallyPerVerdictTheVocabularyDefinesInTheTextSummary
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DirectiveAuditSummaryProjectionTest::itPublishesOneSummaryKeyPerVerdictTheVocabularyDefines
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itFailsTheRunOnAConfigurationErrorWhateverFailOnSays
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itRefusesAConfigurationErrorReportedBelowWarning
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itStillHonoursFailOnForAnOrdinaryDebtFinding
@@ -6260,6 +6277,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itStopsAProducerWhoseEveryDeclaredLevelTheRunDisabled
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itValidatesEveryComputedChannelSelectorFromTheSameResolvedDefinitions
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itAppliesOwnerConfigurationsOnlyAfterEveryValueResolves
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itDisablesProgressForAnOutputWithoutAnErrorStream
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itDisablesProgressWhenNoProgressIsRequested
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itDisablesProgressWhenTheErrorStreamIsNotATerminal
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itDrawsProgressOnTheErrorStreamOnly
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itEnablesProgressWhenOnlyTheErrorStreamIsATerminal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"Architecture"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"ComputedMetrics"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"Coupling"
@@ -7060,9 +7082,9 @@ Available tests:
  - Qualimetrix\Tests\Unit\Infrastructure\Console\MeasuredFindingSetTest::itReturnsTheRunAlongsideTheSameMeasuredSetForPathsReturns
  - Qualimetrix\Tests\Unit\Infrastructure\Console\MeasuredFindingSetTest::itUsesExplicitDiscoveryWithoutCallingTheFactory
  - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itCanBeFinishedMultipleTimes
+ - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itDrawsInTheSectionItWasGiven
  - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itHandlesAdvanceBeforeStart
  - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itSkipsProgressBarForFewFiles
- - Qualimetrix\Tests\Unit\Infrastructure\Console\Progress\ConsoleProgressBarTest::itSkipsProgressBarForNonConsoleOutput
  - Qualimetrix\Tests\Unit\Infrastructure\Console\RuntimeLoggerConfiguratorTest::itCreatesPublishesAndReturnsTheSameLogger
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ScopeWarningCheckerTest::itDoesNotCheckAutoloadDev
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ScopeWarningCheckerTest::itReturnsNoWarningsForFullCoverage
@@ -7865,6 +7887,47 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itFiltersFindingsBySeverity
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itIsEmptyWhenNoFindings
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itIsNotEmptyWhenHasFindings
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itAcceptsATreeWhoseSitesMatchAndWhereSomethingWasMeasured
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itFloorsNothingWhenNoThresholdSiteIsInScope
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itPropagatesARunThatWasAlreadyDisqualified
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itPropagatesTheCommandsOwnCodeThroughAnErrorEnvelope
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesAnAuditThatProducedNoJson
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesAnEnumerationThatWouldNotRun
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesAnUnknownVerdictOnASuppressionSite
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesAnUnknownVerdictWhereTheFloorIsNeverReached
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesToJudgeAVerdictValueTheFloorCannotWeigh
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itReportsAPopulationMismatch
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itSeesOneOfTwoDirectivesOnASiteGoMissing
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itAcceptsAPopulationCarryingEveryVerdictAndEveryRefusal
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itAsksForEveryRefusalTheProductCanPublishAndNoOther
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itAsksForEveryVerdictTheProductCanPublishAndNoOther
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itCountsEveryOccurrenceOfARepeatedSite
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itKeepsEveryEntryOfASiteAuthoredTwice
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itNamesEveryRequirementAHomogeneousPopulationMisses
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itNamesEveryVerdictTheProductCanPublishAndNoOther
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itReadsAWellFormedReportAsOneMeasurementAndItsContext
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itReadsAnErrorEnvelopeWithoutDemandingVerdicts
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itReadsEveryEnumeratedSiteAndKeepsATabInsideItsValues
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAPopulationShortOfMeasuredThresholdVerdicts
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAReportWhoseDirectivesAreNotAList
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAReportWithNoDirectivesAtAll
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictCarriedOnlyByASuppression
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictValueTheFloorDoesNotName
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"effect missing"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"effect not a string"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"effect null"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"file missing"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"form missing"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"line not a number"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"target missing"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAnEntryWithoutAReasonKey
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAnEnumerationRowShortOfAColumn
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAnEnumerationRowThatAddressesNothing
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAnEnumerationRowWhoseLineIsNotANumber
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAnUnknownVerdictOnTheSuppressionHalf
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itLeavesAWildcardTargetInHistoryAlone
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesExecutedHistoryThatNoLongerDescribesTheMeasurement
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesToRetireADecisionWhoseTargetIsAWildcard
@@ -7872,3 +7935,30 @@ Available tests:
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesToRetireWhenTheTargetIsMeasuredUnderAnotherKind
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRetiresARenameWhoseTargetsAppeared
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRetiresASplitOnlyWhenAllThreeTargetsAppeared
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itKeepsEverySeededFixtureFileOutOfSrc
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itNamesEveryFormTheFixtureDeclares
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"after a multiline backtick region"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"backticked"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"capital"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"colon"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"comma"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"cut target then a second directive"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"digit"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"glued to the docblock star"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"hash"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"hyphen"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"outside a docblock"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"plain"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"plus"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"single-line docblock"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"slash"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"star"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"tag with a suffix"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"target cut at a call"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"target wrapped in parens"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"two on one line"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"underscore"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itRefusesToScanATreeItCannotRead
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp

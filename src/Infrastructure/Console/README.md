@@ -245,11 +245,25 @@ Analysis progress display for large projects.
 
 Implementation using Symfony ProgressBar.
 
+**The bar is drawn on standard error.** The report is the payload of standard
+output, and a bar written there prefixes `--format=json` with terminal control
+bytes on a TTY. `RuntimeConfigurator` builds a `ConsoleSectionOutput` over the
+error stream by hand — `getErrorOutput()` returns a plain `StreamOutput`, which
+has no `section()` — and hands it to the bar. The bar no longer asks its output
+whether it can make a section; whether progress is possible at all is the
+configurator's decision.
+
+Diagnostics (`DiagnosticOutput`, the logger factory) write to the error stream
+directly, not through that section, so a warning emitted mid-run can tear the
+bar's frame. That is an accepted cost, not an oversight.
+
 **Features:**
 - Shown only for projects > 10 files
-- Automatically disabled for non-TTY (CI, pipes)
+- Automatically disabled when standard error is not a terminal (CI, pipes)
 - Disabled in quiet mode (`-q`)
 - Shows current file, progress, ETA, memory usage
+- Accepted by all seven analysing commands via `--no-progress`: `check`,
+  `directives`, `debug:layer-assignment` and the four `baseline:*` commands
 
 **Output format:**
 ```
@@ -259,9 +273,9 @@ Analyzing src/...
 ```
 
 **Automatic disabling:**
-- Non-TTY output (CI, pipes)
+- Standard error is not a terminal (CI, pipes, redirected stderr)
+- The output has no distinguishable error stream (a buffer, `NullOutput`)
 - Quiet mode (`-q`)
-- Verbose mode (`-v`, `-vv`, `-vvv`) — detailed logging is shown instead of progress bar
 
 ## Usage Examples
 

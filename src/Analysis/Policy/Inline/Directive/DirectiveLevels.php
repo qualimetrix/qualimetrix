@@ -19,7 +19,7 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
  * is its subject's. A physical (file) directive has no subject and can silence
  * the channel wherever the channel reports, which is what the channel declares.
  *
- * A class of its own rather than a helper on {@see DirectiveUsage}: the
+ * A class of its own rather than a helper on {@see \Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage}: the
  * accounting asks this question, it does not own it, and keeping the three
  * inputs together is what stops a later reader from remembering only the
  * widest of them — both earlier drafts of the directive audit lost the

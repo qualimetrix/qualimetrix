@@ -6,15 +6,22 @@ namespace Qualimetrix\Infrastructure\Console\Progress;
 
 use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Output\ConsoleSectionOutput;
 
 /**
  * Console progress bar implementation using Symfony ProgressBar.
  *
- * Automatically disables progress bar for:
- * - Non-TTY output (CI, pipes)
- * - File count below threshold
+ * **The section is given, not made.** The bar used to ask its output whether it
+ * was a `ConsoleOutputInterface` and call `section()` on it. That question is
+ * about who can *produce* a section, and it has the wrong answer now that the
+ * section is built over the error stream: `getErrorOutput()` returns a plain
+ * `StreamOutput`, so the old gate would have silently disabled progress
+ * altogether. The caller decides whether progress is possible at all
+ * ({@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator}); what
+ * reaches here is the section to draw in.
+ *
+ * Progress is still skipped for a file count below the threshold, because a
+ * run that finishes in a moment has nothing to report.
  *
  * Uses null-safe operations to ensure no errors when progress bar is disabled.
  */
@@ -23,7 +30,7 @@ final class ConsoleProgressBar implements ProgressReporterInterface
     private ?ProgressBar $progressBar = null;
 
     public function __construct(
-        private readonly OutputInterface $output,
+        private readonly ConsoleSectionOutput $section,
         private readonly int $minFilesForProgress = 10,
     ) {}
 
@@ -34,14 +41,7 @@ final class ConsoleProgressBar implements ProgressReporterInterface
             return;
         }
 
-        // Skip progress bar for non-console output (e.g., file redirection)
-        if (!$this->output instanceof ConsoleOutputInterface) {
-            return;
-        }
-
-        // Create progress bar with a dedicated section
-        $section = $this->output->section();
-        $this->progressBar = new ProgressBar($section, $total);
+        $this->progressBar = new ProgressBar($this->section, $total);
 
         // Customize format with time estimates and memory
         $this->progressBar->setFormat(

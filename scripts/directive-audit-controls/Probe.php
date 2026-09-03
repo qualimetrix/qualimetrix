@@ -84,6 +84,25 @@ final readonly class Probe
         return new self($id, $claim, Mutation::edit($file, $replacement, $claim), $reddens, true);
     }
 
+    /**
+     * A breakage that plants a file rather than editing one.
+     *
+     * Some claims are about what is *not* in the tree, and no edit states them:
+     * the seeded directive fixture proves nothing about the enumeration over
+     * `src/` until a copy of it appears there.
+     *
+     * @param array<string, string> $files path => the whole file to write
+     * @param list<string> $reddens
+     */
+    public static function planting(
+        string $id,
+        string $claim,
+        array $files,
+        array $reddens,
+    ): self {
+        return new self($id, $claim, Mutation::create($files, $claim), $reddens);
+    }
+
     public function isPositive(): bool
     {
         return $this->mutation->isEmpty();

@@ -20,9 +20,21 @@ use RuntimeException;
  * **Both halves of the subject, and the command that renders them.** The list
  * held only the threshold half for one package, and that gap was not academic:
  * a defect in the suppression half — a whole channel missing from the universe
- * it judges against — reached a release candidate with this bench reporting
- * thirty-eight probes and no uncovered case. A bench that covers half a subject
- * says so only if the list names what it covers.
+ * it judges against — reached a release candidate with this bench reporting a
+ * full table of probes and no uncovered case. A bench that covers half a
+ * subject says so only if the list names what it covers.
+ *
+ * **And the CI step that reads the answer.** The floor
+ * `composer directives:audit` puts under the audit decides whether a directive
+ * regression stops a build, and until it was listed here no probe could reach
+ * it: the bench runs PHPUnit files, and the floor lived in a script that runs
+ * on include.
+ *
+ * **And the second measure that step compares the audit against.** That measure
+ * used to be a copy of the product's own extraction pattern, so the only thing
+ * guarding it was a text comparison of the two copies — which no breakage of
+ * the measure could fail. What guards it now is agreement with the product on
+ * authored forms, and that is a suite file like any other.
  */
 final readonly class Suite
 {
@@ -33,6 +45,10 @@ final readonly class Suite
         'tests/Analysis/Policy/Inline/Unit/Directive/ExecutionFingerprintFieldCoverageTest.php',
         'tests/Analysis/Run/Integration/DirectiveAuditPipelineTest.php',
         'tests/Infrastructure/Console/Functional/DirectivesCommandTest.php',
+        'tests/Infrastructure/Console/Unit/DirectiveAuditSummaryProjectionTest.php',
+        'tests/Unit/RuleVocabulary/DirectiveAuditGateTest.php',
+        'tests/Unit/RuleVocabulary/DirectiveAuditReportReadingTest.php',
+        'tests/Unit/RuleVocabulary/ThresholdPopulationAgreementTest.php',
     ];
 
     /**
