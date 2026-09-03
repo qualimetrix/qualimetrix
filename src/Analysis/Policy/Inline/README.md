@@ -161,10 +161,14 @@ to it. Both questions read one object, so a form cannot be refused by `check`
 and still judged by `directives`.
 
 The ban is not an exemption from the report. Unlike the three configuration
-errors, a finding on this channel stays inside the pipeline: it is filterable by
-`exclude_paths` and `exclude_namespaces`, acceptable by a baseline ceiling, and
-narrowed by a git scope, exactly as it was. What is gone is the ability to hide
-it with the mechanism it exists to audit.
+errors, a finding on this channel stays inside the pipeline: the top-level
+`exclude_paths` drops it, a baseline ceiling accepts it, and a git scope narrows
+it, exactly as before. Two exclusions never reach it, and did not before the ban
+either: the top-level `exclude_namespaces` matches on a namespace, and this
+finding's subject is the **file** the annotation sits in; the producer's own
+`exclude_paths` / `exclude_namespaces` run inside `RuleExecution`, and the
+channel is assembled after it. What the ban removes is only the ability to hide
+the finding with the mechanism it exists to audit.
 
 **All four channels report once per authored annotation.** The extractor binds
 a class docblock to the class and to every declaration inside it, so a single

@@ -131,6 +131,16 @@ final class ChannelPublicationConsistencyTest extends TestCase
             'set' => 'layer-policy-config-error',
         ],
         [
+            'path' => 'website/docs/rules/annotation.md',
+            'pattern' => '/together with the (?<count>\S+) configuration-error diagnostics above/su',
+            'set' => 'inline-directive-config-error',
+        ],
+        [
+            'path' => 'website/docs/rules/annotation.ru.md',
+            'pattern' => '/вместе с (?<count>\S+) диагностиками-ошибками конфигурации выше/su',
+            'set' => 'inline-directive-config-error',
+        ],
+        [
             'path' => 'website/docs/rules/annotation.ru.md',
             'pattern' => '/У остальных (?<count>\S+) каналов —(?<list>.*?)— нет опции severity/su',
             'set' => 'inline-directive-config-error',

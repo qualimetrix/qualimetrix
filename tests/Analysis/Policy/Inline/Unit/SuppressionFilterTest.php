@@ -147,6 +147,7 @@ final class SuppressionFilterTest extends TestCase
     public static function provideDirectivesThatCannotSilenceTheBannedChannel(): iterable
     {
         yield 'no rule filter' => [new Suppression('*', null, 1, SuppressionType::File)];
+        yield 'no rule filter on the line above' => [new Suppression('*', null, 10, SuppressionType::NextLine)];
         yield 'the exact name' => [
             new Suppression('annotation.unused-directive', null, 1, SuppressionType::File),
         ];

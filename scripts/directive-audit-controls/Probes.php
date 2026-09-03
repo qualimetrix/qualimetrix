@@ -1060,7 +1060,16 @@ final class Probes
                 self::USAGE,
                 ['                    self::anyOfTheGroupFired($file, $group, $findings) => DirectiveEffect::Effective,'
                     => '                    false => DirectiveEffect::Effective,'],
-                ['itCallsASuppressionEffectiveWhenItSilencedAFinding'],
+                // Every case that reads a live suppression, not just the one
+                // written for the claim: the arm this breaks is the only place
+                // an effective suppression is recognised, so the list is what
+                // it actually reddens rather than a selection from it.
+                [
+                    'itCallsASuppressionEffectiveWhenItSilencedAFinding',
+                    'itCallsASuppressionEffectiveWhenSomethingItCoversWasProduced',
+                    'itProjectsExactlyTheInertVerdictsIntoStaleFindings',
+                    'itReportsOneVerdictForAClassDocblockThatBoundSixDeclarations',
+                ],
             ),
             Probe::breaking(
                 'exit-on-an-unaskable-inert',
@@ -1145,9 +1154,27 @@ final class Probes
                 self::BAN,
                 ['        foreach ($this->identity->expand($selector) as $channel) {'
                     => '        foreach ([] as $channel) {'],
+                // Declared form by form, and not by method name: the refusal
+                // is one loop with no branch per form, so no narrower anchor
+                // denies one spelling and leaves the rest standing. A method
+                // name would be matched by any one of its twelve data sets
+                // going red, and the probe would read as specific while
+                // proving only that some form still refuses.
                 [
-                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, the exact name"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, the exact name at file level"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, a group that covers it"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, that group at file level"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, the exact name"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, the exact name at file level"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, a group that covers it"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "next-line, that group at file level"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, the exact name"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, the exact name at file level"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, a group that covers it"',
+                    'itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, that group at file level"',
                     'itRefusesToJudgeADirectiveThatReachesTheBannedChannel',
+                    'itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
                 ],
             ),
             Probe::breaking(
@@ -1156,7 +1183,12 @@ final class Probes
                 self::BAN,
                 ['        return $code === InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME;'
                     => "        return str_starts_with(\$code, 'annotation.');"],
-                ['itDoesNotCallASuppressionOfAConfigurationErrorEffective'],
+                [
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unresolvable name"',
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set'
+                        . ' "a rule that declares no override support"',
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unparsable payload"',
+                ],
             ),
             Probe::breaking(
                 'ban-yields-to-the-pair-grammar',
@@ -1174,7 +1206,10 @@ final class Probes
 "
                         . '        $pairProblem = $this->levels->problemWith($raw, \'Suppression "\' . $raw . \'"\');',
                 ],
-                ['itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan'],
+                [
+                    'itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan with data set "the exact name"',
+                    'itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan with data set "a group that covers it"',
+                ],
             ),
             Probe::breaking(
                 'publication-silences-the-banned-channel',
@@ -1186,7 +1221,13 @@ final class Probes
 
 "
                     => ''],
-                ['itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel'],
+                [
+                    'itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel',
+                    // A refused directive is still registered with the filter,
+                    // so without this branch it silences the complaint about
+                    // the line below it as readily as the bare form does.
+                    'itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
+                ],
             ),
             Probe::breaking(
                 'banned-channel-lifted-out-of-the-pipeline',
@@ -1203,7 +1244,12 @@ final class Probes
                 'a directive is called live for silencing a finding no annotation can silence',
                 self::USAGE,
                 ['        $findings = $this->suppressible($findings);' => ''],
-                ['itDoesNotCallASuppressionOfAConfigurationErrorEffective'],
+                [
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unresolvable name"',
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set'
+                        . ' "a rule that declares no override support"',
+                    'itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unparsable payload"',
+                ],
             ),
             Probe::breaking(
                 'guard-counts-discovered-not-analysed',
