@@ -58,6 +58,7 @@ final class Outcome
      * @param array{stdout: string, stderr: string, exit: int} $run
      * @param list<string> $declaredSurfaces the surfaces the step declares a delta for
      * @param bool $declarationReplaced whether this control's mutation rewrote the declaration index
+     * @param list<string> $touched declared survivors the run changed after all
      */
     public static function of(
         Control $control,
@@ -65,6 +66,7 @@ final class Outcome
         string $reportPath,
         array $declaredSurfaces = [],
         bool $declarationReplaced = false,
+        array $touched = [],
     ): self {
         $failures = self::failures($reportPath, $run);
         $reasons = [];
@@ -136,6 +138,13 @@ final class Outcome
             $reasons[] = 'failure(s) the mutation does not explain: ' . implode('; ', $unexpected);
         }
 
+        // A write mode's whole subject. The report can say "nothing was
+        // written" while the tree holds what was written, and no reading of the
+        // report can tell the two apart.
+        if ($touched !== []) {
+            $reasons[] = 'the run rewrote what it declared it would leave alone: ' . implode(', ', $touched);
+        }
+
         $idle = self::idleTolerations($control, $failures);
 
         if ($idle !== []) {
@@ -191,7 +200,13 @@ final class Outcome
             return false;
         }
 
-        if ($failureClass === FailureClass::SURFACE_MISMATCH) {
+        // `field-move-stale` joins `surface-mismatch` on the third condition
+        // rather than the second, and for the same reason: a control that
+        // replaced the declaration index left the surface compared for equality,
+        // so no diff line reaches the licence and every row of the step's own
+        // `declared-field-moves.tsv` reads as stale through no fault of the
+        // mechanism under test. With the index intact a stale licence is real.
+        if ($failureClass === FailureClass::SURFACE_MISMATCH || $failureClass === FailureClass::FIELD_MOVE_STALE) {
             return $declarationReplaced;
         }
 

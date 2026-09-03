@@ -11,15 +11,20 @@ use RuntimeException;
 /**
  * The controls, as a list.
  *
- * Fifteen negative controls — the four the Ш1 DoD names, the four Ш4a adds for
+ * Seventeen negative controls — the four the Ш1 DoD names, the four Ш4a adds for
  * the declared delta and the reference's vocabulary, the one Ш4b adds for
  * `delta-too-large`, the one P5.0 adds for a lost level of a multi-level channel,
  * the two Ш5b0 adds for the fingerprint mechanism, the two Ш5d0 adds for the
- * split mechanism and the one Ш5e3-0 adds for a moved aggregated spelling —
- * plus two green ones: the positive control, without which fifteen reds could
+ * split mechanism, the one Ш5e3-0 adds for a moved aggregated spelling and the
+ * two Х5-1 adds for the licensed field move and for a derivation that failed —
+ * plus two green ones: the positive control, without which seventeen reds could
  * all be reds for an environmental reason, and Ш5b0's declared rename, which
  * asserts that a change the maps declare is absorbed by the declaration and by
  * nothing else.
+ *
+ * The last of the seventeen is the first control whose subject is not in the
+ * report at all: a derivation that failed prints "nothing was written", and what
+ * had to be checked was whether that was true. See {@see Control::writing()}.
  *
  * `delta-too-large` was the one class of the five that no control had ever seen
  * red. Ш4a named the gap in its own record; Ш4b rewrote the code that computes
@@ -66,6 +71,8 @@ final class Controls
             self::splitRowIdle(),
             self::splitWithoutRow(),
             self::movedAggregatedSpelling(),
+            self::fieldMoveStale(),
+            self::deriveRefusesBrokenRun(),
         ];
 
         return array_map(
@@ -172,13 +179,85 @@ final class Controls
         return Control::red(
             'changed-finding-count',
             'one finding fewer, with the channel set unchanged',
-            Mutation::edit(
-                'src/Analysis/Evidence/Size/PropertyCountRule.php',
-                ['        return $findings;' => '        return \array_slice($findings, 1);'],
-                'size.property-count drops its first finding',
-            ),
+            self::droppedFindingMutation(),
             [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design')],
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:design')],
+        );
+    }
+
+    private static function droppedFindingMutation(): Mutation
+    {
+        return Mutation::edit(
+            'src/Analysis/Evidence/Size/PropertyCountRule.php',
+            ['        return $findings;' => '        return \array_slice($findings, 1);'],
+            'size.property-count drops its first finding',
+        );
+    }
+
+    /**
+     * A licensed move of a compared field that no diff line performs.
+     *
+     * `declared-field-moves.tsv` is the second source of permission
+     * `delta-overreach` consults, and a row in it is the only thing that can
+     * let a compared field differ inside a declared diff. A row describing a
+     * move that did not happen is the same lie as a stale map row, and until
+     * something has been seen refusing one, "the licence is narrow" is a claim
+     * about code nobody has watched fire.
+     *
+     * The index is REPLACED rather than added to, exactly as {@see declare()}
+     * replaces the delta index: the planted row has to be the only one whether
+     * or not the step under test declares moves of its own. Replacing it also
+     * removes the step's own licence, so the move that *does* happen goes back
+     * to being `delta-overreach` on a surface the step declares — absorbed as
+     * declaration noise, and not this control's subject.
+     *
+     * No product code is perturbed: the licence is the whole breakage.
+     */
+    private static function fieldMoveStale(): Control
+    {
+        $surface = 'case:smells|format:json';
+
+        return Control::red(
+            'field-move-stale',
+            'a move of a compared field licensed where no diff line performs it',
+            Mutation::replace(
+                [
+                    'finding-gate/declared-field-moves.tsv' => "surface\tfield\tfrom\tto\treason\n"
+                        . $surface . "\tmessage\ta value nothing published\tnor did anything publish this one"
+                        . "\ta move licensed where nothing moved\n",
+                ],
+                'a field move licensed on ' . $surface . ' that no run performs',
+            ),
+            [new Expectation(FailureClass::FIELD_MOVE_STALE, $surface)],
+        );
+    }
+
+    /**
+     * A derivation whose own comparison failed must leave the tracked
+     * declaration exactly as it found it.
+     *
+     * The gate has always *said* so — "the run this declaration would be derived
+     * from failed, so nothing was written" — and until this control it said so
+     * after having rewritten the index and every diff file. Measured on
+     * 2026-09-04: a full derive over a tree with one finding dropped exited 5,
+     * printed that sentence, and replaced a planted declaration with thirteen
+     * derived rows whose reasons were `?`.
+     *
+     * So the assertion cannot live in the report: the report is what lied. It is
+     * the two paths the write would touch, digested before the run and after it.
+     * The failure class is required as well, because a derivation that failed
+     * for some *other* reason would leave the tree alone for a reason this
+     * control is not about.
+     */
+    private static function deriveRefusesBrokenRun(): Control
+    {
+        return Control::writing(
+            'derive-refuses-broken-run',
+            'a --derive-declared-delta run whose comparison failed, which must write nothing',
+            self::droppedFindingMutation(),
+            '--derive-declared-delta',
+            [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design')],
+            ['finding-gate/' . DeclaredDelta::INDEX, 'finding-gate/' . DeclaredDelta::DIRECTORY],
         );
     }
 
@@ -438,6 +517,10 @@ final class Controls
             throw new RuntimeException(\sprintf('No corpus at %s, so this control cannot state its blast radius.', $root));
         }
 
+        // Every case here keeps its toleration even where the step under test
+        // declares a delta for that case's JSON surface: this control replaces
+        // the declaration index, so those surfaces are compared for equality
+        // again and the mutation moves them like any other.
         $tolerated = [];
 
         foreach ($entries as $entry) {

@@ -313,7 +313,7 @@ final class Harness
      * already running are drained by {@see Shell::poll()} from inside every
      * blocking call rather than by a loop of their own.
      *
-     * @return array{control: Control, scratch: Scratch, child: Child, report: string}
+     * @return array{control: Control, scratch: Scratch, child: Child, report: string, survivors: array<string, string>}
      */
     private function launch(Control $control): array
     {
@@ -322,6 +322,7 @@ final class Harness
         try {
             $control->mutation->apply($scratch, $this->repository);
             $report = \dirname($scratch->tree) . '/report.json';
+            $survivors = self::digestsOf($scratch, $control->unchangedAfterRun);
             $child = Shell::start(
                 [
                     \PHP_BINARY,
@@ -329,6 +330,7 @@ final class Harness
                     '--candidate=' . $scratch->tree,
                     '--reference=' . $this->reference,
                     '--report=' . $report,
+                    ...$control->gateArguments,
                 ],
                 $scratch->tree,
             );
@@ -338,10 +340,66 @@ final class Harness
             throw $error;
         }
 
-        return ['control' => $control, 'scratch' => $scratch, 'child' => $child, 'report' => $report];
+        return [
+            'control' => $control,
+            'scratch' => $scratch,
+            'child' => $child,
+            'report' => $report,
+            'survivors' => $survivors,
+        ];
     }
 
-    /** @param array{control: Control, scratch: Scratch, child: Child, report: string} $attempt */
+    /**
+     * The state of the paths a control declares its run may not touch, taken
+     * after the mutation is planted so that what is compared is the run's own
+     * effect and nothing else.
+     *
+     * A directory is digested by its file list *and* its contents: a write mode
+     * that deletes the diff directory and writes it back identically has still
+     * written, and the only reason to care is that the run said it had not.
+     *
+     * @param list<string> $paths
+     *
+     * @return array<string, string>
+     */
+    private static function digestsOf(Scratch $scratch, array $paths): array
+    {
+        $digests = [];
+
+        foreach ($paths as $path) {
+            $digests[$path] = self::digestOf($scratch->path($path));
+        }
+
+        return $digests;
+    }
+
+    private static function digestOf(string $absolute): string
+    {
+        if (is_file($absolute)) {
+            return 'file:' . (string) hash_file('sha256', $absolute);
+        }
+
+        if (!is_dir($absolute)) {
+            return 'absent';
+        }
+
+        $entries = scandir($absolute);
+        $parts = [];
+
+        foreach ($entries === false ? [] : $entries as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+
+            $parts[] = $entry . "\0" . self::digestOf($absolute . '/' . $entry);
+        }
+
+        sort($parts);
+
+        return 'dir:' . hash('sha256', implode("\0", $parts));
+    }
+
+    /** @param array{control: Control, scratch: Scratch, child: Child, report: string, survivors: array<string, string>} $attempt */
     private function settle(array $attempt): Outcome
     {
         try {
@@ -354,12 +412,33 @@ final class Harness
                 $attempt['report'],
                 $this->declaredSurfaces(),
                 self::replacesDeclaration($attempt['control']),
+                self::touched($attempt['scratch'], $attempt['survivors']),
             );
         } catch (Throwable $error) {
             return Outcome::crashed($attempt['control'], $error->getMessage());
         } finally {
             $attempt['scratch']->remove();
         }
+    }
+
+    /**
+     * The declared survivors the run changed after all.
+     *
+     * @param array<string, string> $before
+     *
+     * @return list<string>
+     */
+    private static function touched(Scratch $scratch, array $before): array
+    {
+        $touched = [];
+
+        foreach ($before as $path => $digest) {
+            if (self::digestOf($scratch->path($path)) !== $digest) {
+                $touched[] = $path;
+            }
+        }
+
+        return $touched;
     }
 
     private static function announce(int $index, int $total, Outcome $outcome, float $elapsed): void

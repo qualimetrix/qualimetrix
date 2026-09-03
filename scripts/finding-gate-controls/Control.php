@@ -49,6 +49,8 @@ final class Control
     /**
      * @param list<Expectation> $required
      * @param list<Expectation> $tolerated
+     * @param list<string> $gateArguments extra arguments this control's gate run is given
+     * @param list<string> $unchangedAfterRun scratch-tree paths the run may not touch
      */
     private function __construct(
         public readonly string $id,
@@ -57,6 +59,8 @@ final class Control
         public readonly array $required,
         public readonly array $tolerated,
         public readonly bool $expectsGreen,
+        public readonly array $gateArguments = [],
+        public readonly array $unchangedAfterRun = [],
     ) {
         foreach ($tolerated as $expectation) {
             if ($expectation->scopeContains === null) {
@@ -77,6 +81,50 @@ final class Control
     public static function red(string $id, string $subject, Mutation $mutation, array $required, array $tolerated = []): self
     {
         return new self($id, $subject, $mutation, $required, $tolerated, expectsGreen: false);
+    }
+
+    /**
+     * A control that runs a *write* mode of the gate and asserts what the write
+     * left on disk.
+     *
+     * The failure classes are judged exactly as a red control's are — a
+     * derivation runs the same comparison — but the subject is what the run
+     * wrote, so the control also names the paths that must come out of it
+     * byte-identical. Nothing else in this harness can see that: a control that
+     * only reads the report cannot tell "refused to write" from "wrote and then
+     * said it had not", which is the defect this shape exists for.
+     *
+     * @param list<Expectation> $required
+     * @param list<string> $unchangedAfterRun paths, relative to the scratch tree, the run may not touch
+     * @param list<Expectation> $tolerated
+     */
+    public static function writing(
+        string $id,
+        string $subject,
+        Mutation $mutation,
+        string $mode,
+        array $required,
+        array $unchangedAfterRun,
+        array $tolerated = [],
+    ): self {
+        if ($unchangedAfterRun === []) {
+            throw new RuntimeException(\sprintf(
+                'Control "%s" runs a write mode and names nothing that must survive it, so it asserts only what'
+                . ' the report says — which is the very thing under test.',
+                $id,
+            ));
+        }
+
+        return new self(
+            $id,
+            $subject,
+            $mutation,
+            $required,
+            $tolerated,
+            expectsGreen: false,
+            gateArguments: [$mode],
+            unchangedAfterRun: $unchangedAfterRun,
+        );
     }
 
     public static function green(string $id, string $subject): self
@@ -110,6 +158,7 @@ final class Control
         FailureClass::DELTA_STALE,
         FailureClass::DELTA_OVERREACH,
         FailureClass::DELTA_TOO_LARGE,
+        FailureClass::FIELD_MOVE_STALE,
     ];
 
     /**
