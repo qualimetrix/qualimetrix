@@ -17,6 +17,19 @@ final class Fs
         return $contents;
     }
 
+    /**
+     * Writes a whole file, and never through a hardlink.
+     *
+     * The temporary file and the rename are not about crash safety here: the
+     * controls harness clones the working tree by **hardlinking** its content,
+     * so a scratch tree's `finding-gate/declared-delta.tsv` and the developer's
+     * are one inode. `file_put_contents` truncates that inode in place, so a
+     * run inside a scratch clone that writes the tracked declaration writes it
+     * into the repository the developer is looking at. Measured on 2026-09-04:
+     * one control run left this repository's index holding thirteen rows
+     * derived from a mutated clone. The rename replaces the directory entry and
+     * leaves the shared inode alone.
+     */
     public static function write(string $path, string $contents): void
     {
         $directory = \dirname($path);
@@ -25,7 +38,15 @@ final class Fs
             throw new GateError(\sprintf('Cannot create directory %s.', $directory));
         }
 
-        if (@file_put_contents($path, $contents) === false) {
+        $temporary = $path . '.tmp.' . getmypid();
+
+        if (@file_put_contents($temporary, $contents) === false) {
+            throw new GateError(\sprintf('Cannot write %s.', $temporary));
+        }
+
+        if (!@rename($temporary, $path)) {
+            @unlink($temporary);
+
             throw new GateError(\sprintf('Cannot write %s.', $path));
         }
     }
