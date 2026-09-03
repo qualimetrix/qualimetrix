@@ -7908,6 +7908,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAPopulationShortOfMeasuredThresholdVerdicts
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAReportWhoseDirectivesAreNotAList
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAReportWithNoDirectivesAtAll
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictCarriedOnlyByASuppression
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictValueTheFloorDoesNotName
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"effect missing"
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"effect not a string"
@@ -7928,6 +7929,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRefusesToRetireWhenTheTargetIsMeasuredUnderAnotherKind
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRetiresARenameWhoseTargetsAppeared
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRetiresASplitOnlyWhenAllThreeTargetsAppeared
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itKeepsEverySeededFixtureFileOutOfSrc
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itNamesEveryFormTheFixtureDeclares

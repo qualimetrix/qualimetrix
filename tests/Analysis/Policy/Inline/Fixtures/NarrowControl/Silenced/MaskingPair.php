@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fixtures\NarrowControl;
+namespace Fixtures\NarrowControl\Silenced;
 
 /**
  * Two directives of one rule covering one subject, each hiding the other.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fixtures\NarrowControl;
+namespace Fixtures\NarrowControl\Silenced;
 
 /**
  * The pair every directive fixture needs: one that certainly does something and

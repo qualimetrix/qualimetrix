@@ -48,8 +48,13 @@ final class Probes
 
     private const string SEEDED = 'tests/Analysis/Policy/Inline/Fixtures/NarrowControl/OverrunBoundary.php';
 
-    /** Where the copy is planted: a path `src/` does not have, so creating it states the mistake. */
+    private const string SEEDED_SUPPRESSION =
+        'tests/Analysis/Policy/Inline/Fixtures/NarrowControl/EveryChannelSuppression.php';
+
+    /** Where a copy is planted: paths `src/` does not have, so creating one states the mistake. */
     private const string SEEDED_LEAK = 'src/NarrowControlLeak/OverrunBoundary.php';
+
+    private const string SEEDED_SUPPRESSION_LEAK = 'src/NarrowControlLeak/EveryChannelSuppression.php';
 
     private const string READER = 'scripts/directive-audit/VerdictReport.php';
 
@@ -233,8 +238,8 @@ final class Probes
                 'the floor answers with the first thing missing instead of everything missing',
                 self::HETEROGENEITY,
                 [
-                    "                \$shortfalls[] = \sprintf('no directive was judged \"%s\".', \$effect);"
-                    => "                return [\sprintf('no directive was judged \"%s\".', \$effect)];",
+                    "                \$shortfalls[] = \sprintf('no @qmx-threshold was judged \"%s\".', \$effect);"
+                    => "                return [\sprintf('no @qmx-threshold was judged \"%s\".', \$effect)];",
                 ],
                 ['itNamesEveryRequirementAHomogeneousPopulationMisses'],
             ),
@@ -248,30 +253,46 @@ final class Probes
                 ],
                 ['itRefusesAnEntryWithoutAReasonKey'],
             ),
+            Probe::breaking(
+                'heterogeneity-counts-a-verdict-the-sweep-cannot-move',
+                'a verdict carried only by a suppression satisfies the verdict axis',
+                self::HETEROGENEITY,
+                [
+                    '        foreach ($report->thresholdVerdicts() as $verdict) {'
+                    => '        foreach ($report->verdicts() as $verdict) {',
+                ],
+                ['itRefusesAVerdictCarriedOnlyByASuppression'],
+            ),
             Probe::planting(
                 'seeded-fixture-copied-into-src',
                 'a copy of the seeded directive fixture appears under src/ and the tree enumeration swallows it',
-                [self::SEEDED_LEAK => self::seededFixture()],
+                [self::SEEDED_LEAK => self::seededFile(self::SEEDED)],
                 ['itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc'],
+            ),
+            Probe::planting(
+                'seeded-suppression-copied-into-src',
+                'a seeded @qmx-ignore appears under src/, where no enumeration would ever notice it',
+                [self::SEEDED_SUPPRESSION_LEAK => self::seededFile(self::SEEDED_SUPPRESSION)],
+                ['itKeepsEverySeededFixtureFileOutOfSrc'],
             ),
         ];
     }
 
     /**
-     * The seeded fixture file as it stands, read rather than copied.
+     * A seeded fixture file as it stands, read rather than copied.
      *
-     * A literal here would keep reddening the case after the fixture moved a
-     * line, which is the one thing the case is about: the identity it compares
-     * carries the line number, so a stale copy would stop matching and the
-     * probe would report the claim unguarded — loudly, but for the wrong
-     * reason.
+     * A literal here would keep reddening its case after the fixture moved a
+     * line, which is the one thing the cases are about: both identities they
+     * compare — the threshold site's line, and the file's hash — change with
+     * any edit, so a stale copy would stop matching and the probe would report
+     * the claim unguarded, loudly and for the wrong reason.
      */
-    private static function seededFixture(): string
+    private static function seededFile(string $path): string
     {
-        $contents = file_get_contents(\dirname(__DIR__, 2) . '/' . self::SEEDED);
+        $contents = file_get_contents(\dirname(__DIR__, 2) . '/' . $path);
 
         if ($contents === false) {
-            throw new RuntimeException(\sprintf('Cannot read %s, so the leak cannot be planted.', self::SEEDED));
+            throw new RuntimeException(\sprintf('Cannot read %s, so the leak cannot be planted.', $path));
         }
 
         return $contents;

@@ -9,6 +9,7 @@ use QmxDirectiveAudit\HeterogeneityFloor;
 use QmxDirectiveAudit\VerdictReport;
 use QmxFindingGate\Process;
 use RuntimeException;
+use Throwable;
 
 /**
  * Proves that `--sweep=narrow` and `--sweep=full` agree, by measuring both over
@@ -40,16 +41,18 @@ use RuntimeException;
  *
  * Every non-zero exit names what would otherwise have gone unnoticed as a
  * silent "matched". Codes: `1` a verdict disagreement; `2` a population the
- * floor refuses; `3` a run that cannot be compared at all — no parseable JSON
- * from one of the sweeps, an error envelope, an exit code no completed audit
- * returns, a process exit disagreeing with the report's own, a report measured
- * with the other sweep, an incomplete scope, zero analysed files, no
+ * floor refuses; `3` **any** `Throwable` that reaches the top — no parseable
+ * JSON from one of the sweeps, an error envelope, an exit code no completed
+ * audit returns, a process exit disagreeing with the report's own, a report
+ * measured with the other sweep, an incomplete scope, zero analysed files, no
  * directives, no measured threshold verdict, a disagreement about `scope` or
- * `selection`, two different sets of judged sites, or an unusable target,
- * configuration or repository root; `7` a report of a shape
- * {@see VerdictReport} cannot read, which is the audit gate's code for the same
- * event. None of them leaves here as an uncaught exception and a shell's 255,
- * which names nothing.
+ * `selection`, two different sets of judged sites, an unusable target,
+ * configuration or repository root, and equally anything thrown by a helper
+ * this file only loads; `7` a report of a shape {@see VerdictReport} cannot
+ * read, which is the audit gate's code for the same event. The guarantee is
+ * stated over `Throwable` rather than over a list of `throw` sites on purpose:
+ * a list drawn from this file missed the one in `Process`, and the shell showed
+ * 255 for it.
  *
  * The report itself is read by {@see \QmxDirectiveAudit\VerdictReport}, the
  * same reader `composer directives:audit` uses. The floor on measured
@@ -65,6 +68,12 @@ use RuntimeException;
  *       [--require-heterogeneity] [--min-measured=<n>]
  */
 
+// `GateError` and not only `Process`: the helper throws it and requires nothing
+// itself, and these scripts have no autoloader — so a `proc_open` that could not
+// start used to die with "Class not found" and a shell's 255, which is exactly
+// the outcome the codes below promise not to produce. Enumerating `throw` in
+// this file could not have seen it.
+require __DIR__ . '/finding-gate/GateError.php';
 require __DIR__ . '/finding-gate/Process.php';
 
 foreach ([
@@ -231,8 +240,13 @@ final class Harness
             fwrite(\STDERR, 'UNREADABLE: ' . $error->getMessage() . "\n");
 
             return self::EXIT_UNREADABLE;
-        } catch (RuntimeException $error) {
-            fwrite(\STDERR, 'NOT COMPARABLE: ' . $error->getMessage() . "\n");
+        } catch (Throwable $error) {
+            // `Throwable` and not `RuntimeException`: this script drives two
+            // subprocesses through helpers it loads by hand, and an `Error` out
+            // of one of them is still "this run cannot be compared". The
+            // promise is that no exit leaves here unnamed, and only the widest
+            // catch keeps it.
+            fwrite(\STDERR, \sprintf('NOT COMPARABLE: %s: %s' . "\n", $error::class, $error->getMessage()));
 
             return self::EXIT_NOT_COMPARABLE;
         }

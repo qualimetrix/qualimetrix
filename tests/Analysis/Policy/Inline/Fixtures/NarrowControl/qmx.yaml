@@ -1,18 +1,18 @@
 # The configuration the narrow/full comparison measures this fixture under.
 #
-# Passed explicitly by `scripts/directive-narrow-control.php`. Without it the
-# product would pick up whatever `qmx.yaml` the working directory happens to
-# hold, and the fixture's verdicts would depend on where the control was run
-# from rather than on what it declares.
+# Passed explicitly by `scripts/directive-narrow-control.php`, and by both runs
+# that read this tree: the whole directory, and `Silenced/` on its own. Without
+# it the product would pick up whatever `qmx.yaml` the working directory happens
+# to hold, and the verdicts would depend on where the control was run from
+# rather than on what this file declares.
 #
 # `complexity.cognitive` is switched off because the fixture needs a directive
 # whose producer did not report: that is the only way to author the
 # `producer-disabled` reason, and the population floor demands every reason.
 #
 # `coupling.distance` is switched off for quiet, not for a verdict: a tree of
-# four fixture classes declares no project namespaces, and the rule says so on
-# stderr once per pass. A control whose stderr is noise is a control nobody
-# reads.
+# this size declares no project namespaces, and the rule says so on stderr once
+# per pass. A control whose stderr is noise is a control nobody reads.
 disabled_rules:
   - complexity.cognitive
   - coupling.distance

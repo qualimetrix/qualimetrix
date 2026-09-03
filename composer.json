@@ -112,8 +112,9 @@
         ],
         "directives:narrow-control": [
             "Composer\\Config::disableProcessTimeout",
-            "php scripts/directive-narrow-control.php --target=src/ --config=qmx.yaml",
-            "php scripts/directive-narrow-control.php --target=tests/Analysis/Policy/Inline/Fixtures/NarrowControl --config=tests/Analysis/Policy/Inline/Fixtures/NarrowControl/qmx.yaml --require-heterogeneity --min-measured=3"
+            "php scripts/directive-narrow-control.php --target=tests/Analysis/Policy/Inline/Fixtures/NarrowControl --config=tests/Analysis/Policy/Inline/Fixtures/NarrowControl/qmx.yaml --require-heterogeneity --min-measured=3",
+            "php scripts/directive-narrow-control.php --target=tests/Analysis/Policy/Inline/Fixtures/NarrowControl/Silenced --config=tests/Analysis/Policy/Inline/Fixtures/NarrowControl/qmx.yaml",
+            "php scripts/directive-narrow-control.php --target=src/ --config=qmx.yaml"
         ],
         "directives:audit": "php scripts/directive-audit-gate.php",
         "docs:check": "bash scripts/check-docs.sh",
@@ -175,7 +176,7 @@
         "check:artifacts": "What a manifest, config or corpus change invalidates: every generated artifact against a fresh measurement",
         "check:self": "What the product says about this repository: the gate self-test, the qmx ratchet and the directive audit",
         "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it",
-        "directives:narrow-control": "Prove --sweep=narrow and --sweep=full agree verdict for verdict, over src/ and over a fixture whose population carries every verdict and every refusal",
+        "directives:narrow-control": "Prove --sweep=narrow and --sweep=full agree verdict for verdict: the seeded fixture whole (every verdict and every refusal), its Silenced/ half (where a wrong-producer defect reaches the comparison), then src/. Cheapest signal first, because composer stops at the first run that fails",
         "directives:audit": "Fail if any inline @qmx directive over src/ does nothing"
     },
     "config": {

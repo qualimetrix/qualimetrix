@@ -16,21 +16,32 @@ namespace QmxDirectiveAudit;
  * narrowed baseline onto the full one flips four of this fixture's eight
  * verdicts and none of `src/`'s.
  *
- * Three requirements, and the third is the one prose could not hold:
+ * Three requirements, and they do not all buy the same thing:
  *
  * - **measured threshold verdicts**, at least as many as the caller names.
  *   `--sweep` changes how a threshold verdict is produced and nothing else, so
  *   these are the only verdicts a difference between the scopes can move at
  *   all. {@see VerdictReport::measuredThresholdCount()} already answers this
  *   for the CI floor; what is new here is a caller-set minimum above one.
- * - **every verdict of the vocabulary**, so the population can express a
- *   disagreement in any direction rather than in the one direction its tree
- *   happens to have.
- * - **every reason of the vocabulary**. Coalition masking — the branch this
- *   whole control was asked for — carries no verdict of its own: it is
- *   `Unmeasured`, exactly like a directive naming a channel nobody owns. A
- *   floor written over verdicts alone is satisfied by a population that never
- *   executes the coalition branch, and no reader would notice.
+ * - **every verdict of the vocabulary, counted over `threshold` sites only.**
+ *   A `symbol` verdict is judged by what it silenced rather than by
+ *   re-executing a rule, so the two sweeps agree on one by construction:
+ *   counting it towards this axis lets a population satisfy the floor with a
+ *   verdict the sweep width cannot touch. Review built exactly that — the sole
+ *   `inert` rewritten as a `@qmx-ignore` — and it passed. Restricting the axis
+ *   to `threshold` is the whole of the fix: `effective`, `overrun` and `inert`
+ *   are measured outcomes by definition, so demanding measuredness on top would
+ *   add no name to the requirement.
+ * - **every reason of the vocabulary, counted over both halves.** This axis is
+ *   coverage of the vocabulary, not discrimination, and saying so is the honest
+ *   half of the choice above. `AddressesEveryChannel` can only ever be reached
+ *   by a suppression, so restricting this axis to `threshold` would make the
+ *   floor unsatisfiable; and `AlreadyRefused` and `ProducerDisabled` are
+ *   decided from the configuration and the channel catalogue before a sweep is
+ *   asked anything. Only `Masked` is a branch the sweep executes, and it is the
+ *   branch this control was asked for — it carries no verdict of its own, being
+ *   `Unmeasured` exactly like a directive naming a channel nobody owns, so a
+ *   floor written over verdicts alone would never demand it.
  *
  * Both tables are frozen here rather than derived from `DirectiveEffect` and
  * `DirectiveUnmeasurableReason`, for the reason {@see MeasuredEffects} is:
@@ -63,7 +74,7 @@ final class HeterogeneityFloor
     public static function describe(VerdictReport $report): string
     {
         return \sprintf(
-            "  verdicts: %s\n  reasons:  %s\n  measured threshold verdicts: %d\n",
+            "  threshold verdicts: %s\n  reasons (both halves): %s\n  measured threshold verdicts: %d\n",
             self::tally(self::effectCounts($report), self::REQUIRED_EFFECTS),
             self::tally(self::reasonCounts($report), self::REQUIRED_REASONS),
             $report->measuredThresholdCount(),
@@ -99,7 +110,7 @@ final class HeterogeneityFloor
         $effects = self::effectCounts($report);
         foreach (self::REQUIRED_EFFECTS as $effect) {
             if (($effects[$effect] ?? 0) === 0) {
-                $shortfalls[] = \sprintf('no directive was judged "%s".', $effect);
+                $shortfalls[] = \sprintf('no @qmx-threshold was judged "%s".', $effect);
             }
         }
 
@@ -122,7 +133,7 @@ final class HeterogeneityFloor
     {
         $counts = [];
 
-        foreach ($report->verdicts() as $verdict) {
+        foreach ($report->thresholdVerdicts() as $verdict) {
             $counts[$verdict->effect] = ($counts[$verdict->effect] ?? 0) + 1;
         }
 

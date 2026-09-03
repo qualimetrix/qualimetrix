@@ -323,9 +323,9 @@ final class DirectiveAuditReportReadingTest extends TestCase
 
         self::assertSame(
             [
-                'no directive was judged "overrun".',
-                'no directive was judged "inert".',
-                'no directive was judged "unmeasured".',
+                'no @qmx-threshold was judged "overrun".',
+                'no @qmx-threshold was judged "inert".',
+                'no @qmx-threshold was judged "unmeasured".',
                 'no directive was refused for "producer-disabled".',
                 'no directive was refused for "already-refused".',
                 'no directive was refused for "addresses-every-channel".',
@@ -356,10 +356,38 @@ final class DirectiveAuditReportReadingTest extends TestCase
     public function itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet(): void
     {
         self::assertSame(
-            "  verdicts: effective=1 overrun=1 inert=1 unmeasured=4\n"
-                . "  reasons:  producer-disabled=1 already-refused=1 addresses-every-channel=1 masked=1\n"
+            "  threshold verdicts: effective=1 overrun=1 inert=1 unmeasured=3\n"
+                . "  reasons (both halves): producer-disabled=1 already-refused=1"
+                . " addresses-every-channel=1 masked=1\n"
                 . "  measured threshold verdicts: 3\n",
             HeterogeneityFloor::describe(self::heterogeneousReport()),
+        );
+    }
+
+    /**
+     * A verdict the sweep cannot move does not satisfy the verdict axis.
+     *
+     * The population below carries every name the floor asks for and is still
+     * degenerate: its only `inert` sits on a `@qmx-ignore`, which is judged by
+     * what it silenced rather than by re-executing a rule, so the two sweeps
+     * agree on it by construction. Review built this and the floor accepted it.
+     */
+    #[Test]
+    public function itRefusesAVerdictCarriedOnlyByASuppression(): void
+    {
+        $report = VerdictReport::fromJson(self::reportJson([
+            self::verdict('src/A.php', 10, 'threshold', 'code-smell.long-parameter-list', 'effective'),
+            self::verdict('src/B.php', 10, 'threshold', 'code-smell.long-parameter-list', 'overrun'),
+            self::verdict('src/C.php', 8, 'threshold', 'code-smell.long-parameter-list', 'unmeasured', 'masked'),
+            self::verdict('src/D.php', 7, 'symbol', '*', 'unmeasured', 'addresses-every-channel'),
+            self::verdict('src/D.php', 20, 'threshold', 'no.such-channel', 'unmeasured', 'already-refused'),
+            self::verdict('src/D.php', 21, 'threshold', 'complexity.cognitive', 'unmeasured', 'producer-disabled'),
+            self::verdict('src/E.php', 4, 'symbol', 'complexity.cyclomatic', 'inert'),
+        ], 2));
+
+        self::assertSame(
+            ['no @qmx-threshold was judged "inert".'],
+            HeterogeneityFloor::shortfalls($report, 2),
         );
     }
 
