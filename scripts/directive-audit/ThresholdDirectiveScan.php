@@ -30,19 +30,24 @@ use SplFileInfo;
  * extraction — that agreement, not this file, is what makes the measure usable
  * as a witness.
  *
- * Three rules below are not stylistic; each one is a divergence that was
+ * Four rules below are not stylistic; each one is a divergence that was
  * measured and then closed:
  *
  * - a directive is a word *ending* in the tag. The product's pattern carries no
  *   left boundary, so a tag written straight against the docblock star, with no
  *   space between them, is honoured by the product; a measure demanding the tag
  *   as a whole word would report that site missing.
- * - once a directive is recognised the rest of the line is its values and the
- *   line is not scanned again. The product's values group is greedy to the end
- *   of the line, so two directives written on one line are one match to it.
- *   A word ending in the directive whose target is *not* there is not a
- *   recognition, and scanning does continue past it — the product's own
- *   `\s+` backtracks into the same answer.
+ * - a directive whose target is followed by a space takes the rest of the line
+ *   as its values, and the line ends there. A directive whose target is not is
+ *   a site with no values, and the scan resumes right after that target. The
+ *   product's values group is greedy to the line break — but only once it
+ *   matches at all, and it does not match when no space separates the target
+ *   from what follows. Review measured the difference: on
+ *   `@qmx-threshold cbo(x) @qmx-threshold other 20` the product reports two
+ *   sites, and a measure that stopped at the first would report one.
+ * - the values are what the product parses, terminator and all: a docblock
+ *   written on a single line ends with `*` and a slash, and the product strips
+ *   that marker with the whitespace around it before reading the values.
  * - backtick regions are blanked, not removed. The product replaces every
  *   non-newline character of such a region with a space (AGENTS.md §8); cutting
  *   the region out instead shortens the docblock by however many lines it
@@ -87,7 +92,11 @@ final class ThresholdDirectiveScan
                 continue;
             }
 
-            $source = file_get_contents($file->getPathname());
+            // `is_readable()` first so that an unreadable file leaves this
+            // refusal and not also an `E_WARNING`: the suite this scan is
+            // guarded by fails on warnings, and a check that cannot be
+            // exercised without tripping the runner is a check nobody runs.
+            $source = $file->isReadable() ? file_get_contents($file->getPathname()) : false;
 
             if ($source === false) {
                 throw new RuntimeException(\sprintf('unreadable: %s', $file->getPathname()));
@@ -118,13 +127,14 @@ final class ThresholdDirectiveScan
             }
 
             foreach (explode("\n", self::blankBacktickRegions($token[1])) as $offset => $line) {
-                $address = self::recognise($line);
-
-                if ($address === null) {
-                    continue;
+                foreach (self::recognise($line) as $address) {
+                    $sites[] = new EnumeratedSite(
+                        $path,
+                        $token[2] + $offset,
+                        $address['target'],
+                        $address['values'],
+                    );
                 }
-
-                $sites[] = new EnumeratedSite($path, $token[2] + $offset, $address['target'], $address['values']);
             }
         }
 
@@ -132,13 +142,28 @@ final class ThresholdDirectiveScan
     }
 
     /**
-     * @return array{target: string, values: string}|null what the line addresses, if it addresses anything
+     * Everything one line addresses, in the order it is written.
+     *
+     * Usually that is nothing or one directive, and a directive carrying values
+     * is always the last thing on its line: the product's values group runs to
+     * the line break, so what follows a complete directive is its reason text
+     * however many tags a reader sees there.
+     *
+     * A directive whose target is *not* followed by a space carries no values —
+     * and then the product's own scan resumes right after that target and can
+     * match a second directive on the same line. A cut-short target followed by
+     * a second tag with a target of its own is two sites to the product, not
+     * one, and a measure returning a single address per line would report the
+     * second of them missing.
+     *
+     * @return list<array{target: string, values: string}>
      */
-    public static function recognise(string $docblockLine): ?array
+    public static function recognise(string $docblockLine): array
     {
         $line = rtrim($docblockLine, "\r");
         $length = \strlen($line);
         $cursor = 0;
+        $addresses = [];
 
         while ($cursor < $length) {
             $cursor = self::skipSeparators($line, $cursor);
@@ -151,12 +176,20 @@ final class ThresholdDirectiveScan
 
             $address = self::addressAfter($line, $cursor);
 
-            if ($address !== null) {
-                return $address;
+            if ($address === null) {
+                continue;
             }
+
+            $addresses[] = ['target' => $address['target'], 'values' => $address['values']];
+
+            if ($address['values'] !== '' || $address['carriesValues']) {
+                return $addresses;
+            }
+
+            $cursor = $address['end'];
         }
 
-        return null;
+        return $addresses;
     }
 
     /**
@@ -166,8 +199,10 @@ final class ThresholdDirectiveScan
      * separates them from the target: the product takes them with `[ \t]+`
      * ahead of the group, so `cbo(x) 30` addresses `cbo` and carries no values
      * at all — an authored mistake both measures must report the same way.
+     * `carriesValues` says which of the two happened, because an empty reason
+     * text and no reason text at all end the line differently.
      *
-     * @return array{target: string, values: string}|null
+     * @return array{target: string, values: string, carriesValues: bool, end: int}|null
      */
     private static function addressAfter(string $line, int $cursor): ?array
     {
@@ -186,12 +221,38 @@ final class ThresholdDirectiveScan
         }
 
         $afterTarget = $afterSeparators + \strlen($target);
-        $separated = $afterTarget < \strlen($line) && str_contains(self::WORD_SEPARATORS, $line[$afterTarget]);
+        $afterSpacing = self::skipSeparators($line, $afterTarget);
+        $carriesValues = $afterSpacing > $afterTarget;
 
         return [
             'target' => $target,
-            'values' => $separated ? trim(substr($line, $afterTarget)) : '',
+            'values' => $carriesValues ? self::withoutTheDocblockTerminator(substr($line, $afterSpacing)) : '',
+            'carriesValues' => $carriesValues,
+            'end' => $afterTarget,
         ];
+    }
+
+    /**
+     * A docblock written on one line ends its own values.
+     *
+     * `/** @qmx-threshold one.line 20 *\/` hands the product `20` and not
+     * `20 *\/`: it strips a terminal docblock marker and the whitespace around
+     * it before it parses anything. Without the same rule the values column of
+     * the enumeration is a different string from the one the product read, on
+     * a form nobody has written in `src/` yet.
+     */
+    private static function withoutTheDocblockTerminator(string $values): string
+    {
+        $trimmed = rtrim($values);
+
+        if (!str_ends_with($trimmed, '*/')) {
+            // Trailing whitespace with no marker behind it stays: the product
+            // keeps it too, and a measure tidier than the thing it measures is
+            // a measure that disagrees.
+            return $values;
+        }
+
+        return rtrim(substr($trimmed, 0, -2));
     }
 
     private static function skipSeparators(string $line, int $cursor): int

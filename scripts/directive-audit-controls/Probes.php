@@ -54,6 +54,8 @@ final class Probes
 
     private const string SCAN = 'scripts/directive-audit/ThresholdDirectiveScan.php';
 
+    private const string FIXTURE = 'tests/Unit/RuleVocabulary/Fixtures/AuthoredThresholdForms.php';
+
     private const string EXTRACTOR = 'src/Analysis/Policy/Inline/Contract/ThresholdOverrideExtractor.php';
 
     /**
@@ -82,6 +84,81 @@ final class Probes
         'threshold' => '            self::number($finding->threshold),',
         'message' => '            $finding->message,',
         'recommendation' => "            \$finding->recommendation ?? '',",
+    ];
+
+    /**
+     * One character of the target list => what breaking it claims, the list it
+     * leaves behind, and the cases that must notice.
+     *
+     * @var array<string, array{0: string, 1: string, 2: list<string>}>
+     */
+    private const array CHARACTER_CLASS_EDITS = [
+        'drops-the-dot' => [
+            'the second measure stops reading a dotted channel whole',
+            'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_*#:-',
+            [
+                'data set "plain"',
+                'data set "glued to the docblock star"',
+                'data set "after a multiline backtick region"',
+                'data set "two on one line"',
+                'data set "target cut at a call"',
+                'data set "star"',
+                'data set "hash"',
+                'data set "colon"',
+                'data set "digit"',
+                'data set "capital"',
+                'data set "cut target then a second directive"',
+                'data set "single-line docblock"',
+                'data set "comma"',
+                'itMeasuresTheSamePopulationOverTheWholeFixture',
+                'itScansATreeAndSkipsWhatIsNotPhp',
+            ],
+        ],
+        'drops-the-underscore' => [
+            'the second measure cuts a target at an underscore the product admits',
+            'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.*#:-',
+            ['data set "underscore"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+        ],
+        'drops-digits' => [
+            'the second measure cuts a target at a digit the product admits',
+            'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_.*#:-',
+            ['data set "digit"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+        ],
+        'drops-capitals' => [
+            'the second measure cuts a target at a capital the product admits',
+            'abcdefghijklmnopqrstuvwxyz0123456789_.*#:-',
+            ['data set "capital"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+        ],
+        'drops-the-star' => [
+            'the second measure cuts a wildcard target short',
+            'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.#:-',
+            ['data set "star"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+        ],
+        'drops-the-hash' => [
+            'the second measure cuts the retired rule#code spelling short',
+            'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*:-',
+            ['data set "hash"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+        ],
+        'drops-the-colon' => [
+            'the second measure cuts a channel:level pair short, which is the pair the product refuses by name',
+            'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#-',
+            ['data set "colon"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+        ],
+        'drops-the-hyphen' => [
+            'the second measure cuts a hyphenated channel short',
+            'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:',
+            ['data set "hyphen"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+        ],
+        'admits-a-slash' => [
+            'the second measure reads past a slash the product stops at',
+            'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:-/',
+            ['data set "slash"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+        ],
+        'admits-a-plus' => [
+            'the second measure reads past a plus the product stops at',
+            'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:-+',
+            ['data set "plus"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+        ],
     ];
 
     /** @return list<Probe> */
@@ -182,6 +259,18 @@ final class Probes
                 self::GATE,
                 ['        if ($auditExit !== 0 && $auditExit !== 2) {' => '        if (false) {'],
                 ['itPropagatesARunThatWasAlreadyDisqualified'],
+            ),
+            Probe::breaking(
+                'enumeration-failure-is-not-a-refusal',
+                'an enumeration that would not run dies with a stack trace instead of this step\'s own code',
+                self::GATE,
+                [
+                    '            throw new AuditReportError(\sprintf(' . "\n"
+                    . '                "enumerate-inline-directives.php failed (exit %d):\n%s",'
+                    => '            throw new RuntimeException(\sprintf(' . "\n"
+                    . '                "enumerate-inline-directives.php failed (exit %d):\n%s",',
+                ],
+                ['itRefusesAnEnumerationThatWouldNotRun'],
             ),
             Probe::breaking(
                 'no-report-read-as-a-report',
@@ -362,6 +451,37 @@ final class Probes
     }
 
     /**
+     * The second measure's character list, one character at a time.
+     *
+     * One probe per character rather than one for the whole list, in both
+     * directions. A single probe narrowing the list to letters reddened twelve
+     * cases while declaring six, which makes it a blanket breakage wearing a
+     * specific claim: it was the only guard two of those cases had, and nothing
+     * said which character each of them was about. And a list that *grows* was
+     * guarded by nothing at all — a measure admitting `/` or `+` reads further
+     * than the product does, and every narrowing probe stays green through it.
+     *
+     * @return list<Probe>
+     */
+    private static function characterClass(): array
+    {
+        $whole = "        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:-';";
+        $probes = [];
+
+        foreach (self::CHARACTER_CLASS_EDITS as $id => [$claim, $list, $reddens]) {
+            $probes[] = Probe::breaking(
+                'scan-class-' . $id,
+                $claim,
+                self::SCAN,
+                [$whole => "        '" . $list . "';"],
+                $reddens,
+            );
+        }
+
+        return $probes;
+    }
+
+    /**
      * The second measure of the authored population, and the product measure it
      * has to agree with.
      *
@@ -378,23 +498,7 @@ final class Probes
     private static function agreement(): array
     {
         return [
-            Probe::breaking(
-                'scan-target-class-narrowed',
-                'the second measure cuts a target at characters a channel is legitimately made of',
-                self::SCAN,
-                [
-                    "        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.*#:-';"
-                    => "        'abcdefghijklmnopqrstuvwxyz';",
-                ],
-                [
-                    'data set "plain"',
-                    'data set "target cut at a call"',
-                    'data set "digit"',
-                    'data set "underscore"',
-                    'data set "capital"',
-                    'itMeasuresTheSamePopulationOverTheWholeFixture',
-                ],
-            ),
+            ...self::characterClass(),
             Probe::breaking(
                 'scan-demands-a-whole-word',
                 'a tag written against the docblock star is read as no directive at all',
@@ -430,13 +534,75 @@ final class Probes
                 ['data set "after a multiline backtick region"'],
             ),
             Probe::breaking(
-                'scan-keeps-reading-past-a-directive',
-                'the values of a directive are scanned for another one, so a documented tag becomes a site',
+                'scan-splits-on-a-comma',
+                'the second measure treats a comma as whitespace, so it reads values the product never saw',
+                self::SCAN,
+                ["    private const string WORD_SEPARATORS = \" \\t\";"
+                    => "    private const string WORD_SEPARATORS = \" \\t,\";"],
+                ['data set "comma"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
+            ),
+            Probe::breaking(
+                'scan-keeps-the-docblock-terminator',
+                'the values of a one-line docblock carry its terminator, which the product strips before parsing',
                 self::SCAN,
                 [
-                    "            if (\$address !== null) {\n                return \$address;\n            }"
-                    => "            if (\$address !== null) {\n"
-                    . "                return self::recognise(substr(\$line, \$cursor)) ?? \$address;\n            }",
+                    "        if (!str_ends_with(\$trimmed, '*/')) {" => '        if (true) {',
+                ],
+                [
+                    'data set "single-line docblock"',
+                    'itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'itScansATreeAndSkipsWhatIsNotPhp',
+                ],
+            ),
+            Probe::breaking(
+                'scan-stops-at-a-valueless-directive',
+                'a second directive behind a target the product cut short is dropped',
+                self::SCAN,
+                [
+                    "            if (\$address['values'] !== '' || \$address['carriesValues']) {"
+                    => '            if (true) {',
+                ],
+                [
+                    'data set "cut target then a second directive"',
+                    'itMeasuresTheSamePopulationOverTheWholeFixture',
+                ],
+            ),
+            Probe::breaking(
+                'scan-reads-any-file-in-the-tree',
+                'the tree scan stops filtering on the extension, so prose in a text file becomes a site',
+                self::SCAN,
+                ["            if (!\$file->isFile() || \$file->getExtension() !== 'php') {" => '            if (false) {'],
+                ['itScansATreeAndSkipsWhatIsNotPhp'],
+            ),
+            Probe::breaking(
+                'scan-skips-what-it-cannot-read',
+                'a file the tree scan cannot read is passed over instead of refused, leaving a hole in the population',
+                self::SCAN,
+                [
+                    "                throw new RuntimeException(\sprintf('unreadable: %s', \$file->getPathname()));"
+                    => '                continue;',
+                ],
+                ['itRefusesToScanATreeItCannotRead'],
+            ),
+            Probe::breaking(
+                'fixture-grows-an-unnamed-form',
+                'a form is added to the fixture and no row names it, so only the two measures judge it',
+                self::FIXTURE,
+                [
+                    "    public function targetFollowedByAComma(): void {}\n}"
+                    => "    public function targetFollowedByAComma(): void {}\n\n    /**\n"
+                    . "     * @qmx-threshold unnamed.form 20\n     */\n"
+                    . "    public function unnamedForm(): void {}\n}",
+                ],
+                ['itNamesEveryFormTheFixtureDeclares'],
+            ),
+            Probe::breaking(
+                'scan-keeps-reading-past-a-directive',
+                'the reason text of a complete directive is scanned for another one, so a quoted tag becomes a site',
+                self::SCAN,
+                [
+                    "            if (\$address['values'] !== '' || \$address['carriesValues']) {"
+                    => '            if (false) {',
                 ],
                 ['data set "two on one line"', 'itMeasuresTheSamePopulationOverTheWholeFixture'],
             ),

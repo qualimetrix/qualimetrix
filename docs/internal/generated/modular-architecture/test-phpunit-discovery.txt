@@ -7877,6 +7877,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itPropagatesTheCommandsOwnCodeThroughAnErrorEnvelope
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesAnAuditThatProducedNoJson
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesAnEnumerationThatWouldNotRun
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesAnUnknownVerdictOnASuppressionSite
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesAnUnknownVerdictWhereTheFloorIsNeverReached
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itRefusesToJudgeAVerdictValueTheFloorCannotWeigh
@@ -7911,18 +7912,27 @@ Available tests:
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRetiresARenameWhoseTargetsAppeared
  - Qualimetrix\Tests\Unit\RuleVocabulary\RenameEnumerationRetirementTest::itRetiresASplitOnlyWhenAllThreeTargetsAppeared
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itNamesEveryFormTheFixtureDeclares
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"after a multiline backtick region"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"backticked"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"capital"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"colon"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"comma"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"cut target then a second directive"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"digit"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"glued to the docblock star"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"hash"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"hyphen"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"outside a docblock"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"plain"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"plus"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"single-line docblock"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"slash"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"star"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"tag with a suffix"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"target cut at a call"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"target wrapped in parens"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"two on one line"
  - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"underscore"
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itRefusesToScanATreeItCannotRead
+ - Qualimetrix\Tests\Unit\RuleVocabulary\ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp

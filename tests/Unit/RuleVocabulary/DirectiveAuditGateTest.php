@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\RuleVocabulary;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use QmxDirectiveAudit\AuditReportError;
 use QmxDirectiveAudit\Gate;
 
 /**
@@ -174,6 +175,21 @@ final class DirectiveAuditGateTest extends TestCase
     public function itRefusesAnAuditThatProducedNoJson(): void
     {
         self::assertSame(1, self::judge('PHP Fatal error: something', 0, ''));
+    }
+
+    /**
+     * An enumeration that would not run is a refusal of this gate's own kind,
+     * so the step answers 7 instead of dying with an uncaught exception. The
+     * enumeration refuses a tree it cannot read whole, which is a path the
+     * scan grew and nothing else exercises.
+     */
+    #[Test]
+    public function itRefusesAnEnumerationThatWouldNotRun(): void
+    {
+        $this->expectException(AuditReportError::class);
+        $this->expectExceptionMessage('exit 1');
+
+        Gate::enumerationOf(['stdout' => '', 'stderr' => "unreadable: src/Broken.php\n", 'exit' => 1]);
     }
 
     /**

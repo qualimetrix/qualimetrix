@@ -268,10 +268,31 @@ final class Gate
     /** One authored `@qmx-threshold` site per line, as `file\tline\tchannel\tvalues`. */
     private static function runEnumeration(): string
     {
-        $result = Process::run(['php', 'scripts/enumerate-inline-directives.php', 'src'], self::rootPath());
+        return self::enumerationOf(
+            Process::run(['php', 'scripts/enumerate-inline-directives.php', 'src'], self::rootPath()),
+        );
+    }
 
+    /**
+     * The enumeration's output, or this gate's own refusal.
+     *
+     * Separated from the process call so a run that failed can be handed over
+     * as data: the enumeration refuses a tree it cannot read whole, and until
+     * that refusal had a case behind it the only thing it was known to produce
+     * was a stack trace.
+     *
+     * @param array{stdout: string, stderr: string, exit: int} $result
+     *
+     * @throws AuditReportError
+     */
+    public static function enumerationOf(array $result): string
+    {
         if ($result['exit'] !== 0) {
-            throw new RuntimeException(\sprintf(
+            // An `AuditReportError` and not a bare exception: an enumeration
+            // that refused to run is the same event for this step as one it
+            // cannot read — there is no population to compare — and it exits
+            // 7 rather than dying at 255 with a stack trace.
+            throw new AuditReportError(\sprintf(
                 "enumerate-inline-directives.php failed (exit %d):\n%s",
                 $result['exit'],
                 $result['stderr'],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\RuleVocabulary;
 
+use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use PhpParser\NodeFinder;
 use PhpParser\ParserFactory;
@@ -17,6 +18,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use RuntimeException;
 
 /**
  * The two measures of the authored `@qmx-threshold` population, asked the same
@@ -38,7 +40,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * The fixture and not `src/` because of what `src/` does not contain: every
  * target in the tree is spelled with lowercase letters, dots and hyphens, so
  * narrowing the pattern to exactly those would leave every measurement of the
- * live tree unmoved. Six of the cases below exist for that reason alone.
+ * live tree unmoved. The rows naming a target with any other character exist
+ * for that reason alone, and so do the ones the product cuts short — a
+ * character list that *grows* reads further than the product does, and no
+ * narrowing catches that.
  *
  * One authored form is deliberately absent. The product's separator between the
  * tag and its target is `\s+`, which crosses a line break, so a tag alone at
@@ -54,6 +59,9 @@ final class ThresholdPopulationAgreementTest extends TestCase
 {
     private const string FIXTURE = 'tests/Unit/RuleVocabulary/Fixtures/AuthoredThresholdForms.php';
 
+    /** @var list<string> scratch trees to remove, whatever the case did with them */
+    private static array $trees = [];
+
     public static function setUpBeforeClass(): void
     {
         foreach (['EnumeratedSite', 'ThresholdDirectiveScan'] as $part) {
@@ -61,40 +69,92 @@ final class ThresholdPopulationAgreementTest extends TestCase
         }
     }
 
+    protected function tearDown(): void
+    {
+        foreach (self::$trees as $tree) {
+            self::removeTree($tree);
+        }
+
+        self::$trees = [];
+    }
+
+    private static function removeTree(string $path): void
+    {
+        if (is_file($path)) {
+            @chmod($path, 0o600);
+            @unlink($path);
+
+            return;
+        }
+
+        $entries = scandir($path);
+
+        foreach (array_diff($entries === false ? [] : $entries, ['.', '..']) as $entry) {
+            self::removeTree($path . '/' . $entry);
+        }
+
+        @rmdir($path);
+    }
+
     /**
-     * @return iterable<string, array{string, list<string>}> declaration => the targets it authors
+     * Each row is the declaration and what it authors: the target, and the
+     * values the product parses out behind it.
+     *
+     * The values are part of the expectation because they are part of the
+     * measurement — the enumeration publishes them in its fourth column, and
+     * nothing else in this repository compares them to what the product read.
+     *
+     * @return iterable<string, array{string, list<array{string, string}>}>
      */
     public static function provideAuthoredForms(): iterable
     {
-        yield 'plain' => ['plain', ['plain.simple']];
+        yield 'plain' => ['plain', [['plain.simple', '20']]];
 
-        yield 'glued to the docblock star' => ['gluedToTheStar', ['glued.star']];
+        yield 'glued to the docblock star' => ['gluedToTheStar', [['glued.star', '20']]];
 
         yield 'tag with a suffix' => ['suffixedWord', []];
 
         yield 'backticked' => ['backticked', []];
 
-        yield 'after a multiline backtick region' => ['afterMultilineBacktickRegion', ['after.backticks']];
+        yield 'after a multiline backtick region' => ['afterMultilineBacktickRegion', [['after.backticks', '20']]];
 
         yield 'outside a docblock' => ['outsideADocblock', []];
 
-        yield 'two on one line' => ['twoOnOneLine', ['first.of.two']];
+        yield 'two on one line' => [
+            'twoOnOneLine',
+            [['first.of.two', '20 @qmx-threshold second.of.two 30']],
+        ];
 
-        yield 'target cut at a call' => ['targetCutAtACall', ['paren.call']];
+        yield 'target cut at a call' => ['targetCutAtACall', [['paren.call', '']]];
 
         yield 'target wrapped in parens' => ['targetWrappedInParens', []];
 
-        yield 'star' => ['targetWithAStar', ['class.star.*']];
+        yield 'star' => ['targetWithAStar', [['class.star.*', '20']]];
 
-        yield 'hash' => ['targetWithAHash', ['class.hash#code']];
+        yield 'hash' => ['targetWithAHash', [['class.hash#code', '20']]];
 
-        yield 'colon' => ['targetWithAColon', ['class.colon:level']];
+        yield 'colon' => ['targetWithAColon', [['class.colon:level', '20']]];
 
-        yield 'digit' => ['targetWithADigit', ['class.digit9']];
+        yield 'digit' => ['targetWithADigit', [['class.digit9', '20']]];
 
-        yield 'underscore' => ['targetWithAnUnderscore', ['class_underscore']];
+        yield 'underscore' => ['targetWithAnUnderscore', [['class_underscore', '20']]];
 
-        yield 'capital' => ['targetWithACapital', ['Class.Upper']];
+        yield 'capital' => ['targetWithACapital', [['Class.Upper', '20']]];
+
+        yield 'hyphen' => ['targetWithAHyphen', [['hyphen-target', '20']]];
+
+        yield 'cut target then a second directive' => [
+            'cutTargetThenASecondDirective',
+            [['cut.first', ''], ['second.target', '20']],
+        ];
+
+        yield 'single-line docblock' => ['onASingleLineDocblock', [['one.line', '20']]];
+
+        yield 'slash' => ['targetCutAtASlash', [['slash', '']]];
+
+        yield 'plus' => ['targetCutAtAPlus', [['plus', '']]];
+
+        yield 'comma' => ['targetFollowedByAComma', [['comma.target', '']]];
     }
 
     /**
@@ -107,20 +167,63 @@ final class ThresholdPopulationAgreementTest extends TestCase
      * on the wrong line — what removing a multiline backtick region does to
      * everything below it — is a failure and not a rounding difference.
      *
-     * @param list<string> $targets
+     * @param list<array{string, string}> $authored target and values, in the order the source writes them
      */
     #[Test]
     #[DataProvider('provideAuthoredForms')]
-    public function itReadsAnAuthoredFormTheWayTheProductDoes(string $declaration, array $targets): void
+    public function itReadsAnAuthoredFormTheWayTheProductDoes(string $declaration, array $authored): void
     {
-        $expected = array_map(
-            static fn(string $target): string => \sprintf('%d:%s', self::lineAuthoring($target), $target),
-            $targets,
+        $authoredValues = array_map(
+            static fn(array $site): string => \sprintf('%d|%s|%s', self::lineAuthoring($site[0]), $site[0], $site[1]),
+            $authored,
+        );
+        $productReadings = array_map(
+            static fn(array $site): string => \sprintf(
+                '%d|%s|%s',
+                self::lineAuthoring($site[0]),
+                $site[0],
+                self::productReadingOf($site[0], $site[1]),
+            ),
+            $authored,
         );
         [$from, $to] = self::rangeOf($declaration);
 
-        self::assertSame($expected, self::within(self::productSites(), $from, $to), 'the product read it differently');
-        self::assertSame($expected, self::within(self::scanSites(), $from, $to), 'the enumeration read it differently');
+        self::assertSame(
+            $productReadings,
+            self::within(self::productSites(), $from, $to),
+            'the product read this form differently from what the row says it authors',
+        );
+        self::assertSame(
+            $authoredValues,
+            self::within(self::scanRawSites(), $from, $to),
+            'the enumeration read this form differently from what the row says it authors',
+        );
+    }
+
+    /**
+     * Every declaration in the fixture is named by a row above.
+     *
+     * A form nobody wrote a row for is measured by one case only — the
+     * whole-fixture one, which compares the two measures against each other.
+     * That is the self-confirming pair this package exists to remove, and it
+     * would grow back silently with the next form added to the fixture.
+     */
+    #[Test]
+    public function itNamesEveryFormTheFixtureDeclares(): void
+    {
+        $declared = array_map(
+            static fn(Node\Stmt\ClassMethod $method): string => $method->name->toString(),
+            self::methods(),
+        );
+        $named = array_map(
+            static fn(array $row): string => $row[0],
+            iterator_to_array(self::provideAuthoredForms()),
+        );
+
+        sort($declared);
+        sort($named);
+
+        self::assertSame($declared, $named);
     }
 
     /**
@@ -138,31 +241,75 @@ final class ThresholdPopulationAgreementTest extends TestCase
     }
 
     /**
+     * The scan over a directory, rather than over a string.
+     *
+     * `overTree()` is what the CI step actually runs, and until this case
+     * existed nothing but a live run over `src/` exercised its file filter, its
+     * relative paths or its refusal to carry on past a file it cannot read — a
+     * measurement with a hole in it is the one thing this measure may not be.
+     */
+    #[Test]
+    public function itScansATreeAndSkipsWhatIsNotPhp(): void
+    {
+        $root = self::temporaryTree([
+            'lib/Kept.php' => "<?php\n/**\n * @qmx-threshold tree.kept 20\n */\nclass Kept {}\n",
+            'lib/nested/Deep.php' => "<?php\n/** @qmx-threshold tree.deep 30 */\nclass Deep {}\n",
+            // A whole PHP docblock, in a file the scan must not open: a plain
+            // sentence would be skipped by the tokenizer anyway, and then the
+            // extension filter could be deleted with nothing noticing.
+            'lib/notes.txt' => "<?php\n/** @qmx-threshold tree.text 40 */\n",
+        ]);
+
+        $sites = array_map(
+            static fn(EnumeratedSite $site): string => $site->site() . '|' . $site->values,
+            ThresholdDirectiveScan::overTree($root, 'lib'),
+        );
+        sort($sites);
+
+        self::assertSame(
+            ['lib/Kept.php:3:tree.kept|20', 'lib/nested/Deep.php:2:tree.deep|30'],
+            $sites,
+        );
+    }
+
+    #[Test]
+    public function itRefusesToScanATreeItCannotRead(): void
+    {
+        $root = self::temporaryTree(['lib/Locked.php' => "<?php\n/** @qmx-threshold tree.locked 20 */\n"]);
+        chmod($root . '/lib/Locked.php', 0o000);
+
+        if (is_readable($root . '/lib/Locked.php')) {
+            self::markTestSkipped('This user reads a file with no permission bits, so nothing can be hidden from it.');
+        }
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('unreadable');
+
+        ThresholdDirectiveScan::overTree($root, 'lib');
+    }
+
+    /**
      * What the product recognised, overrides and diagnostics alike.
      *
      * A directive whose values do not parse produces a diagnostic instead of an
      * override, and it is still a site the author wrote and the enumeration
-     * lists — `paren.call(x) 30` is exactly that. Reading only the overrides
-     * would make the two measures disagree over a form neither of them
-     * misread.
+     * lists — a target cut short by a bracket is exactly that. Reading only the
+     * overrides would make the two measures disagree over a form neither of
+     * them misread.
      *
-     * @return list<string> `line:target`, in the order the file authors them
+     * The third field is what the product made of the values, because the
+     * string it read them from is not observable: an override carries parsed
+     * thresholds and a diagnostic quotes its complaint.
+     *
+     * @return list<string> `line|target|reading`
      */
     private static function productSites(): array
     {
-        $extractor = new ThresholdOverrideExtractor([]);
-        $subject = MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString(self::FIXTURE)));
         $sites = [];
 
         foreach (self::documentedNodes() as $node) {
-            $result = $extractor->extractWithDiagnostics($node, $subject, ControlScope::Class_);
-
-            foreach ($result->overrides as $override) {
-                $sites[] = \sprintf('%d:%s', $override->line, $override->rulePattern);
-            }
-
-            foreach ($result->diagnostics as $diagnostic) {
-                $sites[] = \sprintf('%d:%s', $diagnostic->line, self::addressedBy($diagnostic->message));
+            foreach (self::readingsOf($node) as $reading) {
+                $sites[] = $reading;
             }
         }
 
@@ -171,17 +318,107 @@ final class ThresholdPopulationAgreementTest extends TestCase
         return $sites;
     }
 
-    /** @return list<string> `line:target` */
+    /**
+     * The enumeration's sites, with their values put back to the product.
+     *
+     * The values column cannot be compared to the product directly: what the
+     * extractor publishes is the parsed thresholds, never the string it parsed
+     * them from. So each pair the enumeration reports is handed back to the
+     * extractor on a docblock of its own, and what the product makes of it must
+     * be what the product made of the line it came from. A values column that
+     * carried `20` and a docblock terminator would parse as nothing where the
+     * original parsed as a number.
+     *
+     * @return list<string> `line|target|reading`
+     */
     private static function scanSites(): array
     {
         $sites = array_map(
-            static fn(EnumeratedSite $site): string => \sprintf('%d:%s', $site->line, $site->target),
+            static fn(EnumeratedSite $site): string => \sprintf(
+                '%d|%s|%s',
+                $site->line,
+                $site->target,
+                self::productReadingOf($site->target, $site->values),
+            ),
             ThresholdDirectiveScan::overFile(self::FIXTURE, self::source()),
         );
 
         sort($sites);
 
         return $sites;
+    }
+
+    /** @return list<string> `line|target|values`, the enumeration's own answer verbatim */
+    private static function scanRawSites(): array
+    {
+        $sites = array_map(
+            static fn(EnumeratedSite $site): string => \sprintf(
+                '%d|%s|%s',
+                $site->line,
+                $site->target,
+                $site->values,
+            ),
+            ThresholdDirectiveScan::overFile(self::FIXTURE, self::source()),
+        );
+
+        sort($sites);
+
+        return $sites;
+    }
+
+    /**
+     * What the product makes of one authored pair, on a docblock of its own.
+     *
+     * @return list<string> `line|target|reading`
+     */
+    private static function readingsOf(Node $node): array
+    {
+        $extractor = new ThresholdOverrideExtractor([]);
+        $subject = MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString(self::FIXTURE)));
+        $result = $extractor->extractWithDiagnostics($node, $subject, ControlScope::Class_);
+        $sites = [];
+
+        foreach ($result->overrides as $override) {
+            $sites[] = \sprintf(
+                '%d|%s|%s',
+                $override->line,
+                $override->rulePattern,
+                self::thresholds($override->warning, $override->error),
+            );
+        }
+
+        foreach ($result->diagnostics as $diagnostic) {
+            $sites[] = \sprintf(
+                '%d|%s|%s',
+                $diagnostic->line,
+                self::addressedBy($diagnostic->message),
+                self::complaintIn($diagnostic->message),
+            );
+        }
+
+        return $sites;
+    }
+
+    private static function productReadingOf(string $target, string $values): string
+    {
+        $line = $values === ''
+            ? \sprintf('/** @qmx-threshold %s */', $target)
+            : \sprintf('/** @qmx-threshold %s %s */', $target, $values);
+        $node = new Node\Stmt\Nop();
+        $node->setDocComment(new Doc($line, 1, 0));
+        $node->setAttribute('startLine', 1);
+        $node->setAttribute('endLine', 1);
+
+        $readings = self::readingsOf($node);
+
+        return \count($readings) === 1
+            ? explode('|', $readings[0], 3)[2]
+            : \sprintf('%d reading(s)', \count($readings));
+    }
+
+    private static function thresholds(int|float|null $warning, int|float|null $error): string
+    {
+        return \sprintf('warning=%s error=%s', var_export($warning, true), var_export($error, true));
     }
 
     /**
@@ -195,6 +432,14 @@ final class ThresholdPopulationAgreementTest extends TestCase
         $tagged = explode(' ', $message, 2)[1] ?? $message;
 
         return explode(': ', $tagged, 2)[0];
+    }
+
+    /** What the product complained about, which is where it quotes the values it read. */
+    private static function complaintIn(string $message): string
+    {
+        $tagged = explode(' ', $message, 2)[1] ?? $message;
+
+        return explode(': ', $tagged, 2)[1] ?? $message;
     }
 
     /**
@@ -265,7 +510,7 @@ final class ThresholdPopulationAgreementTest extends TestCase
     private static function within(array $sites, int $from, int $to): array
     {
         return array_values(array_filter($sites, static function (string $site) use ($from, $to): bool {
-            $line = (int) explode(':', $site, 2)[0];
+            $line = (int) explode('|', $site, 2)[0];
 
             return $line >= $from && $line <= $to;
         }));
@@ -288,6 +533,42 @@ final class ThresholdPopulationAgreementTest extends TestCase
         }
 
         self::fail(\sprintf('The fixture authors no directive addressing %s.', $target));
+    }
+
+    /**
+     * Every method the fixture declares.
+     *
+     * @return list<Node\Stmt\ClassMethod>
+     */
+    private static function methods(): array
+    {
+        $parsed = (new ParserFactory())->createForNewestSupportedVersion()->parse(self::source()) ?? [];
+
+        /** @var list<Node\Stmt\ClassMethod> $methods */
+        $methods = (new NodeFinder())->find(
+            $parsed,
+            static fn(Node $node): bool => $node instanceof Node\Stmt\ClassMethod,
+        );
+
+        return $methods;
+    }
+
+    /**
+     * @param array<string, string> $files relative path => contents
+     */
+    private static function temporaryTree(array $files): string
+    {
+        $root = sys_get_temp_dir() . '/qmx-scan-' . bin2hex(random_bytes(6));
+
+        foreach ($files as $relative => $contents) {
+            $path = $root . '/' . $relative;
+            @mkdir(\dirname($path), 0o777, true);
+            file_put_contents($path, $contents);
+        }
+
+        self::$trees[] = $root;
+
+        return $root;
     }
 
     private static function source(): string
