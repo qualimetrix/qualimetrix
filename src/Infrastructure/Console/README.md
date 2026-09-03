@@ -276,7 +276,6 @@ Analyzing src/...
 - Standard error is not a terminal (CI, pipes, redirected stderr)
 - The output has no distinguishable error stream (a buffer, `NullOutput`)
 - Quiet mode (`-q`)
-- Verbose mode (`-v`, `-vv`, `-vvv`) — detailed logging is shown instead of progress bar
 
 ## Usage Examples
 

@@ -496,9 +496,10 @@ bin/qmx check src/ --log-file=qmx.log --log-level=debug
 bin/qmx check src/ --no-progress
 ```
 
-Принимается каждой командой, которая запускает анализ: `check`, `directives`,
-`debug:layer-assignment`, `baseline:generate`, `baseline:update`,
-`baseline:cleanup` и `baseline:explain`.
+Принимается каждой командой, которая показывает прогресс-бар: `check`,
+`directives`, `debug:layer-assignment`, `baseline:generate`, `baseline:update`,
+`baseline:cleanup` и `baseline:explain`. `graph:export` тоже анализирует дерево,
+но бара не рисует, поэтому опции у него нет.
 
 Прогресс-бар пишется в поток ошибок, поэтому отчёт в стандартном выводе остаётся
 машиночитаемым даже на терминале — `bin/qmx check src/ --format=json >
