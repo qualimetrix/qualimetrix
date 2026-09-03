@@ -208,15 +208,25 @@ final class Gate
      * Measures every surface that differs and writes it out as the declared
      * delta, so no declaration is a diff somebody typed.
      *
+     * A run that failed writes nothing, and this is where that has to be
+     * decided. The entry point already refuses to call such a run a write and
+     * prints "nothing was written" — but it printed it *after* this method had
+     * replaced the index and every diff file on disk, so the sentence was false
+     * and the tree was left holding a declaration measured from a breakage for
+     * the next ordinary run to be judged against.
+     *
      * @return list<string> the files written
      */
     public function deriveDeclaredDelta(): array
     {
         $this->derived = [];
         $this->compare();
-        $derived = $this->derived ?? [];
 
-        return $this->declaredDelta->rewrite($derived);
+        if ($this->report->exitCode() !== GateReport::EXIT_GREEN) {
+            return [];
+        }
+
+        return $this->declaredDelta->rewrite($this->derived ?? []);
     }
 
     /**

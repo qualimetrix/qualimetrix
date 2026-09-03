@@ -134,6 +134,13 @@ function deriveDeclaredDelta(Options $options): int
     $written = $gate->deriveDeclaredDelta();
     echo $report->render();
 
+    // A derive run's verdict is what decides whether anything was written, so
+    // it has to be as readable by machine as a comparison's is: the control that
+    // proves a failed derivation leaves the tree alone reads it from here.
+    if ($options->reportPath !== null) {
+        $report->writeJson($options->reportPath);
+    }
+
     // A declaration derived from a broken run describes the breakage: if it is
     // deterministic — and a product bug on the reference side is — the next real
     // run reproduces it and goes green against it.
