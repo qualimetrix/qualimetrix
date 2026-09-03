@@ -43,6 +43,8 @@ exit_directives_of = _STAND.exit_directives_of
 render_table = _STAND.render_table
 render_row = _STAND.render_row
 parse_tsv = _STAND.parse_tsv
+write_markdown = _STAND.write_markdown
+StandError = _STAND.StandError
 
 REFUSAL_CHANNEL = "annotation.unresolved-directive"
 CONFIG_ERROR_PREFIX = "annotation."
@@ -280,7 +282,11 @@ def main() -> int:
         derivation[row["case"]] = (item, why)
         rows.append(RULES[item](row))
 
-    arguments.output.write_text(document(rows, {row["case"]: row for row in today}, derivation) + "\n")
+    try:
+        write_markdown(arguments.output, document(rows, {row["case"]: row for row in today}, derivation) + "\n")
+    except StandError as error:
+        print(f"stand-predict-forms: {error}", file=sys.stderr)
+        return 3
     print(f"wrote {arguments.output.name}", file=sys.stderr)
     return 0
 

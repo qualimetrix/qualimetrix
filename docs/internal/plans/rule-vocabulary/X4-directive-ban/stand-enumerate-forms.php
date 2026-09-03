@@ -226,6 +226,22 @@ if (file_put_contents($output, $text) === false) {
     $fail('could not write ' . $output);
 }
 
+// The pre-commit hook aligns staged markdown tables, so a generator that writes
+// unaligned ones dirties the tree on every run and `git status` stops being
+// evidence. Format what was written, then ask the formatter whether anything is
+// left to do: a silent no-op here would bring the noise straight back.
+$formatter = $root . '/scripts/format-md-tables.py';
+$formatCode = 0;
+$checkCode = 0;
+exec(escapeshellcmd('python3') . ' ' . escapeshellarg($formatter) . ' --in-place ' . escapeshellarg($output), $ignored, $formatCode);
+if ($formatCode !== 0) {
+    $fail('the markdown table formatter exited ' . $formatCode . ' on ' . $output);
+}
+exec(escapeshellcmd('python3') . ' ' . escapeshellarg($formatter) . ' --check ' . escapeshellarg($output), $ignored, $checkCode);
+if ($checkCode !== 0) {
+    $fail($output . ' still needs formatting after the formatter ran over it');
+}
+
 fwrite(\STDERR, 'wrote ' . $output . ($agree ? "\n" : " (AGREE: NO)\n"));
 
 exit($agree ? 0 : 1);
