@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
@@ -28,7 +29,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
         $factory = self::createStub(LoggerFactoryInterface::class);
         $factory->method('create')->willReturn($expectedLogger);
 
-        $logger = (new RuntimeLoggerConfigurator($factory, $holder))->configure($input, $output);
+        $logger = (new RuntimeLoggerConfigurator($factory, $holder, new ErrorStream()))->configure($input, $output);
 
         self::assertSame($expectedLogger, $logger);
         self::assertSame($logger, $holder->getLogger());

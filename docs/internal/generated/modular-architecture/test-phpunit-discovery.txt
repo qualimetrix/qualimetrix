@@ -6236,6 +6236,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsALoggerLineAboveTheFrame
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsAProfileSummaryAboveTheFrame
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsAnUncaughtThrowableAboveNoFrameAtAll
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itRendersAnUncaughtThrowableIntoAnOutputThatHasNoErrorChannel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-v"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-vv"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-vvv"
@@ -6243,7 +6244,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-v"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-vv"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-vvv"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"default"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-v"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vv"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vvv"
@@ -6297,6 +6297,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"hook:status"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"hook:uninstall"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"rules"
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamContainerIdentityTest::itGivesEveryConsumerTheOneOwnerTheContainerHolds
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamContainerIdentityTest::itLeavesNoConsumerAbleToInventItsOwnOwner
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamSoleOwnerTest::itFindsNoSecondWriterIntoTheErrorStream
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamSoleOwnerTest::itKeepsEveryAllowedExceptionReal
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan

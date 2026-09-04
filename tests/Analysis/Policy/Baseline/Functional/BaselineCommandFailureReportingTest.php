@@ -413,16 +413,18 @@ final class BaselineCommandFailureReportingTest extends TestCase
     private static function resultPresenter(): ResultPresenter
     {
         $profile = new ProfileSession();
+        $errorStream = new ErrorStream();
 
         return new ResultPresenter(
             self::createStub(FormatterRegistryInterface::class),
             $profile,
             self::withoutConstructor(SummaryEnricher::class),
-            new ProfilePresenter($profile),
+            new ProfilePresenter($profile, $errorStream),
             new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
             new FindingFilter(),
             new FormatterContextFactory(),
             self::createStub(RuleConfigurationInterface::class),
+            $errorStream,
         );
     }
 }

@@ -33,7 +33,7 @@ final readonly class FindingFilterOrchestrator
 {
     public function __construct(
         private FindingProjector $findingProjector,
-        private ErrorStream $errorStream = new ErrorStream(),
+        private ErrorStream $errorStream,
     ) {}
 
     public function projectionOptions(

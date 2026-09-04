@@ -33,8 +33,8 @@ final class GraphExportCommand extends Command
     public function __construct(
         private readonly DependencyGraphAnalyzerInterface $analyzer,
         private readonly DependencyGraphProjectionInterface $projection,
+        private readonly ErrorStream $errorStream,
         private readonly LoggerInterface $logger = new NullLogger(),
-        private readonly ErrorStream $errorStream = new ErrorStream(),
     ) {
         parent::__construct();
     }

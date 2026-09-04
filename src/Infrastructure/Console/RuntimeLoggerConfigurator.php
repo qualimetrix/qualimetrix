@@ -17,7 +17,7 @@ final readonly class RuntimeLoggerConfigurator
     public function __construct(
         private LoggerFactoryInterface $loggerFactory,
         private LoggerHolder $loggerHolder,
-        private ErrorStream $errorStream = new ErrorStream(),
+        private ErrorStream $errorStream,
     ) {}
 
     public function configure(InputInterface $input, OutputInterface $output): LoggerInterface

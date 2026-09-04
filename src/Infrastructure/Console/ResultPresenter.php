@@ -52,7 +52,7 @@ final class ResultPresenter
         private readonly FindingFilter $findingFilter,
         private readonly FormatterContextFactory $formatterContextFactory,
         private readonly RuleConfigurationInterface $ruleConfiguration,
-        private readonly ErrorStream $errorStream = new ErrorStream(),
+        private readonly ErrorStream $errorStream,
     ) {
         $this->suppressionCompositionBuilder = new SuppressionCompositionBuilder();
     }

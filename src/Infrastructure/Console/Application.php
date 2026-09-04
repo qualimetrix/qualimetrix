@@ -23,7 +23,7 @@ final class Application extends BaseApplication
 {
     public const string NAME = 'Qualimetrix';
 
-    public function __construct(private readonly ErrorStream $errorStream = new ErrorStream())
+    public function __construct(private readonly ErrorStream $errorStream)
     {
         parent::__construct(self::NAME, Version::get());
     }

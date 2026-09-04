@@ -16,8 +16,8 @@ final class ProfilePresenter
 {
     public function __construct(
         private readonly ProfileReportInterface $profileReport,
+        private readonly ErrorStream $errorStream,
         private readonly ProfileSummaryRenderer $profileRenderer = new ProfileSummaryRenderer(),
-        private readonly ErrorStream $errorStream = new ErrorStream(),
     ) {}
 
     /**

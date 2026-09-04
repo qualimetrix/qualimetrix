@@ -303,8 +303,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(ProfilePresenter::class)
             ->setArguments([
                 new Reference(ProfileReportInterface::class),
-                new Reference(ProfileSummaryRenderer::class),
                 new Reference(ErrorStream::class),
+                new Reference(ProfileSummaryRenderer::class),
             ]);
 
         $container->register(FormatterContextFactory::class);
@@ -445,8 +445,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(DependencyGraphAnalyzerInterface::class),
                 new Reference('Qualimetrix\\Reporting\\GraphProjection\\Contract\\DependencyGraphProjectionInterface'),
-                new Reference(DelegatingLogger::class),
                 new Reference(ErrorStream::class),
+                new Reference(DelegatingLogger::class),
             ])
             ->setPublic(true);
     }

@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Application;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
 use Throwable;
@@ -39,7 +40,7 @@ final class ApplicationTest extends TestCase
         $resolved = realpath($tempDir);
         self::assertNotFalse($resolved);
 
-        $app = new Application();
+        $app = new Application(new ErrorStream());
         $app->setAutoExit(false);
 
         // doRun with --working-dir will chdir, then fail on missing command — that's fine
@@ -58,7 +59,7 @@ final class ApplicationTest extends TestCase
     #[Test]
     public function invalidWorkingDirThrowsException(): void
     {
-        $app = new Application();
+        $app = new Application(new ErrorStream());
         $app->setAutoExit(false);
 
         self::expectException(InvalidArgumentException::class);
@@ -75,7 +76,7 @@ final class ApplicationTest extends TestCase
     {
         $before = getcwd();
 
-        $app = new Application();
+        $app = new Application(new ErrorStream());
         $app->setAutoExit(false);
 
         try {
