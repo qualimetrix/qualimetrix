@@ -33,7 +33,8 @@ use Symfony\Component\Console\Output\StreamOutput;
  * stream of its own — a buffer, a `NullOutput`, an embedder's single-channel
  * output — diagnostics are dropped rather than folded into the payload:
  * `--format=json` promises a parsable stdout, and that promise is the reason
- * the two channels are separated at all.
+ * the two channels are separated at all. The one message exempt from that is
+ * the uncaught throwable that ends the run: see {@see self::boundWriter()}.
  */
 final class ErrorStream
 {
@@ -78,17 +79,24 @@ final class ErrorStream
     }
 
     /**
-     * The writer this run is already bound to, or the given output when the run
-     * never bound one.
+     * The writer this run is already bound to, or the given output when this
+     * run has no diagnostic writer of its own.
      *
      * For the paths that are handed a resolved stream rather than the console
      * output — {@see Application::renderThrowable} receives `getErrorOutput()`
      * itself — so that asking the owner cannot rebind it to a stream that has
      * no error channel and swallow the message.
+     *
+     * The fallback is taken whenever there is no writer, and a run bound to a
+     * single-channel output has none: its diagnostics are dropped by design.
+     * Dropping applies to diagnostics, not to the message that ends the run —
+     * an uncaught throwable would otherwise leave exit code 1 and an empty
+     * screen, which is worse than writing the trace into the one channel the
+     * caller gave, and is what Symfony does when no owner is involved at all.
      */
     public function boundWriter(OutputInterface $fallback): OutputInterface
     {
-        return $this->boundTo === null ? $fallback : $this->diagnostics;
+        return $this->diagnostics instanceof NullOutput ? $fallback : $this->diagnostics;
     }
 
     /** Writes one diagnostic line through this run's writer. */

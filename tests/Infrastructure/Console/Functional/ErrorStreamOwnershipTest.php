@@ -17,9 +17,12 @@ use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
 use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
 use Qualimetrix\Tests\Infrastructure\Console\Support\TerminalScreen;
 use RuntimeException;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -122,6 +125,46 @@ final class ErrorStreamOwnershipTest extends TestCase
 
         self::assertSame('', $output->fetch());
         self::assertNull($errorStream->progressSection($output));
+    }
+
+    #[Test]
+    public function itRendersAnUncaughtThrowableIntoAnOutputThatHasNoErrorChannel(): void
+    {
+        // The fallback drops *diagnostics*, not the message that ends the run.
+        // A run bound to a single-channel output has no diagnostic writer at
+        // all, and an uncaught throwable would then leave exit code 1 and an
+        // empty screen — strictly worse than folding the trace into the one
+        // channel the caller gave, which is what Symfony itself does.
+        $errorStream = new ErrorStream();
+        $output = new BufferedOutput();
+
+        $application = new Application($errorStream);
+        $application->setAutoExit(false);
+        $application->addCommand(self::commandThatBindsThenThrows($errorStream, 'a failure with nowhere to go'));
+
+        $exitCode = $application->run(new ArrayInput(['command' => 'boom']), $output);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('a failure with nowhere to go', $output->fetch());
+    }
+
+    private static function commandThatBindsThenThrows(ErrorStream $errorStream, string $message): Command
+    {
+        return new class ($errorStream, $message) extends Command {
+            public function __construct(private readonly ErrorStream $errorStream, private readonly string $message)
+            {
+                parent::__construct('boom');
+            }
+
+            protected function execute(InputInterface $input, OutputInterface $output): int
+            {
+                // Binds the owner to this output, exactly as a real run does
+                // before it fails.
+                $this->errorStream->write($output, 'a diagnostic before the failure');
+
+                throw new RuntimeException($this->message);
+            }
+        };
     }
 
     private static function frameOn(ErrorStream $errorStream, SplitStreamConsoleOutput $output): string
