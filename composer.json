@@ -108,7 +108,7 @@
         ],
         "directives:controls": [
             "Composer\\Config::disableProcessTimeout",
-            "php scripts/directive-audit-controls.php"
+            "php scripts/directive-audit-controls.php --jobs=auto"
         ],
         "directives:narrow-control": [
             "Composer\\Config::disableProcessTimeout",

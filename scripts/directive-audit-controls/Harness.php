@@ -63,13 +63,15 @@ final class Harness
             return 3;
         }
 
-        $outcomes = [];
+        try {
+            $jobs = self::jobs($arguments);
+        } catch (RuntimeException $error) {
+            fwrite(\STDERR, 'directive-audit-controls: ' . $error->getMessage() . "\n");
 
-        foreach ($probes as $probe) {
-            $outcomes[] = self::observe($probe, $repository);
+            return 3;
         }
 
-        return Report::of($outcomes, $only !== [])->print();
+        return Report::of(self::observeAll($probes, $repository, $jobs), $only !== [])->print();
     }
 
     /**
@@ -144,6 +146,144 @@ final class Harness
     }
 
     /**
+     * Runs the probes, `$jobs` of them at a time, and returns their outcomes in
+     * the order the list declares rather than the order they finished.
+     *
+     * A probe is a clone, a mutation and a PHPUnit run over nine files, and it
+     * shares nothing with its neighbours: measured at 11.3 CPU seconds and 0.94
+     * cores, so the sequential bench left thirteen of fourteen cores idle.
+     *
+     * The parallel path forks around {@see observe()} rather than reimplementing
+     * it, so both paths plant and read a breakage the same way. Forking happens
+     * before the clone, which keeps `Scratch::$live` empty in the parent: each
+     * child registers, and removes, only its own tree.
+     *
+     * A child that writes no outcome is a refusal, never a gap. It is the shape
+     * an out-of-memory kill takes, and a bench that silently dropped such a
+     * probe would report a smaller suite as a complete one.
+     *
+     * @param list<Probe> $probes
+     *
+     * @return list<Outcome>
+     */
+    private static function observeAll(array $probes, string $repository, int $jobs): array
+    {
+        if ($jobs === 1 || !\function_exists('pcntl_fork')) {
+            return array_map(
+                static fn(Probe $probe): Outcome => self::observe($probe, $repository),
+                $probes,
+            );
+        }
+
+        $directory = Shell::temporaryDirectory('directive-audit-controls-outcomes-');
+        $outcomes = [];
+        $running = [];
+
+        try {
+            foreach ($probes as $index => $probe) {
+                while (\count($running) >= $jobs) {
+                    self::reap($running, $outcomes, $directory, $probes);
+                }
+
+                $pid = pcntl_fork();
+
+                if ($pid === -1) {
+                    throw new RuntimeException('Cannot fork a worker for the probe bench.');
+                }
+
+                if ($pid === 0) {
+                    file_put_contents(
+                        $directory . '/' . $index,
+                        serialize(self::observe($probe, $repository)),
+                    );
+
+                    exit(0);
+                }
+
+                $running[$pid] = $index;
+            }
+
+            while ($running !== []) {
+                self::reap($running, $outcomes, $directory, $probes);
+            }
+        } finally {
+            if (\function_exists('posix_kill')) {
+                foreach (array_keys($running) as $pid) {
+                    @posix_kill($pid, \defined('SIGTERM') ? \SIGTERM : 15);
+                }
+            }
+
+            Shell::removeRecursively($directory);
+        }
+
+        ksort($outcomes);
+
+        return array_values($outcomes);
+    }
+
+    /**
+     * @param array<int, int> $running pid => index of the probe it carries
+     * @param array<int, Outcome> $outcomes
+     * @param list<Probe> $probes
+     */
+    private static function reap(array &$running, array &$outcomes, string $directory, array $probes): void
+    {
+        $status = 0;
+        $pid = pcntl_wait($status);
+
+        if ($pid <= 0 || !isset($running[$pid])) {
+            return;
+        }
+
+        $index = $running[$pid];
+        unset($running[$pid]);
+        $path = $directory . '/' . $index;
+        $written = is_file($path) ? file_get_contents($path) : false;
+        $outcome = $written === false ? false : @unserialize($written);
+
+        if (!$outcome instanceof Outcome) {
+            $outcomes[$index] = Outcome::refused($probes[$index], \sprintf(
+                'The worker carrying this probe exited %d without writing an outcome, so it measured nothing.',
+                pcntl_wifexited($status) ? pcntl_wexitstatus($status) : -1,
+            ));
+
+            return;
+        }
+
+        $outcomes[$index] = $outcome;
+    }
+
+    /**
+     * `--jobs=auto` leaves one core to the rest of the machine; an explicit
+     * number is taken as given. The default is one, so a bench run by hand
+     * behaves as it always did unless it is asked otherwise.
+     *
+     * @param list<string> $arguments
+     */
+    private static function jobs(array $arguments): int
+    {
+        $requested = '1';
+
+        foreach ($arguments as $argument) {
+            if (str_starts_with($argument, '--jobs=')) {
+                $requested = substr($argument, 7);
+            }
+        }
+
+        if ($requested === 'auto') {
+            $reported = (int) shell_exec('getconf _NPROCESSORS_ONLN 2>/dev/null');
+
+            return max(1, ($reported > 0 ? $reported : 2) - 1);
+        }
+
+        if (!ctype_digit($requested) || (int) $requested < 1) {
+            throw new RuntimeException(\sprintf('--jobs takes a positive number or "auto", not %s.', $requested));
+        }
+
+        return (int) $requested;
+    }
+
+    /**
      * @param list<string> $arguments
      *
      * @return list<string>
@@ -159,6 +299,10 @@ final class Harness
                     static fn(string $id): bool => $id !== '',
                 )];
 
+                continue;
+            }
+
+            if (str_starts_with($argument, '--jobs=')) {
                 continue;
             }
 
