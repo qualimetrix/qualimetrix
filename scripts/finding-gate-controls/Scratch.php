@@ -33,8 +33,8 @@ use RuntimeException;
  *
  * `.git` is a real copy, not hardlinked: the gate creates and removes a
  * worktree inside the candidate's repository, and no control may reach into the
- * repository the developer is working in. At 21M/462 entries it is not worth
- * making cheaper.
+ * repository the developer is working in. A caller with no repository to make
+ * takes {@see contentOf()} and does not pay for it at all.
  *
  * Never symlink `vendor/` — see the note on
  * scripts/finding-gate/ReferenceTree.php: Composer resolves `__DIR__` through
@@ -53,7 +53,40 @@ final class Scratch
         private readonly string $directory,
     ) {}
 
+    /** A clone that is still a git repository, for a control that needs one. */
     public static function cloneOf(string $repository): self
+    {
+        $scratch = self::contentOf($repository);
+
+        Shell::mustRun(['cp', '-R', $repository . '/.git', $scratch->tree . '/.git'], $repository);
+
+        // A copied `.git` brings the repository's worktree registrations with
+        // it, including the reference checkout of an earlier gate run that was
+        // killed before it could deregister. Git refuses to add a worktree
+        // whose name is already registered, and the gate always names its
+        // reference `tree` — so an unrelated stale entry would turn a control
+        // into a crash. The scratch tree's own registrations mean nothing.
+        Shell::removeRecursively($scratch->tree . '/.git/worktrees');
+
+        return $scratch;
+    }
+
+    /**
+     * The same clone without `.git`: the files, and no history.
+     *
+     * `.git` is a real copy rather than a hardlink farm, so a caller that does
+     * not need a repository pays 24M and 329 entries to make one and pays
+     * again to remove it. The probe bench did exactly that, 116 times a run,
+     * and the removal is why this costs nothing to skip: the tree it hands the
+     * suite is the tree it handed before.
+     *
+     * A `git clone`, shallow or not, is not the cheaper version of this. What
+     * is cloned here is the *working tree* — tracked files at their current
+     * bytes plus untracked ones git does not ignore — and a clone of any depth
+     * would silently substitute the last commit for what the developer is
+     * looking at.
+     */
+    public static function contentOf(string $repository): self
     {
         $directory = Shell::temporaryDirectory('finding-gate-controls-');
         $tree = $directory . '/tree';
@@ -72,15 +105,6 @@ final class Scratch
         }
 
         Shell::mustRun(['cp', '-Rl', $repository . '/vendor', $tree . '/vendor'], $repository);
-        Shell::mustRun(['cp', '-R', $repository . '/.git', $tree . '/.git'], $repository);
-
-        // A copied `.git` brings the repository's worktree registrations with
-        // it, including the reference checkout of an earlier gate run that was
-        // killed before it could deregister. Git refuses to add a worktree
-        // whose name is already registered, and the gate always names its
-        // reference `tree` — so an unrelated stale entry would turn a control
-        // into a crash. The scratch tree's own registrations mean nothing.
-        Shell::removeRecursively($tree . '/.git/worktrees');
 
         return $scratch;
     }
@@ -139,6 +163,24 @@ final class Scratch
                 . ' comparison vacuous while looking green: refusing to run.',
             );
         }
+    }
+
+    /**
+     * A directory beside the cloned tree, inside the scratch that owns it.
+     *
+     * Beside and not within: a control plants its breakage in the tree and then
+     * reads what a run says about that tree, so anything else written into it
+     * moves the reading. Whatever is put here goes away with the clone.
+     */
+    public function beside(string $name): string
+    {
+        $path = $this->directory . '/' . $name;
+
+        if (!is_dir($path) && !@mkdir($path, 0o700, true)) {
+            throw new RuntimeException(\sprintf('Cannot create %s beside the clone.', $path));
+        }
+
+        return $path;
     }
 
     public function path(string $relative): string
