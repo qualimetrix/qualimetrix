@@ -596,6 +596,10 @@ bin/qmx check --help
 For multi-package changes, fail fast before paying for the full test suite:
 
 1. Run lint/style, focused tests, and scoped static analysis for each package.
+   A scoped `phpstan analyse <paths>` overrides the `paths` of `phpstan.neon`
+   yet writes the shared `.phpstan.cache`, so delete that directory before the
+   next full run: otherwise the aggregate reports errors a cold cache does not,
+   in files the change never touched.
 2. Before the root aggregate, run full PHPStan, `composer architecture:check`,
    and dogfood with machine-readable output, `--workers=0`, and
    `--fail-on=warning`.
