@@ -82,6 +82,24 @@ final class DeclaredFieldMoves
                 ));
             }
 
+            // A licence no reader could ever consult is not a licence: it fires
+            // nowhere, and the run reports it as a move that did not happen —
+            // naming staleness where the defect is a typo in the surface key or
+            // a field that surface does not publish. Both are answerable here,
+            // and only here is the row still on screen.
+            if (!str_contains($row['surface'], '|')
+                || PublishedVocabulary::spellingOf(Surfaces::surfaceClass($row['surface']), $row['field']) === null
+            ) {
+                throw new GateError(\sprintf(
+                    '%s licenses a move of "%s" on "%s", where nothing can read that field: either the surface key'
+                    . ' is not one the corpus produces, or that surface publishes no such field. See'
+                    . ' PublishedVocabulary for what each surface marks.',
+                    self::INDEX,
+                    $row['field'],
+                    $row['surface'],
+                ));
+            }
+
             if ($row['from'] === $row['to']) {
                 throw new GateError(\sprintf(
                     '%s declares "%s" moving from a value to itself on "%s", which is not a move.',

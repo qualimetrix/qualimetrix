@@ -42,9 +42,23 @@ final class GateReport
      */
     private int $declaredDeltaCount = 0;
 
+    /**
+     * How many moves of a compared field this run licensed rather than refused.
+     *
+     * Counted for the same reason the deltas are, and it was prose before: a
+     * declaration that lets a surface differ has to be visible to a machine, or
+     * a control cannot hold a green run to the number the repository declares.
+     */
+    private int $fieldMoveCount = 0;
+
     public function countDeclaredDeltas(int $count): void
     {
         $this->declaredDeltaCount = $count;
+    }
+
+    public function countFieldMoves(int $count): void
+    {
+        $this->fieldMoveCount = $count;
     }
 
     /** @param list<string> $diff */
@@ -125,9 +139,13 @@ final class GateReport
             // waived.
             self::VERDICT_GREEN => \sprintf(
                 '  GREEN — the two trees are finding-equivalent under the declared maps%s.',
-                $this->declaredDeltaCount === 0
+                $this->declaredDeltaCount === 0 && $this->fieldMoveCount === 0
                     ? ''
-                    : \sprintf(' and %d declared delta(s)', $this->declaredDeltaCount),
+                    : \sprintf(
+                        ' and %d declared delta(s), %d licensed field move(s)',
+                        $this->declaredDeltaCount,
+                        $this->fieldMoveCount,
+                    ),
             ),
             self::VERDICT_PARTIAL => \sprintf(
                 "  PARTIAL — no equivalence is claimed: %s.\n"
@@ -155,6 +173,7 @@ final class GateReport
             // stays GREEN under a declared map row has to be able to assert that
             // it stayed green without a declared delta absorbing the difference.
             'declaredDeltaCount' => $this->declaredDeltaCount,
+            'fieldMoveCount' => $this->fieldMoveCount,
         ];
 
         Fs::write($path, json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n");

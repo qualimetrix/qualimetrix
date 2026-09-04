@@ -15,11 +15,23 @@ moves of exactly three fields: `channel`, `rule`, `code`.
 So `message`, `techDebtMinutes`, `file`, `line` and `subject` could be licensed
 by nothing. Not because moving them is dangerous — because there was no list for
 them. Measured on the step that removed the banned channel from the "did you
-mean" suggestions: the finding set does not change at all, one record's
-`message` moves on nine surfaces, `DeclaredDelta` already absorbed eight of
-them, and the ninth (`format:json`, which publishes the `"field": value` syntax
-`delta-overreach` reads) had no shape to be declared with. That step was dropped
-from the previous round for want of this one row.
+mean" suggestions: the finding set does not change at all, and one record's
+`message` moves on nine surfaces, each of which `DeclaredDelta` covers. Exactly
+one of the nine — `format:json` — produced `delta-overreach`, and had no shape
+to be declared with. That step was dropped from the previous round for want of
+this one row.
+
+**Why only one of the nine, corrected in place.** The first reading of that
+measurement was that the other eight publish the field in a syntax
+`delta-overreach` cannot read. Half of that is right: `summary`, `text`,
+`text-verbose` and `github` mark no field at all. The other half was a fact
+about the reader, not about the surfaces — `sarif` publishes the same field as
+`"text"`, `gitlab` as `"description"`, `checkstyle` as an XML attribute, and the
+reader knew only the tuple's own spelling in the tuple's own syntax. Four of the
+nine declarations were therefore accepted by a check that could not reach them.
+The vocabulary is now stated per surface and per syntax
+(`PublishedVocabulary`, pinned to the formatters that write it), and this step's
+move is licensed on four surfaces rather than one.
 
 ## Decision
 

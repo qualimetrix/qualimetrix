@@ -1334,32 +1334,132 @@ final class SelfTest
     }
 
     /**
-     * The keys the HTML report's embedded payload publishes compared fields
-     * under, pinned against the one place that writes them.
+     * The keys each surface publishes a compared field under, pinned against
+     * the one place that writes them — and the list of surfaces itself.
      *
-     * `Gate::spellingsOf()` carries three aliases because the payload spells
-     * `rule`, `code` and `symbol` as `ruleName`, `violationCode` and
-     * `symbolPath`. A table like that rots silently: if the payload renames a
-     * key, `delta-overreach` stops reading that field on the HTML surface and
-     * nothing says so. So the alias is asserted to occur in the partitioner,
-     * and the tuple's own spelling is asserted **not** to — the point of the
-     * alias is that the payload does not use the tuple's name.
+     * A table like this rots silently: if a formatter renames a key,
+     * `delta-overreach` stops reading that field on that surface and nothing
+     * says so. Worse, the *absence* of a surface from the table rots without
+     * ever having been written down. That is what happened: the table named the
+     * HTML payload's three aliases and stopped, so `sarif` (`text`) and `gitlab`
+     * (`description`) published `message` under a key no reader knew, and eight
+     * of nine declared deltas of one step were accepted by a reader that could
+     * not reach them.
+     *
+     * So three things are asserted. Every alias occurs in its formatter; every
+     * format of {@see Surfaces::FORMATS} is classified as readable or as
+     * unreadable-with-a-reason, so a new format cannot be silently unread; and
+     * the reader really picks the value out of a line in each surface's own
+     * syntax, because a pinned name proves nothing about the regex that looks
+     * for it.
      */
-    private function htmlPayloadVocabulary(): void
+    private function publicationVocabulary(): void
     {
-        $partitioner = $this->candidateRoot . '/src/Reporting/Formatter/Html/HtmlFindingPartitioner.php';
-        $source = Fs::read($partitioner);
+        $formatters = [
+            'format:html' => 'src/Reporting/Formatter/Html/HtmlFindingPartitioner.php',
+            'format:sarif' => 'src/Reporting/Formatter/Sarif/SarifFormatter.php',
+            'format:gitlab' => 'src/Reporting/Formatter/GitLabCodeQualityFormatter.php',
+            'format:checkstyle' => 'src/Reporting/Formatter/CheckstyleFormatter.php',
+            'format:suppressed' => 'src/Reporting/Formatter/Suppressed/SuppressedFormatter.php',
+            'baseline-file' => 'src/Analysis/Policy/Baseline/BaselineEntry.php',
+        ];
 
-        foreach (['rule' => 'ruleName', 'code' => 'violationCode', 'symbol' => 'symbolPath'] as $field => $alias) {
+        foreach ($formatters as $surface => $relative) {
+            $source = Fs::read($this->candidateRoot . '/' . $relative);
+            $keys = PublishedVocabulary::keysOf($surface);
+
+            $this->assert($keys !== [], $surface . ' declares which compared fields it publishes');
+
+            foreach ($keys as $field => $key) {
+                $this->assert(
+                    str_contains($source, "'" . $key . "'"),
+                    $surface . ' still publishes ' . $field . ' as ' . $key,
+                );
+            }
+        }
+
+        // The HTML payload's own point: it does not use the tuple's spelling at
+        // all, so reading the tuple spelling there read nothing.
+        $partitioner = Fs::read($this->candidateRoot . '/src/Reporting/Formatter/Html/HtmlFindingPartitioner.php');
+
+        foreach (array_keys(PublishedVocabulary::keysOf('format:html')) as $field) {
             $this->assert(
-                str_contains($source, "'" . $alias . "' =>"),
-                'the HTML payload still publishes ' . $field . ' as ' . $alias,
-            );
-            $this->assert(
-                !str_contains($source, "'" . $field . "' =>"),
-                'and still does not publish it under the tuple spelling ' . $field,
+                !str_contains($partitioner, "'" . $field . "' =>"),
+                'and the HTML payload still does not publish it under the tuple spelling ' . $field,
             );
         }
+
+        $classified = PublishedVocabulary::readableSurfaces();
+
+        foreach (Surfaces::FORMATS as $format) {
+            $this->assert(
+                \in_array('format:' . $format, $classified, true) || isset(PublishedVocabulary::UNREADABLE[$format]),
+                'the ' . $format . ' surface is classified as readable or as marking no field, with a reason',
+            );
+        }
+
+        // The reader, not the table. One line per syntax, each carrying the same
+        // message under that surface's own key.
+        $message = 'Suppression addresses no channel.';
+        $this->same(
+            [$message],
+            PublishedVocabulary::valuesOn('format:json', '            "message": "' . $message . '",', 'message'),
+            'the JSON member syntax is read under the tuple spelling',
+        );
+        $this->same(
+            [$message],
+            PublishedVocabulary::valuesOn('format:sarif', '                    "text": "' . $message . '"', 'message'),
+            'and SARIF publishes the same field as "text"',
+        );
+        $this->same(
+            [$message],
+            PublishedVocabulary::valuesOn('format:gitlab', '        "description": "' . $message . '",', 'message'),
+            'and GitLab as "description"',
+        );
+        $this->same(
+            [$message],
+            PublishedVocabulary::valuesOn('format:checkstyle', '    <error line="35" message="' . $message . '" source="qmx.a.b"/>', 'message'),
+            'and checkstyle marks it as an XML attribute rather than a JSON member',
+        );
+        $this->same(
+            [],
+            PublishedVocabulary::valuesOn('format:text', 'src/A.php:35: error[a.b]: ' . $message, 'message'),
+            'a prose surface yields nothing, which is why it is enumerated as unreadable rather than assumed read',
+        );
+
+        // Exhaustiveness, both ways round. A field SARIF does not carry is not
+        // hunted for under its tuple spelling, and the JSON report's own
+        // spelling still covers every field it publishes.
+        $this->same(
+            [],
+            PublishedVocabulary::valuesOn('format:sarif', '                    "threshold": "5"', 'threshold'),
+            'a field SARIF does not publish is not read there under its tuple spelling',
+        );
+        $this->same(
+            ['5'],
+            PublishedVocabulary::valuesOn('format:json', '            "threshold": "5",', 'threshold'),
+            'while the JSON report publishes every compared field under its own name',
+        );
+        $this->same(
+            [],
+            PublishedVocabulary::valuesOn('format:suppressed', '        "channel": "a.b",', 'channel'),
+            'and the suppressed surface spells the tuple\'s code as "channel", so its "channel" key is not the tuple\'s',
+        );
+        $this->same(
+            ['a.b'],
+            PublishedVocabulary::valuesOn('format:suppressed', '        "channel": "a.b",', 'code'),
+            'it is the tuple\'s code',
+        );
+
+        // The container key of a nested object is not a value. SARIF spells the
+        // member `"message": {`, and reading the tuple spelling as well would
+        // have paired that brace against the reference's brace as if it were
+        // the compared field.
+        $this->same(
+            [],
+            PublishedVocabulary::valuesOn('format:sarif', '                    "message": {', 'message'),
+            'and the SARIF container key is not read as a value of the field it wraps',
+        );
     }
 
     /**
@@ -1447,7 +1547,7 @@ final class SelfTest
 
         $this->prefixShadowing();
         $this->multiHunkDiff();
-        $this->htmlPayloadVocabulary();
+        $this->publicationVocabulary();
 
         // Loading refuses a row whose reason is still "?", so a loaded index is
         // already an explained one. What the self-test adds is that every
@@ -1483,6 +1583,74 @@ final class SelfTest
             );
         }
         $this->same(null, $delta->claim('case:smells|format:json'), 'a surface nothing declares claims nothing');
+        $this->declaredDeltaWrite();
+    }
+
+    /**
+     * The write half of the declaration, exercised end to end on a synthetic
+     * root.
+     *
+     * Everything asserted about `DeclaredDelta` until now was about *loading* —
+     * refusals, staleness, an empty index. The path that produces the file was
+     * covered by nothing at all, so gutting it went unnoticed by every check.
+     * The one property a run cannot supply is `reason`, so the carry-over rule
+     * is asserted in both directions here: kept while the diff it explains is
+     * the same diff, dropped to "?" the moment that diff moves.
+     */
+    private function declaredDeltaWrite(): void
+    {
+        $root = Fs::temporaryDirectory('self-test-delta-write-');
+        $kept = "--- candidate\n+++ reference (mapped)\n@@ -1,1 +1,1 @@\n-a\n+A\n";
+        $moved = "--- candidate\n+++ reference (mapped)\n@@ -2,1 +2,1 @@\n-b\n+B\n";
+
+        Fs::write($root . '/' . DeclaredDelta::DIRECTORY . '/case-x-format-json.diff', $kept);
+        Fs::write($root . '/' . DeclaredDelta::DIRECTORY . '/case-y-format-json.diff', $kept);
+        Fs::write($root . '/' . DeclaredDelta::INDEX, Tsv::render(DeclaredDelta::COLUMNS, [
+            ['case:x|format:json', DeclaredDelta::DIRECTORY . '/case-x-format-json.diff', 'the sentence written for x'],
+            ['case:y|format:json', DeclaredDelta::DIRECTORY . '/case-y-format-json.diff', 'the sentence written for y'],
+        ]));
+
+        $written = DeclaredDelta::load($root)->rewrite([
+            'case:y|format:json' => $moved,
+            'case:x|format:json' => $kept,
+            'case:z|format:json' => $kept,
+        ]);
+
+        $this->same(
+            [
+                DeclaredDelta::DIRECTORY . '/case-x-format-json.diff',
+                DeclaredDelta::DIRECTORY . '/case-y-format-json.diff',
+                DeclaredDelta::DIRECTORY . '/case-z-format-json.diff',
+                DeclaredDelta::INDEX,
+            ],
+            $written,
+            'a derivation writes one file per differing surface plus the index, and says which',
+        );
+
+        foreach ($written as $file) {
+            $this->assert(is_file($root . '/' . $file), $file . ' is on disk after the write, not only in the return value');
+        }
+
+        $newFile = $root . '/' . DeclaredDelta::DIRECTORY . '/case-z-format-json.diff';
+        $this->same($kept, is_file($newFile) ? Fs::read($newFile) : 'nothing was written', 'and holds the measured diff');
+
+        $reasons = [];
+
+        foreach (is_file($root . '/' . DeclaredDelta::INDEX) ? Tsv::rows($root . '/' . DeclaredDelta::INDEX, DeclaredDelta::COLUMNS) : [] as $row) {
+            $reasons[$row['surface']] = $row['reason'];
+        }
+
+        $this->same(
+            [
+                'case:x|format:json' => 'the sentence written for x',
+                'case:y|format:json' => '?',
+                'case:z|format:json' => '?',
+            ],
+            $reasons,
+            'a reason survives only the surface whose diff did not move; a moved one and a new one need writing again',
+        );
+
+        Fs::removeRecursively($root);
     }
 
     /**
@@ -1606,6 +1774,30 @@ final class SelfTest
             self::refusalOfFieldMoves([[$surface, 'message', 'same', 'same', 'why']]),
             'a row declaring no movement is refused',
         );
+
+        // A licence nothing can consult is refused where it is still readable,
+        // rather than surfacing a whole gate run later as staleness — which
+        // names the wrong defect for a typo.
+        $this->same(
+            'where nothing can read that field',
+            self::refusalOfFieldMoves([['case:annotations|format:sarrif', 'message', 'from', 'to', 'why']]),
+            'a row naming a surface no run produces is refused',
+        );
+        $this->same(
+            'where nothing can read that field',
+            self::refusalOfFieldMoves([['case:annotations|format:text', 'message', 'from', 'to', 'why']]),
+            'and so is one on a surface that marks no field at all',
+        );
+        $this->same(
+            'where nothing can read that field',
+            self::refusalOfFieldMoves([['case:annotations|format:sarif', 'threshold', 'from', 'to', 'why']]),
+            'and one naming a field that surface does not publish',
+        );
+        $this->same(
+            'has whitespace around the "from" field',
+            self::refusalOfFieldMoves([[$surface, 'message', 'trailing space ', 'to', 'why']]),
+            'a value with an invisible edge is refused rather than silently firing nowhere',
+        );
     }
 
     /**
@@ -1639,6 +1831,8 @@ final class SelfTest
                 'has a row naming no field',
                 'has a row naming no surface',
                 'moving from a value to itself',
+                'where nothing can read that field',
+                'has whitespace around the "from" field',
             ] as $fragment) {
                 if (str_contains($error->getMessage(), $fragment)) {
                     return $fragment;
