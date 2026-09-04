@@ -666,6 +666,9 @@ function classifyOwner(string $path): array
     if (str_starts_with($path, 'tests/System/TestRunnerConfiguration/')) {
         return ['System/TestRunnerConfiguration', 'P8'];
     }
+    if (str_starts_with($path, 'tests/System/ScratchPathIsolation/')) {
+        return ['System/ScratchPathIsolation', 'P8'];
+    }
     if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
         return ['TestSupport/Logging', 'P8'];
     }
@@ -1053,6 +1056,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Reporting/Formatter/Suppressed/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/System/TestRunnerConfiguration/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/System/DocumentationConsistency/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/System/ScratchPathIsolation/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Policy/Baseline/Functional/', 'suite' => 'Functional'],
         ['prefix' => 'tests/Functional/', 'suite' => 'Functional'],
@@ -1469,6 +1473,7 @@ function systemSupportContents(string $root): string
     $rows = [
         ['System/DocumentationConsistency', 'tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php', 'System scenario crossing source and documentation owners.', 'Integration'],
         ['System/TestRunnerConfiguration', 'tests/System/TestRunnerConfiguration/Unit/CoverageIsRequestedExplicitlyTest.php', 'Repository test-runner configuration guard.', 'Unit'],
+        ['System/ScratchPathIsolation', 'tests/System/ScratchPathIsolation/Unit/ScratchPathsCarryRealEntropyTest.php', 'Repository scratch-path isolation guard.', 'Unit'],
         ['TestSupport/Logging', 'tests/TestSupport/Logging/Support/RecordingLogger.php', 'Shared PSR-3 recording helper for named Finding and Coupling tests.', 'support'],
         ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],
         ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],

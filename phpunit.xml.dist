@@ -30,6 +30,7 @@
             <directory>tests/Core/Symbol/Unit</directory>
             <directory>tests/TestSupport/ArchitectureStaticAnalysis/Unit</directory>
             <directory>tests/System/TestRunnerConfiguration/Unit</directory>
+            <directory>tests/System/ScratchPathIsolation/Unit</directory>
             <directory>tests/Analysis/Policy/Architecture/Unit</directory>
             <directory>tests/Analysis/Policy/Baseline/Unit</directory>
             <directory>tests/Analysis/Policy/Inline/Unit</directory>

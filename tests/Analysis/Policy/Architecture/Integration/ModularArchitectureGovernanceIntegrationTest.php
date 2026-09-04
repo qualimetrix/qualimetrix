@@ -213,7 +213,7 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     public function itPublishesTheReviewedTopologyEvidenceAndRejectsProductionToTestImports(): void
     {
         self::assertCount(28, $this->tsv('test-orphan-dispositions.tsv'));
-        self::assertCount(5, $this->tsv('test-system-support-owners.tsv'));
+        self::assertCount(6, $this->tsv('test-system-support-owners.tsv'));
         self::assertSame([], $this->tsv('production-to-test-imports.tsv'));
         self::assertNotEmpty($this->tsv('production-public-imports.tsv'));
         self::assertNotEmpty($this->tsv('production-module-fan-in.tsv'));
