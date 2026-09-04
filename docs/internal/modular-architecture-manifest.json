@@ -16640,25 +16640,6 @@
         }
       ]
     },
-    "Qualimetrix\\Infrastructure\\Console\\DiagnosticOutput": {
-      "path": "src/Infrastructure/Console/DiagnosticOutput.php",
-      "kind": "class",
-      "owner": "Infrastructure.Console",
-      "visibility": "internal",
-      "closure_package": "P8",
-      "consumers": [
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "relation": "composition_binding",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
-          "closes_in": null,
-          "operations": [
-            "service_reference",
-            "service_registration"
-          ]
-        }
-      ]
-    },
     "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter": {
       "path": "src/Infrastructure/Console/DirectiveAuditPresenter.php",
       "kind": "class",
@@ -19012,6 +18993,44 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
           "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\ErrorStream": {
+      "path": "src/Infrastructure/Console/ErrorStream.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Progress\\ProgressConfigurator": {
+      "path": "src/Infrastructure/Console/Progress/ProgressConfigurator.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
         }
       ]
     }

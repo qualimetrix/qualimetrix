@@ -153,7 +153,7 @@ rule-path-exclusion	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/Analysis
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/AnalysisPipeline.php	Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	error	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/AnalysisPreflight.php	Qualimetrix\Infrastructure\Console	error	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/BaselineCaptureReporter.php	Qualimetrix\Infrastructure\Console\Command	error	1
-rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	error	1
+rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	warning	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/ResultPresenter.php	Qualimetrix\Infrastructure\Console\ResultPresenter	warning	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/RuleInputValidator.php	Qualimetrix\Infrastructure\Console\RuleInputValidator	warning	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/RuntimeConfigurator.php	Qualimetrix\Infrastructure\Console\RuntimeConfigurator	warning	1

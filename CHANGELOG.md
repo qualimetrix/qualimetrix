@@ -39,6 +39,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The progress bar and detailed logging no longer destroy each other on a
+  terminal. Both write to standard error, and the bar erased upwards by the
+  height of its own section, so at `-vv` and `-vvv` a log line that arrived
+  between two frames was wiped out and the bar itself froze at `0%` for the rest
+  of the run. Every writer to that stream — the logger, warnings emitted during
+  a run, the report notes, `graph:export`'s incomplete-analysis report and an
+  uncaught error's trace — now goes through one owner, which erases the frame,
+  writes the line permanently and redraws the frame beneath it.
+
 - An `exclude_namespace_channels` key can name a channel whose name contains a
   hyphen. The keys of that map were case-normalized along with the typed option
   keys around them, so `code-smell.boolean-argument` reached the run as

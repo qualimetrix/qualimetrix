@@ -83,10 +83,10 @@ src/Infrastructure/Cache/CacheConfigurationStore.php	Qualimetrix\Infrastructure\
 src/Infrastructure/Cache/CacheFactory.php	Qualimetrix\Infrastructure\Cache\CacheFactory	Infrastructure.Cache	P8	"adapter session or cache"	-	cache	reset,resetConfiguration
 src/Infrastructure/Cache/FileCache.php	Qualimetrix\Infrastructure\Cache\FileCache	Infrastructure.Cache	P8	"adapter session or cache"	-	serializerVerified	clear,set
 src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	P8	"adapter session or cache"	-	hiddenOptionNames	configure,execute
+src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\ErrorStream	Infrastructure.Console	P8	"adapter session or cache"	-	boundTo,diagnostics,progress,sectionable,sections	bind,reset
 src/Infrastructure/Console/FilteredInputDefinition.php	Qualimetrix\Infrastructure\Console\FilteredInputDefinition	Infrastructure.Console	P8	"adapter session or cache"	-	hiddenOptionNames	setHiddenOptionNames
 src/Infrastructure/Console/Progress/ConsoleProgressBar.php	Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar	Infrastructure.Console	P8	"adapter session or cache"	-	progressBar	setMessage
 src/Infrastructure/Console/Progress/SwitchableProgressReporter.php	Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter	Infrastructure.Console	P8	"adapter session or cache"	-	delegate	reset,setMessage
-src/Infrastructure/Console/RuntimeConfigurator.php	Qualimetrix\Infrastructure\Console\RuntimeConfigurator	Infrastructure.Console	P8	"adapter session or cache"	-	progressSections	clearCacheIfRequested,configure,configureProfiler,configureProgressReporter,resetRunState
 src/Infrastructure/Git/GitClient.php	Qualimetrix\Infrastructure\Git\GitClient	Infrastructure.Git	P8	"adapter session or cache"	-	gitToplevelCache	collectRow
 src/Infrastructure/Logging/FileLogger.php	Qualimetrix\Infrastructure\Logging\FileLogger	Infrastructure.Logging	P8	"adapter session or cache"	-	handle	-
 src/Infrastructure/Logging/LoggerHolder.php	Qualimetrix\Infrastructure\Logging\LoggerHolder	Infrastructure.Logging	P8	"runtime holder"	-	logger	setLogger

@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
@@ -19,7 +20,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
@@ -34,6 +34,7 @@ final class GraphExportCommand extends Command
         private readonly DependencyGraphAnalyzerInterface $analyzer,
         private readonly DependencyGraphProjectionInterface $projection,
         private readonly LoggerInterface $logger = new NullLogger(),
+        private readonly ErrorStream $errorStream = new ErrorStream(),
     ) {
         parent::__construct();
     }
@@ -172,7 +173,7 @@ final class GraphExportCommand extends Command
 
     private function writeIncompleteAnalysis(OutputInterface $output, IncompleteAnalysisException $exception): void
     {
-        $diagnostic = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+        $diagnostic = $this->errorStream->writer($output);
         $diagnostic->writeln(\sprintf('<error>%s</error>', $exception->getMessage()));
 
         foreach ($exception->coverage->failures as $failure) {

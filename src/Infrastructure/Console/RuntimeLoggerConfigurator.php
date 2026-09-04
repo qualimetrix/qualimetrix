@@ -17,6 +17,7 @@ final readonly class RuntimeLoggerConfigurator
     public function __construct(
         private LoggerFactoryInterface $loggerFactory,
         private LoggerHolder $loggerHolder,
+        private ErrorStream $errorStream = new ErrorStream(),
     ) {}
 
     public function configure(InputInterface $input, OutputInterface $output): LoggerInterface
@@ -37,7 +38,7 @@ final readonly class RuntimeLoggerConfigurator
             $logLevel = LogLevel::INFO;
         }
 
-        $logger = $this->loggerFactory->create($output, $logFile, $logLevel);
+        $logger = $this->loggerFactory->create($this->errorStream->writer($output), $logFile, $logLevel);
         $this->loggerHolder->setLogger($logger);
 
         return $logger;

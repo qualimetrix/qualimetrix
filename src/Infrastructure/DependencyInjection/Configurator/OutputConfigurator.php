@@ -56,13 +56,14 @@ use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\DiagnosticOutput;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
+use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
@@ -260,6 +261,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(LoggerFactoryInterface::class),
                 new Reference(LoggerHolder::class),
+                new Reference(ErrorStream::class),
             ]);
 
         // RuntimeConfigurator owns cross-cutting setup and resets owner-local
@@ -268,7 +270,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setPublic(true)
             ->setArguments([
                 new Reference($runtimeLoggerConfigurator),
-                new Reference(SwitchableProgressReporter::class),
+                new Reference(ProgressConfigurator::class),
                 new Reference(ProfileSessionControlInterface::class),
                 new Reference(AnalysisRuntimeConfigurator::class),
                 new Reference(CacheFactory::class),
@@ -279,7 +281,15 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // ProfileSummaryRenderer (stateless, no dependencies)
         $container->register(ProfileSummaryRenderer::class);
 
-        $container->register(DiagnosticOutput::class);
+        // ErrorStream is the single owner of the run's error stream: the
+        // progress section and every diagnostic writer come from this one
+        // shared instance, which is what makes them redraw around each other.
+        $container->register(ErrorStream::class)->setPublic(true);
+        $container->register(ProgressConfigurator::class)
+            ->setArguments([
+                new Reference(SwitchableProgressReporter::class),
+                new Reference(ErrorStream::class),
+            ]);
         $container->register(RuntimeLimitsController::class);
         $container->register(RuleInputValidator::class)
             ->setArguments([
@@ -294,7 +304,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(ProfileReportInterface::class),
                 new Reference(ProfileSummaryRenderer::class),
-                new Reference(DiagnosticOutput::class),
+                new Reference(ErrorStream::class),
             ]);
 
         $container->register(FormatterContextFactory::class);
@@ -316,12 +326,14 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(FindingFilter::class),
                 new Reference(FormatterContextFactory::class),
                 new Reference(RuleConfigurationInterface::class),
+                new Reference(ErrorStream::class),
             ]);
 
         // FindingFilterOrchestrator
         $container->register(FindingFilterOrchestrator::class)
             ->setArguments([
                 new Reference($findingProjector),
+                new Reference(ErrorStream::class),
             ]);
 
         // CheckCommand with all dependencies injected
@@ -434,6 +446,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyGraphAnalyzerInterface::class),
                 new Reference('Qualimetrix\\Reporting\\GraphProjection\\Contract\\DependencyGraphProjectionInterface'),
                 new Reference(DelegatingLogger::class),
+                new Reference(ErrorStream::class),
             ])
             ->setPublic(true);
     }

@@ -30,7 +30,6 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
@@ -308,13 +307,12 @@ final class CheckCommand extends Command
     }
 
     /**
-     * Writes a warning to stderr to avoid polluting structured output.
+     * Writes a warning through the run's single error-stream owner, so it
+     * cannot land inside a progress frame that is about to erase itself.
      */
     private function writeWarning(OutputInterface $output, string $message): void
     {
-        if ($output instanceof ConsoleOutputInterface) {
-            $output->getErrorOutput()->writeln(\sprintf('<comment>%s</comment>', $message));
-        }
+        $this->resultPresenter->writeDiagnostic($output, \sprintf('<comment>%s</comment>', $message));
     }
 
 }

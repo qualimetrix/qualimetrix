@@ -17,7 +17,7 @@ final class ProfilePresenter
     public function __construct(
         private readonly ProfileReportInterface $profileReport,
         private readonly ProfileSummaryRenderer $profileRenderer = new ProfileSummaryRenderer(),
-        private readonly DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
+        private readonly ErrorStream $errorStream = new ErrorStream(),
     ) {}
 
     /**
@@ -25,7 +25,7 @@ final class ProfilePresenter
      */
     public function present(InputInterface $input, OutputInterface $output): void
     {
-        $output = $this->diagnosticOutput->stream($output);
+        $output = $this->errorStream->writer($output);
         if (!$this->profileReport->isEnabled()) {
             return;
         }

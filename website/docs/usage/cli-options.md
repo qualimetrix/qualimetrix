@@ -508,6 +508,12 @@ report.json` produces valid JSON without this flag. It is drawn only when
 standard error is a terminal; redirecting standard error silences the bar
 without touching the report, rather than writing control bytes into the file.
 
+The bar shares the error stream with detailed logging (`-v`, `-vv`, `-vvv`) and
+with warnings emitted during a run. Both are drawn through one owner: a
+diagnostic line pushes the bar down and stays on the screen, and the bar is
+redrawn beneath it. Raising verbosity therefore does not turn the bar off, and
+the bar does not eat log lines.
+
 ---
 
 <!-- llms:skip-begin -->

@@ -6231,6 +6231,23 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsAnUnreadableConfigAsAConfigurationError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itSaysTheSameThingInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itDrawsTheFrameBelowEveryLineWrittenBeforeIt
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itDropsDiagnosticsWhenTheOutputHasNoErrorChannel
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsALoggerLineAboveTheFrame
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsAProfileSummaryAboveTheFrame
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsAnUncaughtThrowableAboveNoFrameAtAll
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-v"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-vv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-vvv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"default"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-v"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-vv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-vvv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"default"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-v"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vvv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"default"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphToDotFormat
@@ -6280,6 +6297,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"hook:status"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"hook:uninstall"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"rules"
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamSoleOwnerTest::itFindsNoSecondWriterIntoTheErrorStream
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamSoleOwnerTest::itKeepsEveryAllowedExceptionReal
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer

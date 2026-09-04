@@ -29,16 +29,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Handles formatting and output of analysis results.
  *
- * @qmx-threshold code-smell.constructor-overinjection warning=9 error=9 -- Raw 8 gets one-edge
- *                headroom: `RuleConfigurationInterface` is the eighth collaborator, added so this
+ * @qmx-threshold code-smell.constructor-overinjection warning=10 error=10 -- Raw 9 gets one-edge
+ *                headroom. `RuleConfigurationInterface` is the eighth collaborator, added so this
  *                class can build {@see \Qualimetrix\Reporting\FindingProjection\SuppressionComposition}
  *                (Ш6) without a second, separately-wired service reaching the same per-rule
  *                exclusion predicates {@see \Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder}
- *                needs.
+ *                needs. The ninth, {@see ErrorStream}, did not add a collaborator: this class always
+ *                had one for its six stderr messages and built it privately, which is precisely what
+ *                made the error stream have two owners. Making it a parameter is what allows the
+ *                single shared instance; hiding it again would restore the defect.
  */
 final class ResultPresenter
 {
-    private readonly DiagnosticOutput $diagnosticOutput;
     private readonly SuppressionCompositionBuilder $suppressionCompositionBuilder;
 
     public function __construct(
@@ -50,8 +52,8 @@ final class ResultPresenter
         private readonly FindingFilter $findingFilter,
         private readonly FormatterContextFactory $formatterContextFactory,
         private readonly RuleConfigurationInterface $ruleConfiguration,
+        private readonly ErrorStream $errorStream = new ErrorStream(),
     ) {
-        $this->diagnosticOutput = new DiagnosticOutput();
         $this->suppressionCompositionBuilder = new SuppressionCompositionBuilder();
     }
 
@@ -79,7 +81,7 @@ final class ResultPresenter
 
         // Deprecation warning for text-verbose (stderr only, not in formatted output)
         if ($format === 'text-verbose') {
-            $this->diagnosticOutput->write(
+            $this->errorStream->write(
                 $output,
                 '<comment>Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.</comment>',
             );
@@ -188,7 +190,7 @@ final class ResultPresenter
 
     public function writeDiagnostic(OutputInterface $output, string $message): void
     {
-        $this->diagnosticOutput->write($output, $message);
+        $this->errorStream->write($output, $message);
     }
 
     /**
@@ -209,7 +211,7 @@ final class ResultPresenter
             $writeResult = @file_put_contents($tmpFile, $formattedOutput);
 
             if ($writeResult === false) {
-                $this->diagnosticOutput->write(
+                $this->errorStream->write(
                     $output,
                     \sprintf('<error>Failed to write output to %s</error>', $outputPath),
                 );
@@ -218,7 +220,7 @@ final class ResultPresenter
             }
 
             if (!rename($tmpFile, $outputPath)) {
-                $this->diagnosticOutput->write(
+                $this->errorStream->write(
                     $output,
                     \sprintf('<error>Failed to rename temporary file to %s</error>', $outputPath),
                 );
@@ -229,7 +231,7 @@ final class ResultPresenter
                 return;
             }
 
-            $this->diagnosticOutput->write(
+            $this->errorStream->write(
                 $output,
                 \sprintf('<info>Report written to %s</info>', $outputPath),
             );
@@ -239,7 +241,7 @@ final class ResultPresenter
 
         // TTY warning for HTML output to stdout
         if ($format === 'html' && $this->isOutputTty($output)) {
-            $this->diagnosticOutput->write(
+            $this->errorStream->write(
                 $output,
                 '<comment>HTML output is best saved to a file. Use --output=report.html</comment>',
             );

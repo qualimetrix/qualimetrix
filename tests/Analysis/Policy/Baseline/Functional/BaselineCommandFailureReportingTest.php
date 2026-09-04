@@ -41,12 +41,14 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
@@ -367,9 +369,11 @@ final class BaselineCommandFailureReportingTest extends TestCase
             $staticChannels,
         );
 
+        $errorStream = new ErrorStream();
+
         return new RuntimeConfigurator(
-            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder()),
-            new SwitchableProgressReporter(),
+            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream),
+            new ProgressConfigurator(new SwitchableProgressReporter(), $errorStream),
             new ProfileSession(),
             new AnalysisRuntimeConfigurator(
                 $ruleOptions,
