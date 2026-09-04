@@ -24,7 +24,7 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->directory = sys_get_temp_dir() . '/qmx-pipeline-' . uniqid();
+        $this->directory = sys_get_temp_dir() . '/qmx-pipeline-' . bin2hex(random_bytes(6));
         mkdir($this->directory);
     }
 

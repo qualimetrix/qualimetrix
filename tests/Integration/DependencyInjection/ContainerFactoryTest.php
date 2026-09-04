@@ -137,7 +137,7 @@ final class ContainerFactoryTest extends TestCase
     protected function setUp(): void
     {
         $this->factory = new ContainerFactory();
-        $this->tempDir = sys_get_temp_dir() . '/qmx_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
     }
 

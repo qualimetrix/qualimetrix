@@ -40,7 +40,7 @@ final class GitSubdirScopeTest extends TestCase
 
     protected function setUp(): void
     {
-        $dir = sys_get_temp_dir() . '/qmx-git-subdir-' . uniqid();
+        $dir = sys_get_temp_dir() . '/qmx-git-subdir-' . bin2hex(random_bytes(6));
         if (!mkdir($dir, 0777, true)) {
             throw new RuntimeException('Failed to create temp dir: ' . $dir);
         }

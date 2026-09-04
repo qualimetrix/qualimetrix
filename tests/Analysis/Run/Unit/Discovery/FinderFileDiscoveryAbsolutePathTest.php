@@ -27,7 +27,7 @@ final class FinderFileDiscoveryAbsolutePathTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->fixturesDir = sys_get_temp_dir() . '/qmx-disco-vo-' . uniqid();
+        $this->fixturesDir = sys_get_temp_dir() . '/qmx-disco-vo-' . bin2hex(random_bytes(6));
         mkdir($this->fixturesDir, 0755, true);
     }
 

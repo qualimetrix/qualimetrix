@@ -55,7 +55,7 @@ final class CheckScopeResolverTest extends TestCase
     #[Test]
     public function itReturnsTheUnchangedGitScopeWithWarnings(): void
     {
-        $projectRoot = sys_get_temp_dir() . '/qmx_check_scope_' . uniqid();
+        $projectRoot = sys_get_temp_dir() . '/qmx_check_scope_' . bin2hex(random_bytes(6));
         mkdir($projectRoot . '/src', 0o755, true);
         mkdir($projectRoot . '/lib', 0o755, true);
         file_put_contents($projectRoot . '/composer.json', '{}');

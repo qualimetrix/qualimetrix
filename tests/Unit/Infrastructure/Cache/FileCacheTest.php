@@ -24,7 +24,7 @@ final class FileCacheTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->cacheDir = sys_get_temp_dir() . '/qmx-cache-test-' . uniqid();
+        $this->cacheDir = sys_get_temp_dir() . '/qmx-cache-test-' . bin2hex(random_bytes(6));
         $this->cache = new FileCache(AbsolutePath::fromString($this->cacheDir));
     }
 

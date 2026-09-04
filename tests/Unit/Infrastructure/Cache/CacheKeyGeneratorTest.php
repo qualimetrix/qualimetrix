@@ -19,7 +19,7 @@ final class CacheKeyGeneratorTest extends TestCase
     protected function setUp(): void
     {
         $this->generator = new CacheKeyGenerator();
-        $this->tempFile = sys_get_temp_dir() . '/qmx-cache-test-' . uniqid() . '.php';
+        $this->tempFile = sys_get_temp_dir() . '/qmx-cache-test-' . bin2hex(random_bytes(6)) . '.php';
         file_put_contents($this->tempFile, '<?php class Test {}');
     }
 

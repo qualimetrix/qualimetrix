@@ -16,7 +16,7 @@ final class TempDirectory
 {
     public static function create(string $prefix): string
     {
-        $dir = sys_get_temp_dir() . '/' . $prefix . uniqid();
+        $dir = sys_get_temp_dir() . '/' . $prefix . bin2hex(random_bytes(6));
         mkdir($dir, 0777, true);
 
         return $dir;

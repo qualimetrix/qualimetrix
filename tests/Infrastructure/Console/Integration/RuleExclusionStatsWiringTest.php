@@ -49,7 +49,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-rule-exclusion-wiring-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-rule-exclusion-wiring-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
     }
 

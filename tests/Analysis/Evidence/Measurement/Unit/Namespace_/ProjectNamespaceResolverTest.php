@@ -20,7 +20,7 @@ final class ProjectNamespaceResolverTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir);
     }
 

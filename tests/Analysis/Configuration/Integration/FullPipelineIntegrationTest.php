@@ -32,7 +32,7 @@ final class FullPipelineIntegrationTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->directory = sys_get_temp_dir() . '/qmx-full-pipeline-' . uniqid();
+        $this->directory = sys_get_temp_dir() . '/qmx-full-pipeline-' . bin2hex(random_bytes(6));
         mkdir($this->directory);
     }
 

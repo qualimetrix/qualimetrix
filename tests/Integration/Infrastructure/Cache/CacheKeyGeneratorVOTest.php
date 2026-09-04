@@ -26,7 +26,7 @@ final class CacheKeyGeneratorVOTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-cachekeygen-vo-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-cachekeygen-vo-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0o755, true);
     }
 

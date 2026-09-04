@@ -287,7 +287,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
     private function createEmptyGitScope(): GitScopeRequest
     {
-        $dir = sys_get_temp_dir() . '/qmx-config-error-git-' . uniqid();
+        $dir = sys_get_temp_dir() . '/qmx-config-error-git-' . bin2hex(random_bytes(6));
         mkdir($dir, 0777, true);
         $realPath = realpath($dir);
         if ($realPath === false) {

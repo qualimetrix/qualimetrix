@@ -73,7 +73,7 @@ final class LateChannelObeysSelectionTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-late-channel-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-late-channel-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir . '/src', 0777, true);
 
         // One stale suppression, which is what the late channel reports on, and

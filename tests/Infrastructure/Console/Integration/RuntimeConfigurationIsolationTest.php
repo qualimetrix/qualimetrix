@@ -36,7 +36,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->temporaryDirectory = sys_get_temp_dir() . '/qmx-runtime-isolation-' . uniqid('', true);
+        $this->temporaryDirectory = sys_get_temp_dir() . '/qmx-runtime-isolation-' . bin2hex(random_bytes(6));
         mkdir($this->temporaryDirectory, 0o755, true);
     }
 

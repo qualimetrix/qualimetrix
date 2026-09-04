@@ -978,7 +978,7 @@ final class FindingProjectorTest extends TestCase
      */
     private function createGitScope(): GitScopeRequest
     {
-        $dir = sys_get_temp_dir() . '/qmx-pipeline-git-' . uniqid();
+        $dir = sys_get_temp_dir() . '/qmx-pipeline-git-' . bin2hex(random_bytes(6));
         mkdir($dir, 0777, true);
         $realPath = realpath($dir);
         if ($realPath === false) {

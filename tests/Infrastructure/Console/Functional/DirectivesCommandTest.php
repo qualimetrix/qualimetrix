@@ -49,7 +49,12 @@ final class DirectivesCommandTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-directives-' . uniqid();
+        // `uniqid()` is unique within a process and not between them, and
+        // this path leaves the tree, so the probe stand's clone does not
+        // isolate it: two concurrent runs of this case landed in one
+        // directory and each refused to write the other's baseline.
+        $this->tempDir = sys_get_temp_dir()
+            . '/qmx-directives-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir . '/src', 0o755, true);
     }
 
@@ -948,7 +953,7 @@ final class DirectivesCommandTest extends TestCase
 
     private function writeConfig(string $body): string
     {
-        $path = $this->tempDir . '/qmx-' . uniqid() . '.yaml';
+        $path = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
         file_put_contents($path, $body);
 
         return $path;

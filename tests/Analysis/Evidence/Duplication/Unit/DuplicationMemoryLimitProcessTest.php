@@ -15,7 +15,7 @@ final class DuplicationMemoryLimitProcessTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tmpDir = sys_get_temp_dir() . '/qmx-duplication-memory-' . uniqid('', true);
+        $this->tmpDir = sys_get_temp_dir() . '/qmx-duplication-memory-' . bin2hex(random_bytes(6));
         mkdir($this->tmpDir . '/src', 0o755, true);
     }
 

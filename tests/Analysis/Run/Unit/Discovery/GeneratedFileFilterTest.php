@@ -21,7 +21,7 @@ final class GeneratedFileFilterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-generated-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-generated-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0755, true);
     }
 

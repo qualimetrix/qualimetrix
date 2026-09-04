@@ -18,7 +18,7 @@ final class ComposerReaderTest extends TestCase
     protected function setUp(): void
     {
         $this->reader = new ComposerReader();
-        $this->tempDir = sys_get_temp_dir() . '/composer_reader_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/composer_reader_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
     }
 

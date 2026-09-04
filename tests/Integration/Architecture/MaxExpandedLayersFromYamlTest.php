@@ -49,7 +49,7 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx_max_expanded_layers_' . uniqid('', true);
+        $this->tempDir = sys_get_temp_dir() . '/qmx_max_expanded_layers_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0o755, true);
     }
 

@@ -19,7 +19,7 @@ final class V5BaselineReaderTest extends TestCase
     protected function setUp(): void
     {
         $this->reader = new V5BaselineReader();
-        $this->tempDir = sys_get_temp_dir() . '/qmx_v5_reader_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_v5_reader_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0755, true);
     }
 

@@ -30,7 +30,7 @@ final class DuplicationDetectorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tmpDir = sys_get_temp_dir() . '/qmx_dup_test_' . uniqid();
+        $this->tmpDir = sys_get_temp_dir() . '/qmx_dup_test_' . bin2hex(random_bytes(6));
         mkdir($this->tmpDir, 0777, true);
     }
 

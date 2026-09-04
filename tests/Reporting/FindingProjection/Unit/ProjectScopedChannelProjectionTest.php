@@ -145,7 +145,7 @@ final class ProjectScopedChannelProjectionTest extends TestCase
 
     private function createEmptyGitScope(): GitScopeRequest
     {
-        $dir = realpath(sys_get_temp_dir()) . '/qmx-project-scoped-git-' . uniqid();
+        $dir = realpath(sys_get_temp_dir()) . '/qmx-project-scoped-git-' . bin2hex(random_bytes(6));
         mkdir($dir, 0777, true);
         $this->tempDirs[] = $dir;
 

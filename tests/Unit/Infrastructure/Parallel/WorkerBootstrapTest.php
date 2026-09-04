@@ -39,7 +39,7 @@ final class WorkerBootstrapTest extends TestCase
         WorkerBootstrap::reset();
 
         // Create temporary directory for cache
-        $this->tempCacheDir = sys_get_temp_dir() . '/qmx-test-cache-' . uniqid();
+        $this->tempCacheDir = sys_get_temp_dir() . '/qmx-test-cache-' . bin2hex(random_bytes(6));
         @mkdir($this->tempCacheDir, 0755, true);
     }
 

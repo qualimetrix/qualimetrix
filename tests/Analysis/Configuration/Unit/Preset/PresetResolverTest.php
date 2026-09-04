@@ -22,7 +22,7 @@ final class PresetResolverTest extends TestCase
     protected function setUp(): void
     {
         $this->resolver = new PresetResolver();
-        $this->tempDir = sys_get_temp_dir() . '/qmx-preset-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-preset-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
     }
 

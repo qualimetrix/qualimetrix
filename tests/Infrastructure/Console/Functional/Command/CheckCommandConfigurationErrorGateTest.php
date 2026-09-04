@@ -36,7 +36,7 @@ final class CheckCommandConfigurationErrorGateTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-config-error-gate-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-config-error-gate-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir . '/src', 0777, true);
         // A configuration of its own, so the repository's `qmx.yaml` — with
         // its layers and its own diagnostics — never reaches this run.

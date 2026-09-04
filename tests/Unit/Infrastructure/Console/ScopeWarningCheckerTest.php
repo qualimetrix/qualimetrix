@@ -24,7 +24,7 @@ final class ScopeWarningCheckerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx_scope_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_scope_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0o755, true);
         $this->projectRoot = AbsolutePath::fromString($this->tempDir);
         $this->checker = new ScopeWarningChecker(new ComposerReader());

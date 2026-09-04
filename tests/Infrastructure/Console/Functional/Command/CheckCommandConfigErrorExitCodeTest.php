@@ -24,7 +24,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-config-error-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-config-error-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
     }
 

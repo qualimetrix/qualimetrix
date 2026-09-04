@@ -48,7 +48,7 @@ final class BaselineMigratorTest extends TestCase
     protected function setUp(): void
     {
         $this->migrator = new BaselineMigrator(new V5BaselineReader(), self::producerEdge());
-        $this->tempDir = sys_get_temp_dir() . '/qmx_migrator_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_migrator_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0755, true);
     }
 

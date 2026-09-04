@@ -48,7 +48,7 @@ final class YamlNormalizationCharacterizationTest extends TestCase
     protected function setUp(): void
     {
         $this->loader = new YamlConfigLoader();
-        $this->tempDir = sys_get_temp_dir() . '/qmx_yaml_norm_char_' . uniqid('', true);
+        $this->tempDir = sys_get_temp_dir() . '/qmx_yaml_norm_char_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0o755, true);
     }
 
@@ -324,7 +324,7 @@ final class YamlNormalizationCharacterizationTest extends TestCase
      */
     private function loadYaml(string $yaml): array
     {
-        $path = $this->tempDir . '/config_' . uniqid('', true) . '.yaml';
+        $path = $this->tempDir . '/config_' . bin2hex(random_bytes(6)) . '.yaml';
         file_put_contents($path, $yaml);
 
         return $this->loader->load($path);

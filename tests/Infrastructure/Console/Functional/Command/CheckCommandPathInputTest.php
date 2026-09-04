@@ -32,7 +32,7 @@ final class CheckCommandPathInputTest extends TestCase
         self::assertNotFalse($cwd);
         $this->originalCwd = $cwd;
 
-        $this->tempDir = sys_get_temp_dir() . '/qmx-path-input-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-path-input-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
         mkdir($this->tempDir . '/src', 0777, true);
         file_put_contents(
