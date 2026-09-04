@@ -60,6 +60,10 @@ final class UnusedDirectiveRuleTest extends TestCase
      * the rules whose name is not also a channel are the ones emitting several
      * *judgements* — the inline-directive producer among them. Silence here is
      * what the old prefix matcher gave and is the defect being removed.
+     *
+     * This rule owns the banned channel, so the answer is also where the ban and
+     * the advice used to disagree: it enumerated all four channels, one of which
+     * no directive may carry.
      */
     #[Test]
     public function itRejectsARuleNameWhereASuppressionMustNameAChannel(): void
@@ -73,7 +77,21 @@ final class UnusedDirectiveRuleTest extends TestCase
         );
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertStringContainsString('names a rule, not a channel', $findings[0]->message);
-        self::assertStringContainsString(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->message);
+        self::assertStringContainsString(
+            InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
+            $findings[0]->message,
+            'the answer still names the channels of that rule a directive may carry',
+        );
+
+        // The list is advice, not an inventory: the author writes what it names.
+        // It used to name the one channel no directive may address, so following
+        // it produced a directive the next run refuses. See
+        // BannedChannelIsNeverSuggestedTest for the sweep over every branch.
+        self::assertStringNotContainsString(
+            InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
+            $findings[0]->message,
+            $findings[0]->message,
+        );
     }
 
     #[Test]

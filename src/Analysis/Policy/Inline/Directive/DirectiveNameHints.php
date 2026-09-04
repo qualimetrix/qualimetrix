@@ -50,21 +50,40 @@ final readonly class DirectiveNameHints
      * The advice for a suppression whose selector covers no channel, in the
      * order the answer is worth anything: the channels of the rule they
      * named, the parent they asked for descendants of, then near spellings.
+     *
+     * **Every branch here is advice, not an inventory**, and that is what
+     * decides how each treats the one channel a directive may not carry. The
+     * method is reached only from a directive that already failed to address
+     * anything, and every sentence it returns ends up in the author's editor as
+     * the name they type next. So a branch that named the banned channel would
+     * hand back a directive the next run refuses — which is the same defect on
+     * the descendants branch ("write X to address it") and on the rule branch
+     * ("its channels are ...") as it was on the near-spelling one, however
+     * differently each phrases it.
+     *
+     * The rule branch therefore says *addressable* channels and means it: a
+     * reader who wants the full channel list of a rule has `qmx rules`, which
+     * answers "what does this rule produce" without pretending to answer "what
+     * may I write here".
      */
     public function forChannelSelector(NameSelector $selector): string
     {
         $name = $selector->name();
 
         if ($selector->selectsDescendantsOnly()) {
-            return $this->identity->hasChannel($name)
-                ? \sprintf('"%s" has no channels below it; write "%s" to address it.', $name, $name)
-                : self::listOrNothing($this->nearestChannels($name));
+            if (!$this->identity->hasChannel($name)) {
+                return self::listOrNothing($this->nearestChannels($name));
+            }
+
+            return DirectiveChannelBan::covers($name)
+                ? \sprintf('"%s" has no channels below it, and no directive may address it either.', $name)
+                : \sprintf('"%s" has no channels below it; write "%s" to address it.', $name, $name);
         }
 
-        $ownedByRule = $this->channelsOf($name);
+        $ownedByRule = self::addressable($this->channelsOf($name));
         if ($ownedByRule !== []) {
             return \sprintf(
-                '"%s" names a rule, not a channel. Its channels are: %s.',
+                '"%s" names a rule, not a channel. Its addressable channels are: %s.',
                 $name,
                 implode(', ', $ownedByRule),
             );
@@ -141,6 +160,12 @@ final readonly class DirectiveNameHints
     }
 
     /**
+     * The candidates a directive could actually carry.
+     *
+     * Applied to every list this class offers, so a rule whose channels are all
+     * banned yields no list at all and falls through to the near-spelling
+     * search — an empty "its channels are" is a worse answer than a guess.
+     *
      * @param list<string> $codes
      *
      * @return list<string>
