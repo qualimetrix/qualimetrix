@@ -69,15 +69,39 @@ final class ErrorStreamPseudoTerminalTest extends TestCase
         yield '-vvv' => [['-vvv']];
     }
 
+    /**
+     * The verbosities that actually produce a diagnostic to survive.
+     *
+     * The console log level is a pure function of verbosity
+     * ({@see \Qualimetrix\Infrastructure\Logging\LoggerFactory::create()},
+     * `default => LogLevel::WARNING`), so a clean run at the default verbosity
+     * writes no log line at all: there is nothing for a frame to erase, and
+     * the case would have no subject rather than a satisfied one.
+     *
+     * @return iterable<string, array{list<string>}>
+     */
+    public static function provideLoggingVerbosityCases(): iterable
+    {
+        yield '-v' => [['-v']];
+        yield '-vv' => [['-vv']];
+        yield '-vvv' => [['-vvv']];
+    }
+
     /** @param list<string> $verbosity */
     #[Test]
-    #[DataProvider('provideVerbosityCases')]
+    #[DataProvider('provideLoggingVerbosityCases')]
     public function itLeavesEveryDiagnosticLineOnTheScreen(array $verbosity): void
     {
         $run = $this->analyse($verbosity);
 
         $written = self::logLinesIn($run->stderr);
         $screen = $run->screen(self::COLUMNS)->unwrappedText();
+
+        self::assertNotSame(
+            [],
+            $written,
+            'the run logged nothing at all, so this case would pass vacuously',
+        );
 
         $survivors = array_values(array_filter(
             $written,
