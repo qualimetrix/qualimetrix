@@ -330,14 +330,22 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      * turn "matched nothing" into "matched something" — the audit can lose a
      * stale report here, never gain one.
      *
+     * **What is asked and what is reported are still two questions.** The
+     * verdict is reached over `produced`; whether the verdict is *published*
+     * obeys the same channel selection as every other finding, asked through
+     * {@see RuleExecutionInterface::publishable()}. Being assembled after
+     * `execute()` used to mean being assembled past that filter, which made
+     * `--disable-rule annotation.unused-directive` inert and let an
+     * `--only-rule` naming a sibling channel publish this one.
+     *
      * @return list<Finding>
      */
     private function reportedFindings(RuleExecutionResult $ruleExecution): array
     {
-        $unused = $this->ruleProducerPreparation->auditInlineDirectives(
+        $unused = $this->ruleExecutor->publishable($this->ruleProducerPreparation->auditInlineDirectives(
             $ruleExecution->produced,
             $ruleExecution->levelActivity,
-        );
+        ));
 
         return $unused === [] ? $ruleExecution->published : array_merge($ruleExecution->published, $unused);
     }

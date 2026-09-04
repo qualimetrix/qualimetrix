@@ -136,6 +136,13 @@ final class DirectiveAuditUniverseTest extends TestCase
         );
         $rules->method('allRules')->willReturn([]);
 
+        // The pipeline asks the executor which of the late findings this run's
+        // selection publishes. Nothing here selects anything, so the honest
+        // stub answer is the argument — and it must be written down: a stub's
+        // default empty array would drop the very finding both cases are about
+        // and make the pair pass and fail for reasons that are not the subject.
+        $rules->method('publishable')->willReturnArgument(0);
+
         $profiler = self::createStub(ProfilerInterface::class);
         $aggregation = self::createStub(MeasurementAggregationInterface::class);
         $aggregation->method('aggregate')->willReturn(new NamespaceTree([]));

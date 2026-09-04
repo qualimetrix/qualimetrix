@@ -603,6 +603,19 @@ Likewise, the owner before `:` in `--rule-opt=RULE:OPTION=VALUE` must be an exac
 producer rule, not a group or channel — a group or channel there is an error. The same rule
 governs the `rules:` YAML section keys.
 
+!!! note "Every channel obeys selection, including the one assembled last"
+    `annotation.unused-directive` — the "this suppression silenced nothing" verdict — can only be
+    reached once every other rule has produced its findings, so a run assembles it after rule
+    execution. It is selected like any other channel all the same:
+    `--disable-rule=annotation.unused-directive` (or `annotation.unused-directive:file`) silences
+    it, and an `--only-rule` that names other channels of `annotation.directive` without naming
+    this one does not report it.
+
+    The producer's exclusion options are a separate matter and do not reach this channel:
+    `rules.annotation.directive.exclude_paths` gates its early channels only, and
+    `exclude_namespaces` reaches none of them, since these findings are reported against the file
+    the annotation was written in.
+
 ### `--rule-opt`
 
 Override rule options from the command line. Format: `rule-name:option=value`, where

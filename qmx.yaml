@@ -430,6 +430,7 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Finding\ChannelPresentationView'
         - 'Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver'
+        - 'Qualimetrix\Analysis\Finding\ConfiguredLevelActivity'
         - 'Qualimetrix\Analysis\Finding\Contract\AcceptedLevel'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface'

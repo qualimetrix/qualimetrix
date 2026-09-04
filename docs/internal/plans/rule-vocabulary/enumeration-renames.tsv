@@ -2,7 +2,7 @@ old	kind	new	step	src	tests	presets	config	baseline	website_docs	benchmarks	find
 annotation.invalid-threshold	channel	?		2	6	0	0	0	19	0	1
 annotation.unresolved-directive	channel	?		11	17	0	0	0	40	0	22
 annotation.unsupported-threshold	channel	?		6	6	0	0	0	19	0	1
-annotation.unused-directive	channel	?		16	22	0	0	0	35	0	11
+annotation.unused-directive	channel	?		19	24	0	0	0	41	0	11
 architecture.circular-dependency	channel	?		9	29	0	2	0	39	0	1
 architecture.coverage	channel	?		18	71	0	0	0	43	0	1
 architecture.empty-template	channel	?		9	11	0	0	0	27	0	1
@@ -27,7 +27,7 @@ code-smell.unreachable-code	channel	?		8	37	0	1	0	23	0	1
 code-smell.unused-private	channel	?		2	6	0	0	0	15	0	3
 cohesion.lcom	channel	?		41	151	2	3	0	31	0	4
 complexity.cognitive	channel	?		24	86	2	2	31	48	0	12
-complexity.cyclomatic	channel	?		37	651	2	2	55	120	0	11
+complexity.cyclomatic	channel	?		37	653	2	2	55	120	0	11
 complexity.npath	channel	?		22	95	2	2	12	38	0	8
 complexity.wmc	channel	?		20	86	2	2	10	31	0	4
 coupling.cbo	channel	?		63	310	2	4	6	104	0	6
@@ -133,7 +133,7 @@ size.setter-count	metric-key	?		5	11	0	0	0	0	0	0
 size.symbol-class-count	metric-key	?		1	0	0	0	0	0	0	0
 size.symbol-method-count	metric-key	?		6	3	0	0	0	2	0	0
 size.trait-count	metric-key	?		11	13	0	0	0	0	0	0
-annotation.directive	producer	?		4	6	0	0	0	26	0	1
+annotation.directive	producer	?		4	6	0	0	0	28	0	1
 architecture.circular-dependency	producer	?		9	29	0	2	0	39	0	1
 architecture.layer-violation	producer	?		27	105	0	3	0	79	0	1
 architecture.unassigned-class	producer	?		25	18	0	0	0	21	0	2
@@ -153,10 +153,10 @@ code-smell.unreachable-code	producer	?		8	37	0	1	0	23	0	1
 code-smell.unused-private	producer	?		2	6	0	0	0	15	0	3
 cohesion.lcom	producer	?		41	151	2	3	0	31	0	4
 complexity.cognitive	producer	?		24	86	2	2	31	48	0	12
-complexity.cyclomatic	producer	?		37	651	2	2	55	120	0	11
+complexity.cyclomatic	producer	?		37	653	2	2	55	120	0	11
 complexity.npath	producer	?		22	95	2	2	12	38	0	8
 complexity.wmc	producer	?		20	86	2	2	10	31	0	4
-computed	producer	?		92	92	0	1	0	25	0	11
+computed	producer	?		93	92	0	1	0	25	0	11
 coupling.cbo	producer	?		63	310	2	4	6	104	0	6
 coupling.class-rank	producer	?		22	99	0	2	2	26	0	30
 coupling.distance	producer	?		30	72	2	2	2	33	0	31

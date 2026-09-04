@@ -5836,6 +5836,33 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itPreservesInlineControlsAcrossARealParallelWorkerRoundTrip
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itProducesIdenticalDependenciesSequentiallyAndThroughARealAmpWorkerRoundTrip
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itResetsArchitectureAndCircularStateIndependentlyAcrossCompiledContainerRuns
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"channel:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"exact channel name"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"group"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"group:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"producer rule name"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"three of four channels, the late one omitted"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"union of all four channels"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"cli --disable-rule"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"cli --only-rule"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"config disabled_rules"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"config only_rules"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"preset disabledRules"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"preset onlyRules"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::itPublishesTheLateChannelWhenNothingSelectsAgainstIt
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"channel:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"exact channel name"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"group"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"group:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"producer rule name"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"sibling channel only"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"three of four channels, the late one omitted"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"union of all four channels"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::refusedFormsStayRefused"--disable-rule producer:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::refusedFormsStayRefused"--disable-rule retired pair"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::refusedFormsStayRefused"--only-rule producer:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::refusedFormsStayRefused"--only-rule retired pair"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::theProducersPathExclusionStillReachesTheEarlySiblingAndNotTheLateChannel
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itAnalyzesEveryNamespaceBlockWithoutLosingMetrics#0
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itAnalyzesEveryNamespaceBlockWithoutLosingMetrics#1
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itAnalyzesEveryNamespaceBlockWithoutLosingMetrics#2

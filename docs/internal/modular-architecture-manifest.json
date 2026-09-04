@@ -5568,6 +5568,14 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\ConfiguredLevelActivity": {
+      "path": "src/Analysis/Finding/ConfiguredLevelActivity.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\AcceptedLevel": {
       "path": "src/Analysis/Finding/Contract/AcceptedLevel.php",
       "kind": "class",
