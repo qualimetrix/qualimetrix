@@ -220,8 +220,8 @@ final class PathFactoryTest extends TestCase
         $tmpBase = realpath(sys_get_temp_dir());
         self::assertIsString($tmpBase);
 
-        $target = $tmpBase . '/qmx-besteffort-target-' . uniqid('', true);
-        $link = $tmpBase . '/qmx-besteffort-link-' . uniqid('', true);
+        $target = $tmpBase . '/qmx-besteffort-target-' . bin2hex(random_bytes(6));
+        $link = $tmpBase . '/qmx-besteffort-link-' . bin2hex(random_bytes(6));
 
         mkdir($target);
         mkdir($target . '/src');
@@ -253,7 +253,7 @@ final class PathFactoryTest extends TestCase
         $tmpBase = realpath(sys_get_temp_dir());
         self::assertIsString($tmpBase);
 
-        $linkPath = $tmpBase . '/qmx-test-' . uniqid('', true);
+        $linkPath = $tmpBase . '/qmx-test-' . bin2hex(random_bytes(6));
         $target = $linkPath . '-target';
 
         mkdir($target);

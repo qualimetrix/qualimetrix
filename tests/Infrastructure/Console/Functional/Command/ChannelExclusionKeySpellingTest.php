@@ -33,7 +33,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-channel-key-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-channel-key-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir . '/src', 0o777, true);
 
         file_put_contents($this->tempDir . '/src/First.php', <<<'PHP'

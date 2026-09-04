@@ -30,7 +30,7 @@ final class GraphExportCommandTest extends TestCase
     protected function setUp(): void
     {
         // Create temporary directory for test files
-        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
     }
 

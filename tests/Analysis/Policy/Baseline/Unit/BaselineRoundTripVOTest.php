@@ -39,7 +39,7 @@ final class BaselineRoundTripVOTest extends TestCase
         $this->loader = new BaselineLoader(
             new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()),
         );
-        $this->tempDir = sys_get_temp_dir() . '/qmx_baseline_vo_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_baseline_vo_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0755, true);
     }
 

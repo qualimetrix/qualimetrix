@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxDirectiveAuditControls;
 
+use QmxFindingGateControls\Child;
 use QmxFindingGateControls\Scratch;
 use QmxFindingGateControls\Shell;
 use RuntimeException;
@@ -38,6 +39,25 @@ use Throwable;
  */
 final class Harness
 {
+    /**
+     * Width does not divide this bench's work, it adds to it. Measured over all
+     * 116 probes on a fourteen-core machine: 1433s, 683s and 630s of wall clock
+     * at widths 1, 4 and 8, for 1350, 2492 and 2733 CPU seconds. So the wall
+     * clock stops falling long before the cores run out, and eight buys eight
+     * percent over four for a fifth more of the machine.
+     *
+     * Where the extra CPU goes is not known. Hardlinking trees was the first
+     * guess and it is wrong: removing the `.git` copy from every clone moved
+     * about eleven of those thirteen hundred seconds, and a paired measurement
+     * afterwards put most of the growth in user time rather than the kernel.
+     * The ceiling stands on the wall clock, which is measured, not on a cause,
+     * which is not.
+     */
+    private const JOB_CEILING = 8;
+
+    /** How long a run may say nothing before it names what it is waiting for. */
+    private const LIVENESS_INTERVAL_SECONDS = 30.0;
+
     /** @param list<string> $arguments */
     public static function main(array $arguments): int
     {
@@ -63,13 +83,17 @@ final class Harness
             return 3;
         }
 
-        $outcomes = [];
+        try {
+            $width = min(self::jobs($arguments), \count($probes));
+        } catch (RuntimeException $error) {
+            fwrite(\STDERR, 'directive-audit-controls: ' . $error->getMessage() . "\n");
 
-        foreach ($probes as $probe) {
-            $outcomes[] = self::observe($probe, $repository);
+            return 3;
         }
 
-        return Report::of($outcomes, $only !== [])->print();
+        self::report(\sprintf('%d probe(s), %d at a time', \count($probes), $width));
+
+        return Report::of(self::runPool($probes, $repository, $width), $only !== [])->print();
     }
 
     /**
@@ -107,40 +131,204 @@ final class Harness
     }
 
     /**
-     * One probe: clone, plant, run, read.
+     * Runs the probes with at most `$width` clones in flight and returns their
+     * outcomes in the order the list declares.
      *
-     * The clone is thrown away whatever happens, including on a refusal — a
-     * scratch tree left behind is a hardlink farm pointing at the developer's
-     * working tree.
+     * This is the sibling bench's pool, in the same shape and over the same
+     * primitives, and one width of one is what "sequential" means here — there
+     * is no second path to keep in step. What that buys, and what an earlier
+     * fork-based scheduler of its own did not have: the stop flag is consulted
+     * every turn, so an interrupt reaches a parallel run; the clones stay
+     * registered in this process, so `Scratch::removeAll()` can reach them;
+     * and a child that dies is read through `Child`, whose exit code reaches
+     * the outcome instead of being inferred from a missing file.
+     *
+     * Order is restored rather than observed. The report has to read the same
+     * whatever the scheduling, or two runs cannot be compared — which is the
+     * one thing this bench exists to allow.
+     *
+     * @param list<Probe> $probes
+     *
+     * @return list<Outcome>
      */
-    private static function observe(Probe $probe, string $repository): Outcome
+    private static function runPool(array $probes, string $repository, int $width): array
     {
-        $scratch = Scratch::cloneOf($repository);
+        $total = \count($probes);
+        $outcomes = [];
+        $inFlight = [];
+        $next = 0;
+        $spokeAt = microtime(true);
+
+        while ($next < $total || $inFlight !== []) {
+            Shell::stopIfRequested();
+
+            while ($next < $total && \count($inFlight) < $width) {
+                $probe = $probes[$next];
+
+                try {
+                    $inFlight[$next] = self::launch($probe, $repository);
+                } catch (Throwable $error) {
+                    $outcomes[$next] = Outcome::refused($probe, $error->getMessage());
+                }
+
+                $spokeAt = microtime(true);
+                ++$next;
+            }
+
+            Shell::poll();
+
+            foreach ($inFlight as $index => $attempt) {
+                if (!$attempt['child']->settled()) {
+                    continue;
+                }
+
+                unset($inFlight[$index]);
+                $outcomes[$index] = self::settle($attempt);
+                self::report(\sprintf(
+                    '[%d/%d] %s %s',
+                    $index + 1,
+                    $total,
+                    $attempt['probe']->id,
+                    $outcomes[$index]->asDeclared() ? 'as declared' : 'NOT as declared',
+                ));
+                $spokeAt = microtime(true);
+            }
+
+            if ($inFlight !== [] && microtime(true) - $spokeAt >= self::LIVENESS_INTERVAL_SECONDS) {
+                self::report(\sprintf(
+                    'in flight  %s',
+                    implode(', ', array_map(
+                        static fn(array $attempt): string => $attempt['probe']->id,
+                        $inFlight,
+                    )),
+                ));
+                $spokeAt = microtime(true);
+            }
+        }
+
+        ksort($outcomes);
+
+        return array_values($outcomes);
+    }
+
+    /**
+     * Clones, plants the breakage and starts that clone's suite without waiting
+     * for it.
+     *
+     * The clone carries no `.git`: the suite needs no history, and a worktree's
+     * `.git` is a pointer at the main repository rather than the isolation
+     * `Scratch` describes.
+     *
+     * @return array{probe: Probe, scratch: Scratch, child: Child, log: string}
+     */
+    private static function launch(Probe $probe, string $repository): array
+    {
+        $scratch = Scratch::contentOf($repository);
 
         try {
-            // A worktree's `.git` is a pointer at the main repository, so the
-            // clone's copy of it is not the isolation `Scratch` describes. The
-            // suite needs no history, so the safe move is to leave it none.
-            Shell::removeRecursively($scratch->path('.git'));
-
             $probe->mutation->apply($scratch, $repository);
-            $suite = Suite::runIn($scratch->tree);
+            $started = Suite::startIn($scratch);
+        } catch (Throwable $error) {
+            $scratch->remove();
+
+            throw $error;
+        }
+
+        return [
+            'probe' => $probe,
+            'scratch' => $scratch,
+            'child' => $started['child'],
+            'log' => $started['log'],
+        ];
+    }
+
+    /**
+     * Reads one finished clone and throws it away, whatever it said.
+     *
+     * A scratch tree left behind is a hardlink farm pointing at the working
+     * tree, so the removal belongs to a `finally` rather than to the happy
+     * path.
+     *
+     * @param array{probe: Probe, scratch: Scratch, child: Child, log: string} $attempt
+     */
+    private static function settle(array $attempt): Outcome
+    {
+        try {
+            $suite = Suite::of($attempt['child']->result(), $attempt['log']);
             $red = $suite->red();
 
             if ($red === [] && $suite->exit !== 0) {
-                return Outcome::refused($probe, \sprintf(
+                return Outcome::refused($attempt['probe'], \sprintf(
                     'PHPUnit exited %d with every case green, so it failed on something the log does not'
                     . ' record — a warning or a risky test. This probe measured nothing.',
                     $suite->exit,
                 ));
             }
 
-            return Outcome::of($probe, $suite->names(), $red);
+            return Outcome::of($attempt['probe'], $suite->names(), $red);
         } catch (Throwable $failure) {
-            return Outcome::refused($probe, $failure->getMessage());
+            return Outcome::refused($attempt['probe'], $failure->getMessage());
         } finally {
-            $scratch->remove();
+            $attempt['scratch']->remove();
         }
+    }
+
+    /**
+     * Progress goes to the error stream because the report goes to the other
+     * one: a run redirected to a file has to yield the same bytes whether or
+     * not anybody watched it.
+     */
+    private static function report(string $line): void
+    {
+        fwrite(\STDERR, '  ' . $line . "\n");
+    }
+
+    /**
+     * `--jobs=<n>` or `--jobs=auto`; the default is the same measured quarter
+     * the sibling bench uses.
+     *
+     * @param list<string> $arguments
+     */
+    private static function jobs(array $arguments): int
+    {
+        $requested = null;
+
+        foreach ($arguments as $argument) {
+            if (str_starts_with($argument, '--jobs=')) {
+                $requested = substr($argument, 7);
+            }
+        }
+
+        if ($requested === null || $requested === 'auto') {
+            return self::defaultJobs();
+        }
+
+        if (!ctype_digit($requested) || (int) $requested < 1 || (int) $requested > self::JOB_CEILING) {
+            throw new RuntimeException(\sprintf(
+                '--jobs takes "auto" or a number between 1 and %d, not %s.',
+                self::JOB_CEILING,
+                $requested,
+            ));
+        }
+
+        return (int) $requested;
+    }
+
+    /**
+     * A quarter of the machine, never fewer than two — the floor is what makes
+     * this a parallel bench on a small machine rather than a sequential one,
+     * and it is why the quarter is a ceiling on the ratio and not a promise.
+     *
+     * `shell_exec` is disabled in some hardened builds, where reading it would
+     * be a fatal error rather than an unknown core count.
+     */
+    private static function defaultJobs(): int
+    {
+        $reported = \function_exists('shell_exec')
+            ? (int) shell_exec('getconf _NPROCESSORS_ONLN 2>/dev/null')
+            : 0;
+
+        return max(2, min(self::JOB_CEILING, intdiv($reported > 0 ? $reported : 8, 4)));
     }
 
     /**
@@ -159,6 +347,10 @@ final class Harness
                     static fn(string $id): bool => $id !== '',
                 )];
 
+                continue;
+            }
+
+            if (str_starts_with($argument, '--jobs=')) {
                 continue;
             }
 

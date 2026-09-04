@@ -115,7 +115,7 @@ final class ConfigSchemaTest extends TestCase
         // Build a YAML config that exercises every root key from ENTRIES
         $yaml = $this->buildFullConfigYaml();
 
-        $tmpFile = sys_get_temp_dir() . '/qmx_schema_test_' . uniqid() . '.yaml';
+        $tmpFile = sys_get_temp_dir() . '/qmx_schema_test_' . bin2hex(random_bytes(6)) . '.yaml';
         file_put_contents($tmpFile, $yaml);
 
         try {

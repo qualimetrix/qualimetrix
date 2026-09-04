@@ -26,7 +26,7 @@ final class ProfilerIntegrationTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx_profiler_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_profiler_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir);
         $this->profilePath = $this->tempDir . '/profile.json';
 

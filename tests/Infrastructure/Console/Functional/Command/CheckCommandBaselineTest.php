@@ -54,7 +54,7 @@ final class CheckCommandBaselineTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-baseline-check-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-baseline-check-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
 
         $this->configPath = $this->tempDir . '/qmx.yaml';

@@ -31,8 +31,8 @@ final class RunConfigurationResolverTest extends TestCase
     {
         $original = getcwd();
         self::assertNotFalse($original);
-        $rootA = sys_get_temp_dir() . '/qmx-run-root-a-' . uniqid();
-        $rootB = sys_get_temp_dir() . '/qmx-run-root-b-' . uniqid();
+        $rootA = sys_get_temp_dir() . '/qmx-run-root-a-' . bin2hex(random_bytes(6));
+        $rootB = sys_get_temp_dir() . '/qmx-run-root-b-' . bin2hex(random_bytes(6));
         mkdir($rootA);
         mkdir($rootB);
 

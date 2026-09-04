@@ -144,7 +144,7 @@ final class GitRepositoryLocatorTest extends TestCase
 
     private function makeTempDir(string $prefix): string
     {
-        $dir = sys_get_temp_dir() . '/qmx-' . $prefix . uniqid();
+        $dir = sys_get_temp_dir() . '/qmx-' . $prefix . bin2hex(random_bytes(6));
         if (!mkdir($dir, 0777, true)) {
             throw new RuntimeException('Failed to create temp dir: ' . $dir);
         }

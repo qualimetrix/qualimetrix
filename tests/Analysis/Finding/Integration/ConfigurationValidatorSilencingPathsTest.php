@@ -67,7 +67,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-silencing-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-silencing-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir . '/src/Controller', 0777, true);
         mkdir($this->tempDir . '/src/Repository', 0777, true);
         mkdir($this->tempDir . '/src/Orphan', 0777, true);

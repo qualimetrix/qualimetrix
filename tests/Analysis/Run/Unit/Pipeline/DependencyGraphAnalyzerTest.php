@@ -34,7 +34,7 @@ final class DependencyGraphAnalyzerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-graph-analyzer-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-graph-analyzer-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
     }
 

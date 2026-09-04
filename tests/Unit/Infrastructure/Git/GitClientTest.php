@@ -22,7 +22,7 @@ final class GitClientTest extends TestCase
 
     protected function setUp(): void
     {
-        $dir = sys_get_temp_dir() . '/git-test-' . uniqid();
+        $dir = sys_get_temp_dir() . '/git-test-' . bin2hex(random_bytes(6));
         mkdir($dir);
         // Use realpath to normalize the path (macOS /var vs /private/var)
         $realPath = realpath($dir);

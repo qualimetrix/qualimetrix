@@ -545,6 +545,7 @@ composer directives:narrow-control                # 0 agreed, 1 disagreed, 2 pop
 # Proving the threshold audit's own tests bite
 composer directives:controls                     # plant one breakage at a time; every case must be reddened by one
 composer directives:controls -- --only=<id,...>  # one probe, for iterating (coverage is then not evidence)
+composer directives:controls -- --jobs=1         # same verdicts, one worker; re-read a disagreement here first
 
 # HTML report (run when modifying src/Reporting/Template/)
 composer test:js        # JS tests for HTML report (vitest)
@@ -596,6 +597,11 @@ bin/qmx check --help
 For multi-package changes, fail fast before paying for the full test suite:
 
 1. Run lint/style, focused tests, and scoped static analysis for each package.
+   An aggregate PHPStan run that reports errors in files the change never
+   touched: delete `.phpstan.cache` and run it again before acting on them. A
+   run of this shape has been seen to go green on the second, cold pass, and
+   the cause is not known — so treat the cold result as the verdict rather than
+   hunting a regression the tree may not carry.
 2. Before the root aggregate, run full PHPStan, `composer architecture:check`,
    and dogfood with machine-readable output, `--workers=0`, and
    `--fail-on=warning`.

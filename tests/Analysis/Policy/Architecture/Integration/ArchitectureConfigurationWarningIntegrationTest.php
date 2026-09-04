@@ -31,7 +31,7 @@ final class ArchitectureConfigurationWarningIntegrationTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-architecture-warning-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-architecture-warning-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0755, true);
     }
 

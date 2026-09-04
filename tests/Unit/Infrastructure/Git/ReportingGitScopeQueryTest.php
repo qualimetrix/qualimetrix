@@ -32,7 +32,7 @@ final class ReportingGitScopeQueryTest extends TestCase
 
     protected function setUp(): void
     {
-        $dir = sys_get_temp_dir() . '/git-scope-filter-test-' . uniqid();
+        $dir = sys_get_temp_dir() . '/git-scope-filter-test-' . bin2hex(random_bytes(6));
         mkdir($dir);
         // Use realpath to normalize the path (macOS /var vs /private/var)
         $realPath = realpath($dir);

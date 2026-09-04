@@ -26,7 +26,7 @@ final class LocCollectorTest extends TestCase
     protected function setUp(): void
     {
         $this->collector = new LocCollector();
-        $this->tempDir = sys_get_temp_dir() . '/loc_collector_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/loc_collector_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
     }
 
@@ -579,7 +579,7 @@ PHP;
     private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag
     {
         // Create actual temp file
-        $filePath = $this->tempDir . '/test_' . uniqid() . '.php';
+        $filePath = $this->tempDir . '/test_' . bin2hex(random_bytes(6)) . '.php';
         file_put_contents($filePath, $code);
 
         $file = new SplFileInfo($filePath);

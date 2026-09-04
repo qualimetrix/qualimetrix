@@ -189,7 +189,7 @@ final class AbsolutePathTest extends TestCase
     #[Test]
     public function itThrowsWhenCanonicalizingMissingPath(): void
     {
-        $missing = '/this/path/should/not/exist/' . uniqid('qmx-test-', true);
+        $missing = '/this/path/should/not/exist/' . bin2hex(random_bytes(6));
 
         $this->expectException(RuntimeException::class);
         AbsolutePath::fromString($missing)->canonicalize();
@@ -208,7 +208,7 @@ final class AbsolutePathTest extends TestCase
     #[Test]
     public function itReportsNonexistentPathAsAbsent(): void
     {
-        $missing = AbsolutePath::fromString('/this/path/should/not/exist/' . uniqid('qmx-test-', true));
+        $missing = AbsolutePath::fromString('/this/path/should/not/exist/' . bin2hex(random_bytes(6)));
 
         self::assertFalse($missing->exists());
         self::assertFalse($missing->isFile());

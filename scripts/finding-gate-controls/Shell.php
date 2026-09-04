@@ -77,9 +77,13 @@ final class Shell
      * Starts a child and returns it unsupervised; the caller keeps it and calls
      * {@see poll()} until it is settled.
      *
+     * The environment is stated rather than inherited, so a child cannot pick
+     * up whatever the developer's shell happens to carry.
+     *
      * @param list<string> $command
+     * @param array<string, string> $environment merged over that set, replacing
      */
-    public static function start(array $command, string $workingDirectory): Child
+    public static function start(array $command, string $workingDirectory, array $environment = []): Child
     {
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $handle = proc_open($command, $descriptors, $pipes, $workingDirectory, [
@@ -89,6 +93,7 @@ final class Shell
             'TZ' => 'UTC',
             'COLUMNS' => '120',
             'NO_COLOR' => '1',
+            ...$environment,
         ]);
 
         if (!\is_resource($handle)) {

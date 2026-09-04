@@ -25,7 +25,7 @@ final class LoggerFactoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_test_' . bin2hex(random_bytes(6));
         if (!is_dir($this->tempDir)) {
             mkdir($this->tempDir, 0755, true);
         }

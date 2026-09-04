@@ -46,7 +46,7 @@ final class CheckCommandProjectScopedGateTest extends TestCase
     {
         $this->originalCwd = (string) getcwd();
 
-        $tempDir = realpath(sys_get_temp_dir()) . '/qmx-project-scoped-gate-' . uniqid();
+        $tempDir = realpath(sys_get_temp_dir()) . '/qmx-project-scoped-gate-' . bin2hex(random_bytes(6));
         mkdir($tempDir . '/src', 0777, true);
         $this->tempDir = $tempDir;
 

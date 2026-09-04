@@ -30,8 +30,8 @@ final class CachedFileParserTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempFile = sys_get_temp_dir() . '/qmx-parser-test-' . uniqid() . '.php';
-        $this->cacheDir = sys_get_temp_dir() . '/qmx-cache-test-' . uniqid();
+        $this->tempFile = sys_get_temp_dir() . '/qmx-parser-test-' . bin2hex(random_bytes(6)) . '.php';
+        $this->cacheDir = sys_get_temp_dir() . '/qmx-cache-test-' . bin2hex(random_bytes(6));
         file_put_contents($this->tempFile, '<?php class Test {}');
     }
 

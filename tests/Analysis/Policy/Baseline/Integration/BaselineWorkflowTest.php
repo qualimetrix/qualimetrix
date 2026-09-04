@@ -44,7 +44,7 @@ final class BaselineWorkflowTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx_baseline_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_baseline_test_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir);
         $this->baselinePath = $this->tempDir . '/baseline.json';
     }

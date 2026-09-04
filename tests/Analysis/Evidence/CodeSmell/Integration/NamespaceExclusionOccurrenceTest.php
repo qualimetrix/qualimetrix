@@ -23,7 +23,7 @@ final class NamespaceExclusionOccurrenceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-ns-excl-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-ns-excl-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir . '/Foo', 0777, true);
         mkdir($this->tempDir . '/Bar', 0777, true);
 

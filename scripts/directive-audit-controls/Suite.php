@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace QmxDirectiveAuditControls;
 
+use QmxFindingGateControls\Child;
+use QmxFindingGateControls\Scratch;
 use QmxFindingGateControls\Shell;
 use RuntimeException;
 
@@ -60,18 +62,44 @@ final readonly class Suite
         public int $exit,
     ) {}
 
-    public static function runIn(string $tree): self
+    /**
+     * Starts the suite without waiting for it, so several clones can be in
+     * flight at once and one loop can drain them all.
+     *
+     * @return array{child: Child, log: string}
+     */
+    public static function startIn(Scratch $scratch): array
     {
+        $tree = $scratch->tree;
         $log = $tree . '/.directive-audit-controls.xml';
-        $result = Shell::run([
-            'vendor/bin/phpunit',
-            '--no-coverage',
-            '--do-not-cache-result',
-            '--log-junit',
-            $log,
-            ...self::FILES,
-        ], $tree);
 
+        // A scratch path a test builds under the system temp directory is
+        // outside the clone, so two suites running at once can be handed the
+        // same one — the defect this bench was measured to have. Naming those
+        // paths with real entropy fixes it wherever the suite runs; giving the
+        // child its own temp directory makes it unreachable here, whatever a
+        // future test names them.
+        //
+        // Where it goes, and why it is not inside the tree, belongs to the
+        // clone rather than to this caller.
+        $temporary = $scratch->beside('tmp');
+
+        return [
+            'child' => Shell::start([
+                'vendor/bin/phpunit',
+                '--no-coverage',
+                '--do-not-cache-result',
+                '--log-junit',
+                $log,
+                ...self::FILES,
+            ], $tree, ['TMPDIR' => $temporary]),
+            'log' => $log,
+        ];
+    }
+
+    /** @param array{stdout: string, stderr: string, exit: int} $result */
+    public static function of(array $result, string $log): self
+    {
         if (!is_file($log)) {
             throw new RuntimeException(\sprintf(
                 "PHPUnit wrote no JUnit log in the scratch tree, so this run says nothing.\nstdout: %s\nstderr: %s",

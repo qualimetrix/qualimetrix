@@ -27,7 +27,7 @@ final class MultiNamespaceAnalysisTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->filePath = sys_get_temp_dir() . '/qmx_multi_namespace_' . uniqid() . '.php';
+        $this->filePath = sys_get_temp_dir() . '/qmx_multi_namespace_' . bin2hex(random_bytes(6)) . '.php';
         $written = file_put_contents($this->filePath, <<<'PHP'
 <?php
 namespace One { class A {} }
@@ -39,7 +39,7 @@ PHP);
             throw new RuntimeException('Failed to create multi-namespace fixture');
         }
 
-        $this->globalStatementFilePath = sys_get_temp_dir() . '/qmx_global_statement_' . uniqid() . '.php';
+        $this->globalStatementFilePath = sys_get_temp_dir() . '/qmx_global_statement_' . bin2hex(random_bytes(6)) . '.php';
         $written = file_put_contents($this->globalStatementFilePath, <<<'PHP'
 <?php
 declare(strict_types=1);
@@ -125,7 +125,7 @@ PHP);
     #[Test]
     public function itPreservesNamespaceContributionsAcrossTheWorkerWire(): void
     {
-        $fixtureDir = sys_get_temp_dir() . '/qmx_parallel_namespaces_' . uniqid();
+        $fixtureDir = sys_get_temp_dir() . '/qmx_parallel_namespaces_' . bin2hex(random_bytes(6));
         if (!mkdir($fixtureDir)) {
             throw new RuntimeException('Failed to create parallel fixture directory');
         }

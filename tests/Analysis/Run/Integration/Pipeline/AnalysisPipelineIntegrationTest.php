@@ -255,7 +255,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     #[Test]
     public function itResetsArchitectureAndCircularStateIndependentlyAcrossCompiledContainerRuns(): void
     {
-        $fixtureRoot = sys_get_temp_dir() . '/qmx-p4-sequential-' . uniqid('', true);
+        $fixtureRoot = sys_get_temp_dir() . '/qmx-p4-sequential-' . bin2hex(random_bytes(6));
         $cyclicRoot = $fixtureRoot . '/cyclic';
         $cleanRoot = $fixtureRoot . '/clean';
         mkdir($cyclicRoot, 0o755, true);
@@ -599,7 +599,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     #[Test]
     public function itPreservesInlineControlsAcrossARealParallelWorkerRoundTrip(): void
     {
-        $fixtureRootPath = sys_get_temp_dir() . '/qmx-inline-worker-' . uniqid('', true);
+        $fixtureRootPath = sys_get_temp_dir() . '/qmx-inline-worker-' . bin2hex(random_bytes(6));
         mkdir($fixtureRootPath, 0o755, true);
         $fixturePath = $fixtureRootPath . '/Controlled.php';
         file_put_contents($fixturePath, <<<'PHP'

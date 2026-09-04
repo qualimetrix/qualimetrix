@@ -145,7 +145,7 @@ final class BenchmarkConsumersCoverageTest extends TestCase
 
     private function createFixtureRoot(): string
     {
-        $fixtureRoot = sys_get_temp_dir() . '/qmx_benchmark_consumer_' . uniqid();
+        $fixtureRoot = sys_get_temp_dir() . '/qmx_benchmark_consumer_' . bin2hex(random_bytes(6));
         if (!mkdir($fixtureRoot . '/scripts', recursive: true)) {
             throw new RuntimeException('Failed to create benchmark consumer fixture');
         }

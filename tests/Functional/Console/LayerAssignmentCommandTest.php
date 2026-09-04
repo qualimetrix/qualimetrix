@@ -44,7 +44,7 @@ final class LayerAssignmentCommandTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx-debug-layer-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-debug-layer-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0o755, true);
         $current = \ini_get('memory_limit');
         $this->originalMemoryLimit = $current !== false ? $current : '-1';
@@ -768,7 +768,7 @@ final class LayerAssignmentCommandTest extends TestCase
         }
         $yaml = "paths: ['{$emptyPath}']\narchitecture:\n  layers:\n{$layerYaml}  allow:\n{$allowYaml}  coverage: ignore\n";
 
-        $path = $this->tempDir . '/qmx-' . uniqid() . '.yaml';
+        $path = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
         file_put_contents($path, $yaml);
 
         return $path;

@@ -21,7 +21,7 @@ final class HookInstallCommandTest extends TestCase
     protected function setUp(): void
     {
         // Create temporary directory with fake git structure
-        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
 
         // Create .git/hooks directory

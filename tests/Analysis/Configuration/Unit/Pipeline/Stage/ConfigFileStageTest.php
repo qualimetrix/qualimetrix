@@ -22,7 +22,7 @@ final class ConfigFileStageTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->directory = sys_get_temp_dir() . '/qmx-config-stage-' . uniqid();
+        $this->directory = sys_get_temp_dir() . '/qmx-config-stage-' . bin2hex(random_bytes(6));
         mkdir($this->directory);
         $this->loader = $this->createMock(ConfigLoaderInterface::class);
     }
