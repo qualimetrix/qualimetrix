@@ -44,7 +44,14 @@ expensive error.
    (`GitClient.php:118`, one row).
 4. **Whether a writer fires while a frame is on screen.** That is not statically
    decidable and was measured separately (`stand-today-error-stream.md`).
-5. **`error_log()`, PHP's own warning output, and a child process's stderr.**
+5. **Anything outside `src/`.** The entry point is shipped code and writes to
+   the error stream before an autoloader exists (`bin/qmx:41`,
+   `fwrite(STDERR, "Error: Could not find autoloader…")`), and no row here
+   covers it. It is not a seam — nothing of this project is loaded yet, so no
+   frame can be on screen — but it is a writer, and the guard built from this
+   enumeration (`ErrorStreamSoleOwnerTest`) scans `bin/qmx` as well and carries
+   it as a named allowance.
+6. **`error_log()`, PHP's own warning output, and a child process's stderr.**
    The first two are not in the source at all; the third is row S7 below and is
    out of this process's reach by construction.
 

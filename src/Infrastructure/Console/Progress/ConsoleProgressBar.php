@@ -17,8 +17,8 @@ use Symfony\Component\Console\Output\ConsoleSectionOutput;
  * section is built over the error stream: `getErrorOutput()` returns a plain
  * `StreamOutput`, so the old gate would have silently disabled progress
  * altogether. The caller decides whether progress is possible at all
- * ({@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator}); what
- * reaches here is the section to draw in.
+ * ({@see \Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator});
+ * what reaches here is the section to draw in.
  *
  * Progress is still skipped for a file count below the threshold, because a
  * run that finishes in a moment has nothing to report.

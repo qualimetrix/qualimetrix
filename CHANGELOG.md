@@ -58,7 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a run, the report notes, `graph:export`'s incomplete-analysis report and an
   uncaught error's trace — now goes through one owner, which erases the frame,
   writes the line permanently and redraws the frame beneath it.
-
 - An `exclude_namespace_channels` key can name a channel whose name contains a
   hyphen. The keys of that map were case-normalized along with the typed option
   keys around them, so `code-smell.boolean-argument` reached the run as
@@ -82,6 +81,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `LoggerFactoryInterface::create()` takes the run's already-resolved diagnostic
+  writer, not the console output. The parameter type is unchanged
+  (`Symfony\Component\Console\Output\OutputInterface`) and the rename
+  `$output` → `$diagnostics` does not stop old code compiling, but the factory
+  no longer calls `getErrorOutput()` on what it is given: a caller that passed a
+  full `ConsoleOutputInterface` expecting the factory to pick standard error now
+  gets its log on standard output. Pass the writer the error stream's owner
+  hands out instead —
+  `$errorStream->writer($output)`, from
+  `Qualimetrix\Infrastructure\Console\ErrorStream` — which is what
+  `RuntimeLoggerConfigurator` does. The stream has one owner now, and choosing
+  one here was the second opinion that put log lines inside the progress frame.
+- The console classes that write diagnostics take that owner as a **required**
+  constructor argument: `Application`, `ResultPresenter`, `ProfilePresenter`,
+  `RuntimeLoggerConfigurator`, `FindingFilterOrchestrator` and
+  `GraphExportCommand` no longer default it to an `ErrorStream` of their own.
+  A composition that omitted it used to get a private owner, drawing its frame
+  around a section list nobody else shares — the two-owner defect, reintroduced
+  by omission. Two of them also take it earlier in the signature, before their
+  optional collaborators: `ProfilePresenter($report, $errorStream, $renderer)`
+  and `GraphExportCommand($analyzer, $projection, $errorStream, $logger)`.
+  Code composing these by hand should pass the one instance the container holds
+  (`$container->get(ErrorStream::class)`), as `bin/qmx` does.
 - No inline directive can silence `annotation.unused-directive` any more — the
   channel that reports which directives did nothing. Three separate things
   change for a project that used it.
