@@ -28,6 +28,19 @@ final class Mutation
     private const CREATE = 'create';
     private const REPLACE = 'replace';
 
+    /**
+     * Adds to a file instead of rewriting it, so a control can perturb a
+     * declaration whose contents it must not have to restate.
+     *
+     * The declared delta changes with every round; a control that replaced it
+     * with a typed copy would have to be re-typed with it, and would silently
+     * stop testing the current declaration. Appending is also the only shape
+     * that survives {@see assertApplied()} here: every fragment-based edit of a
+     * header leaves that header in the file, which reads as "the mutation did
+     * not land".
+     */
+    private const APPEND = 'append';
+
     /** @param list<array{kind: string, path: string, replacements: array<string, string>, contents: string}> $actions */
     private function __construct(
         public readonly string $description,
@@ -41,6 +54,11 @@ final class Mutation
     public static function edit(string $relativePath, array $replacements, string $description): self
     {
         return new self($description, [self::action(self::EDIT, $relativePath, $replacements, '')]);
+    }
+
+    public static function append(string $relativePath, string $text, string $description): self
+    {
+        return new self($description, [self::action(self::APPEND, $relativePath, [], $text)]);
     }
 
     public static function delete(string $relativePath, string $description): self
@@ -153,11 +171,15 @@ final class Mutation
         // Kept for the no-op assertion below: a REPLACE that writes exactly what
         // was already there mutates nothing, and its control would silently
         // become a second positive control.
-        $applied = [...$action, 'before' => $action['kind'] === self::REPLACE ? Shell::read($target) : ''];
+        $applied = [
+            ...$action,
+            'before' => \in_array($action['kind'], [self::REPLACE, self::APPEND], true) ? Shell::read($target) : '',
+        ];
 
         match ($action['kind']) {
             self::DELETE => self::removeFrom($target, $action['path']),
             self::CREATE, self::REPLACE => self::createAt($target, $action['contents']),
+            self::APPEND => Shell::replace($target, Shell::read($target) . $action['contents']),
             default => Shell::replace($target, self::rewrite(Shell::read($target), $action)),
         };
 
@@ -228,6 +250,14 @@ final class Mutation
         if ($action['kind'] === self::DELETE) {
             if (is_file($target)) {
                 throw new RuntimeException(\sprintf('%s still exists in the scratch tree.', $action['path']));
+            }
+
+            return;
+        }
+
+        if ($action['kind'] === self::APPEND) {
+            if (Shell::read($target) !== $action['before'] . $action['contents']) {
+                throw new RuntimeException(\sprintf('%s does not end with what the mutation appended.', $action['path']));
             }
 
             return;

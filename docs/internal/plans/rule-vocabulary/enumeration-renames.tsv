@@ -1,6 +1,6 @@
 old	kind	new	step	src	tests	presets	config	baseline	website_docs	benchmarks	finding_gate
 annotation.invalid-threshold	channel	?		2	6	0	0	0	19	0	1
-annotation.unresolved-directive	channel	?		11	17	0	0	0	40	0	22
+annotation.unresolved-directive	channel	?		11	18	0	0	0	40	0	25
 annotation.unsupported-threshold	channel	?		6	6	0	0	0	19	0	1
 annotation.unused-directive	channel	?		19	24	0	0	0	43	0	11
 architecture.circular-dependency	channel	?		9	29	0	2	0	39	0	1

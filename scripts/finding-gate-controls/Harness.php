@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QmxFindingGateControls;
 
 use QmxFindingGate\DeclaredDelta;
+use QmxFindingGate\DeclaredFieldMoves;
 use RuntimeException;
 use Throwable;
 
@@ -313,7 +314,7 @@ final class Harness
      * already running are drained by {@see Shell::poll()} from inside every
      * blocking call rather than by a loop of their own.
      *
-     * @return array{control: Control, scratch: Scratch, child: Child, report: string, survivors: array<string, string>}
+     * @return array{control: Control, scratch: Scratch, child: Child, report: string, survivors: array<string, string>, tracked: array<string, string>}
      */
     private function launch(Control $control): array
     {
@@ -323,6 +324,7 @@ final class Harness
             $control->mutation->apply($scratch, $this->repository);
             $report = \dirname($scratch->tree) . '/report.json';
             $survivors = self::digestsOf($scratch, $control->unchangedAfterRun);
+            $tracked = self::digestsOf($this->repository, $control->restoredAfterRun);
             $child = Shell::start(
                 [
                     \PHP_BINARY,
@@ -346,6 +348,7 @@ final class Harness
             'child' => $child,
             'report' => $report,
             'survivors' => $survivors,
+            'tracked' => $tracked,
         ];
     }
 
@@ -362,12 +365,12 @@ final class Harness
      *
      * @return array<string, string>
      */
-    private static function digestsOf(Scratch $scratch, array $paths): array
+    private static function digestsOf(Scratch|string $root, array $paths): array
     {
         $digests = [];
 
         foreach ($paths as $path) {
-            $digests[$path] = self::digestOf($scratch->path($path));
+            $digests[$path] = self::digestOf($root instanceof Scratch ? $root->path($path) : $root . '/' . $path);
         }
 
         return $digests;
@@ -399,7 +402,7 @@ final class Harness
         return 'dir:' . hash('sha256', implode("\0", $parts));
     }
 
-    /** @param array{control: Control, scratch: Scratch, child: Child, report: string, survivors: array<string, string>} $attempt */
+    /** @param array{control: Control, scratch: Scratch, child: Child, report: string, survivors: array<string, string>, tracked: array<string, string>} $attempt */
     private function settle(array $attempt): Outcome
     {
         try {
@@ -413,6 +416,8 @@ final class Harness
                 $this->declaredSurfaces(),
                 self::replacesDeclaration($attempt['control']),
                 self::touched($attempt['scratch'], $attempt['survivors']),
+                self::touched($attempt['scratch'], $attempt['tracked']),
+                $this->declaredFieldMoveCount(),
             );
         } catch (Throwable $error) {
             return Outcome::crashed($attempt['control'], $error->getMessage());
@@ -422,7 +427,9 @@ final class Harness
     }
 
     /**
-     * The declared survivors the run changed after all.
+     * The paths whose content in the scratch tree is not the digest it was held
+     * to — the survivors the run changed after all, or the declarations it
+     * failed to put back.
      *
      * @param array<string, string> $before
      *
@@ -545,6 +552,17 @@ final class Harness
         }
 
         return DeclaredDelta::load($this->repository . '/finding-gate')->surfaces();
+    }
+
+    /**
+     * How many moves of a compared field this repository licenses, read the same
+     * way and for the same reason as the declared surfaces: a green control has
+     * to be held to the licences the repository already states and to no more,
+     * or a control could go green because a licence absorbed its mutation.
+     */
+    private function declaredFieldMoveCount(): int
+    {
+        return DeclaredFieldMoves::load($this->repository . '/finding-gate')->count();
     }
 
     private function keepReport(Control $control, string $report): void

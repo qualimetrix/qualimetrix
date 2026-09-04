@@ -59,6 +59,8 @@ final class Outcome
      * @param list<string> $declaredSurfaces the surfaces the step declares a delta for
      * @param bool $declarationReplaced whether this control's mutation rewrote the declaration index
      * @param list<string> $touched declared survivors the run changed after all
+     * @param list<string> $unrestored declarations the run was supposed to write back and did not
+     * @param int $declaredFieldMoves how many moves of a compared field this repository licenses
      */
     public static function of(
         Control $control,
@@ -67,6 +69,8 @@ final class Outcome
         array $declaredSurfaces = [],
         bool $declarationReplaced = false,
         array $touched = [],
+        array $unrestored = [],
+        int $declaredFieldMoves = 0,
     ): self {
         $failures = self::failures($reportPath, $run);
         $reasons = [];
@@ -114,7 +118,7 @@ final class Outcome
         // that baseline. A control that replaced the index declares its own
         // baseline, so there is nothing to hold it to.
         if ($control->expectsGreen && !$declarationReplaced) {
-            $declared = self::declaredDeltaCount($reportPath);
+            $declared = self::countIn($reportPath, 'declaredDeltaCount');
             $baseline = \count($declaredSurfaces);
 
             if ($declared !== $baseline) {
@@ -126,6 +130,26 @@ final class Outcome
                         . ' compared against one',
                         $baseline,
                         $declared,
+                    );
+            }
+        }
+
+        // The same argument, one declaration along. A licensed field move lets a
+        // compared field differ inside a declared diff, so a green control that
+        // introduced one beyond the repository's baseline would be green because
+        // a licence absorbed its mutation. The count was prose in the report
+        // until now, which is to say nothing read it.
+        if ($control->expectsGreen && !$declarationReplaced) {
+            $licensed = self::countIn($reportPath, 'fieldMoveCount');
+
+            if ($licensed !== $declaredFieldMoves) {
+                $reasons[] = $licensed === null
+                    ? 'the gate report does not state how many field moves it licensed, so "green without a licence'
+                        . ' of its own" cannot be asserted'
+                    : \sprintf(
+                        'expected the %d licensed field move(s) this repository states and no more; %d were licensed',
+                        $declaredFieldMoves,
+                        $licensed,
                     );
             }
         }
@@ -143,6 +167,15 @@ final class Outcome
         // report can tell the two apart.
         if ($touched !== []) {
             $reasons[] = 'the run rewrote what it declared it would leave alone: ' . implode(', ', $touched);
+        }
+
+        // The other half of a write mode's subject. A derivation that measured
+        // nothing and wrote nothing produces a green report and an untouched
+        // tree, which is indistinguishable from a correct refusal unless
+        // something asks what the write was supposed to put there.
+        if ($unrestored !== []) {
+            $reasons[] = 'the run did not write back the declaration it was supposed to derive: '
+                . implode(', ', $unrestored);
         }
 
         $idle = self::idleTolerations($control, $failures);
@@ -282,21 +315,21 @@ final class Outcome
     }
 
     /**
-     * How many surfaces the run compared against a declaration rather than for
-     * equality, or `null` when the report does not say.
+     * One declaration count the run states, or `null` when the report does not
+     * state it.
      *
      * `null` is not "none": a renamed field would otherwise read as a run with
-     * no declared delta, which is exactly the claim this number exists to
+     * no declaration at all, which is exactly the claim these numbers exist to
      * support.
      */
-    private static function declaredDeltaCount(string $reportPath): ?int
+    private static function countIn(string $reportPath, string $field): ?int
     {
         if (!is_file($reportPath)) {
             return null;
         }
 
         $decoded = json_decode(Shell::read($reportPath), true);
-        $count = \is_array($decoded) ? $decoded['declaredDeltaCount'] ?? null : null;
+        $count = \is_array($decoded) ? $decoded[$field] ?? null : null;
 
         return \is_int($count) ? $count : null;
     }

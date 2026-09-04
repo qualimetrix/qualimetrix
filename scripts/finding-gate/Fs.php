@@ -29,6 +29,11 @@ final class Fs
      * one control run left this repository's index holding thirteen rows
      * derived from a mutated clone. The rename replaces the directory entry and
      * leaves the shared inode alone.
+     *
+     * A process killed between the write and the rename leaves the temporary
+     * behind. It is not cleaned up here — there is nothing left running to do it
+     * — but it is named so that it cannot be mistaken for a declaration and
+     * cannot collide with another writer's.
      */
     public static function write(string $path, string $contents): void
     {
@@ -38,7 +43,10 @@ final class Fs
             throw new GateError(\sprintf('Cannot create directory %s.', $directory));
         }
 
-        $temporary = $path . '.tmp.' . getmypid();
+        // Random rather than the pid: `getmypid()` is `int|false`, and on false
+        // every concurrent writer would collide on `<path>.tmp.`. The controls
+        // harness runs eight gates at once against clones of one tree.
+        $temporary = $path . '.tmp.' . bin2hex(random_bytes(6));
 
         if (@file_put_contents($temporary, $contents) === false) {
             throw new GateError(\sprintf('Cannot write %s.', $temporary));

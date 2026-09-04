@@ -11,20 +11,24 @@ use RuntimeException;
 /**
  * The controls, as a list.
  *
- * Seventeen negative controls — the four the Ш1 DoD names, the four Ш4a adds for
+ * Eighteen negative controls — the four the Ш1 DoD names, the four Ш4a adds for
  * the declared delta and the reference's vocabulary, the one Ш4b adds for
  * `delta-too-large`, the one P5.0 adds for a lost level of a multi-level channel,
  * the two Ш5b0 adds for the fingerprint mechanism, the two Ш5d0 adds for the
  * split mechanism, the one Ш5e3-0 adds for a moved aggregated spelling and the
- * two Х5-1 adds for the licensed field move and for a derivation that failed —
- * plus two green ones: the positive control, without which seventeen reds could
+ * two Х5-1 adds for the licensed field move and for a derivation that failed,
+ * and the one Х5-G adds for the other half of that — a derivation that *passed*,
+ * which must write the declaration back —
+ * plus two green ones: the positive control, without which eighteen reds could
  * all be reds for an environmental reason, and Ш5b0's declared rename, which
  * asserts that a change the maps declare is absorbed by the declaration and by
  * nothing else.
  *
- * The last of the seventeen is the first control whose subject is not in the
- * report at all: a derivation that failed prints "nothing was written", and what
- * had to be checked was whether that was true. See {@see Control::writing()}.
+ * The last two are the only controls whose subject is not in the report at all.
+ * A derivation that failed prints "nothing was written", and what had to be
+ * checked was whether that was true ({@see Control::writing()}); a derivation
+ * that succeeded prints what it wrote, and what had to be checked was whether it
+ * wrote it ({@see Control::rewriting()}).
  *
  * `delta-too-large` was the one class of the five that no control had ever seen
  * red. Ш4a named the gap in its own record; Ш4b rewrote the code that computes
@@ -73,6 +77,7 @@ final class Controls
             self::movedAggregatedSpelling(),
             self::fieldMoveStale(),
             self::deriveRefusesBrokenRun(),
+            self::deriveWritesOnAGreenRun(),
         ];
 
         return array_map(
@@ -257,6 +262,45 @@ final class Controls
             self::droppedFindingMutation(),
             '--derive-declared-delta',
             [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design')],
+            ['finding-gate/' . DeclaredDelta::INDEX, 'finding-gate/' . DeclaredDelta::DIRECTORY],
+        );
+    }
+
+    /**
+     * A derivation whose comparison passed must put the declaration back.
+     *
+     * The mirror of {@see deriveRefusesBrokenRun()}, and the half nothing held.
+     * That control proves a failed derivation writes nothing; a derivation
+     * emptied to `return []` after the comparison satisfies it exactly — the
+     * comparison still fails, the tree is still untouched — and satisfies the
+     * self-test too, which never enters the write path. A check green before and
+     * after the change it exists to catch is not a check.
+     *
+     * The perturbation is a comment line in the index, and it is the only shape
+     * that works. A correct derivation over an unmutated tree reproduces the
+     * tracked declaration byte for byte, so "the file changed" sees nothing;
+     * every perturbation the loader *reads* turns the comparison red and the
+     * derivation refuses. A comment is skipped by {@see \QmxFindingGate\Tsv} and
+     * cannot survive a rewrite, so the run's own output is the difference
+     * between the mutated file and the repository's.
+     *
+     * It is appended rather than typed over the rows, so the control does not
+     * have to be re-typed each time the declaration changes. When a round
+     * empties the declaration the assertion still holds — a derivation with
+     * nothing to declare writes the header alone, and the comment is gone from
+     * that too.
+     */
+    private static function deriveWritesOnAGreenRun(): Control
+    {
+        return Control::rewriting(
+            'derive-writes-green-run',
+            'a --derive-declared-delta run whose comparison passed, which must write the declaration back',
+            Mutation::append(
+                'finding-gate/' . DeclaredDelta::INDEX,
+                "# planted: a line the loader skips and a derivation cannot reproduce\n",
+                'a comment in the declaration index that only a real rewrite removes',
+            ),
+            '--derive-declared-delta',
             ['finding-gate/' . DeclaredDelta::INDEX, 'finding-gate/' . DeclaredDelta::DIRECTORY],
         );
     }

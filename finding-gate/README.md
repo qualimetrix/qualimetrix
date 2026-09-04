@@ -315,6 +315,20 @@ comparison it is part of:
   excluding a compared field would retire it from the comparison while the tuple
   still claims it is guarded.
 
+The derivation is judged before it writes, exactly as `--derive-declared-delta`
+is, and for the same reason: a list measured from runs that produced nothing
+describes the breakage, and the next ordinary run reproduces it and goes green
+against it. Every pass is judged, not only the one the rules are read from. It
+also refuses `--cases=` and `--incomplete-corpus`, because a rule the narrowed
+run never exercised leaves the tracked list as stale. Measured on 2026-09-04
+with a `bin/qmx` that exits immediately: before, the run rewrote
+`normalization.tsv` down to its header and reported success; after, it exits 5,
+says nothing was written, and the file is untouched.
+
+All three `--derive-*` modes exit 4 when they wrote and 5 when the measurement
+failed. None of them exits 0: a write is not a verdict, and a DoD reading an exit
+code cannot be left to think a rewrite of the declaration was a passing check.
+
 ## What a map declares
 
 `maps/*.tsv` is how a step states what it renamed, and the gate holds the
@@ -573,14 +587,31 @@ judged on the diff the run **measures**, not on the declared text:
     `(from, to)` pairs its explained records actually produced. A line moving
     `rule` between two *targets* of the same split — both values that explained
     records carry — is refused, because no record ever paired them.
-  - **Read under the spelling each surface uses.** Only the published
-    `"field": value` syntax is read, which covers the JSON family and the HTML
-    report's embedded payload. The payload spells three tuple fields
-    differently (`ruleName`, `violationCode`, `symbolPath`), and those aliases
-    are declared in the gate and pinned against the partitioner that writes
-    them, so the HTML surface is read in its own vocabulary rather than skipped
-    in silence. The plain-text surfaces print a bare name no field syntax marks,
-    and there the record-level split check is the guard.
+  - **Read under the spelling each surface uses, and in the syntax it uses.**
+    `PublishedVocabulary` states, per surface, which tuple fields it publishes
+    and under which key, and every alias is pinned against the formatter that
+    writes it. The JSON family marks a field as `"field": value` and checkstyle
+    as `field="value"`, whose values are XML-escaped; the same tuple field is
+    `message` on `json`, `text` on `sarif` and `description` on `gitlab`, and
+    the HTML payload spells three of them `ruleName`, `violationCode` and
+    `symbolPath`. `summary`, `text`, `text-verbose` and `github` mark no field
+    at all, and `metrics` and `health` publish no finding record, so for those
+    the record-level split check is the guard — and that list is enumerated in
+    the same place, so a format belonging to neither list fails the self-test
+    rather than being silently unread.
+
+    This is not a refinement. Reading the tuple's own spelling in the tuple's
+    own syntax meant reading the JSON report and, by accident, only it. The step
+    that removed the banned channel from the "did you mean" advice moved one
+    record's `message` on nine surfaces and declared a delta for each; exactly
+    one of the nine needed a licence, and the reason was not that the other
+    eight leave `message` alone. Eight declarations were accepted by a reader
+    that could not reach them.
+
+    A licence naming a surface no reader can read, or a field that surface does
+    not publish, is refused at load. It could only ever have fired nowhere, and
+    the failure it would otherwise produce — `field-move-stale` — names the
+    wrong defect for a typo.
   A line that publishes a *different number* of values for one field is refused
   outright: the record set on that line changed, which no rename explains.
 
@@ -680,9 +711,10 @@ while the channel fires.
 
 ## The controls
 
-`composer gate:controls` runs nineteen controls, each on its own hardlink clone:
-seventeen planted breakages, each required to produce a named failure class at a
-named surface, and two green ones. `moved-aggregated-spelling`
+`composer gate:controls` runs twenty controls, each on its own hardlink clone:
+eighteen planted breakages and two green ones. Sixteen of the eighteen are each
+required to produce a named failure class at a named surface; the two derive
+controls are judged by what the run left on disk instead. `moved-aggregated-spelling`
 is the control on the suffix expansion: the metrics
 surface publishes `<key>.pct95` where the product computed `<key>.p95`, the base
 keys stay exactly where they are, and the gate has to be red rather than absorbing
@@ -786,9 +818,9 @@ differs. Three properties of the declaration are worth knowing before adding one
   movement test, and both controls still PASS — a corpus run cannot see the
   difference, because the records in it move. Those two properties are held by
   self-test cases (`producerMoves()`) and by them alone.
-- `field-move-stale` and `derive-refuses-broken-run` are the two newest, and the
-  second is the first control in this harness whose subject is not in the report
-  at all. `field-move-stale` replaces `declared-field-moves.tsv` with one row
+- `field-move-stale`, `derive-refuses-broken-run` and `derive-writes-green-run`
+  are the three newest, and the last two are the only controls in this harness
+  whose subject is not in the report at all. `field-move-stale` replaces `declared-field-moves.tsv` with one row
   licensing a move on a surface where nothing moves; the step's own licence goes
   with the replacement, so the move that *does* happen returns to being
   `delta-overreach` on a surface the step declares and is absorbed as declaration
@@ -799,6 +831,15 @@ differs. Three properties of the declaration are worth knowing before adding one
   paths before and after, because the report is exactly what could not be
   trusted — measured on 2026-09-04, the gate printed "nothing was written" and
   had already replaced a planted declaration with thirteen derived rows.
+  `derive-writes-green-run` is that control's mirror, and it exists because
+  nothing held the other half: a derivation gutted to measure nothing and write
+  nothing satisfies "a failed derivation writes nothing" perfectly. It cannot be
+  asserted as "the file changed" — over an unmutated tree a correct derivation
+  reproduces the declaration byte for byte — so it plants a comment line in
+  `declared-delta.tsv`, which the loader skips and a rewrite cannot reproduce,
+  and requires the run to leave the index and the diff directory equal to the
+  repository's. A derivation that wrote nothing leaves the comment; one that
+  wrote an empty declaration drops the rows.
 - `lost-level-fixture` is the control on a lost level. Its mutation takes the
   `class` level away from the `health` case's user-defined computed metric, which
   is the only way this corpus can lose one level of a multi-level channel:
