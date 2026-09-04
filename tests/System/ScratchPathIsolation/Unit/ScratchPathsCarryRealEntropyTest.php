@@ -29,6 +29,13 @@ use SplFileInfo;
  * from the clock; admitting it would make this guard a rule with a footnote,
  * and the footnote is where the next collision would live. One idiom,
  * `bin2hex(random_bytes())`, and nothing to remember.
+ *
+ * The probe bench also hands its children a temp directory of their own, so a
+ * path built under `sys_get_temp_dir()` lands inside the clone there. That
+ * covers neither every path nor every run: a hardcoded `/tmp/...` walks past
+ * it, and it reaches only suites the bench itself starts. This rule covers the
+ * rest — two terminals, two agents, a test run beside a bench — so neither
+ * replaces the other.
  */
 final class ScratchPathsCarryRealEntropyTest extends TestCase
 {
