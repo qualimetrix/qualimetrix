@@ -111,8 +111,10 @@
         ],
         "directives:controls": [
             "Composer\\Config::disableProcessTimeout",
+            "@directives:controls:coverage",
             "php scripts/directive-audit-controls.php"
         ],
+        "directives:controls:coverage": "php scripts/directive-audit-coverage-control.php",
         "directives:narrow-control": [
             "Composer\\Config::disableProcessTimeout",
             "php scripts/directive-narrow-control.php --target=tests/Analysis/Policy/Inline/Fixtures/NarrowControl --config=tests/Analysis/Policy/Inline/Fixtures/NarrowControl/qmx.yaml --require-heterogeneity --min-measured=3",
@@ -178,7 +180,8 @@
         "check:docs": "What a website change invalidates: a strict mkdocs build",
         "check:artifacts": "What a manifest, config or corpus change invalidates: every generated artifact against a fresh measurement",
         "check:self": "What the product says about this repository: the gate self-test, the qmx ratchet and the directive audit",
-        "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it",
+        "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it, then run directives:controls:coverage",
+        "directives:controls:coverage": "Prove the negative-controls stand's own coverage arithmetic: removing a case's declaration makes exactly that case read as guarded by nothing, and a declaration naming a case absent from the run is a distinct stale-declaration refusal",
         "directives:narrow-control": "Prove --sweep=narrow and --sweep=full agree verdict for verdict: the seeded fixture whole (every verdict and every refusal), its Silenced/ half (where a wrong-producer defect reaches the comparison), then src/. Cheapest signal first, because composer stops at the first run that fails",
         "directives:audit": "Fail if any inline @qmx directive over src/ does nothing"
     },
