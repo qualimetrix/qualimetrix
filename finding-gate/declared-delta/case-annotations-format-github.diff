@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -3,1 +3,1 @@
--::error file=src/Directives.php,line=35,title=annotation.unresolved-directive::Suppression "annotation.unressed-directive" addresses no channel. Addressable names closest to it: annotation.unresolved-directive. Prose belongs after "--".
-+::error file=src/Directives.php,line=35,title=annotation.unresolved-directive::Suppression "annotation.unressed-directive" addresses no channel. Addressable names closest to it: annotation.unresolved-directive, annotation.unused-directive. Prose belongs after "--".
