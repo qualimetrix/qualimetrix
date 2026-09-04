@@ -14,7 +14,24 @@ namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
  */
 enum DirectiveEffect: string
 {
-    /** It changed the outcome: a finding was silenced, or a verdict moved. */
+    /**
+     * It changed what the rules produced: a finding was silenced, or a verdict
+     * moved.
+     *
+     * **Produced, not published — and the report is built from the second.**
+     * Between the two stand the per-rule exclusion ledger, channel selection,
+     * the ratchet and the git scope, each of which can drop a finding this
+     * directive silenced first. Measured on a fixture: under
+     * `rules.code-smell.boolean-argument.exclude_paths` covering the annotated
+     * file, removing the directive changes the report by not one byte, and the
+     * verdict in that same run is this one. It is the honest answer to "what
+     * did this annotation do", which is the question the audit is asked; it is
+     * not an answer to "will the report change if I delete it".
+     *
+     * A separate verdict for "effective, and publishes nothing" is a subject of
+     * its own size — the audit would have to be handed the published set beside
+     * the produced one — and is deliberately not part of this enum.
+     */
     case Effective = 'effective';
 
     /**
