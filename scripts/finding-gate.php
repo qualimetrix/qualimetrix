@@ -36,7 +36,9 @@ foreach (
         'Corpus',
         'RenameMaps',
         'ChannelSplit',
+        'PublishedVocabulary',
         'DeclaredDelta',
+        'DeclaredFieldMoves',
         'NormalizationRule',
         'Normalization',
         'NormalizationDeriver',
@@ -54,6 +56,20 @@ foreach (
 ) {
     require __DIR__ . '/finding-gate/' . $class . '.php';
 }
+
+/**
+ * A derive run is a write, not a verdict, and none of the three returns 0.
+ *
+ * Returning 0 made a write look like a passing check to anything reading an exit
+ * code, including a DoD, while what it had actually done was replace the
+ * declaration the next real run will be judged against. Two distinct non-zero
+ * codes so the two outcomes are told apart: {@see WROTE} for "wrote a
+ * declaration, now read it", {@see MEASUREMENT_FAILED} for "the run that was
+ * supposed to measure it failed, and nothing was written".
+ */
+const WROTE = 4;
+
+const MEASUREMENT_FAILED = 5;
 
 exit(main(CommandLine::arguments()));
 
@@ -102,29 +118,48 @@ function deriveTuple(Options $options): int
     $path = $options->candidateRoot . '/' . EquivalenceTuple::TRACKED_PATH;
     Fs::write($path, EquivalenceTuple::derive($options->candidateRoot)->render());
     echo 'Derived ' . $path . " from the publishing code.\n";
+    echo "This was a write, not a check: re-run without --derive-tuple to be judged against it.\n";
 
-    return 0;
-}
-
-function deriveNormalization(Options $options): int
-{
-    $path = $options->candidateRoot . '/finding-gate/normalization.tsv';
-    Fs::write($path, (new Gate($options, new GateReport()))->deriveNormalization());
-    echo 'Measured ' . $path . " from repeated runs of the candidate tree.\n";
-
-    return 0;
+    return WROTE;
 }
 
 /**
- * Rewrites the tracked declaration from a measurement — and never returns 0.
+ * Measures the normalization list — and, like the declared delta, only from a
+ * run that produced something.
  *
- * A derive run is a write, not a verdict. Returning 0 made it look like a
- * passing check to anything reading an exit code, including a DoD, while what it
- * had actually done was replace the declaration the next real run will be judged
- * against. Two distinct non-zero codes so the two outcomes are told apart: 4 for
- * "wrote a declaration, now read it", 5 for "the run that was supposed to
- * measure it failed, and nothing was written".
+ * The verdict has to be taken before the write and not after it: this mode
+ * compares nothing, so every failure class lived in a code path it never
+ * entered, and a candidate whose runs all failed rewrote the tracked list down
+ * to its header while printing "Measured ... from repeated runs".
  */
+function deriveNormalization(Options $options): int
+{
+    $path = $options->candidateRoot . '/finding-gate/normalization.tsv';
+    $report = new GateReport();
+    $gate = new Gate($options, $report);
+    register_shutdown_function($gate->cleanUp(...));
+    $measured = $gate->deriveNormalization();
+
+    if ($options->reportPath !== null) {
+        $report->writeJson($options->reportPath);
+    }
+
+    if ($measured === null) {
+        echo $report->render();
+        echo "The runs this list would be measured from failed, so nothing was written: a list measured from a"
+            . " broken run describes the breakage and lets the next run agree with it.\n";
+
+        return MEASUREMENT_FAILED;
+    }
+
+    Fs::write($path, $measured);
+    echo 'Measured ' . $path . " from repeated runs of the candidate tree.\n";
+    echo "This was a write, not a check: re-run without --derive-normalization to be judged against it.\n";
+
+    return WROTE;
+}
+
+/** Rewrites the declared delta and its diff files from a full comparison. */
 function deriveDeclaredDelta(Options $options): int
 {
     $report = new GateReport();
@@ -133,6 +168,13 @@ function deriveDeclaredDelta(Options $options): int
     $written = $gate->deriveDeclaredDelta();
     echo $report->render();
 
+    // A derive run's verdict is what decides whether anything was written, so
+    // it has to be as readable by machine as a comparison's is: the control that
+    // proves a failed derivation leaves the tree alone reads it from here.
+    if ($options->reportPath !== null) {
+        $report->writeJson($options->reportPath);
+    }
+
     // A declaration derived from a broken run describes the breakage: if it is
     // deterministic — and a product bug on the reference side is — the next real
     // run reproduces it and goes green against it.
@@ -140,20 +182,14 @@ function deriveDeclaredDelta(Options $options): int
         echo "The run this declaration would be derived from failed, so nothing was written: a declaration"
             . " measured from a broken run would describe the breakage and let the next run agree with it.\n";
 
-        return 5;
-    }
-
-    if ($written === []) {
-        echo "No surface differs from the reference, so no delta was declared.\n";
-
-        return 4;
+        return MEASUREMENT_FAILED;
     }
 
     echo 'Measured the declared delta into: ' . implode(', ', $written) . "\n";
     echo "Fill in the reason of every row marked \"?\" — the gate refuses to load one that is not explained.\n";
     echo "This was a write, not a check: re-run without --derive-declared-delta to be judged against it.\n";
 
-    return 4;
+    return WROTE;
 }
 
 function selfTest(Options $options): int

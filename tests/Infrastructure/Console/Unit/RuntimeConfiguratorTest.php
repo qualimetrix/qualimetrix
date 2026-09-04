@@ -30,6 +30,8 @@ use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
@@ -142,9 +144,11 @@ final class RuntimeConfiguratorTest extends TestCase
             $ruleInputValidator,
         );
 
+        $errorStream = new ErrorStream();
+
         return new RuntimeConfigurator(
-            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder()),
-            $this->progress,
+            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream),
+            new ProgressConfigurator($this->progress, $errorStream),
             $this->profile,
             $analysis,
             $this->cacheFactory,

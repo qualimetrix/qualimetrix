@@ -26,6 +26,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
@@ -390,7 +391,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             },
         );
 
-        return new FindingFilterOrchestrator($pipeline);
+        return new FindingFilterOrchestrator($pipeline, new ErrorStream());
     }
 
     private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput

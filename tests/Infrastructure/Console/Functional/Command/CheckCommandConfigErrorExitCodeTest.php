@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -131,7 +132,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         $container = (new ContainerFactory())->create();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
-        $application = new Application();
+        $application = new Application(new ErrorStream());
         $application->addCommand($command);
 
         $tester = new CommandTester($command);

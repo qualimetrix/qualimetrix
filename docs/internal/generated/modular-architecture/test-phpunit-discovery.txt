@@ -130,11 +130,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesArchitectureAllowSourceLayerNames
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesArchitectureLayerNamesVerbatim
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesCamelCaseKeys
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesChannelKeysUnderTheCamelCaseSpellingOfTheOption
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesCodeSmellRuleNames
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesComputedMetricNameKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesDottedKebabCaseRuleNames
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesLongFormTargetSnakeCaseKeysUnderArchitectureAllow
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesMultipleRuleNamesWithMixedFormats
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesTheChannelKeysOfAnExclusionMap
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsInvalidRuleConfig
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsMultipleUnknownSubKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsNonArrayCache
@@ -155,6 +157,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itShowsAllowedKeysInSubKeyError
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itShowsNoSuggestionForDistantKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itStillNormalizesCliKeysOutsideArchitecture
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itStillNormalizesTheTypedOptionKeysBesideAnExclusionMap
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itSuggestsCorrectRootKeyForTypo
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itSupportsYamlExtension
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsForInvalidYaml
@@ -5496,6 +5499,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReportsASymbolWhoseValueIsNotAListOfRecords
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReportsNothingUnreadableForAWellFormedFile
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReturnsTheMalformedRowsInsteadOfDroppingThem
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\BannedChannelIsNeverSuggestedTest::itDoesNotTellTheAuthorToWriteTheBannedChannelWhenTheyAskedForItsDescendants
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\BannedChannelIsNeverSuggestedTest::itKeepsTheBannedChannelOutOfAnAnswerItIsCloseEnoughToEnter
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\BannedChannelIsNeverSuggestedTest::itLeavesTheBannedChannelOutOfTheChannelListOfItsOwnRule
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\BannedChannelIsNeverSuggestedTest::itNamesTheBannedChannelInNoAnswerTheWholeUniverseCanProduce
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\BannedChannelIsNeverSuggestedTest::itStillOffersTheBannedChannelsNeighboursWhenTheTypoIsOnTheRuleName
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp"computed"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp"health.cohesion"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ClasslessProducerThresholdRefusalTest::aPairedThresholdOnAFamilyProducerRefusesWithoutAdvisingANoOp"health.complexity"
@@ -5834,6 +5842,33 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itPreservesInlineControlsAcrossARealParallelWorkerRoundTrip
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itProducesIdenticalDependenciesSequentiallyAndThroughARealAmpWorkerRoundTrip
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itResetsArchitectureAndCircularStateIndependentlyAcrossCompiledContainerRuns
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"channel:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"exact channel name"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"group"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"group:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"producer rule name"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"three of four channels, the late one omitted"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::disableSelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"union of all four channels"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"cli --disable-rule"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"cli --only-rule"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"config disabled_rules"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"config only_rules"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"preset disabledRules"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::everyCarrierOfASelectorReachesTheSameMergedSelection"preset onlyRules"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::itPublishesTheLateChannelWhenNothingSelectsAgainstIt
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"channel:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"exact channel name"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"group"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"group:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"producer rule name"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"sibling channel only"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"three of four channels, the late one omitted"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::onlySelectionReachesTheLateChannelExactlyWhereTheGridSaysItDoes"union of all four channels"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::refusedFormsStayRefused"--disable-rule producer:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::refusedFormsStayRefused"--disable-rule retired pair"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::refusedFormsStayRefused"--only-rule producer:level"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::refusedFormsStayRefused"--only-rule retired pair"
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::theProducersPathExclusionStillReachesTheEarlySiblingAndNotTheLateChannel
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itAnalyzesEveryNamespaceBlockWithoutLosingMetrics#0
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itAnalyzesEveryNamespaceBlockWithoutLosingMetrics#1
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itAnalyzesEveryNamespaceBlockWithoutLosingMetrics#2
@@ -6101,6 +6136,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::createReturnsFileCacheConfiguredFromProvider
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::createUsesCacheDirFromCurrentConfigurationAtFirstCall
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::resetClearsMemoizedInstanceAndRebuildsOnNextCreate
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAHyphenatedGroupKey
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAKeyForAChannelThatNeverReportsAtNamespaceLevel
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesAComputedMetricNamedInKebab
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesTheNamespaceAggregateOfAHyphenatedChannel
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesUnderTheHyphenatedChannelLevelPair
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itPublishesTheNamespaceAggregateWithoutTheKey
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itRefusesTheRetiredPairSpellingUnderTheWrittenKey
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itDoesNotPromoteWhenTheEntryCannotBeApplied
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itKeepsAGroupWithAnIgnoredMemberAcceptedAcrossGenerateAndCheck
@@ -6192,6 +6234,23 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsAnUnreadableConfigAsAConfigurationError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itSaysTheSameThingInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itDrawsTheFrameBelowEveryLineWrittenBeforeIt
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itDropsDiagnosticsWhenTheOutputHasNoErrorChannel
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsALoggerLineAboveTheFrame
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsAProfileSummaryAboveTheFrame
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsAnUncaughtThrowableAboveNoFrameAtAll
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itRendersAnUncaughtThrowableIntoAnOutputThatHasNoErrorChannel
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-v"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-vv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-vvv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"default"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-v"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-vv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-vvv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-v"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vvv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"default"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphToDotFormat
@@ -6241,6 +6300,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"hook:status"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"hook:uninstall"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\CommandRegistrationTest::itLoadsEveryDeclaredCommandFromTheContainerUnderTheNameTheBinaryUses"rules"
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamContainerIdentityTest::itGivesEveryConsumerTheOneOwnerTheContainerHolds
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamContainerIdentityTest::itLeavesNoConsumerAbleToInventItsOwnOwner
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamSoleOwnerTest::itFindsNoSecondWriterIntoTheErrorStream
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ErrorStreamSoleOwnerTest::itKeepsEveryAllowedExceptionReal
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer

@@ -29,6 +29,8 @@ final class Gate
 
     private readonly DeclaredDelta $declaredDelta;
 
+    private readonly DeclaredFieldMoves $declaredFieldMoves;
+
     private readonly ChannelSplit $split;
 
     private readonly string $temporaryDirectory;
@@ -65,6 +67,7 @@ final class Gate
         $this->vocabulary = MetricVocabulary::ofTree($this->options->candidateRoot);
         $this->maps = RenameMaps::load($root . '/maps', $this->vocabulary);
         $this->declaredDelta = DeclaredDelta::load($root);
+        $this->declaredFieldMoves = DeclaredFieldMoves::load($root);
         $this->split = ChannelSplit::of($this->maps);
         $this->corpus = Corpus::load($this->options->candidateRoot, $this->options->cases);
         $this->witness = new ChannelWitness($this->options->candidateRoot);
@@ -101,6 +104,20 @@ final class Gate
                 '%d surface(s) are compared against a declared delta rather than for equality: %s.',
                 $this->declaredDelta->count(),
                 implode(', ', $this->declaredDelta->surfaces()),
+            ));
+        }
+
+        // Loud for the same reason: a declared field move is the only thing that
+        // lets a compared field differ inside a declared diff, so how many there
+        // are belongs in what a reader of a GREEN run sees.
+        $this->report->fact('declared field moves', $this->declaredFieldMoves->count());
+        $this->report->countFieldMoves($this->declaredFieldMoves->count());
+
+        if (!$this->declaredFieldMoves->isEmpty()) {
+            $this->report->warn(\sprintf(
+                '%d move(s) of a compared field are licensed by %s rather than refused.',
+                $this->declaredFieldMoves->count(),
+                DeclaredFieldMoves::INDEX,
             ));
         }
 
@@ -149,6 +166,7 @@ final class Gate
             $this->checkStaleNormalization();
             $this->checkStaleMaps();
             $this->checkStaleDeclaredDelta();
+            $this->checkStaleFieldMoves();
         } finally {
             $reference->remove();
             $this->cleanUp();
@@ -165,13 +183,26 @@ final class Gate
      * list either. Both properties the plan demands survive: a row still enters
      * only by measurement, and a row that fires nowhere is stale and leaves.
      */
-    public function deriveNormalization(): string
+    public function deriveNormalization(): ?string
     {
         try {
             $passes = [];
 
             for ($pass = 1; $pass <= NormalizationDeriver::passes(); ++$pass) {
-                $passes[] = $this->runTree($this->options->candidateRoot, 'derive-' . $pass, reverseInput: false);
+                $artifacts = $this->runTree($this->options->candidateRoot, 'derive-' . $pass, reverseInput: false);
+                $this->checkRunsProduced('derive-' . $pass, $artifacts);
+                $passes[] = $artifacts;
+            }
+
+            // The same rule the declared-delta derivation obeys, for the same
+            // reason and one door along: a run that produced nothing measures
+            // nothing, and a list "measured" from it is a claim the next
+            // ordinary run will be judged against. Every pass is judged, not
+            // just the one the rules are read from, because a list derived from
+            // one good pass and one empty one is a difference between a run and
+            // a failure rather than between two runs.
+            if ($this->report->exitCode() !== GateReport::EXIT_GREEN) {
+                return null;
             }
 
             foreach ($passes[0] as $key => $content) {
@@ -191,15 +222,25 @@ final class Gate
      * Measures every surface that differs and writes it out as the declared
      * delta, so no declaration is a diff somebody typed.
      *
+     * A run that failed writes nothing, and this is where that has to be
+     * decided. The entry point already refuses to call such a run a write and
+     * prints "nothing was written" — but it printed it *after* this method had
+     * replaced the index and every diff file on disk, so the sentence was false
+     * and the tree was left holding a declaration measured from a breakage for
+     * the next ordinary run to be judged against.
+     *
      * @return list<string> the files written
      */
     public function deriveDeclaredDelta(): array
     {
         $this->derived = [];
         $this->compare();
-        $derived = $this->derived ?? [];
 
-        return $this->declaredDelta->rewrite($derived);
+        if ($this->report->exitCode() !== GateReport::EXIT_GREEN) {
+            return [];
+        }
+
+        return $this->declaredDelta->rewrite($this->derived ?? []);
     }
 
     /**
@@ -379,6 +420,61 @@ final class Gate
         }
     }
 
+    /**
+     * Whether every case of one tree's run produced the artifacts a comparison
+     * reads, reporting what did not.
+     *
+     * Split out because a *derivation* needs exactly this much judgement and no
+     * more. A derive run rewrites the tracked declaration the next ordinary run
+     * is judged against, so a run that failed must write nothing — but the
+     * normalization derivation compares nothing, and every verdict lived in
+     * compare(). It therefore wrote a measured list from runs that had produced
+     * no output at all, under the sentence "Measured ... from repeated runs".
+     *
+     * @param array<string, string> $artifacts
+     */
+    private function checkRunsProduced(string $side, array $artifacts): void
+    {
+        foreach ($this->corpus->cases as $case) {
+            $this->findingsOf($side, $case, $artifacts);
+        }
+    }
+
+    /**
+     * One case's findings, or null with the failure already reported.
+     *
+     * @param array<string, string> $artifacts
+     *
+     * @return list<array<string, mixed>>|null
+     */
+    private function findingsOf(string $side, CaseDefinition $case, array $artifacts): ?array
+    {
+        $key = Surfaces::key('case:' . $case->id, 'format:json');
+        $report = json_decode($artifacts[$key] ?? '', true);
+
+        if (!\is_array($report) || !\is_array($report['violations'] ?? null)) {
+            $this->report->fail(FailureClass::RUN_FAILED, $side . ' / ' . $case->id, 'The JSON surface carries no findings section.');
+
+            return null;
+        }
+
+        if (($report['violationsMeta']['truncated'] ?? false) === true) {
+            $this->report->fail(
+                FailureClass::RUN_FAILED,
+                $side . ' / ' . $case->id,
+                'The JSON surface truncated its findings, so the comparison would silently cover a prefix.'
+                . ' Add --format-opt=violations=all to the case arguments.',
+            );
+        }
+
+        $this->checkBaselineSurface($side, $case, $artifacts);
+
+        /** @var list<array<string, mixed>> $findings */
+        $findings = array_values($report['violations']);
+
+        return $findings;
+    }
+
     /** @param array<string, string> $artifacts */
     private function checkFindings(string $side, array $artifacts, bool $trackObserved): void
     {
@@ -386,27 +482,12 @@ final class Gate
 
         foreach ($this->corpus->cases as $case) {
             $key = Surfaces::key('case:' . $case->id, 'format:json');
-            $report = json_decode($artifacts[$key] ?? '', true);
+            $findings = $this->findingsOf($side, $case, $artifacts);
 
-            if (!\is_array($report) || !\is_array($report['violations'] ?? null)) {
-                $this->report->fail(FailureClass::RUN_FAILED, $side . ' / ' . $case->id, 'The JSON surface carries no findings section.');
-
+            if ($findings === null) {
                 continue;
             }
 
-            if (($report['violationsMeta']['truncated'] ?? false) === true) {
-                $this->report->fail(
-                    FailureClass::RUN_FAILED,
-                    $side . ' / ' . $case->id,
-                    'The JSON surface truncated its findings, so the comparison would silently cover a prefix.'
-                    . ' Add --format-opt=violations=all to the case arguments.',
-                );
-            }
-
-            $this->checkBaselineSurface($side, $case, $artifacts);
-
-            /** @var list<array<string, mixed>> $findings */
-            $findings = array_values($report['violations']);
             $this->checkTupleAgainstFindings($side, $case, $tuple, $findings);
             $this->checkNormalizationLeavesFindings($side, $case, $artifacts[$key], $findings);
             $this->checkFingerprints($side, $case, $findings, $artifacts);
@@ -748,12 +829,14 @@ final class Gate
             );
         }
 
-        foreach ($this->overreachingLines($diff) as $problem) {
+        foreach ($this->overreachingLines($key, $diff) as $problem) {
             $this->report->fail(
                 FailureClass::DELTA_OVERREACH,
                 $key,
                 $problem . ' A declared delta may change a compared field only inside a record whose (rule, code)'
-                . ' pair a declared split already explains — the waiver normalization was refused is refused here too.',
+                . ' pair a declared split already explains, or where a ' . DeclaredFieldMoves::INDEX . ' row names'
+                . ' this exact pair of values on this exact surface — the waiver normalization was refused is'
+                . ' refused here too.',
             );
         }
 
@@ -781,22 +864,34 @@ final class Gate
      *
      * Changed, not mentioned: a compact JSON record names `channel` on the same
      * line as the magnitude it records, so "the line contains a compared field"
-     * would flag every such line. Only the published `"field": value` syntax is
-     * read, which covers the JSON family and the HTML report's embedded payload;
-     * the plain-text surfaces print a bare name that no field syntax marks, and
-     * for those the record-level split check is the guard.
+     * would flag every such line. Which surfaces a field can be found on, under
+     * which key and in which syntax, is {@see PublishedVocabulary} — and it is
+     * asked per surface rather than once, because the same field is `message` on
+     * one surface, `text` on the next and `description` on the third. For the
+     * surfaces that mark no field at all the record-level split check is the
+     * guard, and that list is enumerated there rather than assumed here.
+     *
+     * Two sources of permission, and they answer different questions. A
+     * declared split says "this record was renamed, so its fields moved with
+     * it"; a {@see DeclaredFieldMoves} row says "this exact value became that
+     * exact value on this exact surface, and here is why". The second exists
+     * because the first can only ever speak about `channel`, `rule` and `code`
+     * — the fields a channel rename rewrites — so every other compared field
+     * was unlicensable by construction rather than by judgement.
      *
      * @return list<string>
      */
-    private function overreachingLines(ExactDiff $diff): array
+    private function overreachingLines(string $key, ExactDiff $diff): array
     {
         $fields = EquivalenceTuple::load($this->options->candidateRoot)->fields;
         $problems = [];
 
+        $surface = Surfaces::surfaceClass($key);
+
         foreach ($diff->pairs() as $index => [$candidateLine, $referenceLine]) {
             foreach ($fields as $field) {
-                $onCandidate = self::publishedValues($candidateLine, $field);
-                $onReference = self::publishedValues($referenceLine, $field);
+                $onCandidate = PublishedVocabulary::valuesOn($surface, $candidateLine, $field);
+                $onReference = PublishedVocabulary::valuesOn($surface, $referenceLine, $field);
 
                 if ($onCandidate === $onReference) {
                     continue;
@@ -836,9 +931,13 @@ final class Gate
                         continue;
                     }
 
+                    if ($this->declaredFieldMoves->allows($key, $field, $referenceValue, $candidateValue)) {
+                        continue;
+                    }
+
                     $problems[] = \sprintf(
-                        'Hunk line %d changes the compared field "%s" ("%s" -> "%s"), a move no declared split'
-                        . ' explains.',
+                        'Hunk line %d changes the compared field "%s" ("%s" -> "%s"), a move neither a declared'
+                        . ' split nor a licensed field move explains.',
                         $index + 1,
                         $field,
                         $referenceValue,
@@ -849,63 +948,6 @@ final class Gate
         }
 
         return array_values(array_unique($problems));
-    }
-
-    /**
-     * Every value the line publishes for one field.
-     *
-     * @return list<string>
-     */
-    private static function publishedValues(?string $line, string $field): array
-    {
-        if ($line === null) {
-            return [];
-        }
-
-        $values = [];
-
-        foreach (self::spellingsOf($field) as $spelling) {
-            $pattern = \sprintf('~"%s"\s*:\s*(?:"((?:[^"\\\\]|\\\\.)*)"|([^,}\]\s]+))~', preg_quote($spelling, '~'));
-
-            if (preg_match_all($pattern, $line, $matches) === false) {
-                throw new GateError(\sprintf('Cannot read published values of "%s".', $spelling));
-            }
-
-            foreach ($matches[2] as $index => $bare) {
-                $values[] = $bare === '' ? $matches[1][$index] : $bare;
-            }
-        }
-
-        return $values;
-    }
-
-    /**
-     * Every key a surface publishes one tuple field under.
-     *
-     * The tuple is named after the JSON report, and the HTML report's embedded
-     * payload publishes three of its fields under other keys. Reading only the
-     * tuple's own spelling therefore meant `delta-overreach` read *nothing* on
-     * `case:*|format:html` — the surface where every changed line is a compared
-     * datum moving — while both this class's docblock and finding-gate/README.md
-     * claimed the check covered that payload. It covered its syntax, not its
-     * vocabulary.
-     *
-     * Measured against `HtmlFindingPartitioner::partition()`, which is the one
-     * place the payload's keys are written, and pinned there by
-     * {@see SelfTest::htmlPayloadVocabulary()} so a rename on that side is loud
-     * rather than a silently unread field.
-     *
-     * @return list<string>
-     */
-    private static function spellingsOf(string $field): array
-    {
-        $aliases = [
-            'rule' => 'ruleName',
-            'code' => 'violationCode',
-            'symbol' => 'symbolPath',
-        ];
-
-        return isset($aliases[$field]) ? [$field, $aliases[$field]] : [$field];
     }
 
     /**
@@ -926,6 +968,37 @@ final class Gate
                 $surface,
                 'A delta is declared for this surface, and the two trees agree on it. A declaration of a change that'
                 . ' did not happen fails until it is corrected or removed.',
+            );
+        }
+    }
+
+    /**
+     * A licensed move no diff line performed.
+     *
+     * The same lie as a stale map row, and it has to fail the same way: a row
+     * here is the one declaration that lets a compared field differ, so one
+     * that describes nothing is a permission sitting in the tree waiting for
+     * some later step's diff to walk into it.
+     *
+     * Skipped while deriving for the reason the declared delta's staleness is:
+     * a derive run absorbs every differing surface instead of judging it, so no
+     * row can be credited and all of them would read as stale.
+     */
+    private function checkStaleFieldMoves(): void
+    {
+        if ($this->derived !== null) {
+            return;
+        }
+
+        foreach ($this->declaredFieldMoves->staleMoves() as $stale) {
+            $this->report->fail(
+                FailureClass::FIELD_MOVE_STALE,
+                $stale['surface'],
+                \sprintf(
+                    'The move of %s is licensed on this surface and no diff line performed it. A licence for a'
+                    . ' change that did not happen fails until it is corrected or removed.',
+                    $stale['move'],
+                ),
             );
         }
     }

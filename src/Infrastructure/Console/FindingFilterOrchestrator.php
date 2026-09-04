@@ -33,7 +33,7 @@ final readonly class FindingFilterOrchestrator
 {
     public function __construct(
         private FindingProjector $findingProjector,
-        private DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
+        private ErrorStream $errorStream,
     ) {}
 
     public function projectionOptions(
@@ -77,7 +77,7 @@ final readonly class FindingFilterOrchestrator
         GitScopeResolution $scopeResolution,
         FindingProjectionOptions $options,
     ): FindingProjectionResult {
-        $output = $this->diagnosticOutput->stream($output);
+        $output = $this->errorStream->writer($output);
         $filterResult = $this->findingProjector->project(
             $result->findings,
             $result->suppressions,

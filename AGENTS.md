@@ -652,7 +652,9 @@ the surface list.
   that proved itself before the rewrite says nothing about the rewritten one.
 - `--derive-normalization` and `--derive-tuple` regenerate their tracked files.
   Do not hand-edit either: a row that no measurement produced is a claim about
-  nondeterminism that nothing checks.
+  nondeterminism that nothing checks. Every `--derive-*` mode is a write, not a
+  check: it exits 4 when it wrote and 5 when the measurement it would have
+  written from failed, and never 0.
 
 ### Self-Analysis: Interpreting Results
 

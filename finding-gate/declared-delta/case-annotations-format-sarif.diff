@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -127,1 +127,1 @@
+-                        "text": "Suppression \"annotation.unressed-directive\" addresses no channel. Addressable names closest to it: annotation.unresolved-directive. Prose belongs after \"--\"."
++                        "text": "Suppression \"annotation.unressed-directive\" addresses no channel. Addressable names closest to it: annotation.unresolved-directive, annotation.unused-directive. Prose belongs after \"--\"."

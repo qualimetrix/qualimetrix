@@ -131,6 +131,11 @@ final class YamlConfigLoader implements ConfigLoaderInterface
      * List items (integer keys) carry no user-facing snake_case; their keys
      * pass through unchanged regardless of policy.
      *
+     * Where a sub-array goes next is the policy's own answer
+     * ({@see SectionNormalizationPolicy::childPolicyFor()} and
+     * {@see SectionNormalizationPolicy::childDepthFor()}): an option declared
+     * identifier-keyed opens a fresh identifier boundary for its own children.
+     *
      * @param array<string|int, mixed> $config
      *
      * @return array<string|int, mixed>
@@ -140,23 +145,17 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         $preserveKeysHere = $policy === SectionNormalizationPolicy::PRESERVE_SUBTREE
             || ($policy === SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN && $depth === 0);
 
-        // Below the immediate-children boundary, deeper levels resume
-        // NORMALIZE; PRESERVE_SUBTREE stays sticky forever.
-        $childPolicy = $policy === SectionNormalizationPolicy::PRESERVE_SUBTREE
-            ? SectionNormalizationPolicy::PRESERVE_SUBTREE
-            : SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE;
-
         $result = [];
 
         foreach ($config as $key => $value) {
-            if (\is_int($key)) {
-                $newKey = $key;
-            } else {
-                $newKey = $preserveKeysHere ? $key : $this->snakeToCamel($key);
-            }
-
+            $normalizedKey = \is_int($key) ? $key : $this->snakeToCamel($key);
+            $newKey = \is_int($key) || $preserveKeysHere ? $key : $normalizedKey;
             $result[$newKey] = \is_array($value)
-                ? $this->applyPolicy($value, $childPolicy, $depth + 1)
+                ? $this->applyPolicy($value, ...$policy->descentFor(
+                    $normalizedKey,
+                    ConfigSchema::identifierKeyedOptions(),
+                    $depth,
+                ))
                 : $value;
         }
 

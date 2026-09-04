@@ -23,7 +23,7 @@ Console/
 ├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, cache, and feature state
 ├── CheckScopeResolver.php           # Git scope first, then warnings for that exact scope
 ├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
-├── DiagnosticOutput.php              # Human diagnostics routed to stderr
+├── ErrorStream.php                   # The run's single error-stream owner: the progress section and every diagnostic writer
 ├── RuleInputValidator.php            # Fail-closed selector/option-owner validation
 ├── ChannelExclusionKeyValidator.php  # Whether one exclude_namespace_channels key can exclude anything
 ├── ChannelExclusionKeyHints.php      # What to say when it cannot
@@ -34,6 +34,7 @@ Console/
 ├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment diagnostics
 ├── Progress/
 │   ├── ConsoleProgressBar.php
+│   ├── ProgressConfigurator.php      # Whether this run shows a frame, and on what
 │   └── SwitchableProgressReporter.php
 └── Command/
     ├── CheckCommand.php             # Main analysis command
@@ -56,7 +57,7 @@ Console/
 direct collaborators are `RuleRegistryInterface`, `AnalysisPipelineInterface`,
 `CacheFactory`, `FindingFilterOrchestrator`,
 `ConfigurationPipelineInterface`, `RuntimeConfigurator`, `ResultPresenter`,
-`RuleInputValidator`, `DiagnosticOutput`, and `CheckScopeResolver`. The command
+`RuleInputValidator`, and `CheckScopeResolver`. The command
 has no logger, `GitScopeResolver`, or `ScopeWarningChecker` property.
 
 `CheckScopeResolver` owns the narrow scope seam. It resolves
@@ -247,15 +248,19 @@ Implementation using Symfony ProgressBar.
 
 **The bar is drawn on standard error.** The report is the payload of standard
 output, and a bar written there prefixes `--format=json` with terminal control
-bytes on a TTY. `RuntimeConfigurator` builds a `ConsoleSectionOutput` over the
-error stream by hand — `getErrorOutput()` returns a plain `StreamOutput`, which
-has no `section()` — and hands it to the bar. The bar no longer asks its output
-whether it can make a section; whether progress is possible at all is the
-configurator's decision.
+bytes on a TTY. The section is built by `ErrorStream` — `getErrorOutput()`
+returns a plain `StreamOutput`, which has no `section()` — and handed to the
+bar. The bar no longer asks its output whether it can make a section; whether
+progress is possible at all is `ProgressConfigurator`'s decision, taken on the
+same four gates as before — an error stream of its own, decoration,
+`--no-progress`, quiet mode.
 
-Diagnostics (`DiagnosticOutput`, the logger factory) write to the error stream
-directly, not through that section, so a warning emitted mid-run can tear the
-bar's frame. That is an accepted cost, not an oversight.
+**Diagnostics share the frame's owner.** `ErrorStream` holds the section list
+and creates the diagnostic section before the progress section, which puts the
+frame at the bottom of the screen: a log line, a preflight warning, a report
+note or an uncaught throwable erases the frame, is written permanently, and the
+frame is redrawn beneath it. Progress and detailed logging are therefore both
+shown at `-v`, `-vv` and `-vvv`; neither erases the other.
 
 **Features:**
 - Shown only for projects > 10 files

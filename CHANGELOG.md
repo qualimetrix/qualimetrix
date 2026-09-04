@@ -39,6 +39,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A mistyped directive target is no longer answered with `annotation.unused-directive`.
+  The near-spelling search offered it to anyone who mistyped a neighbouring
+  `annotation.*` name — it sits one edit from its own family — and following the
+  advice produced a directive the next run refuses. Every branch of the answer now
+  drops it: the near-spelling search, the channel list a rule name is answered
+  with, and the answer to a group form. The full channel list of a rule, banned
+  ones included, is what `qmx rules` is for.
+- `--disable-rule` and `--only-rule` act on `annotation.unused-directive`. Naming
+  it in `--disable-rule` was inert and said nothing, and an `--only-rule` naming
+  a sibling channel of `annotation.directive` published it anyway. The channel is
+  assembled after rule execution, which until now also meant assembled past the
+  selection every other finding passes. The per-rule `exclude_paths` /
+  `exclude_namespaces` under that rule are still inapplicable to it, as before.
+- The progress bar and detailed logging no longer destroy each other on a
+  terminal. Both write to standard error, and the bar erased upwards by the
+  height of its own section, so at `-vv` and `-vvv` a log line that arrived
+  between two frames was wiped out and the bar itself froze at `0%` for the rest
+  of the run. Every writer to that stream — the logger, warnings emitted during
+  a run, the report notes, `graph:export`'s incomplete-analysis report and an
+  uncaught error's trace — now goes through one owner, which erases the frame,
+  writes the line permanently and redraws the frame beneath it.
+- An `exclude_namespace_channels` key can name a channel whose name contains a
+  hyphen. The keys of that map were case-normalized along with the typed option
+  keys around them, so `code-smell.boolean-argument` reached the run as
+  `codeSmell.booleanArgument` and ended it with exit code 3 — printing the
+  correct name in the same sentence that refused the written one. Every form of
+  the key was affected: the exact name, the `X.*` group, the `channel:namespace`
+  pair, and every computed metric, whose names the name validator *requires* to
+  be kebab. Keys without a hyphen are unaffected, and nothing else about the
+  option changes: a key still has to name a channel its rule produces, and one
+  naming a channel that never reports a namespace aggregate is still accepted
+  and still excludes nothing.
 - `bin/qmx directives` no longer demands the removal of a live directive whose
   rule the configuration switched off per level. A directive bound to a
   declaration — `@qmx-threshold`, and `@qmx-ignore` in a docblock — now reports
@@ -51,6 +83,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `LoggerFactoryInterface::create()` takes the run's already-resolved diagnostic
+  writer, not the console output. The parameter type is unchanged
+  (`Symfony\Component\Console\Output\OutputInterface`) and the rename
+  `$output` → `$diagnostics` does not stop old code compiling, but the factory
+  no longer calls `getErrorOutput()` on what it is given: a caller that passed a
+  full `ConsoleOutputInterface` expecting the factory to pick standard error now
+  gets its log on standard output. Pass the writer the error stream's owner
+  hands out instead —
+  `$errorStream->writer($output)`, from
+  `Qualimetrix\Infrastructure\Console\ErrorStream` — which is what
+  `RuntimeLoggerConfigurator` does. The stream has one owner now, and choosing
+  one here was the second opinion that put log lines inside the progress frame.
+- The console classes that write diagnostics take that owner as a **required**
+  constructor argument: `Application`, `ResultPresenter`, `ProfilePresenter`,
+  `RuntimeLoggerConfigurator`, `FindingFilterOrchestrator` and
+  `GraphExportCommand` no longer default it to an `ErrorStream` of their own.
+  A composition that omitted it used to get a private owner, drawing its frame
+  around a section list nobody else shares — the two-owner defect, reintroduced
+  by omission. Two of them also take it earlier in the signature, before their
+  optional collaborators: `ProfilePresenter($report, $errorStream, $renderer)`
+  and `GraphExportCommand($analyzer, $projection, $errorStream, $logger)`.
+  Code composing these by hand should pass the one instance the container holds
+  (`$container->get(ErrorStream::class)`), as `bin/qmx` does.
 - No inline directive can silence `annotation.unused-directive` any more — the
   channel that reports which directives did nothing. Three separate things
   change for a project that used it.

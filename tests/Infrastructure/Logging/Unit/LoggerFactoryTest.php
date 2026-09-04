@@ -11,7 +11,6 @@ use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -52,7 +51,7 @@ final class LoggerFactoryTest extends TestCase
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
 
-        $logger = (new LoggerFactory())->create(self::diagnosticConsole($output));
+        $logger = (new LoggerFactory())->create($output);
 
         self::assertNotInstanceOf(NullLogger::class, $logger);
 
@@ -68,7 +67,7 @@ final class LoggerFactoryTest extends TestCase
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_QUIET);
 
-        $logger = (new LoggerFactory())->create(self::diagnosticConsole($output));
+        $logger = (new LoggerFactory())->create($output);
 
         self::assertInstanceOf(NullLogger::class, $logger);
     }
@@ -78,7 +77,7 @@ final class LoggerFactoryTest extends TestCase
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
 
-        $logger = (new LoggerFactory())->create(self::diagnosticConsole($output));
+        $logger = (new LoggerFactory())->create($output);
 
         $logger->info('Test message');
         self::assertStringContainsString('Test message', $output->fetch());
@@ -90,7 +89,7 @@ final class LoggerFactoryTest extends TestCase
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
         $logFile = $this->tempDir . '/test.log';
 
-        $logger = (new LoggerFactory())->create(self::diagnosticConsole($output), $logFile);
+        $logger = (new LoggerFactory())->create($output, $logFile);
         $logger->info('Test');
 
         self::assertFileExists($logFile);
@@ -105,7 +104,7 @@ final class LoggerFactoryTest extends TestCase
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
         $logFile = $this->tempDir . '/test.log';
 
-        $logger = (new LoggerFactory())->create(self::diagnosticConsole($output), $logFile);
+        $logger = (new LoggerFactory())->create($output, $logFile);
         $logger->info('Test message');
 
         self::assertStringContainsString('Test message', $output->fetch());
@@ -121,7 +120,7 @@ final class LoggerFactoryTest extends TestCase
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
 
         $logger = (new LoggerFactory())->create(
-            self::diagnosticConsole($output),
+            $output,
             null,
             LogLevel::WARNING,
         );
@@ -140,7 +139,7 @@ final class LoggerFactoryTest extends TestCase
         $logFile = $this->tempDir . '/test.log';
 
         $logger = (new LoggerFactory())->create(
-            self::diagnosticConsole($output),
+            $output,
             $logFile,
             LogLevel::INFO,
         );
@@ -159,17 +158,10 @@ final class LoggerFactoryTest extends TestCase
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
 
-        $logger = (new LoggerFactory())->create(self::diagnosticConsole($output), '');
+        $logger = (new LoggerFactory())->create($output, '');
 
         $logger->info('Test');
         self::assertStringContainsString('Test', $output->fetch());
     }
 
-    private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput
-    {
-        $output = new ConsoleOutput($diagnostics->getVerbosity(), false);
-        $output->setErrorOutput($diagnostics);
-
-        return $output;
-    }
 }

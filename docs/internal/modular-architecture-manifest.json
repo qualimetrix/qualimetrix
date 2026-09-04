@@ -5568,6 +5568,14 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\ConfiguredLevelActivity": {
+      "path": "src/Analysis/Finding/ConfiguredLevelActivity.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\AcceptedLevel": {
       "path": "src/Analysis/Finding/Contract/AcceptedLevel.php",
       "kind": "class",
@@ -16632,25 +16640,6 @@
         }
       ]
     },
-    "Qualimetrix\\Infrastructure\\Console\\DiagnosticOutput": {
-      "path": "src/Infrastructure/Console/DiagnosticOutput.php",
-      "kind": "class",
-      "owner": "Infrastructure.Console",
-      "visibility": "internal",
-      "closure_package": "P8",
-      "consumers": [
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "relation": "composition_binding",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
-          "closes_in": null,
-          "operations": [
-            "service_reference",
-            "service_registration"
-          ]
-        }
-      ]
-    },
     "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter": {
       "path": "src/Infrastructure/Console/DirectiveAuditPresenter.php",
       "kind": "class",
@@ -19004,6 +18993,44 @@
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter",
           "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\ErrorStream": {
+      "path": "src/Infrastructure/Console/ErrorStream.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Progress\\ProgressConfigurator": {
+      "path": "src/Infrastructure/Console/Progress/ProgressConfigurator.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "closes_in": null,
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
         }
       ]
     }

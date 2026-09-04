@@ -14,6 +14,10 @@ namespace QmxDirectiveAuditControls;
  * The coverage line at the end is the condition no single probe can carry — a
  * case that no breakage reddens is a case that proves nothing, and it is
  * invisible while every probe passes its own declaration.
+ *
+ * Cases reddened past the declaration are printed beside the ones that stayed
+ * green because the two are the same kind of answer: a declaration and a
+ * measurement that disagree, in one direction or the other.
  */
 final readonly class Report
 {
@@ -50,6 +54,13 @@ final readonly class Report
 
             foreach ($outcome->missing as $declared) {
                 printf("%-{$width}s  %-20s %s\n", '', '', 'stayed green: ' . $declared);
+            }
+
+            // Printed exactly like the cases that stayed green, and for the
+            // same reason: the run has to be readable as "here is what to
+            // declare or narrow", not as a count nobody can act on.
+            foreach ($outcome->unexpected as $case) {
+                printf("%-{$width}s  %-20s %s\n", '', '', 'reddened undeclared: ' . $case);
             }
         }
 

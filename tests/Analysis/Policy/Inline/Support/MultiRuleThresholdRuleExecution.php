@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Support;
 
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
@@ -39,6 +40,19 @@ final class MultiRuleThresholdRuleExecution implements RuleExecutionInterface
         }
 
         return new RuleExecutionResult($produced, $published, new RuleExclusionStats(), LevelActivity::empty());
+    }
+
+    /**
+     * Nothing is assembled after execution in these scenarios; the run's
+     * selection publishes whatever it is handed, unfiltered.
+     *
+     * @param list<Finding> $findings
+     *
+     * @return list<Finding>
+     */
+    public function publishable(array $findings): array
+    {
+        return $findings;
     }
 
     /**

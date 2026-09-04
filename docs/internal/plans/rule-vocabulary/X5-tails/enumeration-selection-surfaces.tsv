@@ -1,0 +1,60 @@
+input	name form	example	reaches the late channel	behaviour today	how it refuses
+cli-disable [exact channel]	exact channel	annotation.unused-directive	no (silently inert)	inert, silently: finding still published	does not refuse
+cli-only [exact channel]	exact channel	annotation.unused-directive	yes	empty report, exit 0 - but because every other rule is off, so the directive is unmeasurable and no verdict is reached; not a channel filter	does not refuse
+yaml disabled_rules [exact channel]	exact channel	annotation.unused-directive	no (silently inert)	inert, silently: finding still published	does not refuse
+yaml only_rules [exact channel]	exact channel	annotation.unused-directive	yes	empty report, exit 0 - but because every other rule is off, so the directive is unmeasurable and no verdict is reached; not a channel filter	does not refuse
+preset file disabledRules [exact channel]	exact channel	annotation.unused-directive	no (silently inert)	inert, silently: finding still published	does not refuse
+cli-disable [producer rule name]	producer rule name	annotation.directive	yes	late-channel finding gone from the report	does not refuse
+cli-only [producer rule name]	producer rule name	annotation.directive	yes	empty report, exit 0 - but because every other rule is off, so the directive is unmeasurable and no verdict is reached; not a channel filter	does not refuse
+yaml disabled_rules [producer rule name]	producer rule name	annotation.directive	yes	late-channel finding gone from the report	does not refuse
+yaml only_rules [producer rule name]	producer rule name	annotation.directive	yes	empty report, exit 0 - but because every other rule is off, so the directive is unmeasurable and no verdict is reached; not a channel filter	does not refuse
+preset file disabledRules [producer rule name]	producer rule name	annotation.directive	yes	late-channel finding gone from the report	does not refuse
+cli-disable [group X.*]	group X.*	annotation.*	yes	late-channel finding gone from the report	does not refuse
+cli-only [group X.*]	group X.*	annotation.*	yes	empty report, exit 0 - but because every other rule is off, so the directive is unmeasurable and no verdict is reached; not a channel filter	does not refuse
+yaml disabled_rules [group X.*]	group X.*	annotation.*	yes	late-channel finding gone from the report	does not refuse
+yaml only_rules [group X.*]	group X.*	annotation.*	yes	empty report, exit 0 - but because every other rule is off, so the directive is unmeasurable and no verdict is reached; not a channel filter	does not refuse
+preset file disabledRules [group X.*]	group X.*	annotation.*	yes	late-channel finding gone from the report	does not refuse
+cli-disable [channel:level]	channel:level	annotation.unused-directive:file	no (silently inert)	inert, silently: finding still published	does not refuse
+cli-only [channel:level]	channel:level	annotation.unused-directive:file	yes	empty report, exit 0 - but because every other rule is off, so the directive is unmeasurable and no verdict is reached; not a channel filter	does not refuse
+yaml disabled_rules [channel:level]	channel:level	annotation.unused-directive:file	no (silently inert)	inert, silently: finding still published	does not refuse
+yaml only_rules [channel:level]	channel:level	annotation.unused-directive:file	yes	empty report, exit 0 - but because every other rule is off, so the directive is unmeasurable and no verdict is reached; not a channel filter	does not refuse
+preset file disabledRules [channel:level]	channel:level	annotation.unused-directive:file	no (silently inert)	inert, silently: finding still published	does not refuse
+cli-disable [producer:level]	producer:level	annotation.directive:file	refuses	refused: Rule selector "annotation.directive:file" addresses no channel, so it cannot address one at level "file".	exit 3 at preflight (RuleInputValidator)
+cli-only [producer:level]	producer:level	annotation.directive:file	refuses	refused: Rule selector "annotation.directive:file" addresses no channel, so it cannot address one at level "file".	exit 3 at preflight (RuleInputValidator)
+yaml disabled_rules [producer:level]	producer:level	annotation.directive:file	refuses	refused: Rule selector "annotation.directive:file" addresses no channel, so it cannot address one at level "file".	exit 3 at preflight (RuleInputValidator)
+yaml only_rules [producer:level]	producer:level	annotation.directive:file	refuses	refused: Rule selector "annotation.directive:file" addresses no channel, so it cannot address one at level "file".	exit 3 at preflight (RuleInputValidator)
+preset file disabledRules [producer:level]	producer:level	annotation.directive:file	refuses	refused: Rule selector "annotation.directive:file" addresses no channel, so it cannot address one at level "file".	exit 3 at preflight (RuleInputValidator)
+cli-disable [group:level]	group:level	annotation.*:file	yes	late-channel finding gone from the report	does not refuse
+cli-only [group:level]	group:level	annotation.*:file	yes	empty report, exit 0 - but because every other rule is off, so the directive is unmeasurable and no verdict is reached; not a channel filter	does not refuse
+yaml disabled_rules [group:level]	group:level	annotation.*:file	yes	late-channel finding gone from the report	does not refuse
+yaml only_rules [group:level]	group:level	annotation.*:file	yes	empty report, exit 0 - but because every other rule is off, so the directive is unmeasurable and no verdict is reached; not a channel filter	does not refuse
+preset file disabledRules [group:level]	group:level	annotation.*:file	yes	late-channel finding gone from the report	does not refuse
+cli-disable [retired pair]	retired pair	annotation.directive#unused-directive	refuses	refused: Rule selector "annotation.directive#unused-directive" is written in the retired channel-pair form. The "ruleNa	exit 3 at preflight (RuleInputValidator)
+cli-only [retired pair]	retired pair	annotation.directive#unused-directive	refuses	refused: Rule selector "annotation.directive#unused-directive" is written in the retired channel-pair form. The "ruleNa	exit 3 at preflight (RuleInputValidator)
+yaml disabled_rules [retired pair]	retired pair	annotation.directive#unused-directive	refuses	refused: Rule selector "annotation.directive#unused-directive" is written in the retired channel-pair form. The "ruleNa	exit 3 at preflight (RuleInputValidator)
+yaml only_rules [retired pair]	retired pair	annotation.directive#unused-directive	refuses	refused: Rule selector "annotation.directive#unused-directive" is written in the retired channel-pair form. The "ruleNa	exit 3 at preflight (RuleInputValidator)
+preset file disabledRules [retired pair]	retired pair	annotation.directive#unused-directive	refuses	refused: Rule selector "annotation.directive#unused-directive" is written in the retired channel-pair form. The "ruleNa	exit 3 at preflight (RuleInputValidator)
+rules.<r>.exclude_paths	producer rule name	annotation.directive	no (silently inert)	inert, silently: finding still published	does not refuse
+rules.<r>.exclude_namespaces	producer rule name	annotation.directive	no (silently inert)	inert, silently: finding still published	does not refuse
+rules.<r>.exclude_namespace_channels	exact channel (as key)	annotation.unused-directive	refuses	refused: Option "exclude_namespace_channels" for rule "annotation.directive" is keyed by "annotation.unusedDirective", 	exit 3 at preflight (RuleInputValidator)
+rules.<r>.exclude_namespace_channels	camelCase key	annotation.unused-directive	refuses	refused: Option "exclude_namespace_channels" for rule "annotation.directive" is keyed by "annotation.unusedDirective", 	exit 3 at preflight (RuleInputValidator)
+rules.<r>.exclude_namespace_channels	key = the late channel, camel spelling of option	annotation.unused-directive	refuses	refused: Option "exclude_namespace_channels" for rule "annotation.directive", keyed by "annotation.unusedDirective:file	exit 3 at preflight (RuleInputValidator)
+rules.<r>.enabled: false	producer rule name	annotation.directive	yes	late-channel finding gone from the report	does not refuse
+rules.<channel> (options keyed by channel)	exact channel	annotation.unused-directive	refuses	refused: Configuration error: Invalid configuration in /private/tmp/claude-501/-Users-fractalizer-PhpstormProjects-gith	exit 3 at preflight (RuleInputValidator)
+--rule-opt RULE:enabled=false	producer rule name	annotation.directive	yes	late-channel finding gone from the report	does not refuse
+--rule-opt CHANNEL:enabled=false	exact channel	annotation.unused-directive	refuses	refused: Rule option owner "annotation.unused-directive" does not match any registered producer rule.	exit 3 at preflight (RuleInputValidator)
+top-level exclude_paths	no name (path only)	-	yes	late-channel finding gone from the report	does not refuse
+top-level exclude_namespaces	no name (namespace only)	-	no (silently inert)	inert, silently: finding still published	does not refuse
+--exclude-path	no name (path only)	-	yes	late-channel finding gone from the report	does not refuse
+--exclude-namespace	no name (namespace only)	-	no (silently inert)	inert, silently: finding still published	does not refuse
+--exclude (discovery)	no name (path only)	-	yes	late-channel finding gone from the report	does not refuse
+rules.<r>.exclude_paths	producer rule name	rules: {annotation.directive: {exclude_paths: ['**/*.php']}}	no (silently inert)	inert on the late channel; the early sibling channel IS gated	does not refuse
+rules.<r>.exclude_namespaces	producer rule name	rules: {annotation.directive: {exclude_namespaces: ['Demo\*']}}	no (silently inert)	inert on the late channel	does not refuse
+--disable-rule (union)	every channel of the producer, one selector each	--disable-rule=annotation.unused-directive ... x4	yes	silences the channel; the early sibling channel IS gated	does not refuse
+--disable-rule (partial union)	three of four channels	--disable-rule=annotation.unresolved-directive ... x3	no (silently inert)	inert on the late channel; the early sibling channel IS gated	does not refuse
+rules.<r>.enabled	producer rule name	rules: {annotation.directive: {enabled: false}}	yes	silences the channel; the early sibling channel IS gated	does not refuse
+rules.<r>.unused_directive_severity	producer rule name (severity, not selection)	rules: {annotation.directive: {unused_directive_severity: error}}	no (silently inert)	inert on the late channel	does not refuse
+inline @qmx-ignore	exact channel	@qmx-ignore annotation.unused-directive <reason>	n/a (refused before it can)	refused in place: published on annotation.unresolved-directive (count=1), exit=2	DirectiveChannelBan, as a finding on the configuration-error channel
+--baseline / qmx-baseline.json	channel, as a recorded entry	annotation.unused-directive	yes	channel is recorded in the baseline (True) and accepted: late=0, early=1, exit=2	does not refuse (acceptance is the point)
+--only-rule (with the suppressed rule kept on)	exact channel, a sibling of the late one	--only-rule=annotation.unresolved-directive --only-rule=complexity.cyclomatic	no (silently inert)	late=1, early=1, exit=2: the late channel is published although only_rules never names it	does not refuse
+--only-rule + --disable-rule	producer excluded by only, channel named by disable	--only-rule=complexity.cyclomatic --disable-rule=annotation.unused-directive	yes (through only, not through disable)	late=0, early=0, exit=0: the producer is not selected at all, so the rule never arms the channel	does not refuse

@@ -129,6 +129,19 @@ final class ScriptedThresholdRuleExecution implements RuleExecutionInterface
     }
 
     /**
+     * Nothing is assembled after execution in these scenarios; the run's
+     * selection publishes whatever it is handed, unfiltered.
+     *
+     * @param list<Finding> $findings
+     *
+     * @return list<Finding>
+     */
+    public function publishable(array $findings): array
+    {
+        return $findings;
+    }
+
+    /**
      * A scripted executor answers about the rules it was scripted with, and
      * nothing here is switched off by configuration: an empty snapshot
      * declares no pair, which the audit reads as "not a disablement" rather

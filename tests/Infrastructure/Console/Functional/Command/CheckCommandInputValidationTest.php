@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionMethod;
@@ -284,7 +285,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $container = (new ContainerFactory())->create();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
-        $application = new Application();
+        $application = new Application(new ErrorStream());
         $application->addCommand($command);
 
         return new CommandTester($command);

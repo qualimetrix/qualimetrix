@@ -27,6 +27,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\ExitPolicy;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
@@ -169,11 +170,12 @@ final class ResultPresenterTest extends TestCase
                 new ImpactCalculator(new ClassRankResolver(), $remediation),
                 new HealthSummaryBuilder(new HealthMetricCatalog(), $definitions),
             ),
-            new ProfilePresenter($session),
+            new ProfilePresenter($session, new ErrorStream()),
             new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
             new FindingFilter(),
             new FormatterContextFactory(),
             self::createStub(RuleConfigurationInterface::class),
+            new ErrorStream(),
         );
     }
 

@@ -60,6 +60,34 @@ interface RuleExecutionInterface
     public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult;
 
     /**
+     * The subset of `$findings` this run's selection publishes, for findings a
+     * caller assembles **outside** {@see execute()}.
+     *
+     * One channel is assembled that way today — the directive-usage audit's
+     * `annotation.unused-directive`, which can only be answered once every rule
+     * has produced its findings. Being assembled late used to mean being
+     * assembled past the filter: naming that channel in `--disable-rule` left it
+     * reported, and an `only_rules` that never named it reported it anyway.
+     * Both halves leaked, and both leaked silently.
+     *
+     * The predicate is the same object and the same call
+     * {@see \Qualimetrix\Analysis\Finding\RuleExecution::published()} makes,
+     * not a second reading of the selection: the union-quantified half of the
+     * grammar (a producer stopped because its disable selectors together cover
+     * every declared level of every channel it emits) lives in
+     * {@see Rule\RuleSelector} and must not be re-derived per selector by a
+     * caller.
+     *
+     * The per-rule exclusion ledger is deliberately **not** applied here; see
+     * the implementation for the accounting that forbids it.
+     *
+     * @param list<Finding> $findings
+     *
+     * @return list<Finding>
+     */
+    public function publishable(array $findings): array;
+
+    /**
      * Every registered producer, each carrying whether the resolved selection
      * leaves it enabled.
      *

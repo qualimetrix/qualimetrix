@@ -125,7 +125,7 @@ Infrastructure/
     ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector and reports its stage results
     ├── RuntimeConfigurator.php        # Runtime DI configuration; applies the ConfigurationDocument to Coupling every run
     ├── RuntimeLoggerConfigurator.php  # Creates and publishes the logger for one console run
-    ├── DiagnosticOutput.php          # Routes human diagnostics to stderr without polluting report payloads
+    ├── ErrorStream.php               # Sole owner of the run's error stream: progress section plus every diagnostic writer
     ├── RuleInputValidator.php        # Fails closed on unknown selectors and option owners
     ├── ResultPresenter.php            # Output presentation
     ├── ExitCodeResolver.php           # Determines policy codes and incomplete-analysis exit 4
@@ -215,7 +215,8 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 **Runtime configuration:**
 Configuration is resolved after container creation to `ConfigurationDocument`.
 `RuntimeConfigurator` resets Cache, Parallel, Finding, Cohesion LCOM, profiling,
-and progress state before any resolver runs. Run, Finding, Cache, Parallel,
+and — through `ProgressConfigurator` — the progress reporter together with the
+error stream's section list, before any resolver runs. Run, Finding, Cache, Parallel,
 Reporting, and Console each resolve their own immutable values; stores are
 replaced only after all resolution succeeds. This prevents a failed or prior run
 from leaking values into the next one. There is no transitional provider and no

@@ -55,15 +55,21 @@ final class Options
 
         // Deriving a declaration from a narrowed corpus deletes the rows the run
         // did not measure — and with them the `reason` column, the one thing a
-        // run cannot produce. A PARTIAL run may not write the tracked
-        // declaration at all.
-        if ($mode === self::MODE_DERIVE_DECLARED_DELTA && ($cases !== [] || $incomplete)) {
-            throw new GateError(
-                "--derive-declared-delta measures the whole corpus or nothing: it rewrites the tracked declaration,"
-                . " and a run narrowed by --cases= or --incomplete-corpus would delete the surfaces it did not"
-                . " measure along with the reasons written against them. Drop the narrowing, or edit the declaration"
-                . " by hand and let a full run judge it.\n" . self::usage(),
-            );
+        // run cannot produce. A PARTIAL run may not write a tracked declaration
+        // at all, and that holds for the normalization list word for word: a
+        // rule no narrowed run exercised leaves as stale, and the next full run
+        // is then judged against a list measured from part of the corpus.
+        $deriving = [self::MODE_DERIVE_DECLARED_DELTA => '--derive-declared-delta', self::MODE_DERIVE_NORMALIZATION => '--derive-normalization'];
+
+        if (isset($deriving[$mode]) && ($cases !== [] || $incomplete)) {
+            throw new GateError(\sprintf(
+                "%s measures the whole corpus or nothing: it rewrites a tracked declaration, and a run narrowed by"
+                . " --cases= or --incomplete-corpus would delete the rows it did not measure along with anything"
+                . " written against them. Drop the narrowing, or edit the declaration by hand and let a full run"
+                . " judge it.\n%s",
+                $deriving[$mode],
+                self::usage(),
+            ));
         }
 
         return new self($mode, $candidate, $reference, $cases, $report, $incomplete);

@@ -59,13 +59,6 @@ rule-namespace-exclusion	coupling.distance	coupling.distance	src/Reporting/Forma
 rule-namespace-exclusion	coupling.instability	coupling.instability	src/Reporting/Formatter/CheckstyleFormatter.php	Qualimetrix\Reporting\Formatter	warning	1
 rule-namespace-exclusion	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Evidence\Prioritization	warning	1
 rule-namespace-exclusion	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion	warning	1
-rule-namespace-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineCleanupCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	warning	1
-rule-namespace-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineExplainCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand	warning	1
-rule-namespace-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineGenerateCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand	warning	1
-rule-namespace-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineUpdateCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	warning	1
-rule-namespace-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php	Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand	warning	1
-rule-namespace-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/DirectivesCommand.php	Qualimetrix\Infrastructure\Console\Command\DirectivesCommand	warning	1
-rule-namespace-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/HookUninstallCommand.php	Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand	warning	1
 rule-path-exclusion	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php	Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing::__construct	warning	1
 rule-path-exclusion	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Reporting/FormatterContext.php	Qualimetrix\Reporting\FormatterContext::__construct	warning	1
 rule-path-exclusion	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Reporting/Report.php	Qualimetrix\Reporting\Report::__construct	error	1
@@ -153,7 +146,7 @@ rule-path-exclusion	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/Analysis
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/AnalysisPipeline.php	Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	error	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/AnalysisPreflight.php	Qualimetrix\Infrastructure\Console	error	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/BaselineCaptureReporter.php	Qualimetrix\Infrastructure\Console\Command	error	1
-rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	error	1
+rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	warning	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/ResultPresenter.php	Qualimetrix\Infrastructure\Console\ResultPresenter	warning	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/RuleInputValidator.php	Qualimetrix\Infrastructure\Console\RuleInputValidator	warning	1
 rule-path-exclusion	coupling.cbo	coupling.cbo	src/Infrastructure/Console/RuntimeConfigurator.php	Qualimetrix\Infrastructure\Console\RuntimeConfigurator	warning	1
@@ -189,6 +182,13 @@ rule-path-exclusion	duplication.code-duplication	duplication.code-duplication	sr
 rule-path-exclusion	duplication.code-duplication	duplication.code-duplication	src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	(project)	warning	2
 rule-path-exclusion	duplication.code-duplication	duplication.code-duplication	src/Analysis/Evidence/Coupling/ClassRankOptions.php	(project)	warning	1
 rule-path-exclusion	duplication.code-duplication	duplication.code-duplication	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php	(project)	warning	1
+rule-path-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineCleanupCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	warning	1
+rule-path-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineExplainCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand	warning	1
+rule-path-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineGenerateCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand	warning	1
+rule-path-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineUpdateCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	warning	1
+rule-path-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php	Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand	warning	1
+rule-path-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/DirectivesCommand.php	Qualimetrix\Infrastructure\Console\Command\DirectivesCommand	warning	1
+rule-path-exclusion	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/HookUninstallCommand.php	Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand	warning	1
 rule-path-exclusion	size.property-count	size.property-count	src/Analysis/Evidence/Size/MethodCountMetrics.php	Qualimetrix\Analysis\Evidence\Size\MethodCountMetrics	error	1
 suppression	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	health.cohesion	src/Analysis/Evidence/CodeSmell/LongParameterListRule.php	Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	warning	1
 suppression	src/Analysis/Evidence/CodeSmell/UnusedPrivateClassData.php	health.cohesion	src/Analysis/Evidence/CodeSmell/UnusedPrivateClassData.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateClassData	warning	1

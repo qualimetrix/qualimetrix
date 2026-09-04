@@ -10,8 +10,6 @@ use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Stringable;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
-use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -28,30 +26,30 @@ final class LoggerFactory implements LoggerFactoryInterface
     /**
      * Creates a logger based on output configuration.
      *
-     * @param OutputInterface $output Console output interface
+     * @param OutputInterface $diagnostics The run's diagnostic writer, already
+     *                                     resolved by its owner. This factory does not choose a stream: the
+     *                                     error stream has exactly one owner, in the console adapter, and a
+     *                                     second opinion here is what let log lines land inside a progress
+     *                                     frame.
      * @param string|null $logFile Optional path to log file
      * @param string $level Minimum log level (default: INFO)
      */
     public function create(
-        OutputInterface $output,
+        OutputInterface $diagnostics,
         ?string $logFile = null,
         string $level = LogLevel::INFO,
     ): LoggerInterface {
         $loggers = [];
 
         // Console logger (respects verbosity)
-        // Use stderr to avoid polluting structured output (JSON, SARIF, etc.)
-        if (!$output->isQuiet()) {
-            $logOutput = $output instanceof ConsoleOutputInterface
-                ? $output->getErrorOutput()
-                : new NullOutput();
+        if (!$diagnostics->isQuiet()) {
             $consoleLevel = match (true) {
-                $output->isDebug() => LogLevel::DEBUG,
-                $output->isVeryVerbose() => LogLevel::DEBUG,
-                $output->isVerbose() => $level,
+                $diagnostics->isDebug() => LogLevel::DEBUG,
+                $diagnostics->isVeryVerbose() => LogLevel::DEBUG,
+                $diagnostics->isVerbose() => $level,
                 default => LogLevel::WARNING,
             };
-            $loggers[] = new ConsoleLogger($logOutput, $consoleLevel);
+            $loggers[] = new ConsoleLogger($diagnostics, $consoleLevel);
         }
 
         // File logger

@@ -247,6 +247,10 @@ name**, or `X.*` for the strict descendants of `X`, either optionally narrowed t
 prefix such as `health` is an error, not a group: write `health.*`. Exact `health.cohesion`
 leaves the sibling `health.coupling` untouched.
 
+Write the channel exactly as it is named, hyphens included — these keys are not
+case-normalized, so `size.class-count`, `code-smell.*` and a computed metric named
+`computed.my-score` are written here the way they are written everywhere else.
+
 The key must address a channel **the rule it is written under actually emits**. A key that
 names another rule's channel, or no channel at all, ends the run with exit code 3 and a
 message listing that rule's channels — it used to be accepted and exclude nothing. A key

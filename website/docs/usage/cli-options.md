@@ -508,6 +508,12 @@ report.json` produces valid JSON without this flag. It is drawn only when
 standard error is a terminal; redirecting standard error silences the bar
 without touching the report, rather than writing control bytes into the file.
 
+The bar shares the error stream with detailed logging (`-v`, `-vv`, `-vvv`) and
+with warnings emitted during a run. Both are drawn through one owner: a
+diagnostic line pushes the bar down and stays on the screen, and the bar is
+redrawn beneath it. Raising verbosity therefore does not turn the bar off, and
+the bar does not eat log lines.
+
 ---
 
 <!-- llms:skip-begin -->
@@ -602,6 +608,19 @@ Rule selector "complexity" does not match any registered producer, group, or cha
 Likewise, the owner before `:` in `--rule-opt=RULE:OPTION=VALUE` must be an exact
 producer rule, not a group or channel — a group or channel there is an error. The same rule
 governs the `rules:` YAML section keys.
+
+!!! note "Every channel obeys selection, including the one assembled last"
+    `annotation.unused-directive` — the "this suppression silenced nothing" verdict — can only be
+    reached once every other rule has produced its findings, so a run assembles it after rule
+    execution. It is selected like any other channel all the same:
+    `--disable-rule=annotation.unused-directive` (or `annotation.unused-directive:file`) silences
+    it, and an `--only-rule` that names other channels of `annotation.directive` without naming
+    this one does not report it.
+
+    The producer's exclusion options are a separate matter and do not reach this channel:
+    `rules.annotation.directive.exclude_paths` gates its early channels only, and
+    `exclude_namespaces` reaches none of them, since these findings are reported against the file
+    the annotation was written in.
 
 ### `--rule-opt`
 
