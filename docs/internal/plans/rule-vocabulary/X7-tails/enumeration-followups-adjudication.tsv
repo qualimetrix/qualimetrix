@@ -1,0 +1,13 @@
+line	witness_a	witness_b	adjudicated	основание
+27	OPEN	CLOSED	ACTIONABLE/SMALL	условие закрытия — переизмерение после Ш5e3; переизмерения в записи нет
+747	OPEN	CLOSED	ACCEPTED	«что закроет: ничего дешёвого»; запись существует как предупреждение
+1154	PARTIAL	CLOSED	ACCEPTED	«Закрыто пакетом 6 захода Х5», остаток — принятая цена, свой предмет у записи 1819
+1222	PARTIAL	CLOSED	ACCEPTED	«Закрыто пакетом Х3-F», остаток назван как принятая цена
+1247	OPEN	CLOSED	ACCEPTED	«ничего дешёвого и ничего нужного»
+1300	UNCLEAR	CLOSED	ACCEPTED	«Решено не исключать каталог из периметра» — решение принято, остаток есть цена
+1424	OPEN	PARTIAL	SUPERSEDED	«что остаётся открытым … записано ниже» → 1775
+1458	PARTIAL	CLOSED	SUPERSEDED	«что осталось и записано отдельно» → 1692
+1548	PARTIAL	CLOSED	SUPERSEDED	«хвост … отдельная запись в разделе Х5» → 1760
+1580	PARTIAL	CLOSED	SUPERSEDED	«что осталось открытым и записано отдельно» → 1715, 1728, 1743
+1636	OPEN	CLOSED	CLOSED	проверено прогоном 2026-09-04: declared-delta.tsv и declared-field-moves.tsv — только заголовок, каталог declared-delta/ отсутствует, карты пусты, composer gate --reference=41fcc71d GREEN
+774	PARTIAL	PARTIAL	CLOSED	третий проход: «по-другому чиниться не может» — объяснение механизма, не остаток

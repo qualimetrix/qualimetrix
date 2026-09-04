@@ -1,0 +1,114 @@
+scripts/finding-gate-controls/Control.php	11	One control
+scripts/finding-gate-controls/Control.php	16	two cases
+scripts/finding-gate-controls/Control.php	22	four things beyond the surface
+scripts/finding-gate-controls/Control.php	36	two controls
+scripts/finding-gate-controls/Control.php	218	one artifact of one case
+scripts/finding-gate-controls/Control.php	220	twelve formats
+scripts/finding-gate-controls/Controls.php	14	Eighteen negative controls
+scripts/finding-gate-controls/Controls.php	27	two are the only controls
+scripts/finding-gate-controls/Controls.php	33	five that no control
+scripts/finding-gate-controls/Controls.php	108	one case
+scripts/finding-gate-controls/Controls.php	154	one case
+scripts/finding-gate-controls/Controls.php	357	two levels inside one case
+scripts/finding-gate-controls/Controls.php	365	one level in one case
+scripts/finding-gate-controls/Controls.php	502	one case
+scripts/finding-gate-controls/Controls.php	504	twelve other cases
+scripts/finding-gate-controls/Controls.php	584	ten into a case
+scripts/finding-gate-controls/Controls.php	588	twelve surface
+scripts/finding-gate-controls/Controls.php	623	two surfaces
+scripts/finding-gate-controls/Controls.php	682	two surfaces
+scripts/finding-gate-controls/Controls.php	702	one case
+scripts/finding-gate-controls/Controls.php	708	two controls
+scripts/finding-gate-controls/Controls.php	805	two of the surfaces
+scripts/finding-gate-controls/Controls.php	808	one case
+scripts/finding-gate-controls/Controls.php	918	twelve findings the `smells` case
+scripts/finding-gate-controls/Controls.php	967	fourteen cases, "the JSON surface
+scripts/finding-gate-controls/Controls.php	983	one surface
+scripts/finding-gate-controls/Controls.php	1048	Two controls
+scripts/finding-gate-controls/Controls.php	1071	one whole surface
+scripts/finding-gate-controls/Controls.php	1161	two controls
+scripts/finding-gate-controls/Controls.php	1163	one format
+scripts/finding-gate-controls/Controls.php	1188	one surface
+scripts/finding-gate-controls/Controls.php	1209	one, and a control
+scripts/finding-gate-controls/Expectation.php	11	One failure a control
+scripts/finding-gate-controls/Harness.php	168	One control
+scripts/finding-gate-controls/Harness.php	251	one carries its control
+scripts/finding-gate-controls/Harness.php	499	One control
+scripts/finding-gate-controls/Outcome.php	10	one control
+scripts/finding-gate-controls/Outcome.php	205	five that no control
+scripts/finding-gate-controls/Outcome.php	207	one tree produced this surface
+scripts/finding-gate/CaseDefinition.php	7	One corpus case
+scripts/finding-gate/DeclaredDelta.php	75	one says why the surface
+scripts/finding-gate/DeclaredDelta.php	153	one file per surface
+scripts/finding-gate/DeclaredDelta.php	182	ten against this surface
+scripts/finding-gate/DeclaredFieldMoves.php	23	one surface
+scripts/finding-gate/DeclaredFieldMoves.php	78	one move on one surface
+scripts/finding-gate/FailureClass.php	55	one case
+scripts/finding-gate/FingerprintSubstitution.php	8	One surface
+scripts/finding-gate/Fingerprints.php	23	one surface
+scripts/finding-gate/Fingerprints.php	56	one surface
+scripts/finding-gate/Fs.php	29	one control
+scripts/finding-gate/Gate.php	444	One case
+scripts/finding-gate/Gate.php	624	one fingerprint surface
+scripts/finding-gate/Gate.php	766	one surface
+scripts/finding-gate/Gate.php	870	one surface
+scripts/finding-gate/Gate.php	1011	ten into a case
+scripts/finding-gate/Gate.php	1012	twelve surface
+scripts/finding-gate/Gate.php	1203	one case
+scripts/finding-gate/Gate.php	1206	two cases
+scripts/finding-gate/Gate.php	1212	one case
+scripts/finding-gate/Gate.php	1239	one case
+scripts/finding-gate/Gate.php	1328	two levels inside one case
+scripts/finding-gate/Gate.php	1357	two cases
+scripts/finding-gate/NormalizationDeriver.php	316	one row per case
+scripts/finding-gate/NormalizationDeriver.php	332	one case
+scripts/finding-gate/NormalizationDeriver.php	335	one row cover every case
+scripts/finding-gate/Options.php	101	one writes why the surface
+scripts/finding-gate/PublishedVocabulary.php	19	nine surfaces
+scripts/finding-gate/PublishedVocabulary.php	47	two surfaces
+scripts/finding-gate/PublishedVocabulary.php	114	one non-format
+scripts/finding-gate/PublishedVocabulary.php	156	one line of one surface
+scripts/finding-gate/PublishedVocabulary.php	202	one surface
+scripts/finding-gate/RenameMaps.php	50	fourteen cases
+scripts/finding-gate/RenameMaps.php	131	nine formats
+scripts/finding-gate/RenameMaps.php	157	twelve formats
+scripts/finding-gate/RenameMaps.php	713	one surface
+scripts/finding-gate/RenameMaps.php	1108	one case
+scripts/finding-gate/SelfTest.php	486	ten case
+scripts/finding-gate/SelfTest.php	499	ten case
+scripts/finding-gate/SelfTest.php	614	fourteen cases
+scripts/finding-gate/SelfTest.php	743	Three cases
+scripts/finding-gate/SelfTest.php	1180	two cases
+scripts/finding-gate/SelfTest.php	1627	one file per differing surface
+scripts/finding-gate/SelfTest.php	1660	one control
+scripts/finding-gate/SelfTest.php	1770	one naming no surface
+scripts/finding-gate/SelfTest.php	1789	one on a surface
+scripts/finding-gate/SelfTest.php	2131	one surface
+scripts/finding-gate/SelfTest.php	2132	one surface
+scripts/finding-gate/SubjectLevel.php	20	two levels inside one case
+scripts/finding-gate/SubjectLevel.php	122	two levels in one case
+scripts/finding-gate/Surfaces.php	33	one rule, whatever case
+finding-gate/README.md	20	one corpus case
+finding-gate/README.md	61	one case
+finding-gate/README.md	79	two levels inside one case
+finding-gate/README.md	88	two cases
+finding-gate/README.md	96	one case
+finding-gate/README.md	224	twelve formats
+finding-gate/README.md	250	one-case
+finding-gate/README.md	296	twelve GitLab surfaces
+finding-gate/README.md	345	twelve formats
+finding-gate/README.md	351	one surface
+finding-gate/README.md	414	fourteen cases
+finding-gate/README.md	445	one case
+finding-gate/README.md	483	twelve surface
+finding-gate/README.md	508	three producers, so a case
+finding-gate/README.md	606	nine surfaces
+finding-gate/README.md	714	twenty controls
+finding-gate/README.md	716	two derive controls
+finding-gate/README.md	748	Four surfaces
+finding-gate/README.md	764	two surfaces
+finding-gate/README.md	773	twelve `check` formats
+finding-gate/README.md	783	eleven formats
+finding-gate/README.md	822	two are the only controls
+finding-gate/README.md	846	seven channels of that case
+finding-gate/README.md	848	one level in a case
