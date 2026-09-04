@@ -97,8 +97,17 @@ final readonly class PseudoTerminalRun
                     continue;
                 }
 
-                $chunk = fread($stream, 65536);
+                // A pseudo-terminal master reports EIO once the child is gone,
+                // where a pipe — and the same master on macOS — reports plain
+                // EOF. Everything written is already collected by then, so that
+                // diagnostic is noise. A failed read with the stream still open
+                // is not: that one loses output, so it stops the run.
+                $chunk = @fread($stream, 65536);
                 if ($chunk === false || $chunk === '') {
+                    if ($chunk === false && !feof($stream)) {
+                        throw new RuntimeException('Reading the run output failed while the stream was still open');
+                    }
+
                     if (feof($stream)) {
                         fclose($stream);
                         unset($open[$key]);
