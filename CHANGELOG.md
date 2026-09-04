@@ -42,8 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A mistyped directive target is no longer answered with `annotation.unused-directive`.
   The near-spelling search offered it to anyone who mistyped a neighbouring
   `annotation.*` name — it sits one edit from its own family — and following the
-  advice produced a directive the next run refuses. Both hops of the search now
-  drop every name a directive may not carry.
+  advice produced a directive the next run refuses. Every branch of the answer now
+  drops it: the near-spelling search, the channel list a rule name is answered
+  with, and the answer to a group form. The full channel list of a rule, banned
+  ones included, is what `qmx rules` is for.
 - `--disable-rule` and `--only-rule` act on `annotation.unused-directive`. Naming
   it in `--disable-rule` was inert and said nothing, and an `--only-rule` naming
   a sibling channel of `annotation.directive` published it anyway. The channel is
