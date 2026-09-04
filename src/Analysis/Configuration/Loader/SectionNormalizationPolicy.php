@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Loader;
 
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
-
 /**
  * Per-section key normalization policy used by {@see YamlConfigLoader}.
  *
@@ -70,4 +68,40 @@ enum SectionNormalizationPolicy
      * existing users of {@code PRESERVE_IMMEDIATE_CHILDREN}.
      */
     case PRESERVE_SUBTREE;
+
+    /**
+     * The policy and depth a sub-array written under {@code $normalizedKey} is
+     * walked with.
+     *
+     * {@see self::PRESERVE_SUBTREE} is sticky forever; below the
+     * immediate-children boundary everything else resumes
+     * {@see self::NORMALIZE_TO_CAMEL_CASE}. An option named in
+     * {@code $identifierKeyedOptions} re-opens the identifier boundary one
+     * level down — its own keys are the user's words, not schema options — so
+     * it answers {@see self::PRESERVE_IMMEDIATE_CHILDREN} at a depth restarted
+     * to zero. `PRESERVE_SUBTREE` is already stricter and is not weakened into
+     * that.
+     *
+     * The declared option list is passed in rather than read here: it lives in
+     * {@see \Qualimetrix\Analysis\Configuration\ConfigSchema::identifierKeyedOptions()},
+     * which is the loader's dependency and must not become this enum's — the
+     * schema already names the enum.
+     *
+     * @param list<string> $identifierKeyedOptions normalized option spellings
+     *
+     * @return array{policy: self, depth: int}
+     */
+    public function descentFor(string|int $normalizedKey, array $identifierKeyedOptions, int $depth): array
+    {
+        if ($this === self::PRESERVE_SUBTREE) {
+            return ['policy' => self::PRESERVE_SUBTREE, 'depth' => $depth + 1];
+        }
+
+        // An integer key matches nothing: every declared option is a string.
+        if (\in_array($normalizedKey, $identifierKeyedOptions, true)) {
+            return ['policy' => self::PRESERVE_IMMEDIATE_CHILDREN, 'depth' => 0];
+        }
+
+        return ['policy' => self::NORMALIZE_TO_CAMEL_CASE, 'depth' => $depth + 1];
+    }
 }

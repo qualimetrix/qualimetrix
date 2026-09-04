@@ -39,6 +39,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- An `exclude_namespace_channels` key can name a channel whose name contains a
+  hyphen. The keys of that map were case-normalized along with the typed option
+  keys around them, so `code-smell.boolean-argument` reached the run as
+  `codeSmell.booleanArgument` and ended it with exit code 3 — printing the
+  correct name in the same sentence that refused the written one. Every form of
+  the key was affected: the exact name, the `X.*` group, the `channel:namespace`
+  pair, and every computed metric, whose names the name validator *requires* to
+  be kebab. Keys without a hyphen are unaffected, and nothing else about the
+  option changes: a key still has to name a channel its rule produces, and one
+  naming a channel that never reports a namespace aggregate is still accepted
+  and still excludes nothing.
 - `bin/qmx directives` no longer demands the removal of a live directive whose
   rule the configuration switched off per level. A directive bound to a
   declaration — `@qmx-threshold`, and `@qmx-ignore` in a docblock — now reports

@@ -836,6 +836,84 @@ YAML);
         self::assertSame('app_core_v2', $config['architecture']['layers'][1]['name']);
     }
 
+    /**
+     * The keys of `exclude_namespace_channels` are channel names, and channel
+     * names are kebab: camelCasing them produced a key naming no channel,
+     * which the run then refused by the mangled spelling.
+     */
+    #[Test]
+    public function itPreservesTheChannelKeysOfAnExclusionMap(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+rules:
+  size.class-count:
+    exclude_namespace_channels:
+      size.class-count: ['App\Legacy']
+      code-smell.*: ['App\Legacy']
+      size.class-count:namespace: ['App\Legacy']
+      computed.my-score: ['App\Legacy']
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertSame(
+            ['size.class-count', 'code-smell.*', 'size.class-count:namespace', 'computed.my-score'],
+            array_keys($config['rules']['size.class-count']['excludeNamespaceChannels']),
+        );
+        self::assertSame(
+            ['App\Legacy'],
+            $config['rules']['size.class-count']['excludeNamespaceChannels']['code-smell.*'],
+        );
+    }
+
+    /** The option is written in either spelling, so both have to reach the same map. */
+    #[Test]
+    public function itPreservesChannelKeysUnderTheCamelCaseSpellingOfTheOption(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+rules:
+  size.class-count:
+    excludeNamespaceChannels:
+      size.class-count: ['App\Legacy']
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertSame(
+            ['size.class-count'],
+            array_keys($config['rules']['size.class-count']['excludeNamespaceChannels']),
+        );
+    }
+
+    /**
+     * Only the channel map is exempt: its siblings are typed option keys and
+     * keep being normalized, and so is the name of the map itself.
+     */
+    #[Test]
+    public function itStillNormalizesTheTypedOptionKeysBesideAnExclusionMap(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+rules:
+  size.class-count:
+    warning_threshold: 3
+    exclude_namespace_channels:
+      size.class-count: ['App\Legacy']
+    callable:
+      warning_threshold: 5
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertSame(
+            ['warningThreshold', 'excludeNamespaceChannels', 'callable'],
+            array_keys($config['rules']['size.class-count']),
+        );
+        self::assertSame(['warningThreshold' => 5], $config['rules']['size.class-count']['callable']);
+    }
+
     private function removeDirectory(string $dir): void
     {
         if (!is_dir($dir)) {

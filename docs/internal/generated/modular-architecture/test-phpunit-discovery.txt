@@ -130,11 +130,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesArchitectureAllowSourceLayerNames
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesArchitectureLayerNamesVerbatim
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesCamelCaseKeys
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesChannelKeysUnderTheCamelCaseSpellingOfTheOption
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesCodeSmellRuleNames
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesComputedMetricNameKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesDottedKebabCaseRuleNames
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesLongFormTargetSnakeCaseKeysUnderArchitectureAllow
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesMultipleRuleNamesWithMixedFormats
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesTheChannelKeysOfAnExclusionMap
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsInvalidRuleConfig
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsMultipleUnknownSubKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsNonArrayCache
@@ -155,6 +157,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itShowsAllowedKeysInSubKeyError
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itShowsNoSuggestionForDistantKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itStillNormalizesCliKeysOutsideArchitecture
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itStillNormalizesTheTypedOptionKeysBesideAnExclusionMap
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itSuggestsCorrectRootKeyForTypo
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itSupportsYamlExtension
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsForInvalidYaml
@@ -6130,6 +6133,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::createReturnsFileCacheConfiguredFromProvider
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::createUsesCacheDirFromCurrentConfigurationAtFirstCall
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheFactoryTest::resetClearsMemoizedInstanceAndRebuildsOnNextCreate
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAHyphenatedGroupKey
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAKeyForAChannelThatNeverReportsAtNamespaceLevel
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesAComputedMetricNamedInKebab
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesTheNamespaceAggregateOfAHyphenatedChannel
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesUnderTheHyphenatedChannelLevelPair
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itPublishesTheNamespaceAggregateWithoutTheKey
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itRefusesTheRetiredPairSpellingUnderTheWrittenKey
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itDoesNotPromoteWhenTheEntryCannotBeApplied
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itKeepsAGroupWithAnIgnoredMemberAcceptedAcrossGenerateAndCheck

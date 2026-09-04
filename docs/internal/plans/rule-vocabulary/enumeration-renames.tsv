@@ -11,7 +11,7 @@ architecture.pending-layer-matched	channel	?		8	11	0	0	0	25	0	1
 architecture.potential-shadow	channel	?		13	9	0	0	0	32	0	1
 architecture.unassigned-class	channel	?		25	18	0	0	0	21	0	2
 architecture.unreachable-layer	channel	?		15	22	0	0	0	41	0	1
-code-smell.boolean-argument	channel	?		3	22	1	2	29	34	0	1
+code-smell.boolean-argument	channel	?		4	28	1	2	29	35	0	1
 code-smell.constructor-overinjection	channel	?		11	8	2	2	6	27	0	1
 code-smell.count-in-loop	channel	?		1	5	0	0	0	12	0	1
 code-smell.debug-code	channel	?		1	37	0	0	0	13	0	1
@@ -48,7 +48,7 @@ security.hardcoded-credentials	channel	?		6	31	0	0	0	15	0	1
 security.sensitive-parameter	channel	?		5	19	0	0	0	13	0	1
 security.sql-injection	channel	?		3	6	0	0	0	13	0	1
 security.xss	channel	?		4	17	0	0	0	13	0	1
-size.class-count	channel	?		27	88	2	1	4	29	0	4
+size.class-count	channel	?		27	116	2	1	4	31	0	4
 size.method-count	channel	?		24	152	2	3	0	50	0	3
 size.property-count	channel	?		20	36	2	2	0	24	0	3
 code-smell.is-vo-constructor	metric-key	?		1	25	0	0	0	0	0	1
@@ -108,7 +108,7 @@ maintainability.mi	metric-key	?		12	133	0	0	0	0	0	0
 security.hardcoded-credentials	metric-key	?		6	31	0	0	0	15	0	1
 security.sensitive-parameter	metric-key	?		5	19	0	0	0	13	0	1
 size.abstract-class-count	metric-key	?		8	11	0	0	0	0	0	0
-size.class-count	metric-key	?		27	88	2	1	4	29	0	4
+size.class-count	metric-key	?		27	116	2	1	4	31	0	4
 size.class-loc	metric-key	?		2	31	0	0	0	0	0	0
 size.cloc	metric-key	?		5	20	0	0	0	0	0	0
 size.enum-count	metric-key	?		12	18	0	0	0	0	0	0
@@ -117,7 +117,7 @@ size.getter-count	metric-key	?		7	13	0	0	0	0	0	0
 size.implementing-enum-count	metric-key	?		13	9	0	0	0	0	0	0
 size.interface-count	metric-key	?		13	17	0	0	0	0	0	0
 size.lloc	metric-key	?		8	18	0	0	0	3	0	0
-size.loc	metric-key	?		11	194	0	0	0	5	0	0
+size.loc	metric-key	?		11	195	0	0	0	5	0	0
 size.method-count	metric-key	?		24	152	2	3	0	50	0	3
 size.method-count.private	metric-key	?		4	6	0	0	0	0	0	0
 size.method-count.protected	metric-key	?		4	6	0	0	0	0	0	0
@@ -137,7 +137,7 @@ annotation.directive	producer	?		4	6	0	0	0	28	0	1
 architecture.circular-dependency	producer	?		9	29	0	2	0	39	0	1
 architecture.layer-violation	producer	?		27	105	0	3	0	79	0	1
 architecture.unassigned-class	producer	?		25	18	0	0	0	21	0	2
-code-smell.boolean-argument	producer	?		3	22	1	2	29	34	0	1
+code-smell.boolean-argument	producer	?		4	28	1	2	29	35	0	1
 code-smell.constructor-overinjection	producer	?		11	8	2	2	6	27	0	1
 code-smell.count-in-loop	producer	?		1	5	0	0	0	12	0	1
 code-smell.debug-code	producer	?		1	37	0	0	0	13	0	1
@@ -156,7 +156,7 @@ complexity.cognitive	producer	?		24	86	2	2	31	48	0	12
 complexity.cyclomatic	producer	?		37	653	2	2	55	120	0	11
 complexity.npath	producer	?		22	95	2	2	12	38	0	8
 complexity.wmc	producer	?		20	86	2	2	10	31	0	4
-computed	producer	?		93	92	0	1	0	25	0	11
+computed	producer	?		94	94	0	1	0	27	0	11
 coupling.cbo	producer	?		63	310	2	4	6	104	0	6
 coupling.class-rank	producer	?		22	99	0	2	2	26	0	30
 coupling.distance	producer	?		30	72	2	2	2	33	0	31
@@ -181,7 +181,7 @@ security.hardcoded-credentials	producer	?		6	31	0	0	0	15	0	1
 security.sensitive-parameter	producer	?		5	19	0	0	0	13	0	1
 security.sql-injection	producer	?		3	6	0	0	0	13	0	1
 security.xss	producer	?		4	17	0	0	0	13	0	1
-size.class-count	producer	?		27	88	2	1	4	29	0	4
+size.class-count	producer	?		27	116	2	1	4	31	0	4
 size.method-count	producer	?		24	152	2	3	0	50	0	3
 size.property-count	producer	?		20	36	2	2	0	24	0	3
 #

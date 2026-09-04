@@ -246,6 +246,35 @@ final class ConfigSchema
     }
 
     /**
+     * Option keys, at any depth below a section root, whose own keys are
+     * user-written identifiers rather than schema-known options. The children
+     * of such an option are preserved verbatim; anything deeper resumes
+     * {@see SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE}, exactly as
+     * {@see SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN} does one
+     * level higher.
+     *
+     * `exclude_namespace_channels` is keyed by channel names, and channel
+     * names are kebab. Sitting at level 3 of the `rules` section, its keys were
+     * camelCased into names addressing no channel — `code-smell.boolean-argument`
+     * reached the validator as `codeSmell.booleanArgument` and ended the run.
+     * The reach is wider than the static vocabulary: the computed-metric name
+     * validator *prescribes* kebab, so no computed metric could be named here
+     * at all.
+     *
+     * Declared here rather than decided in the loader's traversal for the
+     * reason ADR 0009 gives for the section policies themselves: which keys are
+     * identifiers is a property of the schema, not of a walk.
+     *
+     * @return list<string> normalized (camelCase) option spellings, matched
+     *                      against the normalized form of the key read, so
+     *                      both spellings an author may write are covered
+     */
+    public static function identifierKeyedOptions(): array
+    {
+        return ['excludeNamespaceChannels'];
+    }
+
+    /**
      * Returns the policy for a single root key. Fails fast with
      * {@see LogicException} when the key has no registered policy — the
      * intended behavior for any new root added without updating
