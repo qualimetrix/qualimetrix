@@ -1652,21 +1652,34 @@ rules:
 
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
-    exclude_namespaces:
+    exclude_paths:
       # A console command shares no fields by construction: `configure()` touches
       # none of them and the helpers are static, so shared-field cohesion
-      # mis-models the design rather than reporting debt. Seven commands sat at
-      # exactly 40 and all seven were accepted in the ratchet; one scoped
-      # exclusion states that one decision once. Plain prefix form on purpose —
-      # the `[Q]` idiom would make this a glob and leave `Command\Debug\*` out.
+      # mis-models the design rather than reporting debt. These seven classes sit
+      # at exactly 40 and are the whole of that debt on this root today.
       #
-      # What this costs, precisely: five of those seven classes are left with no
-      # ratchet entry at all (only BaselineCleanupCommand and BaselineUpdateCommand
-      # keep callable-level entries on other channels), and on this root cohesion
-      # fired earlier than any size channel — six methods at lcom=2 against the
-      # twenty of size.method-count. Command bloat is still caught here by
-      # size.method-count (20) and cohesion.lcom (5), just later.
-      - Qualimetrix\Infrastructure\Console\Command
+      # Named one by one rather than by the namespace they share, and the
+      # difference is measured, not stylistic. The namespace form took the
+      # channel off all nineteen classes of the root and off every command
+      # written after it; `CheckCommand` sits at exactly 50.0 against a warning
+      # boundary of 50.0, so it publishes nothing today and would publish on the
+      # first method that lowers it. Oracle: with the boundary moved to 51, the
+      # namespace form suppresses CheckCommand's finding and this form publishes
+      # it. At the real boundary the published set of `bin/qmx check src/` is
+      # identical under both — 221 findings, byte for byte — so this buys the
+      # early signal back at no cost to the ratchet.
+      #
+      # What it costs instead: a listed file whose cohesion later rises leaves a
+      # path exclusion that silences nothing and says so to nobody. An exclusion
+      # has no staleness verdict, unlike an inline directive; that is the price
+      # of keeping the decision in configuration rather than in seven docblocks.
+      - src/Infrastructure/Console/Command/BaselineCleanupCommand.php
+      - src/Infrastructure/Console/Command/BaselineExplainCommand.php
+      - src/Infrastructure/Console/Command/BaselineGenerateCommand.php
+      - src/Infrastructure/Console/Command/BaselineUpdateCommand.php
+      - src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php
+      - src/Infrastructure/Console/Command/DirectivesCommand.php
+      - src/Infrastructure/Console/Command/HookUninstallCommand.php
     exclude_namespace_channels:
       health.cohesion:
         # Stateless expansion algorithms and their immutable result do not share
