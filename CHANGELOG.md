@@ -39,6 +39,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A mistyped directive target is no longer answered with `annotation.unused-directive`.
+  The near-spelling search offered it to anyone who mistyped a neighbouring
+  `annotation.*` name — it sits one edit from its own family — and following the
+  advice produced a directive the next run refuses. Both hops of the search now
+  drop every name a directive may not carry.
+- `--disable-rule` and `--only-rule` act on `annotation.unused-directive`. Naming
+  it in `--disable-rule` was inert and said nothing, and an `--only-rule` naming
+  a sibling channel of `annotation.directive` published it anyway. The channel is
+  assembled after rule execution, which until now also meant assembled past the
+  selection every other finding passes. The per-rule `exclude_paths` /
+  `exclude_namespaces` under that rule are still inapplicable to it, as before.
 - The progress bar and detailed logging no longer destroy each other on a
   terminal. Both write to standard error, and the bar erased upwards by the
   height of its own section, so at `-vv` and `-vvv` a log line that arrived
