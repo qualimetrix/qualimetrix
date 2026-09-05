@@ -36,6 +36,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the number is lower than before.
 - `composer check` now audits inline directives as part of `check:self`: a
   proven inert directive fails the aggregate the same way a red gate does.
+- `bin/qmx rules` prints, under each rule, the catalogue metric its channels
+  judge. Twenty-two of the fifty-two static channels say something; the rest
+  publish a magnitude of their own making, or no magnitude at all, and stay
+  silent. The rule pages carry the same pair under their rule id.
+- A `@qmx-threshold` naming a metric key instead of a rule is answered with the
+  channel that judges that metric and the rule to address. It used to be told
+  that no declared name was close to it: `complexity.ccn` is eight edits from
+  `complexity.cyclomatic`, so a near-spelling search could never reach the
+  answer.
 
 ### Fixed
 

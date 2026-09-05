@@ -47,7 +47,6 @@
 # - The `values` column carries the reason text with backticked spans blanked
 #   out to spaces, because the blanking runs before the match; it is a locator,
 #   not a quotation.
-file	line	channel	values
 src/Analysis/Evidence/Measurement/Contract/CallableWithMetrics.php	26	code-smell.constructor-overinjection	warning=9 error=9 -- Exact callable measurement record carries eight independent facts about one declaration; bundling them would recreate the prohibited array record.
 src/Analysis/Evidence/Measurement/Contract/VisitorCallableScope.php	14	code-smell.constructor-overinjection	warning=14 error=14 -- Exact immutable callable scope exposes thirteen independent identity fields, in-run join position beside durable ordinal; bundling them would recreate the prohibited array record. One field of headroom, as before.
 src/Analysis/Finding/Contract/Finding.php	14	code-smell.constructor-overinjection	warning=17 error=17 — Finding is a flat immutable transport VO; its 15 constructor parameters mirror independent public fields that a parameter bundle would obscure.
@@ -78,4 +77,4 @@ src/Reporting/Report.php	19	coupling.cbo	warning=31 error=31 -- Report is the tr
 src/Analysis/Evidence/Measurement/Contract/MetricBag.php	15	coupling.class-rank	warning=0.035 error=0.035 -- Intentional contract hub:
 src/Core/Symbol/SymbolLevel.php	19	coupling.class-rank	warning=0.045 error=0.045 -- Same intentional contract-hub
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	26	coupling.instability	warning=0.95 error=0.95 -- A composition root depends outward on everything it assembles and is depended on by one trait; instability near one is its shape, not its defect.
-src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	33	coupling.instability	warning=0.85 error=0.85 -- Ca=2, Ce=10: this class answers for the whole directive vocabulary, so it depends outward on every part of it and is depended on by the two halves that ask. The measured 0.83 moved by one dependency when the ban arrived and stays structural; the second dependent is what made an always-structural value reportable at all, since the class rule needs min_afferent=2. Same shape as VisitorMethodContext's composition root.
+src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php	34	coupling.instability	warning=0.85 error=0.85 -- Ca=2, Ce=10: this class answers for the whole directive vocabulary, so it depends outward on every part of it and is depended on by the two halves that ask. The measured 0.83 moved by one dependency when the ban arrived and stays structural; the second dependent is what made an always-structural value reportable at all, since the class rule needs min_afferent=2. Same shape as VisitorMethodContext's composition root.
