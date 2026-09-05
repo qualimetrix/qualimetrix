@@ -130,6 +130,18 @@ this ownership change does not alter the rule id, options, algorithm or output.
     therefore does not re-key an existing baseline entry or formatter
     fingerprint.
 
+!!! warning "Inline `@qmx-ignore` cannot suppress this channel"
+    `duplication.code-duplication` reports at project level only, so no inline
+    directive can bind to it reliably: `@qmx-ignore` binds to the declaration
+    it decorates, which the project never is, and `@qmx-ignore-file` /
+    `@qmx-ignore-next-line` are matched against the finding's primary
+    location — the copy the scan happens to visit first, an implementation
+    detail rather than something you control. All three forms are refused
+    (`annotation.unresolved-directive`) wherever they are written. Disable the
+    rule instead — `disabled_rules: [duplication.code-duplication]` in the
+    configuration, or `--disable-rule=duplication.code-duplication` — or
+    accept a specific occurrence into the baseline.
+
 !!! info "Constant and property arrays are always excluded"
     A duplicate block that lies **entirely** inside a `const` declaration or a static/instance property's array-literal initializer is never reported. Rows of a lookup table (e.g. `'key' => ['a' => ..., 'b' => ...]` repeated with different values) normalize to identical token sequences, but "extract a shared method" is not actionable advice for a data table — repeating the same field shape across rows is the normal, correct form of that table. A block spanning both a data declaration and executable code (or lying entirely in a method body) is still reported. This suppression is unconditional and cannot be turned off.
 

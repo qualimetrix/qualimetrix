@@ -100,6 +100,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `@qmx-ignore-next-line`, carry no declaration and are still answered at
   producer granularity: a rule off at only one of its levels still reports them
   `inert`.
+- `@qmx-ignore`, `@qmx-ignore-file` and `@qmx-ignore-next-line` addressing
+  `duplication.code-duplication` are now refused at the line they are written
+  on, instead of silently doing nothing. The channel reports one finding per
+  duplicate block aggregated at project level: a symbol directive can never
+  bind to that aggregate, and a file or next-line directive matched only when
+  placed in whichever copy the duplicate scan happened to visit first — doing
+  nothing, unreported, in every other copy. Disable the rule instead
+  (`disabled_rules: [duplication.code-duplication]` / `--disable-rule=…`), or
+  accept the occurrence in the baseline.
 
 ### Breaking
 

@@ -61,10 +61,10 @@ final readonly class DirectiveNameHints
      * named, the parent they asked for descendants of, then near spellings.
      *
      * **Every branch here is advice, not an inventory**, and that is what
-     * decides how each treats the one channel a directive may not carry. The
+     * decides how each treats the channels a directive may not carry. The
      * method is reached only from a directive that already failed to address
      * anything, and every sentence it returns ends up in the author's editor as
-     * the name they type next. So a branch that named the banned channel would
+     * the name they type next. So a branch that named a banned channel would
      * hand back a directive the next run refuses — which is the same defect on
      * the descendants branch ("write X to address it") and on the rule branch
      * ("its channels are ...") as it was on the near-spelling one, however
@@ -202,10 +202,10 @@ final readonly class DirectiveNameHints
      * would otherwise get "no close match" while its channels sat one letter
      * away from what the author meant.
      *
-     * Both hops offer addressable names only, which is why the banned channel
+     * Both hops offer addressable names only, which is why a banned channel
      * is filtered out of the candidates rather than out of the answer: it is
      * near-spelled by everything in its own family, so an author who mistyped a
-     * neighbouring `annotation.*` name would be handed the one name a directive
+     * neighbouring `annotation.*` name would be handed a name a directive
      * may not carry, and the directive written from that advice is refused.
      *
      * @return list<string>
