@@ -12,12 +12,18 @@ use RuntimeException;
  * Provider-owned metric value bag shared across collection, aggregation, and rules.
  *
  * @qmx-threshold coupling.cbo 68 -- Stable Measurement contract fan-in has raw CBO 67 after the declaration-index delivery edge and one-edge headroom.
- * @qmx-threshold coupling.class-rank warning=0.035 error=0.035 -- Intentional contract hub:
- *                observed raw ClassRank 0.00995, and project-size scaling
- *                (`sqrt(classCount/100)`, 867 classes today) maps this point threshold to
- *                0.0119. The margin is deliberately more than one step: the scaled value
- *                moves with the project's class count, so a threshold set just above
- *                today's rank would trip on growth anywhere else in the tree.
+ * @qmx-threshold coupling.class-rank warning=0.035 error=0.035 -- Intentional Measurement
+ *                contract hub: MetricBag is the shared metric-value carrier nearly every
+ *                collector and rule reads, so ClassRank scoring it high is structural, not a
+ *                defect (ADR 0017 point 5: a project-normalized rank stands for centrality, not
+ *                a ratchetable ceiling -- `coupling.cbo` owns that job). Re-measured at 902
+ *                classes: raw rank 0.0095125, scale factor sqrt(902/100)=3.0033. The unscaled
+ *                default (0.02) already flags this class -- its scaled warning 0.0066593 is
+ *                below the raw rank. This directive's own scaled threshold is 0.0116537, an
+ *                18.4% margin over the raw rank, deliberately wider than the class-rank
+ *                directive above because MetricBag's rank has room the tightest hub does not.
+ *                Both sides move with class count; re-measure rather than trusting either
+ *                figure.
  */
 final class MetricBag
 {
