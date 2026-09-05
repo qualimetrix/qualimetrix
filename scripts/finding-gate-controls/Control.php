@@ -52,6 +52,9 @@ final class Control
      * @param list<string> $gateArguments extra arguments this control's gate run is given
      * @param list<string> $unchangedAfterRun scratch-tree paths the run may not touch
      * @param list<string> $restoredAfterRun scratch-tree paths the run must leave equal to the repository's
+     * @param array<string, string> $restoredContent restoredAfterRun path => the exact bytes it must be restored
+     *                                               to, where the repository's own file cannot state that byte —
+     *                                               see {@see rewriting()}
      */
     private function __construct(
         public readonly string $id,
@@ -63,6 +66,7 @@ final class Control
         public readonly array $gateArguments = [],
         public readonly array $unchangedAfterRun = [],
         public readonly array $restoredAfterRun = [],
+        public readonly array $restoredContent = [],
     ) {
         foreach ($tolerated as $expectation) {
             if ($expectation->scopeContains === null) {
@@ -147,7 +151,19 @@ final class Control
      * that wrote nothing leaves the comment; one that wrote an empty
      * declaration drops the rows. Both differ from the tracked file.
      *
+     * A repository that tracks no declaration at all — an empty-maps tree, this
+     * one included — has no *file* whose bytes a correct derivation restores:
+     * `DeclaredDelta::rewrite()` always writes the index, header included, even
+     * over zero rows, so a correct green derive turns "absent" into "header
+     * only" and there is no reading of "the repository's bytes" that means
+     * "absent". `$restoredContent` is the escape for exactly that gap: it
+     * names, per `restoredAfterRun` path, the bytes a correct run must produce
+     * where the repository's own file cannot state them, and Harness compares
+     * against it instead of against the repository. A path this map does not
+     * mention is still read from the repository, unchanged from before.
+     *
      * @param list<string> $restoredAfterRun paths, relative to the scratch tree, the run must leave equal to the repository's
+     * @param array<string, string> $restoredContent see the class docblock's `$restoredContent` parameter
      */
     public static function rewriting(
         string $id,
@@ -155,6 +171,7 @@ final class Control
         Mutation $mutation,
         string $mode,
         array $restoredAfterRun,
+        array $restoredContent = [],
     ): self {
         if ($restoredAfterRun === []) {
             throw new RuntimeException(\sprintf(
@@ -173,6 +190,7 @@ final class Control
             expectsGreen: false,
             gateArguments: [$mode],
             restoredAfterRun: $restoredAfterRun,
+            restoredContent: $restoredContent,
         );
     }
 
