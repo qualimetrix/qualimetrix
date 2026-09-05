@@ -159,6 +159,7 @@ docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/d2.md	Architecture.G
 docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/e2.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/e3.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/e4.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
+docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/e5.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/sarif-channel-descriptions.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 src/Analysis/Configuration/README.md	Analysis.Configuration	P3	"Move or update atomically with the named migration package."
 src/Analysis/Evidence/CircularDependency/README.md	Analysis.Evidence.CircularDependency	P4	"Move or update atomically with the named migration package."

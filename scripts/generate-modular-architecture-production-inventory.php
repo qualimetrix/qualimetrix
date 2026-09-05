@@ -2659,6 +2659,7 @@ function documentationDisposition(string $path): array
         'docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/d2.md',
         'docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/e2.md',
         'docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/e3.md',
+        'docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/e5.md',
         'docs/internal/plans/rule-vocabulary/X9-gate-holes/followups/e4.md',
         'docs/internal/plans/README.md',
         'src/Core/Path/README.md',
