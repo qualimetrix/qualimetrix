@@ -191,8 +191,12 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $overrides = $input->baseline->thresholdOverrides;
 
         foreach ($groups as $group) {
-            $overrides[$group->fileKey] = array_values(array_filter(
-                $overrides[$group->fileKey] ?? [],
+            // The map's own key, not a second spelling of it: every key the run
+            // produced is already normalized, so the path the group holds
+            // converts back to the bucket the run filled.
+            $key = $group->file->value();
+            $overrides[$key] = array_values(array_filter(
+                $overrides[$key] ?? [],
                 static fn(ThresholdOverride $override): bool => $override->line !== $group->line
                     || $override->rulePattern !== $group->rule,
             ));
@@ -504,13 +508,11 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      */
     private static function boundaryObservable(AuthoredDirectiveGroup $group, array $produced): bool
     {
-        $subjects = $group->subjects;
-
         foreach ($produced as $finding) {
             if (
                 $finding->threshold === null
                 && $finding->ruleName === $group->rule
-                && \in_array($finding->subject->toCanonical(), $subjects, true)
+                && $group->covers($finding->subject)
             ) {
                 return false;
             }
