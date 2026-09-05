@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -27,6 +28,9 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * - MI >= 40: good (no finding)
  * - MI 20-39: warning
  * - MI < 20: error
+ *
+ * Besides the published `maintainability.mi` value, also reads
+ * `size.method-statement-count` to skip methods below `minStatements`.
  */
 #[CliAlias('mi-warning', 'warning')]
 #[CliAlias('mi-error', 'error')]
@@ -48,14 +52,6 @@ final class MaintainabilityRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks Maintainability Index (lower values indicate harder to maintain code)';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::MAINTAINABILITY_MI, MetricName::SIZE_METHOD_STATEMENT_COUNT];
     }
 
     /**
@@ -157,7 +153,11 @@ final class MaintainabilityRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Lower,
+                JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
+                SymbolLevel::Callable,
+            ),
         ];
     }
 

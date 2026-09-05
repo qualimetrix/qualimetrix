@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFacto
 use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -427,6 +428,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(RulesCommand::class)
             ->setArguments([
                 new Reference(RuleExecutionInterface::class),
+                new Reference(RuleChannelRegistryInterface::class),
+                new Reference(ChannelDeclarationRegistryInterface::class),
             ])
             ->setPublic(true);
 

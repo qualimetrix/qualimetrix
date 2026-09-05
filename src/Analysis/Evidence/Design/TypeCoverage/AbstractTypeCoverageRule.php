@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -49,7 +50,11 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
     /**
      * Coverage is a percentage, and less of it is worse debt — hence a
      * magnitude channel whose worse direction is `Lower`. It reports at class
-     * level because that is the declaration whose members are counted.
+     * level because that is the declaration whose members are counted, and it
+     * judges the very metric {@see judge()} reads, named by the same
+     * {@see coverageMetric()} — which is why that method is static: one
+     * authority answering both the declaration and the reading, rather than a
+     * fourth abstract method a subclass could answer differently.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -58,7 +63,11 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
         $name = static::channelName();
 
         return [
-            $name => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
+            $name => ChannelDeclaration::judging(
+                WorseDirection::Lower,
+                JudgedMetrics::of(static::coverageMetric()),
+                SymbolLevel::Class_,
+            ),
         ];
     }
 
@@ -115,7 +124,7 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
         $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
         \assert($effectiveOptions instanceof TypeCoverageOptions);
 
-        $coverage = (float) ($metrics->get($this->coverageMetric()) ?? 0.0);
+        $coverage = (float) ($metrics->get(static::coverageMetric()) ?? 0.0);
         $severity = $effectiveOptions->getSeverity($coverage);
 
         if ($severity === null) {
@@ -154,7 +163,7 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
     abstract protected function totalMetric(): string;
 
     /** The percentage of those declarations that carry a type. */
-    abstract protected function coverageMetric(): string;
+    abstract protected static function coverageMetric(): string;
 
     /** How the message names the dimension ("Parameter", "Return", "Property"). */
     abstract protected function label(): string;

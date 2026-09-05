@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -278,6 +279,86 @@ final class CheckCommandInputValidationTest extends TestCase
             unlink($configA);
             unlink($configB);
         }
+    }
+
+    /**
+     * A retired suppression flag is refused the way its config-file twin is —
+     * by name, with the fork spelled out, at exit 3. Symfony's own
+     * "option does not exist" arrives before `execute()` and leaves exit 1, so
+     * a CI wrapper that tells 3 from 1 would read a migration as a crash.
+     */
+    #[Test]
+    #[DataProvider('provideRetiredSuppressionFlags')]
+    public function itRejectsARetiredSuppressionFlagByName(string $retired, string $replacement): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                $retired => 'src/Entity',
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString(\sprintf('The "%s" option was retired', $retired), $tester->getErrorOutput());
+        self::assertStringContainsString(\sprintf('use "%s"', $replacement), $tester->getErrorOutput());
+        self::assertStringContainsString('"--exclude" option instead', $tester->getErrorOutput());
+    }
+
+    /**
+     * A path that happens to be spelled like a retired flag is a value, not a
+     * flag. Recognizing retired flags by walking the token list could not tell
+     * the two apart and refused this run; the parser can, and does.
+     */
+    #[Test]
+    public function itAcceptsAPathValueSpelledLikeARetiredFlag(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                '--suppress-path' => ['--exclude-path'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertNotSame(3, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringNotContainsString('was retired', $tester->getErrorOutput());
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function provideRetiredSuppressionFlags(): iterable
+    {
+        yield 'path' => ['--exclude-path', '--suppress-path'];
+        yield 'namespace' => ['--exclude-namespace', '--suppress-namespace'];
+    }
+
+    /**
+     * The `--rule-opt` door of the retired per-rule option: refused while the
+     * name is still spelled the way it was typed, so kebab is answered in
+     * kebab. The config-file door is the loader's
+     * ({@see \Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest}).
+     */
+    #[Test]
+    public function itRejectsARetiredRuleOptionInTheSpellingTheCommandLineUsed(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                '--rule-opt' => ['code-smell.long-parameter-list:exclude-paths=src/Entity'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('The "exclude-paths" option was retired', $tester->getErrorOutput());
+        self::assertStringContainsString('use "suppress-paths"', $tester->getErrorOutput());
     }
 
     private function tester(): CommandTester

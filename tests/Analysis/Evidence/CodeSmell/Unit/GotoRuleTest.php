@@ -31,14 +31,6 @@ final class GotoRuleTest extends TestCase
     }
 
     #[Test]
-    public function requiresReturnsExpectedMetrics(): void
-    {
-        $rule = new GotoRule(new CodeSmellOptions());
-
-        self::assertSame(['codeSmell.goto'], $rule->requires());
-    }
-
-    #[Test]
     public function optionsClassIsCorrect(): void
     {
         self::assertSame(CodeSmellOptions::class, GotoRule::getOptionsClass());

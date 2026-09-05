@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive\Audit;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
@@ -75,6 +76,13 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
  * own half of the narrowed result — the per-channel filter — is likewise
  * never read here: {@see without()} reads only `->produced`. A second caller
  * narrowing for a different reason would need to revisit both assumptions.
+ *
+ * @qmx-threshold coupling.cbo 21 -- Raw CBO 20: an audit that answers what a directive did must
+ *                name every vocabulary the answer is spelled in — verdict, effect, unmeasurable
+ *                reason, sweep scope, authored group — plus the two run-side interfaces its single
+ *                identity argument intersects, because deciding addressability needs both a
+ *                channel's identity and its declaration. Those are the alphabet of the answer, not
+ *                collaborators it delegates work to. 21 gets one-edge headroom.
  */
 final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditInterface
 {
@@ -88,7 +96,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
     private DirectiveAddressability $addressability;
 
     public function __construct(
-        ChannelIdentityInterface $identity,
+        ChannelIdentityInterface&ChannelDeclarationRegistryInterface $identity,
         private RuleSelector $ruleSelector,
         private RuleConfigurationInterface $ruleConfiguration,
     ) {
@@ -191,8 +199,12 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $overrides = $input->baseline->thresholdOverrides;
 
         foreach ($groups as $group) {
-            $overrides[$group->fileKey] = array_values(array_filter(
-                $overrides[$group->fileKey] ?? [],
+            // The map's own key, not a second spelling of it: every key the run
+            // produced is already normalized, so the path the group holds
+            // converts back to the bucket the run filled.
+            $key = $group->file->value();
+            $overrides[$key] = array_values(array_filter(
+                $overrides[$key] ?? [],
                 static fn(ThresholdOverride $override): bool => $override->line !== $group->line
                     || $override->rulePattern !== $group->rule,
             ));
@@ -504,13 +516,11 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      */
     private static function boundaryObservable(AuthoredDirectiveGroup $group, array $produced): bool
     {
-        $subjects = $group->subjects;
-
         foreach ($produced as $finding) {
             if (
                 $finding->threshold === null
                 && $finding->ruleName === $group->rule
-                && \in_array($finding->subject->toCanonical(), $subjects, true)
+                && $group->covers($finding->subject)
             ) {
                 return false;
             }

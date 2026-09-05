@@ -78,7 +78,7 @@ final class RuleInputValidatorTest extends TestCase
     }
 
     /**
-     * `exclude_namespace_channels` is keyed by a channel selector, and a key
+     * `suppress_namespace_channels` is keyed by a channel selector, and a key
      * that addresses nothing used to exclude nothing while looking exactly
      * like an exclusion that works.
      *
@@ -103,7 +103,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $accepted = new FindingConfiguration(
             new RuleOptionsDocument([
-                'health.complexity' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
+                'health.complexity' => ['suppress_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -112,7 +112,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $rejected = new FindingConfiguration(
             new RuleOptionsDocument([
-                'health.complexity' => ['exclude_namespace_channels' => ['health' => ['App\\Legacy']]],
+                'health.complexity' => ['suppress_namespace_channels' => ['health' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -139,7 +139,7 @@ final class RuleInputValidatorTest extends TestCase
         $accepted = new FindingConfiguration(
             new RuleOptionsDocument([
                 'health.complexity' => [
-                    'exclude_namespace_channels' => ['health.complexity:namespace' => ['App\\Legacy']],
+                    'suppress_namespace_channels' => ['health.complexity:namespace' => ['App\\Legacy']],
                 ],
             ]),
             new FindingCliOverrides([]),
@@ -149,7 +149,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $rejected = new FindingConfiguration(
             new RuleOptionsDocument([
-                'health.complexity' => ['exclude_namespace_channels' => ['health.complexity:file' => ['App\\Legacy']]],
+                'health.complexity' => ['suppress_namespace_channels' => ['health.complexity:file' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -256,7 +256,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $configuration = new FindingConfiguration(
             new RuleOptionsDocument([
-                'health.complexity' => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
+                'health.complexity' => ['suppress_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -285,7 +285,7 @@ final class RuleInputValidatorTest extends TestCase
 
         $configuration = new FindingConfiguration(
             new RuleOptionsDocument([
-                LcomRule::NAME => ['exclude_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
+                LcomRule::NAME => ['suppress_namespace_channels' => ['health.complexity' => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),
@@ -357,7 +357,7 @@ final class RuleInputValidatorTest extends TestCase
     {
         return new FindingConfiguration(
             new RuleOptionsDocument([
-                'health.complexity' => ['exclude_namespace_channels' => [$key => ['App\\Legacy']]],
+                'health.complexity' => ['suppress_namespace_channels' => [$key => ['App\\Legacy']]],
             ]),
             new FindingCliOverrides([]),
             new RuleSelection(),

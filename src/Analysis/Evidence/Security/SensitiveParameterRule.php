@@ -42,14 +42,6 @@ final class SensitiveParameterRule extends AbstractRule
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::SECURITY_SENSITIVE_PARAMETER];
-    }
-
-    /**
      * @return class-string<SensitiveParameterOptions>
      */
     public static function getOptionsClass(): string

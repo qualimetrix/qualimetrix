@@ -31,14 +31,6 @@ final class CountInLoopRuleTest extends TestCase
     }
 
     #[Test]
-    public function requiresReturnsExpectedMetrics(): void
-    {
-        $rule = new CountInLoopRule(new CodeSmellOptions());
-
-        self::assertSame(['codeSmell.count_in_loop'], $rule->requires());
-    }
-
-    #[Test]
     public function optionsClassIsCorrect(): void
     {
         self::assertSame(CodeSmellOptions::class, CountInLoopRule::getOptionsClass());

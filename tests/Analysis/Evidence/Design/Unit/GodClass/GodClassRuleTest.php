@@ -38,14 +38,6 @@ final class GodClassRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new GodClassRule(new GodClassOptions());
-
-        self::assertSame(['complexity.wmc', 'cohesion.lcom', 'cohesion.tcc', 'size.class-loc', 'size.method-count', 'design.is-readonly'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetsOptionsClass(): void
     {
         self::assertSame(GodClassOptions::class, GodClassRule::getOptionsClass());

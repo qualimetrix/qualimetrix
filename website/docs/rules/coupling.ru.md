@@ -12,6 +12,8 @@
 
 **Rule ID:** `coupling.cbo`
 
+**Судимые метрики:** `coupling.cbo`, `coupling.cbo-app`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -119,7 +121,7 @@ Qualimetrix реализует **двунаправленную связанно
 # qmx.yaml
 rules:
   coupling.cbo:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Core\ValueObject
     scope: application  # 'all' (по умолчанию) или 'application' (использует CBO_APP)
     class:
@@ -218,6 +220,8 @@ rules:
 
 **Rule ID:** `coupling.instability`
 
+**Судимая метрика:** `coupling.instability`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -312,7 +316,7 @@ class DailyReportJob
 # qmx.yaml
 rules:
   coupling.instability:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Core\ValueObject
     class:
       max_warning: 0.9
@@ -368,6 +372,8 @@ bin/qmx check src/ --rule-opt="coupling.instability:threshold=0.9"
 ## Расстояние от главной последовательности
 
 **Rule ID:** `coupling.distance`
+
+**Судимая метрика:** `coupling.distance`
 
 <!-- llms:skip-begin -->
 ### Что измеряет
@@ -470,7 +476,7 @@ rules:
     include_namespaces:
       - App\Domain
       - App\Infrastructure
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Tests
 ```
 

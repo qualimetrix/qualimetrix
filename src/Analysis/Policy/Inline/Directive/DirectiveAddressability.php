@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
@@ -51,8 +52,15 @@ final readonly class DirectiveAddressability
      */
     private DirectiveChannelBan $ban;
 
+    /**
+     * An intersection of the two views the hints read, not the composite that
+     * joins them: what a name belongs to, and what a channel declares. Both
+     * are answered by one object — the run's channel universe — and naming
+     * that composite here would additionally grant the producer-expansion view
+     * nothing below asks for.
+     */
     public function __construct(
-        private ChannelIdentityInterface $identity,
+        private ChannelIdentityInterface&ChannelDeclarationRegistryInterface $identity,
     ) {
         $this->hints = new DirectiveNameHints($identity);
         $this->levels = new ChannelLevelAddressing($identity);

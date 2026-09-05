@@ -9,7 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 /**
  * Which channels are **file-scoped** — that is, which findings are about a
  * particular piece of code in a particular file, and can therefore be dropped
- * by `exclude_paths` / `exclude_namespaces`.
+ * by `suppress_paths` / `suppress_namespaces`.
  *
  * A project-scoped channel reports on the shape of the project itself: a
  * dependency cycle, a layer boundary, a gap in the declared layers. Those

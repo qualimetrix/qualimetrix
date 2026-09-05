@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use InvalidArgumentException;
-
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AdditionalOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -75,11 +76,11 @@ final class RuleOptionsFactory
 
         $userConfig = $this->deepMerge($normalizedFileOptions, $cliRuleOptions, $ruleName);
 
-        // 3. Extract and store framework-level keys (exclude_namespaces,
-        // exclude_namespace_channels, exclude_paths) BEFORE deciding whether $userConfig counts as
+        // 3. Extract and store framework-level keys (suppress_namespaces,
+        // suppress_namespace_channels, suppress_paths) BEFORE deciding whether $userConfig counts as
         // "empty" below. These keys are consumed by the framework — they
         // never reach Options::fromArray() — so a rule configured with
-        // ONLY these keys (e.g. `{ exclude_namespaces: [App\Tests] }` and
+        // ONLY these keys (e.g. `{ suppress_namespaces: [App\Tests] }` and
         // nothing else) must still be treated as "unconfigured" for the
         // fromArray() input, not as "configured with an empty rest-of-
         // config". Stripping them first and THEN checking for emptiness is
@@ -91,8 +92,9 @@ final class RuleOptionsFactory
         // fromArray() and several Options classes special-case that as
         // "disabled" (see the note on $merged below), silently turning the
         // rule off. This was a real regression, caught by external review.
-        $this->extractExcludeNamespaces($ruleName, $userConfig);
-        $this->extractExcludePaths($ruleName, $userConfig);
+        RetiredSuppressionOptions::refuseRuleOption($userConfig);
+        $this->extractSuppressNamespaces($ruleName, $userConfig);
+        $this->extractSuppressPaths($ruleName, $userConfig);
 
         // 4. $merged is what Options::fromArray() actually receives.
         //
@@ -132,33 +134,33 @@ final class RuleOptionsFactory
     }
 
     /**
-     * Extracts exclude_namespaces from merged options and stores them in the provider.
+     * Extracts suppress_namespaces from merged options and stores them in the provider.
      *
      * Supports both snake_case (from config file) and camelCase (from CLI).
      * Removes the key from $merged so it doesn't leak into Options::fromArray().
      *
      * @param array<string, mixed> $merged
      */
-    private function extractExcludeNamespaces(string $ruleName, array &$merged): void
+    private function extractSuppressNamespaces(string $ruleName, array &$merged): void
     {
-        $namespaces = $this->takeAliasedOption($merged, 'excludeNamespaces', 'exclude_namespaces');
+        $namespaces = $this->takeAliasedOption($merged, 'suppressNamespaces', 'suppress_namespaces');
         $this->registry->configureNamespaceExclusions($ruleName, $namespaces);
 
-        $channels = $this->takeAliasedOption($merged, 'excludeNamespaceChannels', 'exclude_namespace_channels');
+        $channels = $this->takeAliasedOption($merged, 'suppressNamespaceChannels', 'suppress_namespace_channels');
         $this->registry->configureNamespaceChannelExclusions($ruleName, $channels);
     }
 
     /**
-     * Extracts exclude_paths from merged options and stores them in the provider.
+     * Extracts suppress_paths from merged options and stores them in the provider.
      *
      * Supports both snake_case (from config file) and camelCase (from CLI).
      * Removes the key from $merged so it doesn't leak into Options::fromArray().
      *
      * @param array<string, mixed> $merged
      */
-    private function extractExcludePaths(string $ruleName, array &$merged): void
+    private function extractSuppressPaths(string $ruleName, array &$merged): void
     {
-        $raw = $this->takeAliasedOption($merged, 'excludePaths', 'exclude_paths');
+        $raw = $this->takeAliasedOption($merged, 'suppressPaths', 'suppress_paths');
 
         if (\is_string($raw)) {
             $patterns = [$raw];
@@ -277,7 +279,7 @@ final class RuleOptionsFactory
         $result = [];
 
         foreach ($options as $key => $value) {
-            $normalizedKey = lcfirst(str_replace(['_', '-'], '', ucwords((string) $key, '_-')));
+            $normalizedKey = ConfigKeySpelling::normalize((string) $key);
             $result[$normalizedKey] = $value;
         }
 
@@ -330,7 +332,7 @@ final class RuleOptionsFactory
      * any extra keys the Options class declares via
      * {@see ShorthandOptionKeysInterface} or
      * {@see AdditionalOptionKeysInterface}. Framework-level keys
-     * (excludeNamespaces, excludePaths) are excluded since they are
+     * (suppressNamespaces, suppressPaths) are excluded since they are
      * extracted before fromArray().
      *
      * > **Note:** reflection only sees constructor parameter names. Any
@@ -359,12 +361,12 @@ final class RuleOptionsFactory
     {
         // Framework-level keys that are valid but not in the options constructor
         static $frameworkKeys = [
-            'excludeNamespaces',
-            'exclude_namespaces',
-            'excludeNamespaceChannels',
-            'exclude_namespace_channels',
-            'excludePaths',
-            'exclude_paths',
+            'suppressNamespaces',
+            'suppress_namespaces',
+            'suppressNamespaceChannels',
+            'suppress_namespace_channels',
+            'suppressPaths',
+            'suppress_paths',
         ];
 
         $acceptedExtraKeys = $this->acceptedExtraOptionKeysFor($optionsClass);
@@ -374,7 +376,7 @@ final class RuleOptionsFactory
         foreach (array_keys($defaults) as $key) {
             $knownKeys[] = $key;
             // Also accept camelCase version of snake_case keys
-            $camelKey = lcfirst(str_replace(['_', '-'], '', ucwords($key, '_-')));
+            $camelKey = ConfigKeySpelling::normalize($key);
             if ($camelKey !== $key) {
                 $knownKeys[] = $camelKey;
             }
@@ -383,10 +385,10 @@ final class RuleOptionsFactory
         foreach ($acceptedExtraKeys as $acceptedExtraKey) {
             // Declared keys are canonical kebab-case; $merged keys are always
             // camelCase by the time they reach here (normalizeKeys()/
-            // RuleOptionsParser::normalizeOptionName() already ran), so both
+            // ConfigKeySpelling::normalize() already ran), so both
             // spellings must be accepted.
             $knownKeys[] = $acceptedExtraKey;
-            $camelAcceptedExtraKey = lcfirst(str_replace(['_', '-'], '', ucwords($acceptedExtraKey, '_-')));
+            $camelAcceptedExtraKey = ConfigKeySpelling::normalize($acceptedExtraKey);
             if ($camelAcceptedExtraKey !== $acceptedExtraKey) {
                 $knownKeys[] = $camelAcceptedExtraKey;
             }
@@ -443,7 +445,7 @@ final class RuleOptionsFactory
      * (multi-word) option names (see CLAUDE.md rule-option naming policy).
      *
      * Both camelCase and kebab/snake_case input are always accepted (see
-     * {@see normalizeKeys()} and `RuleOptionsParser::normalizeOptionName()`),
+     * {@see normalizeKeys()} and `ConfigKeySpelling::normalize()`),
      * but the "Available options" hint must show a single, typeable spelling
      * rather than the internal PHP property name.
      */

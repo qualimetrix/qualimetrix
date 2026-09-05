@@ -674,7 +674,7 @@ It exists because `pending: true` switches a safety net off, and a switched-off 
 A template that expands to zero instances **silently disables** the policy attached to it, which is why — like the other four configuration diagnostics — it fails the run unconditionally instead of waiting on a severity or `fail_on` setting; see the note under [Coverage modes](#coverage-modes). Three common causes:
 
 1. **Typo in the template pattern.** `App\Modul\{module}\Domain\**` instead of `App\Module\{module}\Domain\**` — no class matches and no instance is created.
-2. **Excluded modules.** Every candidate class is removed by `exclude:`, by `exclude_paths`, or by being in a non-analysed directory.
+2. **Excluded modules.** Every candidate class is removed by `exclude:`, by `suppress_paths`, or by being in a non-analysed directory.
 3. **Single-segment capture spanning namespace separators.** `App\{path}\Domain\**` where `path` is meant to capture `Module\Order` (two segments). Switch to `{path:**}` to allow cross-segment captures.
 
 ### Potential-shadow diagnostic
@@ -874,18 +874,18 @@ The baseline file stores layer violations by source layer, target layer, depende
     and projected target, so repeated identical edges share one count-bounded
     baseline identity without using the presentation line.
 
-**Per-rule `exclude_namespaces` / `exclude_paths` also work here.** The [global `exclude_namespaces`](../getting-started/configuration.md#exclude-namespaces) is deliberately exempt for `architecture.*` rules (see the warning there) — a project-wide, metric-shaped exclusion should not double as a silent way to switch off architecture enforcement. The *per-rule* form is a different, explicit mechanism and is **not** exempt:
+**Per-rule `suppress_namespaces` / `suppress_paths` also work here.** The [global `suppress_namespaces`](../getting-started/configuration.md#suppress-namespaces) is deliberately exempt for `architecture.*` rules (see the warning there) — a project-wide, metric-shaped exclusion should not double as a silent way to switch off architecture enforcement. The *per-rule* form is a different, explicit mechanism and is **not** exempt:
 
 ```yaml
 rules:
   architecture.layer-violation:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Legacy
-    exclude_paths:
+    suppress_paths:
       - src/Legacy
 ```
 
-This works because the framework (`RuleOptionsFactory`) extracts `exclude_namespaces` / `exclude_paths` for any rule name unconditionally, before the rule's own Options class ever sees the config. Naming `architecture.layer-violation` explicitly is an unambiguous, auditable choice — unlike a blanket `exclude_namespaces` entry, it cannot be read as "just exclude this namespace from metrics" and accidentally take architecture violations down with it. Suppressions applied this way are counted and reported the same way as any other per-rule exclusion — see [Visibility](../getting-started/configuration.md#rules) in the configuration guide.
+This works because the framework (`RuleOptionsFactory`) extracts `suppress_namespaces` / `suppress_paths` for any rule name unconditionally, before the rule's own Options class ever sees the config. Naming `architecture.layer-violation` explicitly is an unambiguous, auditable choice — unlike a blanket `suppress_namespaces` entry, it cannot be read as "just exclude this namespace from metrics" and accidentally take architecture violations down with it. Suppressions applied this way are counted and reported the same way as any other per-rule exclusion — see [Visibility](../getting-started/configuration.md#rules) in the configuration guide.
 
 <!-- llms:skip-end -->
 

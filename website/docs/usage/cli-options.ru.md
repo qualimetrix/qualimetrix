@@ -56,35 +56,35 @@ bin/qmx check src/ --include-generated
 include_generated: true
 ```
 
-### `--exclude-path`
+### `--suppress-path`
 
 Подавить нарушения для файлов, соответствующих glob-паттерну. Файлы по-прежнему анализируются (их метрики учитываются при расчёте метрик пространства имён), но нарушения не выводятся. Можно указывать несколько раз:
 
 ```bash
-bin/qmx check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
+bin/qmx check src/ --suppress-path="src/Entity/*" --suppress-path="src/DTO/*"
 ```
 
-Объединяется с `exclude_paths` из `qmx.yaml` — оба источника суммируются.
+Объединяется с `suppress_paths` из `qmx.yaml` — оба источника суммируются.
 
 !!! warning "Не действует на правила `architecture.*`"
     Нарушения `architecture.layer-violation` и `architecture.circular-dependency` эта опция
     никогда не подавляет — почему и какие есть альтернативы, см.
-    [Исключение путей из отчёта](../getting-started/configuration.ru.md#исключение-путей-из-отчёта-exclude_paths).
+    [Подавление путей в отчёте](../getting-started/configuration.ru.md#подавление-путей-в-отчёте-suppress_paths).
 
-### `--exclude-namespace`
+### `--suppress-namespace`
 
 Подавить нарушения для классов в пространствах имён, соответствующих префиксу или glob-паттерну. Классы по-прежнему анализируются (их метрики учитываются в агрегированных расчётах), но нарушения не выводятся. Можно указывать несколько раз:
 
 ```bash
-bin/qmx check src/ --exclude-namespace="App\Entity" --exclude-namespace="App\DTO\*"
+bin/qmx check src/ --suppress-namespace="App\Entity" --suppress-namespace="App\DTO\*"
 ```
 
-Объединяется с `exclude_namespaces` из `qmx.yaml` — оба источника суммируются.
+Объединяется с `suppress_namespaces` из `qmx.yaml` — оба источника суммируются.
 
 !!! warning "Не действует на правила `architecture.*`"
     Нарушения `architecture.layer-violation` и `architecture.circular-dependency` эта опция
     никогда не подавляет — почему и какие есть альтернативы, см.
-    [Исключение неймспейсов](../getting-started/configuration.ru.md#исключение-неймспейсов-exclude_namespaces).
+    [Подавление неймспейсов](../getting-started/configuration.ru.md#подавление-неймспейсов-suppress_namespaces).
 
 ---
 
@@ -354,7 +354,7 @@ bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel
 ### `--show-suppressed`
 
 Показать нарушения, подавленные тегами `@qmx-ignore`, а также нарушения, подавленные записью
-`exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths` на уровне правила в `qmx.yaml` (см.
+`suppress_namespaces` / `suppress_namespace_channels` / `suppress_paths` на уровне правила в `qmx.yaml` (см.
 [«Правила»](../getting-started/configuration.ru.md#правила-rules)):
 
 ```bash
@@ -363,7 +363,7 @@ bin/qmx check src/ --show-suppressed
 
 Независимо от `--show-suppressed`, запуск с `-v` печатает разбивку по правилам — сколько
 нарушений подавлено таким образом. Namespace-бакет включает обе опции неймспейсов и выводится
-отдельно от `exclude_paths`; каждый бакет разбит по имени правила. В отличие от `@qmx-ignore`, в остальном это подавление проходит
+отдельно от `suppress_paths`; каждый бакет разбит по имени правила. В отличие от `@qmx-ignore`, в остальном это подавление проходит
 незаметно — ничто в стандартном выводе не сигнализирует о том, что оно произошло.
 
 `--show-suppressed` выводит прозой лишь часть этого.
@@ -406,8 +406,8 @@ bin/qmx check src/ --no-suppression-annotations
     Видимое следствие: под этим флагом подавленное аннотацией нарушение
     показывается со **своей собственной** серьёзностью и никогда не повышается
     до ошибки, потому что ни одна запись baseline его не покрывает. Флаг может
-    сузить измеряемое baseline множество (`--exclude-path`,
-    `--exclude-namespace`), но расширить его не может ни один.
+    сузить измеряемое baseline множество (`--suppress-path`,
+    `--suppress-namespace`), но расширить его не может ни один.
 
 ---
 
@@ -617,8 +617,8 @@ producer-rule, а не группой или каналом — группа и�
     его не публикует.
 
     Опции исключений, ключёванные продюсером, — отдельный вопрос, и до этого канала они не
-    достают: `rules.annotation.directive.exclude_paths` действует только на его ранние каналы, а
-    `exclude_namespaces` не действует ни на один из них, поскольку эти находки сообщаются о файле,
+    достают: `rules.annotation.directive.suppress_paths` действует только на его ранние каналы, а
+    `suppress_namespaces` не действует ни на один из них, поскольку эти находки сообщаются о файле,
     в котором написана аннотация.
 
 ### `--rule-opt`
@@ -633,7 +633,7 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.warning=15
 bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 ```
 
-`exclude_namespace_channels` настраивается в YAML, а не через `--rule-opt`: каждому селектору
+`suppress_namespace_channels` настраивается в YAML, а не через `--rule-opt`: каждому селектору
 нужен непустой список паттернов неймспейсов, тогда как `--rule-opt` передаёт скалярные значения.
 Его ключи — это селекторы каналов, подчиняющиеся тому же правилу «точное имя или `X.*`», что
 и `@qmx-ignore`: голый префикс вроде `health` теперь ошибка, а не сокращение для `health.*`.
@@ -848,7 +848,7 @@ bin/qmx directives src/ --format=json
 
 !!! info "Судим по произведённому правилами, а не по отчёту"
 
-    `exclude_paths`, `exclude_namespaces` и `exclude_namespace_channels` подавляют **публикацию**, а не измерение. Директива, сдвинувшая находку внутри исключённого неймспейса, всё равно что-то сделала, поэтому аудит задаёт вопрос по всем находкам, произведённым правилами, а не по отчёту. Единственный канал вне этого универсума — `annotation.unused-directive`, который прогон собирает уже после исполнения правил: адресовать его директива не может, поэтому и судить по нему нечего.
+    `suppress_paths`, `suppress_namespaces` и `suppress_namespace_channels` подавляют **публикацию**, а не измерение. Директива, сдвинувшая находку внутри исключённого неймспейса, всё равно что-то сделала, поэтому аудит задаёт вопрос по всем находкам, произведённым правилами, а не по отчёту. Единственный канал вне этого универсума — `annotation.unused-directive`, который прогон собирает уже после исполнения правил: адресовать его директива не может, поэтому и судить по нему нечего.
 
     Единственное, что подавлению не засчитывается, — гашение ошибки конфигурации (`annotation.unresolved-directive` и два его собрата). Эти каналы выведены из-под аннотационного подавления по построению, а не настройкой, поэтому директива, адресующая любой из них, отчитывается инертной, как бы она ни была написана.
 

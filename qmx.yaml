@@ -5,7 +5,7 @@
 #
 # Decision framework for violations:
 # 1. Real issue? → Fix the code
-# 2. Structural (project nature)? → exclude_paths or exclude_namespaces
+# 2. Structural (project nature)? → suppress_paths or suppress_namespaces
 # 3. Threshold mismatch? → Tune threshold
 # 4. One-off exception? → @qmx-threshold on the class/method
 # 5. Genuinely inapplicable? → @qmx-ignore with reason
@@ -46,6 +46,7 @@ architecture:
   layers:
     - name: analysis-configuration
       patterns:
+        - 'Qualimetrix\Analysis\Configuration\ConfigKeySpelling'
         - 'Qualimetrix\Analysis\Configuration\ConfigSchema'
         - 'Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument'
         - 'Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface'
@@ -69,6 +70,7 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage'
         - 'Qualimetrix\Analysis\Configuration\Preset\PresetResolver'
+        - 'Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions'
     - name: analysis-evidence-circulardependency
       patterns:
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis'
@@ -454,6 +456,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage'
         - 'Qualimetrix\Analysis\Finding\Contract\Finding'
         - 'Qualimetrix\Analysis\Finding\Contract\FindingChannel'
+        - 'Qualimetrix\Analysis\Finding\Contract\JudgedMetrics'
         - 'Qualimetrix\Analysis\Finding\Contract\LevelActivity'
         - 'Qualimetrix\Analysis\Finding\Contract\Location'
         - 'Qualimetrix\Analysis\Finding\Contract\OccurrenceKey'
@@ -845,6 +848,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FileSetInspectionParticipantCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\JudgedMetricDeclarationGuard'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ParallelCollectorClassesCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass'
@@ -1311,7 +1315,7 @@ rules:
 
   # Core value objects are coupling magnets by design — every domain depends on them.
   coupling.cbo:
-    exclude_namespaces:
+    suppress_namespaces:
       - Qualimetrix\Analysis\Finding\Contract
       # Reconfirmed 2026-08-26 for a namespace that grew: SymbolLevel and its
       # projection moved in here (rule-vocabulary plan Ш5e2b). This line decides
@@ -1329,7 +1333,7 @@ rules:
       # and nothing further is owed to it.
       - Qualimetrix\Core\Symbol
       - Qualimetrix\Core\Path
-    exclude_namespace_channels:
+    suppress_namespace_channels:
       coupling.cbo:namespace:
         # This exact public-contract namespace replaces four broad historical
         # consumer namespaces with five mandatory ADR 0022 named capability
@@ -1340,7 +1344,22 @@ rules:
         # Inline contract dependencies. Exact channel scope keeps declaration
         # CBO, children, and every other coupling channel active.
         - '[Q]ualimetrix\Analysis\Policy\Inline\Contract'
-    exclude_paths:
+        # The Measurement contract namespace, whose union is 45 against a
+        # threshold of 25 and had been ratcheted at 44. The one edge that moved
+        # it is `Infrastructure\DependencyInjection\CompilerPass`: the channel
+        # compiler pass now reads `MetricName`'s constants by reflection to
+        # check at build time that a channel's declared judged metric exists
+        # (ADR 0046), and the union is counted at namespace granularity, so one
+        # new importing namespace is one edge. Measured: reverting the second
+        # new importer (`HealthDimensionCatalog`) leaves the union at 45, so it
+        # is this namespace alone. The check cannot move anywhere cheaper —
+        # every namespace already in the union is an analysis capability, not a
+        # composition root — and a namespace channel is not addressable by
+        # `@qmx-threshold`. Class CBO inside this namespace stays measured:
+        # `MetricName`, `MetricBag`, `AbstractCollector` and the rest each keep
+        # their own point threshold.
+        - '[Q]ualimetrix\Analysis\Evidence\Measurement\Contract'
+    suppress_paths:
       # The graph contract is intentionally a widely consumed type hub. Keep this
       # exact declaration measured by other rules without excluding its siblings.
       - src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php
@@ -1377,11 +1396,10 @@ rules:
 
   # Core contracts and value objects are coupling hubs by design.
   coupling.class-rank:
-    exclude_namespaces:
+    suppress_namespaces:
       - Qualimetrix\Analysis\Finding\Contract
       # Same reconfirmation as for the CBO channel above: the level vocabulary now
-      # lives here, so its ClassRank is unpublished too, and its point threshold
-      # keeps the same suppressed-report reach (rule-vocabulary Ш5e2b).
+      # lives here, so its ClassRank is unpublished too (rule-vocabulary Ш5e2b).
       - Qualimetrix\Core\Symbol
       - Qualimetrix\Analysis\Finding\Rule
       - Qualimetrix\Analysis\Evidence\DependencyModel\Contract
@@ -1392,13 +1410,13 @@ rules:
   # domain-VO sub-namespace. The P4 Layer root contains the Architecture leaf's
   # immutable layer values and its expansion implementation (ADR 0022).
   #
-  # Note on scope: plain `exclude_namespaces` entries match by prefix, so the two
+  # Note on scope: plain `suppress_namespaces` entries match by prefix, so the two
   # entries below are blankets — `Qualimetrix\Core` covers the whole
   # Core tree (including the umbrella namespace itself, D=0.71) and the P4
   # Layer root deliberately covers its Expansion child. Configuration/Allow is
   # a separate concrete selector/value/parser leaf, so it has its own prefix.
   coupling.distance:
-    exclude_namespaces:
+    suppress_namespaces:
       - Qualimetrix\Core
       - Qualimetrix\Analysis\Policy\Architecture\Layer
       - Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow
@@ -1430,11 +1448,27 @@ rules:
       # Concrete validators implement an externally consumed override language,
       # making local A/I incomplete; exact-root distance is 0.7375.
       - '[Q]ualimetrix\Analysis\Finding\Contract\Rule\Override'
+      # The threshold penalizes consolidation itself here, and that is measured
+      # rather than argued. Four copies of the retired-suppression vocabulary
+      # were folded into one owner, which is the only direction the manifest
+      # allows: `Analysis\Finding` already imports `Analysis\Configuration`, so
+      # the reverse edge would be a cycle. Folding them adds afferent edges and
+      # nothing else — abstractness is unchanged, instability falls to 4/38, and
+      # D = |A + I - 1| rises for that reason alone. The counterfactual was
+      # measured, not assumed: leaving the spelling fold in `Core` and moving
+      # only the vocabulary gives 0.677, over the same ceiling, because the
+      # edges are the cause and the class placement is not. Exact-root aggregate
+      # distance is 0.686404. `[Q]` keeps every child namespace (Contract,
+      # Loader, Pipeline, Preset, Discovery) measured, and a namespace channel
+      # is not addressable by `@qmx-threshold` — probed on this tree: a point
+      # override on the file the finding is attributed to left the violation
+      # standing and the audit reported that directive inert.
+      - '[Q]ualimetrix\Analysis\Configuration'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 
   coupling.instability:
-    exclude_namespace_channels:
+    suppress_namespace_channels:
       coupling.instability:namespace:
         # Ca=4 / Ce=36 (I=0.9, rule-vocabulary Ш6): a formatter package is
         # efferent by its nature — each format renders a different slice of
@@ -1451,7 +1485,19 @@ rules:
         # number: no per-class fix exists that keeps the format able to
         # render its own payload.
         - '[Q]ualimetrix\Reporting\Formatter'
-    exclude_paths:
+        # Ca=3 / Ce=62 (I=0.953846), ratcheted at 0.953125 when Ce was 61. The
+        # one new efferent class is `Analysis\Finding\Contract\JudgedMetrics`,
+        # which each judging rule in this package names in its own channel
+        # declaration (ADR 0046). A leaf evidence capability is efferent by its
+        # nature — its rules and collectors depend outward on the Finding
+        # vocabulary, the Measurement contract and the Core symbols, while only
+        # three classes anywhere depend on it inward — so every future addition
+        # to the declaration vocabulary crosses this again by the same
+        # mechanism. There is no per-class fix that keeps a rule able to declare
+        # what it judges, and a namespace channel is not addressable by
+        # `@qmx-threshold`.
+        - '[Q]ualimetrix\Analysis\Evidence\Coupling'
+    suppress_paths:
       # Note: visitors and DI configurators are NOT listed here. They are indeed
       # inherently unstable, but `min_afferent: 2` below already filters them out
       # (they have Ca=1), so path entries for them were pure no-ops — measured, then
@@ -1490,7 +1536,7 @@ rules:
   # The two exact trait paths do the same AST node-type dispatch without carrying
   # the Visitor suffix.
   complexity.npath:
-    exclude_paths:
+    suppress_paths:
       - src/Analysis/Evidence/CodeSmell/*Visitor.php
       - src/Analysis/Evidence/Cohesion/*Visitor.php
       - src/Analysis/Evidence/Complexity/*Visitor.php
@@ -1509,7 +1555,7 @@ rules:
   # `const array METRICS`/`RANGES`, so the exclusion is now a no-op (verified: zero delta).
   duplication.code-duplication:
     min_tokens: 100
-    exclude_paths:
+    suppress_paths:
       - src/Analysis/Evidence/CodeSmell/*Options.php
       - src/Analysis/Evidence/Cohesion/*Options.php
       - src/Analysis/Evidence/Complexity/*Options.php
@@ -1519,9 +1565,23 @@ rules:
       - src/Analysis/Evidence/Security/*Options.php
       - src/Analysis/Evidence/Size/*Options.php
       - src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
+      # CboRule and InstabilityRule match on 34 lines that hold no behaviour: the
+      # class line, the five metadata constants every rule must declare, and the
+      # name/description/supported-levels accessors the rule interface mandates.
+      # Identifiers and literals are normalized before matching, so two rules
+      # implementing one interface are indistinguishable from a copy — the same
+      # mechanism that put the eight `*Options.php` roots above on this list. The
+      # only member inside the window with a body worth sharing is
+      # getSupportedLevels(), whose literal differs in three of the five
+      # hierarchical rules, so no base class can hold it. The window opened when
+      # the retired `requires()` metadata, which used to differ between the two,
+      # was deleted; nothing was copied.
+      # Only CboRule is listed: the detector reports the pair once, on this side.
+      # An InstabilityRule entry beside it was measured as inert and removed.
+      - src/Analysis/Evidence/Coupling/CboRule.php
 
   complexity.cyclomatic:
-    exclude_paths:
+    suppress_paths:
       - src/Analysis/Evidence/CodeSmell/*Visitor.php
       - src/Analysis/Evidence/Cohesion/*Visitor.php
       - src/Analysis/Evidence/Complexity/*Visitor.php
@@ -1534,7 +1594,7 @@ rules:
       - src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
 
   complexity.wmc:
-    exclude_paths:
+    suppress_paths:
       - src/Analysis/Evidence/CodeSmell/*Visitor.php
       - src/Analysis/Evidence/Cohesion/*Visitor.php
       - src/Analysis/Evidence/Complexity/*Visitor.php
@@ -1545,7 +1605,7 @@ rules:
       - src/Analysis/Evidence/Size/*Visitor.php
 
   complexity.cognitive:
-    exclude_paths:
+    suppress_paths:
       - src/Analysis/Evidence/CodeSmell/*Visitor.php
       - src/Analysis/Evidence/Cohesion/*Visitor.php
       - src/Analysis/Evidence/Complexity/*Visitor.php
@@ -1588,7 +1648,7 @@ rules:
   code-smell.long-parameter-list:
     warning: 8
     error: 12
-    exclude_paths:
+    suppress_paths:
       - src/Reporting/Report.php
       - src/Reporting/FormatterContext.php
       - src/Analysis/Evidence/DependencyModel/DependencyGraph.php
@@ -1599,7 +1659,7 @@ rules:
       - src/Analysis/Finding/Contract/Finding.php
 
   code-smell.constructor-overinjection:
-    exclude_paths:
+    suppress_paths:
       - src/Reporting/Report.php
       - src/Reporting/FormatterContext.php
       - src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php
@@ -1612,7 +1672,7 @@ rules:
   size.property-count:
     warning: 15
     error: 15
-    exclude_paths:
+    suppress_paths:
       - src/Analysis/Evidence/Size/MethodCountMetrics.php
 
   # --- Design ---
@@ -1622,14 +1682,14 @@ rules:
   design.noc:
     warning: 10
     error: 10
-    exclude_paths:
+    suppress_paths:
       - src/Analysis/Finding/Contract/Rule/AbstractRule.php
       - src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php
 
   cohesion.lcom:
     warning: 5
     error: 5
-    exclude_paths:
+    suppress_paths:
       # Derived metric collectors are thin wrappers (low cohesion by nature)
       - src/Analysis/Evidence/Coupling/*Collector.php
 
@@ -1638,7 +1698,7 @@ rules:
     error: 4
 
   design.god-class:
-    exclude_paths:
+    suppress_paths:
       - src/Reporting/Formatter/Health
 
   # --- Maintainability ---
@@ -1652,7 +1712,7 @@ rules:
 
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
-    exclude_paths:
+    suppress_paths:
       # A console command shares no fields by construction: `configure()` touches
       # none of them and the helpers are static, so shared-field cohesion
       # mis-models the design rather than reporting debt. These seven classes sit
@@ -1680,7 +1740,7 @@ rules:
       - src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php
       - src/Infrastructure/Console/Command/DirectivesCommand.php
       - src/Infrastructure/Console/Command/HookUninstallCommand.php
-    exclude_namespace_channels:
+    suppress_namespace_channels:
       health.cohesion:
         # Stateless expansion algorithms and their immutable result do not share
         # fields; cohesion is structurally inapplicable only to this exact root.

@@ -32,14 +32,6 @@ final class DebugCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function requiresReturnsExpectedMetrics(): void
-    {
-        $rule = new DebugCodeRule(new CodeSmellOptions());
-
-        self::assertSame(['codeSmell.debug_code'], $rule->requires());
-    }
-
-    #[Test]
     public function optionsClassIsCorrect(): void
     {
         self::assertSame(CodeSmellOptions::class, DebugCodeRule::getOptionsClass());

@@ -110,10 +110,9 @@ final class TypeCoverageRuleTest extends TestCase
 
         self::assertSame($dimension['name'], $rule->getName());
         self::assertSame($dimension['description'], $rule->getDescription());
-        self::assertSame([$dimension['coverage']], $rule->requires());
-        // The literals above are the second witness; this is where they are tied
-        // back to the constants, so a renamed constant fails here rather than
-        // leaving the table quietly measuring a key nothing produces.
+        // The literals in this table are the second witness; this is where they
+        // are tied back to the constants, so a renamed constant fails here
+        // rather than leaving the table quietly measuring a key nothing produces.
         self::assertContains(
             $dimension['coverage'],
             (new ReflectionClass(MetricName::class))->getConstants(),

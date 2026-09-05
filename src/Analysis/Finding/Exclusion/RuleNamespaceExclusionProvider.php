@@ -52,12 +52,12 @@ final class RuleNamespaceExclusionProvider
         $patterns = \is_string($patterns) ? [$patterns] : $patterns;
         if (!\is_array($patterns) || !array_is_list($patterns)) {
             throw new InvalidArgumentException(\sprintf(
-                'Option "exclude_namespaces" for rule "%s" must be a string or a list of strings; use "exclude_namespace_channels" for namespace-aggregate channel exclusions',
+                'Option "suppress_namespaces" for rule "%s" must be a string or a list of strings; use "suppress_namespace_channels" for namespace-aggregate channel exclusions',
                 $ruleName,
             ));
         }
 
-        $this->setExclusions($ruleName, $this->validatePatterns($ruleName, 'exclude_namespaces', $patterns));
+        $this->setExclusions($ruleName, $this->validatePatterns($ruleName, 'suppress_namespaces', $patterns));
     }
 
     /**
@@ -81,7 +81,7 @@ final class RuleNamespaceExclusionProvider
     }
 
     /**
-     * Validates and stores the `exclude_namespace_channels` configuration map.
+     * Validates and stores the `suppress_namespace_channels` configuration map.
      *
      * @param array<mixed> $channelPatterns
      */
@@ -93,7 +93,7 @@ final class RuleNamespaceExclusionProvider
 
         if (!\is_array($channelPatterns) || $channelPatterns === [] || array_is_list($channelPatterns)) {
             throw new InvalidArgumentException(\sprintf(
-                'Option "exclude_namespace_channels" for rule "%s" must be a non-empty channel map',
+                'Option "suppress_namespace_channels" for rule "%s" must be a non-empty channel map',
                 $ruleName,
             ));
         }
@@ -109,7 +109,7 @@ final class RuleNamespaceExclusionProvider
     {
         if (!\is_string($selector) || trim($selector) === '') {
             throw new InvalidArgumentException(\sprintf(
-                'Option "exclude_namespace_channels" for rule "%s" contains an empty or non-string channel selector',
+                'Option "suppress_namespace_channels" for rule "%s" contains an empty or non-string channel selector',
                 $ruleName,
             ));
         }
@@ -124,7 +124,7 @@ final class RuleNamespaceExclusionProvider
     {
         if (!\is_array($patterns) || !array_is_list($patterns) || $patterns === []) {
             throw new InvalidArgumentException(\sprintf(
-                'Option "exclude_namespace_channels.%s" for rule "%s" must be a non-empty list of strings',
+                'Option "suppress_namespace_channels.%s" for rule "%s" must be a non-empty list of strings',
                 $selector,
                 $ruleName,
             ));
@@ -132,7 +132,7 @@ final class RuleNamespaceExclusionProvider
 
         return $this->validatePatterns(
             $ruleName,
-            'exclude_namespace_channels.' . $selector,
+            'suppress_namespace_channels.' . $selector,
             $patterns,
         );
     }

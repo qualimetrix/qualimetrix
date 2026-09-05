@@ -8,7 +8,6 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
@@ -17,7 +16,6 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -81,6 +79,15 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * @var array<string, string>
      */
     private const array ALLOWED_FILES = [
+        'src/Analysis/Evidence/Measurement/Contract/MetricName.php' =>
+            'The const declarations that mint the strings. Eighteen metric keys are'
+            . ' spelled the same as a channel code, and this file is where that'
+            . ' spelling is authored, so there is nothing here to derive it from: the'
+            . ' channel of the same spelling is declared by its own producing rule'
+            . ' under another capability root, and pointing the constant at that'
+            . ' declaration would invert the dependency Measurement is allowed to'
+            . ' have. Curing a declaration site is not possible in the sense the'
+            . ' other sites were cured — a definition cannot reference itself.',
         'src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php' =>
             'Declared, audited hand-kept copy of each rule\'s ThresholdParser::parse()'
             . ' key spelling. Its own docblock argues why it cannot be derived at'
@@ -91,6 +98,20 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             . ' ConfigurationMergerTest. See'
             . ' docs/internal/plans/sarif-channel-descriptions.md, "Two sites checked'
             . ' and cleared".',
+        'src/Reporting/Formatter/Json/JsonFormatter.php' =>
+            'Key of the published JSON object carrying $issue->classRank, whose sibling'
+            . ' keys in the same array literal (rank, file, line, symbol, rule,'
+            . ' severity, message, impactScore, debtMinutes) are authored output'
+            . ' vocabulary. The name belongs to the wire contract the finding gate'
+            . ' compares, not to the metric or the channel universe, so spelling it'
+            . ' through MetricName would let an internal metric rename silently'
+            . ' rewrite published output.',
+        'src/Reporting/Formatter/Json/JsonOffenderSection.php' =>
+            'Key of the published JSON object carrying $offender->classCount, whose'
+            . ' sibling keys in the same array literal (symbolPath, healthOverall,'
+            . ' label, reason, violationCount, violationDensity, healthScores) are'
+            . ' authored output vocabulary. Same argument as JsonFormatter.php: the'
+            . ' wire contract must not move when a metric key is renamed.',
     ];
 
     /**
@@ -147,7 +168,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             'A rule class or a declared classless producer is missing from RuleExecutionInterface::allRules().',
         );
 
-        $ownerByLiteral = self::ownerByOwnedLiteral($container);
+        $ownerByLiteral = self::ownerByLiteral($container);
 
         $root = self::projectRoot();
         $findings = [];
@@ -184,7 +205,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
     public function everyNamedFileStillEarnsItsEntry(): void
     {
         $container = (new ContainerFactory())->create();
-        $ownerByLiteral = self::ownerByOwnedLiteral($container);
+        $ownerByLiteral = self::ownerByLiteral($container);
         $root = self::projectRoot();
         $stale = [];
 
@@ -261,14 +282,18 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
      * Rule names and channel codes alike, each mapped to the capability that
      * owns it — the one place this map is built.
      *
-     * Two questions read this map and they need different halves of it, so the
-     * split is explicit rather than incidental: whether a hand-spelled code
-     * names anything real is asked of the whole set, and whether a literal
-     * belongs to the file holding it is asked of
-     * {@see ownerByOwnedLiteral()}, which drops the names a metric key and a
-     * channel code share. Building each half separately from the container
-     * would be two enumerations of one thing, which is the drift this guard
-     * exists to catch.
+     * Both questions read this one map — whether a hand-spelled code names
+     * anything real, and whether a literal belongs to the file holding it.
+     * Building either from the container separately would be two enumerations
+     * of one thing, which is the drift this guard exists to catch.
+     *
+     * A spelling shared by a channel code and a metric key is no longer
+     * dropped. It used to be, and the cost was that a health catalog copying
+     * another capability's channel code passed: the drop took roughly twenty
+     * of the fifty-two codes out of the check. The overlap sites were then
+     * enumerated with this guard's own reader and every one that read a metric
+     * now spells it as a `MetricName` constant, so a surviving literal is once
+     * again evidence of a channel reference.
      *
      * @return array<string, string>
      */
@@ -293,51 +318,6 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         }
 
         return $ownerByLiteral;
-    }
-
-    /**
-     * The same map, minus the literals a metric key and a channel code share.
-     *
-     * @return array<string, string>
-     */
-    private static function ownerByOwnedLiteral(ContainerBuilder $container): array
-    {
-        $owners = self::ownerByLiteral($container);
-
-        foreach (self::metricKeys() as $key) {
-            unset($owners[$key]);
-        }
-
-        return $owners;
-    }
-
-    /**
-     * The published metric keys, which this guard must not read as channel codes.
-     *
-     * Ш5e3 made a metric key and the channel checking it the same string on
-     * purpose: `size.method-count` is the key `SizeRule` thresholds and the
-     * code its finding carries, and Р7 keeps that so one thing has one name.
-     * The cost lands here. A literal that is both stops being evidence of a
-     * channel reference, so this guard no longer covers the names in the
-     * overlap — twenty-odd of the fifty-two — and a health catalog copying a
-     * channel code of another capability would pass. What it still covers is
-     * every channel whose name is not also a metric key: the whole
-     * `architecture.*`, `annotation.*`, `code-smell.*`, `duplication.*` and
-     * `security.*` families among them, i.e. the families the two measured
-     * drifts actually occurred in.
-     *
-     * Narrowing it further is possible in principle — a literal owned by the
-     * capability that owns the metric is fine, a literal elsewhere is not —
-     * but the two readings are the same string in the same file, so nothing
-     * measures which one was meant.
-     *
-     * @return list<string>
-     */
-    private static function metricKeys(): array
-    {
-        $constants = (new ReflectionClass(MetricName::class))->getConstants();
-
-        return array_values(array_filter($constants, static fn(mixed $value): bool => \is_string($value)));
     }
 
     /**

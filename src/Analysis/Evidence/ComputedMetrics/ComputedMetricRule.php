@@ -58,14 +58,6 @@ final class ComputedMetricRule extends AbstractRule
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [];
-    }
-
-    /**
      * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array

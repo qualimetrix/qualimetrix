@@ -43,14 +43,6 @@ final class InheritanceRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequiresDit(): void
-    {
-        $rule = new InheritanceRule(new InheritanceOptions());
-
-        self::assertSame(['design.dit'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetsOptionsClass(): void
     {
         self::assertSame(

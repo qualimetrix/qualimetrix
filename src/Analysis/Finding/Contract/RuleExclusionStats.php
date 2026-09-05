@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 /**
- * Counts and captures findings suppressed by per-rule `exclude_namespaces`,
- * `exclude_namespace_channels`, or `exclude_paths` (configured under
+ * Counts and captures findings suppressed by per-rule `suppress_namespaces`,
+ * `suppress_namespace_channels`, or `suppress_paths` (configured under
  * `rules: {<rule-name>: {...}}` in `qmx.yaml`).
  *
- * This mechanism is distinct from the global `exclude_namespaces` / `exclude_paths`
+ * This mechanism is distinct from the global `suppress_namespaces` / `suppress_paths`
  * filters ({@see \Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter},
  * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter}), which run later
  * in {@see \Qualimetrix\Reporting\FindingProjection\FindingProjector}: the
@@ -23,7 +23,7 @@ final readonly class RuleExclusionStats
 {
     /**
      * @param array<string, int> $namespaceExclusionsByRule Rule name => findings suppressed by
-     *                                                      `exclude_namespaces` or `exclude_namespace_channels`
+     *                                                      `suppress_namespaces` or `suppress_namespace_channels`
      * @param array<string, int> $pathExclusionsByRule Rule name => suppressed finding count
      * @param list<Finding> $excludedFindings All findings dropped by any per-rule exclusion, in encounter order.
      *                                        Populated only when the current {@see RuleConfigurationInterface} enables capture from

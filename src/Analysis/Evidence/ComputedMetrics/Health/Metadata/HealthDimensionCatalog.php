@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+
 final class HealthDimensionCatalog
 {
     /** @var array<string, list<array{key: string, altKey: string|null, label: string, ideal: string, direction: string}>> */
@@ -16,12 +18,12 @@ final class HealthDimensionCatalog
         ],
         'health.cohesion' => [
             ['key' => 'cohesion.tcc.avg', 'altKey' => 'cohesion.tcc', 'label' => 'TCC', 'ideal' => '1.0', 'direction' => 'higher'],
-            ['key' => 'cohesion.lcom.avg', 'altKey' => 'cohesion.lcom', 'label' => 'LCOM', 'ideal' => '1', 'direction' => 'lower'],
+            ['key' => 'cohesion.lcom.avg', 'altKey' => MetricName::COHESION_LCOM, 'label' => 'LCOM', 'ideal' => '1', 'direction' => 'lower'],
         ],
         'health.coupling' => [
             ['key' => 'coupling.ce.avg', 'altKey' => 'coupling.ce', 'label' => 'Ce (avg)', 'ideal' => '0-3', 'direction' => 'lower'],
             ['key' => 'coupling.ce-packages.avg', 'altKey' => 'coupling.ce-packages', 'label' => 'Ce packages', 'ideal' => '0-1', 'direction' => 'lower'],
-            ['key' => 'coupling.distance.avg', 'altKey' => 'coupling.distance', 'label' => 'Distance', 'ideal' => '0.0', 'direction' => 'lower'],
+            ['key' => 'coupling.distance.avg', 'altKey' => MetricName::COUPLING_DISTANCE, 'label' => 'Distance', 'ideal' => '0.0', 'direction' => 'lower'],
         ],
         'health.typing' => [
             ['key' => 'design.type-coverage.pct', 'altKey' => null, 'label' => 'Coverage', 'ideal' => '100%', 'direction' => 'higher'],
@@ -41,6 +43,26 @@ final class HealthDimensionCatalog
         'coupling' => ['bad' => 'high coupling', 'good' => 'low coupling'],
         'typing' => ['bad' => 'low type safety', 'good' => 'good type safety'],
         'maintainability' => ['bad' => 'hard to maintain', 'good' => 'maintainable'],
+    ];
+
+    /**
+     * The class-level metrics a report calls out by name.
+     *
+     * A constant beside the other two catalogs rather than a literal in the
+     * accessor: this is settled data about the product, and the accessor that
+     * hands it out has no decision left to make.
+     *
+     * @var list<string>
+     */
+    private const array NOTABLE_CLASS_METRICS = [
+        MetricName::SIZE_METHOD_COUNT,
+        MetricName::SIZE_PROPERTY_COUNT,
+        MetricName::COUPLING_CBO,
+        'complexity.ccn.avg',
+        'cohesion.tcc',
+        MetricName::COMPLEXITY_WMC,
+        'maintainability.mi.avg',
+        'size.loc',
     ];
 
     /** @var array{inputs: array<string, list<array{key: string, altKey: string|null, label: string, ideal: string, direction: string}>>, labels: array<string, array{bad: string, good: string}>, scores: array<string, string>} */
@@ -127,7 +149,7 @@ final class HealthDimensionCatalog
     /** @return list<string> */
     public function notableClassMetrics(): array
     {
-        return ['size.method-count', 'size.property-count', 'coupling.cbo', 'complexity.ccn.avg', 'cohesion.tcc', 'complexity.wmc', 'maintainability.mi.avg', 'size.loc'];
+        return self::NOTABLE_CLASS_METRICS;
     }
 
     public function classLocMetric(): string

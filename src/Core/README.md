@@ -376,7 +376,7 @@ Text that is not a selector matches nothing.
 There is no second, channel-specific grammar. A channel is one name, so every
 surface that addresses one reads `ChannelLevelSelector` — `NameSelector` plus an
 optional level — and the name half of it is this type: the three inline
-suppression directives, the `exclude_namespace_channels` keys, and rule selection
+suppression directives, the `suppress_namespace_channels` keys, and rule selection
 (`only_rules` / `disabled_rules` / `--only-rule` / `--disable-rule`), which also
 matches a producer name. `@qmx-threshold` addresses a rule rather than a channel,
 takes no level (ADR 0024 §2), and reads this grammar for rule names.
@@ -454,7 +454,7 @@ reports does not depend on it. Group addressing is written `complexity.*` and is
 parsed by `NameSelector`, which reads a whole name rather than a first segment.
 That is the difference from the retired group *matcher*, whose derived
 membership decided what a directive applied to; behavioural exemptions such as
-"always let architecture findings through an `exclude_paths`/`exclude_namespaces`
+"always let architecture findings through a `suppress_paths`/`suppress_namespaces`
 filter" are declared per channel instead, see `ChannelFileScope` below.
 
 One consumer does read it, and only to display: `qmx rules --group=<family>`
@@ -639,13 +639,13 @@ Foundation for baseline and suppression.
 
 ### PathExclusionFilter
 
-Suppresses findings whose file path matches configured exclusion patterns (the global `exclude_paths` / `--exclude-path` mechanism). Findings without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. Findings on a channel its owner declared **project-scoped** (e.g. `architecture.*`) are always exempt for the same reason as `NamespaceExclusionFilter` below — the exemption is declared per channel via `ChannelFileScope`, not derived from the rule name's spelling.
+Suppresses findings whose file path matches configured exclusion patterns (the global `suppress_paths` / `--suppress-path` mechanism). Findings without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. Findings on a channel its owner declared **project-scoped** (e.g. `architecture.*`) are always exempt for the same reason as `NamespaceExclusionFilter` below — the exemption is declared per channel via `ChannelFileScope`, not derived from the rule name's spelling.
 
 **Constructor:** `__construct(PathMatcher $pathMatcher)`
 
 ### NamespaceExclusionFilter
 
-Suppresses findings whose symbol namespace matches configured exclusion patterns (the global `exclude_namespaces` / `--exclude-namespace` mechanism). `architecture.*` rule findings (e.g., `architecture.layer-violation`, `architecture.circular-dependency`) are always exempt — a layer-policy violation is not a metric, so a namespace exclusion aimed at quieting noisy metrics must not double as a silent way to disable architecture enforcement. The exemption is **declared per channel**, not derived from the `architecture.` spelling: each capability publishes its project-scoped channel keys (`LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS`, `CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS`) and the filter consults `ChannelFileScope`. A channel nobody declared is file-scoped, which is the right default for the open `computed.*` vocabulary. Occurrence-style findings (code-smell, security) carry a file symbol path whose namespace is `null`; the filter falls back to the declaring namespace on `Finding::$subject` so those findings are still suppressible per namespace.
+Suppresses findings whose symbol namespace matches configured exclusion patterns (the global `suppress_namespaces` / `--suppress-namespace` mechanism). `architecture.*` rule findings (e.g., `architecture.layer-violation`, `architecture.circular-dependency`) are always exempt — a layer-policy violation is not a metric, so a namespace exclusion aimed at quieting noisy metrics must not double as a silent way to disable architecture enforcement. The exemption is **declared per channel**, not derived from the `architecture.` spelling: each capability publishes its project-scoped channel keys (`LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS`, `CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS`) and the filter consults `ChannelFileScope`. A channel nobody declared is file-scoped, which is the right default for the open `computed.*` vocabulary. Occurrence-style findings (code-smell, security) carry a file symbol path whose namespace is `null`; the filter falls back to the declaring namespace on `Finding::$subject` so those findings are still suppressible per namespace.
 
 **Constructor:** `__construct(NamespaceMatcher $namespaceMatcher)`
 
@@ -653,7 +653,7 @@ Suppresses findings whose symbol namespace matches configured exclusion patterns
 
 Finding-owned static holder controlling whether `Analysis\Finding\RuleExecution`
 retains individual `Finding` objects suppressed by per-rule
-`exclude_namespaces` / `exclude_paths`, rather than only their counts. It
+`suppress_namespaces` / `suppress_paths`, rather than only their counts. It
 defaults to `false`; `Infrastructure\Console\AnalysisRuntimeConfigurator`
 sets it from `--show-suppressed` before the analysis pipeline runs. This keeps
 the CLI option at the Infrastructure boundary and the capture state with
@@ -717,7 +717,7 @@ The pattern that fired, returned by `PathMatcher::matches()` and `NamespaceMatch
 
 ### PathMatcher
 
-Matches file paths against patterns. Supports two modes per pattern: prefix matching (no glob characters — `src/Entity` matches all files under it) and glob matching (with `*`, `?`, `[` — `src/Metrics/*Visitor.php`). Used for `exclude_paths` configuration.
+Matches file paths against patterns. Supports two modes per pattern: prefix matching (no glob characters — `src/Entity` matches all files under it) and glob matching (with `*`, `?`, `[` — `src/Metrics/*Visitor.php`). Used for `suppress_paths` configuration.
 
 **Constructor:** `__construct(list<string> $patterns)`
 
@@ -727,7 +727,7 @@ Matches file paths against patterns. Supports two modes per pattern: prefix matc
 
 ### NamespaceMatcher
 
-Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but uses `\` as boundary separator, and a trailing `\` in a pattern is cosmetic (`App\Entity\` ≡ `App\Entity`) — normalization lives in `matchesSingle()`, so every caller gets it. Used for `exclude_namespaces`, the `--namespace` selector, health drill-down, worst-offender lists, `coupling.distance`'s `include_namespaces` and layer-policy `patterns:`.
+Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but uses `\` as boundary separator, and a trailing `\` in a pattern is cosmetic (`App\Entity\` ≡ `App\Entity`) — normalization lives in `matchesSingle()`, so every caller gets it. Used for `suppress_namespaces`, the `--namespace` selector, health drill-down, worst-offender lists, `coupling.distance`'s `include_namespaces` and layer-policy `patterns:`.
 
 **Constructor:** `__construct(list<string> $patterns)`
 

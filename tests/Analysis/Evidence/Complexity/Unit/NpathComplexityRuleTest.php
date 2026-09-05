@@ -46,14 +46,6 @@ final class NpathComplexityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new NpathComplexityRule(new NpathComplexityOptions());
-
-        self::assertSame(['complexity.npath'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetOptionsClass(): void
     {
         self::assertSame(

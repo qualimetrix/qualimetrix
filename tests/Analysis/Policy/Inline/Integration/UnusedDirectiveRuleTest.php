@@ -11,7 +11,6 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -746,7 +745,7 @@ final class UnusedDirectiveRuleTest extends TestCase
     private static function analyzeFamily(
         InlineDirectiveOptions $options,
         InlineDirectivePolicy $policy,
-        ChannelIdentityInterface $identity,
+        ChannelUniverseInterface $identity,
     ): array {
         return [
             ...(new UnusedDirectiveRule($options, $policy))->analyze(self::context()),

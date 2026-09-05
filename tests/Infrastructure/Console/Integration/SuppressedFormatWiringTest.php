@@ -51,9 +51,9 @@ final class SuppressedFormatWiringTest extends TestCase
             <<<YAML
             rules:
               code-smell.long-parameter-list:
-                exclude_namespaces:
+                suppress_namespaces:
                   - App\Excluded
-                exclude_paths:
+                suppress_paths:
                   - src/DoesNotExist.php
             YAML,
         );
@@ -85,9 +85,9 @@ final class SuppressedFormatWiringTest extends TestCase
         self::assertSame(0, $exitCode, $display);
 
         $payload = $this->decode($display);
-        self::assertGreaterThanOrEqual(1, $payload['byMechanism']['rule-namespace-exclusion']);
+        self::assertGreaterThanOrEqual(1, $payload['byMechanism']['rule-namespace-suppression']);
         self::assertContainsEquals(
-            ['mechanism' => 'rule-path-exclusion', 'suppressor' => 'code-smell.long-parameter-list: src/DoesNotExist.php'],
+            ['mechanism' => 'rule-path-suppression', 'suppressor' => 'code-smell.long-parameter-list: src/DoesNotExist.php'],
             $payload['neverMatched'],
         );
     }
@@ -116,9 +116,9 @@ final class SuppressedFormatWiringTest extends TestCase
             format: suppressed
             rules:
               code-smell.long-parameter-list:
-                exclude_namespaces:
+                suppress_namespaces:
                   - App\Excluded
-                exclude_paths:
+                suppress_paths:
                   - src/DoesNotExist.php
             YAML,
         );
@@ -160,7 +160,7 @@ final class SuppressedFormatWiringTest extends TestCase
 
         self::assertStringContainsString('0 error(s), 0 warning(s)', $display);
         self::assertStringContainsString(
-            'suppressed by per-rule exclude_namespaces/exclude_namespace_channels/exclude_paths',
+            'suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths',
             $diagnostics,
         );
     }

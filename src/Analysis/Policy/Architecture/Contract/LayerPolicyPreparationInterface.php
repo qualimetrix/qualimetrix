@@ -33,8 +33,8 @@ interface LayerPolicyPreparationInterface
 
     /**
      * This capability's channels that are **not** file-scoped: a layer policy
-     * is a statement about the project, so `exclude_paths` and
-     * `exclude_namespaces` do not apply to its findings. Declared here rather
+     * is a statement about the project, so `suppress_paths` and
+     * `suppress_namespaces` do not apply to its findings. Declared here rather
      * than inferred from the `architecture.` spelling — see
      * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope}.
      *

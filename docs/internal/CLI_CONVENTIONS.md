@@ -136,11 +136,11 @@ actually does today, not an aspirational convention.
 
 | Channel                            | Canonical casing | Example                                                                |
 | ---------------------------------- | ---------------- | ---------------------------------------------------------------------- |
-| `qmx.yaml` / preset YAML           | `snake_case`     | `exclude_namespaces: [...]`, `max_distance_warning: 0.5`               |
+| `qmx.yaml` / preset YAML           | `snake_case`     | `suppress_namespaces: [...]`, `max_distance_warning: 0.5`              |
 | `--rule-opt` / `#[CliAlias]` flags | `kebab-case`     | `--rule-opt=coupling.cbo:min-class-count=5`, `--cyclomatic-warning=15` |
 
 The repository's own root `qmx.yaml` follows this and is snake_case
-throughout (`exclude_namespaces`, `max_distance_warning`, `min_afferent`,
+throughout (`suppress_namespaces`, `max_distance_warning`, `min_afferent`,
 `max_warning`, …) — treat it as the reference example, not the kebab-case
 form implied by `--rule-opt` alone.
 
@@ -153,7 +153,7 @@ before it reaches an Options class:
 - `RuleOptionsParser::normalizeOptionName()` does the same for `--rule-opt`
   and `#[CliAlias]` option names.
 
-So `exclude_namespaces`, `exclude-namespaces`, and `excludeNamespaces` are
+So `suppress_namespaces`, `suppress-namespaces`, and `suppressNamespaces` are
 all equivalent in `qmx.yaml`; `min-class-count`, `min_class_count`, and
 `minClassCount` are all equivalent on `--rule-opt`. There is no channel where
 only one casing works — the canonical spellings above are the *documented,

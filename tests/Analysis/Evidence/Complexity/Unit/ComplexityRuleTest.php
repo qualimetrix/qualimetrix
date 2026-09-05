@@ -47,14 +47,6 @@ final class ComplexityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new ComplexityRule(new ComplexityOptions());
-
-        self::assertSame(['complexity.ccn', 'complexity.cognitive'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetOptionsClass(): void
     {
         self::assertSame(

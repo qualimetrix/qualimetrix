@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
@@ -28,6 +29,7 @@ use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionInterface;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -102,6 +104,57 @@ final class CheckCommand extends Command
      * - 3: input/configuration error (bad paths, invalid config, etc.)
      */
     private const int EXIT_CONFIG_ERROR = 3;
+
+    /** @var array<string, string> retired flag => the flag that suppresses findings now */
+    private const array RETIRED_SUPPRESSION_FLAGS = [
+        '--exclude-path' => '--suppress-path',
+        '--exclude-namespace' => '--suppress-namespace',
+    ];
+
+    /**
+     * Refuses a retired suppression flag by name, with the text and the exit
+     * code its config-file twins already use.
+     *
+     * The flag is not declared in
+     * {@see \Qualimetrix\Infrastructure\Console\CheckCommandDefinition}, which would put it
+     * back in `--help` as if it still worked; it is recognized here instead,
+     * from the binding failure Symfony already raises for it. Reading the token
+     * list ourselves would mean not knowing which token is an option name and
+     * which is another option's value: a path literally called
+     * `--exclude-path` was refused as a flag, and whether it was refused
+     * depended on which of the two equivalent spellings the user wrote it in.
+     * The parser knows the difference and names the offending option in its
+     * message; anything it did bind is not a retired flag.
+     *
+     * Refusing on this command and not globally is what keeps
+     * `graph:export --exclude-namespace` alive — that flag was never renamed,
+     * it drops files from the graph rather than suppressing findings.
+     *
+     * Symfony's own "option does not exist" names neither the replacement nor
+     * the fork, and leaves exit 1, which a CI wrapper reads as "the run fell
+     * over" rather than "there is a migration to make".
+     */
+    public function run(InputInterface $input, OutputInterface $output): int
+    {
+        try {
+            return parent::run($input, $output);
+        } catch (ConsoleExceptionInterface $e) {
+            foreach (self::RETIRED_SUPPRESSION_FLAGS as $retired => $current) {
+                if (!str_contains($e->getMessage(), \sprintf('"%s"', $retired))) {
+                    continue;
+                }
+
+                $this->resultPresenter->writeDiagnostic(
+                    $output,
+                    '<error>' . RetiredSuppressionOptions::refusalText($retired, $current) . '</error>',
+                );
+
+                return self::EXIT_CONFIG_ERROR;
+            }
+
+            throw $e;
+        }
+    }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {

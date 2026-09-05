@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -26,6 +27,10 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * LCOM measures how well methods in a class work together:
  * - LCOM = 1: all methods share at least one property (cohesive)
  * - LCOM > 1: class could potentially be split into multiple classes
+ *
+ * Besides the published `cohesion.lcom` value, also reads
+ * `size.method-count` (skip trivial classes) and `design.is-readonly` (skip
+ * readonly classes when configured).
  */
 #[CliAlias('lcom-warning', 'warning')]
 #[CliAlias('lcom-error', 'error')]
@@ -48,14 +53,6 @@ final class LcomRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks Lack of Cohesion of Methods (high values indicate class should be split)';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::COHESION_LCOM, MetricName::SIZE_METHOD_COUNT, MetricName::DESIGN_IS_READONLY];
     }
 
     /**
@@ -157,7 +154,11 @@ final class LcomRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Higher,
+                JudgedMetrics::of(MetricName::COHESION_LCOM),
+                SymbolLevel::Class_,
+            ),
         ];
     }
 

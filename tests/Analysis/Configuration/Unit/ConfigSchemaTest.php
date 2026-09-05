@@ -70,7 +70,7 @@ final class ConfigSchemaTest extends TestCase
         self::assertContains('exclude', $lists);
         self::assertContains('disabledRules', $lists);
         self::assertContains('onlyRules', $lists);
-        self::assertContains('excludePaths', $lists);
+        self::assertContains('suppressPaths', $lists);
         self::assertContains('excludeHealth', $lists);
 
         // These are NOT lists

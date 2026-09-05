@@ -11,7 +11,7 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * Suppresses findings whose symbol namespace matches configured exclusion patterns.
  *
  * Findings on a channel its owner declared **project-scoped** are exempt:
- * `exclude_namespaces` means "I don't want metrics for this code", but a
+ * `suppress_namespaces` means "I don't want metrics for this code", but a
  * project-level finding such as an architecture boundary violation is not a
  * metric — silently dropping it would let a noisy-metric exclusion double as an
  * undocumented way to disable layer-policy enforcement. Which channels those

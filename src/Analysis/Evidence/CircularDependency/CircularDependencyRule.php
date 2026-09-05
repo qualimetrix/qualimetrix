@@ -55,14 +55,6 @@ final class CircularDependencyRule extends AbstractRule
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return []; // Requires dependency graph, not metrics
-    }
-
-    /**
      * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array

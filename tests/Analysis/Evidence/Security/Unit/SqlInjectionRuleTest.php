@@ -32,14 +32,6 @@ final class SqlInjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new SqlInjectionRule(new SecurityPatternOptions());
-
-        self::assertSame(['security.sql_injection'], $rule->requires());
-    }
-
-    #[Test]
     public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions(enabled: false));

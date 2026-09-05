@@ -45,7 +45,7 @@ final class PathExclusionFilterTest extends TestCase
 
         $finding = $this->createFinding('src/Entity/User.php', LayerViolationRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by exclude_paths');
+        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by suppress_paths');
     }
 
     #[Test]
@@ -55,7 +55,7 @@ final class PathExclusionFilterTest extends TestCase
 
         $finding = $this->createFinding('src/Entity/User.php', CircularDependencyRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by exclude_paths');
+        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by suppress_paths');
     }
 
     #[Test]
@@ -173,7 +173,7 @@ final class PathExclusionFilterTest extends TestCase
 
             self::assertTrue(
                 $filter->shouldInclude($this->createChannelFinding('src/Entity/User.php', $channel)),
-                \sprintf('%s is declared project-scoped and must survive exclude_paths', $key),
+                \sprintf('%s is declared project-scoped and must survive suppress_paths', $key),
             );
         }
     }

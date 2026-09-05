@@ -19,7 +19,7 @@ interface CircularDependencyPreparationInterface
     /**
      * This capability's channels that are **not** file-scoped: a cycle is a
      * property of the dependency graph, not of the file a member of it happens
-     * to sit in, so `exclude_paths` and `exclude_namespaces` do not apply to
+     * to sit in, so `suppress_paths` and `suppress_namespaces` do not apply to
      * its findings. Declared here rather than inferred from the
      * `architecture.` spelling — see
      * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope}.

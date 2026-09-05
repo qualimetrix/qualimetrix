@@ -134,15 +134,10 @@ final readonly class DirectiveMaskingCoalition
     private static function overlapping(array $measurable, int $index): array
     {
         $group = $measurable[$index];
-        $subjects = $group->subjects;
         $maskers = [];
 
         foreach ($measurable as $position => $candidate) {
-            if ($position === $index || $candidate->rule !== $group->rule) {
-                continue;
-            }
-
-            if (array_intersect($subjects, $candidate->subjects) === []) {
+            if ($position === $index || !$group->overlaps($candidate)) {
                 continue;
             }
 

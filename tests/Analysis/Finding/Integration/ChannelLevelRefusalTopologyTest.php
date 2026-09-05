@@ -119,7 +119,7 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
         'src/Analysis/Finding/Contract/Rule/ChannelLevelRefusalWording.php' =>
             'the seam itself: every sentence a refusal of an authored pair is made of',
         'src/Infrastructure/Console/ChannelExclusionKeyValidator.php' =>
-            'the level `exclude_namespace_channels` applies at is a property of that option\'s own runtime, not a'
+            'the level `suppress_namespace_channels` applies at is a property of that option\'s own runtime, not a'
             . ' question about the channel universe; the seam has already judged the pair by then',
         'src/Infrastructure/Console/RuleInputValidator.php' =>
             '" at that level" is appended to a "matches nothing registered" refusal, after the seam accepted the'

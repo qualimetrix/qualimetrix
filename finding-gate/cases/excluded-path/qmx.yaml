@@ -1,4 +1,4 @@
-exclude_paths:
+suppress_paths:
   - src/Silenced.php
 computed_metrics:
   health.complexity: { enabled: false }

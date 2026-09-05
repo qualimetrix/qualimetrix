@@ -74,8 +74,8 @@ final class CheckCommandBaselineTest extends TestCase
               size.property-count:
                 warning: 1
                 error: 2
-            exclude_paths: ['*ConfiguredPath.php']
-            exclude_namespaces: ['App\ConfiguredNamespace']
+            suppress_paths: ['*ConfiguredPath.php']
+            suppress_namespaces: ['App\ConfiguredNamespace']
             YAML . "\n");
     }
 
@@ -152,8 +152,8 @@ final class CheckCommandBaselineTest extends TestCase
             $check = $this->runCheck([
                 '--baseline' => $this->baselinePath,
                 '--no-suppression-annotations' => true,
-                '--exclude-path' => ['*CliPath.php'],
-                '--exclude-namespace' => ['App\\CliNamespace'],
+                '--suppress-path' => ['*CliPath.php'],
+                '--suppress-namespace' => ['App\\CliNamespace'],
                 '--report' => 'git:staged',
             ]);
 

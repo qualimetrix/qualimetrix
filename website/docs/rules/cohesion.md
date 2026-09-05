@@ -10,6 +10,8 @@ See also: [LCOM (Lack of Cohesion of Methods)](#lcom----lack-of-cohesion-of-meth
 
 **Rule ID:** `cohesion.lcom`
 
+**Judged metric:** `cohesion.lcom`
+
 LCOM4 counts disconnected groups of related instance methods. A value of `1`
 means that the class is cohesive; values above `1` indicate independent groups
 of responsibilities that may be split. Qualimetrix connects methods that share

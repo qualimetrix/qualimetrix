@@ -46,14 +46,6 @@ final class ClassRankRule extends AbstractRule
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::COUPLING_CLASS_RANK];
-    }
-
-    /**
      * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array
@@ -191,6 +183,19 @@ final class ClassRankRule extends AbstractRule
      * class is an accepted coupling hotspot" — the only claim the number
      * actually supports. Ratcheting the coupling ClassRank stands for is
      * `coupling.cbo`'s job; that channel stays `magnitude`.
+     *
+     * **This is also why the channel declares no judged metric**, although its
+     * `metricValue` is read straight out of the catalog
+     * ({@see MetricName::COUPLING_CLASS_RANK}, in {@see classFinding()}).
+     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::judging()}
+     * exists for a `magnitude` channel, and the decision that this one is not
+     * `magnitude` is [ADR 0017](../../../../docs/adr/0017-baseline-ceiling.md),
+     * point 5: a project-normalised rank can change meaning while the channel
+     * does not, and a baseline entry bound to it would over-accept. The
+     * question is settled — do not reopen it by "fixing" the declaration to
+     * match the reading. The cost is named in ADR 0046: this channel is one of
+     * the six the declared-metric check does not cover, and it is the only one
+     * where the check stays silent over a live catalog value.
      *
      * @return array<string, ChannelDeclaration>
      */

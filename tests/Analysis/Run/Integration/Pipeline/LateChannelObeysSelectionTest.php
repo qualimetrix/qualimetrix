@@ -221,7 +221,7 @@ final class LateChannelObeysSelectionTest extends TestCase
      * channel selection is applied to the late finding, the per-producer
      * exclusion ledger is not.
      *
-     * The ledger is reachable at the same point — measured, `exclude_paths`
+     * The ledger is reachable at the same point — measured, `suppress_paths`
      * keyed by the producer does remove this finding when applied there. What
      * it cannot do is account for the removal. A ledger lives for one
      * `execute()` call, and the run's whole account of it — the per-mechanism
@@ -240,7 +240,7 @@ final class LateChannelObeysSelectionTest extends TestCase
     {
         self::assertSame(
             [self::LATE],
-            $this->channelsFrom(['--rule-opt' => [self::PRODUCER . ':exclude_paths=**']]),
+            $this->channelsFrom(['--rule-opt' => [self::PRODUCER . ':suppress_paths=**']]),
         );
     }
 

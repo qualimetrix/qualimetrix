@@ -87,6 +87,14 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * even inspected. Both checks read `$shapeByRule`, built alongside
  * `$minutesByRule` in the same first pass over every rule.
  *
+ * **A third pair guards the judged metric a channel declares (ADR 0046).**
+ * A key a channel names must exist in the metric catalog, and only a
+ * `magnitude` producer may name one at all — see
+ * {@see JudgedMetricDeclarationGuard::assertDeclarable()}, which also names the
+ * six channels the check says nothing about. It lives beside this pass for the
+ * same reason the shape checks do: {@see ChannelDeclaration} would otherwise
+ * have to import the metric catalog across a capability boundary to assert it.
+ *
  * The capability-owned channel family contract supplies the names and the
  * facts of the classless producers. The pass never imports the internal rule
  * or its Options class — the latter is read off the one producer of the family
@@ -467,6 +475,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                 ));
             }
 
+            JudgedMetricDeclarationGuard::assertDeclarable($key, $class, $producerRuleName, $shapeByRule[$producerRuleName], $declaration);
             $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shapeByRule[$producerRuleName], $declaration);
 
             $channel = new FindingChannel($key);
@@ -516,7 +525,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
      *
      * The channels are registered under the *producer rule's* name, not under
      * some identity of the validator's own, because that name is what
-     * `--disable-rule`, `only_rules`, `exclude_paths`, the channel
+     * `--disable-rule`, `only_rules`, `suppress_paths`, the channel
      * description, the documentation page and the remediation estimate all
      * resolve through today. The producer's own metadata is read in a first
      * pass over every rule, so a validator may be registered before the rule
@@ -576,6 +585,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 
         foreach ($validatorDeclarations as $key => $declaration) {
             $this->assertUnclaimed($key, $class, $declarations, $producerByCode, $producerRuleName);
+            JudgedMetricDeclarationGuard::assertDeclarable($key, $class, $producerRuleName, $shape, $declaration);
             $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shape, $declaration);
 
             $channel = new FindingChannel($key);

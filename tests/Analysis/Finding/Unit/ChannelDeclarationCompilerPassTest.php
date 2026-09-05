@@ -11,10 +11,12 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -69,7 +71,11 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             $declarations['code-smell.goto'],
         );
         self::assertEquals(
-            ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Callable),
+            ChannelDeclaration::judging(
+                WorseDirection::Lower,
+                JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
+                SymbolLevel::Callable,
+            ),
             $declarations['maintainability.index'],
         );
         self::assertSame(
@@ -225,6 +231,79 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
     }
 
     /**
+     * ADR 0046: a channel names the catalog metric its magnitude is read
+     * from, and the key it names has to exist. Refused at container build
+     * because that is the one place a `Analysis.Finding` declaration and the
+     * `Analysis.Evidence.Measurement` catalog are both in hand without either
+     * capability importing the other.
+     */
+    #[Test]
+    public function itThrowsWhenAChannelJudgesAMetricTheCatalogDoesNotPublish(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleJudgingAnUnknownMetric::class)
+            ->setClass(FixtureRuleJudgingAnUnknownMetric::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('judges "complexity.ccn.mux", which is not a metric the catalog publishes');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    /**
+     * The aggregate half of the same check: `size.class-count.sum` is not a
+     * `MetricName` constant, and it is exactly what `ClassCountRule` reads.
+     * A check that only compared against constant values would have forced
+     * every aggregate-reading channel to declare a key its rule never asks
+     * for.
+     */
+    #[Test]
+    public function itAcceptsAnAggregateSpellingOfAPublishedMetric(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleJudgingAnAggregate::class)
+            ->setClass(FixtureRuleJudgingAnAggregate::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+
+        $declarations = $container->getDefinition(ChannelUniverse::class)->getArgument('$staticDeclarations');
+        self::assertIsArray($declarations);
+        $declaration = $declarations[FixtureRuleJudgingAnAggregate::NAME];
+        self::assertInstanceOf(ChannelDeclaration::class, $declaration);
+        self::assertNotNull($declaration->judges);
+        self::assertSame(['size.class-count.sum'], $declaration->judges->keys);
+    }
+
+    /**
+     * A judged metric is where a *reported magnitude* comes from, so an
+     * `occurrence` producer naming one is refused — and refused under its own
+     * message, ahead of the direction check, which would otherwise report the
+     * same fixture as a direction disagreement and say nothing about the
+     * judged metric that caused it. `coupling.class-rank` is the live case
+     * this keeps honest: it reads a catalog metric and is deliberately
+     * `occurrence` (ADR 0017 point 5), so "just declare it" must not be a
+     * thing the build quietly permits.
+     */
+    #[Test]
+    public function itThrowsWhenAnOccurrenceProducerNamesAJudgedMetric(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureOccurrenceRuleJudgingAMetric::class)
+            ->setClass(FixtureOccurrenceRuleJudgingAMetric::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('names a judged metric, but producer "fixture.judging-occurrence" declares shape "occurrence"');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    /**
      * The display family is derived from a producer's name rather than
      * declared beside it, so a name with no first segment would reach
      * `qmx rules` as an empty group heading. Refused at container build
@@ -365,14 +444,6 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [];
-    }
-
-    /**
      * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
     /**
@@ -429,14 +500,6 @@ final class FixtureRuleWithShapeMismatch implements RuleInterface
     public static function shape(): ChannelShape
     {
         return ChannelShape::Magnitude;
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [];
     }
 
     /**
@@ -507,14 +570,6 @@ final class FixtureRuleForShapeAgreement implements RuleInterface
     public static function shape(): ChannelShape
     {
         return ChannelShape::Occurrence;
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [];
     }
 
     /**
@@ -645,14 +700,6 @@ final class FixtureRuleWithoutAFamily implements RuleInterface
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [];
-    }
-
-    /**
      * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
     /**
@@ -677,5 +724,210 @@ final class FixtureRuleWithoutAFamily implements RuleInterface
     public static function getOptionsClass(): string
     {
         return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+}
+
+/**
+ * @internal
+ *
+ * A key one character away from a real aggregate spelling — the typo class the
+ * catalog check exists for.
+ */
+final class FixtureRuleJudgingAnUnknownMetric implements RuleInterface
+{
+    public const string NAME = 'fixture.unknown-judged-metric';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 5;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule for the judged-metric half of registry assembly.';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Magnitude;
+    }
+
+    /**
+     * A double with no producers of its own: an empty activity declares
+     * nothing, and absence is not disablement.
+     *
+     * @return array<string, array<string, bool>>
+     */
+    public function levelActivity(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+
+    /**
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [self::NAME => ChannelDeclaration::judging(
+            WorseDirection::Higher,
+            JudgedMetrics::of('complexity.ccn.mux'),
+            SymbolLevel::Class_,
+        )];
+    }
+}
+
+/**
+ * @internal
+ *
+ * Judges an aggregate spelling, which no `MetricName` constant equals.
+ */
+final class FixtureRuleJudgingAnAggregate implements RuleInterface
+{
+    public const string NAME = 'fixture.aggregate-judged-metric';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 5;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule for the judged-metric half of registry assembly.';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Magnitude;
+    }
+
+    /**
+     * A double with no producers of its own: an empty activity declares
+     * nothing, and absence is not disablement.
+     *
+     * @return array<string, array<string, bool>>
+     */
+    public function levelActivity(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+
+    /**
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [self::NAME => ChannelDeclaration::judging(
+            WorseDirection::Higher,
+            JudgedMetrics::of('size.class-count.sum'),
+            SymbolLevel::Namespace_,
+        )];
+    }
+}
+
+/**
+ * @internal
+ *
+ * Declares `occurrence` and names a judged metric anyway.
+ */
+final class FixtureOccurrenceRuleJudgingAMetric implements RuleInterface
+{
+    public const string NAME = 'fixture.judging-occurrence';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 5;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule for the judged-metric half of registry assembly.';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
+    /**
+     * A double with no producers of its own: an empty activity declares
+     * nothing, and absence is not disablement.
+     *
+     * @return array<string, array<string, bool>>
+     */
+    public function levelActivity(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+
+    /**
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [self::NAME => ChannelDeclaration::judging(
+            WorseDirection::Higher,
+            JudgedMetrics::of('cohesion.lcom'),
+            SymbolLevel::Class_,
+        )];
     }
 }

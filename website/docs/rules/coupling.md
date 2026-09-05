@@ -15,6 +15,8 @@ Think of coupling like wires connecting boxes. The more wires between two boxes,
 
 **Rule ID:** `coupling.cbo`
 
+**Judged metrics:** `coupling.cbo`, `coupling.cbo-app`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -121,7 +123,7 @@ Qualimetrix implements **bidirectional coupling** consistent with Chidamber & Ke
 # qmx.yaml
 rules:
   coupling.cbo:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Core\ValueObject
     scope: application  # 'all' (default) or 'application' (uses CBO_APP)
     class:
@@ -220,6 +222,8 @@ When no `framework-namespaces` are configured, `coupling.cbo-app` equals `coupli
 
 **Rule ID:** `coupling.instability`
 
+**Judged metric:** `coupling.instability`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -314,7 +318,7 @@ class DailyReportJob
 # qmx.yaml
 rules:
   coupling.instability:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Core\ValueObject
     class:
       max_warning: 0.9
@@ -370,6 +374,8 @@ bin/qmx check src/ --rule-opt="coupling.instability:threshold=0.9"
 ## Distance from Main Sequence
 
 **Rule ID:** `coupling.distance`
+
+**Judged metric:** `coupling.distance`
 
 <!-- llms:skip-begin -->
 ### What it measures
@@ -472,7 +478,7 @@ rules:
     include_namespaces:
       - App\Domain
       - App\Infrastructure
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Tests
 ```
 

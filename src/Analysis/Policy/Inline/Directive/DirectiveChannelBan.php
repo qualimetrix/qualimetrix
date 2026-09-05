@@ -29,10 +29,10 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
  *
  * What the ban is **not**: an exemption from the report. A finding on this
  * channel is ordinary debt — ratchetable, dropped by the top-level
- * `exclude_paths`, inside a git scope like any other — and passes every stage
+ * `suppress_paths`, inside a git scope like any other — and passes every stage
  * after suppression. Only the configuration errors are lifted out of the
  * pipeline, and this channel is not one. Two exclusions never reached it and
- * still do not: `exclude_namespaces` matches a namespace, and this finding's
+ * still do not: `suppress_namespaces` matches a namespace, and this finding's
  * subject is the file; the producer's own `exclude_*` keys run inside rule
  * execution, and the channel is assembled after it.
  */

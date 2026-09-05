@@ -22,7 +22,7 @@ enum DirectiveEffect: string
      * Between the two stand the per-rule exclusion ledger, channel selection,
      * the ratchet and the git scope, each of which can drop a finding this
      * directive silenced first. Measured on a fixture: under
-     * `rules.code-smell.boolean-argument.exclude_paths` covering the annotated
+     * `rules.code-smell.boolean-argument.suppress_paths` covering the annotated
      * file, removing the directive changes the report by not one byte, and the
      * verdict in that same run is this one. It is the honest answer to "what
      * did this annotation do", which is the question the audit is asked; it is
@@ -41,11 +41,23 @@ enum DirectiveEffect: string
      *
      * The name describes the common case rather than every one. A directive
      * that *tightens* a boundary and still leaves the finding standing
-     * produces the same shape of difference, and the rule layer has no notion
-     * of which direction is stricter — `coupling.instability` is worse when
-     * higher, `cohesion.tcc` when lower — so the two cannot be told apart
-     * here. What the verdict states exactly is: applied, and nothing moved
-     * except the boundary it printed.
+     * produces the same shape of difference, and this verdict does not tell
+     * the two apart.
+     *
+     * **Not because the direction is unknown.** Every magnitude channel
+     * declares which way is worse — `WorseDirection` is a required argument of
+     * `ChannelDeclaration::magnitude()`, so a relaxed boundary and a tightened
+     * one are distinguishable from the declaration alone. What is missing is
+     * an occasion: sweeping this tree yields 43 directives, 43 of them
+     * effective and none of them applied-boundary-only, so a split verdict
+     * would sort a population nobody has observed. Re-measure with
+     * `bin/qmx directives src/` before building it.
+     *
+     * That measurement is one tree, and no mechanism is known that would keep
+     * the outcome away from another one — it is a reason not to build the
+     * split now, not evidence that the split is unnecessary. What the verdict
+     * states exactly is: applied, and nothing moved except the boundary it
+     * printed.
      */
     case Overrun = 'overrun';
 

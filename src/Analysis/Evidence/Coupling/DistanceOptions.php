@@ -23,7 +23,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * Namespace filtering:
  * - By default, auto-detects project namespaces from composer.json (autoload.psr-4)
  * - Use `includeNamespaces` to override auto-detection with explicit list
- * - Use `exclude_namespaces` (universal per-rule option) to exclude specific namespaces
+ * - Use `suppress_namespaces` (universal per-rule option) to exclude specific namespaces
  * - External dependencies (not matching project namespaces) are always excluded
  */
 final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface

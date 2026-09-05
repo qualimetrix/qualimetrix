@@ -31,14 +31,6 @@ final class EvalRuleTest extends TestCase
     }
 
     #[Test]
-    public function requiresReturnsExpectedMetrics(): void
-    {
-        $rule = new EvalRule(new CodeSmellOptions());
-
-        self::assertSame(['codeSmell.eval'], $rule->requires());
-    }
-
-    #[Test]
     public function optionsClassIsCorrect(): void
     {
         self::assertSame(CodeSmellOptions::class, EvalRule::getOptionsClass());

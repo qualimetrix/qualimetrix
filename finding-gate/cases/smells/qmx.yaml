@@ -1,4 +1,4 @@
-exclude_paths: []
+suppress_paths: []
 computed_metrics:
   health.complexity: { enabled: false }
   health.cohesion: { enabled: false }

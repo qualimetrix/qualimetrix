@@ -26,7 +26,9 @@ Configuration/
 ├── Loader/             # YAML load and section normalization
 ├── Pipeline/Stage/     # defaults, preset, file, Composer, CLI stages
 ├── Preset/             # built-in and custom preset resolution
-└── ConfigurationMerger.php # document-layer merge mechanics
+├── ConfigKeySpelling.php   # the snake/kebab/camel fold of a key, and its inverse
+├── ConfigurationMerger.php # document-layer merge mechanics
+└── RetiredSuppressionOptions.php # the retired `exclude*` spellings and the one refusal
 ```
 
 ## Resolution model
@@ -37,6 +39,18 @@ Configuration/
 precedence order is defaults, presets, configuration files, Composer discovery,
 and CLI options; later layers override earlier scalar values while the schema
 defines merge semantics for collection values.
+`RetiredSuppressionOptions` holds the retired `exclude*` suppression spellings
+and the one sentence refusing them, for all four doors: the YAML root, a
+`rules:` block, `--rule-opt`, and the rule-option factory behind it. Each door
+used to carry its own copy of the family and of the sentence, and the copies had
+already drifted apart in wording. A refusal answers in the spelling its author
+wrote, so the doors that still hold it — the loader, handed the
+*pre-normalization* `rules:` section by `YamlConfigLoader`, and the `--rule-opt`
+parser — are the ones that raise it: below them `exclude_paths`,
+`exclude-paths` and `excludePaths` are one key. Configuration owns the subject
+because the rule layer already imports Configuration and the reverse edge would
+be a cycle. `ConfigKeySpelling` is that fold and its inverse, shared by every
+door rather than spelled out again in each.
 
 `ConfigurationDocument` preserves ordered source contributions. Feature leaves
 consume their own contribution key: for example,

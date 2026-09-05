@@ -12,6 +12,8 @@ aligned.
 
 **Rule ID:** `maintainability.index`
 
+**Judged metric:** `maintainability.mi`
+
 <!-- llms:skip-begin -->
 ### What it measures
 

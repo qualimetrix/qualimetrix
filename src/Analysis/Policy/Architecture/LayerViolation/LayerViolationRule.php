@@ -77,14 +77,6 @@ final class LayerViolationRule extends AbstractRule
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [];
-    }
-
-    /**
      * @return class-string<LayerViolationOptions>
      */
     public static function getOptionsClass(): string

@@ -8,6 +8,8 @@
 
 **Rule ID:** `design.noc`
 
+**Судимая метрика:** `design.noc`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -97,6 +99,8 @@ bin/qmx check src/ --rule-opt="design.noc:error=20"
 ## Глубина наследования
 
 **Rule ID:** `design.inheritance`
+
+**Судимая метрика:** `design.dit`
 
 <!-- llms:skip-begin -->
 ### Что измеряет
@@ -206,6 +210,8 @@ bin/qmx check src/ --rule-opt="design.inheritance:error=7"
 
 **Rule ID:** `design.type-coverage.param`
 
+**Судимая метрика:** `design.type-coverage.param`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -294,6 +300,8 @@ bin/qmx check src/ --param-type-coverage-error=60
 
 **Rule ID:** `design.type-coverage.return`
 
+**Судимая метрика:** `design.type-coverage.return`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -359,6 +367,8 @@ bin/qmx check src/ --return-type-coverage-error=60
 
 **Rule ID:** `design.type-coverage.property`
 
+**Судимая метрика:** `design.type-coverage.property`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -419,6 +429,8 @@ bin/qmx check src/ --property-type-coverage-error=60
 ## Класс данных (Data Class)
 
 **Идентификатор правила:** `design.data-class`
+
+**Судимая метрика:** `design.woc`
 **Серьезность:** Warning
 
 <!-- llms:skip-begin -->

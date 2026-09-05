@@ -43,14 +43,6 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function requires_returnsClassRank(): void
-    {
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        self::assertSame(['coupling.class-rank'], $rule->requires());
-    }
-
-    #[Test]
     public function getOptionsClass_returnsClassRankOptions(): void
     {
         self::assertSame(ClassRankOptions::class, ClassRankRule::getOptionsClass());

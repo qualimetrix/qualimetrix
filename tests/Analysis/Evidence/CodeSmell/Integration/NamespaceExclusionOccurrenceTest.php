@@ -12,7 +12,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * End-to-end guard for D2: the global `--exclude-namespace` option must
+ * End-to-end guard for D2: the global `--suppress-namespace` option must
  * suppress occurrence-style findings (e.g. `code-smell.eval`) whose *file*
  * symbol path carries no namespace, by resolving the declaring namespace from
  * the finding's subject.
@@ -92,7 +92,7 @@ PHP);
             '--no-cache' => true,
             '--no-progress' => true,
             '--only-rule' => ['code-smell.eval'],
-            '--exclude-namespace' => ['Foo'],
+            '--suppress-namespace' => ['Foo'],
         ]);
 
         $report = json_decode(self::extractJsonObject($tester->getDisplay()), true, 512, \JSON_THROW_ON_ERROR);

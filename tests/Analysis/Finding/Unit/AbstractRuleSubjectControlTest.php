@@ -60,11 +60,6 @@ final class SubjectControlHarness extends AbstractRule
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
 
-    public function requires(): array
-    {
-        return [];
-    }
-
     public function analyze(AnalysisContext $context): array
     {
         return [];

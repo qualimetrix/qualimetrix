@@ -132,7 +132,7 @@ final readonly class FindingProjector
      * reports that the tool cannot do what the configuration asked. That is
      * not a judgement about the code, so it is not something a user is
      * entitled to filter out — and the promise is that *nothing* filters it:
-     * not `@qmx-ignore`, not `exclude_paths` or `exclude_namespaces`, not a
+     * not `@qmx-ignore`, not `suppress_paths` or `suppress_namespaces`, not a
      * baseline, not a report narrowed to a git range.
      *
      * Holding these findings out of the pipeline is the mechanism, rather
@@ -186,8 +186,8 @@ final readonly class FindingProjector
      * Which channels those are is declared by the capabilities themselves and
      * assembled by {@see DeclaredChannelFileScope}, so the guarantee extends
      * to the next project-scoped channel without anyone editing this class.
-     * That one scope is what all three narrowing stages read — `exclude_paths`
-     * and `exclude_namespaces` here, and the git-range narrowing in
+     * That one scope is what all three narrowing stages read — `suppress_paths`
+     * and `suppress_namespaces` here, and the git-range narrowing in
      * {@see project()}. Letting each stage decide for itself is what produced
      * two answers to one question: `architecture.unassigned-class` was exempt
      * from the first two and silently dropped by the third, so
@@ -209,13 +209,13 @@ final readonly class FindingProjector
     {
         $fileScope = DeclaredChannelFileScope::create();
         $stages = [];
-        if ($options->excludePaths !== []) {
+        if ($options->suppressPaths !== []) {
             $stages[] = new PredicateFilterStage(
                 FindingFilterStage::PathExclusion,
-                new PathExclusionFilter(new PathMatcher(array_values($options->excludePaths)), $fileScope),
+                new PathExclusionFilter(new PathMatcher(array_values($options->suppressPaths)), $fileScope),
             );
         }
-        $matcher = new NamespaceMatcher(array_values($options->excludeNamespaces));
+        $matcher = new NamespaceMatcher(array_values($options->suppressNamespaces));
         if (!$matcher->isEmpty()) {
             $stages[] = new PredicateFilterStage(
                 FindingFilterStage::NamespaceExclusion,

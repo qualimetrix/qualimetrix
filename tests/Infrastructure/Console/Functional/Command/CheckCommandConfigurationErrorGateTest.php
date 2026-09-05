@@ -71,7 +71,7 @@ final class CheckCommandConfigurationErrorGateTest extends TestCase
 
     /**
      * The same finding, taken out by an exclusion rather than an annotation:
-     * `exclude_paths` covering the only analysed directory.
+     * `suppress_paths` covering the only analysed directory.
      */
     #[Test]
     public function itFailsAndReportsThroughAPathExclusionCoveringTheFile(): void
@@ -84,7 +84,7 @@ final class CheckCommandConfigurationErrorGateTest extends TestCase
 
         $tester = $this->runCheck([
             '--fail-on' => 'none',
-            '--exclude-path' => ['**/Subject.php'],
+            '--suppress-path' => ['**/Subject.php'],
         ]);
 
         self::assertSame(self::EXIT_ERROR, $tester->getStatusCode());

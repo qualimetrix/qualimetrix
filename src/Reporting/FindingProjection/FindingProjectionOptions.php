@@ -10,13 +10,13 @@ use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 final readonly class FindingProjectionOptions
 {
     /**
-     * @param list<string> $excludePaths
-     * @param list<string> $excludeNamespaces
+     * @param list<string> $suppressPaths
+     * @param list<string> $suppressNamespaces
      */
     public function __construct(
         public ?string $baselinePath = null,
-        public array $excludePaths = [],
-        public array $excludeNamespaces = [],
+        public array $suppressPaths = [],
+        public array $suppressNamespaces = [],
         public bool $annotationSuppressionDisabled = false,
         public ?GitScopeRequest $gitScope = null,
     ) {}

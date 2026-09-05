@@ -594,7 +594,7 @@ xdg-open report.html  # Linux
 
 **Когда использовать:** разобраться, почему ожидаемое нарушение отсутствует в
 отчёте; проверить, что именно молчаливо исключает настройка `qmx.yaml`; найти
-неработающую запись `exclude_paths`/`exclude_namespaces` (опечатку в пути,
+неработающую запись `suppress_paths`/`suppress_namespaces` (опечатку в пути,
 удалённый файл).
 
 **Захват включается двумя независимыми способами** — флагом
@@ -605,7 +605,7 @@ xdg-open report.html  # Linux
 
 **В остальном эти две поверхности не эквивалентны.** `--show-suppressed` на
 `--format=text` печатает прозой инлайновые подавления `@qmx-ignore` и
-пер-рулевые исключения. Глобальные `path-exclusion` и `namespace-exclusion`
+пер-рулевые исключения. Глобальные `path-suppression` и `namespace-suppression`
 там видны только как счётчик под `-v`, а не по находкам; снятия `baseline` и
 `git-scope` не выводятся вовсе; текстового аналога `neverMatched` нет.
 `suppressed` — единственная поверхность, публикующая все семь механизмов
@@ -615,18 +615,18 @@ xdg-open report.html  # Linux
 попасть под несколько механизмов сразу — например, находку, которую убрал бы
 инлайновый `@qmx-ignore`, могло раньше убрать исключение по неймспейсу. Всего
 семь механизмов: `suppression` (инлайновые `@qmx-ignore`/`@qmx-ignore-file`/
-`@qmx-ignore-next-line`), `path-exclusion` и `namespace-exclusion` (глобальные
-`exclude_paths`/`exclude_namespaces`), `baseline` (потолок принятого уровня),
+`@qmx-ignore-next-line`), `path-suppression` и `namespace-suppression` (глобальные
+`suppress_paths`/`suppress_namespaces`), `baseline` (потолок принятого уровня),
 `git-scope` (сужение `--report=git:*`) и две половины пер-рулевого леджера
 исключений, настраиваемого под ключом `rules: {<имя-правила>: {...}}` —
-`rule-namespace-exclusion` и `rule-path-exclusion`. `byMechanism` считает
+`rule-namespace-suppression` и `rule-path-suppression`. `byMechanism` считает
 записи по каждому механизму отдельно; поскольку одна и та же находка может
 попасть под несколько механизмов, эти счётчики **не складываются** в число
 различных подавленных находок — об этом прямо говорит поле `note` самого
 формата.
 
 Отдельный список `neverMatched` показывает настроенные подавители, не
-исключившие в этом прогоне ничего: без него устаревшую запись `exclude_paths`,
+исключившие в этом прогоне ничего: без него устаревшую запись `suppress_paths`,
 указывающую на удалённый файл, невозможно отличить от записи, которую вообще
 никогда не писали.
 
@@ -647,21 +647,21 @@ xdg-open report.html  # Linux
     "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
     "mechanisms": [
         "suppression",
-        "path-exclusion",
-        "namespace-exclusion",
+        "path-suppression",
+        "namespace-suppression",
         "baseline",
         "git-scope",
-        "rule-namespace-exclusion",
-        "rule-path-exclusion"
+        "rule-namespace-suppression",
+        "rule-path-suppression"
     ],
     "byMechanism": {
         "suppression": 12,
-        "path-exclusion": 0,
-        "namespace-exclusion": 0,
+        "path-suppression": 0,
+        "namespace-suppression": 0,
         "baseline": 0,
         "git-scope": 0,
-        "rule-namespace-exclusion": 58,
-        "rule-path-exclusion": 131
+        "rule-namespace-suppression": 58,
+        "rule-path-suppression": 131
     },
     "suppressed": [
         {
@@ -676,7 +676,7 @@ xdg-open report.html  # Linux
             "message": "Log the exception or add a comment explaining why it is safe to ignore."
         },
         {
-            "mechanism": "rule-path-exclusion",
+            "mechanism": "rule-path-suppression",
             "suppressor": "code-smell.constructor-overinjection",
             "rule": "code-smell.constructor-overinjection",
             "channel": "code-smell.constructor-overinjection",
@@ -689,16 +689,16 @@ xdg-open report.html  # Linux
     ],
     "neverMatched": [
         {
-            "mechanism": "rule-path-exclusion",
+            "mechanism": "rule-path-suppression",
             "suppressor": "coupling.cbo: src/Analysis/Evidence/Design/*Visitor.php"
         }
     ]
 }
 ```
 
-Для двух механизмов леджера (`rule-namespace-exclusion`,
-`rule-path-exclusion`) `suppressor` называет правило-производитель; для
-`path-exclusion`/`namespace-exclusion` — сработавший настроенный паттерн; для
+Для двух механизмов леджера (`rule-namespace-suppression`,
+`rule-path-suppression`) `suppressor` называет правило-производитель; для
+`path-suppression`/`namespace-suppression` — сработавший настроенный паттерн; для
 `suppression` — `файл:строка` директивы; для `baseline` — описание принятой
 записи; для `git-scope` — настроенную git-ссылку.
 <!-- llms:skip-end -->

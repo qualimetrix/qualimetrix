@@ -518,7 +518,7 @@ final class DirectivesCommandTest extends TestCase
      * The configuration errors are the precedent this case rules out. Those
      * are lifted out of the pipeline before the suppression stage and rejoin
      * the report at the very end, and reinstating that arrangement here would
-     * silently take the channel out of both `exclude_paths` and the ratchet.
+     * silently take the channel out of both `suppress_paths` and the ratchet.
      */
     #[Test]
     public function itLeavesTheBannedChannelInsideEveryStageAfterSuppression(): void
@@ -540,7 +540,7 @@ final class DirectivesCommandTest extends TestCase
 
         $excluded = self::decode($this->runCheck([
             'paths' => [$this->tempDir . '/src'],
-            '--config' => $this->writeConfig(self::WITHOUT_COUPLING . "exclude_paths: ['*Debt.php']\n"),
+            '--config' => $this->writeConfig(self::WITHOUT_COUPLING . "suppress_paths: ['*Debt.php']\n"),
             '--format' => 'json',
         ])->getDisplay());
 

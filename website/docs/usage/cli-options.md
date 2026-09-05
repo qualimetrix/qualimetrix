@@ -56,34 +56,34 @@ Can also be set in `qmx.yaml`:
 include_generated: true
 ```
 
-### `--exclude-path`
+### `--suppress-path`
 
 Suppress violations for files matching a glob pattern. The files are still analyzed (their metrics contribute to namespace-level calculations), but violations are not reported. Can be repeated:
 
 ```bash
-bin/qmx check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
+bin/qmx check src/ --suppress-path="src/Entity/*" --suppress-path="src/DTO/*"
 ```
 
-Merged with `exclude_paths` from `qmx.yaml` — both sources are combined.
+Merged with `suppress_paths` from `qmx.yaml` — both sources are combined.
 
 !!! warning "Does not apply to `architecture.*` rules"
     `architecture.layer-violation` and `architecture.circular-dependency` violations are never
-    suppressed by this option — see [Exclude Paths](../getting-started/configuration.md#exclude-paths)
+    suppressed by this option — see [Suppress Paths](../getting-started/configuration.md#suppress-paths)
     for why and for the alternatives.
 
-### `--exclude-namespace`
+### `--suppress-namespace`
 
 Suppress violations for classes in namespaces matching a prefix or glob pattern. The classes are still analyzed (their metrics contribute to aggregated calculations), but violations are not reported. Can be repeated:
 
 ```bash
-bin/qmx check src/ --exclude-namespace="App\Entity" --exclude-namespace="App\DTO\*"
+bin/qmx check src/ --suppress-namespace="App\Entity" --suppress-namespace="App\DTO\*"
 ```
 
-Merged with `exclude_namespaces` from `qmx.yaml` — both sources are combined.
+Merged with `suppress_namespaces` from `qmx.yaml` — both sources are combined.
 
 !!! warning "Does not apply to `architecture.*` rules"
     `architecture.layer-violation` and `architecture.circular-dependency` violations are never
-    suppressed by this option — see [Exclude Namespaces](../getting-started/configuration.md#exclude-namespaces)
+    suppressed by this option — see [Suppress Namespaces](../getting-started/configuration.md#suppress-namespaces)
     for why and for the alternatives.
 
 ---
@@ -357,7 +357,7 @@ The removed `--generate-baseline` and `--baseline-ignore-stale` options have no 
 ### `--show-suppressed`
 
 Show violations that were suppressed by `@qmx-ignore` tags, and violations suppressed by a
-per-rule `exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths` entry in `qmx.yaml` (see
+per-rule `suppress_namespaces` / `suppress_namespace_channels` / `suppress_paths` entry in `qmx.yaml` (see
 [Rules](../getting-started/configuration.md#rules)):
 
 ```bash
@@ -366,7 +366,7 @@ bin/qmx check src/ --show-suppressed
 
 Independently of `--show-suppressed`, running with `-v` prints a per-rule count of how many
 violations were suppressed this way. The namespace bucket includes both namespace options and
-is separate from `exclude_paths`; each is broken down by rule name. Unlike `@qmx-ignore`, this suppression is otherwise silent: nothing in
+is separate from `suppress_paths`; each is broken down by rule name. Unlike `@qmx-ignore`, this suppression is otherwise silent: nothing in
 the default output indicates it happened.
 
 `--show-suppressed` renders part of this as prose on the text surface.
@@ -408,7 +408,7 @@ bin/qmx check src/ --no-suppression-annotations
     The visible consequence: under this flag an annotated finding is shown at
     its **own** severity and is never promoted to an error, because no baseline
     entry covers it. A flag can narrow what a baseline measures
-    (`--exclude-path`, `--exclude-namespace`); none can widen it.
+    (`--suppress-path`, `--suppress-namespace`); none can widen it.
 
 ---
 
@@ -618,8 +618,8 @@ governs the `rules:` YAML section keys.
     this one does not report it.
 
     The producer's exclusion options are a separate matter and do not reach this channel:
-    `rules.annotation.directive.exclude_paths` gates its early channels only, and
-    `exclude_namespaces` reaches none of them, since these findings are reported against the file
+    `rules.annotation.directive.suppress_paths` gates its early channels only, and
+    `suppress_namespaces` reaches none of them, since these findings are reported against the file
     the annotation was written in.
 
 ### `--rule-opt`
@@ -634,7 +634,7 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.warning=15
 bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 ```
 
-`exclude_namespace_channels` is configured in YAML, not through `--rule-opt`: each selector
+`suppress_namespace_channels` is configured in YAML, not through `--rule-opt`: each selector
 requires a non-empty list of namespace patterns, while `--rule-opt` carries scalar values. Its
 keys are channel selectors and follow the same exact-or-`X.*` rule as `@qmx-ignore` — a bare
 prefix like `health` is now an error, not a shorthand for `health.*`. A key may add `:namespace`
@@ -849,7 +849,7 @@ Four verdicts, of which three are answers and one is the absence of one:
 
 !!! info "Judged against what the rules produced, not against the report"
 
-    `exclude_paths`, `exclude_namespaces` and `exclude_namespace_channels` suppress **publication**, not measurement. A directive that moved a finding inside an excluded namespace still did something, so the audit asks its question against every finding the rules produced, not against the report. The one channel outside that universe is `annotation.unused-directive`, which a run assembles after the rules have run — no directive may address it, so no verdict is judged against it.
+    `suppress_paths`, `suppress_namespaces` and `suppress_namespace_channels` suppress **publication**, not measurement. A directive that moved a finding inside an excluded namespace still did something, so the audit asks its question against every finding the rules produced, not against the report. The one channel outside that universe is `annotation.unused-directive`, which a run assembles after the rules have run — no directive may address it, so no verdict is judged against it.
 
     The one thing a suppression is *not* credited with is silencing a configuration error (`annotation.unresolved-directive` and its two siblings). Those channels are exempt from annotation suppression by construction, not by configuration, so a directive aimed at one is reported inert however it is written.
 

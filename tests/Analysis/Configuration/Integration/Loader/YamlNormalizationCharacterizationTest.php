@@ -147,16 +147,16 @@ final class YamlNormalizationCharacterizationTest extends TestCase
             ['onlyRules' => ['complexity.cognitive']],
         ];
 
-        yield 'exclude_paths → excludePaths' => [
+        yield 'suppress_paths → suppressPaths' => [
             'snake_case root list key normalized to camelCase, glob items preserved',
-            "exclude_paths:\n  - src/Generated/*\n",
-            ['excludePaths' => ['src/Generated/*']],
+            "suppress_paths:\n  - src/Generated/*\n",
+            ['suppressPaths' => ['src/Generated/*']],
         ];
 
-        yield 'exclude_namespaces → excludeNamespaces' => [
+        yield 'suppress_namespaces → suppressNamespaces' => [
             'snake_case root list key normalized to camelCase, namespace strings preserved',
-            "exclude_namespaces:\n  - App\\Generated\n",
-            ['excludeNamespaces' => ['App\\Generated']],
+            "suppress_namespaces:\n  - App\\Generated\n",
+            ['suppressNamespaces' => ['App\\Generated']],
         ];
 
         yield 'exclude_health → excludeHealth' => [

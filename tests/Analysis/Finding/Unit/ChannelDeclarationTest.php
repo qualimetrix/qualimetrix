@@ -8,7 +8,9 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use ReflectionClass;
@@ -37,18 +39,18 @@ final class ChannelDeclarationTest extends TestCase
 
     /**
      * The one refusal left inside the constructor — an empty level list — is
-     * unreachable through either factory, because both take a mandatory first
-     * level. Widening either signature to a variadic-only list puts it back
+     * unreachable through any factory, because all three take a mandatory
+     * first level. Widening any signature to a variadic-only list puts it back
      * in reach, and this test is what says so out loud instead of leaving a
      * branch that looks live and is not.
      */
     #[Test]
     public function itLeavesTheEmptyLevelListRefusalUnstatableThroughTheFactorySignatures(): void
     {
-        $magnitude = (new ReflectionClass(ChannelDeclaration::class))->getMethod('magnitude');
-        $occurrence = (new ReflectionClass(ChannelDeclaration::class))->getMethod('occurrence');
+        $reflection = new ReflectionClass(ChannelDeclaration::class);
 
-        foreach ([$magnitude, $occurrence] as $factory) {
+        foreach (['magnitude', 'occurrence', 'judging'] as $name) {
+            $factory = $reflection->getMethod($name);
             $levels = array_values(array_filter(
                 $factory->getParameters(),
                 static fn(ReflectionParameter $parameter): bool => $parameter->getName() === 'level',
@@ -143,6 +145,53 @@ final class ChannelDeclarationTest extends TestCase
         self::assertFalse(ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)->isConfigurationError());
         self::assertTrue($plain->asConfigurationError()->isConfigurationError());
         self::assertFalse($plain->isConfigurationError(), 'The wither must not mutate the declaration it copies.');
+    }
+
+    /**
+     * `judging()` is `magnitude()` plus the metrics: same shape, same
+     * direction requirement, no third {@see \Qualimetrix\Analysis\Finding\Contract\ChannelShape}
+     * case (ADR 0046). A caller that could reach the metrics through
+     * `magnitude()` or drop them here would make the two factories differ in
+     * something other than that one declared fact.
+     */
+    #[Test]
+    public function itBuildsAJudgingDeclarationThatIsAMagnitudeCarryingItsMetrics(): void
+    {
+        $declaration = ChannelDeclaration::judging(
+            WorseDirection::Higher,
+            JudgedMetrics::of(MetricName::COMPLEXITY_CCN),
+            SymbolLevel::Callable,
+        );
+
+        self::assertSame(WorseDirection::Higher, $declaration->direction);
+        self::assertNotNull($declaration->judges);
+        self::assertSame([MetricName::COMPLEXITY_CCN], $declaration->judges->keys);
+        self::assertFalse($declaration->isConfigurationError());
+    }
+
+    /**
+     * Naming no judged metric is the default, not an omission to be filled in
+     * later: `architecture.circular-dependency` and three others publish a
+     * magnitude of their own making, and `null` is how they say so.
+     */
+    #[Test]
+    public function itLeavesTheJudgedMetricsUnsetForTheTwoOlderFactories(): void
+    {
+        self::assertNull(ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)->judges);
+        self::assertNull(ChannelDeclaration::occurrence(SymbolLevel::Project)->judges);
+    }
+
+    #[Test]
+    public function itCarriesTheJudgedMetricsThroughTheConfigurationErrorWither(): void
+    {
+        $declaration = ChannelDeclaration::judging(
+            WorseDirection::Lower,
+            JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
+            SymbolLevel::Callable,
+        )->asConfigurationError();
+
+        self::assertNotNull($declaration->judges);
+        self::assertSame([MetricName::MAINTAINABILITY_MI], $declaration->judges->keys);
     }
 
     #[Test]

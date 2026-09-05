@@ -38,13 +38,6 @@ interface RuleInterface extends RuleDefinitionInterface
     public function getDescription(): string;
 
     /**
-     * Returns list of metric names this rule requires.
-     *
-     * @return list<string>
-     */
-    public function requires(): array;
-
-    /**
      * Analyzes metrics and generates findings.
      *
      * @return list<Finding>

@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
- * Whether one `exclude_namespace_channels` key addresses a channel the rule it
+ * Whether one `suppress_namespace_channels` key addresses a channel the rule it
  * is written under produces, at a level this option can ever ask about.
  *
  * The key reads the one selector grammar there is: an exact channel name, or
@@ -59,7 +59,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  */
 final readonly class ChannelExclusionKeyValidator
 {
-    private const string OPTION = 'exclude_namespace_channels';
+    private const string OPTION = 'suppress_namespace_channels';
 
     /**
      * The level every key is matched at, whether or not it names one.

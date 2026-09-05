@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -57,6 +58,40 @@ final class DirectiveAddressabilityTest extends TestCase
             $rejection->message,
             'The level half never parsed, so no --rule-opt spelling built from it can be recommended.',
         );
+    }
+
+    /**
+     * A threshold naming the metric key a report prints beside the channel.
+     * The two spellings are eight edits apart, so the near-spelling search
+     * cannot reach the answer: without the declared relation the author is
+     * told nothing is close to what they typed.
+     */
+    #[Test]
+    public function itAnswersAThresholdNamingAJudgedMetricWithTheChannelThatJudgesIt(): void
+    {
+        $rejection = self::addressability()->problemWithThreshold(self::threshold('complexity.ccn'));
+
+        self::assertNotNull($rejection);
+        self::assertFalse($rejection->ruleExistsButCannotBeRetuned);
+        self::assertStringContainsString('"complexity.ccn" is a metric, not a rule', $rejection->message);
+        self::assertStringContainsString(
+            'channel "complexity.cyclomatic" of rule "complexity.cyclomatic"',
+            $rejection->message,
+        );
+    }
+
+    /**
+     * The answer comes from the declaration and from nothing else: a key in
+     * the same family, one no channel declares, gets no pair — which is what
+     * fails if the branch is ever rewritten to match on spelling.
+     */
+    #[Test]
+    public function itOffersNoPairForAMetricNoChannelDeclares(): void
+    {
+        $rejection = self::addressability()->problemWithThreshold(self::threshold('complexity.cognitive.max'));
+
+        self::assertNotNull($rejection);
+        self::assertStringNotContainsString('is a metric, not a rule', $rejection->message);
     }
 
     #[Test]
@@ -124,7 +159,11 @@ final class DirectiveAddressabilityTest extends TestCase
     {
         return new DirectiveAddressability(new ChannelUniverse(
             [
-                'complexity.cyclomatic' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+                'complexity.cyclomatic' => ChannelDeclaration::judging(
+                    WorseDirection::Higher,
+                    JudgedMetrics::of('complexity.ccn', 'complexity.ccn.max'),
+                    SymbolLevel::Class_,
+                ),
                 'coupling.cbo' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
             ],
             [

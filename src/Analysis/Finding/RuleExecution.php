@@ -157,7 +157,7 @@ final class RuleExecution implements RuleExecutionInterface
      * For every static rule and every configuration validator the two are the
      * same name, so nothing moves. They part exactly on the computed-metric
      * family, where one instance publishes under seven producer names: keying
-     * by the instance would apply `health.cohesion`'s `exclude_namespaces` to
+     * by the instance would apply `health.cohesion`'s `suppress_namespaces` to
      * `health.coupling`'s findings, and would let one `--disable-rule` silence
      * all seven. The granularity of {@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats}
      * follows, which is a declared consequence rather than a side effect.

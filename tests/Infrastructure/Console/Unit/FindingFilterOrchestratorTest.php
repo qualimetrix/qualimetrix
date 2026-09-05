@@ -44,8 +44,8 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Verifies that per-rule `exclude_namespaces`, `exclude_namespace_channels`,
- * and `exclude_paths` suppression
+ * Verifies that per-rule `suppress_namespaces`, `suppress_namespace_channels`,
+ * and `suppress_paths` suppression
  * ({@see RuleExecutionResult::exclusions()}, carried on {@see AnalysisResult}) is
  * surfaced by the orchestrator's
  * `-v` and `--show-suppressed` output, mirroring the existing global-filter
@@ -80,7 +80,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             $this->createScopeResolution(),
         );
 
-        self::assertStringNotContainsString('exclude_namespaces', $output->fetch());
+        self::assertStringNotContainsString('suppress_namespaces', $output->fetch());
     }
 
     #[Test]
@@ -102,7 +102,7 @@ final class FindingFilterOrchestratorTest extends TestCase
 
         $display = $output->fetch();
         self::assertStringContainsString(
-            '2 violation(s) suppressed by per-rule exclude_namespaces/exclude_namespace_channels',
+            '2 violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels',
             $display,
         );
         self::assertStringContainsString('complexity.cyclomatic: 2', $display);
@@ -126,7 +126,7 @@ final class FindingFilterOrchestratorTest extends TestCase
         );
 
         $display = $output->fetch();
-        self::assertStringContainsString('3 violation(s) suppressed by per-rule exclude_paths', $display);
+        self::assertStringContainsString('3 violation(s) suppressed by per-rule suppress_paths', $display);
         self::assertStringContainsString('coupling.cbo: 3', $display);
     }
 
@@ -145,7 +145,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             $this->createScopeResolution(),
         );
 
-        self::assertStringNotContainsString('exclude_namespaces', $output->fetch());
+        self::assertStringNotContainsString('suppress_namespaces', $output->fetch());
     }
 
     #[Test]
@@ -180,7 +180,7 @@ final class FindingFilterOrchestratorTest extends TestCase
 
         $display = $output->fetch();
         self::assertStringContainsString(
-            '1 violation(s) suppressed by per-rule exclude_namespaces/exclude_namespace_channels/exclude_paths',
+            '1 violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths',
             $display,
         );
         self::assertStringContainsString('src/Service/UserService.php', $display);
@@ -409,8 +409,8 @@ final class FindingFilterOrchestratorTest extends TestCase
     {
         $definition = new InputDefinition([
             new InputOption('baseline', mode: InputOption::VALUE_OPTIONAL),
-            new InputOption('exclude-path', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
-            new InputOption('exclude-namespace', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
+            new InputOption('suppress-path', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
+            new InputOption('suppress-namespace', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
             new InputOption('report-strict', mode: InputOption::VALUE_NONE),
             new InputOption('no-suppression-annotations', mode: InputOption::VALUE_NONE),
             new InputOption('show-resolved', mode: InputOption::VALUE_NONE),

@@ -45,14 +45,6 @@ final class LcomRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequiresLcomMethodCountAndIsReadonly(): void
-    {
-        $rule = new LcomRule(new LcomOptions());
-
-        self::assertSame(['cohesion.lcom', 'size.method-count', 'design.is-readonly'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetsOptionsClass(): void
     {
         self::assertSame(

@@ -10,7 +10,7 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  *
  * `$produced` and `$published` differ by exactly two things that run inside
  * {@see \Qualimetrix\Analysis\Finding\RuleExecution}: the per-rule
- * `exclude_namespaces`/`exclude_namespace_channels`/`exclude_paths` ledger,
+ * `suppress_namespaces`/`suppress_namespace_channels`/`suppress_paths` ledger,
  * and the per-finding channel selection in `published()` — the half of
  * `--only-rule`/`--disable-rule` that switches off one channel of a producer
  * that keeps running (the computed-metric family publishing seven channels

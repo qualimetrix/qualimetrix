@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
@@ -42,8 +43,16 @@ final readonly class DirectiveNameHints
      */
     public const int SUGGESTION_DISTANCE = 5;
 
+    /**
+     * The two views this class reads, and not the composite that joins them:
+     * an intersection because a single object answers both — the run's channel
+     * universe — while naming
+     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface}
+     * here would additionally hand this class the producer-expansion view it
+     * has no business asking.
+     */
     public function __construct(
-        private ChannelIdentityInterface $identity,
+        private ChannelIdentityInterface&ChannelDeclarationRegistryInterface $universe,
     ) {}
 
     /**
@@ -71,7 +80,7 @@ final readonly class DirectiveNameHints
         $name = $selector->name();
 
         if ($selector->selectsDescendantsOnly()) {
-            if (!$this->identity->hasChannel($name)) {
+            if (!$this->universe->hasChannel($name)) {
                 return self::listOrNothing($this->nearestChannels($name));
             }
 
@@ -93,18 +102,78 @@ final readonly class DirectiveNameHints
     }
 
     /**
-     * The advice for a threshold naming no rule. A name that turns out to be
-     * a *channel* is the common case — the report prints channel names — so
-     * it is answered with the producing rule rather than a guess.
+     * The advice for a threshold naming no rule, in the order the answer is
+     * worth anything: the name is a *channel* (the common case — the report
+     * prints channel names), the name is a *metric* some channel judges, then
+     * near spellings.
+     *
+     * The metric branch sits ahead of the near-spelling search because that
+     * search cannot reach it: `complexity.ccn` is eight edits from
+     * `complexity.cyclomatic`, so an author who typed the metric key they read
+     * in a report used to be told that no declared name was close to it.
      */
     public function forRuleName(string $name): string
     {
-        $producer = $this->identity->producerOf($name);
+        $producer = $this->universe->producerOf($name);
         if ($producer !== null) {
             return \sprintf('"%s" is a channel of rule "%s" — a threshold addresses the rule.', $name, $producer);
         }
 
-        return self::listOrNothing(self::nearest($name, $this->identity->ruleNames()));
+        $judging = $this->channelsJudging($name);
+        if ($judging !== []) {
+            return \sprintf(
+                '"%s" is a metric, not a rule. It is judged by %s — a threshold addresses the rule.',
+                $name,
+                implode(', ', $judging),
+            );
+        }
+
+        return self::listOrNothing(self::nearest($name, $this->universe->ruleNames()));
+    }
+
+    /**
+     * The declared "this channel judges that metric" pairs whose metric is the
+     * name that was typed, each as `channel "X" of rule "Y"`.
+     *
+     * Both halves are printed even where they spell the same, which is every
+     * judging channel today: the sentence has to name the rule a threshold may
+     * address, and a reader given only one name cannot tell which of the two
+     * questions it answers.
+     *
+     * Answered from the declarations rather than from the spelling of the
+     * name, which is the whole point: `complexity.ccn` and
+     * `complexity.cyclomatic` are one letter short of unrelated as strings,
+     * and a channel whose code happens to equal a metric key says nothing
+     * about whether it reads that metric. A metric two channels judge yields
+     * two pairs, because both are things the author could have meant.
+     *
+     * The run-time computed-metric family is out of scope by construction: a
+     * `computed.*` channel's number is its own formula's result, never a
+     * catalog metric, so no declaration there carries judged metrics to match.
+     *
+     * @return list<string>
+     */
+    private function channelsJudging(string $metricKey): array
+    {
+        $pairs = [];
+
+        foreach ($this->universe->staticDeclarations() as $code => $declaration) {
+            if ($declaration->judges === null || !\in_array($metricKey, $declaration->judges->keys, true)) {
+                continue;
+            }
+
+            $producer = $this->universe->producerOf($code);
+
+            // A declared channel with no producer cannot be advised about: the
+            // sentence exists to name the rule a threshold should address.
+            if ($producer !== null) {
+                $pairs[] = \sprintf('channel "%s" of rule "%s"', $code, $producer);
+            }
+        }
+
+        sort($pairs);
+
+        return $pairs;
     }
 
     /** @return list<string> */
@@ -112,8 +181,8 @@ final readonly class DirectiveNameHints
     {
         $codes = [];
 
-        foreach ($this->identity->channels() as $channel) {
-            if ($this->identity->producerOf($channel->code) === $ruleName) {
+        foreach ($this->universe->channels() as $channel) {
+            if ($this->universe->producerOf($channel->code) === $ruleName) {
                 $codes[] = $channel->code;
             }
         }
@@ -145,14 +214,14 @@ final readonly class DirectiveNameHints
     {
         $near = self::nearest($name, self::addressable(array_map(
             static fn(FindingChannel $channel): string => $channel->code,
-            $this->identity->channels(),
+            $this->universe->channels(),
         )));
 
         if ($near !== []) {
             return $near;
         }
 
-        foreach (self::nearest($name, $this->identity->ruleNames()) as $ruleName) {
+        foreach (self::nearest($name, $this->universe->ruleNames()) as $ruleName) {
             $near = [...$near, ...self::addressable($this->channelsOf($ruleName))];
         }
 

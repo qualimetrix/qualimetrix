@@ -24,6 +24,15 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * is what checks the two agree — see
  * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}.
  *
+ * **One more thing does belong here, and it was added against that list:**
+ * {@see $judges}, the catalog metric keys a `magnitude` channel's reported
+ * number may be read from, declared through {@see judging()}. It is here
+ * rather than beside the shape because it is a per-channel fact, not a
+ * per-producer one, and because nothing else in the tree said which metric a
+ * channel judged — the relation was spelled three ways and checked none. The
+ * exception is argued in ADR 0046, which also names the six channels the
+ * resulting check does not cover.
+ *
  * Nothing else belongs here: no axis name, no threshold binding, no
  * epsilon. A channel that declares no {@see ChannelDeclaration} at all is
  * not an error state — it is simply not baselineable (see
@@ -52,11 +61,11 @@ final readonly class ChannelDeclaration
     public array $levels;
 
     /**
-     * The constructor is private, so the only callers are the two factories
+     * The constructor is private, so the only callers are the three factories
      * below. That makes the refusal in {@see canonicalLevels()} — an empty
      * level list — unreachable from outside the file: it is already excluded
-     * by both factory signatures, which take a mandatory first level. It is
-     * kept as a backstop against an edit to those two factories, and
+     * by all three factory signatures, which take a mandatory first level. It
+     * is kept as a backstop against an edit to those factories, and
      * {@see \Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest}
      * pins the signatures that make it unreachable rather than the
      * unreachable branch itself.
@@ -67,6 +76,7 @@ final readonly class ChannelDeclaration
     private function __construct(
         public ?WorseDirection $direction,
         public bool $configurationError,
+        public ?JudgedMetrics $judges,
         array $levels,
     ) {
         $this->levels = self::canonicalLevels($levels);
@@ -84,7 +94,47 @@ final readonly class ChannelDeclaration
      */
     public static function magnitude(WorseDirection $direction, SymbolLevel $level, SymbolLevel ...$moreLevels): self
     {
-        return new self($direction, false, array_merge([$level], $moreLevels));
+        return new self($direction, false, null, array_merge([$level], $moreLevels));
+    }
+
+    /**
+     * The same `magnitude` declaration, naming the catalog metrics its
+     * reported number may be read from.
+     *
+     * The shape is unchanged: a channel declared here is `magnitude` exactly
+     * as one declared by {@see magnitude()} is, and no new
+     * {@see ChannelShape} case exists — ADR 0031 keeps the shape a property of
+     * the producer, and this factory adds a per-channel fact, not a third kind
+     * of channel. The difference between the two factories is whether the
+     * producer's magnitude comes out of the metric catalog at all:
+     * `architecture.circular-dependency` reports a cycle's member count and
+     * `design.god-class` a count of matched criteria, and neither is a
+     * {@see \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName}
+     * key, so both keep declaring {@see magnitude()}.
+     *
+     * Keys are declared in their **exact published spelling**, aggregate
+     * strategy included: `size.class-count` is judged as
+     * `size.class-count.sum` because that is the key
+     * {@see \Qualimetrix\Analysis\Evidence\Size\ClassCountRule} reads. A
+     * channel whose body chooses between keys names all of them — see
+     * {@see JudgedMetrics} for why order is preserved and what the type does
+     * not promise.
+     *
+     * That the named keys exist, and that only a `magnitude` producer names
+     * any, is checked at container build by
+     * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}
+     * — not here, because `MetricName` belongs to
+     * `Analysis\Evidence\Measurement` and a check in this class would give
+     * `Analysis\Finding` an edge onto it for the sake of a build-time
+     * assertion.
+     */
+    public static function judging(
+        WorseDirection $direction,
+        JudgedMetrics $metrics,
+        SymbolLevel $level,
+        SymbolLevel ...$moreLevels,
+    ): self {
+        return new self($direction, false, $metrics, array_merge([$level], $moreLevels));
     }
 
     /**
@@ -96,7 +146,7 @@ final readonly class ChannelDeclaration
      */
     public static function occurrence(SymbolLevel $level, SymbolLevel ...$moreLevels): self
     {
-        return new self(null, false, array_merge([$level], $moreLevels));
+        return new self(null, false, null, array_merge([$level], $moreLevels));
     }
 
     /**
@@ -117,7 +167,7 @@ final readonly class ChannelDeclaration
      */
     public function asConfigurationError(): self
     {
-        return new self($this->direction, true, $this->levels);
+        return new self($this->direction, true, $this->judges, $this->levels);
     }
 
     /**

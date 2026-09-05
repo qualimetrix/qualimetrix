@@ -32,7 +32,7 @@ final class MetricHintCatalog
             'badExplanation' => 'too many code paths per method',
             'goodExplanation' => 'manageable branching',
         ],
-        'complexity.cognitive' => [
+        MetricName::COMPLEXITY_COGNITIVE => [
             'label' => 'Cognitive',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 5',
@@ -46,7 +46,7 @@ final class MetricHintCatalog
             'badExplanation' => 'deeply nested, hard to follow',
             'goodExplanation' => 'straightforward control flow',
         ],
-        'complexity.npath' => [
+        MetricName::COMPLEXITY_NPATH => [
             'label' => 'NPath',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 200',
@@ -67,21 +67,21 @@ final class MetricHintCatalog
             'badExplanation' => 'methods are loosely connected',
             'goodExplanation' => 'methods are well connected',
         ],
-        'cohesion.lcom' => [
+        MetricName::COHESION_LCOM => [
             'label' => 'LCOM4',
             'direction' => 'lower_is_better',
             'goodValue' => '1 or less',
             'badExplanation' => 'class has {value} unrelated method groups',
             'goodExplanation' => 'class is cohesive',
         ],
-        'complexity.wmc' => [
+        MetricName::COMPLEXITY_WMC => [
             'label' => 'WMC',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 20',
             'badExplanation' => 'total method complexity is high',
             'goodExplanation' => 'total complexity is manageable',
         ],
-        'coupling.cbo' => [
+        MetricName::COUPLING_CBO => [
             'label' => 'CBO',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 7',
@@ -123,7 +123,7 @@ final class MetricHintCatalog
             'badExplanation' => 'classes touch many external packages',
             'goodExplanation' => 'narrow package dependencies',
         ],
-        'coupling.instability' => [
+        MetricName::COUPLING_INSTABILITY => [
             'label' => 'Instability',
             'direction' => 'range',
             'goodValue' => '0.3 – 0.7',
@@ -137,14 +137,14 @@ final class MetricHintCatalog
             'badExplanation' => 'package is too abstract/concrete',
             'goodExplanation' => 'balanced abstraction',
         ],
-        'coupling.distance' => [
+        MetricName::COUPLING_DISTANCE => [
             'label' => 'Distance',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 0.3',
             'badExplanation' => 'poor balance of abstraction and stability',
             'goodExplanation' => 'well-balanced design',
         ],
-        'coupling.class-rank' => [
+        MetricName::COUPLING_CLASS_RANK => [
             'label' => 'ClassRank',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 0.02',
@@ -158,7 +158,7 @@ final class MetricHintCatalog
             'badExplanation' => 'deep inheritance, fragile hierarchy',
             'goodExplanation' => 'normal inheritance',
         ],
-        'design.noc' => [
+        MetricName::DESIGN_NOC => [
             'label' => 'NOC',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 5',
@@ -172,14 +172,14 @@ final class MetricHintCatalog
             'badExplanation' => 'too many callable methods',
             'goodExplanation' => 'reasonable method reach',
         ],
-        'size.method-count' => [
+        MetricName::SIZE_METHOD_COUNT => [
             'label' => 'Methods',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 20',
             'badExplanation' => 'too many methods',
             'goodExplanation' => 'focused class',
         ],
-        'size.property-count' => [
+        MetricName::SIZE_PROPERTY_COUNT => [
             'label' => 'Properties',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 10',
@@ -221,21 +221,21 @@ final class MetricHintCatalog
             'badExplanation' => 'missing type declarations',
             'goodExplanation' => 'well-typed code',
         ],
-        'design.type-coverage.param' => [
+        MetricName::DESIGN_TYPE_COVERAGE_PARAM => [
             'label' => 'Parameter Type Coverage',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 80%',
             'badExplanation' => 'missing parameter types',
             'goodExplanation' => 'well-typed parameters',
         ],
-        'design.type-coverage.return' => [
+        MetricName::DESIGN_TYPE_COVERAGE_RETURN => [
             'label' => 'Return Type Coverage',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 80%',
             'badExplanation' => 'missing return types',
             'goodExplanation' => 'well-typed returns',
         ],
-        'design.type-coverage.property' => [
+        MetricName::DESIGN_TYPE_COVERAGE_PROPERTY => [
             'label' => 'Property Type Coverage',
             'direction' => 'higher_is_better',
             'goodValue' => 'above 80%',
@@ -281,20 +281,20 @@ final class MetricHintCatalog
             ['max' => 50, 'text' => 'Very complex, hard to maintain'],
             ['above' => true, 'text' => 'Extremely complex'],
         ],
-        'complexity.cognitive' => [
+        MetricName::COMPLEXITY_COGNITIVE => [
             ['max' => 5, 'text' => 'Simple, easy to understand'],
             ['max' => 15, 'text' => 'Moderate complexity'],
             ['max' => 30, 'text' => 'Complex, hard to follow'],
             ['above' => true, 'text' => 'Very hard to follow'],
         ],
-        'complexity.npath' => [
+        MetricName::COMPLEXITY_NPATH => [
             ['max' => 20, 'text' => 'Simple, few execution paths'],
             ['max' => 200, 'text' => 'Moderate path count'],
             ['max' => 1000, 'text' => 'Many execution paths'],
             ['above' => true, 'text' => 'Explosive path count'],
         ],
         // Cohesion
-        'cohesion.lcom' => [
+        MetricName::COHESION_LCOM => [
             ['max' => 1, 'text' => 'Cohesive — single responsibility'],
             ['max' => 3, 'text' => 'Moderate cohesion'],
             ['max' => 5, 'text' => 'Low cohesion, consider splitting'],
@@ -310,20 +310,20 @@ final class MetricHintCatalog
             ['max' => 0.49, 'text' => 'Moderate cohesion'],
             ['above' => true, 'text' => 'Good cohesion'],
         ],
-        'complexity.wmc' => [
+        MetricName::COMPLEXITY_WMC => [
             ['max' => 20, 'text' => 'Manageable class'],
             ['max' => 50, 'text' => 'Large class'],
             ['max' => 80, 'text' => 'Very large class'],
             ['above' => true, 'text' => 'Excessive — consider splitting'],
         ],
         // Coupling
-        'coupling.cbo' => [
+        MetricName::COUPLING_CBO => [
             ['max' => 7, 'text' => 'Normal coupling'],
             ['max' => 14, 'text' => 'Moderate coupling'],
             ['max' => 20, 'text' => 'High coupling'],
             ['above' => true, 'text' => 'Very high coupling'],
         ],
-        'coupling.instability' => [
+        MetricName::COUPLING_INSTABILITY => [
             ['max' => 0.09, 'text' => 'Maximally stable'],
             ['max' => 0.29, 'text' => 'Stable'],
             ['max' => 0.7, 'text' => 'Balanced'],
@@ -336,12 +336,12 @@ final class MetricHintCatalog
             ['max' => 0.9, 'text' => 'Mostly abstract'],
             ['above' => true, 'text' => 'All abstract'],
         ],
-        'coupling.distance' => [
+        MetricName::COUPLING_DISTANCE => [
             ['max' => 0.1, 'text' => 'On main sequence'],
             ['max' => 0.3, 'text' => 'Acceptable balance'],
             ['above' => true, 'text' => 'Off balance'],
         ],
-        'coupling.class-rank' => [
+        MetricName::COUPLING_CLASS_RANK => [
             ['max' => 0.009, 'text' => 'Peripheral class'],
             ['max' => 0.02, 'text' => 'Moderate importance'],
             ['max' => 0.05, 'text' => 'Important hub'],
@@ -354,7 +354,7 @@ final class MetricHintCatalog
             ['max' => 6, 'text' => 'Deep hierarchy'],
             ['above' => true, 'text' => 'Fragile hierarchy'],
         ],
-        'design.noc' => [
+        MetricName::DESIGN_NOC => [
             ['max' => 0, 'text' => 'Leaf class'],
             ['max' => 5, 'text' => 'Normal inheritance'],
             ['max' => 10, 'text' => 'Many subclasses'],
@@ -367,13 +367,13 @@ final class MetricHintCatalog
             ['above' => true, 'text' => 'Very complex interface'],
         ],
         // Size
-        'size.method-count' => [
+        MetricName::SIZE_METHOD_COUNT => [
             ['max' => 10, 'text' => 'Focused class'],
             ['max' => 20, 'text' => 'Large class'],
             ['max' => 30, 'text' => 'Very large class'],
             ['above' => true, 'text' => 'God Class territory'],
         ],
-        'size.property-count' => [
+        MetricName::SIZE_PROPERTY_COUNT => [
             ['max' => 10, 'text' => 'Normal'],
             ['max' => 15, 'text' => 'Large'],
             ['max' => 20, 'text' => 'Heavy'],
@@ -399,17 +399,17 @@ final class MetricHintCatalog
             ['max' => 79, 'text' => 'Moderate type coverage'],
             ['above' => true, 'text' => 'Good type coverage'],
         ],
-        'design.type-coverage.param' => [
+        MetricName::DESIGN_TYPE_COVERAGE_PARAM => [
             ['max' => 49, 'text' => 'Low coverage'],
             ['max' => 79, 'text' => 'Moderate coverage'],
             ['above' => true, 'text' => 'Good coverage'],
         ],
-        'design.type-coverage.return' => [
+        MetricName::DESIGN_TYPE_COVERAGE_RETURN => [
             ['max' => 49, 'text' => 'Low coverage'],
             ['max' => 79, 'text' => 'Moderate coverage'],
             ['above' => true, 'text' => 'Good coverage'],
         ],
-        'design.type-coverage.property' => [
+        MetricName::DESIGN_TYPE_COVERAGE_PROPERTY => [
             ['max' => 49, 'text' => 'Low coverage'],
             ['max' => 79, 'text' => 'Moderate coverage'],
             ['above' => true, 'text' => 'Good coverage'],
@@ -424,7 +424,7 @@ final class MetricHintCatalog
      * @var array<string, string>
      */
     private const array FORMAT_TEMPLATES = [
-        'cohesion.lcom' => '{value} disconnected group{plural}',
+        MetricName::COHESION_LCOM => '{value} disconnected group{plural}',
     ];
 
     /**
@@ -438,20 +438,20 @@ final class MetricHintCatalog
      */
     private const array HTML_LABELS = [
         'complexity.ccn' => 'Cyclomatic Complexity',
-        'complexity.cognitive' => 'Cognitive Complexity',
-        'complexity.npath' => 'NPath Complexity',
+        MetricName::COMPLEXITY_COGNITIVE => 'Cognitive Complexity',
+        MetricName::COMPLEXITY_NPATH => 'NPath Complexity',
         'cohesion.tcc' => 'Tight Class Cohesion',
         'cohesion.lcc' => 'Loose Class Cohesion',
-        'complexity.wmc' => 'Weighted Methods per Class',
-        'coupling.cbo' => 'Coupling Between Objects',
+        MetricName::COMPLEXITY_WMC => 'Weighted Methods per Class',
+        MetricName::COUPLING_CBO => 'Coupling Between Objects',
         'coupling.ce' => 'Efferent Coupling',
         'coupling.ce-packages' => 'Efferent Packages',
         'design.dit' => 'Depth of Inheritance Tree',
-        'design.noc' => 'Number of Children',
+        MetricName::DESIGN_NOC => 'Number of Children',
         'coupling.rfc' => 'Response for a Class',
         'maintainability.mi' => 'Maintainability Index',
-        'size.method-count' => 'Method Count',
-        'size.property-count' => 'Property Count',
+        MetricName::SIZE_METHOD_COUNT => 'Method Count',
+        MetricName::SIZE_PROPERTY_COUNT => 'Property Count',
         'size.class-count.sum' => 'Class Count',
     ];
 

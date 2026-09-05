@@ -271,7 +271,7 @@ Suppress violations for files matching glob patterns. Useful for generated code,
 
     ```yaml
     # qmx.yaml
-    exclude_paths:
+    suppress_paths:
       - src/Entity/*
       - src/DTO/*
     ```
@@ -279,7 +279,7 @@ Suppress violations for files matching glob patterns. Useful for generated code,
 === "CLI"
 
     ```bash
-    vendor/bin/qmx check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
+    vendor/bin/qmx check src/ --suppress-path='src/Entity/*' --suppress-path='*/DTO/*'
     ```
 
 CLI patterns are merged with those defined in the config file.

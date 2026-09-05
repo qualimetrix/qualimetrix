@@ -1,6 +1,6 @@
 {
     "id": "excluded-path",
-    "description": "Auxiliary: the only case with a non-empty exclude_paths, silencing the one fixture that would fire code-smell.goto.",
+    "description": "Auxiliary: the only case with a non-empty suppress_paths, silencing the one fixture that would fire code-smell.goto.",
     "coverage": "auxiliary",
     "paths": [
         "src"

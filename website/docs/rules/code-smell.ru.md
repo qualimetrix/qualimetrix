@@ -512,6 +512,8 @@ class UserController
 
 **Идентификатор правила:** `code-smell.constructor-overinjection`
 
+**Судимая метрика:** `code-smell.parameter-count`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -579,6 +581,8 @@ bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 ## Длинный список параметров (Long Parameter List)
 
 **Идентификатор правила:** `code-smell.long-parameter-list`
+
+**Судимая метрика:** `code-smell.parameter-count`
 
 <!-- llms:skip-begin -->
 ### Что измеряет
@@ -800,6 +804,8 @@ class OrderService
 ## Неиспользуемые приватные члены (Unused Private Members)
 
 **Идентификатор правила:** `code-smell.unused-private`
+
+**Судимая метрика:** `code-smell.unused-private.total`
 **Серьезность:** Warning
 
 <!-- llms:skip-begin -->
@@ -856,6 +862,8 @@ class OrderService
 ## Недостижимый код (Unreachable Code)
 
 **Идентификатор правила:** `code-smell.unreachable-code`
+
+**Судимая метрика:** `code-smell.unreachable-code`
 
 <!-- llms:skip-begin -->
 ### Что измеряет

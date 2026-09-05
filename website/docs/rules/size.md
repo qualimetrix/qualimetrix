@@ -12,6 +12,8 @@ configuration remain unchanged.
 
 **Rule ID:** `size.method-count`
 
+**Judged metric:** `size.method-count`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -124,6 +126,8 @@ class OrderService
 
 **Rule ID:** `size.class-count`
 
+**Judged metric:** `size.class-count.sum`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -215,6 +219,8 @@ App\Service\                  # 28 classes -- too many!
 ## Property Count
 
 **Rule ID:** `size.property-count`
+
+**Judged metric:** `size.property-count`
 
 <!-- llms:skip-begin -->
 ### What it measures

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Loader;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
@@ -301,7 +301,7 @@ paths:
   - src
 exclude:
   - vendor
-exclude_paths:
+suppress_paths:
   - src/Entity/*
 YAML);
 
@@ -310,19 +310,102 @@ YAML);
         self::assertArrayHasKey('rules', $config);
         self::assertArrayHasKey('cache', $config);
         self::assertSame('json', $config['format']);
-        self::assertSame(['src/Entity/*'], $config['excludePaths']);
+        self::assertSame(['src/Entity/*'], $config['suppressPaths']);
     }
 
     #[Test]
     public function itRejectsNonListExcludePaths(): void
     {
         $path = $this->tempDir . '/config.yaml';
-        file_put_contents($path, 'exclude_paths: not_a_list');
+        file_put_contents($path, 'suppress_paths: not_a_list');
 
         self::expectException(ConfigLoadException::class);
-        self::expectExceptionMessage('"exclude_paths" must be a list');
+        self::expectExceptionMessage('"suppress_paths" must be a list');
 
         $this->loader->load($path);
+    }
+
+    // The retired root-level `exclude_paths`/`exclude_namespaces` spelling
+    // must refuse by name (Х8), not fall through as a generic "unknown
+    // configuration key": Levenshtein suggestion isn't close enough between
+    // `exclude_paths` and `suppress_paths` to name the rename on its own, and
+    // the message must also point away from the unrelated top-level
+    // `exclude` — the mechanism readers have conflated with suppression.
+
+    #[Test]
+    #[DataProvider('provideRetiredRootSpellings')]
+    public function itRefusesARetiredRootOptionInTheSpellingItsAuthorUsed(
+        string $authored,
+        string $replacement,
+    ): void {
+        $this->assertRefusalEchoesTheAuthoredSpelling(
+            \sprintf("%s:\n  - src/Entity/*\n", $authored),
+            $authored,
+            $replacement,
+        );
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function provideRetiredRootSpellings(): iterable
+    {
+        yield 'snake' => ['exclude_paths', 'suppress_paths'];
+        yield 'camel' => ['excludeNamespaces', 'suppressNamespaces'];
+    }
+
+    /**
+     * The per-rule half of the same refusal, and the reason it lives in the
+     * loader: three spellings of one option arrive here and leave as one
+     * normalized key, so a refusal raised any later can only answer in a
+     * spelling the author may never have typed.
+     */
+    #[Test]
+    #[DataProvider('provideRetiredRuleOptionSpellings')]
+    public function itRefusesARetiredRuleOptionInTheSpellingItsAuthorUsed(
+        string $authored,
+        string $replacement,
+    ): void {
+        $this->assertRefusalEchoesTheAuthoredSpelling(
+            \sprintf(
+                "rules:\n  code-smell.long-parameter-list:\n    %s:\n      - src/Entity/Foo.php\n",
+                $authored,
+            ),
+            $authored,
+            $replacement,
+        );
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function provideRetiredRuleOptionSpellings(): iterable
+    {
+        yield 'snake' => ['exclude_paths', 'suppress_paths'];
+        yield 'camel' => ['excludePaths', 'suppressPaths'];
+        yield 'kebab' => ['exclude-namespaces', 'suppress-namespaces'];
+    }
+
+    /**
+     * Asserted by catching rather than by `expectExceptionMessage()`: that
+     * method assigns one expectation, so a second call silently replaces the
+     * first and half the claim stops being checked.
+     */
+    private function assertRefusalEchoesTheAuthoredSpelling(
+        string $document,
+        string $authored,
+        string $replacement,
+    ): void {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, $document);
+
+        try {
+            $this->loader->load($path);
+            self::fail(\sprintf('"%s" was accepted instead of refused.', $authored));
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString(
+                \sprintf('The "%s" option was retired', $authored),
+                $e->getMessage(),
+            );
+            self::assertStringContainsString(\sprintf('use "%s"', $replacement), $e->getMessage());
+            self::assertStringContainsString('"exclude" option instead', $e->getMessage());
+        }
     }
 
     #[Test]
@@ -368,7 +451,7 @@ YAML);
         file_put_contents($path, <<<'YAML'
 disabled_rules:
   - size.method-count
-exclude_paths:
+suppress_paths:
   - vendor
 YAML);
 
@@ -376,9 +459,9 @@ YAML);
 
         // Root-level snake_case keys are normalized to camelCase
         self::assertArrayHasKey('disabledRules', $config);
-        self::assertArrayHasKey('excludePaths', $config);
+        self::assertArrayHasKey('suppressPaths', $config);
         self::assertSame(['size.method-count'], $config['disabledRules']);
-        self::assertSame(['vendor'], $config['excludePaths']);
+        self::assertSame(['vendor'], $config['suppressPaths']);
     }
 
     #[Test]
@@ -802,7 +885,7 @@ architecture:
       patterns: ['App\Core']
 disabled_rules:
   - architecture.layer-violation
-exclude_paths:
+suppress_paths:
   - tests/
 YAML);
 
@@ -810,7 +893,7 @@ YAML);
 
         // CLI-style top-level snake_case keys are normalized to camelCase as before
         self::assertArrayHasKey('disabledRules', $config);
-        self::assertArrayHasKey('excludePaths', $config);
+        self::assertArrayHasKey('suppressPaths', $config);
         // Architecture layer name preserved (as the value of `name`).
         self::assertSame('app_core', $config['architecture']['layers'][0]['name']);
     }
@@ -837,7 +920,7 @@ YAML);
     }
 
     /**
-     * The keys of `exclude_namespace_channels` are channel names, and channel
+     * The keys of `suppress_namespace_channels` are channel names, and channel
      * names are kebab: camelCasing them produced a key naming no channel,
      * which the run then refused by the mangled spelling.
      */
@@ -848,7 +931,7 @@ YAML);
         file_put_contents($path, <<<'YAML'
 rules:
   size.class-count:
-    exclude_namespace_channels:
+    suppress_namespace_channels:
       size.class-count: ['App\Legacy']
       code-smell.*: ['App\Legacy']
       size.class-count:namespace: ['App\Legacy']
@@ -859,11 +942,11 @@ YAML);
 
         self::assertSame(
             ['size.class-count', 'code-smell.*', 'size.class-count:namespace', 'computed.my-score'],
-            array_keys($config['rules']['size.class-count']['excludeNamespaceChannels']),
+            array_keys($config['rules']['size.class-count']['suppressNamespaceChannels']),
         );
         self::assertSame(
             ['App\Legacy'],
-            $config['rules']['size.class-count']['excludeNamespaceChannels']['code-smell.*'],
+            $config['rules']['size.class-count']['suppressNamespaceChannels']['code-smell.*'],
         );
     }
 
@@ -875,7 +958,7 @@ YAML);
         file_put_contents($path, <<<'YAML'
 rules:
   size.class-count:
-    excludeNamespaceChannels:
+    suppressNamespaceChannels:
       size.class-count: ['App\Legacy']
 YAML);
 
@@ -883,7 +966,7 @@ YAML);
 
         self::assertSame(
             ['size.class-count'],
-            array_keys($config['rules']['size.class-count']['excludeNamespaceChannels']),
+            array_keys($config['rules']['size.class-count']['suppressNamespaceChannels']),
         );
     }
 
@@ -899,7 +982,7 @@ YAML);
 rules:
   size.class-count:
     warning_threshold: 3
-    exclude_namespace_channels:
+    suppress_namespace_channels:
       size.class-count: ['App\Legacy']
     callable:
       warning_threshold: 5
@@ -908,7 +991,7 @@ YAML);
         $config = $this->loader->load($path);
 
         self::assertSame(
-            ['warningThreshold', 'excludeNamespaceChannels', 'callable'],
+            ['warningThreshold', 'suppressNamespaceChannels', 'callable'],
             array_keys($config['rules']['size.class-count']),
         );
         self::assertSame(['warningThreshold' => 5], $config['rules']['size.class-count']['callable']);

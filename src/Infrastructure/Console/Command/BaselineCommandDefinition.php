@@ -15,7 +15,7 @@ use Symfony\Component\Console\Input\InputOption;
  * narrow the measured set, none may widen it.**
  *
  * *Absent, and deliberately so* — the exclusion and suppression flags `check`
- * accepts (`--exclude-path`, `--exclude-namespace`,
+ * accepts (`--suppress-path`, `--suppress-namespace`,
  * `--no-suppression-annotations`). They only ever *remove* findings from a
  * report, so a baseline command that took them would capture less than the
  * `check` it must agree with, leaving entries that can never apply.

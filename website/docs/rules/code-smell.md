@@ -512,6 +512,8 @@ Common request abstractions:
 
 **Rule ID:** `code-smell.constructor-overinjection`
 
+**Judged metric:** `code-smell.parameter-count`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -579,6 +581,8 @@ bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 ## Long Parameter List
 
 **Rule ID:** `code-smell.long-parameter-list`
+
+**Judged metric:** `code-smell.parameter-count`
 
 <!-- llms:skip-begin -->
 ### What it measures
@@ -799,6 +803,8 @@ These are almost always bugs -- inspect each occurrence and fix the intended log
 ## Unused Private Members
 
 **Rule ID:** `code-smell.unused-private`
+
+**Judged metric:** `code-smell.unused-private.total`
 **Severity:** Warning
 
 <!-- llms:skip-begin -->
@@ -855,6 +861,8 @@ class OrderService
 ## Unreachable Code
 
 **Rule ID:** `code-smell.unreachable-code`
+
+**Judged metric:** `code-smell.unreachable-code`
 
 <!-- llms:skip-begin -->
 ### What it measures

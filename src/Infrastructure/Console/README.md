@@ -25,7 +25,7 @@ Console/
 ├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
 ├── ErrorStream.php                   # The run's single error-stream owner: the progress section and every diagnostic writer
 ├── RuleInputValidator.php            # Fail-closed selector/option-owner validation
-├── ChannelExclusionKeyValidator.php  # Whether one exclude_namespace_channels key can exclude anything
+├── ChannelExclusionKeyValidator.php  # Whether one suppress_namespace_channels key can exclude anything
 ├── ChannelExclusionKeyHints.php      # What to say when it cannot
 ├── ResultPresenter.php
 ├── CheckCommandDefinition.php
@@ -81,7 +81,7 @@ from `ResolvedComputedMetricDefinitions`; Console consumes only that resolved
 snapshot while processing the invocation.
 
 `ChannelExclusionKeyValidator` answers the one question that needs the universe
-rather than the input: whether an `exclude_namespace_channels` key addresses a
+rather than the input: whether a `suppress_namespace_channels` key addresses a
 channel the rule it is written under actually produces. Keys read `NameSelector`,
 the one selector grammar; a key left in the retired `ruleName#violationCode`
 spelling is refused by name rather than treated as an unknown channel.
@@ -187,12 +187,12 @@ does not create a missing destination, and preserves an existing destination.
 
 ### Baseline
 
-| Option                         | Description                                                                                                                                                                                                                                                                                                                                                                                           |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--baseline`                   | Use baseline file                                                                                                                                                                                                                                                                                                                                                                                     |
-| `--show-resolved`              | Show count of resolved findings                                                                                                                                                                                                                                                                                                                                                                       |
-| `--show-suppressed`            | Show suppressed findings — `@qmx-ignore` tags and per-rule `exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths` exclusions, each listed in its own block. `--format=suppressed` (or `format: suppressed` in `qmx.yaml`) reports the same composition, across all seven suppression mechanisms, as machine-readable JSON — either route arms the same capture (`RuntimeConfigurator`) |
-| `--no-suppression-annotations` | Report findings `@qmx-ignore` suppresses. It does **not** change what a baseline measures: the annotated findings never reach the baseline stage and are never captured, so they are shown at their own severity and compared against no entry. A flag may narrow the measured set (`--exclude-path`, `--exclude-namespace`), never widen it                                                          |
+| Option                         | Description                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--baseline`                   | Use baseline file                                                                                                                                                                                                                                                                                                                                                                                        |
+| `--show-resolved`              | Show count of resolved findings                                                                                                                                                                                                                                                                                                                                                                          |
+| `--show-suppressed`            | Show suppressed findings — `@qmx-ignore` tags and per-rule `suppress_namespaces` / `suppress_namespace_channels` / `suppress_paths` exclusions, each listed in its own block. `--format=suppressed` (or `format: suppressed` in `qmx.yaml`) reports the same composition, across all seven suppression mechanisms, as machine-readable JSON — either route arms the same capture (`RuntimeConfigurator`) |
+| `--no-suppression-annotations` | Report findings `@qmx-ignore` suppresses. It does **not** change what a baseline measures: the annotated findings never reach the baseline stage and are never captured, so they are shown at their own severity and compared against no entry. A flag may narrow the measured set (`--suppress-path`, `--suppress-namespace`), never widen it                                                           |
 
 ### `check`'s baseline reporting
 

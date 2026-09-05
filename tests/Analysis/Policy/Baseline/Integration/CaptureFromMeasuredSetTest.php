@@ -88,7 +88,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $excluded = self::finding('generated/Proxy.php', 'App\\Generated', 'Proxy');
         $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(excludePaths: ['generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: ['generated']));
 
         $baseline = $this->capture($this->project($pipeline, [$excluded, $reported], new FindingProjectionOptions())->measuredFindings);
 
@@ -98,7 +98,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
     /**
      * Written on an ordinary channel on purpose: `architecture.*` is exempt
-     * from `exclude_namespaces` and behaves the opposite way — see below.
+     * from `suppress_namespaces` and behaves the opposite way — see below.
      */
     #[Test]
     public function itWritesNoEntryForAnOrdinaryFindingRemovedByNamespaceExclusion(): void
@@ -106,7 +106,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $excluded = self::finding('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
         $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(excludeNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: ['App\\Generated']));
 
         $baseline = $this->capture($this->project($pipeline, [$excluded, $reported], new FindingProjectionOptions())->measuredFindings);
 
@@ -115,7 +115,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
     }
 
     /**
-     * `exclude_namespaces` does not silence layer-policy enforcement, so an
+     * `suppress_namespaces` does not silence layer-policy enforcement, so an
      * architecture finding inside an excluded namespace stays in the measured
      * set and is captured — the baseline is its sanctioned route.
      */
@@ -130,7 +130,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
             LayerViolationRule::NAME,
         );
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(excludeNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: ['App\\Generated']));
 
         $baseline = $this->capture($this->project($pipeline, [$architecture], new FindingProjectionOptions())->measuredFindings);
 
@@ -248,8 +248,8 @@ final class CaptureFromMeasuredSetTest extends TestCase
     {
         return $projector->project($findings, $this->suppressions, new FindingProjectionOptions(
             baselinePath: $options->baselinePath,
-            excludePaths: [...$this->configuredOptions->excludePaths, ...$options->excludePaths],
-            excludeNamespaces: [...$this->configuredOptions->excludeNamespaces, ...$options->excludeNamespaces],
+            suppressPaths: [...$this->configuredOptions->suppressPaths, ...$options->suppressPaths],
+            suppressNamespaces: [...$this->configuredOptions->suppressNamespaces, ...$options->suppressNamespaces],
             annotationSuppressionDisabled: $options->annotationSuppressionDisabled,
             gitScope: $options->gitScope,
         ));

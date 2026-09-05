@@ -13,8 +13,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
  *
  * Sibling of {@see ParamTypeCoverageRule} and
  * {@see ReturnTypeCoverageRule}, configured and suppressed on its own.
- *
- * @qmx-ignore health.cohesion -- Metadata only: every method here returns a constant naming this dimension, so no two of them can share a field. The judgement they configure lives in AbstractTypeCoverageRule.
  */
 #[CliAlias('property-type-coverage-warning', 'warning')]
 #[CliAlias('property-type-coverage-error', 'error')]
@@ -25,14 +23,6 @@ final class PropertyTypeCoverageRule extends AbstractTypeCoverageRule
     public function getDescription(): string
     {
         return 'Checks type coverage of properties per class';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::DESIGN_TYPE_COVERAGE_PROPERTY];
     }
 
     /**
@@ -53,7 +43,7 @@ final class PropertyTypeCoverageRule extends AbstractTypeCoverageRule
         return MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL;
     }
 
-    protected function coverageMetric(): string
+    protected static function coverageMetric(): string
     {
         return MetricName::DESIGN_TYPE_COVERAGE_PROPERTY;
     }

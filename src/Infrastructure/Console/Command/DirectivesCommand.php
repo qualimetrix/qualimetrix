@@ -38,8 +38,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * analyses, not at a slice of it.
  *
  * The universe judged against is everything the rules **produced**, not what a
- * report would have published. `exclude_paths`, `exclude_namespaces` and
- * `exclude_namespace_channels` filter publication; a directive that moves a
+ * report would have published. `suppress_paths`, `suppress_namespaces` and
+ * `suppress_namespace_channels` filter publication; a directive that moves a
  * finding inside an excluded namespace still did something, and calling it dead
  * because a report would not have printed it is the mistake this command exists
  * to avoid making.
@@ -98,8 +98,8 @@ final class DirectivesCommand extends Command
                 'it. Analyse what the project analyses.',
                 '',
                 'The question is asked against every finding the rules produced, including',
-                'those a report would have dropped through <info>exclude_paths</info>,',
-                '<info>exclude_namespaces</info> or <info>exclude_namespace_channels</info>: those suppress',
+                'those a report would have dropped through <info>suppress_paths</info>,',
+                '<info>suppress_namespaces</info> or <info>suppress_namespace_channels</info>: those suppress',
                 'publication, not measurement, and a directive that moved such a finding',
                 'did something.',
                 '',

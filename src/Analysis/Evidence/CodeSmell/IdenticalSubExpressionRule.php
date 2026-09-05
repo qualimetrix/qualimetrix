@@ -25,6 +25,11 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * - Identical ternary branches ($cond ? $x : $x)
  * - Duplicate match arm conditions
  * - Duplicate switch case values
+ *
+ * Reads the five `identicalSubExpression.*` collector fact keys (one per
+ * type above) directly by string, not through
+ * {@see \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName} — they are
+ * per-occurrence entries produced by the collector, not catalog metrics.
  */
 final class IdenticalSubExpressionRule extends AbstractRule
 {
@@ -56,20 +61,6 @@ final class IdenticalSubExpressionRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Detects identical sub-expressions indicating copy-paste errors or logic bugs';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        $requires = [];
-
-        foreach (array_keys(self::FINDING_TYPES) as $type) {
-            $requires[] = "identicalSubExpression.{$type}";
-        }
-
-        return $requires;
     }
 
     /**

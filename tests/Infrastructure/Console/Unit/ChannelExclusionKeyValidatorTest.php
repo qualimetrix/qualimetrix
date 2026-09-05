@@ -17,7 +17,7 @@ use Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 
 /**
- * The `exclude_namespace_channels` key: what it must address, and at what
+ * The `suppress_namespace_channels` key: what it must address, and at what
  * level.
  *
  * The universe here holds two channels of two different producers, one

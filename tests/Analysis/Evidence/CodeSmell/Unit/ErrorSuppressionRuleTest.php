@@ -31,14 +31,6 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function requiresReturnsExpectedMetrics(): void
-    {
-        $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
-
-        self::assertSame(['codeSmell.error_suppression'], $rule->requires());
-    }
-
-    #[Test]
     public function optionsClassIsCorrect(): void
     {
         self::assertSame(ErrorSuppressionOptions::class, ErrorSuppressionRule::getOptionsClass());

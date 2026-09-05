@@ -21,7 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
  * **A validator is not free-standing — it belongs to a rule.**
  * {@see producerRuleName()} names that rule, and it is the name under which
  * the validator's channels are registered, addressed by `--disable-rule` and
- * `only_rules`, keyed by `exclude_paths` and `exclude_namespaces`, and
+ * `only_rules`, keyed by `suppress_paths` and `suppress_namespaces`, and
  * resolved for a description, a documentation page and a remediation
  * estimate. The validator also runs in the producer's slot in the execution
  * order and answers to the producer's own options, `enabled` included. All of

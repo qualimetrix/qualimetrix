@@ -55,7 +55,7 @@ final class NamespaceExclusionFilterTest extends TestCase
 
         $finding = $this->createFinding('App\\Entity', LayerViolationRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by exclude_namespaces');
+        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by suppress_namespaces');
     }
 
     #[Test]
@@ -65,7 +65,7 @@ final class NamespaceExclusionFilterTest extends TestCase
 
         $finding = $this->createFinding('App\\Entity', CircularDependencyRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by exclude_namespaces');
+        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by suppress_namespaces');
     }
 
     #[Test]
@@ -90,7 +90,7 @@ final class NamespaceExclusionFilterTest extends TestCase
         // even for a file-symbol finding whose subject declares an excluded namespace.
         $finding = $this->createFileSymbolFinding('App\\Entity', LayerViolationRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by exclude_namespaces');
+        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by suppress_namespaces');
     }
 
     #[Test]
@@ -191,7 +191,7 @@ final class NamespaceExclusionFilterTest extends TestCase
 
             self::assertTrue(
                 $filter->shouldInclude($this->createChannelFinding($channel)),
-                \sprintf('%s is declared project-scoped and must survive exclude_namespaces', $key),
+                \sprintf('%s is declared project-scoped and must survive suppress_namespaces', $key),
             );
         }
     }

@@ -1,1 +1,2 @@
 surface	file	reason
+tree|rules	declared-delta/tree-rules.diff	The rules listing gained one line per channel that declares a judged catalog metric: twenty-two added lines, no line removed and no existing line changed. Nothing about a finding moved -- the surface is the CLI rule inventory, and the added text names the channel and the metric keys its declaration already carried.

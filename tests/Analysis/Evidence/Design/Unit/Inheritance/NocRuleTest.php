@@ -45,14 +45,6 @@ final class NocRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequiresNoc(): void
-    {
-        $rule = new NocRule(new NocOptions());
-
-        self::assertSame(['design.noc'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetsOptionsClass(): void
     {
         self::assertSame(

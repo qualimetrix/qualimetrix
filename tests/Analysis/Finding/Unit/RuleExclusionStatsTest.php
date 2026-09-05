@@ -70,7 +70,7 @@ final class RuleExclusionStatsTest extends TestCase
 
     /**
      * The per-rule exclusion ledger has exactly two halves —
-     * `exclude_namespaces`/`exclude_namespace_channels` and `exclude_paths`.
+     * `suppress_namespaces`/`suppress_namespace_channels` and `suppress_paths`.
      * `Reporting\FindingProjection\SuppressionMechanism::ledgerHalves()` is
      * beholden to that count (its own test,
      * `Tests\Reporting\FindingProjection\Unit\SuppressionMechanismTest`,

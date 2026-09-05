@@ -103,6 +103,7 @@ Infrastructure/
 │       ├── RuleCompilerPass.php
 │       ├── RuleRegistryCompilerPass.php
 │       ├── ChannelDeclarationCompilerPass.php
+│       ├── JudgedMetricDeclarationGuard.php
 │       ├── ConfigurationValidatorCompilerPass.php
 │       ├── RuleOptionsCompilerPass.php
 │       ├── FormatterCompilerPass.php
@@ -154,7 +155,7 @@ Infrastructure/
         ├── BaselineExplainCommand.php  # `baseline:explain` — prints the effective boundary for one symbol and its three sources (baseline, qmx.yaml, @qmx-threshold)
         ├── DirectivesCommand.php      # `directives` — what each inline @qmx directive still does; exits 2 on an inert one (ADR 0039)
         ├── GraphExportCommand.php           # Export dependency graph (DOT, JSON)
-        ├── RulesCommand.php           # Lists all rules with options and CLI aliases
+        ├── RulesCommand.php           # Lists all rules with options, CLI aliases and judged metrics
         ├── HookInstallCommand.php
         ├── HookStatusCommand.php
         └── HookUninstallCommand.php
@@ -264,6 +265,10 @@ remain independent because configuration is keyed by producer rule name.
 **RuleCompilerPass:**
 - Composes Finding's private executable-rule set
 - Adapters, including `RulesCommand`, consume `RuleExecutionInterface` metadata views
+- `RulesCommand` additionally reads `RuleChannelRegistryInterface` and
+  `ChannelDeclarationRegistryInterface` to print, under each producer, the
+  catalog metrics its channels declare they judge — the rule ID and the metric
+  key are separate names, and the listing is where the pair is readable
 
 **RuleRegistryCompilerPass:**
 - Collects `RuleDefinitionInterface` class strings for CLI option discovery
@@ -284,6 +289,10 @@ remain independent because configuration is keyed by producer rule name.
 - Rejects a channel declared by more than one producer, a validator that names a
   producer no rule answers to or declares no channels at all, and a tagged service
   whose definition names no class
+- Delegates the judged-metric half of the declaration check to
+  `JudgedMetricDeclarationGuard`, which is the only class on this side that reads the
+  metric catalog: a declared judged key must exist in `MetricName` (an aggregate
+  spelling counts) and only a `magnitude` producer may name one at all
 - **The one place a channel becomes a configuration error.** It applies
   `ChannelDeclaration::asConfigurationError()` to everything a validator declares and
   to nothing else, registering it under the validator's producer rule name so
@@ -379,6 +388,14 @@ Factory with runtime configuration awareness.
 
 **Runtime configuration:**
 - CLI options are parsed in `CheckCommand::execute()`
+- A retired suppression flag (`--exclude-path`, `--exclude-namespace`) is
+  refused in `CheckCommand::run()`, out of the binding failure Symfony raises
+  for it — the flag is undeclared, so a retired token never reaches
+  `execute()`, and only a token the parser itself could not bind is read as one
+  (a *path* named `--exclude-path` is not). The refusal text is
+  `Analysis\Configuration\RetiredSuppressionOptions`, shared with the
+  config-file doors, and exits 3 like them. Scoped to this command so
+  `graph:export --exclude-namespace`, which was never renamed, keeps working
 - `RuntimeConfigurator` resolves the ordered document through exact owner
   resolvers, resets/replaces their local state, then passes RunConfiguration to
   the analysis pipeline

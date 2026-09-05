@@ -25,6 +25,11 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * A God Class is overly complex, large, and lacks cohesion.
  * Detection is based on 4 criteria: WMC, LCOM4, TCC, and class LOC.
  * A class is flagged when it matches minCriteria of the evaluable criteria.
+ *
+ * Reads `complexity.wmc`, `cohesion.lcom`, `cohesion.tcc`, `size.class-loc`
+ * as the four criteria, `size.method-count` for the minMembers gate, and
+ * `design.is-readonly` as an exclusion gate; none of these are published —
+ * the channel's own value is the matched-criteria count.
  */
 #[CliAlias('god-class-wmc-threshold', 'wmcThreshold')]
 #[CliAlias('god-class-lcom-threshold', 'lcomThreshold')]
@@ -49,21 +54,6 @@ final class GodClassRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Detects God Classes (overly complex, large, low cohesion)';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [
-            MetricName::COMPLEXITY_WMC,
-            MetricName::COHESION_LCOM,
-            MetricName::COHESION_TCC,
-            MetricName::SIZE_CLASS_LOC,
-            MetricName::SIZE_METHOD_COUNT,
-            MetricName::DESIGN_IS_READONLY,
-        ];
     }
 
     /**
