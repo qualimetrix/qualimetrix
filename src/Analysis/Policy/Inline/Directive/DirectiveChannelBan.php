@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
+use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -93,34 +94,53 @@ final readonly class DirectiveChannelBan
     public function problemWith(string $raw, NameSelector $selector): ?string
     {
         foreach ($this->identity->expand($selector) as $channel) {
-            if ($channel->code === InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME) {
-                return \sprintf(
-                    'Suppression "%s" addresses "%s", which no directive may silence: that channel reports the'
-                    . ' directives that did nothing, so silencing it would hide the answer. Delete the directive'
-                    . ' it complains about, or accept the finding in the baseline. A reason goes after "%s".',
-                    $raw,
-                    InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
-                    Suppression::REASON_SEPARATOR,
-                );
+            if (!self::covers($channel->code)) {
+                continue;
             }
 
-            if ($channel->code === self::PROJECT_ONLY_DUPLICATION_NAME) {
-                return \sprintf(
-                    'Suppression "%s" addresses "%s", which reports one project-wide finding per duplicate'
-                    . ' block: no declaration a symbol directive binds to is the project, and the file a file or'
-                    . ' next-line directive names is only the block\'s first occurrence, which the scan chooses'
-                    . ' and the author does not control. Disable the rule instead:'
-                    . ' "disabled_rules: [%s]" in the configuration, or "--disable-rule=%s", or accept the'
-                    . ' occurrence in the baseline. A reason goes after "%s".',
-                    $raw,
-                    self::PROJECT_ONLY_DUPLICATION_NAME,
-                    self::PROJECT_ONLY_DUPLICATION_NAME,
-                    self::PROJECT_ONLY_DUPLICATION_NAME,
-                    Suppression::REASON_SEPARATOR,
-                );
-            }
+            return self::message($raw, $channel->code);
         }
 
         return null;
+    }
+
+    /**
+     * The wording for one banned channel, kept out of {@see problemWith()} so
+     * that method reads {@see covers()} — the same predicate the publication
+     * filter reads — rather than repeating the two names beside it. Only
+     * ever called with a code {@see covers()} already accepted; the `default`
+     * arm is unreachable by that contract and exists so a third banned name
+     * added to `covers()` without a wording here fails loudly at runtime
+     * instead of falling through to one of the two existing messages.
+     */
+    private static function message(string $raw, string $code): string
+    {
+        return match ($code) {
+            InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME => \sprintf(
+                'Suppression "%s" addresses "%s", which no directive may silence: that channel reports the'
+                . ' directives that did nothing, so silencing it would hide the answer. Delete the directive'
+                . ' it complains about, or accept the finding in the baseline. A reason goes after "%s".',
+                $raw,
+                InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
+                Suppression::REASON_SEPARATOR,
+            ),
+            self::PROJECT_ONLY_DUPLICATION_NAME => \sprintf(
+                'Suppression "%s" addresses "%s", which reports one project-wide finding per duplicate'
+                . ' block: no declaration a symbol directive binds to is the project, and the file a file or'
+                . ' next-line directive names is only the block\'s first occurrence, which the scan chooses'
+                . ' and the author does not control. Disable the rule instead:'
+                . ' "disabled_rules: [%s]" in the configuration, or "--disable-rule=%s", or accept the'
+                . ' occurrence in the baseline. A reason goes after "%s".',
+                $raw,
+                self::PROJECT_ONLY_DUPLICATION_NAME,
+                self::PROJECT_ONLY_DUPLICATION_NAME,
+                self::PROJECT_ONLY_DUPLICATION_NAME,
+                Suppression::REASON_SEPARATOR,
+            ),
+            default => throw new LogicException(\sprintf(
+                'DirectiveChannelBan::covers() accepted "%s" but message() has no wording for it.',
+                $code,
+            )),
+        };
     }
 }
