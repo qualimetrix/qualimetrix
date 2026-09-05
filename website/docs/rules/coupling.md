@@ -15,6 +15,8 @@ Think of coupling like wires connecting boxes. The more wires between two boxes,
 
 **Rule ID:** `coupling.cbo`
 
+**Judged metrics:** `coupling.cbo`, `coupling.cbo-app`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -220,6 +222,8 @@ When no `framework-namespaces` are configured, `coupling.cbo-app` equals `coupli
 
 **Rule ID:** `coupling.instability`
 
+**Judged metric:** `coupling.instability`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -370,6 +374,8 @@ bin/qmx check src/ --rule-opt="coupling.instability:threshold=0.9"
 ## Distance from Main Sequence
 
 **Rule ID:** `coupling.distance`
+
+**Judged metric:** `coupling.distance`
 
 <!-- llms:skip-begin -->
 ### What it measures

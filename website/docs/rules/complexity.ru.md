@@ -10,6 +10,8 @@
 
 **Rule ID:** `complexity.cyclomatic`
 
+**Судимые метрики:** `complexity.ccn`, `complexity.ccn.max`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -138,6 +140,8 @@ bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
 
 **Rule ID:** `complexity.cognitive`
 
+**Судимые метрики:** `complexity.cognitive`, `complexity.cognitive.max`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -244,6 +248,8 @@ bin/qmx check src/ --rule-opt="complexity.cognitive:callable.error=40"
 ## NPath-сложность
 
 **Rule ID:** `complexity.npath`
+
+**Судимые метрики:** `complexity.npath`, `complexity.npath.max`
 
 <!-- llms:skip-begin -->
 ### Что измеряет
@@ -375,6 +381,8 @@ bin/qmx check src/ --rule-opt="complexity.npath:class.enabled=true"
 ## WMC -- Взвешенные методы класса
 
 **Rule ID:** `complexity.wmc`
+
+**Судимая метрика:** `complexity.wmc`
 
 <!-- llms:skip-begin -->
 ### Что измеряет

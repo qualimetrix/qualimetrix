@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -27,6 +29,8 @@ final class RulesCommand extends Command
 {
     public function __construct(
         private readonly RuleExecutionInterface $ruleExecution,
+        private readonly RuleChannelRegistryInterface $channels,
+        private readonly ChannelDeclarationRegistryInterface $declarations,
     ) {
         parent::__construct();
     }
@@ -77,6 +81,14 @@ final class RulesCommand extends Command
 
             $output->writeln(\sprintf('  %-40s %s', $rule['name'], $rule['description']));
 
+            foreach ($rule['judged'] as $channelCode => $metricKeys) {
+                $output->writeln(\sprintf(
+                    '    <comment>%s</comment> judges %s',
+                    $channelCode,
+                    implode(', ', $metricKeys),
+                ));
+            }
+
             foreach ($rule['aliases'] as $alias => $optionName) {
                 $output->writeln(\sprintf(
                     '    <info>--%s</info> <comment>(--rule-opt=%s:%s=...)</comment>',
@@ -115,7 +127,7 @@ final class RulesCommand extends Command
     }
 
     /**
-     * @return list<array{name: string, group: string, description: string, aliases: array<string, string>}>
+     * @return list<array{name: string, group: string, description: string, aliases: array<string, string>, judged: array<string, non-empty-list<string>>}>
      */
     private function rulesIn(?string $groupFilter): array
     {
@@ -126,11 +138,28 @@ final class RulesCommand extends Command
                 continue;
             }
 
+            // The catalog metrics each of this producer's channels judges,
+            // keyed by channel code — read per channel rather than per rule
+            // because that is the pair the declaration makes: a rule may
+            // publish several channels and only some of them read their
+            // number out of the metric catalog. The keys keep the author's
+            // declared order, which is the order the producing rule's own body
+            // considers them in.
+            $judged = [];
+            foreach ($this->channels->channelsProducedBy($rule->name) as $channel) {
+                $judges = $this->declarations->declarationFor($channel)?->judges;
+
+                if ($judges !== null) {
+                    $judged[$channel->code] = $judges->keys;
+                }
+            }
+
             $rules[] = [
                 'name' => $rule->name,
                 'group' => $rule->family,
                 'description' => $rule->description,
                 'aliases' => $rule->aliases,
+                'judged' => $judged,
             ];
         }
 
@@ -141,5 +170,4 @@ final class RulesCommand extends Command
 
         return $rules;
     }
-
 }

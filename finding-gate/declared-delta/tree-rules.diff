@@ -1,0 +1,89 @@
+--- candidate
++++ reference (mapped)
+@@ -17,1 +17,0 @@
+-    code-smell.constructor-overinjection judges code-smell.parameter-count
+@@ -29,1 +28,0 @@
+-    code-smell.long-parameter-list judges code-smell.parameter-count
+@@ -36,8 +34,5 @@
+-    code-smell.unreachable-code judges code-smell.unreachable-code
+-    --unreachable-code-warning (--rule-opt=code-smell.unreachable-code:warning=...)
+-    --unreachable-code-error (--rule-opt=code-smell.unreachable-code:error=...)
+-  code-smell.unused-private                Detects unused private methods, properties, and constants
+-    code-smell.unused-private judges code-smell.unused-private.total
+-Cohesion
+-  cohesion.lcom                            Checks Lack of Cohesion of Methods (high values indicate class should be split)
+-    cohesion.lcom judges cohesion.lcom
++    --unreachable-code-warning (--rule-opt=code-smell.unreachable-code:warning=...)
++    --unreachable-code-error (--rule-opt=code-smell.unreachable-code:error=...)
++  code-smell.unused-private                Detects unused private methods, properties, and constants
++Cohesion
++  cohesion.lcom                            Checks Lack of Cohesion of Methods (high values indicate class should be split)
+@@ -51,1 +46,0 @@
+-    complexity.cognitive judges complexity.cognitive, complexity.cognitive.max
+@@ -57,1 +51,0 @@
+-    complexity.cyclomatic judges complexity.ccn, complexity.ccn.max
+@@ -63,1 +56,0 @@
+-    complexity.npath judges complexity.npath, complexity.npath.max
+@@ -69,1 +61,0 @@
+-    complexity.wmc judges complexity.wmc
+@@ -77,1 +68,0 @@
+-    coupling.cbo judges coupling.cbo, coupling.cbo-app
+@@ -86,5 +76,3 @@
+-    coupling.distance judges coupling.distance
+-    --distance-warning (--rule-opt=coupling.distance:max_distance_warning=...)
+-    --distance-error (--rule-opt=coupling.distance:max_distance_error=...)
+-  coupling.instability                     Checks instability at class and namespace levels
+-    coupling.instability judges coupling.instability
++    --distance-warning (--rule-opt=coupling.distance:max_distance_warning=...)
++    --distance-error (--rule-opt=coupling.distance:max_distance_error=...)
++  coupling.instability                     Checks instability at class and namespace levels
+@@ -97,1 +85,0 @@
+-    design.data-class judges design.woc
+@@ -113,17 +100,12 @@
+-    design.inheritance judges design.dit
+-    --dit-warning (--rule-opt=design.inheritance:warning=...)
+-    --dit-error (--rule-opt=design.inheritance:error=...)
+-  design.noc                               Checks Number of Children (many direct subclasses indicate wide impact)
+-    design.noc judges design.noc
+-    --noc-warning (--rule-opt=design.noc:warning=...)
+-    --noc-error (--rule-opt=design.noc:error=...)
+-  design.type-coverage.param               Checks type coverage of parameters per class
+-    design.type-coverage.param judges design.type-coverage.param
+-    --param-type-coverage-warning (--rule-opt=design.type-coverage.param:warning=...)
+-    --param-type-coverage-error (--rule-opt=design.type-coverage.param:error=...)
+-  design.type-coverage.property            Checks type coverage of properties per class
+-    design.type-coverage.property judges design.type-coverage.property
+-    --property-type-coverage-warning (--rule-opt=design.type-coverage.property:warning=...)
+-    --property-type-coverage-error (--rule-opt=design.type-coverage.property:error=...)
+-  design.type-coverage.return              Checks type coverage of return types per class
+-    design.type-coverage.return judges design.type-coverage.return
++    --dit-warning (--rule-opt=design.inheritance:warning=...)
++    --dit-error (--rule-opt=design.inheritance:error=...)
++  design.noc                               Checks Number of Children (many direct subclasses indicate wide impact)
++    --noc-warning (--rule-opt=design.noc:warning=...)
++    --noc-error (--rule-opt=design.noc:error=...)
++  design.type-coverage.param               Checks type coverage of parameters per class
++    --param-type-coverage-warning (--rule-opt=design.type-coverage.param:warning=...)
++    --param-type-coverage-error (--rule-opt=design.type-coverage.param:error=...)
++  design.type-coverage.property            Checks type coverage of properties per class
++    --property-type-coverage-warning (--rule-opt=design.type-coverage.property:warning=...)
++    --property-type-coverage-error (--rule-opt=design.type-coverage.property:error=...)
++  design.type-coverage.return              Checks type coverage of return types per class
+@@ -143,1 +125,0 @@
+-    maintainability.index judges maintainability.mi
+@@ -156,9 +137,6 @@
+-    size.class-count judges size.class-count.sum
+-    --class-count-warning (--rule-opt=size.class-count:warning=...)
+-    --class-count-error (--rule-opt=size.class-count:error=...)
+-  size.method-count                        Checks number of methods per class
+-    size.method-count judges size.method-count
+-    --method-count-warning (--rule-opt=size.method-count:warning=...)
+-    --method-count-error (--rule-opt=size.method-count:error=...)
+-  size.property-count                      Checks if classes have too many properties
+-    size.property-count judges size.property-count
++    --class-count-warning (--rule-opt=size.class-count:warning=...)
++    --class-count-error (--rule-opt=size.class-count:error=...)
++  size.method-count                        Checks number of methods per class
++    --method-count-warning (--rule-opt=size.method-count:warning=...)
++    --method-count-error (--rule-opt=size.method-count:error=...)
++  size.property-count                      Checks if classes have too many properties

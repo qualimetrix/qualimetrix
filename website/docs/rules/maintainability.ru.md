@@ -12,6 +12,8 @@
 
 **Идентификатор правила:** `maintainability.index`
 
+**Судимая метрика:** `maintainability.mi`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 

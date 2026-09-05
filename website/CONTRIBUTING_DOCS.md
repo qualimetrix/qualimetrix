@@ -32,6 +32,8 @@ Each rule group page (e.g., `complexity.md`, `design.md`) follows this structure
 
 **Rule ID:** `group.rule-name`
 
+**Judged metric:** `group.metric-key`   <!-- only where the rule reads its number from the metric catalog -->
+
 ### What it measures
 
 {Clear explanation of the metric/check. Use analogies and plain language.
@@ -189,6 +191,7 @@ Per the single-source-of-truth principle:
 ### What to keep in rule pages
 
 - Rule ID (e.g., `**Rule ID:** complexity.cyclomatic`)
+- Judged metric, where the rule declares one (e.g., `**Judged metric:** complexity.ccn`) — the rule ID and the metric key are separate names in separate vocabularies, and this line is the only place the pair is written down for a reader. Take the keys from `bin/qmx rules`, never from the spelling of the rule ID. RU pages use `**Судимая метрика:**` / `**Судимые метрики:**`
 - `### Configuration` — YAML/CLI option syntax and non-default options (`exclude_data_classes`, `min_afferent`, `max_warning`, `threshold` shorthand, etc.) — these are canonical here, not in `default-thresholds.md`
 
 When adding a new rule page, mirror the skip-marker placement from existing pages. Both EN and RU versions must have identical markers.

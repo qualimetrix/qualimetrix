@@ -2,6 +2,12 @@
 
 Qualimetrix ships with a set of built-in rules that check your PHP code for common quality problems. Each rule looks at a specific aspect of your code -- complexity, size, coupling, design, maintainability, or common bad practices -- and reports violations when thresholds are exceeded.
 
+## Rule IDs and Judged Metrics
+
+A rule ID and a metric key are two names in two vocabularies, and they are not the same name even where they look alike. The rule ID -- `complexity.cyclomatic` -- is what you configure, suppress and retune. The metric key -- `complexity.ccn` -- is the measured number the rule compares against its thresholds.
+
+Where a rule reads its number out of the metric catalog, its section on the group page names it as **Judged metric**, right below the rule ID; `bin/qmx rules` prints the same pair. Rules that report a number of their own making -- a cycle's member count, a count of matched criteria -- name no metric, and neither does the listing.
+
 ## Severity Levels
 
 Every violation has one of two severity levels:

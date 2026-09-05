@@ -40,7 +40,7 @@ Inline/
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
 │   ├── DirectiveChannelBan.php     # the one channel no directive may address or silence
 │   ├── DirectiveLevels.php         # which levels one directive can silence a channel at
-│   ├── DirectiveNameHints.php      # "did you mean" by reverse query
+│   ├── DirectiveNameHints.php      # "did you mean" by reverse query, incl. metric -> judging channel
 │   ├── DirectiveRejection.php
 │   ├── InlineDirectiveOptions.php
 │   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting

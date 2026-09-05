@@ -154,7 +154,7 @@ Infrastructure/
         ├── BaselineExplainCommand.php  # `baseline:explain` — prints the effective boundary for one symbol and its three sources (baseline, qmx.yaml, @qmx-threshold)
         ├── DirectivesCommand.php      # `directives` — what each inline @qmx directive still does; exits 2 on an inert one (ADR 0039)
         ├── GraphExportCommand.php           # Export dependency graph (DOT, JSON)
-        ├── RulesCommand.php           # Lists all rules with options and CLI aliases
+        ├── RulesCommand.php           # Lists all rules with options, CLI aliases and judged metrics
         ├── HookInstallCommand.php
         ├── HookStatusCommand.php
         └── HookUninstallCommand.php
@@ -264,6 +264,10 @@ remain independent because configuration is keyed by producer rule name.
 **RuleCompilerPass:**
 - Composes Finding's private executable-rule set
 - Adapters, including `RulesCommand`, consume `RuleExecutionInterface` metadata views
+- `RulesCommand` additionally reads `RuleChannelRegistryInterface` and
+  `ChannelDeclarationRegistryInterface` to print, under each producer, the
+  catalog metrics its channels declare they judge — the rule ID and the metric
+  key are separate names, and the listing is where the pair is readable
 
 **RuleRegistryCompilerPass:**
 - Collects `RuleDefinitionInterface` class strings for CLI option discovery

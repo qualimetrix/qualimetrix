@@ -8,6 +8,8 @@ Design rules analyze the internal structure of your classes -- how focused they 
 
 **Rule ID:** `design.noc`
 
+**Judged metric:** `design.noc`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -97,6 +99,8 @@ bin/qmx check src/ --rule-opt="design.noc:error=20"
 ## Inheritance Depth
 
 **Rule ID:** `design.inheritance`
+
+**Judged metric:** `design.dit`
 
 <!-- llms:skip-begin -->
 ### What it measures
@@ -206,6 +210,8 @@ bin/qmx check src/ --rule-opt="design.inheritance:error=7"
 
 **Rule ID:** `design.type-coverage.param`
 
+**Judged metric:** `design.type-coverage.param`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -294,6 +300,8 @@ bin/qmx check src/ --param-type-coverage-error=60
 
 **Rule ID:** `design.type-coverage.return`
 
+**Judged metric:** `design.type-coverage.return`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -359,6 +367,8 @@ bin/qmx check src/ --return-type-coverage-error=60
 
 **Rule ID:** `design.type-coverage.property`
 
+**Judged metric:** `design.type-coverage.property`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -419,6 +429,8 @@ bin/qmx check src/ --property-type-coverage-error=60
 ## Data Class
 
 **Rule ID:** `design.data-class`
+
+**Judged metric:** `design.woc`
 **Severity:** Warning
 
 <!-- llms:skip-begin -->

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive\Audit;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
@@ -88,7 +89,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
     private DirectiveAddressability $addressability;
 
     public function __construct(
-        ChannelIdentityInterface $identity,
+        ChannelIdentityInterface&ChannelDeclarationRegistryInterface $identity,
         private RuleSelector $ruleSelector,
         private RuleConfigurationInterface $ruleConfiguration,
     ) {

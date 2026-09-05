@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability;
@@ -134,8 +134,8 @@ final class ClasslessProducerThresholdRefusalTest extends TestCase
 
     private static function addressability(): DirectiveAddressability
     {
-        $identity = (new ContainerFactory())->create()->get(ChannelIdentityInterface::class);
-        \assert($identity instanceof ChannelIdentityInterface);
+        $identity = (new ContainerFactory())->create()->get(ChannelUniverseInterface::class);
+        \assert($identity instanceof ChannelUniverseInterface);
 
         return new DirectiveAddressability($identity);
     }

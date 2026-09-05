@@ -7,8 +7,13 @@ namespace Qualimetrix\Tests\Infrastructure\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
@@ -19,6 +24,8 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerEvidenceCollect
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
+use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -184,6 +191,47 @@ final class RulesCommandTest extends TestCase
         self::assertStringContainsString('--rule-opt', $display);
     }
 
+    /**
+     * The listing is where a reader looks a rule up, so it is where the
+     * declared "this channel judges that metric" pair has to be readable: the
+     * report prints channel codes and the metric catalog prints metric keys,
+     * and nothing between them used to say which belonged to which.
+     */
+    #[Test]
+    public function itPrintsTheMetricsAChannelDeclaresItJudges(): void
+    {
+        $rule = $this->createRuleMock('complexity.cyclomatic', 'Cyclomatic complexity');
+
+        $tester = new CommandTester($this->createCommand(
+            [$rule],
+            ['complexity.cyclomatic' => ['complexity.cyclomatic' => ['complexity.ccn', 'complexity.ccn.max']]],
+        ));
+        $tester->execute([], ['decorated' => false]);
+
+        self::assertStringContainsString(
+            'complexity.cyclomatic judges complexity.ccn, complexity.ccn.max',
+            $tester->getDisplay(),
+        );
+    }
+
+    /**
+     * Thirty of the fifty-two declared channels judge no catalog metric —
+     * `architecture.circular-dependency` reports a cycle's member count, and
+     * `coupling.class-rank` stays an occurrence by ADR 0017 — so the listing
+     * must stay silent about them rather than invent a metric from the
+     * channel's own spelling.
+     */
+    #[Test]
+    public function itSaysNothingAboutAChannelThatJudgesNoMetric(): void
+    {
+        $rule = $this->createRuleMock('architecture.circular-dependency', 'Circular dependencies');
+
+        $tester = new CommandTester($this->createCommand([$rule]));
+        $tester->execute([], ['decorated' => false]);
+
+        self::assertStringNotContainsString('judges', $tester->getDisplay());
+    }
+
     private function createRuleMock(
         string $name,
         string $description,
@@ -195,8 +243,13 @@ final class RulesCommandTest extends TestCase
         return $rule;
     }
 
-    /** @param list<RuleInterface> $rules */
-    private function createCommand(array $rules): RulesCommand
+    /**
+     * A channel absent from `$judged` is declared without judged metrics.
+     *
+     * @param list<RuleInterface> $rules
+     * @param array<string, array<string, non-empty-list<string>>> $judged rule name => channel code => judged metric keys
+     */
+    private function createCommand(array $rules, array $judged = []): RulesCommand
     {
         $metadata = array_map(
             static fn(RuleInterface $rule): RuleMetadata => new RuleMetadata(
@@ -211,7 +264,30 @@ final class RulesCommandTest extends TestCase
         $execution = self::createStub(RuleExecutionInterface::class);
         $execution->method('allRules')->willReturn($metadata);
 
-        return new RulesCommand($execution);
+        $channelsByRule = [];
+        $declarationByCode = [];
+        foreach ($judged as $ruleName => $byChannel) {
+            foreach ($byChannel as $code => $metricKeys) {
+                $channelsByRule[$ruleName][] = new FindingChannel($code);
+                $declarationByCode[$code] = ChannelDeclaration::judging(
+                    WorseDirection::Higher,
+                    JudgedMetrics::of(...$metricKeys),
+                    SymbolLevel::Class_,
+                );
+            }
+        }
+
+        $channels = self::createStub(RuleChannelRegistryInterface::class);
+        $channels->method('channelsProducedBy')->willReturnCallback(
+            static fn(string $ruleName): array => $channelsByRule[$ruleName] ?? [],
+        );
+
+        $registry = self::createStub(ChannelDeclarationRegistryInterface::class);
+        $registry->method('declarationFor')->willReturnCallback(
+            static fn(FindingChannel $channel): ?ChannelDeclaration => $declarationByCode[$channel->code] ?? null,
+        );
+
+        return new RulesCommand($execution, $channels, $registry);
     }
 
     private function createCyclomaticRuleWithAlias(): RuleInterface

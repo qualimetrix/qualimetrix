@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
@@ -74,7 +75,7 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
     public function __construct(
         private readonly RuleOptionsInterface $options,
         private readonly InlineDirectivePolicy $policy,
-        ChannelIdentityInterface $identity,
+        ChannelIdentityInterface&ChannelDeclarationRegistryInterface $identity,
     ) {
         $this->addressability = new DirectiveAddressability($identity);
     }

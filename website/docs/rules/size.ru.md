@@ -12,6 +12,8 @@
 
 **Идентификатор правила:** `size.method-count`
 
+**Судимая метрика:** `size.method-count`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -124,6 +126,8 @@ class OrderService
 
 **Идентификатор правила:** `size.class-count`
 
+**Судимая метрика:** `size.class-count.sum`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -215,6 +219,8 @@ App\Service\                  # 28 классов -- слишком много!
 ## Количество свойств (Property Count)
 
 **Идентификатор правила:** `size.property-count`
+
+**Судимая метрика:** `size.property-count`
 
 <!-- llms:skip-begin -->
 ### Что измеряет

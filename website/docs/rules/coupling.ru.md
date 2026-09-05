@@ -12,6 +12,8 @@
 
 **Rule ID:** `coupling.cbo`
 
+**Судимые метрики:** `coupling.cbo`, `coupling.cbo-app`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -218,6 +220,8 @@ rules:
 
 **Rule ID:** `coupling.instability`
 
+**Судимая метрика:** `coupling.instability`
+
 <!-- llms:skip-begin -->
 ### Что измеряет
 
@@ -368,6 +372,8 @@ bin/qmx check src/ --rule-opt="coupling.instability:threshold=0.9"
 ## Расстояние от главной последовательности
 
 **Rule ID:** `coupling.distance`
+
+**Судимая метрика:** `coupling.distance`
 
 <!-- llms:skip-begin -->
 ### Что измеряет

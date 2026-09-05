@@ -3492,6 +3492,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::everyFindingConstructionInSourceIsInspectedOrDeclaredDelegated
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::theResolvedArgumentNamesAreTheFindingConstructorsOwn
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelJudgedMetricDriftTest::everyFindingPublishesOneOfTheMetricsItsChannelDeclares
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelJudgedMetricDriftTest::theCorpusReachesEveryChannelThatDeclaresAJudgedMetric
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest::noDeclaredChannelCodeCarriesALevel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest::noProductionSourceSpellsALevelSuffixAsALiteral
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelLevelAssemblyTopologyTest::theLevelDetectorRecognisesARetiredLevelBearingName
@@ -5592,9 +5594,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredDirectiveNotPerBoundDeclaration
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredThresholdDirective
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itStillAnswersAnImpossiblePairAboutTheLevel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itAnswersAThresholdNamingAJudgedMetricWithTheChannelThatJudgesIt
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itGivesTheSuppressionRefusalOneSubjectNotTwo
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itNamesTheBadHalfWhenTheThresholdLevelDoesNotParse
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itNamesTheBadHalfWhenTheThresholdRuleDoesNotExist
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itOffersNoPairForAMetricNoChannelDeclares
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itOnlyRecommendsRuleOptWhenBothHalvesOfTheThresholdPairAreValid
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itRefusesTheRetiredPairSpellingBeforeAskingAboutTheLevel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itAnswersNoMaskerWhenTheCoalitionChangesNothing
@@ -6522,6 +6526,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itFailsOnAGroupThatDiffersOnlyInCase
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itFiltersRulesByGroup
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itListsRulesUnderGroupHeaders
+ - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itPrintsTheMetricsAChannelDeclaresItJudges
+ - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itSaysNothingAboutAChannelThatJudgesNoMetric
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itSetsTheCommandNameAndDescription
  - Qualimetrix\Tests\Integration\Architecture\MaxExpandedLayersFromYamlTest::omittedMaxExpandedLayersFallsBackToDefault
  - Qualimetrix\Tests\Integration\Architecture\MaxExpandedLayersFromYamlTest::userProvidedMaxExpandedLayersReachesConfiguration

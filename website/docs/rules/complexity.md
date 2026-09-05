@@ -10,6 +10,8 @@ Think of it like directions to someone's house: "go straight, then turn left" is
 
 **Rule ID:** `complexity.cyclomatic`
 
+**Judged metrics:** `complexity.ccn`, `complexity.ccn.max`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -138,6 +140,8 @@ bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
 
 **Rule ID:** `complexity.cognitive`
 
+**Judged metrics:** `complexity.cognitive`, `complexity.cognitive.max`
+
 <!-- llms:skip-begin -->
 ### What it measures
 
@@ -244,6 +248,8 @@ bin/qmx check src/ --rule-opt="complexity.cognitive:callable.error=40"
 ## NPath Complexity
 
 **Rule ID:** `complexity.npath`
+
+**Judged metrics:** `complexity.npath`, `complexity.npath.max`
 
 <!-- llms:skip-begin -->
 ### What it measures
@@ -377,6 +383,8 @@ bin/qmx check src/ --rule-opt="complexity.npath:class.enabled=true"
 ## WMC -- Weighted Methods per Class
 
 **Rule ID:** `complexity.wmc`
+
+**Judged metric:** `complexity.wmc`
 
 <!-- llms:skip-begin -->
 ### What it measures
