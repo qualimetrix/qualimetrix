@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Finding\Support\CorpusCaseRun;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -56,9 +57,6 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     private const string OBSERVATION_ORACLE = 'docs/internal/plans/rule-vocabulary/enumeration-channel-levels.tsv';
 
     private const string DECLARED_CHANNELS = 'tests/Analysis/Finding/Fixtures/Channels/declared.txt';
-
-    /** Exit codes at or above this one mean the analysis did not happen, not that it found something. */
-    private const int EXIT_CANNOT_ANALYSE = 3;
 
     /** @var array<string, list<string>>|null channel key => observed level values */
     private static ?array $observed = null;
@@ -222,7 +220,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
      */
     private static function readOracle(): array
     {
-        $path = self::repositoryRoot() . '/' . self::OBSERVATION_ORACLE;
+        $path = CorpusCaseRun::repositoryRoot() . '/' . self::OBSERVATION_ORACLE;
         $contents = file_get_contents($path);
 
         if ($contents === false) {
@@ -307,7 +305,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
      */
     private static function readDeclaredChannels(): array
     {
-        $path = self::repositoryRoot() . '/' . self::DECLARED_CHANNELS;
+        $path = CorpusCaseRun::repositoryRoot() . '/' . self::DECLARED_CHANNELS;
         $contents = file_get_contents($path);
 
         if ($contents === false) {
@@ -371,10 +369,10 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         self::$runtime = [];
         self::$recognisedForms = [];
 
-        foreach (self::cases() as $directory => $case) {
+        foreach (CorpusCaseRun::cases() as $directory => $case) {
             $channelsInCase = [];
 
-            foreach (self::runCase($directory, $case) as $finding) {
+            foreach (self::findingsOf($directory, $case) as $finding) {
                 $channel = $finding['channel'];
                 $level = self::levelOf($finding['subject']);
                 $observed[$channel][] = $level;
@@ -418,7 +416,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
             // both readings the same file.
             new ConfigurationResolutionRequest(
                 AbsolutePath::fromString($directory),
-                $directory . '/' . self::stringField($case, 'config'),
+                $directory . '/' . CorpusCaseRun::stringField($case, 'config'),
                 [],
                 [],
             ),
@@ -500,142 +498,33 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     }
 
     /**
+     * The findings a case emits, narrowed to the two fields this guard reads
+     * off them. The run itself, and the refusal to accept a partial one as an
+     * observation, live in {@see CorpusCaseRun}.
+     *
      * @param array<string, mixed> $case
      *
      * @return list<array{channel: string, subject: string}>
      */
-    private static function runCase(string $directory, array $case): array
+    private static function findingsOf(string $directory, array $case): array
     {
-        /** @var list<string> $paths */
-        $paths = $case['paths'] ?? [];
-        /** @var list<string> $extra */
-        $extra = $case['args'] ?? [];
+        $findings = [];
 
-        $command = array_merge(
-            [\PHP_BINARY, self::repositoryRoot() . '/bin/qmx', 'check'],
-            $paths,
-            ['-c', self::stringField($case, 'config'), '--format=json', '--workers=0', '--no-cache', '--no-ansi', '--fail-on=none'],
-            $extra,
-        );
+        foreach (CorpusCaseRun::findings($directory, $case) as $finding) {
+            $channel = $finding['channel'] ?? null;
+            $subject = $finding['subject'] ?? null;
 
-        $process = proc_open(
-            $command,
-            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes,
-            $directory,
-        );
-
-        if ($process === false) {
-            throw new RuntimeException(\sprintf('Could not run the corpus case in %s.', $directory));
-        }
-
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        array_map(fclose(...), $pipes);
-        $exit = proc_close($process);
-
-        $decoded = json_decode((string) $stdout, true);
-
-        if (!\is_array($decoded) || !\is_array($decoded['violations'] ?? null)) {
-            throw new RuntimeException(\sprintf(
-                "The corpus case in %s produced no JSON report (exit %d).\n%s",
-                $directory,
-                $exit,
-                (string) $stderr,
-            ));
-        }
-
-        self::assertObservationIsComplete($decoded, $directory, $exit, (string) $stderr);
-
-        /** @var list<array{channel: string, subject: string}> */
-        return array_values($decoded['violations']);
-    }
-
-    /**
-     * A run that analysed less than the whole case, or whose finding list was
-     * truncated, is not an observation — it is a smaller observation wearing
-     * the same shape.
-     *
-     * `qmx check` prints a valid JSON report even when a file failed to
-     * parse, and reports the shortfall in its own `coverage` section rather
-     * than by withholding the document. Reading `findings` and stopping
-     * there would let a broken fixture quietly narrow what this guard sees,
-     * which is the failure mode the whole test exists to rule out. The exit
-     * code is checked too, but it cannot carry this alone: two of the ten
-     * cases exit 2 on a healthy run because they report configuration
-     * errors on purpose.
-     *
-     * @param array<string, mixed> $report
-     */
-    private static function assertObservationIsComplete(array $report, string $directory, int $exit, string $stderr): void
-    {
-        $coverage = $report['coverage'] ?? null;
-        $meta = $report['violationsMeta'] ?? null;
-
-        self::assertIsArray($coverage, \sprintf('The corpus case in %s reported no coverage section.', $directory));
-        self::assertIsArray($meta, \sprintf('The corpus case in %s reported no violation metadata.', $directory));
-
-        self::assertLessThan(
-            self::EXIT_CANNOT_ANALYSE,
-            $exit,
-            \sprintf("The corpus case in %s could not be analysed (exit %d).\n%s", $directory, $exit, $stderr),
-        );
-        self::assertTrue(
-            $coverage['complete'] ?? false,
-            \sprintf('The corpus case in %s did not analyse every discovered file: %s', $directory, json_encode($coverage)),
-        );
-        self::assertSame(
-            0,
-            $coverage['failed'] ?? null,
-            \sprintf('The corpus case in %s failed on %s.', $directory, json_encode($coverage['failures'] ?? null)),
-        );
-        self::assertFalse(
-            $meta['truncated'] ?? true,
-            \sprintf('The corpus case in %s truncated its finding list; the observation is incomplete.', $directory),
-        );
-    }
-
-    /**
-     * @return array<string, array<string, mixed>> case directory => case definition
-     */
-    private static function cases(): array
-    {
-        $root = self::repositoryRoot() . '/finding-gate/cases';
-        $directories = glob($root . '/*', \GLOB_ONLYDIR);
-
-        if ($directories === false || $directories === []) {
-            throw new RuntimeException(\sprintf('No corpus cases under %s.', $root));
-        }
-
-        $cases = [];
-
-        foreach ($directories as $directory) {
-            $definition = file_get_contents($directory . '/case.json');
-
-            if ($definition === false) {
-                throw new RuntimeException(\sprintf('Corpus case %s has no case.json.', $directory));
+            if (!\is_string($channel) || !\is_string($subject)) {
+                throw new RuntimeException(\sprintf(
+                    'A finding of the corpus case in %s carries no channel or no subject.',
+                    $directory,
+                ));
             }
 
-            /** @var array<string, mixed> $decoded */
-            $decoded = json_decode($definition, true, flags: \JSON_THROW_ON_ERROR);
-            $cases[$directory] = $decoded;
+            $findings[] = ['channel' => $channel, 'subject' => $subject];
         }
 
-        return $cases;
-    }
-
-    /**
-     * @param array<string, mixed> $case
-     */
-    private static function stringField(array $case, string $field): string
-    {
-        $value = $case[$field] ?? null;
-
-        if (!\is_string($value)) {
-            throw new RuntimeException(\sprintf('Corpus case is missing the string field "%s".', $field));
-        }
-
-        return $value;
+        return $findings;
     }
 
     /**
@@ -660,8 +549,4 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         return $canonical;
     }
 
-    private static function repositoryRoot(): string
-    {
-        return \dirname(__DIR__, 4);
-    }
 }
