@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
+
 /**
  * Parses CLI rule options.
  *
@@ -63,7 +66,7 @@ final readonly class RuleOptionsParser
      * Parses a short alias option.
      *
      * The option name declared on `#[CliAlias(...)]` is normalized the same
-     * way as `--rule-opt` option names ({@see normalizeOptionName()}), so both
+     * way as `--rule-opt` option names ({@see ConfigKeySpelling::normalize()}), so both
      * channels converge on the same internal (camelCase) key before reaching
      * {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory}. Without this, a
      * rule author who wrote a kebab-case/snake_case second argument (matching
@@ -83,7 +86,7 @@ final readonly class RuleOptionsParser
 
         return [
             'rule' => $mapping['rule'],
-            'option' => $this->normalizeOptionName($mapping['option']),
+            'option' => ConfigKeySpelling::normalize($mapping['option']),
             'value' => $value,
         ];
     }
@@ -147,9 +150,9 @@ final readonly class RuleOptionsParser
         // was typed: `--rule-opt` accepts kebab, snake and camel alike, and a
         // refusal raised after the fold can only answer in one of the three.
         $authoredOption = substr($rest, 0, $equalsPos);
-        RetiredRuleOptionKeys::refuse($ruleName, [trim($authoredOption) => null]);
+        RetiredSuppressionOptions::refuseRuleOption([trim($authoredOption) => null]);
 
-        $option = $this->normalizeOptionName($authoredOption);
+        $option = ConfigKeySpelling::normalize($authoredOption);
         $value = $this->normalizeValue(substr($rest, $equalsPos + 1));
 
         return [$ruleName, $option, $value];
@@ -161,16 +164,6 @@ final readonly class RuleOptionsParser
     private function normalizeRuleName(string $name): string
     {
         return strtolower(trim($name));
-    }
-
-    /**
-     * Normalizes option name from kebab-case to camelCase.
-     */
-    private function normalizeOptionName(string $name): string
-    {
-        $name = trim($name);
-
-        return lcfirst(str_replace(['-', '_'], '', ucwords($name, '-_')));
     }
 
     /**

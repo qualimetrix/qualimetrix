@@ -213,7 +213,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   quietly stopped applying; the refusal message names both `suppress_*` (for
   suppressing findings a rule still produces) and the root `exclude` (for
   keeping a file out of the analysis entirely) so the two are not confused
-  again. `graph:export --exclude-namespace` is untouched — it narrows the
+  again. Every door answers with the same sentence and exit code 3, echoing the
+  spelling that was actually typed — snake, kebab or camel, root key, rule
+  option or flag. `graph:export --exclude-namespace` is untouched — it narrows the
   exported graph, not a set of findings — and neither is the root `exclude:`
   block. Existing `qmx-baseline.json` files apply unchanged: no channel code
   or subject moves.

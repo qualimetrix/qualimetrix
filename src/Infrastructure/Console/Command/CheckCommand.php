@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
@@ -28,6 +29,7 @@ use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionInterface;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -110,15 +112,21 @@ final class CheckCommand extends Command
     ];
 
     /**
-     * Refuses a retired suppression flag by name, and with the same exit code
-     * its config-file twin already uses.
+     * Refuses a retired suppression flag by name, with the text and the exit
+     * code its config-file twins already use.
      *
-     * Read off the raw argv here rather than declared in
-     * {@see \Qualimetrix\Infrastructure\Console\CheckCommandDefinition}: Symfony binds the
-     * definition inside {@see Command::run()} and throws there, so a retired
-     * token never reaches `execute()` at all, and re-declaring the options to
-     * catch them later would also put them back in `--help` as if they still
-     * worked. Refusing on this command and not globally is what keeps
+     * The flag is not declared in
+     * {@see \Qualimetrix\Infrastructure\Console\CheckCommandDefinition}, which would put it
+     * back in `--help` as if it still worked; it is recognized here instead,
+     * from the binding failure Symfony already raises for it. Reading the token
+     * list ourselves would mean not knowing which token is an option name and
+     * which is another option's value: a path literally called
+     * `--exclude-path` was refused as a flag, and whether it was refused
+     * depended on which of the two equivalent spellings the user wrote it in.
+     * The parser knows the difference and names the offending option in its
+     * message; anything it did bind is not a retired flag.
+     *
+     * Refusing on this command and not globally is what keeps
      * `graph:export --exclude-namespace` alive — that flag was never renamed,
      * it drops files from the graph rather than suppressing findings.
      *
@@ -128,23 +136,24 @@ final class CheckCommand extends Command
      */
     public function run(InputInterface $input, OutputInterface $output): int
     {
-        foreach (self::RETIRED_SUPPRESSION_FLAGS as $retired => $current) {
-            if (!$input->hasParameterOption($retired, true)) {
-                continue;
+        try {
+            return parent::run($input, $output);
+        } catch (ConsoleExceptionInterface $e) {
+            foreach (self::RETIRED_SUPPRESSION_FLAGS as $retired => $current) {
+                if (!str_contains($e->getMessage(), \sprintf('"%s"', $retired))) {
+                    continue;
+                }
+
+                $this->resultPresenter->writeDiagnostic(
+                    $output,
+                    '<error>' . RetiredSuppressionOptions::refusalText($retired, $current) . '</error>',
+                );
+
+                return self::EXIT_CONFIG_ERROR;
             }
 
-            $this->resultPresenter->writeDiagnostic($output, \sprintf(
-                '<error>The "%s" option was retired. To suppress findings the analysis already produces, '
-                . 'use "%s". To exclude files from analysis entirely (the finding is never produced), use the '
-                . '"--exclude" option instead — it is a different mechanism, not a renamed one.</error>',
-                $retired,
-                $current,
-            ));
-
-            return self::EXIT_CONFIG_ERROR;
+            throw $e;
         }
-
-        return parent::run($input, $output);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

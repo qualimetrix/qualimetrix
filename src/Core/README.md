@@ -46,7 +46,6 @@ Core/
 │   ├── ClockInterface.php                 # "What time is it?" contract
 │   └── SystemClock.php                    # Wall-clock reading of ClockInterface
 ├── Util/
-│   ├── ConfigKeySpelling.php              # The snake/kebab/camel fold of a config key, and its inverse
 │   ├── NamespaceMatcher.php               # Glob pattern matching for namespaces
 │   ├── PathMatcher.php                    # Glob pattern matching for file paths
 │   ├── PatternMatch.php                   # The pattern a matcher's matches() fired on
@@ -737,14 +736,6 @@ Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but u
 - `matchesSingle(string $pattern, string $namespace): bool` (static) — single-pattern primitive other Core utilities delegate to
 - `isGlob(string $pattern): bool` (static)
 - `isEmpty(): bool` — whether no patterns are configured
-
-### ConfigKeySpelling
-
-The fold that makes `exclude_paths`, `exclude-paths` and `excludePaths` one configuration key, and its inverse. Neutral because every door configuration arrives through accepts all three and none of them owns the equivalence. Callers that only fold keys still do it inline; this is for the ones that must answer *about* a key in the spelling its author used — today the two retired-option refusals (`Analysis\Configuration\Loader\RetiredRuleOptions` and `Analysis\Finding\RuleConfiguration\RetiredRuleOptionKeys`).
-
-**Methods:**
-- `normalize(string $key): string` (static) — the camelCase spelling every consumer compares against
-- `rewriteLike(string $normalized, string $authored): string` (static) — the same key in whatever separator style `$authored` used; a camelCase original is left alone
 
 ---
 

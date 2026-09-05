@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Loader;
 
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
@@ -71,7 +73,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         $map = [];
 
         foreach (array_keys($config) as $originalKey) {
-            $map[$this->snakeToCamel((string) $originalKey)] = (string) $originalKey;
+            $map[ConfigKeySpelling::normalize((string) $originalKey)] = (string) $originalKey;
         }
 
         return $map;
@@ -104,7 +106,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
 
         foreach ($config as $key => $value) {
             $stringKey = (string) $key;
-            $normalizedRoot = $this->snakeToCamel($stringKey);
+            $normalizedRoot = ConfigKeySpelling::normalize($stringKey);
 
             // Unregistered roots will be rejected by validateRootKeys() below;
             // default them to NORMALIZE so we still produce a usable shape for
@@ -148,7 +150,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         $result = [];
 
         foreach ($config as $key => $value) {
-            $normalizedKey = \is_int($key) ? $key : $this->snakeToCamel($key);
+            $normalizedKey = \is_int($key) ? $key : ConfigKeySpelling::normalize($key);
             $newKey = \is_int($key) || $preserveKeysHere ? $key : $normalizedKey;
             $result[$newKey] = \is_array($value)
                 ? $this->applyPolicy($value, ...$policy->descentFor(
@@ -160,12 +162,6 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         }
 
         return $result;
-    }
-
-    private function snakeToCamel(string $input): string
-    {
-        // Convert snake_case and kebab-case to camelCase, but preserve already camelCase keys
-        return lcfirst(str_replace(['_', '-'], '', ucwords($input, '_-')));
     }
 
     /**
@@ -210,7 +206,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             return;
         }
 
-        ConfigSchema::refuseRetiredRootKey($unknownKeys, $path, $keyMap);
+        RetiredSuppressionOptions::refuseRootKey($unknownKeys, $path, $keyMap);
 
         // Build allowed keys in original format (snake_case) for suggestions
         $allowedOriginal = array_map(
@@ -234,7 +230,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     }
 
     /**
-     * The raw section is handed to {@see RetiredRuleOptions} rather than the
+     * The raw section is handed to {@see RetiredSuppressionOptions} rather than the
      * normalized one: the three spellings of an option key have already
      * collapsed into one by then, and that refusal exists to answer in the
      * author's own.
@@ -265,7 +261,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             }
         }
 
-        RetiredRuleOptions::refuseIn($rawConfig, $this->originalKey(ConfigSchema::RULES, $keyMap), $path);
+        RetiredSuppressionOptions::refuseInRules($rawConfig, $this->originalKey(ConfigSchema::RULES, $keyMap), $path);
     }
 
     /**
@@ -409,7 +405,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     private function findOriginalSectionName(string $normalizedSection, array $rawConfig): string
     {
         foreach (array_keys($rawConfig) as $originalKey) {
-            if ($this->snakeToCamel((string) $originalKey) === $normalizedSection) {
+            if (ConfigKeySpelling::normalize((string) $originalKey) === $normalizedSection) {
                 return (string) $originalKey;
             }
         }
@@ -426,12 +422,12 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     {
         // Find the original section first
         foreach ($rawConfig as $originalSection => $value) {
-            if ($this->snakeToCamel((string) $originalSection) !== $normalizedSection || !\is_array($value)) {
+            if (ConfigKeySpelling::normalize((string) $originalSection) !== $normalizedSection || !\is_array($value)) {
                 continue;
             }
 
             foreach (array_keys($value) as $originalSubKey) {
-                if ($this->snakeToCamel((string) $originalSubKey) === $normalizedSubKey) {
+                if (ConfigKeySpelling::normalize((string) $originalSubKey) === $normalizedSubKey) {
                     return (string) $originalSubKey;
                 }
             }

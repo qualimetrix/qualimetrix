@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use InvalidArgumentException;
-
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AdditionalOptionKeysInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -91,7 +92,7 @@ final class RuleOptionsFactory
         // fromArray() and several Options classes special-case that as
         // "disabled" (see the note on $merged below), silently turning the
         // rule off. This was a real regression, caught by external review.
-        RetiredRuleOptionKeys::refuse($ruleName, $userConfig);
+        RetiredSuppressionOptions::refuseRuleOption($userConfig);
         $this->extractSuppressNamespaces($ruleName, $userConfig);
         $this->extractSuppressPaths($ruleName, $userConfig);
 
@@ -278,7 +279,7 @@ final class RuleOptionsFactory
         $result = [];
 
         foreach ($options as $key => $value) {
-            $normalizedKey = lcfirst(str_replace(['_', '-'], '', ucwords((string) $key, '_-')));
+            $normalizedKey = ConfigKeySpelling::normalize((string) $key);
             $result[$normalizedKey] = $value;
         }
 
@@ -375,7 +376,7 @@ final class RuleOptionsFactory
         foreach (array_keys($defaults) as $key) {
             $knownKeys[] = $key;
             // Also accept camelCase version of snake_case keys
-            $camelKey = lcfirst(str_replace(['_', '-'], '', ucwords($key, '_-')));
+            $camelKey = ConfigKeySpelling::normalize($key);
             if ($camelKey !== $key) {
                 $knownKeys[] = $camelKey;
             }
@@ -384,10 +385,10 @@ final class RuleOptionsFactory
         foreach ($acceptedExtraKeys as $acceptedExtraKey) {
             // Declared keys are canonical kebab-case; $merged keys are always
             // camelCase by the time they reach here (normalizeKeys()/
-            // RuleOptionsParser::normalizeOptionName() already ran), so both
+            // ConfigKeySpelling::normalize() already ran), so both
             // spellings must be accepted.
             $knownKeys[] = $acceptedExtraKey;
-            $camelAcceptedExtraKey = lcfirst(str_replace(['_', '-'], '', ucwords($acceptedExtraKey, '_-')));
+            $camelAcceptedExtraKey = ConfigKeySpelling::normalize($acceptedExtraKey);
             if ($camelAcceptedExtraKey !== $acceptedExtraKey) {
                 $knownKeys[] = $camelAcceptedExtraKey;
             }
@@ -444,7 +445,7 @@ final class RuleOptionsFactory
      * (multi-word) option names (see CLAUDE.md rule-option naming policy).
      *
      * Both camelCase and kebab/snake_case input are always accepted (see
-     * {@see normalizeKeys()} and `RuleOptionsParser::normalizeOptionName()`),
+     * {@see normalizeKeys()} and `ConfigKeySpelling::normalize()`),
      * but the "Available options" hint must show a single, typeable spelling
      * rather than the internal PHP property name.
      */

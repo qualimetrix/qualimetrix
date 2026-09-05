@@ -15,16 +15,6 @@ namespace Qualimetrix\Core\Symbol;
  * Every edge counted against it is inbound, and the only way to lower that count
  * is to spell the level in more than one enum again — the defect this one hub
  * replaced.
- *
- * @qmx-threshold coupling.class-rank warning=0.045 error=0.045 -- Same intentional contract-hub
- *                role as MetricBag. This channel is excluded by namespace for `Core\Symbol`,
- *                so the threshold decides only whether the hub is reported at all — whether it
- *                appears under `--show-suppressed` and in the suppression count — not the
- *                published report or the exit code. Project-size scaling maps 0.045 to 0.0153
- *                against the observed raw ClassRank 0.0133, a margin wider than one step for
- *                the same reason as MetricBag's. Warning and error are deliberately equal:
- *                there is no band in which growing fan-in on the level vocabulary is a warning
- *                rather than the expected shape.
  */
 enum SymbolLevel: string
 {

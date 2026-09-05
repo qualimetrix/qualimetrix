@@ -333,36 +333,23 @@ YAML);
     // `exclude` — the mechanism readers have conflated with suppression.
 
     #[Test]
-    public function itRefusesTheRetiredRootExcludePathsSpelling(): void
-    {
-        $path = $this->tempDir . '/config.yaml';
-        file_put_contents($path, <<<'YAML'
-exclude_paths:
-  - src/Entity/*
-YAML);
-
-        self::expectException(ConfigLoadException::class);
-        self::expectExceptionMessage('"exclude_paths" was retired');
-        self::expectExceptionMessageMatches('/suppress_paths/');
-        self::expectExceptionMessageMatches('/"exclude" option instead/');
-
-        $this->loader->load($path);
+    #[DataProvider('provideRetiredRootSpellings')]
+    public function itRefusesARetiredRootOptionInTheSpellingItsAuthorUsed(
+        string $authored,
+        string $replacement,
+    ): void {
+        $this->assertRefusalEchoesTheAuthoredSpelling(
+            \sprintf("%s:\n  - src/Entity/*\n", $authored),
+            $authored,
+            $replacement,
+        );
     }
 
-    #[Test]
-    public function itRefusesTheRetiredRootExcludeNamespacesSpelling(): void
+    /** @return iterable<string, array{string, string}> */
+    public static function provideRetiredRootSpellings(): iterable
     {
-        $path = $this->tempDir . '/config.yaml';
-        file_put_contents($path, <<<'YAML'
-excludeNamespaces:
-  - App\Tests
-YAML);
-
-        self::expectException(ConfigLoadException::class);
-        self::expectExceptionMessage('"excludeNamespaces" was retired');
-        self::expectExceptionMessageMatches('/suppress_namespaces/');
-
-        $this->loader->load($path);
+        yield 'snake' => ['exclude_paths', 'suppress_paths'];
+        yield 'camel' => ['excludeNamespaces', 'suppressNamespaces'];
     }
 
     /**
@@ -377,19 +364,14 @@ YAML);
         string $authored,
         string $replacement,
     ): void {
-        $path = $this->tempDir . '/config.yaml';
-        file_put_contents($path, <<<YAML
-rules:
-  code-smell.long-parameter-list:
-    {$authored}:
-      - src/Entity/Foo.php
-YAML);
-
-        self::expectException(ConfigLoadException::class);
-        self::expectExceptionMessage(\sprintf('uses the retired option "%s"', $authored));
-        self::expectExceptionMessage(\sprintf('use "%s"', $replacement));
-
-        $this->loader->load($path);
+        $this->assertRefusalEchoesTheAuthoredSpelling(
+            \sprintf(
+                "rules:\n  code-smell.long-parameter-list:\n    %s:\n      - src/Entity/Foo.php\n",
+                $authored,
+            ),
+            $authored,
+            $replacement,
+        );
     }
 
     /** @return iterable<string, array{string, string}> */
@@ -398,6 +380,32 @@ YAML);
         yield 'snake' => ['exclude_paths', 'suppress_paths'];
         yield 'camel' => ['excludePaths', 'suppressPaths'];
         yield 'kebab' => ['exclude-namespaces', 'suppress-namespaces'];
+    }
+
+    /**
+     * Asserted by catching rather than by `expectExceptionMessage()`: that
+     * method assigns one expectation, so a second call silently replaces the
+     * first and half the claim stops being checked.
+     */
+    private function assertRefusalEchoesTheAuthoredSpelling(
+        string $document,
+        string $authored,
+        string $replacement,
+    ): void {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, $document);
+
+        try {
+            $this->loader->load($path);
+            self::fail(\sprintf('"%s" was accepted instead of refused.', $authored));
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString(
+                \sprintf('The "%s" option was retired', $authored),
+                $e->getMessage(),
+            );
+            self::assertStringContainsString(\sprintf('use "%s"', $replacement), $e->getMessage());
+            self::assertStringContainsString('"exclude" option instead', $e->getMessage());
+        }
     }
 
     #[Test]

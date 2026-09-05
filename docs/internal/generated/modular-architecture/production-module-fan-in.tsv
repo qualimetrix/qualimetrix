@@ -1,4 +1,5 @@
 target_contract_fqcn	target_owner	distinct_consumer_fqcns	distinct_consumer_owners
+Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	2	1
 Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	9	6
 Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	23	9
 Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface	Analysis.Configuration	3	2
@@ -6,6 +7,7 @@ Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException	Analys
 Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
+Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface	Analysis.Evidence.CircularDependency	4	3
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface	Analysis.Evidence.Cohesion	2	2
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration	Analysis.Evidence.Cohesion	3	2
@@ -233,7 +235,6 @@ Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	64	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	30	11
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
-Qualimetrix\Core\Util\ConfigKeySpelling	Core.Neutral	2	2
 Qualimetrix\Core\Util\NamespaceMatcher	Core.Neutral	11	5
 Qualimetrix\Core\Util\PathMatcher	Core.Neutral	5	2
 Qualimetrix\Core\Util\StringSet	Core.Neutral	2	1

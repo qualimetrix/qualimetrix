@@ -93,6 +93,16 @@ is.** It narrows which namespaces appear in an exported dependency graph; no
 rule runs and no finding is ever produced or suppressed. Renaming it would
 apply this step's vocabulary to a mechanism it does not describe.
 
+**The price of that is accepted, not overlooked: one flag spelling means two
+things in one binary.** `--exclude-namespace` runs on `graph:export` and is
+refused on `check`. The alternative is renaming a live, correct flag so that a
+retired one can be refused symmetrically, which costs a working surface to buy
+consistency in an error message. Two further asymmetries are accepted with it:
+`check --exclude-path=x --help` prints help rather than refusing, because the
+application substitutes the help command before `check` ever runs; and a
+retired flag is recognized only where Symfony's binding rejects it, so a
+*value* that happens to be spelled like one is a value.
+
 ## Consequences
 
 - `qmx-baseline.json` is unaffected: no channel code and no subject changes,

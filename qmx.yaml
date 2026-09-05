@@ -46,6 +46,7 @@ architecture:
   layers:
     - name: analysis-configuration
       patterns:
+        - 'Qualimetrix\Analysis\Configuration\ConfigKeySpelling'
         - 'Qualimetrix\Analysis\Configuration\ConfigSchema'
         - 'Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument'
         - 'Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface'
@@ -55,7 +56,6 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest'
         - 'Qualimetrix\Analysis\Configuration\Discovery\ComposerReader'
         - 'Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface'
-        - 'Qualimetrix\Analysis\Configuration\Loader\RetiredRuleOptions'
         - 'Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy'
         - 'Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer'
@@ -70,6 +70,7 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage'
         - 'Qualimetrix\Analysis\Configuration\Preset\PresetResolver'
+        - 'Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions'
     - name: analysis-evidence-circulardependency
       patterns:
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis'
@@ -508,7 +509,6 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\FindingExclusionLedger'
-        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RetiredRuleOptionKeys'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionThresholdModeResolver'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser'
@@ -734,7 +734,6 @@ architecture:
         - 'Qualimetrix\Core\Observation\WorseDirection'
         - 'Qualimetrix\Core\Time\ClockInterface'
         - 'Qualimetrix\Core\Time\SystemClock'
-        - 'Qualimetrix\Core\Util\ConfigKeySpelling'
         - 'Qualimetrix\Core\Util\NamespaceMatcher'
         - 'Qualimetrix\Core\Util\PathMatcher'
         - 'Qualimetrix\Core\Util\PatternMatch'
@@ -1028,7 +1027,6 @@ architecture:
 
   allow:
     analysis-configuration:
-      - core-neutral
       - core-path
       - external
     analysis-evidence-circulardependency:
@@ -1401,8 +1399,7 @@ rules:
     suppress_namespaces:
       - Qualimetrix\Analysis\Finding\Contract
       # Same reconfirmation as for the CBO channel above: the level vocabulary now
-      # lives here, so its ClassRank is unpublished too, and its point threshold
-      # keeps the same suppressed-report reach (rule-vocabulary Ш5e2b).
+      # lives here, so its ClassRank is unpublished too (rule-vocabulary Ш5e2b).
       - Qualimetrix\Core\Symbol
       - Qualimetrix\Analysis\Finding\Rule
       - Qualimetrix\Analysis\Evidence\DependencyModel\Contract
@@ -1451,6 +1448,22 @@ rules:
       # Concrete validators implement an externally consumed override language,
       # making local A/I incomplete; exact-root distance is 0.7375.
       - '[Q]ualimetrix\Analysis\Finding\Contract\Rule\Override'
+      # The threshold penalizes consolidation itself here, and that is measured
+      # rather than argued. Four copies of the retired-suppression vocabulary
+      # were folded into one owner, which is the only direction the manifest
+      # allows: `Analysis\Finding` already imports `Analysis\Configuration`, so
+      # the reverse edge would be a cycle. Folding them adds afferent edges and
+      # nothing else — abstractness is unchanged, instability falls to 4/38, and
+      # D = |A + I - 1| rises for that reason alone. The counterfactual was
+      # measured, not assumed: leaving the spelling fold in `Core` and moving
+      # only the vocabulary gives 0.677, over the same ceiling, because the
+      # edges are the cause and the class placement is not. Exact-root aggregate
+      # distance is 0.686404. `[Q]` keeps every child namespace (Contract,
+      # Loader, Pipeline, Preset, Discovery) measured, and a namespace channel
+      # is not addressable by `@qmx-threshold` — probed on this tree: a point
+      # override on the file the finding is attributed to left the violation
+      # standing and the audit reported that directive inert.
+      - '[Q]ualimetrix\Analysis\Configuration'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 

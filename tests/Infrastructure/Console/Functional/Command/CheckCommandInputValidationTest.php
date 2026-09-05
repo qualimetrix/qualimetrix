@@ -308,6 +308,28 @@ final class CheckCommandInputValidationTest extends TestCase
         self::assertStringContainsString('"--exclude" option instead', $tester->getErrorOutput());
     }
 
+    /**
+     * A path that happens to be spelled like a retired flag is a value, not a
+     * flag. Recognizing retired flags by walking the token list could not tell
+     * the two apart and refused this run; the parser can, and does.
+     */
+    #[Test]
+    public function itAcceptsAPathValueSpelledLikeARetiredFlag(): void
+    {
+        $tester = $this->tester();
+        $tester->execute(
+            [
+                'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                '--format' => 'json',
+                '--suppress-path' => ['--exclude-path'],
+            ],
+            ['capture_stderr_separately' => true],
+        );
+
+        self::assertNotSame(3, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringNotContainsString('was retired', $tester->getErrorOutput());
+    }
+
     /** @return iterable<string, array{string, string}> */
     public static function provideRetiredSuppressionFlags(): iterable
     {
@@ -335,7 +357,7 @@ final class CheckCommandInputValidationTest extends TestCase
         );
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('retired option "exclude-paths"', $tester->getErrorOutput());
+        self::assertStringContainsString('The "exclude-paths" option was retired', $tester->getErrorOutput());
         self::assertStringContainsString('use "suppress-paths"', $tester->getErrorOutput());
     }
 

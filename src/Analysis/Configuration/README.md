@@ -26,7 +26,9 @@ Configuration/
 ├── Loader/             # YAML load and section normalization
 ├── Pipeline/Stage/     # defaults, preset, file, Composer, CLI stages
 ├── Preset/             # built-in and custom preset resolution
-└── ConfigurationMerger.php # document-layer merge mechanics
+├── ConfigKeySpelling.php   # the snake/kebab/camel fold of a key, and its inverse
+├── ConfigurationMerger.php # document-layer merge mechanics
+└── RetiredSuppressionOptions.php # the retired `exclude*` spellings and the one refusal
 ```
 
 ## Resolution model
@@ -37,19 +39,18 @@ Configuration/
 precedence order is defaults, presets, configuration files, Composer discovery,
 and CLI options; later layers override earlier scalar values while the schema
 defines merge semantics for collection values.
-It also holds the root keys that were *retired*:
-`ConfigSchema::refuseRetiredRootKey()` names the replacement for a dead
-top-level spelling, because the unknown-key path suggests only similarly
-spelled keys and would let a rename through as an unexplained refusal.
-`Loader\RetiredRuleOptions`, handed the *pre-normalization* `rules:` section by
-`YamlConfigLoader::validateRulesSection()`, does the same for a retired option
-inside a rule block. It is here and not in the rule layer because the loader is
-the last place the authored spelling exists: below it `exclude_paths`,
-`exclude-paths` and `excludePaths` are one key, so a refusal raised later can
-only answer in a spelling its author may never have typed. The rule layer keeps
-its own copy of the same family for the `--rule-opt` door, and
-`RetiredRuleOptionKeysAgreementTest` pins the two together. The fold and its
-inverse are `Core\Util\ConfigKeySpelling`, shared rather than copied.
+`RetiredSuppressionOptions` holds the retired `exclude*` suppression spellings
+and the one sentence refusing them, for all four doors: the YAML root, a
+`rules:` block, `--rule-opt`, and the rule-option factory behind it. Each door
+used to carry its own copy of the family and of the sentence, and the copies had
+already drifted apart in wording. A refusal answers in the spelling its author
+wrote, so the doors that still hold it — the loader, handed the
+*pre-normalization* `rules:` section by `YamlConfigLoader`, and the `--rule-opt`
+parser — are the ones that raise it: below them `exclude_paths`,
+`exclude-paths` and `excludePaths` are one key. Configuration owns the subject
+because the rule layer already imports Configuration and the reverse edge would
+be a cycle. `ConfigKeySpelling` is that fold and its inverse, shared by every
+door rather than spelled out again in each.
 
 `ConfigurationDocument` preserves ordered source contributions. Feature leaves
 consume their own contribution key: for example,

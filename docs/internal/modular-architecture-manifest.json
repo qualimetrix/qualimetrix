@@ -40,6 +40,25 @@
     "Reporting.GraphProjection"
   ],
   "declarations": {
+    "Qualimetrix\\Analysis\\Configuration\\ConfigKeySpelling": {
+      "path": "src/Analysis/Configuration/ConfigKeySpelling.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "closure_package": "P3",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsParser",
+          "closes_in": null
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Configuration\\ConfigSchema": {
       "path": "src/Analysis/Configuration/ConfigSchema.php",
       "kind": "class",
@@ -339,14 +358,6 @@
       "closure_package": "P3",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Configuration\\Loader\\RetiredRuleOptions": {
-      "path": "src/Analysis/Configuration/Loader/RetiredRuleOptions.php",
-      "kind": "class",
-      "owner": "Analysis.Configuration",
-      "visibility": "internal",
-      "closure_package": "P3",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Configuration\\Loader\\SectionNormalizationPolicy": {
       "path": "src/Analysis/Configuration/Loader/SectionNormalizationPolicy.php",
       "kind": "enum",
@@ -458,6 +469,30 @@
       "visibility": "internal",
       "closure_package": "P3",
       "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\RetiredSuppressionOptions": {
+      "path": "src/Analysis/Configuration/RetiredSuppressionOptions.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "closure_package": "P3",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsParser",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+          "closes_in": null
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyAnalysis": {
       "path": "src/Analysis/Evidence/CircularDependency/CircularDependencyAnalysis.php",
@@ -10334,14 +10369,6 @@
       "closure_package": "P6-A",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RetiredRuleOptionKeys": {
-      "path": "src/Analysis/Finding/RuleConfiguration/RetiredRuleOptionKeys.php",
-      "kind": "class",
-      "owner": "Analysis.Finding",
-      "visibility": "internal",
-      "closure_package": "P6-A",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionThresholdModeResolver": {
       "path": "src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdModeResolver.php",
       "kind": "class",
@@ -15892,25 +15919,6 @@
             "service_alias",
             "service_registration"
           ]
-        }
-      ]
-    },
-    "Qualimetrix\\Core\\Util\\ConfigKeySpelling": {
-      "path": "src/Core/Util/ConfigKeySpelling.php",
-      "kind": "class",
-      "owner": "Core.Neutral",
-      "visibility": "contract",
-      "closure_package": "P8",
-      "consumers": [
-        {
-          "owner": "Analysis.Configuration",
-          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\RetiredRuleOptions",
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RetiredRuleOptionKeys",
-          "closes_in": null
         }
       ]
     },

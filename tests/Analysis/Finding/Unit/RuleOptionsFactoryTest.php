@@ -1270,7 +1270,7 @@ final class RuleOptionsFactoryTest extends TestCase
     // running with its suppression silently switched off. Each of the five
     // retired spellings, snake_case and camelCase, must refuse by name
     // instead, naming both the rule-level `suppress_*` replacement and the
-    // unrelated top-level `exclude` option.
+    // unrelated `exclude` option.
 
     // The config-file path runs snake_case keys through normalizeKeys()
     // before this check ever sees them (see itNormalizesSnakeCaseKeys()),
@@ -1284,12 +1284,17 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->addCliOption('code-smell.long-parameter-list', 'exclude_namespaces', ['App\\Tests']);
 
-        self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('exclude_namespaces');
-        self::expectExceptionMessageMatches('/suppress_namespaces/');
-        self::expectExceptionMessageMatches('/top-level "exclude"/');
-
-        $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+        // Asserted by catching: `expectExceptionMessage()` and its `Matches()`
+        // twin each hold one expectation, so a second call of the same kind
+        // replaces the first and that half stops being checked.
+        try {
+            $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+            self::fail('The retired spelling was accepted.');
+        } catch (InvalidArgumentException $e) {
+            self::assertStringContainsString('The "exclude_namespaces" option was retired', $e->getMessage());
+            self::assertStringContainsString('use "suppress_namespaces"', $e->getMessage());
+            self::assertStringContainsString('"exclude" option instead', $e->getMessage());
+        }
     }
 
     #[Test]
