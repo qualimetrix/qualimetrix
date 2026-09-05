@@ -828,15 +828,17 @@ final class RenameMaps
             $declared[$key] = $declaration;
         }
 
-        // A REPORT_VALUES pair sharing its (old, new) spelling with a row from
-        // another map is not the legitimate two-role case grouping exists for:
-        // that case is one name serving two DIFFERENT translations (e.g. a
-        // metric key that is also a channel code), each keeping its own
-        // surface restriction. Here the two maps would agree on one
-        // translation, and merging their sources hands REPORT_VALUES the other
-        // role's unrestricted surface and bare spelling — a quoted-only,
-        // format:suppressed-only value would travel unquoted, everywhere,
-        // exactly as codex-01 measured. Refused at load time instead.
+        // Grouping a pair declared by two maps into one declaration is
+        // legitimate — it is what lets one name serve two roles at once, per
+        // the docblock above. What is refused here is REPORT_VALUES sharing
+        // that grouping specifically: every other role publishes bare, so
+        // merging sources leaves the combined declaration unrestricted
+        // (appliesToSurface() passes if ANY source is), and REPORT_VALUES then
+        // inherits a spelling and a surface it never declared for itself — a
+        // quoted-only, format:suppressed-only value would travel unquoted,
+        // everywhere, exactly as codex-01 measured. Refused at load time
+        // instead of letting REPORT_VALUES lose the one restriction that is
+        // its whole point.
         foreach ($declared as $declaration) {
             $sources = $declaration['sources'];
 

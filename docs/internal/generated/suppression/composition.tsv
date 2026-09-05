@@ -117,6 +117,7 @@ rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Co
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/CodeSmell/UnusedPrivateVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateVisitor::enterNode	error	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php	Qualimetrix\Analysis\Evidence\CodeSmell\UsageTrackingTrait::trackUsage	error	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor::enterNode	error	1
+rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor::isConstantExpression	warning	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Cohesion/TccLccVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor::enterNode	error	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Complexity/CognitiveComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor::getComplexityIncrement	error	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Complexity/CognitiveComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor::isRecursiveCall	error	1

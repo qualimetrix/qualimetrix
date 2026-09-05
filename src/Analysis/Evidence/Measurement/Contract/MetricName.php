@@ -23,13 +23,13 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  *                ratchetable ceiling -- `coupling.cbo` owns that job). Re-measured at 902
  *                classes: scale factor sqrt(902/100)=3.0033. The unscaled default (0.02) already
  *                flags this class -- its scaled warning 0.0066593 is below the raw rank
- *                0.0068381. This directive's own scaled threshold is 0.0069922; the raw rank
- *                sits 2.2% below that threshold (a 2.2% margin OF THE THRESHOLD, not of the raw
- *                rank -- the raw rank itself is 2.25% below the threshold; the two are close
- *                enough here to look interchangeable, but see {@see MetricBag} where the same
- *                distinction is a factor of two). Both sides move with class count and both grew
- *                since the prior measurement (901 classes, raw 0.0066931): re-measure rather than
- *                trusting either figure.
+ *                0.0068381. This directive's own scaled threshold is 0.0069922, one gap above
+ *                the raw rank: that gap is 2.2% of the threshold, or, stated against the other
+ *                side of the same gap, 2.25% of the raw rank -- close enough here to look
+ *                interchangeable, but see {@see MetricBag} where the same distinction is a
+ *                factor of two. Both sides move with class count and both grew since the prior
+ *                measurement (901 classes, raw 0.0066931): re-measure rather than trusting
+ *                either figure.
  * @qmx-threshold coupling.cbo 73 -- Canonical names are an intentional Measurement contract hub, and this CBO is afferent: it counts adoption, not entanglement. Current raw CBO 72 gets one-edge headroom. It rose from 64 when Ш5e3 moved the eleven collector-owned counters here and gave the aggregated-key decomposition a home beside its inverse; every reader that stopped keeping a private copy of the strategy list is one of the edges. The two adopters that took it to 71 are ChannelDeclarationCompilerPass, which reads these constants by reflection to check that a channel's declared judged metric exists, and HealthDimensionCatalog, which stopped spelling its class-level keys as literals. The third, which took it to 72 (Х9 C1), is ComputedMetricFormulaValidator, which reads these constants by the same reflection mechanism to check that a computed-metric formula's addressed key exists; removing that one import counterfactually measures raw CBO back at 71.
  */
 final class MetricName

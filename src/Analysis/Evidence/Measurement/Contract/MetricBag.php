@@ -19,9 +19,9 @@ use RuntimeException;
  *                a ratchetable ceiling -- `coupling.cbo` owns that job). Re-measured at 902
  *                classes: raw rank 0.0095125, scale factor sqrt(902/100)=3.0033. The unscaled
  *                default (0.02) already flags this class -- its scaled warning 0.0066593 is
- *                below the raw rank. This directive's own scaled threshold is 0.0116537; the
- *                raw rank sits 18.4% below that threshold (an 18.4% margin OF THE THRESHOLD,
- *                not of the raw rank -- the raw rank itself is 22.5% below the threshold),
+ *                below the raw rank. This directive's own scaled threshold is 0.0116537, one
+ *                gap above the raw rank 0.0095125: that gap is 18.4% of the threshold, or,
+ *                stated against the other side of the same gap, 22.5% of the raw rank --
  *                deliberately wider than the class-rank directive above because MetricBag's
  *                rank has room the tightest hub does not.
  *                Both sides move with class count; re-measure rather than trusting either

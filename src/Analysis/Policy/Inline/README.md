@@ -179,18 +179,13 @@ mentions. What the ban removes is only the ability to hide the finding with the
 mechanism it exists to audit.
 
 **The second banned channel is `duplication.code-duplication`, for a different
-reason.** It reports one project-wide finding per duplicate block, and no
-directive form binds to that aggregate in a way an author controls: a symbol
-directive binds to the declaration it is written on, never the project; a file
-or next-line directive is matched against the finding's `Location`, which the
-rule sets to the block's first occurrence — the scan's choice, not a stable
-target an author can rely on. Every form is refused at the line it is written
-on, with the same `annotation.unresolved-directive` code and its own wording.
-The working path is channel-level, not a directive:
-`disabled_rules: [duplication.code-duplication]` /
-`--disable-rule=duplication.code-duplication`, or accepting individual
-occurrences in the baseline. A bare directive that named no channel and used to
-silence a duplication finding by covering everything no longer does — see
+reason** — no directive form binds to its project-wide finding in a way an
+author controls; see the `DirectiveChannelBan` docblock for the mechanism.
+Every form is refused at the line it is written on, with the same
+`annotation.unresolved-directive` code and its own wording; the working path
+is channel-level (`disabled_rules` / `--disable-rule` / baseline), not a
+directive. A bare directive that named no channel and used to silence a
+duplication finding by covering everything no longer does — see
 `SuppressionFilter` above — and, if that directive silenced nothing else, it
 now surfaces as `annotation.unused-directive` where it previously produced no
 finding at all.
