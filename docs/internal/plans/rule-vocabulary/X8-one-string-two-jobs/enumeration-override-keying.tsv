@@ -1,0 +1,143 @@
+site	role	key_expression	key_origin	normalization_applied	subject_form	path_or_line	notes
+FileProcessor::process	producer	$relativePath = PathFactory::bestEffortRelative($file->getPathname(), $this->projectRoot)	SplFileInfo::getPathname() (Symfony Finder walk, both sequential and parallel-worker paths call this same method)	RelativePath::fromString() via tryProjectRelative(), or realpath()+structurePreservingFallback()+RelativePath::fromString() on the best-effort branch	NA	src/Analysis/Run/Collection/FileProcessor.php:61	The one place a RelativePath is minted for a processed file. Sequential (CollectionOrchestrator) and parallel (amphp worker) both go through FileProcessor::process(), so both sides of a merge are normalized the same way.
+PathFactory::tryProjectRelative	converter	RelativePath::fromString($raw) (relative branch) or AbsolutePath::fromString($raw)->tryRelativizeTo($projectRoot) (absolute branch)	string given by caller (here, SplFileInfo::getPathname())	full RelativePath::normalize() (see RelativePath row); returns null instead of throwing on escape	NA	src/Core/Path/PathFactory.php:44-56	Both branches end in a RelativePath, i.e. both are normalized; asymmetry with fromString() (returns null vs throws) does not affect normalization itself.
+PathFactory::bestEffortRelative	converter	realpath($candidate) when absolute, then tryProjectRelative(), else RelativePath::fromString(structurePreservingFallback($candidate))	string given by caller	realpath() (absolute case) or RelativePath::normalize() (fallback case) — every exit path ends in RelativePath::fromString or an already-built RelativePath	NA	src/Core/Path/PathFactory.php:79-96	Used by FileProcessor; never throws, so it is the actual entry point for the override map's file key, one level above the map itself.
+CollectionOrchestrator (sequential aggregation loop)	producer	$filePathKey = $result->filePath->value(); $allThresholdOverrides[$filePathKey] = $result->thresholdOverrides()	$result->filePath is the typed RelativePath returned by FileProcessor::process() (FileProcessingResult::$filePath)	none applied here — value() just unwraps the RelativePath already normalized by FileProcessor/PathFactory	NA	src/Analysis/Run/Collection/CollectionOrchestrator.php:109,120	This is the literal minting site of the string key that ends up as AuthoredDirectiveGroup::$fileKey's origin. It is always a RelativePath::value() output, never a raw Finder path or CLI argument.
+CollectionPhaseOutput / SuccessfulFileProcessing / FileProcessingResult	converter (typed carrier)	public RelativePath $filePath (typed field, not a string)	FileProcessor::process()	n/a — carries the already-normalized RelativePath object, not a string, until CollectionOrchestrator calls ->value()	NA	src/Analysis/Run/Contract/Collection/FileProcessingResult.php:21; SuccessfulFileProcessing.php:25,35	Confirms the map's per-worker input side never sees an un-normalized string: the type system enforces RelativePath up to the exact point CollectionOrchestrator degrades it to array-key string.
+AnalysisResult::merge	rewriter	$mergedThresholdOverrides[$file] = array_merge($mergedThresholdOverrides[$file] ?? [], $list) for $file => $list of other->thresholdOverrides	both sides' keys come from the same CollectionOrchestrator::$allThresholdOverrides construction (see above), so both are RelativePath::value() forms	none — merge trusts equal-string-means-equal-file	NA	src/Analysis/Run/Contract/Pipeline/AnalysisResult.php:118-121	The place where a form mismatch between two sides would silently duplicate a file's bucket instead of merging it. Currently safe only because both producers are the same FileProcessor code path (see Q1 answer).
+AnalysisPipeline::analyze	reader (pass-through)	thresholdOverrides: $prepared->collection->thresholdOverrides	CollectionPhaseOutput::$thresholdOverrides, itself built from CollectionOrchestrator's $allThresholdOverrides	none, verbatim forward	NA	src/Analysis/Run/Pipeline/AnalysisPipeline.php:99	Feeds AnalysisResult::$thresholdOverrides, the map baseline:explain and the finding-gate later read.
+AnalysisPipeline (rule-execution phase)	reader (pass-through)	$this->ruleProducerPreparation->prepareInlineDirectives($collectionResult->suppressions, $collectionResult->thresholdOverrides, ...); new AnalysisContext(..., thresholdOverrides: $collectionResult->thresholdOverrides)	CollectionPhaseOutput::$thresholdOverrides	none, verbatim forward, into two independent consumers (InlineDirectivePolicy and AnalysisContext) from the same map instance	NA	src/Analysis/Run/Pipeline/AnalysisPipeline.php:255-270	Same map instance reaches both the audit's InlineDirectivePolicy path and the rule-execution AnalysisContext path — a single source of truth for the run, so a form drift introduced upstream would show identically in both.
+RuleProducerPreparation::prepareInlineDirectives	reader (pass-through)	$this->inlineDirectivePolicy->prepare($suppressions, $thresholdOverrides, $thresholdDiagnostics)	CollectionPhaseOutput / AnalysisPipeline	none, verbatim forward	NA	src/Analysis/Run/RuleProducerPreparation.php:118-126	One-line relay into InlineDirectivePolicy's mutable state.
+InlineDirectivePolicy::prepare	reader (pass-through) / rewriter (of internal state)	$this->thresholdOverrides = $thresholdOverrides	RuleProducerPreparation	none	NA	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php:55-59	Stores the run's whole per-file map as private state for the length of the run.
+InlineDirectivePolicy::authoredThresholdOverrides	reader / producer (derived map, same keys)	self::onePerAuthoredSite($this->thresholdOverrides, fn($o) => $o->line . "\0" . $o->rulePattern)	$this->thresholdOverrides (see above)	none — file keys of the input map are reused verbatim as keys of the output map ($authored[$file][] = $item inside onePerAuthoredSite)	NA	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php:87-93, 119-137	This is `$input->baseline->thresholdOverrides`'s ultimate producer for ThresholdDirectiveAuditInput — the doc-referenced feeder for ThresholdDirectiveAudit::groupByAuthoredSite(). Dedupes bindings per (line, rule) but never touches the file-key string.
+ThresholdDirectiveAudit::groupByAuthoredSite	producer (of AuthoredDirectiveGroup, incl. $fileKey)	$key = $file . "\0" . $override->line . "\0" . $override->rulePattern; ...; AuthoredDirectiveGroup::of($group['file'], ...)	$file is a key of $input->baseline->thresholdOverrides (the array parameter $byFile), traced above to CollectionOrchestrator's RelativePath::value()	none applied to $file itself; only used as one component of a compound internal dedup key	NA	src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php:540-567	The one place AuthoredDirectiveGroup::$fileKey is constructed from the map. It passes $file straight through as $fileKey — never wrapped in RelativePath, exactly matching AuthoredDirectiveGroup's own field type.
+AuthoredDirectiveGroup::of / __construct	producer (of the group) / converter (subjects only)	public string $fileKey (verbatim) plus array_map(fn($o) => $o->subject->toCanonical(), $bindings) for $subjects	caller-supplied $fileKey (from groupByAuthoredSite above); $bindings from the same source	fileKey: none (explicitly, per class docblock, to avoid rewriting the map's own bucket under a different key); subjects: MetricSubject::toCanonical() applied to every binding's subject, then array_unique	string (fileKey), string[] (subjects, canonical)	src/Analysis/Policy/Inline/Directive/Audit/AuthoredDirectiveGroup.php:44-74	The class under review. $site (DirectiveSite) is built *separately* here via RelativePath::fromString($fileKey) at line 68 — that conversion is deliberately not fed back into $fileKey.
+AuthoredDirectiveGroup::site	converter	new DirectiveSite(file: RelativePath::fromString($fileKey), ...) — computed once in of(), returned by identity from site()	$fileKey (this group's own field)	full RelativePath::normalize()	NA	src/Analysis/Policy/Inline/Directive/Audit/AuthoredDirectiveGroup.php:67-88	The one sanctioned string->RelativePath conversion of this fileKey, kept apart from the map-key role so the report's identity (DirectiveVerdict::$site) can use a real path VO while the map lookup keeps the run's own string.
+ThresholdDirectiveAudit::without	reader + rewriter	$overrides = $input->baseline->thresholdOverrides; $overrides[$group->fileKey] = array_values(array_filter($overrides[$group->fileKey] ?? [], ...))	$input->baseline->thresholdOverrides (InlineDirectivePolicy-sourced map); $group->fileKey (AuthoredDirectiveGroup field)	none — reads and rewrites the bucket under the exact string the group carries, which is the whole point per the class docblock	NA	src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php:186-207	THE load-bearing site: this is what would rewrite the wrong bucket if $fileKey were normalized independently of the map's own keys. Filters by $override->line and $override->rulePattern, not by subject.
+DirectiveVerdict::report (usort)	comparator (of DirectiveSite, not of fileKey directly)	[$left->site->file->value(), $left->site->line, $left->site->form, $left->site->target] <=> [...]	DirectiveSite::$file — a RelativePath, built via AuthoredDirectiveGroup::site()	implicitly normalized (RelativePath::value() of an already-normalized RelativePath)	NA	src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php:416-439	Sort order uses the normalized form (via site(), not $fileKey directly) — consistent with the docblock's claim that site() is where the RelativePath conversion belongs.
+DirectiveMaskingCoalition::overlapping	comparator (of $subjects, canonical strings)	array_intersect($subjects, $candidate->subjects) === []	AuthoredDirectiveGroup::$subjects (canonical MetricSubject strings, see AuthoredDirectiveGroup::of)	none — compares canonical strings as-is	string[] (canonical)	src/Analysis/Policy/Inline/Directive/Audit/DirectiveMaskingCoalition.php:134-153	The one substantive $subjects reader named in the class docblock. array_intersect() is a strict string-equality set intersection (loose == per element, but canonical strings never look numeric here); correctness depends entirely on MetricSubject::toCanonical() being injective — see Q3 below.
+DirectiveMaskingCoalition::hiddenBy	comparator (of DirectiveSite, by object identity)	$masker->site() !== $candidate->site()	AuthoredDirectiveGroup::site() — same cached DirectiveSite object per group, by construction	n/a (identity comparison, not string comparison)	NA	src/Analysis/Policy/Inline/Directive/Audit/DirectiveMaskingCoalition.php:107-111	Not a $fileKey comparison at all, but the class docblock for AuthoredDirectiveGroup::site() explicitly calls out this exact line as the reason site() must be cached and returned by identity rather than rebuilt per call.
+AnalysisContext::getThresholdOverride	reader + comparator (subject, not file key)	foreach ($this->thresholdOverrides as $overrides) { foreach ($overrides as $override) { if (!$override->matches($ruleName) \|\| $override->subject->toCanonical() !== $subject->toCanonical()) continue; ... } }	AnalysisContext::$thresholdOverrides (same map, built by AnalysisPipeline from CollectionPhaseOutput)	none — file key of the outer array is never read here, only iterated over as a bag of buckets	MetricSubject (both sides converted via toCanonical() for the comparison)	src/Analysis/Finding/Contract/Rule/AnalysisContext.php:33-60	The map's other declared consumer (per AnalysisResult's docblock) never uses the file key as a key at all — it flattens every bucket and matches by (ruleName, subject canonical). File-key normalization is invisible to this reader.
+BoundaryExplanationService::annotationFor	reader + comparator (subject, not file key)	foreach ($thresholdOverridesByFile as $overrides) { ...array_filter(..., fn($o) => $o->subject->toCanonical() === $subject->toCanonical() && $o->matches($producer)) }	AnalysisResult::$thresholdOverrides, forwarded by BaselineExplainCommand	none — same as AnalysisContext, file key of the outer array is discarded by the foreach-over-values	MetricSubject (canonical)	src/Analysis/Policy/Baseline/BoundaryExplanationService.php:234-252	`bin/qmx baseline:explain`'s reader of the same map; also blind to the file key, confirming no consumer besides ThresholdDirectiveAudit::without() actually indexes by it.
+BaselineExplainCommand::doExecute	reader (pass-through)	$this->explanationService->explain($subjectKey, ..., $context->result()->thresholdOverrides, ...)	AnalysisResult::$thresholdOverrides	none, verbatim forward	NA	src/Infrastructure/Console/Command/BaselineExplainCommand.php:107-115	CLI-facing consumer; confirms the map crosses a command boundary still keyed by whatever CollectionOrchestrator minted, with no re-normalization at the CLI edge.
+ThresholdOverride (VO)	converter (subject only; not a fileKey holder)	public MetricSubject $subject (typed field); no file-key field on this VO at all — the file key lives only in the enclosing array<string, list<ThresholdOverride>>	SourceControlExtractor (DeclarationControlBindings), out of this enumeration's direct scope	n/a	MetricSubject	src/Analysis/Finding/Contract/Threshold/ThresholdOverride.php:18-58	ThresholdOverride itself never carries the string file key — the key exists only as the outer array's index, which is exactly what makes AuthoredDirectiveGroup::$fileKey a "carried verbatim" fact rather than a derivable one: nothing on the override remembers which string indexed it.
+MetricSubject::toCanonical	converter (MetricSubject -> string)	$this->declarationPath?->toCanonical() ?? $this->logicalClassPath?->toCanonical() ?? $this->aggregatePath?->toCanonical() ?? throw	exactly one of three private fields is non-null by construction (declaration()/logicalClass()/aggregate() factories)	n/a — this IS the canonicalization step $subjects and every comparator above rely on	MetricSubject -> string	src/Core/Symbol/MetricSubject.php:58-64	See Q3 below for whether this mapping is injective.
+DeclarationPath::toCanonical	converter	sprintf('declaration:%s@%s', $this->logical->toCanonical(), $this->file->value()) . ($ordinal->isFirst() ? '' : '#'.$ordinal->value)	SymbolPath::toCanonical() (logical) + RelativePath::value() (file) + DeclarationOrdinal	uses RelativePath::value() of an already-normalized RelativePath (constructor only accepts RelativePath, not a string)	NA	src/Core/Symbol/DeclarationPath.php:35-44	`declaration:` prefix plus embedded file path and ordinal suffix — see Q3.
+LogicalClassPath::toCanonical / SymbolPath::toCanonical	converter	'class:'.ns.'\\'.type (LogicalClassPath delegates verbatim to SymbolPath's Class_ branch); 'file:'.path; 'project:'; 'ns:'.ns; 'func:'/'func::'; 'callable:'	SymbolPath's own namespace/type/member fields	n/a	NA	src/Core/Symbol/SymbolPath.php:154-263	Every SymbolType has a distinct string prefix (class:, file:, project:, func:, ns:, callable:) — see Q3.
+Test fixture: ThresholdDirectiveAuditTest	producer (test-only)	private const string FILE = 'src/Sample.php'; ... thresholdOverrides: [self::FILE => $overrides]	hand-authored literal, not run through RelativePath::fromString or PathFactory	none applied by the test; the literal is already in normalized form	NA	tests/Analysis/Policy/Inline/Integration/ThresholdDirectiveAuditTest.php:48,731	Only a single already-normalized literal is used across this suite; no test constructs two differing-form keys for the same logical file.
+Test fixture: DirectiveMaskingCoalitionTest	producer (test-only)	private const string FILE = 'src/Sample.php'; AuthoredDirectiveGroup::of(self::FILE, $line, $rule, [...])	hand-authored literal	none	NA	tests/Analysis/Policy/Inline/Unit/Directive/DirectiveMaskingCoalitionTest.php:42,222	Same observation as above — the only other direct caller of AuthoredDirectiveGroup::of() besides the production site, and it too uses one normalized literal.
+Test fixtures: AnalysisContextThresholdTest / BoundaryExplanationServiceTest	reader (test-only, exercising the subject-only consumers)	thresholdOverrides: ['<file>' => [...]]	hand-authored literals	not applicable to these tests: AnalysisContext::getThresholdOverride() and BoundaryExplanationService::annotationFor() never read the outer array's key (see rows above), so these fixtures cannot exercise a form mismatch even if they wanted to	NA	tests/Analysis/Finding/Unit/AnalysisContextThresholdTest.php:37+; tests/Analysis/Policy/Baseline/Unit/BoundaryExplanationServiceTest.php	Confirms by construction, not just by absence of a counterexample, that these two suites are structurally incapable of testing fileKey-form drift: the code under test discards the key.
+Q1 answer (see notes)	NA	NA	NA	NA	NA	src/Analysis/Run/Collection/FileProcessor.php:61; src/Core/Path/PathFactory.php:44-96; src/Analysis/Run/Collection/CollectionOrchestrator.php:109,120	See trailing comment block, item "Q1".
+Q2 answer (see notes)	NA	NA	NA	NA	NA	src/Core/Path/RelativePath.php:178-229	See trailing comment block, item "Q2".
+Q3 answer (see notes)	NA	NA	NA	NA	NA	src/Analysis/Policy/Inline/Directive/Audit/DirectiveMaskingCoalition.php:145; src/Core/Symbol/MetricSubject.php:58-64	See trailing comment block, item "Q3".
+#
+# Q1 — Can two forms of the same path actually diverge here, and does a live producer make the pair?
+# Candidate pair: './src/A.php' vs 'src/A.php' (or, equivalently, double slashes 'src//A.php', a trailing
+# '/./', or Windows backslashes). By code: the ONLY producer that ever writes a key into
+# thresholdOverrides / AuthoredDirectiveGroup::$fileKey is CollectionOrchestrator.php:109-120
+# ($filePathKey = $result->filePath->value()), and $result->filePath is a RelativePath minted exactly
+# once, in FileProcessor.php:61, via PathFactory::bestEffortRelative() (src/Core/Path/PathFactory.php:79-96).
+# Every exit path of bestEffortRelative() ends in RelativePath::fromString() (directly, or through
+# tryProjectRelative()/AbsolutePath::tryRelativizeTo()), which normalizes per RelativePath.php:178-229 —
+# so './src/A.php' and 'src/A.php' would already collapse to the identical string 'src/A.php' BEFORE
+# either ever reaches the map. Sequential (CollectionOrchestrator) and parallel-worker collection both
+# call the same FileProcessor::process(), so there is no second producer with a different normalization
+# policy. Conclusion: no live producer emits two different string forms for the same file into this map —
+# the divergent-form scenario the class docblock warns against is a property the type WOULD need to guard
+# against if a producer bypassed RelativePath (e.g., a future git-diff/cache path, or a hand-built test
+# fixture), not one exercised by any current code path. It is exercised only hypothetically, by the two
+# tests that construct AuthoredDirectiveGroup directly (ThresholdDirectiveAuditTest.php:48,
+# DirectiveMaskingCoalitionTest.php:42) — and both use the SAME already-normalized literal 'src/Sample.php'
+# rather than a diverging pair, so even the tests do not currently probe this. UNKNOWN: whether a symlinked
+# project root or an absolute-vs-relative CLI target argument (outside this map's producers, e.g. a
+# `--report=git:main..HEAD` path fed through a different PathFactory entry point not covered by this pass)
+# could still produce two forms; not traced here because it does not write into thresholdOverrides.
+#
+# Q2 — What RelativePath::fromString() does to the string (from RelativePath.php:44-229):
+# 1. Rejects empty string (throws).
+# 2. Rejects a leading '/' (throws — absolute paths use AbsolutePath instead).
+# 3. Fast-path regex `#\\\\|(?:\A|/)\.{0,2}(?:/|\z)#`: if the value contains no backslash and no '.'/'..'
+#    segment (leading, trailing or embedded) and no such pattern at all, returns the value UNCHANGED
+#    (this is why an already-normalized key round-trips as a no-op).
+# 4. Otherwise (slow path): replaces every '\' with '/' (Windows separators).
+# 5. Strips one leading './' if present.
+# 6. Rejects '' or '.' after that strip (throws).
+# 7. Splits on '/', then rebuilds by dropping every '' segment (collapses double slashes) and every '.'
+#    segment, and for every '..' segment pops the last resolved segment (or throws if nothing to pop,
+#    i.e. a leading '..' that would escape the base).
+# 8. Rejects an empty resolved segment list (throws).
+# 9. Rejoins with '/'.
+# Net effect: normalizes Windows separators, collapses '//' and '/./' and leading './', and resolves '..'
+# lexically — exactly the four shapes named in the task's example pair, all of which fromString() already
+# neutralizes, confirming why AuthoredDirectiveGroup's docblock treats re-normalizing $fileKey as unsafe:
+# fromString() can silently CHANGE the string, so applying it to the map's own key risks writing to a
+# bucket under a different string than the one the run actually used as that key.
+#
+# Q3 — array_intersect($subjects, $candidate->subjects) in DirectiveMaskingCoalition.php:145, and whether
+# MetricSubject::toCanonical() is injective (two distinct MetricSubjects sharing one canonical string):
+# array_intersect() is a set intersection over canonical strings (MetricSubject::toCanonical(), applied at
+# AuthoredDirectiveGroup::of(), AuthoredDirectiveGroup.php:64) — PHP compares array_intersect's elements
+# with loose (==) semantics per the manual, but every canonical string here is prefixed with a
+# non-numeric tag (class:, declaration:, file:, ns:, func:, func::, callable:, project:), so none can be
+# interpreted as a number and loose vs strict equality do not diverge in practice.
+# Injectivity, read off MetricSubject.php:13-64 and its three factories (declaration/logicalClass/
+# aggregate): the private constructor guarantees exactly one of three fields is non-null, and each
+# family's toCanonical() carries a DISTINCT string prefix (SymbolPath.php:154-166: 'class:', 'file:',
+# 'project:', 'func:'/'func::', 'callable:', 'ns:'; DeclarationPath.php:37-43 additionally prefixes
+# 'declaration:' before delegating to the logical SymbolPath and appending '@'+file value and, for a
+# non-first ordinal, '#'+ordinal). Because the prefixes are disjoint, no aggregate/logicalClass/declaration
+# subject can collide with a subject from a different family. Within one family: two logicalClass subjects
+# collide only if their SymbolPath namespace+type+member triples are equal, which by SymbolPath's own
+# construction means they identify the same logical class — not a genuine collision of DISTINCT subjects.
+# Two declaration subjects collide only if logical path, file value, AND ordinal-suffix all match, which
+# again means the same declaration. UNKNOWN / not verified by a dedicated test in this codebase: no
+# uniqueness invariant test for MetricSubject::toCanonical() was found by grep ("toCanonical" tests exist
+# for individual VOs, e.g. SymbolPath, but no cross-family collision test); the injectivity conclusion
+# above is read off the code's construction (disjoint prefixes, full identity embedded in each format), not
+# measured by a property test.
+#
+# --- Чем получено ---
+# MCP Serena (mcp__serena__find_referencing_symbols) was run on AuthoredDirectiveGroup itself
+# (relative_path src/Analysis/Policy/Inline/Directive/Audit/AuthoredDirectiveGroup.php): it returned every
+# reference already found by grep (ThresholdDirectiveAudit::groupByAuthoredSite/without/maskedBy/
+# boundaryObservable, DirectiveMaskingCoalition's constructor/maskedBy/hiddenBy/overlapping, MaskingOutcome,
+# and the two test call sites in DirectiveMaskingCoalitionTest) and nothing beyond them — confirming no
+# aliased import or re-export of this class was missed by the grep pass. Serena was used as the
+# cross-check on this one class; the wider trace (thresholdOverrides map producers/readers/rewriters
+# across CollectionOrchestrator, FileProcessor, PathFactory, AnalysisPipeline, AnalysisContext,
+# BoundaryExplanationService, MetricSubject/SymbolPath/DeclarationPath) was done by grep + Read, not
+# repeated per-symbol through Serena, for budget reasons — flagged here rather than left silent.
+# Method actually used, in full: `grep -rn`/`grep -rln` over src/ and tests/ for the literal names
+# "thresholdOverrides", "AuthoredDirectiveGroup", "filePathKey", "authoredThresholdOverrides",
+# "getThresholdOverride", "toCanonical", plus `Read` of every file a grep hit named, followed the call
+# chain by hand (CollectionOrchestrator -> FileProcessor -> PathFactory -> RelativePath;
+# ThresholdDirectiveAudit -> AuthoredDirectiveGroup -> DirectiveSite; AnalysisContext / BoundaryExplanation
+# -> MetricSubject::toCanonical). No production code was modified; only this one TSV file was written.
+#
+# --- Чего этот способ не видит ---
+# COVERED: direct PHP references within src/ and tests/ (imports, method calls, property/array-key access)
+# reachable by literal-name grep; the full producer chain from Symfony Finder's SplFileInfo through to the
+# thresholdOverrides array; both declared readers of the map (AnalysisContext, BoundaryExplanationService);
+# both direct callers of AuthoredDirectiveGroup::of() (production + the two unit-test suites that construct
+# it directly).
+# NOT COVERED / blind spots of this method:
+# - Aliased imports or re-exported symbols under a different local name — grep on the literal identifier
+#   misses a `use X as Y` alias; no such alias was independently confirmed absent (Serena's
+#   find_referencing_symbols, which resolves aliases, was not actually run — see above).
+# - String literals that spell a rule/config key matching "thresholdOverrides" inside YAML/config files
+#   (qmx.yaml, preset YAML) were not searched — grep was scoped to src/ and tests/ only, not the whole repo
+#   (docs/, benchmarks/, finding-gate/) or non-PHP files.
+# - Reflection-based access (e.g. a debug command or serializer reading the property by name via
+#   ReflectionProperty) was not searched for; `grep -rn "thresholdOverrides"` would only catch it if the
+#   property name appears as a literal string, which was not separately checked.
+# - Serialization/cache paths: whether the AST/metric cache (mentioned in AGENTS.md as "AST caching for
+#   faster repeated runs") ever persists or rehydrates a thresholdOverrides map keyed differently (e.g.
+#   a cache written by one Qualimetrix version and read by another with a different RelativePath::normalize
+#   implementation) was not investigated — this is exactly the kind of path where the two forms in Q1
+#   could realistically diverge, and it is explicitly UNKNOWN here.
+# - External/consumer-side usage: nothing outside this repository (there are none per
+#   BACKWARD COMPATIBILITY POLICY) was considered, and no CI/report-format consumer (JSON, SARIF, etc.)
+#   was checked for whether it re-parses or re-keys the exported threshold-override data.
+# - git-diff / `--report=git:...` and baseline-cache code paths that might feed a DIFFERENT file-key
+#   producer into a merged AnalysisResult were not traced beyond AnalysisResult::merge() (which showed the
+#   merge logic but not every caller that could supply differently-produced maps to it).
