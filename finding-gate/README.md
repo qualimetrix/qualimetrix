@@ -146,7 +146,7 @@ and multiplicity arithmetic counts, so a channel has exactly one of these.
 
 An **auxiliary** case exists for an *input* nothing else exercises. The corpus
 was blind to three of them until Ш4a — `--disable-rule`, `only_rules` and a
-non-empty `exclude_paths` — and adding them as ordinary cases was impossible: the
+non-empty `suppress_paths` — and adding them as ordinary cases was impossible: the
 channels they fire are already owned, so a second producer would be
 `coverage-multiplicity`. An auxiliary case is therefore compared on every surface
 and still has to fire **exactly** what its `channels` claims; it is only left out

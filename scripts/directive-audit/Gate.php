@@ -14,7 +14,7 @@ use RuntimeException;
  * verdict list — correctly, for the user-facing command: a tree with no
  * directives is not an error. But that same leniency means this CI step would
  * stay green through a regression in directive extraction, a widened
- * addressability refusal, or an `exclude_paths`/`exclude_namespaces` entry that
+ * addressability refusal, or a `suppress_paths`/`suppress_namespaces` entry that
  * eats the analysed file set: every one of those shrinks or empties what the
  * audit judges without the audit's own exit code ever noticing.
  *
@@ -46,7 +46,7 @@ use RuntimeException;
  *    character classes `src/` happens never to use. On top of that this check
  *    still catches every disagreement that is not pattern-level: the audit and
  *    the enumerator reach their answer through unrelated pipelines — file
- *    discovery, `exclude_paths`/`exclude_namespaces`, addressability refusal,
+ *    discovery, `suppress_paths`/`suppress_namespaces`, addressability refusal,
  *    rule selection — and none of that machinery is shared.
  *
  * 2. **Non-emptiness of what was actually measured**: population matching is

@@ -1,10 +1,10 @@
-exclude_namespaces:
+suppress_namespaces:
   - Corpus\RuleExclusionLedger\GloballyExcluded
 rules:
   code-smell.long-parameter-list:
-    exclude_namespaces:
+    suppress_namespaces:
       - Corpus\RuleExclusionLedger\Excluded
-    exclude_paths:
+    suppress_paths:
       - src/SilencedByPath.php
 computed_metrics:
   health.complexity: { enabled: false }

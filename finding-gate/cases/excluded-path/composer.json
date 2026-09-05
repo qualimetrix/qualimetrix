@@ -1,6 +1,6 @@
 {
     "name": "finding-gate-corpus/excluded-path",
-    "description": "Corpus case: a fixture silenced through a non-empty exclude_paths",
+    "description": "Corpus case: a fixture silenced through a non-empty suppress_paths",
     "type": "project",
     "autoload": {
         "psr-4": {

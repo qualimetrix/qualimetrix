@@ -491,7 +491,7 @@ final class SelfTest
         $root = Fs::temporaryDirectory('self-test-claim-');
         $directory = $root . '/probe';
         mkdir($directory);
-        Fs::write($directory . '/qmx.yaml', "exclude_paths: []\n");
+        Fs::write($directory . '/qmx.yaml', "suppress_paths: []\n");
 
         $write = static function (array $channels) use ($directory): void {
             Fs::write($directory . '/case.json', (string) json_encode([
