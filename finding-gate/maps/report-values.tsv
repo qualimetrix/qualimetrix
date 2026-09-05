@@ -1,1 +1,5 @@
 old	new	reason
+path-exclusion	path-suppression	E2 renamed four SuppressionMechanism values: suppression stopped calling itself exclusion (ADR 0047).
+namespace-exclusion	namespace-suppression	Same rename, same reason.
+rule-namespace-exclusion	rule-namespace-suppression	Same rename, same reason.
+rule-path-exclusion	rule-path-suppression	Same rename, same reason.
