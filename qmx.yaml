@@ -1359,6 +1359,21 @@ rules:
         # `MetricName`, `MetricBag`, `AbstractCollector` and the rest each keep
         # their own point threshold.
         - '[Q]ualimetrix\Analysis\Evidence\Measurement\Contract'
+        # Unlike the three entries above, this is not an intentional contract
+        # hub — it is an ordinary capability root whose union grew by exactly
+        # one (15 -> 16, measured by reverting the import) when
+        # ComputedMetricFormulaValidator (Х9 C1) started reading MetricName's
+        # constants by reflection, the same mechanism the Measurement\Contract
+        # entry above describes from the provider side. No file already in
+        # this namespace touched Measurement\Contract, so the edge is new and
+        # not avoidable by reusing an existing one; routing it through a
+        # sibling namespace that already imports MetricName would only move
+        # the coupling, not remove it, and would misplace the lookup on a
+        # class whose job is name-format validation, not catalog lookup. A
+        # namespace channel is not addressable by `@qmx-threshold` (same
+        # constraint as above), so this is the only mechanism available.
+        # Class CBO inside this namespace stays measured.
+        - '[Q]ualimetrix\Analysis\Evidence\ComputedMetrics'
     suppress_paths:
       # The graph contract is intentionally a widely consumed type hub. Keep this
       # exact declaration measured by other rules without excluding its siblings.

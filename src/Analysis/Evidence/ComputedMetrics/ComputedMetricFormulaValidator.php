@@ -214,22 +214,34 @@ final class ComputedMetricFormulaValidator
     {
         foreach ($definitions as $definition) {
             foreach ($definition->formulas as $formula) {
-                foreach ($this->expression->keysOf($formula) as $key) {
-                    if (str_starts_with($key, 'health.') || str_starts_with($key, 'computed.')) {
-                        continue; // Cross-references, validated above against declared definitions.
-                    }
-
-                    if (!$this->existsInCatalog($key)) {
-                        throw new ComputedMetricConfigurationException(\sprintf(
-                            'Computed metric "%s" references unknown metric key "%s" in formula: %s',
-                            $definition->name,
-                            $key,
-                            $formula,
-                        ));
-                    }
-                }
+                $this->validateFormulaMetricKeys($definition->name, $formula);
             }
         }
+    }
+
+    private function validateFormulaMetricKeys(string $definitionName, string $formula): void
+    {
+        foreach ($this->expression->keysOf($formula) as $key) {
+            $this->assertKeyIsCatalogued($definitionName, $key, $formula);
+        }
+    }
+
+    private function assertKeyIsCatalogued(string $definitionName, string $key, string $formula): void
+    {
+        if (str_starts_with($key, 'health.') || str_starts_with($key, 'computed.')) {
+            return; // Cross-references, validated above against declared definitions.
+        }
+
+        if ($this->existsInCatalog($key)) {
+            return;
+        }
+
+        throw new ComputedMetricConfigurationException(\sprintf(
+            'Computed metric "%s" references unknown metric key "%s" in formula: %s',
+            $definitionName,
+            $key,
+            $formula,
+        ));
     }
 
     /**
