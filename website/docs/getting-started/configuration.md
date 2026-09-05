@@ -50,21 +50,21 @@ include_generated: true
 
 Equivalent CLI: `--include-generated`
 
-### Exclude Paths
+### Suppress Paths
 
 Path patterns for suppressing violations. Unlike `exclude`, these files **are still analyzed** (their metrics are collected), but violations are not reported. Supports both directory prefixes and glob patterns:
 
 ```yaml
-exclude_paths:
+suppress_paths:
   - src/Entity                # prefix: matches all files under src/Entity/
   - src/Metrics/*Visitor.php  # glob: matches visitor files only
 ```
 
-Also available as a CLI option: `--exclude-path` (merged with YAML config).
+Also available as a CLI option: `--suppress-path` (merged with YAML config).
 
 !!! warning "Does not apply to project-scoped architecture findings"
-    `exclude_paths` (and `--exclude-path`) never suppress `architecture.layer-violation` or
-    `architecture.circular-dependency` violations, for the same reason as `exclude_namespaces`
+    `suppress_paths` (and `--suppress-path`) never suppress `architecture.layer-violation` or
+    `architecture.circular-dependency` violations, for the same reason as `suppress_namespaces`
     below: a layer-policy violation is not a metric, so a path exclusion aimed at quieting noisy
     metrics must not double as an undocumented way to disable architecture enforcement.
 
@@ -83,25 +83,25 @@ Also available as a CLI option: `--exclude-path` (merged with YAML config).
     block inside the architecture layer configuration itself and, for coverage specifically,
     `coverage: ignore`.
 
-    As with `exclude_namespaces`, this exemption is **global-only** — the per-rule
-    `exclude_paths` described below still works for architecture rules.
+    As with `suppress_namespaces`, this exemption is **global-only** — the per-rule
+    `suppress_paths` described below still works for architecture rules.
 
-### Exclude Namespaces
+### Suppress Namespaces
 
-Suppress violations for classes in specific namespaces (prefix matching). Like `exclude_paths`, files are still analyzed and metrics are collected, but violations are not reported. This applies to all rules globally:
+Suppress violations for classes in specific namespaces (prefix matching). Like `suppress_paths`, files are still analyzed and metrics are collected, but violations are not reported. This applies to all rules globally:
 
 ```yaml
-exclude_namespaces:
+suppress_namespaces:
   - App\Tests
   - App\Generated
 ```
 
-This is useful when entire namespace subtrees should never produce violations. For per-rule exclusions, use `exclude_namespaces` inside a rule configuration instead (see below).
+This is useful when entire namespace subtrees should never produce violations. For per-rule exclusions, use `suppress_namespaces` inside a rule configuration instead (see below).
 
-Also available as a CLI option: `--exclude-namespace` (merged with YAML config).
+Also available as a CLI option: `--suppress-namespace` (merged with YAML config).
 
 !!! warning "Does not apply to project-scoped architecture findings"
-    `exclude_namespaces` (and `--exclude-namespace`) never suppress `architecture.layer-violation`
+    `suppress_namespaces` (and `--suppress-namespace`) never suppress `architecture.layer-violation`
     or `architecture.circular-dependency` violations. A layer-policy violation is not a metric —
     silently dropping it would let a noisy-metric exclusion double as an undocumented way to
     disable architecture enforcement. Which findings are exempt is a declared property of the
@@ -115,13 +115,13 @@ Also available as a CLI option: `--exclude-namespace` (merged with YAML config).
     debt; for those, use the `exclude:` block inside the architecture layer configuration
     itself, or `coverage: ignore` for the coverage diagnostic.
 
-    This exemption is **global-only**. The per-rule `exclude_namespaces` / `exclude_paths`
-    described below (`rules: {architecture.layer-violation: {exclude_namespaces: [...]}}`) still
+    This exemption is **global-only**. The per-rule `suppress_namespaces` / `suppress_paths`
+    described below (`rules: {architecture.layer-violation: {suppress_namespaces: [...]}}`) still
     works for architecture rules, same as for any other rule — see
     [Exclude namespaces from a rule](#rules) below and the architecture rule's
     [Suppression section](../rules/architecture.md#suppression) for why that asymmetry is
     intentional: naming the rule explicitly is an unambiguous, auditable choice, while a
-    project-wide `exclude_namespaces` entry is not.
+    project-wide `suppress_namespaces` entry is not.
 
 ### Rules
 
@@ -203,14 +203,14 @@ rules:
     threshold: 80
 ```
 
-**Exclude namespaces from a rule:**
+**Suppress namespaces for a rule:**
 
 Any rule can exclude specific namespaces using prefix matching. Violations from matching namespaces are suppressed:
 
 ```yaml
 rules:
   complexity.cyclomatic:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Tests
       - App\Legacy
     callable:
@@ -218,23 +218,23 @@ rules:
       error: 25
 
   coupling.cbo:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Tests
-    exclude_paths:
+    suppress_paths:
       - src/Infrastructure/DependencyInjection
 ```
 
 This is useful when certain namespaces (e.g., tests, generated code, legacy modules) should not trigger violations for a specific rule, while still being analyzed for metrics.
 
-**Exclude selected namespace-aggregate channels from a rule:**
+**Suppress selected namespace-aggregate channels for a rule:**
 
-Use `exclude_namespace_channels` when one violation channel is structurally inapplicable to
+Use `suppress_namespace_channels` when one violation channel is structurally inapplicable to
 part of the namespace tree, but class findings and the producer's other channels must remain:
 
 ```yaml
 rules:
   health.cohesion:
-    exclude_namespace_channels:
+    suppress_namespace_channels:
       health.cohesion:
         - App\Metrics\Coupling
         - App\Generated\*
@@ -265,7 +265,7 @@ used to be accepted and could never fire:
 ```yaml
 rules:
   coupling.cbo:
-    exclude_namespace_channels:
+    suppress_namespace_channels:
       # the namespace aggregate only; the class findings of the same channel stay reported
       coupling.cbo:namespace:
         - App\Legacy
@@ -285,37 +285,37 @@ writing when the key should say out loud which half of a two-level channel it is
     outside its reach; use the `exclude:` block inside the architecture layer configuration
     instead.
 Only aggregate Namespace violations are removed. Class-level `health.cohesion` findings in
-the same namespace and sibling channels remain. The existing `exclude_namespaces` option is
+the same namespace and sibling channels remain. The existing `suppress_namespaces` option is
 unchanged and stays producer-wide across class and namespace findings.
 
 !!! info "Works for every rule, including the architecture rules"
-    `exclude_namespaces`, `exclude_namespace_channels`, and `exclude_paths` are extracted and applied at the framework level for
+    `suppress_namespaces`, `suppress_namespace_channels`, and `suppress_paths` are extracted and applied at the framework level for
     **any** rule name, regardless of whether that rule's Options class declares such a field —
     this is deliberately not opt-in per rule. That includes `architecture.layer-violation` and
-    `architecture.circular-dependency`, which are exempt from the *global* `exclude_namespaces`
-    and `exclude_paths` above but not from this per-rule form: naming the rule explicitly makes
+    `architecture.circular-dependency`, which are exempt from the *global* `suppress_namespaces`
+    and `suppress_paths` above but not from this per-rule form: naming the rule explicitly makes
     the suppression an unambiguous, auditable choice rather than an incidental side effect of a
     project-wide exclusion. See the architecture rule's
     [Suppression section](../rules/architecture.md#suppression) for the reasoning.
 
-**Exclude paths from a rule:**
+**Suppress paths for a rule:**
 
 Any rule can exclude specific file paths using prefix or glob matching. Violations from matching files are suppressed:
 
 ```yaml
 rules:
   coupling.cbo:
-    exclude_paths:
+    suppress_paths:
       - src/Metrics                # prefix: all files in src/Metrics/
       - src/Metrics/*Visitor.php   # glob: only visitor files
 ```
 
-This works alongside `exclude_namespaces` -- both filters are applied. Unlike the global `exclude_paths`, per-rule `exclude_paths` only affects the specific rule, not all rules.
+This works alongside `suppress_namespaces` -- both filters are applied. Unlike the global `suppress_paths`, per-rule `suppress_paths` only affects the specific rule, not all rules.
 
 **Visibility:** unlike `@qmx-ignore`, these suppressions happen silently by default — nothing in
 the default output hints that violations were dropped. Run with `-v` to see a per-rule breakdown
 of how many violations were suppressed this way (the namespace bucket combines
-`exclude_namespaces` and `exclude_namespace_channels`, separately from `exclude_paths`),
+`suppress_namespaces` and `suppress_namespace_channels`, separately from `suppress_paths`),
 and add `--show-suppressed` to also list each suppressed violation, alongside `@qmx-ignore`
 suppressions.
 
@@ -342,7 +342,7 @@ See [Baseline > @qmx-threshold](../usage/baseline.md#per-symbol-threshold-overri
 ### Rule and Channel Selectors
 
 Every place that names a rule or a finding channel — `disabled_rules`, `only_rules`, their CLI
-equivalents, `exclude_namespace_channels`, and the `@qmx-ignore` family in source code — reads
+equivalents, `suppress_namespace_channels`, and the `@qmx-ignore` family in source code — reads
 the name the same way:
 
 | Form                     | Meaning                                                                                                                                                                                                |
@@ -617,11 +617,11 @@ exclude:
   - vendor/
   - tests/Fixtures/
 
-exclude_paths:
+suppress_paths:
   - src/Entity
   - src/DTO
 
-exclude_namespaces:
+suppress_namespaces:
   - App\Tests
 
 include_generated: false
@@ -650,9 +650,9 @@ disabled_rules:
 
 rules:
   complexity.cyclomatic:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Tests
-    exclude_paths:
+    suppress_paths:
       - src/Generated
     callable:
       warning: 15
@@ -673,8 +673,8 @@ Command-line options always take precedence over values in the configuration fil
 # Config says paths: [src/], but CLI overrides it
 vendor/bin/qmx check lib/
 
-# Add extra exclude paths on top of config
-vendor/bin/qmx check src/ --exclude-path='src/Generated/*'
+# Add extra suppressed paths on top of config
+vendor/bin/qmx check src/ --suppress-path='src/Generated/*'
 ```
 
 This makes it easy to experiment without editing the config file.

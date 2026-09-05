@@ -174,18 +174,18 @@ bin/qmx check src/ --disable-rule=code-smell.*
 
 ## Исключение неймспейсов
 
-Любое правило поддерживает `exclude_namespaces` для подавления нарушений из конкретных пространств имён (сопоставление по префиксу). Файлы по-прежнему анализируются и метрики собираются, но нарушения не выводятся:
+Любое правило поддерживает `suppress_namespaces` для подавления нарушений из конкретных пространств имён (сопоставление по префиксу). Файлы по-прежнему анализируются и метрики собираются, но нарушения не выводятся:
 
 ```yaml
 rules:
   complexity.cyclomatic:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Tests
       - App\Legacy
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:exclude_namespaces=App\Tests"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:suppress_namespaces=App\Tests"
 ```
 
 Это полезно для тестового кода, сгенерированного кода или legacy-модулей, которые вы хотите сохранить в метриках, но исключить из отчёта о нарушениях для конкретного правила.

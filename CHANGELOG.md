@@ -178,6 +178,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now fails container assembly instead of registering under a heading of its own.
 - `qmx rules --group=<name>` fails and lists the existing groups when no rule
   belongs to the group, instead of printing an empty listing and exiting 0.
+- Suppression stops calling itself exclusion. Of the six mechanisms that used
+  to hide under the word `exclude`, four earned it — the finding is never
+  produced — and stay: root `exclude`, `exclude_health`,
+  `architecture.<layer>.exclude`, and the per-rule `exclude_readonly` /
+  `exclude_promoted_only` / `exclude_data_classes` / `exclude_tests` /
+  `exclude_exceptions` / `exclude_methods` family are unchanged. The other two
+  produce a finding and then throw it away, and are renamed: `exclude_paths` →
+  `suppress_paths`, `exclude_namespaces` → `suppress_namespaces`,
+  `exclude_namespace_channels` → `suppress_namespace_channels`, at both the
+  root of `qmx.yaml` and inside a `rules: { <rule-name>: { ... } }` block. The
+  matching CLI flags rename the same way: `--exclude-path` → `--suppress-path`,
+  `--exclude-namespace` → `--suppress-namespace`. `SuppressionMechanism`'s four
+  path/namespace values gain the `-suppression` suffix
+  (`path-exclusion` → `path-suppression`, `namespace-exclusion` →
+  `namespace-suppression`, `rule-path-exclusion` → `rule-path-suppression`,
+  `rule-namespace-exclusion` → `rule-namespace-suppression`), visible in
+  `--format=suppressed`. Nesting level (global vs. per-rule) stays what it
+  always was — a scope of application, not a second mechanism — so the two
+  mechanisms are still two, not merged into one. Each retired key and flag is
+  **refused**, not silently ignored: an unrecognized key inside a rule used to
+  only warn, so an unmigrated config would keep running while its suppressions
+  quietly stopped applying; the refusal message names both `suppress_*` (for
+  suppressing findings a rule still produces) and the root `exclude` (for
+  keeping a file out of the analysis entirely) so the two are not confused
+  again. `graph:export --exclude-namespace` is untouched — it narrows the
+  exported graph, not a set of findings — and neither is the root `exclude:`
+  block. Existing `qmx-baseline.json` files apply unchanged: no channel code
+  or subject moves.
 
 ### Fixed
 

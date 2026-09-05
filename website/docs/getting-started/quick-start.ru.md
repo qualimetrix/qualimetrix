@@ -271,7 +271,7 @@ docker-compose run --rm qmx
 
     ```yaml
     # qmx.yaml
-    exclude_paths:
+    suppress_paths:
       - src/Entity/*
       - src/DTO/*
     ```
@@ -279,7 +279,7 @@ docker-compose run --rm qmx
 === "CLI"
 
     ```bash
-    vendor/bin/qmx check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
+    vendor/bin/qmx check src/ --suppress-path='src/Entity/*' --suppress-path='*/DTO/*'
     ```
 
 CLI-паттерны объединяются с паттернами из конфигурационного файла.

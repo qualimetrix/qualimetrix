@@ -121,7 +121,7 @@ Qualimetrix implements **bidirectional coupling** consistent with Chidamber & Ke
 # qmx.yaml
 rules:
   coupling.cbo:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Core\ValueObject
     scope: application  # 'all' (default) or 'application' (uses CBO_APP)
     class:
@@ -314,7 +314,7 @@ class DailyReportJob
 # qmx.yaml
 rules:
   coupling.instability:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Core\ValueObject
     class:
       max_warning: 0.9
@@ -472,7 +472,7 @@ rules:
     include_namespaces:
       - App\Domain
       - App\Infrastructure
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Tests
 ```
 

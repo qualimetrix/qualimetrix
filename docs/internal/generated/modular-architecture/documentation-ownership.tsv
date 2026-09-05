@@ -51,6 +51,7 @@ docs/adr/0043-late-assembled-findings-and-channel-selection.md	Architecture.Gove
 docs/adr/0044-identifier-keyed-configuration-options.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/adr/0045-one-owner-for-the-error-stream.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/adr/0046-a-channel-declares-the-metric-it-judges.md	Analysis.Finding	P6-A	"Move or update atomically with the named migration package."
+docs/adr/0047-suppression-is-not-exclusion.md	Reporting	P6-D	"Move or update atomically with the named migration package."
 docs/adr/README.md	Architecture.Governance	P0-D	"P0 governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."

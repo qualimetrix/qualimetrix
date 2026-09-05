@@ -593,8 +593,8 @@ payload never changes shape for a feature you did not ask for, no matter which
 format you selected it with.
 
 **When to use:** Auditing why an expected finding is missing, reviewing what a
-`qmx.yaml` exclusion actually silences, spotting a dead `exclude_paths`/
-`exclude_namespaces` entry (a typo'd path, a file the project deleted).
+`qmx.yaml` exclusion actually silences, spotting a dead `suppress_paths`/
+`suppress_namespaces` entry (a typo'd path, a file the project deleted).
 
 **Capture is armed the same way by two independent routes** — passing
 `--show-suppressed`, or selecting `--format=suppressed` itself, including via
@@ -604,7 +604,7 @@ disagree.
 
 **The two surfaces are not otherwise equivalent.** `--show-suppressed` on
 `--format=text` prints inline `@qmx-ignore` suppressions and per-rule
-exclusions as prose. Global `path-exclusion` and `namespace-exclusion` appear
+exclusions as prose. Global `path-suppression` and `namespace-suppression` appear
 there only as `-v` counts, not per finding; `baseline` and `git-scope`
 removals are not listed at all; and there is no text equivalent of
 `neverMatched`. `suppressed` is the only surface that publishes all seven
@@ -614,18 +614,18 @@ mechanisms as individual findings.
 removed by more than one mechanism — for example, a finding an inline
 `@qmx-ignore` would suppress may already have been removed earlier by a
 namespace exclusion. There are seven mechanisms: `suppression` (inline
-`@qmx-ignore`/`@qmx-ignore-file`/`@qmx-ignore-next-line`), `path-exclusion` and
-`namespace-exclusion` (global `exclude_paths`/`exclude_namespaces`),
+`@qmx-ignore`/`@qmx-ignore-file`/`@qmx-ignore-next-line`), `path-suppression` and
+`namespace-suppression` (global `suppress_paths`/`suppress_namespaces`),
 `baseline` (the accepted-level ceiling), `git-scope` (`--report=git:*`
 narrowing), and the two halves of the per-rule exclusion ledger configured
-under `rules: {<rule-name>: {...}}` — `rule-namespace-exclusion` and
-`rule-path-exclusion`. `byMechanism` counts entries per mechanism; because the
+under `rules: {<rule-name>: {...}}` — `rule-namespace-suppression` and
+`rule-path-suppression`. `byMechanism` counts entries per mechanism; because the
 same finding can appear under more than one, those counts **do not sum** to
 the number of distinct findings suppressed — the format's own `note` field
 says so.
 
 A separate `neverMatched` list reports configured suppressors that excluded
-nothing this run: without it, a stale `exclude_paths` entry pointing at a
+nothing this run: without it, a stale `suppress_paths` entry pointing at a
 deleted file is indistinguishable from one that was never written.
 
 **Top-level keys:** `meta`, `note`, `mechanisms` (all seven, always present),
@@ -645,21 +645,21 @@ multiset), `neverMatched`.
     "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
     "mechanisms": [
         "suppression",
-        "path-exclusion",
-        "namespace-exclusion",
+        "path-suppression",
+        "namespace-suppression",
         "baseline",
         "git-scope",
-        "rule-namespace-exclusion",
-        "rule-path-exclusion"
+        "rule-namespace-suppression",
+        "rule-path-suppression"
     ],
     "byMechanism": {
         "suppression": 12,
-        "path-exclusion": 0,
-        "namespace-exclusion": 0,
+        "path-suppression": 0,
+        "namespace-suppression": 0,
         "baseline": 0,
         "git-scope": 0,
-        "rule-namespace-exclusion": 58,
-        "rule-path-exclusion": 131
+        "rule-namespace-suppression": 58,
+        "rule-path-suppression": 131
     },
     "suppressed": [
         {
@@ -674,7 +674,7 @@ multiset), `neverMatched`.
             "message": "Log the exception or add a comment explaining why it is safe to ignore."
         },
         {
-            "mechanism": "rule-path-exclusion",
+            "mechanism": "rule-path-suppression",
             "suppressor": "code-smell.constructor-overinjection",
             "rule": "code-smell.constructor-overinjection",
             "channel": "code-smell.constructor-overinjection",
@@ -687,16 +687,16 @@ multiset), `neverMatched`.
     ],
     "neverMatched": [
         {
-            "mechanism": "rule-path-exclusion",
+            "mechanism": "rule-path-suppression",
             "suppressor": "coupling.cbo: src/Analysis/Evidence/Design/*Visitor.php"
         }
     ]
 }
 ```
 
-For the two ledger mechanisms (`rule-namespace-exclusion`,
-`rule-path-exclusion`), `suppressor` names the producer rule; for
-`path-exclusion`/`namespace-exclusion` it is the matched configured pattern;
+For the two ledger mechanisms (`rule-namespace-suppression`,
+`rule-path-suppression`), `suppressor` names the producer rule; for
+`path-suppression`/`namespace-suppression` it is the matched configured pattern;
 for `suppression` it is the directive's `file:line`; for `baseline` it is the
 accepted entry's description; for `git-scope` it is the configured git
 reference.

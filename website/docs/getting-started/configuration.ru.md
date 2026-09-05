@@ -50,21 +50,21 @@ include_generated: true
 
 Эквивалент в CLI: `--include-generated`
 
-### Исключение путей из отчёта (exclude_paths)
+### Подавление путей в отчёте (suppress_paths)
 
 Паттерны путей для подавления нарушений. В отличие от `exclude`, эти файлы **всё равно анализируются** (их метрики собираются), но нарушения не выводятся в отчёт. Поддерживаются префиксы директорий и glob-паттерны:
 
 ```yaml
-exclude_paths:
+suppress_paths:
   - src/Entity                # префикс: все файлы в src/Entity/
   - src/Metrics/*Visitor.php  # glob: только файлы визиторов
 ```
 
-Также доступна как CLI-опция: `--exclude-path` (объединяется с YAML-конфигурацией).
+Также доступна как CLI-опция: `--suppress-path` (объединяется с YAML-конфигурацией).
 
 !!! warning "Не действует на архитектурные находки уровня проекта"
-    `exclude_paths` (и `--exclude-path`) никогда не подавляют нарушения `architecture.layer-violation`
-    и `architecture.circular-dependency` — по той же причине, что и `exclude_namespaces` ниже:
+    `suppress_paths` (и `--suppress-path`) никогда не подавляют нарушения `architecture.layer-violation`
+    и `architecture.circular-dependency` — по той же причине, что и `suppress_namespaces` ниже:
     нарушение архитектурной границы — не метрика, и исключение пути, нацеленное на подавление
     шумных метрик, не должно незаметно становиться способом выключить контроль архитектуры.
 
@@ -82,26 +82,26 @@ exclude_paths:
     [«Правила > Архитектура»](../rules/architecture.ru.md). Для них остаются блок `exclude:`
     внутри самой конфигурации архитектурных слоёв и, отдельно для покрытия, `coverage: ignore`.
 
-    Как и для `exclude_namespaces`, это исключение действует только для **глобального**
-    механизма — исключение на уровне правила `exclude_paths`, описанное ниже, для
+    Как и для `suppress_namespaces`, это исключение действует только для **глобального**
+    механизма — исключение на уровне правила `suppress_paths`, описанное ниже, для
     архитектурных правил по-прежнему работает.
 
-### Исключение неймспейсов (exclude_namespaces)
+### Подавление неймспейсов (suppress_namespaces)
 
-Подавление нарушений для классов из определённых неймспейсов (сопоставление по префиксу). Как и `exclude_paths`, файлы всё равно анализируются и метрики собираются, но нарушения не выводятся. Применяется ко всем правилам глобально:
+Подавление нарушений для классов из определённых неймспейсов (сопоставление по префиксу). Как и `suppress_paths`, файлы всё равно анализируются и метрики собираются, но нарушения не выводятся. Применяется ко всем правилам глобально:
 
 ```yaml
-exclude_namespaces:
+suppress_namespaces:
   - App\Tests
   - App\Generated
 ```
 
-Это полезно, когда целые поддеревья неймспейсов не должны генерировать нарушения. Для исключений на уровне отдельного правила используйте `exclude_namespaces` внутри конфигурации правила (см. ниже).
+Это полезно, когда целые поддеревья неймспейсов не должны генерировать нарушения. Для исключений на уровне отдельного правила используйте `suppress_namespaces` внутри конфигурации правила (см. ниже).
 
-Также доступна как CLI-опция: `--exclude-namespace` (объединяется с YAML-конфигурацией).
+Также доступна как CLI-опция: `--suppress-namespace` (объединяется с YAML-конфигурацией).
 
 !!! warning "Не действует на архитектурные находки уровня проекта"
-    `exclude_namespaces` (и `--exclude-namespace`) никогда не подавляют нарушения
+    `suppress_namespaces` (и `--suppress-namespace`) никогда не подавляют нарушения
     `architecture.layer-violation` и `architecture.circular-dependency`. Нарушение архитектурной
     границы — не метрика: если бы оно тоже подавлялось, исключение шумной метрики незаметно
     выключало бы контроль архитектуры. Какие находки освобождены — объявленное свойство канала,
@@ -115,13 +115,13 @@ exclude_namespaces:
     слоёв, а для диагностики покрытия — `coverage: ignore`.
 
     Это исключение действует только для **глобального** механизма. Исключение на уровне правила
-    `exclude_namespaces` / `exclude_paths`, описанное ниже
-    (`rules: {architecture.layer-violation: {exclude_namespaces: [...]}}`), для архитектурных
+    `suppress_namespaces` / `suppress_paths`, описанное ниже
+    (`rules: {architecture.layer-violation: {suppress_namespaces: [...]}}`), для архитектурных
     правил по-прежнему работает — как и для любого другого правила. См.
     [«Правила» ниже](#правила-rules) и раздел
     [«Подавление нарушений»](../rules/architecture.ru.md#подавление-нарушений) архитектурного
     правила — там объяснено, почему эта асимметрия осознанная: явное указание имени правила —
-    однозначный, проверяемый выбор, а глобальная запись `exclude_namespaces` — нет.
+    однозначный, проверяемый выбор, а глобальная запись `suppress_namespaces` — нет.
 
 ### Правила (rules)
 
@@ -197,14 +197,14 @@ rules:
 
 Вычисляемые метрики (computed metrics) также поддерживают `threshold`.
 
-**Исключение неймспейсов из правила:**
+**Подавление неймспейсов для правила:**
 
 Любое правило может исключить конкретные неймспейсы по префиксу. Нарушения из совпадающих неймспейсов подавляются:
 
 ```yaml
 rules:
   complexity.cyclomatic:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Tests
       - App\Legacy
     callable:
@@ -212,23 +212,23 @@ rules:
       error: 25
 
   coupling.cbo:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Tests
-    exclude_paths:
+    suppress_paths:
       - src/Infrastructure/DependencyInjection
 ```
 
 Это полезно, когда определённые неймспейсы (например, тесты, сгенерированный код, legacy-модули) не должны вызывать нарушения для конкретного правила, но при этом всё равно анализируются для сбора метрик.
 
-**Исключение отдельных агрегатных каналов неймспейсов из правила:**
+**Подавление отдельных агрегатных каналов неймспейсов для правила:**
 
-Используйте `exclude_namespace_channels`, когда один канал нарушений неприменим к части дерева
+Используйте `suppress_namespace_channels`, когда один канал нарушений неприменим к части дерева
 неймспейсов, но нарушения уровня классов и остальные каналы правила должны сохраниться:
 
 ```yaml
 rules:
   health.cohesion:
-    exclude_namespace_channels:
+    suppress_namespace_channels:
       health.cohesion:
         - App\Metrics\Coupling
         - App\Generated\*
@@ -259,7 +259,7 @@ rules:
 ```yaml
 rules:
   coupling.cbo:
-    exclude_namespace_channels:
+    suppress_namespace_channels:
       # только агрегат по неймспейсу; нарушения уровня класса того же канала остаются
       coupling.cbo:namespace:
         - App\Legacy
@@ -280,38 +280,38 @@ rules:
 
 Удаляются только агрегатные нарушения уровня
 Namespace. Нарушения уровня класса `health.cohesion` в том же неймспейсе и соседние каналы
-остаются. Существующая опция `exclude_namespaces` не меняется и по-прежнему действует на всё
+остаются. Существующая опция `suppress_namespaces` не меняется и по-прежнему действует на всё
 правило, включая нарушения классов и неймспейсов.
 
 !!! info "Работает для любого правила, включая архитектурные"
-    `exclude_namespaces`, `exclude_namespace_channels` и `exclude_paths` извлекаются и применяются на уровне фреймворка для
+    `suppress_namespaces`, `suppress_namespace_channels` и `suppress_paths` извлекаются и применяются на уровне фреймворка для
     **любого** имени правила, независимо от того, объявляет ли класс Options этого правила такое
     поле — это намеренно не opt-in для каждого правила по отдельности. Это касается и
     `architecture.layer-violation`, и `architecture.circular-dependency` — они исключены из
-    *глобальных* `exclude_namespaces` и `exclude_paths` выше, но не из этой формы на уровне правила:
+    *глобальных* `suppress_namespaces` и `suppress_paths` выше, но не из этой формы на уровне правила:
     явное указание имени правила делает подавление однозначным, проверяемым выбором, а не побочным
     эффектом project-wide исключения. См. раздел [«Подавление нарушений»](../rules/architecture.ru.md#подавление-нарушений)
     архитектурного правила — там объяснена логика.
 
-**Исключение путей из правила:**
+**Подавление путей для правила:**
 
 Любое правило может исключить конкретные файлы по префиксу пути или glob-паттерну. Нарушения из совпадающих файлов подавляются:
 
 ```yaml
 rules:
   coupling.cbo:
-    exclude_paths:
+    suppress_paths:
       - src/Metrics                # префикс: все файлы в src/Metrics/
       - src/Metrics/*Visitor.php   # glob: только файлы визиторов
 ```
 
-Работает совместно с `exclude_namespaces` -- оба фильтра применяются. В отличие от глобального `exclude_paths`, эта опция на уровне правила влияет только на конкретное правило, а не на все.
+Работает совместно с `suppress_namespaces` -- оба фильтра применяются. В отличие от глобального `suppress_paths`, эта опция на уровне правила влияет только на конкретное правило, а не на все.
 
 **Видимость:** в отличие от `@qmx-ignore`, эти подавления по умолчанию происходят незаметно —
 ничто в стандартном выводе не намекает на то, что нарушения были отброшены. Запустите с `-v`,
 чтобы увидеть разбивку по правилам — сколько нарушений подавлено таким образом (namespace-бакет
-объединяет `exclude_namespaces` и `exclude_namespace_channels` и показывается отдельно от
-`exclude_paths`), и добавьте `--show-suppressed`, чтобы также вывести
+объединяет `suppress_namespaces` и `suppress_namespace_channels` и показывается отдельно от
+`suppress_paths`), и добавьте `--show-suppressed`, чтобы также вывести
 список каждого подавленного нарушения — вместе с нарушениями, подавленными через `@qmx-ignore`.
 
 <!-- llms:skip-begin -->
@@ -337,7 +337,7 @@ class ComplexStateMachine
 ### Селекторы правил и каналов
 
 Везде, где называется правило или канал нарушений — `disabled_rules`, `only_rules`, их
-CLI-эквиваленты, `exclude_namespace_channels` и семейство `@qmx-ignore` в исходном коде, — имя
+CLI-эквиваленты, `suppress_namespace_channels` и семейство `@qmx-ignore` в исходном коде, — имя
 читается одинаково:
 
 | Форма                    | Что означает                                                                                                                                                                                          |
@@ -615,11 +615,11 @@ exclude:
   - vendor/
   - tests/Fixtures/
 
-exclude_paths:
+suppress_paths:
   - src/Entity
   - src/DTO
 
-exclude_namespaces:
+suppress_namespaces:
   - App\Tests
 
 include_generated: false
@@ -648,9 +648,9 @@ disabled_rules:
 
 rules:
   complexity.cyclomatic:
-    exclude_namespaces:
+    suppress_namespaces:
       - App\Tests
-    exclude_paths:
+    suppress_paths:
       - src/Generated
     callable:
       warning: 15
@@ -671,8 +671,8 @@ rules:
 # В конфиге указано paths: [src/], но CLI переопределяет
 vendor/bin/qmx check lib/
 
-# Добавить дополнительные исключения поверх конфига
-vendor/bin/qmx check src/ --exclude-path='src/Generated/*'
+# Добавить дополнительное подавление поверх конфига
+vendor/bin/qmx check src/ --suppress-path='src/Generated/*'
 ```
 
 Это позволяет экспериментировать без редактирования файла конфигурации.
