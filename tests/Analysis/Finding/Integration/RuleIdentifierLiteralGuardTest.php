@@ -191,6 +191,13 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             'complexity.wmc' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
             'duplication.code-duplication' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
         ],
+        'src/Analysis/Policy/Inline/Directive/DirectiveChannelBan.php' => [
+            'duplication.code-duplication' => 'The ban must name the second channel no directive may silence,'
+                . ' and Inline may not import a Duplication rule class across capabilities to spell it.'
+                . ' The first banned name needs no entry here because Inline owns it'
+                . ' (InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME); this one has no owner inside'
+                . ' Inline to borrow a constant from.',
+        ],
         'src/Reporting/Formatter/Json/JsonFormatter.php' => [
             'coupling.class-rank' => self::JSON_FORMATTER_CLASS_RANK_REASON,
         ],
