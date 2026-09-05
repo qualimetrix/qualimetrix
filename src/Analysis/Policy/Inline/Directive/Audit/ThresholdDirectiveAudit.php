@@ -76,6 +76,13 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
  * own half of the narrowed result — the per-channel filter — is likewise
  * never read here: {@see without()} reads only `->produced`. A second caller
  * narrowing for a different reason would need to revisit both assumptions.
+ *
+ * @qmx-threshold coupling.cbo 21 -- Raw CBO 20: an audit that answers what a directive did must
+ *                name every vocabulary the answer is spelled in — verdict, effect, unmeasurable
+ *                reason, sweep scope, authored group — plus the two run-side interfaces its single
+ *                identity argument intersects, because deciding addressability needs both a
+ *                channel's identity and its declaration. Those are the alphabet of the answer, not
+ *                collaborators it delegates work to. 21 gets one-edge headroom.
  */
 final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditInterface
 {

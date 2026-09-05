@@ -38,9 +38,9 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * `coupling.ce-framework` to report the excluded-framework-classes count
  * under the application scope.
  *
- * @qmx-threshold coupling.cbo 21 -- Raw CBO 20: this hierarchical rule's own dependencies
- *                plus the per-rule channel and shape declarations (ADR 0031); 21 gets
- *                one-edge headroom.
+ * @qmx-threshold coupling.cbo 22 -- Raw CBO 21: this hierarchical rule's own dependencies
+ *                plus the per-rule channel, shape and judged-metric declarations (ADR 0031,
+ *                ADR 0046); 22 gets one-edge headroom.
  */
 #[CliAlias('cbo-warning', 'class.warning')]
 #[CliAlias('cbo-error', 'class.error')]

@@ -74,12 +74,12 @@ Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry	Analys
 Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator	Analysis.Evidence.Prioritization	1	1
 Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue	Analysis.Evidence.Prioritization	1	1
 Qualimetrix\Analysis\Finding\Contract\AcceptedLevel	Analysis.Finding	4	1
-Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	37	15
+Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	38	15
 Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	18	6
 Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface	Analysis.Finding	11	3
 Qualimetrix\Analysis\Finding\Contract\ChannelPresentation	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface	Analysis.Finding	3	3
-Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	41	16
+Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	42	16
 Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides	Analysis.Finding	1	1

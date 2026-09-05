@@ -30,8 +30,6 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * Besides the published `code-smell.parameter-count` value, also reads
  * `code-smell.is-vo-constructor` to relax the threshold for value-object
  * constructors.
- *
- * @qmx-ignore health.cohesion -- Interface metadata methods such as requires() return external metric constants beside one cohesive analysis/projection component; LCOM4 cannot merge those stateless protocol methods.
  */
 #[CliAlias('long-parameter-list-warning', 'warning')]
 #[CliAlias('long-parameter-list-error', 'error')]

@@ -15,7 +15,16 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  * The constant is the key upper-cased, so a constant cannot drift from the
  * family of its own value the way `STRUCTURE_LCOM = 'lcom'` did.
  *
- * @qmx-threshold coupling.cbo 70 -- Canonical names are an intentional Measurement contract hub, and this CBO is afferent: it counts adoption, not entanglement. Current raw CBO 69 gets one-edge headroom. It rose from 64 when Ш5e3 moved the eleven collector-owned counters here and gave the aggregated-key decomposition a home beside its inverse; every reader that stopped keeping a private copy of the strategy list is one of the edges.
+ * @qmx-threshold coupling.class-rank warning=0.021 error=0.021 -- The same intentional contract
+ *                hub the CBO line below describes, seen through PageRank instead of a degree
+ *                count: rank is afferent by construction, so the canonical metric names score
+ *                high exactly because everything that reads a metric goes through them. The
+ *                number here is pre-scale, as the rule divides it by sqrt(classCount/100) before
+ *                comparing: 0.021 over ~901 classes is an effective cut of 0.0070 against a raw
+ *                rank of 0.0066931, where the default 0.02 gives 0.0066630 and reports it. Both
+ *                sides of that comparison move with the size of the graph, so re-measure rather
+ *                than trusting either figure.
+ * @qmx-threshold coupling.cbo 72 -- Canonical names are an intentional Measurement contract hub, and this CBO is afferent: it counts adoption, not entanglement. Current raw CBO 71 gets one-edge headroom. It rose from 64 when Ш5e3 moved the eleven collector-owned counters here and gave the aggregated-key decomposition a home beside its inverse; every reader that stopped keeping a private copy of the strategy list is one of the edges. The two adopters that took it to 71 are ChannelDeclarationCompilerPass, which reads these constants by reflection to check that a channel's declared judged metric exists, and HealthDimensionCatalog, which stopped spelling its class-level keys as literals.
  */
 final class MetricName
 {

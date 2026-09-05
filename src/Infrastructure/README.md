@@ -103,6 +103,7 @@ Infrastructure/
 │       ├── RuleCompilerPass.php
 │       ├── RuleRegistryCompilerPass.php
 │       ├── ChannelDeclarationCompilerPass.php
+│       ├── JudgedMetricDeclarationGuard.php
 │       ├── ConfigurationValidatorCompilerPass.php
 │       ├── RuleOptionsCompilerPass.php
 │       ├── FormatterCompilerPass.php
@@ -288,6 +289,10 @@ remain independent because configuration is keyed by producer rule name.
 - Rejects a channel declared by more than one producer, a validator that names a
   producer no rule answers to or declares no channels at all, and a tagged service
   whose definition names no class
+- Delegates the judged-metric half of the declaration check to
+  `JudgedMetricDeclarationGuard`, which is the only class on this side that reads the
+  metric catalog: a declared judged key must exist in `MetricName` (an aggregate
+  spelling counts) and only a `magnitude` producer may name one at all
 - **The one place a channel becomes a configuration error.** It applies
   `ChannelDeclaration::asConfigurationError()` to everything a validator declares and
   to nothing else, registering it under the validator's producer rule name so

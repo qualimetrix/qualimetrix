@@ -4414,7 +4414,7 @@
         },
         {
           "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\JudgedMetricDeclarationGuard",
           "closes_in": null
         }
       ]
@@ -5806,6 +5806,11 @@
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
           "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\JudgedMetricDeclarationGuard",
+          "closes_in": null
         }
       ]
     },
@@ -6334,6 +6339,11 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\AcceptedLevelNarrator",
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\JudgedMetricDeclarationGuard",
           "closes_in": null
         }
       ]
@@ -10310,6 +10320,14 @@
     },
     "Qualimetrix\\Analysis\\Finding\\FindingExclusionLedger": {
       "path": "src/Analysis/Finding/FindingExclusionLedger.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "closure_package": "P6-A",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RetiredRuleOptionKeys": {
+      "path": "src/Analysis/Finding/RuleConfiguration/RetiredRuleOptionKeys.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",
@@ -17175,6 +17193,14 @@
     },
     "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\GlobalCollectorCompilerPass": {
       "path": "src/Infrastructure/DependencyInjection/CompilerPass/GlobalCollectorCompilerPass.php",
+      "kind": "class",
+      "owner": "Infrastructure.DependencyInjection",
+      "visibility": "internal",
+      "closure_package": "P8",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\JudgedMetricDeclarationGuard": {
+      "path": "src/Infrastructure/DependencyInjection/CompilerPass/JudgedMetricDeclarationGuard.php",
       "kind": "class",
       "owner": "Infrastructure.DependencyInjection",
       "visibility": "internal",

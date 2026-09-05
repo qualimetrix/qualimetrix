@@ -15,8 +15,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
  * type-coverage rule: a codebase typically types its parameters, its return
  * types and its properties at different speeds, so one threshold and one
  * suppression per dimension is what a project can act on.
- *
- * @qmx-ignore health.cohesion -- Metadata only: every method here returns a constant naming this dimension, so no two of them can share a field. The judgement they configure lives in AbstractTypeCoverageRule.
  */
 #[CliAlias('param-type-coverage-warning', 'warning')]
 #[CliAlias('param-type-coverage-error', 'error')]

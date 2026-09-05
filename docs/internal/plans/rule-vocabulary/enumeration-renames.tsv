@@ -30,8 +30,8 @@ complexity.cognitive	channel	?		22	85	2	2	31	50	0	14
 complexity.cyclomatic	channel	?		39	659	2	2	55	123	0	12
 complexity.npath	channel	?		19	95	2	2	12	40	0	10
 complexity.wmc	channel	?		19	84	2	2	10	33	0	6
-coupling.cbo	channel	?		62	312	2	4	6	106	0	8
-coupling.class-rank	channel	?		22	102	0	2	2	26	0	30
+coupling.cbo	channel	?		64	312	2	4	6	106	0	8
+coupling.class-rank	channel	?		23	102	0	2	2	26	0	30
 coupling.distance	channel	?		28	72	2	2	2	35	0	37
 coupling.instability	channel	?		32	87	2	4	8	52	0	12
 design.data-class	channel	?		15	15	1	1	10	33	0	4
@@ -69,12 +69,12 @@ complexity.npath	metric-key	?		19	95	2	2	12	40	0	10
 complexity.wmc	metric-key	?		19	84	2	2	10	33	0	6
 coupling.abstractness	metric-key	?		17	38	0	0	0	0	0	0
 coupling.ca	metric-key	?		10	65	0	0	0	2	0	0
-coupling.cbo	metric-key	?		62	312	2	4	6	106	0	8
+coupling.cbo	metric-key	?		64	312	2	4	6	106	0	8
 coupling.cbo-app	metric-key	?		9	13	0	0	0	14	0	1
 coupling.ce	metric-key	?		14	79	0	0	0	8	0	0
 coupling.ce-framework	metric-key	?		7	10	0	0	0	6	0	0
 coupling.ce-packages	metric-key	?		7	8	0	0	0	4	0	0
-coupling.class-rank	metric-key	?		22	102	0	2	2	26	0	30
+coupling.class-rank	metric-key	?		23	102	0	2	2	26	0	30
 coupling.distance	metric-key	?		28	72	2	2	2	35	0	37
 coupling.instability	metric-key	?		32	87	2	4	8	52	0	12
 coupling.rfc	metric-key	?		6	44	0	0	0	0	0	0
@@ -157,8 +157,8 @@ complexity.cyclomatic	producer	?		39	659	2	2	55	123	0	12
 complexity.npath	producer	?		19	95	2	2	12	40	0	10
 complexity.wmc	producer	?		19	84	2	2	10	33	0	6
 computed	producer	?		94	94	0	1	0	27	0	11
-coupling.cbo	producer	?		62	312	2	4	6	106	0	8
-coupling.class-rank	producer	?		22	102	0	2	2	26	0	30
+coupling.cbo	producer	?		64	312	2	4	6	106	0	8
+coupling.class-rank	producer	?		23	102	0	2	2	26	0	30
 coupling.distance	producer	?		28	72	2	2	2	35	0	37
 coupling.instability	producer	?		32	87	2	4	8	52	0	12
 design.data-class	producer	?		15	15	1	1	10	33	0	4
@@ -169,7 +169,7 @@ design.type-coverage.param	producer	?		8	55	2	1	1	25	0	11
 design.type-coverage.property	producer	?		8	26	2	1	1	24	0	12
 design.type-coverage.return	producer	?		8	33	2	1	0	24	0	8
 duplication.code-duplication	producer	?		15	56	0	2	12	35	0	4
-health.cohesion	producer	?		38	120	0	2	24	36	0	19
+health.cohesion	producer	?		36	120	0	2	24	36	0	19
 health.complexity	producer	?		49	178	0	1	0	22	0	22
 health.coupling	producer	?		39	38	0	0	0	13	0	19
 health.maintainability	producer	?		16	28	0	0	0	13	0	19

@@ -91,7 +91,7 @@ final class RuleOptionsFactory
         // fromArray() and several Options classes special-case that as
         // "disabled" (see the note on $merged below), silently turning the
         // rule off. This was a real regression, caught by external review.
-        $this->refuseLegacyExclusionSpelling($ruleName, $userConfig);
+        RetiredRuleOptionKeys::refuse($ruleName, $userConfig);
         $this->extractSuppressNamespaces($ruleName, $userConfig);
         $this->extractSuppressPaths($ruleName, $userConfig);
 
@@ -130,49 +130,6 @@ final class RuleOptionsFactory
 
         // 7. Create instance using fromArray
         return $optionsClass::fromArray($merged);
-    }
-
-    /**
-     * Refuses the pre-Х8 `exclude*` spelling instead of letting it fall
-     * through to {@see warnAboutUnknownKeys()} as a mere warning.
-     *
-     * A silently-ignored key would keep the rule running while its
-     * suppression config stopped applying — findings the user configured
-     * away would resurface with nothing but a swallowed log line to explain
-     * it (measured: the unknown-key path is a `warning`, not a refusal). The
-     * message names both live spellings so a reader who meant to suppress
-     * findings on this rule reaches `suppress_*`, and a reader who actually
-     * meant to exclude files from analysis entirely reaches the root-level
-     * `exclude` — the two were conflated under one word for three follow-up
-     * rounds running.
-     *
-     * @param array<string, mixed> $userConfig
-     */
-    private function refuseLegacyExclusionSpelling(string $ruleName, array $userConfig): void
-    {
-        static $legacyToCurrent = [
-            'exclude_namespace_channels' => 'suppress_namespace_channels',
-            'excludeNamespaceChannels' => 'suppressNamespaceChannels',
-            'exclude_namespaces' => 'suppress_namespaces',
-            'excludeNamespaces' => 'suppressNamespaces',
-            'exclude_paths' => 'suppress_paths',
-            'excludePaths' => 'suppressPaths',
-        ];
-
-        foreach ($legacyToCurrent as $legacyKey => $currentKey) {
-            if (!\array_key_exists($legacyKey, $userConfig)) {
-                continue;
-            }
-
-            throw new InvalidArgumentException(\sprintf(
-                'Rule "%s" uses the retired option "%s". To suppress findings this rule already produces, '
-                . 'use "%s". To exclude files from analysis entirely (the finding is never produced), use the '
-                . 'top-level "exclude" option instead — it is a different mechanism, not a renamed one.',
-                $ruleName,
-                $legacyKey,
-                $currentKey,
-            ));
-        }
     }
 
     /**

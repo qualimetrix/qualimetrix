@@ -37,6 +37,10 @@ Configuration/
 precedence order is defaults, presets, configuration files, Composer discovery,
 and CLI options; later layers override earlier scalar values while the schema
 defines merge semantics for collection values.
+It also holds the root keys that were *retired*:
+`ConfigSchema::refuseRetiredRootKey()` names the replacement for a dead
+top-level spelling, because the unknown-key path suggests only similarly
+spelled keys and would let a rename through as an unexplained refusal.
 
 `ConfigurationDocument` preserves ordered source contributions. Feature leaves
 consume their own contribution key: for example,

@@ -45,6 +45,26 @@ final class HealthDimensionCatalog
         'maintainability' => ['bad' => 'hard to maintain', 'good' => 'maintainable'],
     ];
 
+    /**
+     * The class-level metrics a report calls out by name.
+     *
+     * A constant beside the other two catalogs rather than a literal in the
+     * accessor: this is settled data about the product, and the accessor that
+     * hands it out has no decision left to make.
+     *
+     * @var list<string>
+     */
+    private const array NOTABLE_CLASS_METRICS = [
+        MetricName::SIZE_METHOD_COUNT,
+        MetricName::SIZE_PROPERTY_COUNT,
+        MetricName::COUPLING_CBO,
+        'complexity.ccn.avg',
+        'cohesion.tcc',
+        MetricName::COMPLEXITY_WMC,
+        'maintainability.mi.avg',
+        'size.loc',
+    ];
+
     /** @var array{inputs: array<string, list<array{key: string, altKey: string|null, label: string, ideal: string, direction: string}>>, labels: array<string, array{bad: string, good: string}>, scores: array<string, string>} */
     private array $dimensions;
 
@@ -129,7 +149,7 @@ final class HealthDimensionCatalog
     /** @return list<string> */
     public function notableClassMetrics(): array
     {
-        return [MetricName::SIZE_METHOD_COUNT, MetricName::SIZE_PROPERTY_COUNT, MetricName::COUPLING_CBO, 'complexity.ccn.avg', 'cohesion.tcc', MetricName::COMPLEXITY_WMC, 'maintainability.mi.avg', 'size.loc'];
+        return self::NOTABLE_CLASS_METRICS;
     }
 
     public function classLocMetric(): string

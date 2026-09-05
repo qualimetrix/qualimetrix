@@ -507,6 +507,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\FindingExclusionLedger'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RetiredRuleOptionKeys'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionThresholdModeResolver'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser'
@@ -846,6 +847,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FileSetInspectionParticipantCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\JudgedMetricDeclarationGuard'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ParallelCollectorClassesCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass'
@@ -1341,6 +1343,21 @@ rules:
         # Inline contract dependencies. Exact channel scope keeps declaration
         # CBO, children, and every other coupling channel active.
         - '[Q]ualimetrix\Analysis\Policy\Inline\Contract'
+        # The Measurement contract namespace, whose union is 45 against a
+        # threshold of 25 and had been ratcheted at 44. The one edge that moved
+        # it is `Infrastructure\DependencyInjection\CompilerPass`: the channel
+        # compiler pass now reads `MetricName`'s constants by reflection to
+        # check at build time that a channel's declared judged metric exists
+        # (ADR 0046), and the union is counted at namespace granularity, so one
+        # new importing namespace is one edge. Measured: reverting the second
+        # new importer (`HealthDimensionCatalog`) leaves the union at 45, so it
+        # is this namespace alone. The check cannot move anywhere cheaper —
+        # every namespace already in the union is an analysis capability, not a
+        # composition root — and a namespace channel is not addressable by
+        # `@qmx-threshold`. Class CBO inside this namespace stays measured:
+        # `MetricName`, `MetricBag`, `AbstractCollector` and the rest each keep
+        # their own point threshold.
+        - '[Q]ualimetrix\Analysis\Evidence\Measurement\Contract'
     suppress_paths:
       # The graph contract is intentionally a widely consumed type hub. Keep this
       # exact declaration measured by other rules without excluding its siblings.
@@ -1452,6 +1469,18 @@ rules:
         # number: no per-class fix exists that keeps the format able to
         # render its own payload.
         - '[Q]ualimetrix\Reporting\Formatter'
+        # Ca=3 / Ce=62 (I=0.953846), ratcheted at 0.953125 when Ce was 61. The
+        # one new efferent class is `Analysis\Finding\Contract\JudgedMetrics`,
+        # which each judging rule in this package names in its own channel
+        # declaration (ADR 0046). A leaf evidence capability is efferent by its
+        # nature — its rules and collectors depend outward on the Finding
+        # vocabulary, the Measurement contract and the Core symbols, while only
+        # three classes anywhere depend on it inward — so every future addition
+        # to the declaration vocabulary crosses this again by the same
+        # mechanism. There is no per-class fix that keeps a rule able to declare
+        # what it judges, and a namespace channel is not addressable by
+        # `@qmx-threshold`.
+        - '[Q]ualimetrix\Analysis\Evidence\Coupling'
     suppress_paths:
       # Note: visitors and DI configurators are NOT listed here. They are indeed
       # inherently unstable, but `min_afferent: 2` below already filters them out
@@ -1520,6 +1549,20 @@ rules:
       - src/Analysis/Evidence/Security/*Options.php
       - src/Analysis/Evidence/Size/*Options.php
       - src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
+      # CboRule and InstabilityRule match on 34 lines that hold no behaviour: the
+      # class line, the five metadata constants every rule must declare, and the
+      # name/description/supported-levels accessors the rule interface mandates.
+      # Identifiers and literals are normalized before matching, so two rules
+      # implementing one interface are indistinguishable from a copy — the same
+      # mechanism that put the eight `*Options.php` roots above on this list. The
+      # only member inside the window with a body worth sharing is
+      # getSupportedLevels(), whose literal differs in three of the five
+      # hierarchical rules, so no base class can hold it. The window opened when
+      # the retired `requires()` metadata, which used to differ between the two,
+      # was deleted; nothing was copied.
+      # Only CboRule is listed: the detector reports the pair once, on this side.
+      # An InstabilityRule entry beside it was measured as inert and removed.
+      - src/Analysis/Evidence/Coupling/CboRule.php
 
   complexity.cyclomatic:
     suppress_paths:

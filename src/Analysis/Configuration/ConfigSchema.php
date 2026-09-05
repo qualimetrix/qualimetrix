@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
@@ -125,6 +126,53 @@ final class ConfigSchema
         // Treated as MIXED because sub-keys are user-defined layer names, not a fixed schema.
         [self::ARCHITECTURE, self::ARCHITECTURE, self::MIXED, null],
     ];
+
+    /** @var array<string, string> retired normalized root key => the current spelling */
+    private const array RETIRED_ROOT_KEYS = [
+        'excludePaths' => 'suppress_paths',
+        'excludeNamespaces' => 'suppress_namespaces',
+    ];
+
+    /**
+     * Refuses a retired root-level `exclude*` spelling by name instead of
+     * letting it fall through as a generic "unknown configuration key".
+     *
+     * Here rather than in the loader because this class is where a root key's
+     * standing is decided: {@see allowedRootKeys()} says which spellings are
+     * live, and this says what a reader who wrote a dead one meant.
+     *
+     * The generic unknown-key message suggests only a *similarly spelled*
+     * allowed key (Levenshtein distance), and `exclude_paths` is not close
+     * enough to `suppress_paths` for that heuristic to find the rename on its
+     * own — a silently-refused root key would stop suppressing findings
+     * without saying why. The message names both live root-level
+     * possibilities: `suppress_paths`/`suppress_namespaces` for suppressing
+     * findings the analysis already produces, and the unrelated `exclude` key
+     * for removing files from analysis entirely — a distinction readers of
+     * this config have conflated repeatedly.
+     *
+     * @param array<int, string> $unknownKeys normalized (camelCase) key names
+     * @param array<string, string> $keyMap normalized key => the spelling the author wrote
+     */
+    public static function refuseRetiredRootKey(array $unknownKeys, string $path, array $keyMap): void
+    {
+        foreach ($unknownKeys as $key) {
+            if (!isset(self::RETIRED_ROOT_KEYS[$key])) {
+                continue;
+            }
+
+            throw ConfigLoadException::invalidStructure(
+                $path,
+                \sprintf(
+                    'The top-level option "%s" was retired. To suppress findings the analysis already produces, '
+                    . 'use "%s". To exclude files from analysis entirely (the finding is never produced), use the '
+                    . '"exclude" option instead — it is a different mechanism, not a renamed one.',
+                    $keyMap[$key] ?? $key,
+                    self::RETIRED_ROOT_KEYS[$key],
+                ),
+            );
+        }
+    }
 
     /**
      * Returns the set of allowed root-level keys (camelCase, post-normalization).

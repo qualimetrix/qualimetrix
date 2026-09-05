@@ -210,7 +210,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             return;
         }
 
-        $this->refuseLegacySuppressionRootKeys($unknownKeys, $path, $keyMap);
+        ConfigSchema::refuseRetiredRootKey($unknownKeys, $path, $keyMap);
 
         // Build allowed keys in original format (snake_case) for suggestions
         $allowedOriginal = array_map(
@@ -231,48 +231,6 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             $path,
             \sprintf('Unknown configuration %s: %s', \count($messages) === 1 ? 'key' : 'keys', implode(', ', $messages)),
         );
-    }
-
-    /**
-     * Refuses the pre-Х8 root-level `exclude*` spelling by name instead of
-     * letting it fall through as a generic "unknown configuration key".
-     *
-     * The generic message above only suggests a *similarly spelled* allowed
-     * key (Levenshtein distance) — `exclude_paths` and `suppress_paths` are
-     * not close enough for that heuristic to find the rename on its own. A
-     * silently-refused root key would otherwise stop suppressing findings
-     * without saying why. The message names both live root-level
-     * possibilities: `suppress_paths`/`suppress_namespaces` for suppressing
-     * findings the analysis already produces, and the unrelated `exclude`
-     * key for removing files from analysis entirely — a distinction readers
-     * of this config have conflated repeatedly.
-     *
-     * @param array<int, string> $unknownKeys normalized (camelCase) key names
-     * @param array<string, string> $keyMap
-     */
-    private function refuseLegacySuppressionRootKeys(array $unknownKeys, string $path, array $keyMap): void
-    {
-        static $legacyToCurrent = [
-            'excludePaths' => 'suppress_paths',
-            'excludeNamespaces' => 'suppress_namespaces',
-        ];
-
-        foreach ($unknownKeys as $key) {
-            if (!isset($legacyToCurrent[$key])) {
-                continue;
-            }
-
-            throw ConfigLoadException::invalidStructure(
-                $path,
-                \sprintf(
-                    'The top-level option "%s" was retired. To suppress findings the analysis already produces, '
-                    . 'use "%s". To exclude files from analysis entirely (the finding is never produced), use the '
-                    . '"exclude" option instead — it is a different mechanism, not a renamed one.',
-                    $this->originalKey($key, $keyMap),
-                    $legacyToCurrent[$key],
-                ),
-            );
-        }
     }
 
     /**
