@@ -40,18 +40,25 @@ use Throwable;
 final class Harness
 {
     /**
-     * Width does not divide this bench's work, it adds to it. Measured over all
-     * 116 probes on a fourteen-core machine: 1433s, 683s and 630s of wall clock
-     * at widths 1, 4 and 8, for 1350, 2492 and 2733 CPU seconds. So the wall
-     * clock stops falling long before the cores run out, and eight buys eight
-     * percent over four for a fifth more of the machine.
+     * Measured over a full stand run on an otherwise idle machine (Docker
+     * stopped, nothing else running, 2026-09-04): 1799.8s, 481.7s and 443.2s
+     * of wall clock at widths 1, 4 and 8, for 1754.6, 1846.6 and 2054.9 CPU
+     * seconds (`measurement-stand-wallclock.tsv`). The probe count that run
+     * covered is not repeated here — it drifts every time a probe is added,
+     * and {@see Probes::all()} is the one place it cannot go stale.  Wall
+     * clock keeps falling through width 8, so the ceiling is not "the point
+     * where more width stops helping" — it is the point measured, not a
+     * plateau found.
      *
-     * Where the extra CPU goes is not known. Hardlinking trees was the first
-     * guess and it is wrong: removing the `.git` copy from every clone moved
-     * about eleven of those thirteen hundred seconds, and a paired measurement
-     * afterwards put most of the growth in user time rather than the kernel.
-     * The ceiling stands on the wall clock, which is measured, not on a cause,
-     * which is not.
+     * The CPU growth is not the bench adding work; it is the same work
+     * costing more. `measurement-machine-cpu-curve.tsv` (same machine, same
+     * date) runs one fixed PHP workload in N simultaneous copies: each copy's
+     * user time costs 1.05x its solo user time at 4 concurrent copies, 1.54x
+     * at 8, 1.69x at 12 (wall clock grows faster — 1.73x at 12). The growth
+     * starts at the fifth concurrent copy, on a machine that reports fourteen
+     * logical cores (`sysctl hw.ncpu`) — a fact about this machine, not a
+     * diagnosis of why five is where it starts. The ceiling stands on the
+     * measured wall clock, not on this explanation of the CPU cost.
      */
     private const JOB_CEILING = 8;
 

@@ -7983,6 +7983,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itFiltersFindingsBySeverity
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itIsEmptyWhenNoFindings
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itIsNotEmptyWhenHasFindings
+ - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditControlsSuiteKeyTest::itKeepsTwoClassesWithASameNamedMethodApart
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itAcceptsATreeWhoseSitesMatchAndWhereSomethingWasMeasured
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itFloorsNothingWhenNoThresholdSiteIsInScope
  - Qualimetrix\Tests\Unit\RuleVocabulary\DirectiveAuditGateTest::itPropagatesARunThatWasAlreadyDisqualified

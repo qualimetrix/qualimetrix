@@ -140,11 +140,16 @@ final readonly class Suite
                 continue;
             }
 
+            // Keyed by classname as well as name: two test classes with a
+            // same-named method are indistinguishable under `name` alone, and
+            // a red in one used to read as a red in both.
+            $key = (string) $case['classname'] . '::' . $name;
+
             // `isset()`, not `=== null`: reading a missing child off a
             // SimpleXMLElement returns an empty element rather than null, so
             // the null comparison marks every case as failed and the harness
             // reports a green suite as forty reds.
-            $cases[$name] = !isset($case->failure) && !isset($case->error) && !isset($case->skipped);
+            $cases[$key] = !isset($case->failure) && !isset($case->error) && !isset($case->skipped);
         }
 
         if ($cases === []) {
