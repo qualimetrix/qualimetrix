@@ -41,7 +41,7 @@ design.noc	channel	?		12	35	2	2	0	22	0	3
 design.type-coverage.param	channel	?		8	57	2	1	1	25	0	3
 design.type-coverage.property	channel	?		8	28	2	1	1	24	0	4
 design.type-coverage.return	channel	?		8	35	2	1	0	24	0	4
-duplication.code-duplication	channel	?		20	64	0	2	12	43	0	4
+duplication.code-duplication	channel	?		20	65	0	2	12	43	0	4
 maintainability.index	channel	?		11	48	2	2	0	27	0	3
 security.command-injection	channel	?		3	5	0	0	0	13	0	1
 security.hardcoded-credentials	channel	?		6	31	0	0	0	15	0	1
@@ -168,7 +168,7 @@ design.noc	producer	?		12	35	2	2	0	22	0	3
 design.type-coverage.param	producer	?		8	57	2	1	1	25	0	3
 design.type-coverage.property	producer	?		8	28	2	1	1	24	0	4
 design.type-coverage.return	producer	?		8	35	2	1	0	24	0	4
-duplication.code-duplication	producer	?		20	64	0	2	12	43	0	4
+duplication.code-duplication	producer	?		20	65	0	2	12	43	0	4
 health.cohesion	producer	?		36	120	0	2	24	36	0	19
 health.complexity	producer	?		49	180	0	1	0	22	0	22
 health.coupling	producer	?		39	38	0	0	0	13	0	19
