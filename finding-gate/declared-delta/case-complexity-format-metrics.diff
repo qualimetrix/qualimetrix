@@ -1,0 +1,14 @@
+--- candidate
++++ reference (mapped)
+@@ -72,1 +72,1 @@
+-                "cohesion.lcom.avg": 1.75,
++                "cohesion.lcom.avg": 2,
+@@ -302,1 +302,1 @@
+-                "cohesion.lcom.avg": 1.75,
++                "cohesion.lcom.avg": 2,
+@@ -518,1 +518,1 @@
+-                "cohesion.lcom.avg": 1.75,
++                "cohesion.lcom.avg": 2,
+@@ -733,1 +733,1 @@
+-                "cohesion.lcom": 1,
++                "cohesion.lcom": 2,
