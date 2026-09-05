@@ -1,5 +1,6 @@
 mechanism	suppressor	channel	file	symbol	severity	count
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/ConfigurationDocument.php	Qualimetrix\Analysis\Configuration\Contract	error	1
+rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/ComputedMetrics/ComputedMetricAnalysis.php	Qualimetrix\Analysis\Evidence\ComputedMetrics	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	Qualimetrix\Analysis\Evidence\Measurement\Contract	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/AcceptedLevel.php	Qualimetrix\Analysis\Finding\Contract	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/ChannelDeclaration.php	Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	error	1
