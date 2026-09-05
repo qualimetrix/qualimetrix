@@ -470,6 +470,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSumm
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder	Analysis.Evidence.ComputedMetrics.Health	Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree	Analysis.Evidence.Measurement	contract	P3
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder	Analysis.Evidence.ComputedMetrics.Health	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder	Analysis.Evidence.ComputedMetrics.Health	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract	P8
+Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog	Analysis.Evidence.ComputedMetrics.Health	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract	P3
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\MetricHintCatalog	Analysis.Evidence.ComputedMetrics.Health	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract	P3
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder	Analysis.Evidence.ComputedMetrics.Health	Qualimetrix\Core\Util\NamespaceMatcher	Core.Neutral	contract	P8
 Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract	P2

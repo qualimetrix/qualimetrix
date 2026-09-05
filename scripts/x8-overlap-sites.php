@@ -3,34 +3,40 @@
 declare(strict_types=1);
 
 /**
- * X8 package P4a: take the population of overlap-spelling literal sites with
- * the guard's own optics.
+ * X8 packages P4a and P4b: take the population of overlap-spelling literal
+ * sites with the guard's own optics.
  *
  * The guard this measures is
  * `tests/Analysis/Finding/Integration/RuleIdentifierLiteralGuardTest.php`. It
- * currently subtracts every `MetricName` value from its ownership map
- * (`metricKeys()` / `ownerByOwnedLiteral()`), so every literal whose spelling
- * is both a channel code and a metric key is invisible to it. P4b removes that
- * subtraction; this script enumerates exactly the sites that will become
- * visible when it does.
+ * used to subtract every `MetricName` value from its ownership map, so every
+ * literal whose spelling is both a channel code and a metric key was invisible
+ * to it. P4a enumerated those sites; P4b removed the subtraction, cured every
+ * site that read a metric and allowed the three files whose sites cannot be
+ * cured. What this script prints is therefore no longer a pending population:
+ * it is the standing census of overlap-spelling literal sites, and every site
+ * it still lists must be inside an allowed file.
  *
  * It does not restate the guard's reader in its own words: the guard's private
  * static `stringLiterals()`, `capabilityRootFromRelativePath()`,
- * `productionPhpFiles()`, `metricKeys()` and `ownerByLiteral()` are invoked by
- * reflection on the test class itself. The only logic written here is the line
- * number, which `stringLiterals()` discards; the local token walk that carries
- * the line is asserted to produce the guard's own value sequence position by
- * position, so a divergence between the two readers is a hard failure rather
- * than a silent difference.
+ * `productionPhpFiles()` and `ownerByLiteral()` are invoked by reflection on
+ * the test class itself. The metric-key list is read here directly, because
+ * the guard no longer holds one — it is a plain reflection over `MetricName`'s
+ * string constants, and the guard has nothing left for it to diverge from. The
+ * only other logic written here is the line number, which `stringLiterals()`
+ * discards; the local token walk that carries the line is asserted to produce
+ * the guard's own value sequence position by position, so a divergence between
+ * the two readers is a hard failure rather than a silent difference.
  *
- * Usage: php scripts/x8-overlap-sites.php <tree-root> [--tsv]
+ * Usage: php scripts/x8-overlap-sites.php <tree-root> [--tsv|--owned-channel-codes]
  *
  * Without `--tsv` the full measurement is printed as JSON, the substring optic
  * this package replaces included, so the two can be compared as sets. With
  * `--tsv`, only `file`, `line`, `literal` — the three columns of
  * `enumeration-overlap-sites.tsv` that come from the reader rather than from
- * judgement.
- *
+ * judgement. With `--owned-channel-codes`, how many of the registered channel
+ * codes the guard's ownership map still carries — the coverage the removed
+ * subtraction used to cost.
+ * *
  * <tree-root> is the tree to measure. It is loaded ahead of the ambient
  * autoloader so that a tree other than the one this script lives in can be
  * measured while neighbouring work edits the working tree; the script refuses
@@ -38,6 +44,7 @@ declare(strict_types=1);
  */
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
 const GUARD_CLASS = 'Qualimetrix\\Tests\\Analysis\\Finding\\Integration\\RuleIdentifierLiteralGuardTest';
@@ -113,12 +120,23 @@ $container = (new ContainerFactory())->create();
 /** @var array<string, string> $ownerByLiteral rule name or channel code => owning capability root */
 $ownerByLiteral = guard('ownerByLiteral', [$container]);
 
-/** @var list<string> $metricKeys */
-$metricKeys = guard('metricKeys');
+/**
+ * Every published metric key.
+ *
+ * @return list<string>
+ */
+function metricKeys(): array
+{
+    $constants = (new ReflectionClass(MetricName::class))->getConstants();
+
+    return array_values(array_filter($constants, static fn(mixed $value): bool => is_string($value)));
+}
+
+$metricKeys = metricKeys();
 
 // The overlap: a spelling that is at once a registered channel code (or rule
-// name) and a published metric key. These are precisely the literals
-// ownerByOwnedLiteral() drops today.
+// name) and a published metric key. These are precisely the literals the guard
+// used to drop.
 $overlap = [];
 
 foreach ($metricKeys as $key) {
@@ -228,7 +246,24 @@ if (in_array('--tsv', $arguments, true)) {
     exit(0);
 }
 
+$universe = $container->get(ChannelUniverseInterface::class);
+assert($universe instanceof ChannelUniverseInterface);
+
+$channelCodes = array_map(static fn(object $channel): string => $channel->code, $universe->channels());
+$ownedChannelCodes = array_values(array_filter(
+    $channelCodes,
+    static fn(string $code): bool => isset($ownerByLiteral[$code]),
+));
+
+if (in_array('--owned-channel-codes', $arguments, true)) {
+    printf("%d of %d channel codes are under the guard's ownership half.\n", count($ownedChannelCodes), count($channelCodes));
+
+    exit(0);
+}
+
 $report = [
+    'channel_codes' => count($channelCodes),
+    'owned_channel_codes' => count($ownedChannelCodes),
     'overlap_literals' => $overlap,
     'sites' => $sites,
     'same_owner_sites' => $sameOwnerSites,
