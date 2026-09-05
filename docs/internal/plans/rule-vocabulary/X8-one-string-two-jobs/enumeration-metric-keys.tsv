@@ -1,0 +1,123 @@
+key	constant	provided_by	is_channel_code	judged_by_channels	read_outside_owner_files	notes
+complexity.ccn	COMPLEXITY_CCN	src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php	N	complexity.cyclomatic	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php,src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php,src/Analysis/Evidence/Measurement/Aggregation/CallableToClassAggregator.php	NONE
+complexity.cognitive	COMPLEXITY_COGNITIVE	src/Analysis/Evidence/Complexity/CognitiveComplexityCollector.php	Y	complexity.cognitive	NONE	NONE
+complexity.npath	COMPLEXITY_NPATH	src/Analysis/Evidence/Complexity/NpathComplexityCollector.php	Y	complexity.npath	NONE	NONE
+complexity.wmc	COMPLEXITY_WMC	src/Analysis/Evidence/Measurement/Aggregation/CallableToClassAggregator.php	Y	complexity.wmc,design.data-class (COMPOSITE, gating only),design.god-class (COMPOSITE, gating only)	src/Analysis/Evidence/Complexity/README.md,src/Analysis/Evidence/Complexity/WmcRule.php,src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php,src/Analysis/Evidence/Design/DataClass/DataClassRule.php,src/Analysis/Evidence/Design/GodClass/GodClassCriteriaEvaluator.php,src/Analysis/Evidence/Design/GodClass/GodClassRule.php	NONE
+coupling.ca	COUPLING_CA	src/Analysis/Evidence/Coupling/CouplingCollector.php	N	NONE	NONE	NONE
+coupling.ce	COUPLING_CE	src/Analysis/Evidence/Coupling/CouplingCollector.php	N	NONE	NONE	NONE
+coupling.cbo	COUPLING_CBO	src/Analysis/Evidence/Coupling/CouplingCollector.php	Y	coupling.cbo	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	NONE
+coupling.instability	COUPLING_INSTABILITY	src/Analysis/Evidence/Coupling/CouplingCollector.php	Y	coupling.instability	NONE	NONE
+coupling.abstractness	COUPLING_ABSTRACTNESS	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	N	NONE	NONE	NONE
+coupling.distance	COUPLING_DISTANCE	src/Analysis/Evidence/Coupling/DistanceCollector.php	Y	coupling.distance	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	NONE
+coupling.class-rank	COUPLING_CLASS_RANK	src/Analysis/Evidence/Coupling/ClassRankCollector.php	Y	coupling.class-rank	src/Analysis/Evidence/Prioritization/Impact/ClassRankResolver.php	NONE
+coupling.ce-packages	COUPLING_CE_PACKAGES	src/Analysis/Evidence/Coupling/CouplingCollector.php	N	NONE	NONE	NONE
+coupling.cbo-app	COUPLING_CBO_APP	src/Analysis/Evidence/Coupling/CouplingCollector.php	N	coupling.cbo (application-scope substitute; see CboRule.php:161)	NONE	Not a channel code itself; substitutes for coupling.cbo as the judged key only when ClassCboOptions->scope is application
+coupling.ce-framework	COUPLING_CE_FRAMEWORK	src/Analysis/Evidence/Coupling/CouplingCollector.php	N	NONE	NONE	NONE
+coupling.rfc	COUPLING_RFC	src/Analysis/Evidence/Coupling/RfcCollector.php	N	NONE	NONE	NONE
+coupling.rfc-own	COUPLING_RFC_OWN	src/Analysis/Evidence/Coupling/RfcCollector.php	N	NONE	NONE	NONE
+coupling.rfc-external	COUPLING_RFC_EXTERNAL	src/Analysis/Evidence/Coupling/RfcCollector.php	N	NONE	NONE	NONE
+cohesion.tcc	COHESION_TCC	src/Analysis/Evidence/Cohesion/TccLccCollector.php	N	design.god-class (COMPOSITE, gating only)	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php,src/Analysis/Evidence/Design/GodClass/GodClassCriteriaEvaluator.php,src/Analysis/Evidence/Design/GodClass/GodClassRule.php	NONE
+cohesion.lcc	COHESION_LCC	src/Analysis/Evidence/Cohesion/TccLccCollector.php	N	NONE	NONE	NONE
+cohesion.pure-method-count	COHESION_PURE_METHOD_COUNT	src/Analysis/Evidence/Cohesion/TccLccCollector.php	N	NONE	NONE	NONE
+cohesion.lcom	COHESION_LCOM	src/Analysis/Evidence/Cohesion/LcomCollector.php	Y	cohesion.lcom,design.god-class (COMPOSITE, gating only)	src/Analysis/Evidence/Design/GodClass/GodClassCriteriaEvaluator.php,src/Analysis/Evidence/Design/GodClass/GodClassRule.php	NONE
+design.type-coverage.param.total	DESIGN_TYPE_COVERAGE_PARAM_TOTAL	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php	N	NONE	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	NONE
+design.type-coverage.param.typed	DESIGN_TYPE_COVERAGE_PARAM_TYPED	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php	N	NONE	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	NONE
+design.type-coverage.param	DESIGN_TYPE_COVERAGE_PARAM	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php	Y	design.type-coverage.param	NONE	NONE
+design.type-coverage.return.total	DESIGN_TYPE_COVERAGE_RETURN_TOTAL	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php	N	NONE	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	NONE
+design.type-coverage.return.typed	DESIGN_TYPE_COVERAGE_RETURN_TYPED	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php	N	NONE	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	NONE
+design.type-coverage.return	DESIGN_TYPE_COVERAGE_RETURN	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php	Y	design.type-coverage.return	NONE	NONE
+design.type-coverage.property.total	DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php	N	NONE	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	NONE
+design.type-coverage.property.typed	DESIGN_TYPE_COVERAGE_PROPERTY_TYPED	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php	N	NONE	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	NONE
+design.type-coverage.property	DESIGN_TYPE_COVERAGE_PROPERTY	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php	Y	design.type-coverage.property	NONE	NONE
+design.type-coverage.pct	DESIGN_TYPE_COVERAGE_PCT	src/Analysis/Evidence/Design/TypeCoverage/TypeCoveragePercentCollector.php	N	NONE	NONE	NONE
+design.dit	DESIGN_DIT	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php	N	design.inheritance	NONE	NONE
+design.is-readonly	DESIGN_IS_READONLY	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	src/Analysis/Evidence/Cohesion/LcomRule.php,src/Analysis/Evidence/Design/DataClass/DataClassExclusionCheck.php,src/Analysis/Evidence/Design/DataClass/DataClassRule.php,src/Analysis/Evidence/Design/GodClass/GodClassRule.php	NONE
+design.is-promoted-properties-only	DESIGN_IS_PROMOTED_PROPERTIES_ONLY	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	src/Analysis/Evidence/Design/DataClass/DataClassExclusionCheck.php,src/Analysis/Evidence/Design/DataClass/DataClassRule.php	NONE
+design.is-data-class	DESIGN_IS_DATA_CLASS	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	src/Analysis/Evidence/Complexity/WmcRule.php	NONE
+design.noc	DESIGN_NOC	src/Analysis/Evidence/Design/Inheritance/NocCollector.php	Y	design.noc	NONE	NONE
+design.is-abstract	DESIGN_IS_ABSTRACT	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	src/Analysis/Evidence/Design/DataClass/DataClassExclusionCheck.php,src/Analysis/Evidence/Design/DataClass/DataClassRule.php	NONE
+design.is-interface	DESIGN_IS_INTERFACE	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	src/Analysis/Evidence/Design/DataClass/DataClassExclusionCheck.php,src/Analysis/Evidence/Design/DataClass/DataClassRule.php	NONE
+design.is-exception	DESIGN_IS_EXCEPTION	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	src/Analysis/Evidence/Design/DataClass/DataClassExclusionCheck.php,src/Analysis/Evidence/Design/DataClass/DataClassRule.php	NONE
+design.woc	DESIGN_WOC	src/Analysis/Evidence/Size/MethodCountCollector.php	N	design.data-class (COMPOSITE, reported value)	src/Analysis/Evidence/Design/DataClass/DataClassRule.php	NONE
+maintainability.halstead.volume	MAINTAINABILITY_HALSTEAD_VOLUME	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	N	NONE	NONE	NONE
+maintainability.halstead.difficulty	MAINTAINABILITY_HALSTEAD_DIFFICULTY	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	N	NONE	NONE	NONE
+maintainability.halstead.effort	MAINTAINABILITY_HALSTEAD_EFFORT	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	N	NONE	NONE	NONE
+maintainability.halstead.bugs	MAINTAINABILITY_HALSTEAD_BUGS	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	N	NONE	NONE	NONE
+maintainability.halstead.time	MAINTAINABILITY_HALSTEAD_TIME	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	N	NONE	NONE	NONE
+maintainability.mi	MAINTAINABILITY_MI	src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php	N	maintainability.index	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	NONE
+security.hardcoded-credentials	SECURITY_HARDCODED_CREDENTIALS	src/Analysis/Evidence/Security/Credential/HardcodedCredentialsCollector.php	Y	NONE	NONE	NONE
+security.sensitive-parameter	SECURITY_SENSITIVE_PARAMETER	src/Analysis/Evidence/Security/SensitiveParameterCollector.php	Y	NONE	NONE	NONE
+size.class-loc	SIZE_CLASS_LOC	src/Analysis/Evidence/Size/LocCollector.php	N	design.god-class (COMPOSITE, gating only)	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php,src/Analysis/Evidence/Design/GodClass/GodClassCriteriaEvaluator.php,src/Analysis/Evidence/Design/GodClass/GodClassRule.php	NONE
+size.class-count	SIZE_CLASS_COUNT	src/Analysis/Evidence/Size/ClassCountCollector.php	Y	size.class-count	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php,src/Analysis/Evidence/Coupling/AbstractnessCollector.php,src/Analysis/Evidence/Coupling/CboRule.php,src/Analysis/Evidence/Coupling/DistanceRule.php,src/Analysis/Evidence/Coupling/InstabilityRule.php	NONE
+size.abstract-class-count	SIZE_ABSTRACT_CLASS_COUNT	src/Analysis/Evidence/Size/ClassCountCollector.php	N	NONE	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	NONE
+size.interface-count	SIZE_INTERFACE_COUNT	src/Analysis/Evidence/Size/ClassCountCollector.php	N	NONE	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	NONE
+size.trait-count	SIZE_TRAIT_COUNT	src/Analysis/Evidence/Size/ClassCountCollector.php	N	NONE	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	NONE
+size.enum-count	SIZE_ENUM_COUNT	src/Analysis/Evidence/Size/ClassCountCollector.php	N	NONE	NONE	NONE
+size.implementing-enum-count	SIZE_IMPLEMENTING_ENUM_COUNT	src/Analysis/Evidence/Size/ClassCountCollector.php	N	NONE	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	NONE
+size.function-count	SIZE_FUNCTION_COUNT	src/Analysis/Evidence/Size/ClassCountCollector.php	N	NONE	NONE	NONE
+size.loc	SIZE_LOC	src/Analysis/Evidence/Size/LocCollector.php	N	NONE	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php,src/Reporting/Formatter/Html/HtmlMetricAggregator.php,src/Reporting/Formatter/Html/HtmlTreeBuilder.php,src/Reporting/Health/SummaryEnricher.php	NONE
+size.lloc	SIZE_LLOC	src/Analysis/Evidence/Size/LocCollector.php	N	NONE	NONE	NONE
+size.cloc	SIZE_CLOC	src/Analysis/Evidence/Size/LocCollector.php	N	NONE	NONE	NONE
+size.method-statement-count	SIZE_METHOD_STATEMENT_COUNT	src/Analysis/Evidence/Size/MethodStatementCountCollector.php	N	NONE	src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php,src/Analysis/Evidence/Maintainability/MaintainabilityRule.php	NONE
+size.method-count.public	SIZE_METHOD_COUNT_PUBLIC	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	NONE	NONE
+size.method-count.protected	SIZE_METHOD_COUNT_PROTECTED	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	NONE	NONE
+size.method-count.private	SIZE_METHOD_COUNT_PRIVATE	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	NONE	NONE
+size.getter-count	SIZE_GETTER_COUNT	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	NONE	NONE
+size.setter-count	SIZE_SETTER_COUNT	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	NONE	NONE
+size.property-count.public	SIZE_PROPERTY_COUNT_PUBLIC	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	NONE	NONE
+size.property-count.protected	SIZE_PROPERTY_COUNT_PROTECTED	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	NONE	NONE
+size.property-count.private	SIZE_PROPERTY_COUNT_PRIVATE	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	NONE	NONE
+size.promoted-property-count	SIZE_PROMOTED_PROPERTY_COUNT	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	NONE	NONE
+size.symbol-method-count	SIZE_SYMBOL_METHOD_COUNT	src/Analysis/Evidence/Measurement/Aggregation/AggregationHelper.php	N	NONE	NONE	NONE
+size.symbol-class-count	SIZE_SYMBOL_CLASS_COUNT	src/Analysis/Evidence/Measurement/Aggregation/AggregationHelper.php	N	NONE	NONE	NONE
+size.method-count	SIZE_METHOD_COUNT	src/Analysis/Evidence/Size/MethodCountCollector.php	Y	size.method-count	src/Analysis/Evidence/Cohesion/LcomRule.php,src/Analysis/Evidence/Complexity/WmcRule.php,src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php,src/Analysis/Evidence/Design/GodClass/GodClassRule.php	NONE
+size.method-count.total	SIZE_METHOD_COUNT_TOTAL	src/Analysis/Evidence/Size/MethodCountCollector.php	N	NONE	src/Analysis/Evidence/Design/DataClass/DataClassExclusionCheck.php,src/Analysis/Evidence/Design/DataClass/DataClassRule.php	NONE
+size.property-count	SIZE_PROPERTY_COUNT	src/Analysis/Evidence/Size/MethodCountCollector.php	Y	size.property-count	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php,src/Analysis/Evidence/Design/DataClass/DataClassExclusionCheck.php,src/Analysis/Evidence/Design/DataClass/DataClassRule.php	NONE
+code-smell.unused-private.total	CODE_SMELL_UNUSED_PRIVATE_TOTAL	src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php	N	code-smell.unused-private	NONE	NONE
+code-smell.unused-private.method	CODE_SMELL_UNUSED_PRIVATE_METHOD	src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php	N	NONE	NONE	NONE
+code-smell.unused-private.property	CODE_SMELL_UNUSED_PRIVATE_PROPERTY	src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php	N	NONE	NONE	NONE
+code-smell.unused-private.constant	CODE_SMELL_UNUSED_PRIVATE_CONSTANT	src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php	N	NONE	NONE	NONE
+code-smell.parameter-count	CODE_SMELL_PARAMETER_COUNT	src/Analysis/Evidence/CodeSmell/ParameterCountCollector.php	N	code-smell.constructor-overinjection,code-smell.long-parameter-list	NONE	NONE
+code-smell.is-vo-constructor	CODE_SMELL_IS_VO_CONSTRUCTOR	src/Analysis/Evidence/CodeSmell/ParameterCountCollector.php	N	NONE	NONE	NONE
+code-smell.unreachable-code	CODE_SMELL_UNREACHABLE_CODE	src/Analysis/Evidence/CodeSmell/UnreachableCodeCollector.php	Y	code-smell.unreachable-code	NONE	NONE
+code-smell.unreachable-code.first-line	CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE	src/Analysis/Evidence/CodeSmell/UnreachableCodeCollector.php	N	NONE	NONE	NONE
+#
+# Чем получено:
+# - key/constant: ReflectionClass(MetricName::class)->getReflectionConstants() (82 строковые константы).
+#   Скрипт: /private/tmp/claude-501/x8/dump_metric_names.php, вывод metric_names.txt.
+# - provided_by: сначала grep "name: MetricName::<CONST>" по src/ (место, где MetricDefinition декларирует
+#   продюсера метрики — 73 из 82 констант найдены так, metric_definition_files.txt); для оставшихся 9
+#   (COMPLEXITY_WMC, SECURITY_HARDCODED_CREDENTIALS, SECURITY_SENSITIVE_PARAMETER, SIZE_SYMBOL_METHOD_COUNT,
+#   SIZE_SYMBOL_CLASS_COUNT, CODE_SMELL_UNUSED_PRIVATE_TOTAL/_METHOD/_PROPERTY/_CONSTANT) продюсер найден вручную
+#   чтением файла (`->with()`, `->addScalar()`, `->withEntry()` write-сайты) — см. build_metrics_tsv.php,
+#   массив $providerOverride.
+# - is_channel_code: сверка с множеством кодов из enumeration-channels.tsv (52 канала).
+# - judged_by_channels: инверсия колонки judged_metric_key из enumeration-channels.tsv плюс вручную составленная
+#   карта COMPOSITE-вкладов (design.woc, complexity.wmc, cohesion.lcom, cohesion.tcc, size.class-loc — участвуют в
+#   design.data-class/design.god-class, но не как единственный судимый ключ).
+# - read_outside_owner_files: grep -rln "MetricName::<CONST>\b" по src/website/scripts/finding-gate/tests
+#   (metric_usage_files.txt), затем исключены: сам provided_by-файл, файлы tests/**, и файлы из той же
+#   capability-директории (src/Analysis/(Evidence|Policy)/{Capability}/), что и provided_by.
+#
+# Чего этот способ не видит:
+# - Строковый литерал в обход константы MetricName: отдельно прогнан grep по значению ключа как строке
+#   ('complexity.ccn' / "complexity.ccn") — /private/tmp/claude-501/x8/metric_literal_usage.txt (292 строки).
+#   Он нашёл заметно БОЛЬШЕ ссылок, чем константный grep: MetricHintCatalog.php, HealthDimensionCatalog.php,
+#   RuleThresholdKeyGroupRegistry.php, src/Reporting/Template/src/hints.js, src/Reporting/Template/dev.html,
+#   website/docs/usage/output-formats.{md,ru.md}, website/docs/rules/*.md и т.д. Эти ссылки НЕ учтены в колонке
+#   read_outside_owner_files — она сознательно ограничена типизированными обращениями через константу; повторение
+#   ключа литералом в другом слое (frontend JS, документация, hint-каталоги) — отдельный, не посчитанный здесь
+#   канал совпадения написания.
+# - Конфигурация qmx.yaml: не искалось, упоминается ли ключ метрики буквально в пользовательской конфигурации
+#   (computed_metrics, thresholds).
+# - Тестовые файлы: сознательно исключены из read_outside_owner_files (колонка — про production-код); полный список
+#   тестовых обращений есть в metric_usage_files.txt/metric_literal_usage.txt, но не перенесён в таблицу.
+# - Автоконфигурация по тегу/атрибуту: неприменимо — MetricName это класс с константами, не DI-сервис.
+# - Агрегированные суффиксы (MetricName::agg($key, $strategy) -> "$key.$strategy"): учтены только когда вызов идёт
+#   через сам agg() с константой-аргументом; отдельный литерал вида 'size.class-count.sum' без прохода через agg()
+#   константным grep'ом не отловится.
+# - provided_by называет ровно один файл, даже если внутри него ключ пишется несколькими вызовами `->with()` —
+#   число и место каждого отдельного write-сайта внутри файла не перечислено.
+# - Полная проверка каждого литерального попадания в src/Reporting/Template и website/docs на предмет того,
+#   действительно ли оно про ЭТОТ метрический ключ, а не про подстроку другого имени — не проводилась (возможны
+#   единичные ложные срабатывания в metric_literal_usage.txt, который не был вычитан построчно для всех 82 ключей).
