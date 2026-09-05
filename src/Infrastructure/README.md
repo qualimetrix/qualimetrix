@@ -388,6 +388,12 @@ Factory with runtime configuration awareness.
 
 **Runtime configuration:**
 - CLI options are parsed in `CheckCommand::execute()`
+- A retired suppression flag (`--exclude-path`, `--exclude-namespace`) is
+  refused in `CheckCommand::run()`, before Symfony binds the definition: the
+  binding throws first, so a retired token never reaches `execute()`. The
+  refusal names the replacement and the unrelated `--exclude`, and exits 3 like
+  its config-file twin. Scoped to this command so `graph:export
+  --exclude-namespace`, which was never renamed, keeps working
 - `RuntimeConfigurator` resolves the ordered document through exact owner
   resolvers, resets/replaces their local state, then passes RunConfiguration to
   the analysis pipeline

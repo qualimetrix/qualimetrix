@@ -49,7 +49,7 @@ final class SuppressedFormatterTest extends TestCase
         $finding = $this->finding();
         $composition = new SuppressionComposition([
             new SuppressedFinding($finding, SuppressionMechanism::Suppression, 'src/Foo.php:3'),
-            new SuppressedFinding($finding, SuppressionMechanism::PathExclusion, 'src/Excluded'),
+            new SuppressedFinding($finding, SuppressionMechanism::PathSuppression, 'src/Excluded'),
         ]);
 
         $payload = $this->decode($this->format($composition));
@@ -67,7 +67,7 @@ final class SuppressedFormatterTest extends TestCase
     {
         $composition = new SuppressionComposition(
             all: [],
-            neverMatched: [new InertSuppressor(SuppressionMechanism::RulePathExclusion, 'coupling.cbo: src/Gone.php')],
+            neverMatched: [new InertSuppressor(SuppressionMechanism::RulePathSuppression, 'coupling.cbo: src/Gone.php')],
         );
 
         $payload = $this->decode($this->format($composition));

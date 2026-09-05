@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Loader;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
@@ -363,6 +363,41 @@ YAML);
         self::expectExceptionMessageMatches('/suppress_namespaces/');
 
         $this->loader->load($path);
+    }
+
+    /**
+     * The per-rule half of the same refusal, and the reason it lives in the
+     * loader: three spellings of one option arrive here and leave as one
+     * normalized key, so a refusal raised any later can only answer in a
+     * spelling the author may never have typed.
+     */
+    #[Test]
+    #[DataProvider('provideRetiredRuleOptionSpellings')]
+    public function itRefusesARetiredRuleOptionInTheSpellingItsAuthorUsed(
+        string $authored,
+        string $replacement,
+    ): void {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<YAML
+rules:
+  code-smell.long-parameter-list:
+    {$authored}:
+      - src/Entity/Foo.php
+YAML);
+
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage(\sprintf('uses the retired option "%s"', $authored));
+        self::expectExceptionMessage(\sprintf('use "%s"', $replacement));
+
+        $this->loader->load($path);
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function provideRetiredRuleOptionSpellings(): iterable
+    {
+        yield 'snake' => ['exclude_paths', 'suppress_paths'];
+        yield 'camel' => ['excludePaths', 'suppressPaths'];
+        yield 'kebab' => ['exclude-namespaces', 'suppress-namespaces'];
     }
 
     #[Test]

@@ -233,6 +233,7 @@ Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	64	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	30	11
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
+Qualimetrix\Core\Util\ConfigKeySpelling	Core.Neutral	2	2
 Qualimetrix\Core\Util\NamespaceMatcher	Core.Neutral	11	5
 Qualimetrix\Core\Util\PathMatcher	Core.Neutral	5	2
 Qualimetrix\Core\Util\StringSet	Core.Neutral	2	1

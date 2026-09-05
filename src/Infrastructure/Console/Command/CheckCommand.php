@@ -103,6 +103,50 @@ final class CheckCommand extends Command
      */
     private const int EXIT_CONFIG_ERROR = 3;
 
+    /** @var array<string, string> retired flag => the flag that suppresses findings now */
+    private const array RETIRED_SUPPRESSION_FLAGS = [
+        '--exclude-path' => '--suppress-path',
+        '--exclude-namespace' => '--suppress-namespace',
+    ];
+
+    /**
+     * Refuses a retired suppression flag by name, and with the same exit code
+     * its config-file twin already uses.
+     *
+     * Read off the raw argv here rather than declared in
+     * {@see \Qualimetrix\Infrastructure\Console\CheckCommandDefinition}: Symfony binds the
+     * definition inside {@see Command::run()} and throws there, so a retired
+     * token never reaches `execute()` at all, and re-declaring the options to
+     * catch them later would also put them back in `--help` as if they still
+     * worked. Refusing on this command and not globally is what keeps
+     * `graph:export --exclude-namespace` alive — that flag was never renamed,
+     * it drops files from the graph rather than suppressing findings.
+     *
+     * Symfony's own "option does not exist" names neither the replacement nor
+     * the fork, and leaves exit 1, which a CI wrapper reads as "the run fell
+     * over" rather than "there is a migration to make".
+     */
+    public function run(InputInterface $input, OutputInterface $output): int
+    {
+        foreach (self::RETIRED_SUPPRESSION_FLAGS as $retired => $current) {
+            if (!$input->hasParameterOption($retired, true)) {
+                continue;
+            }
+
+            $this->resultPresenter->writeDiagnostic($output, \sprintf(
+                '<error>The "%s" option was retired. To suppress findings the analysis already produces, '
+                . 'use "%s". To exclude files from analysis entirely (the finding is never produced), use the '
+                . '"--exclude" option instead — it is a different mechanism, not a renamed one.</error>',
+                $retired,
+                $current,
+            ));
+
+            return self::EXIT_CONFIG_ERROR;
+        }
+
+        return parent::run($input, $output);
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {

@@ -61,7 +61,7 @@ src/Core/Symbol/MetricSubjectCodec.php	68	complexity.cyclomatic	warning=13 error
 src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	74	complexity.cyclomatic	warning=11 error=11 — Finite attachment projection keeps node lookup, magnitude normalization, and payload fields together.
 src/Core/Symbol/MetricSubjectCodec.php	69	complexity.npath	warning=289 error=289 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
 src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	30	complexity.wmc	warning=52 error=52 -- Finite php-parser expression algebra keeps exact NPath composition and saturation together (grew by one arm for the       assignment-coalesce operator).
-src/Analysis/Evidence/Coupling/CboRule.php	41	coupling.cbo	22 -- Raw CBO 21: this hierarchical rule's own dependencies
+src/Analysis/Evidence/Coupling/CboRule.php	41	coupling.cbo	22 -- Raw CBO 21: this hierarchical rule's own dependencies plus
 src/Analysis/Evidence/Coupling/DistanceRule.php	51	coupling.cbo	21 -- Raw CBO 20: this hierarchical rule's own dependencies plus
 src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	18	coupling.cbo	27 -- Measurement collector base is a stable provider-owned extension hub; current raw CBO 26 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php	10	coupling.cbo	38 -- Aggregation definitions and consumers intentionally share this provider-owned enum; current raw CBO 37 gets one-edge headroom.

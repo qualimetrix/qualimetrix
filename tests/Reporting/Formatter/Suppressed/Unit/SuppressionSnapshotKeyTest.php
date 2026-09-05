@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Reporting\Formatter\Suppressed\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
 
 /**
  * The pure key/normalization logic of `scripts/generate-suppression-snapshot.php`,
@@ -43,15 +44,27 @@ final class SuppressionSnapshotKeyTest extends TestCase
      * The other six mechanisms' suppressors never carry a line number
      * (matched pattern, producer rule name, baseline subject+code, git ref)
      * — normalizing them would silently discard part of their identity.
+     *
+     * The mechanism names are read off {@see SuppressionMechanism} rather than
+     * spelled here. `normalizeSuppressor()` compares against one literal and
+     * treats every other string as opaque, so hand-copied names would keep
+     * passing after a rename and this test would stop being a witness to what
+     * the product actually publishes.
      */
     #[Test]
     public function itLeavesEveryOtherMechanismsSuppressorUnchanged(): void
     {
-        self::assertSame('src/Generated/*', normalizeSuppressor('path-exclusion', 'src/Generated/*'));
-        self::assertSame('App\\Generated', normalizeSuppressor('namespace-exclusion', 'App\\Generated'));
-        self::assertSame('example.rule', normalizeSuppressor('rule-namespace-exclusion', 'example.rule'));
-        self::assertSame('example.rule', normalizeSuppressor('rule-path-exclusion', 'example.rule'));
-        self::assertSame('main..HEAD', normalizeSuppressor('git-scope', 'main..HEAD'));
+        foreach (SuppressionMechanism::cases() as $mechanism) {
+            if ($mechanism === SuppressionMechanism::Suppression) {
+                continue;
+            }
+
+            self::assertSame(
+                'src/Generated/*',
+                normalizeSuppressor($mechanism->value, 'src/Generated/*'),
+                $mechanism->name,
+            );
+        }
     }
 
     /**
@@ -97,7 +110,7 @@ final class SuppressionSnapshotKeyTest extends TestCase
     public function itBuildsADifferentKeyWhenOnlySeverityChanges(): void
     {
         $entry = static fn(string $severity): array => [
-            'mechanism' => 'namespace-exclusion',
+            'mechanism' => 'namespace-suppression',
             'suppressor' => 'App\\Generated',
             'channel' => 'example.channel',
             'file' => 'src/Foo.php',

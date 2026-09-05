@@ -137,6 +137,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesLongFormTargetSnakeCaseKeysUnderArchitectureAllow
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesMultipleRuleNamesWithMixedFormats
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesTheChannelKeysOfAnExclusionMap
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesARetiredRuleOptionInTheSpellingItsAuthorUsed"camel"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesARetiredRuleOptionInTheSpellingItsAuthorUsed"kebab"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesARetiredRuleOptionInTheSpellingItsAuthorUsed"snake"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesTheRetiredRootExcludeNamespacesSpelling
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesTheRetiredRootExcludePathsSpelling
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsInvalidRuleConfig
@@ -229,6 +232,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::resolvesBuiltInStrictPreset
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::throwsOnNonExistentFilePath
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::throwsOnUnknownBuiltInName
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\RetiredRuleOptionKeysAgreementTest::itKeepsBothDoorsNamingTheSameRetiredOptions
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itReplacesResultsAcrossSequentialPrepares
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itResetsPreparedCyclesWithoutTraversingTheGraph
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyDetectorTest::itDetectsDirectCycle
@@ -6149,6 +6153,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFailsClosedForUnknownRuleSelectorWithoutPollutingStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFormatsIncompleteAnalysisAndGivesItExitCodePriority
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsAChannelAsRuleOptionOwner
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsARetiredRuleOptionInTheSpellingTheCommandLineUsed
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsARetiredSuppressionFlagByName"namespace"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsARetiredSuppressionFlagByName"path"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsASelectionSelectorInTheRetiredChannelPairForm
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsASelectionSelectorNamingALevelItsChannelDoesNotReportAt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsASelectionSelectorWhoseLevelIsNotOne

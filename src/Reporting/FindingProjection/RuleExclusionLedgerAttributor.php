@@ -9,8 +9,8 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 
 /**
- * The two per-rule exclusion ledger halves — {@see SuppressionMechanism::RuleNamespaceExclusion}
- * and {@see SuppressionMechanism::RulePathExclusion} — split out of
+ * The two per-rule exclusion ledger halves — {@see SuppressionMechanism::RuleNamespaceSuppression}
+ * and {@see SuppressionMechanism::RulePathSuppression} — split out of
  * {@see SuppressionCompositionBuilder} as its own subject: publishing a
  * ledger-excluded finding under the mechanism and producer that removed it,
  * and finding the configured patterns that fired nothing, both read the same
@@ -72,8 +72,8 @@ final readonly class RuleExclusionLedgerAttributor
     private function mechanismOf(RuleExclusionAttribution $attribution): SuppressionMechanism
     {
         return $attribution->isPathExclusion
-            ? SuppressionMechanism::RulePathExclusion
-            : SuppressionMechanism::RuleNamespaceExclusion;
+            ? SuppressionMechanism::RulePathSuppression
+            : SuppressionMechanism::RuleNamespaceSuppression;
     }
 
     /**
@@ -123,8 +123,8 @@ final readonly class RuleExclusionLedgerAttributor
 
             $inert = [
                 ...$inert,
-                ...$this->inertFor(SuppressionMechanism::RulePathExclusion, $ruleName, $this->configuredPathPatterns($ruleOptions), $pathHitsByRule),
-                ...$this->inertFor(SuppressionMechanism::RuleNamespaceExclusion, $ruleName, $this->configuredNamespacePatterns($ruleOptions), $namespaceHitsByRule),
+                ...$this->inertFor(SuppressionMechanism::RulePathSuppression, $ruleName, $this->configuredPathPatterns($ruleOptions), $pathHitsByRule),
+                ...$this->inertFor(SuppressionMechanism::RuleNamespaceSuppression, $ruleName, $this->configuredNamespacePatterns($ruleOptions), $namespaceHitsByRule),
                 ...$this->inertForChannels($ruleName, $this->configuredChannelPatterns($ruleOptions), $channelHitsByRule),
             ];
         }
@@ -165,7 +165,7 @@ final readonly class RuleExclusionLedgerAttributor
             foreach ($patterns as $pattern) {
                 if (!isset($channelHitsByRule[$ruleName][$selector][$pattern])) {
                     $inert[] = new InertSuppressor(
-                        SuppressionMechanism::RuleNamespaceExclusion,
+                        SuppressionMechanism::RuleNamespaceSuppression,
                         $ruleName . ': ' . $selector . ' ' . $pattern,
                     );
                 }

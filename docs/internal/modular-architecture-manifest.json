@@ -339,6 +339,14 @@
       "closure_package": "P3",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\RetiredRuleOptions": {
+      "path": "src/Analysis/Configuration/Loader/RetiredRuleOptions.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "closure_package": "P3",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Configuration\\Loader\\SectionNormalizationPolicy": {
       "path": "src/Analysis/Configuration/Loader/SectionNormalizationPolicy.php",
       "kind": "enum",
@@ -15884,6 +15892,25 @@
             "service_alias",
             "service_registration"
           ]
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\Util\\ConfigKeySpelling": {
+      "path": "src/Core/Util/ConfigKeySpelling.php",
+      "kind": "class",
+      "owner": "Core.Neutral",
+      "visibility": "contract",
+      "closure_package": "P8",
+      "consumers": [
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\RetiredRuleOptions",
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RetiredRuleOptionKeys",
+          "closes_in": null
         }
       ]
     },

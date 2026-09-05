@@ -191,7 +191,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     private function validateStructure(array $config, string $path, array $keyMap, array $rawConfig): void
     {
         $this->validateRootKeys($config, $path, $keyMap);
-        $this->validateRulesSection($config, $path, $keyMap);
+        $this->validateRulesSection($config, $path, $keyMap, $rawConfig);
         $this->validateTypeConstraints($config, $path, $keyMap);
         $this->validateSectionSubKeys($config, $path, $rawConfig);
         $this->validateScalarTypes($config, $path);
@@ -234,10 +234,16 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     }
 
     /**
+     * The raw section is handed to {@see RetiredRuleOptions} rather than the
+     * normalized one: the three spellings of an option key have already
+     * collapsed into one by then, and that refusal exists to answer in the
+     * author's own.
+     *
      * @param array<string, mixed> $config
      * @param array<string, string> $keyMap
+     * @param array<string, mixed> $rawConfig
      */
-    private function validateRulesSection(array $config, string $path, array $keyMap): void
+    private function validateRulesSection(array $config, string $path, array $keyMap, array $rawConfig): void
     {
         if (!isset($config[ConfigSchema::RULES])) {
             return;
@@ -258,6 +264,8 @@ final class YamlConfigLoader implements ConfigLoaderInterface
                 );
             }
         }
+
+        RetiredRuleOptions::refuseIn($rawConfig, $this->originalKey(ConfigSchema::RULES, $keyMap), $path);
     }
 
     /**

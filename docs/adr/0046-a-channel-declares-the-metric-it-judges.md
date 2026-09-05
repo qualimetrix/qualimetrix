@@ -88,9 +88,35 @@ compiler pass already composes both sides.
 `ChannelDeclaration`'s docblock enumerates what it carries and ends with
 "Nothing else belongs here"; ADR 0031 explains why shape left. `judges` is added
 against both texts, and both are amended in the same step rather than left to
-argue with the code. It belongs on the channel and not on the producer because
-it is a per-channel fact — the `design.type-coverage.*` producers judge three
-different metrics, and `coupling.cbo` names two candidates on one channel.
+argue with the code.
+
+It belongs on the channel and not on the producer because the fact is bound to
+the pair (channel, the levels that channel reports at), and a producer is
+neither half of that pair. Two witnesses in the tree, and each says something
+the other does not:
+
+- `AbstractTypeCoverageRule::channelDeclarations()` is **one** declaration site
+  whose `judges` reads `static::coverageMetric()`. Three channels come out of
+  it — `design.type-coverage.param`, `.property`, `.return` — judging three
+  different metrics. This one shows only that the value varies below the class
+  that writes the declaration; it would survive a producer-held field, since
+  each of the three producers owns exactly one channel. It is here because the
+  next witness is the one that would not.
+- `CboRule` declares **one** channel naming two candidate metrics,
+  `coupling.cbo` and `coupling.cbo-app`, and its `scope` option picks between
+  them at run time. `ComplexityRule` does the same across levels rather than
+  options: one channel over `callable` and `class`, judging `complexity.ccn` on
+  the first and its `.max` aggregate on the second. Which key the published
+  number is, is a fact about the channel at a level; the class is the same class
+  either way, so a producer-held `judges` could not name it without inventing a
+  second producer.
+
+What the tree does **not** contain is a producer declaring two channels with
+different `judges` — the shape that decided `direction`'s placement in ADR 0031.
+The argument here is deliberately not that one; it is the level pairing above.
+The absence is also not a reason to move `judges` onto the producer: it would
+put a per-channel fact on a class that today happens to own one channel each
+time, and the first producer to declare a second would have to move it back.
 
 **`coupling.class-rank` stays `occurrence` and declares nothing**, although a
 catalog metric is exactly what it publishes. That is ADR 0017 point 5: a

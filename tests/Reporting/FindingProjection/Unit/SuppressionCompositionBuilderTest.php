@@ -89,7 +89,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         );
 
         self::assertCount(1, $composition->all);
-        self::assertSame(SuppressionMechanism::PathExclusion, $composition->all[0]->mechanism);
+        self::assertSame(SuppressionMechanism::PathSuppression, $composition->all[0]->mechanism);
         self::assertSame('src/Excluded', $composition->all[0]->suppressor);
     }
 
@@ -111,7 +111,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         );
 
         self::assertCount(1, $composition->all);
-        self::assertSame(SuppressionMechanism::NamespaceExclusion, $composition->all[0]->mechanism);
+        self::assertSame(SuppressionMechanism::NamespaceSuppression, $composition->all[0]->mechanism);
         self::assertSame('App\\Excluded', $composition->all[0]->suppressor);
     }
 
@@ -184,7 +184,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         );
 
         self::assertCount(1, $composition->all);
-        self::assertSame(SuppressionMechanism::RuleNamespaceExclusion, $composition->all[0]->mechanism);
+        self::assertSame(SuppressionMechanism::RuleNamespaceSuppression, $composition->all[0]->mechanism);
         self::assertSame('coupling.cbo', $composition->all[0]->suppressor);
     }
 
@@ -207,7 +207,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         );
 
         self::assertCount(1, $composition->all);
-        self::assertSame(SuppressionMechanism::RulePathExclusion, $composition->all[0]->mechanism);
+        self::assertSame(SuppressionMechanism::RulePathSuppression, $composition->all[0]->mechanism);
         self::assertSame('code-smell.long-parameter-list', $composition->all[0]->suppressor);
     }
 
@@ -223,7 +223,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         );
 
         self::assertCount(1, $composition->neverMatched);
-        self::assertSame(SuppressionMechanism::PathExclusion, $composition->neverMatched[0]->mechanism);
+        self::assertSame(SuppressionMechanism::PathSuppression, $composition->neverMatched[0]->mechanism);
         self::assertSame('src/NeverMatched.php', $composition->neverMatched[0]->suppressor);
     }
 
@@ -245,7 +245,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         );
 
         self::assertCount(1, $composition->neverMatched);
-        self::assertSame(SuppressionMechanism::RulePathExclusion, $composition->neverMatched[0]->mechanism);
+        self::assertSame(SuppressionMechanism::RulePathSuppression, $composition->neverMatched[0]->mechanism);
         self::assertSame('coupling.cbo: src/DoesNotExist.php', $composition->neverMatched[0]->suppressor);
     }
 
@@ -277,7 +277,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
         );
 
         self::assertCount(1, $composition->all);
-        self::assertSame(SuppressionMechanism::RuleNamespaceExclusion, $composition->all[0]->mechanism);
+        self::assertSame(SuppressionMechanism::RuleNamespaceSuppression, $composition->all[0]->mechanism);
         self::assertSame($channel, $composition->all[0]->suppressor);
         self::assertNotSame($finding->ruleName, $composition->all[0]->suppressor);
     }
@@ -310,11 +310,11 @@ final class SuppressionCompositionBuilderTest extends TestCase
         );
 
         self::assertCount(1, $composition->all);
-        self::assertSame(SuppressionMechanism::RuleNamespaceExclusion, $composition->all[0]->mechanism);
+        self::assertSame(SuppressionMechanism::RuleNamespaceSuppression, $composition->all[0]->mechanism);
         self::assertSame('computed.health', $composition->all[0]->suppressor);
 
         self::assertCount(1, $composition->neverMatched);
-        self::assertSame(SuppressionMechanism::RuleNamespaceExclusion, $composition->neverMatched[0]->mechanism);
+        self::assertSame(SuppressionMechanism::RuleNamespaceSuppression, $composition->neverMatched[0]->mechanism);
         self::assertSame('computed.health: ' . $siblingChannel . ' App\\NeverMatched', $composition->neverMatched[0]->suppressor);
     }
 

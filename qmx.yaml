@@ -55,6 +55,7 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest'
         - 'Qualimetrix\Analysis\Configuration\Discovery\ComposerReader'
         - 'Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface'
+        - 'Qualimetrix\Analysis\Configuration\Loader\RetiredRuleOptions'
         - 'Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy'
         - 'Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer'
@@ -733,6 +734,7 @@ architecture:
         - 'Qualimetrix\Core\Observation\WorseDirection'
         - 'Qualimetrix\Core\Time\ClockInterface'
         - 'Qualimetrix\Core\Time\SystemClock'
+        - 'Qualimetrix\Core\Util\ConfigKeySpelling'
         - 'Qualimetrix\Core\Util\NamespaceMatcher'
         - 'Qualimetrix\Core\Util\PathMatcher'
         - 'Qualimetrix\Core\Util\PatternMatch'
@@ -1026,6 +1028,7 @@ architecture:
 
   allow:
     analysis-configuration:
+      - core-neutral
       - core-path
       - external
     analysis-evidence-circulardependency:

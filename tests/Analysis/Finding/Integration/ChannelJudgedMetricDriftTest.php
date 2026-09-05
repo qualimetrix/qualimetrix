@@ -56,6 +56,22 @@ use RuntimeException;
  * tracked declaration fixture, not by this run — stated here so that a green
  * run is not read as more than it is.
  *
+ * The "any one candidate is enough" rule is exercised unevenly for the same
+ * reason, and the split is worth knowing:
+ *
+ * - the three complexity channels naming a base key and its `.max` aggregate
+ *   **are** exercised: the base key exists only on `method`/`function`
+ *   subjects and the aggregate only on `class`/`namespace` ones, so the
+ *   subject-scoped lookup really does check that the level picked the right
+ *   key;
+ * - `coupling.cbo` is **not**: it names `coupling.cbo` and `coupling.cbo-app`,
+ *   and on all twelve classes of the `coupling` corpus case the two hold the
+ *   same number, because no fixture there depends on a symbol outside the
+ *   case. A rule body reading the candidate its `scope` option did not select
+ *   would pass this run unnoticed. Separating the two needs a corpus fixture
+ *   with a vendor dependency — a change to the gate's input, which is its own
+ *   declared step, not a side effect of this test.
+ *
  * **What this guard does not cover — six, named, so the set cannot grow in
  * silence.** The same six the build-time half names, for the same reasons
  * (see `assertJudgedMetricsAreDeclarable()` in
@@ -98,6 +114,17 @@ final class ChannelJudgedMetricDriftTest extends TestCase
      * rounding without asking each producer to declare its own, and it does
      * not weaken the property this guard is here for — a channel repointed at
      * a different metric moves its number by far more than this.
+     *
+     * The tolerance is one number for channels whose scales are not one, and
+     * that asymmetry is the price. For an unbounded metric — CCN, CBO, NPath,
+     * LOC — 0.05 is nothing. For the six judging channels whose metric lives
+     * in [0, 1] — `coupling.distance`, `coupling.instability`,
+     * `design.data-class` (judging `design.woc`) and the three
+     * `design.type-coverage.*` — it is five percent of the whole scale, so a
+     * published value drifting from its catalog value by less than that would
+     * pass here. Making the tolerance a property of the channel would fix it,
+     * at the price of asking every producer to declare a rounding it does not
+     * do; today only one producer rounds at all.
      */
     private const float MAGNITUDE_TOLERANCE = 0.05;
 

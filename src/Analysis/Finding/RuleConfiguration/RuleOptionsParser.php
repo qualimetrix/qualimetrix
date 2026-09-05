@@ -143,7 +143,13 @@ final readonly class RuleOptionsParser
             return null;
         }
 
-        $option = $this->normalizeOptionName(substr($rest, 0, $equalsPos));
+        // Before normalization, while the option is still spelled the way it
+        // was typed: `--rule-opt` accepts kebab, snake and camel alike, and a
+        // refusal raised after the fold can only answer in one of the three.
+        $authoredOption = substr($rest, 0, $equalsPos);
+        RetiredRuleOptionKeys::refuse($ruleName, [trim($authoredOption) => null]);
+
+        $option = $this->normalizeOptionName($authoredOption);
         $value = $this->normalizeValue(substr($rest, $equalsPos + 1));
 
         return [$ruleName, $option, $value];

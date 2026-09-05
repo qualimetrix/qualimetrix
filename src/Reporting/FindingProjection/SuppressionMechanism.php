@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
  * exclusion ledger ({@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats}
  * — `suppress_namespaces`/`suppress_namespace_channels` and `suppress_paths`,
  * configured under `rules: {<rule-name>: {...}}`). The ledger halves are
- * distinct from {@see PathExclusion}/{@see NamespaceExclusion} above: those
+ * distinct from {@see PathSuppression}/{@see NamespaceSuppression} above: those
  * two run once, globally, inside {@see \Qualimetrix\Reporting\FindingProjection\FindingProjector};
  * the ledger runs per rule, inside rule execution itself, before a finding
  * ever reaches the projector. Collapsing the two into one "ledger" value
@@ -25,6 +25,12 @@ use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
  * PHPStan's match-exhaustiveness check fails the build the moment a sixth
  * stage is declared without a matching case here — the enum cannot silently
  * fall behind the vocabulary it is derived from.
+ *
+ * The mapping there is deliberately not name-for-name. This enum publishes
+ * what the report says happened to a finding, so it speaks the suppression
+ * vocabulary of ADR 0047; {@see FindingFilterStage} names the pipeline stage
+ * that did it and keeps its own `*Exclusion` spelling, which is why the two
+ * enums have cases of the same standing under different names.
  */
 enum SuppressionMechanism: string
 {
@@ -32,10 +38,10 @@ enum SuppressionMechanism: string
     case Suppression = 'suppression';
 
     /** Global `suppress_paths` (config or `--suppress-path`). */
-    case PathExclusion = 'path-suppression';
+    case PathSuppression = 'path-suppression';
 
     /** Global `suppress_namespaces` (config or `--suppress-namespace`). */
-    case NamespaceExclusion = 'namespace-suppression';
+    case NamespaceSuppression = 'namespace-suppression';
 
     /** The accepted-level ceiling (ADR 0017). */
     case Baseline = 'baseline';
@@ -44,17 +50,17 @@ enum SuppressionMechanism: string
     case GitScope = 'git-scope';
 
     /** Per-rule `suppress_namespaces` / `suppress_namespace_channels`. */
-    case RuleNamespaceExclusion = 'rule-namespace-suppression';
+    case RuleNamespaceSuppression = 'rule-namespace-suppression';
 
     /** Per-rule `suppress_paths`. */
-    case RulePathExclusion = 'rule-path-suppression';
+    case RulePathSuppression = 'rule-path-suppression';
 
     public static function fromStage(FindingFilterStage $stage): self
     {
         return match ($stage) {
             FindingFilterStage::Suppression => self::Suppression,
-            FindingFilterStage::PathExclusion => self::PathExclusion,
-            FindingFilterStage::NamespaceExclusion => self::NamespaceExclusion,
+            FindingFilterStage::PathExclusion => self::PathSuppression,
+            FindingFilterStage::NamespaceExclusion => self::NamespaceSuppression,
             FindingFilterStage::Baseline => self::Baseline,
             FindingFilterStage::GitScope => self::GitScope,
         };
@@ -69,6 +75,6 @@ enum SuppressionMechanism: string
      */
     public static function ledgerHalves(): array
     {
-        return [self::RuleNamespaceExclusion, self::RulePathExclusion];
+        return [self::RuleNamespaceSuppression, self::RulePathSuppression];
     }
 }

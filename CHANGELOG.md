@@ -199,7 +199,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   root of `qmx.yaml` and inside a `rules: { <rule-name>: { ... } }` block. The
   matching CLI flags rename the same way: `--exclude-path` → `--suppress-path`,
   `--exclude-namespace` → `--suppress-namespace`. `SuppressionMechanism`'s four
-  path/namespace values gain the `-suppression` suffix
+  path/namespace cases are renamed to match (`PathExclusion` →
+  `PathSuppression`, and its three siblings likewise), and their values gain
+  the `-suppression` suffix
   (`path-exclusion` → `path-suppression`, `namespace-exclusion` →
   `namespace-suppression`, `rule-path-exclusion` → `rule-path-suppression`,
   `rule-namespace-exclusion` → `rule-namespace-suppression`), visible in

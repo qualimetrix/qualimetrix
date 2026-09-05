@@ -86,10 +86,10 @@ declare(strict_types=1);
  *                            `file` + `symbol` already disambiguate distinct
  *                            declarations sharing that file, so nothing is
  *                            lost that those two fields do not already carry.
- *   - `path-exclusion`,
- *     `namespace-exclusion`,
- *     `rule-path-exclusion`,
- *     `rule-namespace-exclusion` -> a configured glob/namespace pattern or a
+ *   - `path-suppression`,
+ *     `namespace-suppression`,
+ *     `rule-path-suppression`,
+ *     `rule-namespace-suppression` -> a configured glob/namespace pattern or a
  *                            producer rule name. Neither ever contains a
  *                            line number; used unchanged.
  *   - `baseline`          -> `<subject->toCanonical()> <code>`, already

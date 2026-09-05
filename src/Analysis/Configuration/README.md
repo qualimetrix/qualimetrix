@@ -41,6 +41,15 @@ It also holds the root keys that were *retired*:
 `ConfigSchema::refuseRetiredRootKey()` names the replacement for a dead
 top-level spelling, because the unknown-key path suggests only similarly
 spelled keys and would let a rename through as an unexplained refusal.
+`Loader\RetiredRuleOptions`, handed the *pre-normalization* `rules:` section by
+`YamlConfigLoader::validateRulesSection()`, does the same for a retired option
+inside a rule block. It is here and not in the rule layer because the loader is
+the last place the authored spelling exists: below it `exclude_paths`,
+`exclude-paths` and `excludePaths` are one key, so a refusal raised later can
+only answer in a spelling its author may never have typed. The rule layer keeps
+its own copy of the same family for the `--rule-opt` door, and
+`RetiredRuleOptionKeysAgreementTest` pins the two together. The fold and its
+inverse are `Core\Util\ConfigKeySpelling`, shared rather than copied.
 
 `ConfigurationDocument` preserves ordered source contributions. Feature leaves
 consume their own contribution key: for example,

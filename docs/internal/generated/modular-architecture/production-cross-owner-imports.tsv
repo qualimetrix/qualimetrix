@@ -1,6 +1,7 @@
 consumer	consumer_owner	dependency	dependency_owner	dependency_visibility	closure_package
 Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract	P8
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract	P8
+Qualimetrix\Analysis\Configuration\Loader\RetiredRuleOptions	Analysis.Configuration	Qualimetrix\Core\Util\ConfigKeySpelling	Core.Neutral	contract	P8
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract	P2
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract	P2
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector	Analysis.Evidence.CircularDependency	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract	P8
@@ -1224,6 +1225,7 @@ Qualimetrix\Analysis\Finding\FindingExclusionLedger	Analysis.Finding	Qualimetrix
 Qualimetrix\Analysis\Finding\FindingExclusionLedger	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Finding\FindingExclusionLedger	Analysis.Finding	Qualimetrix\Core\Util\NamespaceMatcher	Core.Neutral	contract	P8
 Qualimetrix\Analysis\Finding\FindingExclusionLedger	Analysis.Finding	Qualimetrix\Core\Util\PathMatcher	Core.Neutral	contract	P8
+Qualimetrix\Analysis\Finding\RuleConfiguration\RetiredRuleOptionKeys	Analysis.Finding	Qualimetrix\Core\Util\ConfigKeySpelling	Core.Neutral	contract	P8
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry	Analysis.Finding	Qualimetrix\Core\Path\RelativePath	Core.Path	contract	P8
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Finding\RuleExecution	Analysis.Finding	Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	contract	P8

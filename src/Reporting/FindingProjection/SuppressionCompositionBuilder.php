@@ -101,11 +101,11 @@ final readonly class SuppressionCompositionBuilder
     ): string {
         return match ($mechanism) {
             SuppressionMechanism::Suppression => $this->directiveSuppressorResolver->resolve($finding, $suppressions),
-            SuppressionMechanism::PathExclusion => $this->pathExclusionSuppressor($finding, $options),
-            SuppressionMechanism::NamespaceExclusion => $this->namespaceExclusionSuppressor($finding, $options),
+            SuppressionMechanism::PathSuppression => $this->pathExclusionSuppressor($finding, $options),
+            SuppressionMechanism::NamespaceSuppression => $this->namespaceExclusionSuppressor($finding, $options),
             SuppressionMechanism::Baseline => $this->baselineSuppressor($finding),
             SuppressionMechanism::GitScope => $this->gitScopeSuppressor($options),
-            SuppressionMechanism::RuleNamespaceExclusion, SuppressionMechanism::RulePathExclusion => $finding->ruleName,
+            SuppressionMechanism::RuleNamespaceSuppression, SuppressionMechanism::RulePathSuppression => $finding->ruleName,
         };
     }
 
@@ -182,8 +182,8 @@ final readonly class SuppressionCompositionBuilder
         );
 
         return [
-            ...$this->inertPatterns(SuppressionMechanism::PathExclusion, $options->suppressPaths, $pathHits),
-            ...$this->inertPatterns(SuppressionMechanism::NamespaceExclusion, $options->suppressNamespaces, $namespaceHits),
+            ...$this->inertPatterns(SuppressionMechanism::PathSuppression, $options->suppressPaths, $pathHits),
+            ...$this->inertPatterns(SuppressionMechanism::NamespaceSuppression, $options->suppressNamespaces, $namespaceHits),
         ];
     }
 

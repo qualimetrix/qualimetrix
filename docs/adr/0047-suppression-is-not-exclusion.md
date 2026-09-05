@@ -50,13 +50,13 @@ finding from ever being produced keeps the word `exclude`. A mechanism that
 lets a rule produce a finding and then throws it away is renamed to
 `suppress`:
 
-| was                                                                                                                         | becomes                                     |
-| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `exclude_paths` / `excludePaths` (root and per-rule)                                                                        | `suppress_paths`                            |
-| `exclude_namespaces` / `excludeNamespaces`                                                                                  | `suppress_namespaces`                       |
-| `exclude_namespace_channels` / `excludeNamespaceChannels`                                                                   | `suppress_namespace_channels`               |
-| `--exclude-path`, `--exclude-namespace`                                                                                     | `--suppress-path`, `--suppress-namespace`   |
-| `SuppressionMechanism::PathExclusion` / `NamespaceExclusion` / `RulePathExclusion` / `RuleNamespaceExclusion` string values | the same four cases, `…-suppression` suffix |
+| was                                                                                                           | becomes                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `exclude_paths` / `excludePaths` (root and per-rule)                                                          | `suppress_paths`                                                                                                                 |
+| `exclude_namespaces` / `excludeNamespaces`                                                                    | `suppress_namespaces`                                                                                                            |
+| `exclude_namespace_channels` / `excludeNamespaceChannels`                                                     | `suppress_namespace_channels`                                                                                                    |
+| `--exclude-path`, `--exclude-namespace`                                                                       | `--suppress-path`, `--suppress-namespace`                                                                                        |
+| `SuppressionMechanism::PathExclusion` / `NamespaceExclusion` / `RulePathExclusion` / `RuleNamespaceExclusion` | `PathSuppression` / `NamespaceSuppression` / `RulePathSuppression` / `RuleNamespaceSuppression`, values suffixed `…-suppression` |
 
 `ignore_*` was rejected as the replacement word: `@qmx-ignore` is already one
 of the seven mechanisms, and reusing its verb for a different mechanism would

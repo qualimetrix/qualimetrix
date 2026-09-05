@@ -38,9 +38,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * `coupling.ce-framework` to report the excluded-framework-classes count
  * under the application scope.
  *
- * @qmx-threshold coupling.cbo 22 -- Raw CBO 21: this hierarchical rule's own dependencies
- *                plus the per-rule channel, shape and judged-metric declarations (ADR 0031,
- *                ADR 0046); 22 gets one-edge headroom.
+ * @qmx-threshold coupling.cbo 22 -- Raw CBO 21: this hierarchical rule's own dependencies plus
+ *                the per-rule channel, shape and judged-metric declarations every producer must
+ *                name (ADR 0031, ADR 0046). Those declaration types are metadata the rule states
+ *                about itself — the levels it reports at, the metrics it judges — not
+ *                collaborators it calls, so CBO counts as entanglement what is really this class
+ *                describing itself; the count would fall by naming the same facts in strings, which
+ *                is worse. 22 gets one-edge headroom.
  */
 #[CliAlias('cbo-warning', 'class.warning')]
 #[CliAlias('cbo-error', 'class.error')]

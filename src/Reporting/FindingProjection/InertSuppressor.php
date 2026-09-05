@@ -14,8 +14,8 @@ namespace Qualimetrix\Reporting\FindingProjection;
  * project deleted) visible instead of silently indistinguishable from never
  * having been written.
  *
- * Scoped to the four pattern-based mechanisms — {@see SuppressionMechanism::PathExclusion},
- * {@see SuppressionMechanism::NamespaceExclusion} and their per-rule ledger
+ * Scoped to the four pattern-based mechanisms — {@see SuppressionMechanism::PathSuppression},
+ * {@see SuppressionMechanism::NamespaceSuppression} and their per-rule ledger
  * counterparts — because those are the only ones a configured entry
  * enumerates independently of whether it fired. A `@qmx-ignore` directive
  * that silenced nothing is a different question (`annotation.unused-directive`,
