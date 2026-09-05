@@ -402,6 +402,95 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     }
 
     #[Test]
+    public function itAcceptsAFormulaReferencingAKnownCatalogKey(): void
+    {
+        $result = $this->resolver->resolve([
+            'computed.valid' => [
+                'formula' => 'm["size.loc"] * 2',
+                'levels' => ['namespace'],
+            ],
+        ]);
+
+        self::assertNotNull($this->findByName($result, 'computed.valid'));
+    }
+
+    #[Test]
+    public function itThrowsForATypoedMetricKey(): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('references unknown metric key "complexity.cnn"');
+
+        $this->resolver->resolve([
+            'computed.typo' => [
+                'formula' => 'm["complexity.cnn"] + 1',
+                'levels' => ['namespace'],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function itDoesNotApplyTheCatalogCheckToHealthAndComputedCrossReferences(): void
+    {
+        // health.*/computed.* stay owned by validateComputedMetricReferences() above the
+        // catalog check: a valid cross-reference must not be rejected as an unknown key.
+        $result = $this->resolver->resolve([
+            'computed.derived' => [
+                'formula' => 'm["health.complexity"] + 1',
+                'levels' => ['namespace'],
+            ],
+        ]);
+
+        self::assertNotNull($this->findByName($result, 'computed.derived'));
+    }
+
+    #[Test]
+    public function itAcceptsAKnownAggregationSuffixOnACatalogKey(): void
+    {
+        $result = $this->resolver->resolve([
+            'computed.aggregate' => [
+                'formula' => 'm["complexity.ccn.max"] + 1',
+                'levels' => ['namespace'],
+            ],
+        ]);
+
+        self::assertNotNull($this->findByName($result, 'computed.aggregate'));
+    }
+
+    #[Test]
+    public function itThrowsForAnUnknownAggregationSuffix(): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('references unknown metric key "complexity.ccn.bogus"');
+
+        $this->resolver->resolve([
+            'computed.bad-suffix' => [
+                'formula' => 'm["complexity.ccn.bogus"] + 1',
+                'levels' => ['namespace'],
+            ],
+        ]);
+    }
+
+    /**
+     * A built-in `health.*` formula reaches the same
+     * {@see ComputedMetricFormulaValidator::validate()} call as a user-defined
+     * `computed.*` one: overriding the built-in formula with an unknown key is
+     * caught the same way {@see itThrowsForATypoedMetricKey()} catches it on a
+     * user formula, which is the one-path claim C1 exists to prove by running it.
+     */
+    #[Test]
+    public function itAppliesTheCatalogCheckToAnOverriddenBuiltInFormulaTheSameWayAsAUserFormula(): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('references unknown metric key "complexity.cnn"');
+
+        $this->resolver->resolve([
+            'health.complexity' => [
+                'formula' => 'm["complexity.cnn"] * 10',
+            ],
+        ]);
+    }
+
+    #[Test]
     public function itThrowsForMissingFormulaForLevel(): void
     {
         self::expectException(RuntimeException::class);

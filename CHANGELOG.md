@@ -48,6 +48,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A `computed_metrics:` formula that misspells a metric key now fails
+  configuration validation by name, instead of silently reading it as absent.
+  The check applies to a built-in `health.*` formula overridden in
+  configuration exactly as it does to a user-defined `computed.*` one, and
+  ignores `health.*`/`computed.*` cross-references between computed metrics,
+  which a separate check already validates.
 - A mistyped directive target is no longer answered with `annotation.unused-directive`.
   The near-spelling search offered it to anyone who mistyped a neighbouring
   `annotation.*` name — it sits one edit from its own family — and following the

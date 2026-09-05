@@ -1,0 +1,114 @@
+# method: bin/qmx check src --format=metrics --workers=0 was run over the whole
+# src/ tree (product's own analysis reader) and every "metrics" object key
+# in the resulting symbols was collected (294 distinct spellings). Each
+# spelling was stripped of a trailing aggregation suffix when the suffix is
+# a real AggregationStrategy::cases() value (sum, avg, max, min, count, p95,
+# p5, read via `AggregationStrategy::cases()`, not hand-copied), giving 82
+# distinct published base keys. Six of those are health.* (a different
+# namespace, already owned by ComputedMetricFormulaValidator's fourth check,
+# validateComputedMetricReferences()) and are excluded from this table's
+# comparison; 76 remain. `constant` is whether the base key has a
+# `public const string` in MetricName.php, read via
+# ReflectionClass(MetricName::class)->getReflectionConstants() (82 constants,
+# the same reflection ComputedMetricFormulaValidator::catalogBaseKeys() now
+# uses at runtime) -- not a text grep of the file, so this measurement cannot
+# share a blind spot with scripts/finding-gate/MetricVocabulary.php's regex
+# read of the same file.
+# what this does not see: a metric key a collector only emits under a
+# condition this particular src/ run never triggered (four code-smell keys --
+# code-smell.unreachable-code.first-line, code-smell.unused-private.{method,
+# property,constant} -- and two security keys -- security.hardcoded-
+# credentials, security.sensitive-parameter -- are constants with no row
+# below because this run raised none of those findings; they are not a gap,
+# they are absent from "published" only for this input). It also cannot see
+# a key no collector emits on any input at all (a dead constant), nor a key a
+# collector emits only outside src/ (e.g. only in benchmarks/ or a fixture
+# tree).
+# result: gap (published non-health base key with no MetricName constant) is
+# empty -- every one of the 76 non-health published base keys measured here
+# has a constant. Per the plan (03-blind-spots.md, package C1), an empty gap
+# means the fifth validator check's catalog is built from MetricName's
+# constants, not from a wider republished-universe list.
+base_key	published	constant
+code-smell.is-vo-constructor	yes	yes
+code-smell.parameter-count	yes	yes
+code-smell.unreachable-code	yes	yes
+code-smell.unreachable-code.first-line	no	yes
+code-smell.unused-private.constant	no	yes
+code-smell.unused-private.method	no	yes
+code-smell.unused-private.property	no	yes
+code-smell.unused-private.total	yes	yes
+cohesion.lcc	yes	yes
+cohesion.lcom	yes	yes
+cohesion.pure-method-count	yes	yes
+cohesion.tcc	yes	yes
+complexity.ccn	yes	yes
+complexity.cognitive	yes	yes
+complexity.npath	yes	yes
+complexity.wmc	yes	yes
+coupling.abstractness	yes	yes
+coupling.ca	yes	yes
+coupling.cbo	yes	yes
+coupling.cbo-app	yes	yes
+coupling.ce	yes	yes
+coupling.ce-framework	yes	yes
+coupling.ce-packages	yes	yes
+coupling.class-rank	yes	yes
+coupling.distance	yes	yes
+coupling.instability	yes	yes
+coupling.rfc	yes	yes
+coupling.rfc-external	yes	yes
+coupling.rfc-own	yes	yes
+design.dit	yes	yes
+design.is-abstract	yes	yes
+design.is-data-class	yes	yes
+design.is-exception	yes	yes
+design.is-interface	yes	yes
+design.is-promoted-properties-only	yes	yes
+design.is-readonly	yes	yes
+design.noc	yes	yes
+design.type-coverage.param	yes	yes
+design.type-coverage.param.total	yes	yes
+design.type-coverage.param.typed	yes	yes
+design.type-coverage.pct	yes	yes
+design.type-coverage.property	yes	yes
+design.type-coverage.property.total	yes	yes
+design.type-coverage.property.typed	yes	yes
+design.type-coverage.return	yes	yes
+design.type-coverage.return.total	yes	yes
+design.type-coverage.return.typed	yes	yes
+design.woc	yes	yes
+maintainability.halstead.bugs	yes	yes
+maintainability.halstead.difficulty	yes	yes
+maintainability.halstead.effort	yes	yes
+maintainability.halstead.time	yes	yes
+maintainability.halstead.volume	yes	yes
+maintainability.mi	yes	yes
+security.hardcoded-credentials	no	yes
+security.sensitive-parameter	no	yes
+size.abstract-class-count	yes	yes
+size.class-count	yes	yes
+size.class-loc	yes	yes
+size.cloc	yes	yes
+size.enum-count	yes	yes
+size.function-count	yes	yes
+size.getter-count	yes	yes
+size.implementing-enum-count	yes	yes
+size.interface-count	yes	yes
+size.lloc	yes	yes
+size.loc	yes	yes
+size.method-count	yes	yes
+size.method-count.private	yes	yes
+size.method-count.protected	yes	yes
+size.method-count.public	yes	yes
+size.method-count.total	yes	yes
+size.method-statement-count	yes	yes
+size.promoted-property-count	yes	yes
+size.property-count	yes	yes
+size.property-count.private	yes	yes
+size.property-count.protected	yes	yes
+size.property-count.public	yes	yes
+size.setter-count	yes	yes
+size.symbol-class-count	yes	yes
+size.symbol-method-count	yes	yes
+size.trait-count	yes	yes
