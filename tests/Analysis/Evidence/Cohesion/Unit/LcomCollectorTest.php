@@ -1315,6 +1315,36 @@ PHP;
     }
 
     #[Test]
+    public function itTreatsReturnForeignClassConstantAsStateless(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class OtherClass
+{
+    public const TYPE = 'service';
+}
+
+class WithForeignConstant
+{
+    public const NAME = 'test';
+
+    public function getName(): string { return self::NAME; }
+    public function getType(): string { return OtherClass::TYPE; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Regression: a foreign class constant (OtherClass::TYPE) reads no instance
+        // state just like self::NAME, so getType() must merge into the same stateless
+        // virtual node as getName() instead of standing as its own isolated component.
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\WithForeignConstant'));
+    }
+
+    #[Test]
     public function itDoesNotTreatMethodAccessingPropertyViaCallAsStateless(): void
     {
         $code = <<<'PHP'

@@ -46,7 +46,12 @@ graph nodes, and the metric is the number of connected components.
     constant methods with no property access or instance method calls are
     grouped into one virtual node; this prevents interface-mandated metadata
     methods such as `getName()` and `getDescription()` from each inflating the
-    number of disconnected components. Constructors and destructors
+    number of disconnected components. A method whose body is a single
+    `return` of a class constant qualifies regardless of which class the
+    constant belongs to -- `self::X`, `static::X`, `parent::X`, an imported
+    class's `Foo::X`, and an enum case such as `Suit::Hearts` all read no
+    instance state, so they are all recognized as constant expressions.
+    Constructors and destructors
     (`__construct`, `__destruct`) are excluded from the method set entirely,
     consistent with how TCC/LCC already treats them (see "Implementation
     notes" below): a constructor whose assigned fields no other stateful

@@ -61,6 +61,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   drops it: the near-spelling search, the channel list a rule name is answered
   with, and the answer to a group form. The full channel list of a rule, banned
   ones included, is what `qmx rules` is for.
+- `cohesion.lcom` (LCOM4) no longer counts a method that returns another
+  class's constant (`OtherClass::BAR`, including an enum case) as an isolated,
+  stateful component. It already recognized `self::X`/`static::X` as reading
+  no instance state; the same is now true for any literal class name, so
+  replacing a magic value with a shared constant no longer inflates LCOM.
 - `--disable-rule` and `--only-rule` act on `annotation.unused-directive`. Naming
   it in `--disable-rule` was inert and said nothing, and an `--only-rule` naming
   a sibling channel of `annotation.directive` published it anyway. The channel is

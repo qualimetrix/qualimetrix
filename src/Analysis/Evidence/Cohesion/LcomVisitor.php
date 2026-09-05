@@ -320,8 +320,9 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
     /**
      * Whether an expression is a constant (no instance state access).
      *
-     * Recognizes: scalars, null/true/false, class constants (self::X, static::X),
-     * and arrays of constant expressions.
+     * Recognizes: scalars, null/true/false, class constants on any literal class
+     * name (self::X, static::X, parent::X, Foo::X, an imported enum case), and
+     * arrays of constant expressions.
      */
     private function isConstantExpression(Node\Expr $expr): bool
     {
@@ -337,11 +338,13 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             return true;
         }
 
-        // self::NAME, static::NAME
-        if ($expr instanceof ClassConstFetch
-            && $expr->class instanceof Name
-            && \in_array($expr->class->toLowerString(), ['self', 'static'], true)
-        ) {
+        // Class constant fetch on a literal class name: self::X, static::X,
+        // parent::X, Foo::X, or an enum case (Suit::Hearts parses the same way).
+        // The class operand is resolved at compile time regardless of which name
+        // it names, so it never reads instance state. Excludes the dynamic form
+        // ($this->obj::X, $var::X), where $expr->class is an Expr, not a Name —
+        // that operand can itself read state and stays unrecognized.
+        if ($expr instanceof ClassConstFetch && $expr->class instanceof Name) {
             return true;
         }
 
