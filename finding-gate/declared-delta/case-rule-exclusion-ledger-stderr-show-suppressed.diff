@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -2,1 +2,1 @@
--3 violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths:
-+3 violation(s) suppressed by per-rule exclude_namespaces/exclude_namespace_channels/exclude_paths:

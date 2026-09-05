@@ -1,3 +1,1 @@
 old	new	reason
-exclude_paths:	suppress_paths:	E2 renamed the root and per-rule suppression keys; the reference validates root keys and refuses the new spelling, so its input is written in the old one.
-exclude_namespaces:	suppress_namespaces:	Same rename, same reason: both YAML levels of the key moved together in E2.
