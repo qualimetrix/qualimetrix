@@ -32,14 +32,6 @@ final class SensitiveParameterRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
-
-        self::assertSame(['security.sensitive-parameter'], $rule->requires());
-    }
-
-    #[Test]
     public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions(enabled: false));

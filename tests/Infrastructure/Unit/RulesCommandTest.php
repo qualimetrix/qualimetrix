@@ -264,11 +264,6 @@ final class FixtureRuleWithCyclomaticAlias implements RuleInterface
         return ChannelShape::Magnitude;
     }
 
-    public function requires(): array
-    {
-        return [];
-    }
-
     /**
      * A double with no producers of its own: an empty activity declares
      * nothing, and absence is not disablement.

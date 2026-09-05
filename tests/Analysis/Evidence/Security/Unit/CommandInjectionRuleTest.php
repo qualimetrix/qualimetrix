@@ -34,14 +34,6 @@ final class CommandInjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new CommandInjectionRule(new SecurityPatternOptions());
-
-        self::assertSame(['security.command_injection'], $rule->requires());
-    }
-
-    #[Test]
     public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions(enabled: false));

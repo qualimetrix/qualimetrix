@@ -33,14 +33,6 @@ final class HardcodedCredentialsRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
-
-        self::assertSame(['security.hardcoded-credentials'], $rule->requires());
-    }
-
-    #[Test]
     public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions(enabled: false));

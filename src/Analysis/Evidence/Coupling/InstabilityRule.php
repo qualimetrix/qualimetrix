@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -31,6 +32,10 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * Classes/namespaces with high instability are fragile — they depend on many
  * other components, so changes in dependencies may break them.
+ *
+ * Besides the published `coupling.instability` value, also reads
+ * `coupling.ca` and `coupling.ce` to report the underlying counts in the
+ * finding's message/recommendation.
  */
 #[CliAlias('instability-class-warning', 'class.max_warning')]
 #[CliAlias('instability-class-error', 'class.max_error')]
@@ -52,14 +57,6 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     public function getDescription(): string
     {
         return 'Checks instability at class and namespace levels';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::COUPLING_INSTABILITY, MetricName::COUPLING_CA, MetricName::COUPLING_CE];
     }
 
     /**
@@ -133,7 +130,12 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_, SymbolLevel::Namespace_),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Higher,
+                JudgedMetrics::of(MetricName::COUPLING_INSTABILITY),
+                SymbolLevel::Class_,
+                SymbolLevel::Namespace_,
+            ),
         ];
     }
 

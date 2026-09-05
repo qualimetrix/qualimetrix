@@ -47,14 +47,6 @@ final class LongParameterListRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new LongParameterListRule(new LongParameterListOptions());
-
-        self::assertSame(['code-smell.parameter-count', 'code-smell.is-vo-constructor'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetOptionsClass(): void
     {
         self::assertSame(LongParameterListOptions::class, LongParameterListRule::getOptionsClass());
@@ -482,14 +474,6 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(Severity::Warning, $findings[0]->severity);
         self::assertStringContainsString('Method has 5 parameters', $findings[0]->message);
         self::assertSame(4, $findings[0]->threshold);
-    }
-
-    #[Test]
-    public function itRequiresIncludesVoConstructorMetric(): void
-    {
-        $rule = new LongParameterListRule(new LongParameterListOptions());
-
-        self::assertContains('code-smell.is-vo-constructor', $rule->requires());
     }
 
     #[Test]

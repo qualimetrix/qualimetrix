@@ -31,14 +31,6 @@ final class EmptyCatchRuleTest extends TestCase
     }
 
     #[Test]
-    public function requiresReturnsExpectedMetrics(): void
-    {
-        $rule = new EmptyCatchRule(new CodeSmellOptions());
-
-        self::assertSame(['codeSmell.empty_catch'], $rule->requires());
-    }
-
-    #[Test]
     public function optionsClassIsCorrect(): void
     {
         self::assertSame(CodeSmellOptions::class, EmptyCatchRule::getOptionsClass());

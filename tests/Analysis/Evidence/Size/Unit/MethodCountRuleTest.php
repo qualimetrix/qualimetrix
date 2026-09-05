@@ -40,14 +40,6 @@ final class MethodCountRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequiresMethodCount(): void
-    {
-        $rule = new MethodCountRule(new MethodCountOptions());
-
-        self::assertSame(['size.method-count'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetsOptionsClass(): void
     {
         self::assertSame(MethodCountOptions::class, MethodCountRule::getOptionsClass());

@@ -48,14 +48,6 @@ final class InstabilityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequiresInstabilityMetrics(): void
-    {
-        $rule = new InstabilityRule(new InstabilityOptions());
-
-        self::assertSame(['coupling.instability', 'coupling.ca', 'coupling.ce'], $rule->requires());
-    }
-
-    #[Test]
     public function itReturnsCorrectOptionsClass(): void
     {
         self::assertSame(

@@ -56,12 +56,6 @@ final class UnusedDirectiveRule extends AbstractRule
         return 'Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.';
     }
 
-    /** @return list<string> */
-    public function requires(): array
-    {
-        return [];
-    }
-
     /**
      * @return class-string<InlineDirectiveOptions>
      */

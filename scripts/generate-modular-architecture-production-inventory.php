@@ -2443,6 +2443,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0029-channel-presentation-join.md' => ['Analysis.Finding', 'P6-A'],
         'docs/adr/0030-one-rule-per-type-coverage-dimension.md' => ['Analysis.Evidence.Design', 'P7'],
         'docs/adr/0031-channel-shape-is-a-producer-property.md' => ['Analysis.Finding', 'P6-A'],
+        'docs/adr/0046-a-channel-declares-the-metric-it-judges.md' => ['Analysis.Finding', 'P6-A'],
         'docs/adr/0032-computed-metric-producer-split.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
         'docs/adr/0033-display-family-is-derived-from-the-producer-name.md' => ['Analysis.Finding', 'P6-A'],
         'docs/adr/0034-the-level-is-a-coordinate-of-a-symbol.md' => ['Core.Symbol', 'P8'],

@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -27,6 +28,10 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - WMC <= 30: simple class
  * - WMC 31-50: medium complexity
  * - WMC > 50: complex class requiring refactoring
+ *
+ * Besides the published `complexity.wmc` value, also reads
+ * `design.is-data-class` (skip data classes when configured) and
+ * `size.method-count` (skip trivial classes).
  */
 #[CliAlias('wmc-warning', 'warning')]
 #[CliAlias('wmc-error', 'error')]
@@ -47,14 +52,6 @@ final class WmcRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks Weighted Methods per Class (sum of method complexities)';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::COMPLEXITY_WMC, MetricName::DESIGN_IS_DATA_CLASS, MetricName::SIZE_METHOD_COUNT];
     }
 
     /**
@@ -181,7 +178,11 @@ final class WmcRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Higher,
+                JudgedMetrics::of(MetricName::COMPLEXITY_WMC),
+                SymbolLevel::Class_,
+            ),
         ];
     }
 

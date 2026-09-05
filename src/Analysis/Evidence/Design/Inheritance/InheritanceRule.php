@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -45,14 +46,6 @@ final class InheritanceRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks Depth of Inheritance Tree (deep hierarchies increase complexity)';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::DESIGN_DIT];
     }
 
     /**
@@ -143,7 +136,11 @@ final class InheritanceRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Higher,
+                JudgedMetrics::of(MetricName::DESIGN_DIT),
+                SymbolLevel::Class_,
+            ),
         ];
     }
 

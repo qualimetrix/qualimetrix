@@ -110,16 +110,6 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [
-            'codeSmell.' . static::SMELL_TYPE,
-        ];
-    }
-
-    /**
      * @return list<Finding>
      */
     public function analyze(AnalysisContext $context): array

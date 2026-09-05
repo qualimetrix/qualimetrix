@@ -37,19 +37,6 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
-        $requires = $rule->requires();
-
-        self::assertContains('identicalSubExpression.identical_operands', $requires);
-        self::assertContains('identicalSubExpression.duplicate_condition', $requires);
-        self::assertContains('identicalSubExpression.identical_ternary', $requires);
-        self::assertContains('identicalSubExpression.duplicate_match_arm', $requires);
-        self::assertContains('identicalSubExpression.duplicate_switch_case', $requires);
-    }
-
-    #[Test]
     public function itGetOptionsClass(): void
     {
         self::assertSame(IdenticalSubExpressionOptions::class, IdenticalSubExpressionRule::getOptionsClass());

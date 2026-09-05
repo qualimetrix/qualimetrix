@@ -67,14 +67,6 @@ final class UnassignedClassRule extends AbstractRule
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [];
-    }
-
-    /**
      * @return class-string<UnassignedClassOptions>
      */
     public static function getOptionsClass(): string

@@ -40,14 +40,6 @@ final class ClassCountRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequiresClassCount(): void
-    {
-        $rule = new ClassCountRule(new ClassCountOptions());
-
-        self::assertSame(['size.class-count'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetsOptionsClass(): void
     {
         self::assertSame(ClassCountOptions::class, ClassCountRule::getOptionsClass());

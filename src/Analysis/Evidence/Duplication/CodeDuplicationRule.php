@@ -49,11 +49,6 @@ final class CodeDuplicationRule extends AbstractRule
         return 'Detects duplicated code blocks';
     }
 
-    public function requires(): array
-    {
-        return [];
-    }
-
     public function analyze(AnalysisContext $context): array
     {
         if (!$this->options->isEnabled()) {

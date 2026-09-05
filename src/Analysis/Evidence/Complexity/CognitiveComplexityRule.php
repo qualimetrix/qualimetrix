@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -48,14 +49,6 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     public function getDescription(): string
     {
         return 'Checks cognitive complexity at method and class levels';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::COMPLEXITY_COGNITIVE];
     }
 
     /**
@@ -130,7 +123,15 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Higher,
+                JudgedMetrics::of(
+                    MetricName::COMPLEXITY_COGNITIVE,
+                    MetricName::agg(MetricName::COMPLEXITY_COGNITIVE, AggregationStrategy::Max),
+                ),
+                SymbolLevel::Callable,
+                SymbolLevel::Class_,
+            ),
         ];
     }
 

@@ -74,16 +74,6 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [
-            'security.' . static::PATTERN_TYPE,
-        ];
-    }
-
-    /**
      * @return class-string<SecurityPatternOptions>
      */
     public static function getOptionsClass(): string

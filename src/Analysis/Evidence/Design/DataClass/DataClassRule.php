@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -27,6 +28,12 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * and public properties instead of behaviour, so the share of functional
  * public methods (WOC) is low while complexity (WMC) stays low too. DTOs
  * declared as such (readonly or promoted-properties-only) are excluded.
+ *
+ * Besides the published `design.woc` value, also reads `complexity.wmc`
+ * (the composite gate's other criterion), `size.method-count.total` and
+ * `size.property-count` (minMembers gate), and `design.is-readonly`,
+ * `design.is-promoted-properties-only`, `design.is-abstract`,
+ * `design.is-interface`, `design.is-exception` (exclusion gates).
  */
 #[CliAlias('data-class-woc-threshold', 'wocThreshold')]
 #[CliAlias('data-class-wmc-threshold', 'wmcThreshold')]
@@ -50,24 +57,6 @@ final class DataClassRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Detects classes whose public interface is mostly data access rather than behavior (Data Classes)';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [
-            MetricName::DESIGN_WOC,
-            MetricName::COMPLEXITY_WMC,
-            MetricName::SIZE_METHOD_COUNT_TOTAL,
-            MetricName::SIZE_PROPERTY_COUNT,
-            MetricName::DESIGN_IS_READONLY,
-            MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY,
-            MetricName::DESIGN_IS_ABSTRACT,
-            MetricName::DESIGN_IS_INTERFACE,
-            MetricName::DESIGN_IS_EXCEPTION,
-        ];
     }
 
     /**
@@ -178,7 +167,11 @@ final class DataClassRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Lower,
+                JudgedMetrics::of(MetricName::DESIGN_WOC),
+                SymbolLevel::Class_,
+            ),
         ];
     }
 

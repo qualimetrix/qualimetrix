@@ -50,14 +50,6 @@ final class MaintainabilityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new MaintainabilityRule(new MaintainabilityOptions());
-
-        self::assertSame(['maintainability.mi', 'size.method-statement-count'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetsOptionsClass(): void
     {
         self::assertSame(

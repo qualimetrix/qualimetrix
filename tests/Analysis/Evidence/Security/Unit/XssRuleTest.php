@@ -32,14 +32,6 @@ final class XssRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new XssRule(new SecurityPatternOptions());
-
-        self::assertSame(['security.xss'], $rule->requires());
-    }
-
-    #[Test]
     public function itReturnsNoFindingsWhenDisabled(): void
     {
         $rule = new XssRule(new SecurityPatternOptions(enabled: false));

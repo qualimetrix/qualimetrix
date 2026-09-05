@@ -2,7 +2,7 @@
 # emission point against the channel declaration registry.
 #
 # Format (one channel per line, sorted, blank lines and '#' comments ignored):
-#   <channel> <direction> <levels> [<acceptability>]
+#   <channel> <direction> <levels> [judges:<keys>] [<acceptability>]
 #     direction     := higher | lower | -   ('-' means the channel carries
 #                      none, i.e. its producer's declared ChannelShape is
 #                      `occurrence`; see ADR 0031 -- shape itself is a
@@ -10,7 +10,23 @@
 #                      no longer names it)
 #     levels        := comma-separated SymbolLevel values, in enum case order,
 #                      never empty -- the levels the channel reports at
+#     judges        := judges:<metric key>[,<metric key>...]  (omitted = the
+#                      channel names no catalog metric; see ADR 0046). The
+#                      keys are the exact published spellings, aggregate
+#                      strategy included, in the order the producer considers
+#                      them -- more than one means the rule body chooses
+#                      between them (coupling.cbo by its `scope` option, a
+#                      complexity channel by the level it is reporting at).
+#                      Only a magnitude channel may carry the token.
 #     acceptability := config-error     (omitted = acceptable as debt)
+#
+# Twenty-two of the fifty-two channels here carry a judges: token. The thirty
+# that do not split into twenty-six occurrence channels, four magnitudes that
+# publish a number of their own making (architecture.circular-dependency,
+# architecture.unassigned-class, duplication.code-duplication,
+# design.god-class), and -- inside the twenty-six -- coupling.class-rank,
+# which does read a catalog metric and stays occurrence anyway by ADR 0017
+# point 5.
 #
 # `config-error` marks a channel whose findings report a mistake in the
 # *configuration* rather than debt in the code: it can never be accepted by
@@ -66,7 +82,7 @@ architecture.potential-shadow - project config-error
 architecture.unassigned-class higher project
 architecture.unreachable-layer - project config-error
 code-smell.boolean-argument - callable
-code-smell.constructor-overinjection higher callable
+code-smell.constructor-overinjection higher callable judges:code-smell.parameter-count
 code-smell.count-in-loop - callable
 code-smell.debug-code - callable
 code-smell.empty-catch - callable
@@ -75,33 +91,33 @@ code-smell.eval - callable
 code-smell.exit - callable
 code-smell.goto - callable
 code-smell.identical-subexpression - callable
-code-smell.long-parameter-list higher callable
+code-smell.long-parameter-list higher callable judges:code-smell.parameter-count
 code-smell.superglobals - callable
-code-smell.unreachable-code higher callable
-code-smell.unused-private higher class
-cohesion.lcom higher class
-complexity.cognitive higher callable,class
-complexity.cyclomatic higher callable,class
-complexity.npath higher callable,class
-complexity.wmc higher class
-coupling.cbo higher class,namespace
+code-smell.unreachable-code higher callable judges:code-smell.unreachable-code
+code-smell.unused-private higher class judges:code-smell.unused-private.total
+cohesion.lcom higher class judges:cohesion.lcom
+complexity.cognitive higher callable,class judges:complexity.cognitive,complexity.cognitive.max
+complexity.cyclomatic higher callable,class judges:complexity.ccn,complexity.ccn.max
+complexity.npath higher callable,class judges:complexity.npath,complexity.npath.max
+complexity.wmc higher class judges:complexity.wmc
+coupling.cbo higher class,namespace judges:coupling.cbo,coupling.cbo-app
 coupling.class-rank - class
-coupling.distance higher namespace
-coupling.instability higher class,namespace
-design.data-class lower class
+coupling.distance higher namespace judges:coupling.distance
+coupling.instability higher class,namespace judges:coupling.instability
+design.data-class lower class judges:design.woc
 design.god-class higher class
-design.inheritance higher class
-design.noc higher class
-design.type-coverage.param lower class
-design.type-coverage.property lower class
-design.type-coverage.return lower class
+design.inheritance higher class judges:design.dit
+design.noc higher class judges:design.noc
+design.type-coverage.param lower class judges:design.type-coverage.param
+design.type-coverage.property lower class judges:design.type-coverage.property
+design.type-coverage.return lower class judges:design.type-coverage.return
 duplication.code-duplication higher project
-maintainability.index lower callable
+maintainability.index lower callable judges:maintainability.mi
 security.command-injection - callable
 security.hardcoded-credentials - class
 security.sensitive-parameter - callable
 security.sql-injection - callable
 security.xss - callable
-size.class-count higher namespace
-size.method-count higher class
-size.property-count higher class
+size.class-count higher namespace judges:size.class-count.sum
+size.method-count higher class judges:size.method-count
+size.property-count higher class judges:size.property-count

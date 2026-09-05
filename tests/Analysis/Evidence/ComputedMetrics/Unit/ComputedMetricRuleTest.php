@@ -51,14 +51,6 @@ final class ComputedMetricRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequiresNothing(): void
-    {
-        $rule = $this->createRuleWithDefinitions([]);
-
-        self::assertSame([], $rule->requires());
-    }
-
-    #[Test]
     public function itReturnsCorrectOptionsClass(): void
     {
         self::assertSame(ComputedMetricRuleOptions::class, ComputedMetricRule::getOptionsClass());

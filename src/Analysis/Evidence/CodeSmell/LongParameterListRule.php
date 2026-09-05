@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -25,6 +26,10 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * Too many parameters indicate a method may need a parameter object
  * or the method is doing too much.
+ *
+ * Besides the published `code-smell.parameter-count` value, also reads
+ * `code-smell.is-vo-constructor` to relax the threshold for value-object
+ * constructors.
  *
  * @qmx-ignore health.cohesion -- Interface metadata methods such as requires() return external metric constants beside one cohesive analysis/projection component; LCOM4 cannot merge those stateless protocol methods.
  */
@@ -48,17 +53,6 @@ final class LongParameterListRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks number of parameters per method';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [
-            MetricName::CODE_SMELL_PARAMETER_COUNT,
-            MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR,
-        ];
     }
 
     /**
@@ -86,7 +80,11 @@ final class LongParameterListRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Higher,
+                JudgedMetrics::of(MetricName::CODE_SMELL_PARAMETER_COUNT),
+                SymbolLevel::Callable,
+            ),
         ];
     }
 

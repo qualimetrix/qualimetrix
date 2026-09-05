@@ -43,14 +43,6 @@ final class UnreachableCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
-
-        self::assertSame(['code-smell.unreachable-code'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetOptionsClass(): void
     {
         self::assertSame(UnreachableCodeOptions::class, UnreachableCodeRule::getOptionsClass());

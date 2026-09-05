@@ -42,14 +42,6 @@ final class HardcodedCredentialsRule extends AbstractRule
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::SECURITY_HARDCODED_CREDENTIALS];
-    }
-
-    /**
      * @return class-string<HardcodedCredentialsOptions>
      */
     public static function getOptionsClass(): string

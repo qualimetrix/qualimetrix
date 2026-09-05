@@ -28,14 +28,6 @@ final class PropertyTypeCoverageRule extends AbstractTypeCoverageRule
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::DESIGN_TYPE_COVERAGE_PROPERTY];
-    }
-
-    /**
      * @return class-string<TypeCoverageOptions>
      */
     public static function getOptionsClass(): string
@@ -53,7 +45,7 @@ final class PropertyTypeCoverageRule extends AbstractTypeCoverageRule
         return MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL;
     }
 
-    protected function coverageMetric(): string
+    protected static function coverageMetric(): string
     {
         return MetricName::DESIGN_TYPE_COVERAGE_PROPERTY;
     }

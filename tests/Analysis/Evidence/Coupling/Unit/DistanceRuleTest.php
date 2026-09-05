@@ -51,14 +51,6 @@ final class DistanceRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequiresDistanceMetrics(): void
-    {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
-
-        self::assertSame(['coupling.distance', 'coupling.abstractness', 'coupling.instability'], $rule->requires());
-    }
-
-    #[Test]
     public function itReturnsCorrectOptionsClass(): void
     {
         self::assertSame(

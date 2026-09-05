@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
@@ -318,16 +319,30 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
             $parts = preg_split('/\s+/', $line);
             self::assertNotFalse($parts, \sprintf('Malformed fixture line: "%s".', $line));
-            self::assertContains(\count($parts), [3, 4], \sprintf('Malformed fixture line: "%s".', $line));
+            self::assertContains(\count($parts), [3, 4, 5], \sprintf('Malformed fixture line: "%s".', $line));
 
             $channelKey = $parts[0];
             $directionSpec = $parts[1];
+            $optional = \array_slice($parts, 3);
+            $judgedSpec = null;
+            $acceptabilitySpec = null;
+
+            foreach ($optional as $token) {
+                if (str_starts_with($token, 'judges:')) {
+                    $judgedSpec = $token;
+
+                    continue;
+                }
+
+                $acceptabilitySpec = $token;
+            }
 
             $declarations[$channelKey] = self::parseDirectionSpec(
                 $directionSpec,
                 $channelKey,
-                self::parseAcceptabilitySpec($parts[3] ?? null, $channelKey),
+                self::parseAcceptabilitySpec($acceptabilitySpec, $channelKey),
                 self::parseLevelsSpec($parts[2], $channelKey),
+                self::parseJudgedSpec($judgedSpec, $channelKey),
             );
         }
 
@@ -348,17 +363,64 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         string $channelKey,
         bool $configurationError,
         array $levels,
+        ?JudgedMetrics $judges,
     ): ChannelDeclaration {
-        $declaration = self::parseDirectionOnly($directionSpec, $channelKey, $levels);
+        $declaration = self::parseDirectionOnly($directionSpec, $channelKey, $levels, $judges);
 
         return $configurationError ? $declaration->asConfigurationError() : $declaration;
     }
 
     /**
+     * The optional `judges:<key>[,<key>…]` token (ADR 0046): the catalog
+     * metrics the channel's magnitude may be read from, in the order the
+     * producer considers them.
+     *
+     * Absent means the channel declares none, which is the ordinary case for
+     * an occurrence channel and the deliberate one for the four magnitudes
+     * that publish a number of their own making.
+     */
+    private static function parseJudgedSpec(?string $spec, string $channelKey): ?JudgedMetrics
+    {
+        if ($spec === null) {
+            return null;
+        }
+
+        $keys = array_values(array_filter(
+            explode(',', substr($spec, \strlen('judges:'))),
+            static fn(string $key): bool => $key !== '',
+        ));
+
+        if ($keys === []) {
+            throw new RuntimeException(\sprintf(
+                'Empty judges: token for channel "%s" in the fixture — omit the token instead.',
+                $channelKey,
+            ));
+        }
+
+        return JudgedMetrics::of(...$keys);
+    }
+
+    /**
      * @param non-empty-list<SymbolLevel> $levels
      */
-    private static function parseDirectionOnly(string $directionSpec, string $channelKey, array $levels): ChannelDeclaration
-    {
+    private static function parseDirectionOnly(
+        string $directionSpec,
+        string $channelKey,
+        array $levels,
+        ?JudgedMetrics $judges,
+    ): ChannelDeclaration {
+        if ($judges !== null) {
+            return match ($directionSpec) {
+                'higher' => ChannelDeclaration::judging(WorseDirection::Higher, $judges, ...$levels),
+                'lower' => ChannelDeclaration::judging(WorseDirection::Lower, $judges, ...$levels),
+                default => throw new RuntimeException(\sprintf(
+                    'Channel "%s" names judged metrics with direction "%s"; only a magnitude channel judges one.',
+                    $channelKey,
+                    $directionSpec,
+                )),
+            };
+        }
+
         return match ($directionSpec) {
             '-' => ChannelDeclaration::occurrence(...$levels),
             'higher' => ChannelDeclaration::magnitude(WorseDirection::Higher, ...$levels),

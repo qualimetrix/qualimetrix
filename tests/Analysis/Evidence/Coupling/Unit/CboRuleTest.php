@@ -58,14 +58,6 @@ final class CboRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequiresCboMetrics(): void
-    {
-        $rule = new CboRule(new CboOptions());
-
-        self::assertSame(['coupling.cbo', 'coupling.ca', 'coupling.ce', 'coupling.cbo-app', 'coupling.ce-framework'], $rule->requires());
-    }
-
-    #[Test]
     public function itReturnsCorrectOptionsClass(): void
     {
         self::assertSame(

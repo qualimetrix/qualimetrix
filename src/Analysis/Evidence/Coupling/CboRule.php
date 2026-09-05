@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -30,6 +31,12 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - Low CBO (<14): weakly coupled, easy to test
  * - Medium CBO (14-19): acceptable (warning)
  * - High CBO (>=20): tightly coupled, hard to isolate (error)
+ *
+ * Besides the published `coupling.cbo` (or `coupling.cbo-app` under
+ * `scope: application`) value, also reads `coupling.ca` and `coupling.ce`
+ * to describe the coupling direction in the message/recommendation, plus
+ * `coupling.ce-framework` to report the excluded-framework-classes count
+ * under the application scope.
  *
  * @qmx-threshold coupling.cbo 21 -- Raw CBO 20: this hierarchical rule's own dependencies
  *                plus the per-rule channel and shape declarations (ADR 0031); 21 gets
@@ -55,14 +62,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public function getDescription(): string
     {
         return 'Checks CBO (Coupling Between Objects) at class and namespace levels';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::COUPLING_CBO, MetricName::COUPLING_CA, MetricName::COUPLING_CE, MetricName::COUPLING_CBO_APP, MetricName::COUPLING_CE_FRAMEWORK];
     }
 
     /**
@@ -125,7 +124,15 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_, SymbolLevel::Namespace_),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Higher,
+                JudgedMetrics::of(
+                    MetricName::COUPLING_CBO,
+                    MetricName::COUPLING_CBO_APP,
+                ),
+                SymbolLevel::Class_,
+                SymbolLevel::Namespace_,
+            ),
         ];
     }
 

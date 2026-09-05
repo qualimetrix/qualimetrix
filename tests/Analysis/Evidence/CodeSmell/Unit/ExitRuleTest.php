@@ -31,14 +31,6 @@ final class ExitRuleTest extends TestCase
     }
 
     #[Test]
-    public function requiresReturnsExpectedMetrics(): void
-    {
-        $rule = new ExitRule(new CodeSmellOptions());
-
-        self::assertSame(['codeSmell.exit'], $rule->requires());
-    }
-
-    #[Test]
     public function optionsClassIsCorrect(): void
     {
         self::assertSame(CodeSmellOptions::class, ExitRule::getOptionsClass());

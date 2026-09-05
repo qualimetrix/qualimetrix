@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -24,6 +25,10 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * Rule that checks if classes have too many properties.
  *
  * Too many properties may indicate a God Class that violates the Single Responsibility Principle.
+ *
+ * Besides the published `size.property-count` value, also reads
+ * `design.is-readonly` and `design.is-promoted-properties-only` to exclude
+ * DTOs when configured.
  */
 #[CliAlias('property-count-warning', 'warning')]
 #[CliAlias('property-count-error', 'error')]
@@ -48,14 +53,6 @@ final class PropertyCountRule extends AbstractRule
     }
 
     /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::SIZE_PROPERTY_COUNT, MetricName::DESIGN_IS_READONLY, MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY];
-    }
-
-    /**
      * @return class-string<PropertyCountOptions>
      */
     public static function getOptionsClass(): string
@@ -75,7 +72,11 @@ final class PropertyCountRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Higher,
+                JudgedMetrics::of(MetricName::SIZE_PROPERTY_COUNT),
+                SymbolLevel::Class_,
+            ),
         ];
     }
 

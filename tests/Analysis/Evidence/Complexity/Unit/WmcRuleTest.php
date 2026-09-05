@@ -46,14 +46,6 @@ final class WmcRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequiresWmcIsDataClassAndMethodCount(): void
-    {
-        $rule = new WmcRule(new WmcOptions());
-
-        self::assertSame(['complexity.wmc', 'design.is-data-class', 'size.method-count'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetsOptionsClass(): void
     {
         self::assertSame(

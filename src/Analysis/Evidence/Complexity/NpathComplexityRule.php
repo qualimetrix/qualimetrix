@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -52,14 +53,6 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     public function getDescription(): string
     {
         return 'Checks NPath complexity at method and class levels';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::COMPLEXITY_NPATH];
     }
 
     /**
@@ -133,7 +126,15 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Higher,
+                JudgedMetrics::of(
+                    MetricName::COMPLEXITY_NPATH,
+                    MetricName::agg(MetricName::COMPLEXITY_NPATH, AggregationStrategy::Max),
+                ),
+                SymbolLevel::Callable,
+                SymbolLevel::Class_,
+            ),
         ];
     }
 

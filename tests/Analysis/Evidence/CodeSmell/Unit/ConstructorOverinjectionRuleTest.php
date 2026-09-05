@@ -44,14 +44,6 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
-
-        self::assertSame(['code-smell.parameter-count'], $rule->requires());
-    }
-
-    #[Test]
     public function itGetOptionsClass(): void
     {
         self::assertSame(ConstructorOverinjectionOptions::class, ConstructorOverinjectionRule::getOptionsClass());

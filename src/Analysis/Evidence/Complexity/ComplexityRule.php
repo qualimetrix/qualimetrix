@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -27,6 +28,10 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * - Callable level: checks the CCN of one method or global function
  * - Class level: checks maximum CCN among class methods
+ *
+ * Besides the published `complexity.ccn` value, also reads
+ * `complexity.cognitive` to enrich the callable-level recommendation text;
+ * it does not gate the finding.
  */
 #[CliAlias('cyclomatic-warning', 'callable.warning')]
 #[CliAlias('cyclomatic-error', 'callable.error')]
@@ -57,14 +62,6 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
      * suggests mechanical branching (switch/match) rather than truly complex logic.
      */
     private const int COGNITIVE_WARNING_THRESHOLD = 15;
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::COMPLEXITY_CCN, MetricName::COMPLEXITY_COGNITIVE];
-    }
 
     /**
      * @return list<SymbolLevel>
@@ -138,7 +135,15 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Higher,
+                JudgedMetrics::of(
+                    MetricName::COMPLEXITY_CCN,
+                    MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max),
+                ),
+                SymbolLevel::Callable,
+                SymbolLevel::Class_,
+            ),
         ];
     }
 

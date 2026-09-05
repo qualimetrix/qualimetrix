@@ -796,7 +796,7 @@ final class RuleExecutorTest extends TestCase
     }
 
     /**
-     * `produced()` must hold a per-rule `exclude_namespaces` casualty that
+     * `produced()` must hold a per-rule `suppress_namespaces` casualty that
      * `published()` drops — the Ш5e2b precedent (`AUDIT.md`) where an audit
      * comparing `execute()`'s return value called four such directives
      * "not deciding anything" because nothing recorded what the rule found
@@ -1032,7 +1032,7 @@ final class RuleExecutorTest extends TestCase
         $rule = $this->createRule('computed.health', [$excludedFinding]);
 
         $registry = new RuleOptionsRegistry();
-        $registry->setConfigFileOptions([$channel => ['exclude_namespaces' => ['App\\Metrics']]]);
+        $registry->setConfigFileOptions([$channel => ['suppress_namespaces' => ['App\\Metrics']]]);
         $registry->configureNamespaceExclusions($channel, ['App\\Metrics']);
 
         $channelIdentity = self::createStub(ChannelIdentityInterface::class);
@@ -1060,7 +1060,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $registry->setConfigFileOptions(['computed.health' => [
-            'exclude_namespace_channels' => [$channel => ['App\\Metrics']],
+            'suppress_namespace_channels' => [$channel => ['App\\Metrics']],
         ]]);
 
         $executor = $this->createExecution([$rule], $registry, $this->computedRuleSelector());
@@ -1076,7 +1076,7 @@ final class RuleExecutorTest extends TestCase
     }
 
     /**
-     * Two overlapping `exclude_paths` entries both independently match the
+     * Two overlapping `suppress_paths` entries both independently match the
      * same file. The ledger must record both as fired, not only the one its
      * own short-circuiting lookup happens to reach first — a consumer
      * computing "which configured pattern fired nothing" needs every pattern
@@ -1092,7 +1092,7 @@ final class RuleExecutorTest extends TestCase
         $pathExclusionProvider->setExclusions('rule1', ['src/Excluded', 'src/Excluded/Deep']);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
-        $registry->setConfigFileOptions(['rule1' => ['exclude_paths' => ['src/Excluded', 'src/Excluded/Deep']]]);
+        $registry->setConfigFileOptions(['rule1' => ['suppress_paths' => ['src/Excluded', 'src/Excluded/Deep']]]);
 
         $executor = $this->createExecution([$rule], $registry);
 
@@ -1228,10 +1228,6 @@ final class RuleExecutorTest extends TestCase
             public static function shape(): ChannelShape
             {
                 return ChannelShape::Occurrence;
-            }
-            public function requires(): array
-            {
-                return [];
             }
             /**
      * A double with no producers of its own: an empty activity declares
@@ -1482,10 +1478,6 @@ final readonly class RuleMetadataFixtureRule implements RuleInterface
     public static function shape(): ChannelShape
     {
         return ChannelShape::Occurrence;
-    }
-    public function requires(): array
-    {
-        return [];
     }
     /**
      * A double with no producers of its own: an empty activity declares

@@ -31,14 +31,6 @@ final class SuperglobalsRuleTest extends TestCase
     }
 
     #[Test]
-    public function requiresReturnsExpectedMetrics(): void
-    {
-        $rule = new SuperglobalsRule(new CodeSmellOptions());
-
-        self::assertSame(['codeSmell.superglobals'], $rule->requires());
-    }
-
-    #[Test]
     public function optionsClassIsCorrect(): void
     {
         self::assertSame(CodeSmellOptions::class, SuperglobalsRule::getOptionsClass());

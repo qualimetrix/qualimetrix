@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolve
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -38,10 +39,14 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  *
  * Packages should ideally be close to the main sequence.
  *
+ * Besides the published `coupling.distance` value, also reads
+ * `coupling.abstractness` and `coupling.instability` to explain the finding
+ * in its message/recommendation.
+ *
  * Namespace filtering:
  * - By default, uses ProjectNamespaceResolver to auto-detect project namespaces from composer.json
  * - Use `includeNamespaces` option to override auto-detection
- * - Use `exclude_namespaces` (universal per-rule option) to exclude specific namespaces
+ * - Use `suppress_namespaces` (universal per-rule option) to exclude specific namespaces
  */
 #[CliAlias('distance-warning', 'max_distance_warning')]
 #[CliAlias('distance-error', 'max_distance_error')]
@@ -69,14 +74,6 @@ final class DistanceRule extends AbstractRule
     public function getDescription(): string
     {
         return 'Checks distance from main sequence at namespace level';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function requires(): array
-    {
-        return [MetricName::COUPLING_DISTANCE, MetricName::COUPLING_ABSTRACTNESS, MetricName::COUPLING_INSTABILITY];
     }
 
     /**
@@ -188,7 +185,7 @@ final class DistanceRule extends AbstractRule
      * 2. If ProjectNamespaceResolver is provided, use it
      * 3. Otherwise, include all namespaces
      *
-     * Note: exclude_namespaces is handled at framework level by RuleExecution.
+     * Note: suppress_namespaces is handled at framework level by RuleExecution.
      */
     private function shouldAnalyzeNamespace(string $namespace): bool
     {
@@ -234,7 +231,11 @@ final class DistanceRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Namespace_),
+            self::NAME => ChannelDeclaration::judging(
+                WorseDirection::Higher,
+                JudgedMetrics::of(MetricName::COUPLING_DISTANCE),
+                SymbolLevel::Namespace_,
+            ),
         ];
     }
 

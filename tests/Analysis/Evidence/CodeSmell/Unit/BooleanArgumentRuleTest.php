@@ -34,14 +34,6 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
-    public function requiresReturnsExpectedMetrics(): void
-    {
-        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
-
-        self::assertSame(['codeSmell.boolean_argument'], $rule->requires());
-    }
-
-    #[Test]
     public function optionsClassIsCorrect(): void
     {
         self::assertSame(BooleanArgumentOptions::class, BooleanArgumentRule::getOptionsClass());

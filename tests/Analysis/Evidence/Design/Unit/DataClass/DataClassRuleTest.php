@@ -74,17 +74,6 @@ final class DataClassRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRequires(): void
-    {
-        $rule = new DataClassRule(new DataClassOptions());
-
-        self::assertSame(
-            ['design.woc', 'complexity.wmc', 'size.method-count.total', 'size.property-count', 'design.is-readonly', 'design.is-promoted-properties-only', 'design.is-abstract', 'design.is-interface', 'design.is-exception'],
-            $rule->requires(),
-        );
-    }
-
-    #[Test]
     public function itGetsOptionsClass(): void
     {
         self::assertSame(
