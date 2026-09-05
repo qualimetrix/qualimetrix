@@ -454,6 +454,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage'
         - 'Qualimetrix\Analysis\Finding\Contract\Finding'
         - 'Qualimetrix\Analysis\Finding\Contract\FindingChannel'
+        - 'Qualimetrix\Analysis\Finding\Contract\JudgedMetrics'
         - 'Qualimetrix\Analysis\Finding\Contract\LevelActivity'
         - 'Qualimetrix\Analysis\Finding\Contract\Location'
         - 'Qualimetrix\Analysis\Finding\Contract\OccurrenceKey'
