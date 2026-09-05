@@ -507,6 +507,9 @@
     "ns:Qualimetrix\\Analysis\\Evidence\\Complexity": [
       {"channel":"size.class-count","magnitudes":[21]}
     ],
+    "ns:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics": [
+      {"channel":"coupling.cbo","magnitudes":[16]}
+    ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
       {"channel":"coupling.cbo","magnitudes":[17]},
       {"channel":"coupling.instability","magnitudes":[0.953125]}

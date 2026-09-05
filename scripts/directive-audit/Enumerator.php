@@ -122,8 +122,19 @@ final class Enumerator
         $content = self::headerOf($existing) . implode('', $rows);
 
         $tmp = $path . '.tmp.' . getmypid();
-        file_put_contents($tmp, $content);
-        rename($tmp, $path);
+
+        if (file_put_contents($tmp, $content) === false) {
+            fwrite(\STDERR, \sprintf("%s: could not write %s.\n", self::ARTIFACT, $tmp));
+
+            return self::FAILURE;
+        }
+
+        if (!rename($tmp, $path)) {
+            @unlink($tmp);
+            fwrite(\STDERR, \sprintf("%s: could not rename %s to %s.\n", self::ARTIFACT, $tmp, $path));
+
+            return self::FAILURE;
+        }
 
         fwrite(\STDERR, \sprintf("%s: wrote %d authored site(s) from %s.\n", self::ARTIFACT, \count($rows), $directory));
 

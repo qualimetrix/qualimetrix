@@ -100,15 +100,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `@qmx-ignore-next-line`, carry no declaration and are still answered at
   producer granularity: a rule off at only one of its levels still reports them
   `inert`.
-- `@qmx-ignore`, `@qmx-ignore-file` and `@qmx-ignore-next-line` addressing
-  `duplication.code-duplication` are now refused at the line they are written
-  on, instead of silently doing nothing. The channel reports one finding per
-  duplicate block aggregated at project level: a symbol directive can never
-  bind to that aggregate, and a file or next-line directive matched only when
-  placed in whichever copy the duplicate scan happened to visit first — doing
-  nothing, unreported, in every other copy. Disable the rule instead
-  (`disabled_rules: [duplication.code-duplication]` / `--disable-rule=…`), or
-  accept the occurrence in the baseline.
 
 ### Breaking
 
@@ -135,6 +126,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `GraphExportCommand($analyzer, $projection, $errorStream, $logger)`.
   Code composing these by hand should pass the one instance the container holds
   (`$container->get(ErrorStream::class)`), as `bin/qmx` does.
+- `@qmx-ignore`, `@qmx-ignore-file` and `@qmx-ignore-next-line` addressing
+  `duplication.code-duplication` — the exact name, `:project`, or a group like
+  `duplication.*` that reaches it — are now refused with
+  `annotation.unresolved-directive` at the line they are written on, instead of
+  the previously accepted forms that silently did nothing everywhere but the
+  one copy the duplicate scan happened to visit first. The channel reports one
+  finding per duplicate block aggregated at project level: no declaration a
+  symbol directive binds to is the project, and the file a file or next-line
+  directive names is only the block's first occurrence, an implementation
+  detail of the scan and not something an author controls. Disable the rule
+  instead (`disabled_rules: [duplication.code-duplication]` /
+  `--disable-rule=duplication.code-duplication`), or accept the occurrence in
+  the baseline.
+
+  **A bare directive naming no channel is affected too.** A plain
+  `@qmx-ignore` / `@qmx-ignore-file` / `@qmx-ignore-next-line` with no channel
+  addresses nothing, so the ban above has nothing to refuse it for — but it
+  also no longer silences a `duplication.code-duplication` finding by covering
+  every channel, exactly as it stopped silencing `annotation.unused-directive`
+  below. A bare directive that silenced only a `duplication.code-duplication`
+  finding before this release now produces `annotation.unused-directive`
+  where it previously produced no finding at all.
 - No inline directive can silence `annotation.unused-directive` any more — the
   channel that reports which directives did nothing. Three separate things
   change for a project that used it.

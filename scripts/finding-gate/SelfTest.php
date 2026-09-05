@@ -413,6 +413,19 @@ final class SelfTest
             ])),
             'two report-value rows renaming one value stay refused, exactly as for the other maps',
         );
+
+        // codex-01: a report-values row colliding on (old, new) with another
+        // map's row must not silently merge into one declaration — that would
+        // hand REPORT_VALUES the other role's unrestricted surface and bare
+        // spelling.
+        $this->assert(
+            self::throws(static fn(): mixed => RenameMaps::fromPairs([
+                ['old' => 'shared-spelling', 'new' => 'shared-target', 'source' => RenameMaps::REPORT_VALUES],
+                ['old' => 'shared-spelling', 'new' => 'shared-target', 'source' => RenameMaps::CHANNELS],
+            ])),
+            'a report-value row colliding with a channels row on the same (old, new) spelling is refused'
+            . ' at load, not merged into a bare, every-surface substitution',
+        );
     }
 
     /**

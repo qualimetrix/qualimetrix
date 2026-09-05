@@ -828,6 +828,30 @@ final class RenameMaps
             $declared[$key] = $declaration;
         }
 
+        // A REPORT_VALUES pair sharing its (old, new) spelling with a row from
+        // another map is not the legitimate two-role case grouping exists for:
+        // that case is one name serving two DIFFERENT translations (e.g. a
+        // metric key that is also a channel code), each keeping its own
+        // surface restriction. Here the two maps would agree on one
+        // translation, and merging their sources hands REPORT_VALUES the other
+        // role's unrestricted surface and bare spelling — a quoted-only,
+        // format:suppressed-only value would travel unquoted, everywhere,
+        // exactly as codex-01 measured. Refused at load time instead.
+        foreach ($declared as $declaration) {
+            $sources = $declaration['sources'];
+
+            if (\in_array(self::REPORT_VALUES, $sources, true) && \count($sources) > 1) {
+                throw new GateError(\sprintf(
+                    'Report value "%s" -> "%s" is also declared by %s. A report-values row must not share its'
+                    . ' (old, new) spelling with another map: the roles would merge and the value would stop'
+                    . ' being quoted-only and format:suppressed-only. Give the report value its own spelling.',
+                    $declaration['old'],
+                    $declaration['new'],
+                    implode(', ', array_values(array_diff($sources, [self::REPORT_VALUES]))),
+                ));
+            }
+        }
+
         $unique = [];
 
         foreach ($declared as $declaration) {

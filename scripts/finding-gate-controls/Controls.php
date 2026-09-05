@@ -27,11 +27,12 @@ use RuntimeException;
  * shapes — a root configuration key translated by the fourth `inputs.tsv` form,
  * and a report value translated by `report-values.tsv`.
  *
- * The last two are the only controls whose subject is not in the report at all.
- * A derivation that failed prints "nothing was written", and what had to be
- * checked was whether that was true ({@see Control::writing()}); a derivation
- * that succeeded prints what it wrote, and what had to be checked was whether it
- * wrote it ({@see Control::rewriting()}).
+ * {@see deriveRefusesBrokenRun()} and {@see deriveWritesOnAGreenRun()} are the
+ * only controls whose subject is not in the report at all. A derivation that
+ * failed prints "nothing was written", and what had to be checked was whether
+ * that was true ({@see Control::writing()}); a derivation that succeeded
+ * prints what it wrote, and what had to be checked was whether it wrote it
+ * ({@see Control::rewriting()}).
  *
  * `delta-too-large` was the one class of the five that no control had ever seen
  * red. Ш4a named the gap in its own record; Ш4b rewrote the code that computes
@@ -122,14 +123,21 @@ final class Controls
      * the corpus stays balanced in both directions.
      *
      * A third was declared and DID fire, on the opposite reading from the one
-     * that named it: it was omitted on the assumption that `qmx rules` prints
-     * rule names and option tokens only. Re-measured at Х9-A1: `RulesCommand`
-     * also prints each producer's own channels — `cohesion.lcom4 judges
-     * cohesion.lcom` — so the renamed half of that line moves `tree|rules` too,
-     * and {@see producerListingToleration()} is reused rather than a plain
-     * `Expectation` hardcoded here: its docblock's premise ("only a control
-     * renaming a producer needs this") was true of the two controls it was
-     * written for and false of this one, but its actual *logic* — the reach is
+     * that named it. Two things moved between the 2026-08-24 measurement and
+     * Х9: `RulesCommand` now also prints each producer's own channels —
+     * `cohesion.lcom4 judges cohesion.lcom` — so the renamed half of that line
+     * moves `tree|rules` too where it did not before; and the tree that
+     * measurement ran against had a declared delta for `tree|rules`
+     * (`finding-gate/declared-delta.tsv`, withdrawn on this branch at
+     * `e7d8c9ae`), which {@see producerListingToleration()} reads to decide
+     * whether the reach is tolerated at all. The 2026-08-24 omission was
+     * correct for ITS tree, where the declaration covered the reach; it is not
+     * a false premise being corrected, but a fact whose value changed on both
+     * axes. Re-measured at Х9-A1 with the delta gone: {@see
+     * producerListingToleration()} is reused rather than a plain `Expectation`
+     * hardcoded here — its docblock's premise ("only a control renaming a
+     * producer needs this") was true of the two controls it was written for
+     * and false of this one, but its actual *logic* — the reach is
      * `surface-mismatch` only where the step under test declares nothing for
      * `tree|rules` — does not depend on which half of a printed line moved, and
      * is exactly what this control needs too.
@@ -487,6 +495,19 @@ final class Controls
      * It shares the rename control's mutation, so it shares that control's two
      * tolerations that never fired and the one that does — see
      * {@see renameWithoutMap()} — for the same measured reasons, stated there.
+     *
+     * `tree|rules` is tolerated unconditionally here rather than through
+     * {@see producerListingToleration()}, and that is not a stylistic choice:
+     * this control's own {@see declare()} call REPLACES the whole declared-delta
+     * index with its one `case:complexity|format:json` row (see the docblock
+     * above {@see declare()}), so the scratch tree this control measures can
+     * never carry a repository-tracked `tree|rules` declaration, no matter what
+     * the repository holds. {@see producerListingToleration()} reads the
+     * repository's tracked index, which is a different source from the one this
+     * control's own mutation leaves on disk — using it here would make the
+     * expectation agree with the scratch tree only by the repository's
+     * coincidence of currently declaring no delta at all, and diverge silently
+     * the day a real step commits one for `tree|rules`.
      */
     private static function deltaOverreach(): Control
     {
@@ -506,7 +527,7 @@ final class Controls
                     FailureClass::WITNESS_DISAGREEMENT,
                     'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
                 ),
-                ...self::producerListingToleration(),
+                new Expectation(FailureClass::SURFACE_MISMATCH, self::PRODUCER_LISTING_SURFACE),
             ],
         );
     }
@@ -1234,13 +1255,20 @@ final class Controls
      * The `qmx rules` toleration a control whose mutation moves anything the
      * listing prints needs — a producer name, or a channel code, since
      * `RulesCommand` prints both: a producer's own name, and each channel it
-     * judges (`<channel> judges <metric>`). Four controls qualify: the two
+     * judges (`<channel> judges <metric>`). Three controls use it: the two
      * built on {@see unusedPrivateChannelMutation()}, which renames a producer,
-     * and {@see renameWithoutMap()} and {@see deltaOverreach()}, built on
-     * {@see lcomChannelMutation()}, which renames a channel while leaving the
-     * producing rule's name alone. {@see referenceInputUntranslated()} touches
-     * neither: measured on `bin/qmx rules` captured before and after its
-     * one-literal edit, byte-identical.
+     * and {@see renameWithoutMap()}, built on {@see lcomChannelMutation()},
+     * which renames a channel while leaving the producing rule's name alone.
+     * {@see referenceInputUntranslated()} touches neither: measured on
+     * `bin/qmx rules` captured before and after its one-literal edit,
+     * byte-identical.
+     *
+     * {@see deltaOverreach()} shares {@see lcomChannelMutation()} but does NOT
+     * use this helper, even though it qualifies by mutation: its own
+     * {@see declare()} call replaces the whole declared-delta index in the
+     * scratch tree, so that control's `tree|rules` toleration can never depend
+     * on the repository's tracked declaration — see the docblock on
+     * {@see deltaOverreach()} for why it hardcodes the expectation instead.
      *
      * Whether the reach is a `surface-mismatch` is not a property of the
      * mutation: it is a property of the step under test. A step that declares a
@@ -1264,19 +1292,21 @@ final class Controls
      *
      * One gap is named rather than closed: the answer comes from the
      * repository's tracked declaration, so it does not know about a control
-     * that plants a declaration of its own over the LISTING surface specifically
-     * — the exemption {@see Harness::replacesDeclaration()} computes and
-     * {@see Control::assertNotPinnedToDeclaredDelta()} honours. Neither control
-     * built on {@see unusedPrivateChannelMutation()} touches
-     * `declared-delta.tsv` at all, and {@see deltaOverreach()} touches it for a
-     * different surface (`case:complexity|format:json`), so today all four
-     * answers coincide with the repository's. A control that combined a
-     * qualifying mutation with a planted declaration on the producer listing
-     * surface itself would be compared against the planted diff while this
-     * helper still read the tracked file: the toleration would match nothing
-     * and fail the control as an idle toleration. Such a control has to derive
-     * its expectation from what it plants, not from what the repository
-     * tracks.
+     * whose OWN mutation writes to `declared-delta.tsv` — the index it reads
+     * and the index the scratch tree ends up with would then be two different
+     * files. Neither control built on {@see unusedPrivateChannelMutation()}
+     * touches `declared-delta.tsv` at all, so both stay eligible. A control
+     * that does touch it — {@see deltaOverreach()} is the one case today — must
+     * not call this helper at all, for either surface it could name: if it
+     * plants a declaration for `tree|rules` itself, the toleration would match
+     * nothing and fail the control as idle ({@see Outcome::idleTolerations()});
+     * if it plants one for a DIFFERENT surface, {@see declare()} still replaces
+     * the whole index, so `tree|rules` is unconditionally undeclared in the
+     * scratch tree regardless of what the repository tracks, and reading the
+     * repository would silently drift from that truth the day the repository
+     * starts tracking a `tree|rules` delta of its own. Such a control derives
+     * its expectation from what it itself plants, not from what the repository
+     * tracks — a hardcoded {@see Expectation}, not this helper.
      *
      * @return list<Expectation>
      */

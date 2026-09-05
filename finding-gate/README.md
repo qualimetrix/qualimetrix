@@ -530,6 +530,15 @@ option name between one colon and an `=`, never followed by a second colon, so
 the whole-token text this shape declares — ending in `:` — is not a substring
 of it.
 
+This shape, like the other three `inputs.tsv` shapes, is matched textually
+across the whole artifact — there is no YAML parse, so the substitution cannot
+tell a document's key position from a comment or a quoted string that happens
+to contain the same characters. `# suppress_namespaces:` in a comment, or
+`"suppress_namespaces:"` inside a string value, is substituted exactly like the
+key itself. This is the mechanism every row shares, not a defect specific to
+the fourth shape: the map is a spelling declaration, not a document model, and
+that is the price of not parsing the twelve surfaces it runs against.
+
 One known counterexample is worth naming rather than silently working around:
 `FindingFilterOrchestrator` prints the old per-rule vocabulary in one stderr
 sentence, `suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths:`,
@@ -907,9 +916,9 @@ differs. Three properties of the declaration are worth knowing before adding one
   movement test, and both controls still PASS — a corpus run cannot see the
   difference, because the records in it move. Those two properties are held by
   self-test cases (`producerMoves()`) and by them alone.
-- `field-move-stale`, `derive-refuses-broken-run` and `derive-writes-green-run`
-  are the three newest, and the last two are the only controls in this harness
-  whose subject is not in the report at all. `field-move-stale` replaces `declared-field-moves.tsv` with one row
+- `derive-refuses-broken-run` and `derive-writes-green-run` are the only
+  controls in this harness whose subject is not in the report at all.
+  `field-move-stale` replaces `declared-field-moves.tsv` with one row
   licensing a move on a surface where nothing moves; the step's own licence goes
   with the replacement, so the move that *does* happen returns to being
   `delta-overreach` on a surface the step declares and is absorbed as declaration

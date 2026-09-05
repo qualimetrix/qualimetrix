@@ -338,13 +338,16 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             return true;
         }
 
-        // Class constant fetch on a literal class name: self::X, static::X,
-        // parent::X, Foo::X, or an enum case (Suit::Hearts parses the same way).
-        // The class operand is resolved at compile time regardless of which name
-        // it names, so it never reads instance state. Excludes the dynamic form
-        // ($this->obj::X, $var::X), where $expr->class is an Expr, not a Name —
-        // that operand can itself read state and stays unrecognized.
-        if ($expr instanceof ClassConstFetch && $expr->class instanceof Name) {
+        // Class constant fetch on a literal class name AND a literal constant
+        // name: self::X, static::X, parent::X, Foo::X, or an enum case
+        // (Suit::Hearts parses the same way). Both operands must be resolved at
+        // compile time for the fetch to read no instance state. Excludes the
+        // dynamic class form ($this->obj::X, $var::X), where $expr->class is an
+        // Expr, not a Name, and the dynamic constant-name form
+        // (self::{$this->prop}, PHP 8.3+), where $expr->name is an Expr, not an
+        // Identifier — either operand can itself read state and stays
+        // unrecognized.
+        if ($expr instanceof ClassConstFetch && $expr->class instanceof Name && $expr->name instanceof Identifier) {
             return true;
         }
 

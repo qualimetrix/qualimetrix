@@ -1,6 +1,5 @@
 mechanism	suppressor
 rule-namespace-suppression	coupling.class-rank: Qualimetrix\Analysis\Finding\Rule
-rule-path-suppression	cohesion.lcom: src/Analysis/Evidence/Coupling/*Collector.php
 rule-path-suppression	complexity.cognitive: src/Analysis/Evidence/Coupling/*Visitor.php
 rule-path-suppression	complexity.cognitive: src/Analysis/Evidence/Security/*Visitor.php
 rule-path-suppression	complexity.cyclomatic: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php

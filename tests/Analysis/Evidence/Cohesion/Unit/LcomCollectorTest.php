@@ -1345,6 +1345,35 @@ PHP;
     }
 
     #[Test]
+    public function itDoesNotTreatDynamicConstantNameAsStateless(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithDynamicConstantName
+{
+    public const NAME = 'value';
+
+    private string $prop = 'NAME';
+
+    public function getViaDynamicName(): string { return self::{$this->prop}; }
+
+    public function getName(): string { return 'test'; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Regression: self::{$this->prop} (PHP 8.3+ dynamic constant name) reads
+        // $this->prop through the NAME operand, not just the class operand that
+        // isConstantExpression() checks — so it must NOT merge into the same
+        // stateless virtual node as getName(). Two components => LCOM 2.
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\WithDynamicConstantName'));
+    }
+
+    #[Test]
     public function itDoesNotTreatMethodAccessingPropertyViaCallAsStateless(): void
     {
         $code = <<<'PHP'
